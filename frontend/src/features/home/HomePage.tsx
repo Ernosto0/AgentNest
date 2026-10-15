@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useMe } from "@/features/auth/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { ReadinessCard } from "./ReadinessCard";
 
 export function HomePage() {
   const { t } = useTranslation();
@@ -31,6 +32,8 @@ export function HomePage() {
           <dd>{workspace.currency}</dd>
         </dl>
       </Card>
+
+      <ReadinessCard />
 
       <EmptyState
         title={t("empty.comingLater")}

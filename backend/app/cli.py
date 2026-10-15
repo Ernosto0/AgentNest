@@ -40,6 +40,8 @@ def cmd_seed(args: argparse.Namespace) -> int:
         f"Workspaces:  {len(report.created_workspaces)} created, "
         f"{len(report.existing_workspaces)} existing"
     )
+    for slug, added in report.seeded_facts.items():
+        print(f"Facts:       {slug}: {added} added")
     print("Log in as owner@demo.local / manager@demo.local / staff@demo.local / other@demo.local")
     print("with the value of DEMO_PASSWORD.")
     return 0

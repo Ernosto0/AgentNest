@@ -1,0 +1,89 @@
+# Fictional demo facts for "Harbor Pilates Studio" (English, EUR, Europe/Lisbon). Mirrors the
+# structure of the gym seed. All values are invented.
+facts:
+  - key: identity.business_name
+    value: {text: Harbor Pilates Studio}
+
+  - key: contact.phone
+    value: {e164: "+351210000000"}
+
+  - key: contact.email
+    value: {email: hello@harbor-pilates.example}
+
+  - key: location.address
+    value:
+      lines: [Rua do Exemplo 1]
+      district: Alfama
+      city: Lisbon
+
+  - key: hours.weekly
+    value:
+      mon: [["08:00", "21:00"]]
+      tue: [["08:00", "21:00"]]
+      wed: [["08:00", "21:00"]]
+      thu: [["08:00", "21:00"]]
+      fri: [["08:00", "21:00"]]
+      sat: [["09:00", "14:00"]]
+      sun: []
+      exceptions:
+        - {date: "2026-12-25", closed: true, note: {en: Christmas Day, tr: Noel}}
+
+  - key: pricing.reformer_8_sessions
+    value: {amount: "120", unit: package}
+
+  - key: pricing.membership_monthly
+    value: {amount: "89", unit: month}
+
+  - key: pricing.single_session
+    value: {amount: "18", unit: session}
+
+  - key: pricing.student_monthly
+    status: unverified
+    value:
+      amount: "69"
+      unit: month
+      conditions: {en: valid student ID, tr: geçerli öğrenci belgesi}
+
+  - key: promotion.first_class
+    label: {en: First class free, tr: İlk ders ücretsiz}
+    value_type: localized_text
+    value:
+      en: Your first mat class is free, booking required.
+      tr: İlk mat dersiniz ücretsiz, rezervasyon gerekir.
+    valid_until: {end_of_month: 1}
+
+  - key: booking.instructions
+    value:
+      en: Book a class by DM or phone; we confirm within a few hours.
+      tr: DM veya telefonla ders ayırtın; birkaç saat içinde onaylarız.
+
+  - key: policy.price_disclosure
+    value: {value: share}
+
+  - key: service.reformer_pilates
+    label: {en: Reformer Pilates, tr: Reformer Pilates}
+    value_type: localized_text
+    value:
+      en: Small-group reformer classes for every level.
+      tr: Her seviyeye uygun küçük gruplu reformer dersleri.
+
+  - key: service.mat_pilates
+    label: {en: Mat Pilates, tr: Mat Pilates}
+    value_type: localized_text
+    value:
+      en: Floor-based mat classes focused on core strength and mobility.
+      tr: Merkez gücü ve esnekliğe odaklanan mat dersleri.
+
+  - key: brand.voice_guidelines
+    value:
+      en: Friendly and concise, plain English, at most one emoji.
+      tr: Samimi ve kısa, sade bir dil, en fazla bir emoji.
+
+  - key: escalation.keywords
+    value: {items: [lawyer, refund, injured]}
+
+candidates:
+  - key: pricing.reformer_8_sessions
+    value: {amount: "110", unit: package}
+    source_type: pasted_text
+    excerpt: "Instagram bio: Reformer 8-class pack 110 EUR"

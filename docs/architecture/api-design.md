@@ -40,7 +40,7 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `PATCH /api/v1/auth/me` | `{display_name?, ui_locale?}` |
 | `GET /api/v1/workspaces` | memberships list |
 | `POST /api/v1/workspaces` | `{name, business_category, market, default_locale, timezone, currency}` → workspace |
-| `GET/PATCH /api/v1/workspaces/{ws}` | settings (`workspace.manage` for PATCH) |
+| `GET/PATCH /api/v1/workspaces/{ws}` | settings (`workspace.manage` for PATCH). Temporary until the Phase 4 automation screen: `settings: {automation_reviewed: true}` makes the server stamp `settings.automation_reviewed_at` from its clock and write the audit entry `policy.reviewed`; the timestamp itself cannot be sent |
 | `GET /api/v1/workspaces/{ws}/members` | |
 | `PATCH/DELETE /api/v1/workspaces/{ws}/members/{user_id}` | role change, removal (`members.manage`). The last owner cannot be removed. |
 | `POST /api/v1/workspaces/{ws}/invites` | `{role}` → `{invite_url, expires_at}` (Phase 6) |
@@ -49,18 +49,18 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 ### 2.3 Knowledge (Phase 2; extraction Phase 3; approved answers Phase 4)
 | Method & path | Request → Response |
 |---|---|
-| `GET /…/facts?category=&status=` | `[{id, key, category, label, value_type, value, display, status, criticality, current_version, valid_from, valid_until, last_verified_at, usable, open_candidates_count}]` |
-| `GET /…/facts/template` | template items with `present`/`missing` and status (drives the checklist) |
-| `POST /…/facts` | `{key, label?, value_type, value, criticality?, valid_from?, valid_until?, reason?}` → fact (verified if permitted, else 202 + candidate) |
-| `PATCH /…/facts/{id}` | `{value?, valid_from?, valid_until?, expected_version, reason?}` → fact or candidate |
-| `POST /…/facts/{id}/verify` | `{expected_version}` |
-| `POST /…/facts/{id}/archive` / `restore` | |
-| `GET /…/facts/{id}/versions` | version history |
-| `GET /…/fact-candidates?status=pending` | candidates with `relation`, `source_excerpt` |
-| `POST /…/fact-candidates/{id}/accept` / `reject` | accept → fact |
+| `GET /…/facts?category=&status=` | `{items: [{kind: "fact", id, key, category, label, value_type, value, display, status, state, criticality, current_version, valid_from, valid_until, last_verified_at, last_verified_by_name, source_type, usable, open_candidates_count}], next_cursor}`. `display` is rendered in the **user's UI locale** (not the workspace locale). `state` is the owner-facing label: `verified`, `unverified`, `contested`, `expired`, `not_started` or `archived`. `source_type` is the source of the current version (so verified facts can show where they came from). Read: any member |
+| `GET /…/facts/template` | `[{identifier, key \| pattern, category, label, description, value_types, criticality, required_for, required_group, required_when, allowed_values, status, fact_ids}]` for the workspace's category template; `status` is `missing`, `present` (pattern items) or the state of the fact. Drives the checklist. Read: any member |
+| `POST /…/facts` | `{key, value, value_type?, label?, criticality?, valid_from?, valid_until?, reason?}` → **201** fact (verified, for `knowledge.verify`) or **202** `{kind: "candidate", …}` (staff). The key must be a template key, a pattern key (`service.<slug>`; `label` required) or `custom.<slug>` (`value_type` and `label` required). Staff may only propose fixed template keys and cannot set a validity window (403). A live fact for the key → 409 `CONFLICT_STATE` |
+| `PATCH /…/facts/{id}` | `{expected_version, value?, valid_from?, valid_until?, reason?}` → fact (200) or candidate (202, staff). A null `valid_from`/`valid_until` clears the window; omitting it leaves it unchanged. Staff cannot touch the window (403). Stale version → 409 `FACT_VERSION_CONFLICT` |
+| `POST /…/facts/{id}/verify` | `{expected_version}` (`knowledge.verify`; an already verified fact → 409 `CONFLICT_STATE`) |
+| `POST /…/facts/{id}/archive` / `restore` | `{expected_version, reason?}` (`knowledge.verify`). Restore returns the fact as `unverified`; it needs a free key |
+| `GET /…/facts/{id}/versions` | version history, newest first: `{version, value, display, status, valid_from, valid_until, source_type, source_ref, actor_type, actor_name, reason, change_kind, created_at}` |
+| `GET /…/fact-candidates?status=pending` | candidates with `relation`, `source_excerpt`, `fact_label`, `proposed_display`, `current_display`, `proposed_by_name` |
+| `POST /…/fact-candidates/{id}/accept` / `reject` | `knowledge.verify`. Accept → fact (200); reject → candidate. A candidate that is no longer pending → 409 `CONFLICT_STATE` |
 | `POST /…/knowledge/extractions` | `{text, client_request_id}` → 202 `{run_id, status}` |
 | `GET /…/knowledge/extractions/{run_id}` | `{status, candidates_created}` |
-| `GET /…/readiness` | `{level, requirements: [{code, satisfied, link}]}` |
+| `GET /…/readiness` | `{level: not_ready \| ready_for_drafts \| ready, requirements: [{code, required_for: drafts \| ready, satisfied, status, link: {target: knowledge \| integrations \| automation, category, key}, missing_keys}]}`. The `link` is structured so the API stays free of frontend routes. `status` is `ok`, `missing`, `not_connected` (no account before Phase 4) or `not_reviewed`. Codes: `business_name`, `contact`, `location`, `hours`, `booking_instructions`, `price_policy`, `services`, `account_connected`, `automation_reviewed`. Read: any member |
 | `GET/POST/PATCH /…/approved-answers` | CRUD |
 | `POST /…/approved-answers/from-message/{message_id}` | create from a sent reply |
 | `GET/PUT /…/automation-policies` | `[{action_class, mode}]` (`automation.manage`) |

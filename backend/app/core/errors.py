@@ -23,6 +23,8 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "NOT_FOUND": ErrorSpec(404),
     "VALIDATION_FAILED": ErrorSpec(422),
     "CONFLICT_STATE": ErrorSpec(409),
+    "VERSION_CONFLICT": ErrorSpec(409),
+    "FACT_VERSION_CONFLICT": ErrorSpec(409),
     "JOB_PAYLOAD_INVALID": ErrorSpec(None, retryable=False),
     "INTERNAL_ERROR": ErrorSpec(500),
 }

@@ -112,6 +112,180 @@ export interface paths {
         patch: operations["patch_workspace_api_v1_workspaces__workspace_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/fact-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Candidates */
+        get: operations["list_candidates_api_v1_workspaces__workspace_id__fact_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fact-candidates/{candidate_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Candidate */
+        post: operations["accept_candidate_api_v1_workspaces__workspace_id__fact_candidates__candidate_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fact-candidates/{candidate_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Candidate */
+        post: operations["reject_candidate_api_v1_workspaces__workspace_id__fact_candidates__candidate_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/facts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Facts */
+        get: operations["list_facts_api_v1_workspaces__workspace_id__facts_get"];
+        put?: never;
+        /**
+         * Create Fact
+         * @description A verifier gets the verified fact (201); staff get a pending candidate (202).
+         */
+        post: operations["create_fact_api_v1_workspaces__workspace_id__facts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/facts/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Template */
+        get: operations["get_template_api_v1_workspaces__workspace_id__facts_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Fact */
+        patch: operations["patch_fact_api_v1_workspaces__workspace_id__facts__fact_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Fact */
+        post: operations["archive_fact_api_v1_workspaces__workspace_id__facts__fact_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Fact */
+        post: operations["restore_fact_api_v1_workspaces__workspace_id__facts__fact_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Fact */
+        post: operations["verify_fact_api_v1_workspaces__workspace_id__facts__fact_id__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Versions */
+        get: operations["list_versions_api_v1_workspaces__workspace_id__facts__fact_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/members": {
         parameters: {
             query?: never;
@@ -121,6 +295,23 @@ export interface paths {
         };
         /** List Members */
         get: operations["list_members_api_v1_workspaces__workspace_id__members_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Readiness */
+        get: operations["get_readiness_api_v1_workspaces__workspace_id__readiness_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -173,6 +364,61 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** CandidateOut */
+        CandidateOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Current Display */
+            current_display: string | null;
+            /** Fact Id */
+            fact_id: string | null;
+            /** Fact Key */
+            fact_key: string;
+            /** Fact Label */
+            fact_label: {
+                [key: string]: string;
+            };
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @default candidate
+             * @constant
+             */
+            kind: "candidate";
+            /** Proposed By Name */
+            proposed_by_name: string | null;
+            /** Proposed Display */
+            proposed_display: string;
+            /** Proposed Value */
+            proposed_value: {
+                [key: string]: unknown;
+            };
+            /**
+             * Relation
+             * @enum {string}
+             */
+            relation: "new" | "same" | "discrepancy" | "contest";
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Source Excerpt */
+            source_excerpt: string | null;
+            /** Source Type */
+            source_type: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "rejected" | "superseded";
+            /** Value Type */
+            value_type: string;
+        };
         /** DisclosureText */
         DisclosureText: {
             /**
@@ -186,10 +432,130 @@ export interface components {
              */
             tr: string;
         };
+        /** FactCreate */
+        FactCreate: {
+            /** Criticality */
+            criticality?: ("critical" | "standard") | null;
+            /** Key */
+            key: string;
+            label?: components["schemas"]["LabelIn"] | null;
+            /** Reason */
+            reason?: string | null;
+            /** Valid From */
+            valid_from?: string | null;
+            /** Valid Until */
+            valid_until?: string | null;
+            /** Value */
+            value: {
+                [key: string]: unknown;
+            };
+            /** Value Type */
+            value_type?: string | null;
+        };
+        /** FactOut */
+        FactOut: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "identity" | "contact" | "location" | "hours" | "service" | "pricing" | "promotion" | "policy" | "booking" | "faq" | "brand" | "escalation" | "schedule" | "custom";
+            /**
+             * Criticality
+             * @enum {string}
+             */
+            criticality: "critical" | "standard";
+            /** Current Version */
+            current_version: number;
+            /** Display */
+            display: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @default fact
+             * @constant
+             */
+            kind: "fact";
+            /** Label */
+            label: {
+                [key: string]: string;
+            };
+            /** Last Verified At */
+            last_verified_at: string | null;
+            /** Last Verified By Name */
+            last_verified_by_name: string | null;
+            /** Open Candidates Count */
+            open_candidates_count: number;
+            /** Source Type */
+            source_type: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "unverified" | "verified" | "contested" | "expired" | "not_started" | "archived";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "unverified" | "verified" | "archived";
+            /** Usable */
+            usable: boolean;
+            /** Valid From */
+            valid_from: string | null;
+            /** Valid Until */
+            valid_until: string | null;
+            /** Value */
+            value: {
+                [key: string]: unknown;
+            };
+            /** Value Type */
+            value_type: string;
+        };
+        /**
+         * FactPatch
+         * @description Only the fields that are sent change. ``valid_from``/``valid_until`` may be null to
+         *     clear the window.
+         */
+        FactPatch: {
+            /** Expected Version */
+            expected_version: number;
+            /** Reason */
+            reason?: string | null;
+            /** Valid From */
+            valid_from?: string | null;
+            /** Valid Until */
+            valid_until?: string | null;
+            /** Value */
+            value?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * FactTransition
+         * @description Body of verify / archive / restore.
+         */
+        FactTransition: {
+            /** Expected Version */
+            expected_version: number;
+            /** Reason */
+            reason?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LabelIn */
+        LabelIn: {
+            /** En */
+            en?: string | null;
+            /** Tr */
+            tr?: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -263,6 +629,20 @@ export interface components {
             /** Supported Locales */
             supported_locales: string[];
         };
+        /** Page[CandidateOut] */
+        Page_CandidateOut_: {
+            /** Items */
+            items: components["schemas"]["CandidateOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** Page[FactOut] */
+        Page_FactOut_: {
+            /** Items */
+            items: components["schemas"]["FactOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[MemberOut] */
         Page_MemberOut_: {
             /** Items */
@@ -276,6 +656,93 @@ export interface components {
             items: components["schemas"]["MembershipOut"][];
             /** Next Cursor */
             next_cursor?: string | null;
+        };
+        /** Page[VersionOut] */
+        Page_VersionOut_: {
+            /** Items */
+            items: components["schemas"]["VersionOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** ReadinessLinkOut */
+        ReadinessLinkOut: {
+            /** Category */
+            category: string | null;
+            /** Key */
+            key: string | null;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "knowledge" | "integrations" | "automation";
+        };
+        /** ReadinessOut */
+        ReadinessOut: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "not_ready" | "ready_for_drafts" | "ready";
+            /** Requirements */
+            requirements: components["schemas"]["RequirementOut"][];
+        };
+        /** RequirementOut */
+        RequirementOut: {
+            /** Code */
+            code: string;
+            link: components["schemas"]["ReadinessLinkOut"];
+            /** Missing Keys */
+            missing_keys: string[];
+            /**
+             * Required For
+             * @enum {string}
+             */
+            required_for: "drafts" | "ready";
+            /** Satisfied */
+            satisfied: boolean;
+            /** Status */
+            status: string;
+        };
+        /** TemplateItemOut */
+        TemplateItemOut: {
+            /** Allowed Values */
+            allowed_values: string[];
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "identity" | "contact" | "location" | "hours" | "service" | "pricing" | "promotion" | "policy" | "booking" | "faq" | "brand" | "escalation" | "schedule" | "custom";
+            /**
+             * Criticality
+             * @enum {string}
+             */
+            criticality: "critical" | "standard";
+            /** Description */
+            description: {
+                [key: string]: string;
+            };
+            /** Fact Ids */
+            fact_ids: string[];
+            /** Identifier */
+            identifier: string;
+            /** Key */
+            key: string | null;
+            /** Label */
+            label: {
+                [key: string]: string;
+            };
+            /** Pattern */
+            pattern: string | null;
+            /** Required For */
+            required_for: ("drafts" | "ready") | null;
+            /** Required Group */
+            required_group: string | null;
+            /** Required When */
+            required_when: string | null;
+            /** Status */
+            status: string;
+            /** Value Types */
+            value_types: string[];
         };
         /** UserOut */
         UserOut: {
@@ -306,6 +773,43 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VersionOut */
+        VersionOut: {
+            /** Actor Name */
+            actor_name: string | null;
+            /** Actor Type */
+            actor_type: string;
+            /** Change Kind */
+            change_kind: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Display */
+            display: string;
+            /** Reason */
+            reason: string | null;
+            /** Source Ref */
+            source_ref: string | null;
+            /** Source Type */
+            source_type: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "unverified" | "verified" | "archived";
+            /** Valid From */
+            valid_from: string | null;
+            /** Valid Until */
+            valid_until: string | null;
+            /** Value */
+            value: {
+                [key: string]: unknown;
+            };
+            /** Version */
+            version: number;
         };
         /** WorkspaceCreate */
         WorkspaceCreate: {
@@ -400,6 +904,8 @@ export interface components {
          * @description Validates ``workspaces.settings`` (data-model.md §3.1).
          */
         WorkspaceSettings: {
+            /** Automation Reviewed At */
+            automation_reviewed_at?: string | null;
             /**
              * Daily Report Hour
              * @default 20
@@ -422,6 +928,8 @@ export interface components {
          * @description Partial update of the settings: only the given top-level keys change.
          */
         WorkspaceSettingsPatch: {
+            /** Automation Reviewed */
+            automation_reviewed?: true | null;
             /** Daily Report Hour */
             daily_report_hour?: number | null;
             /** Disclosure Enabled */
@@ -680,6 +1188,379 @@ export interface operations {
             };
         };
     };
+    list_candidates_api_v1_workspaces__workspace_id__fact_candidates_get: {
+        parameters: {
+            query?: {
+                status?: ("pending" | "accepted" | "rejected" | "superseded") | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_CandidateOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_candidate_api_v1_workspaces__workspace_id__fact_candidates__candidate_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_candidate_api_v1_workspaces__workspace_id__fact_candidates__candidate_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_facts_api_v1_workspaces__workspace_id__facts_get: {
+        parameters: {
+            query?: {
+                category?: ("identity" | "contact" | "location" | "hours" | "service" | "pricing" | "promotion" | "policy" | "booking" | "faq" | "brand" | "escalation" | "schedule" | "custom") | null;
+                status?: ("unverified" | "verified" | "archived") | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_FactOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_fact_api_v1_workspaces__workspace_id__facts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FactCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"] | components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template_api_v1_workspaces__workspace_id__facts_template_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateItemOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_fact_api_v1_workspaces__workspace_id__facts__fact_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FactPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"] | components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_fact_api_v1_workspaces__workspace_id__facts__fact_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FactTransition"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_fact_api_v1_workspaces__workspace_id__facts__fact_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FactTransition"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_fact_api_v1_workspaces__workspace_id__facts__fact_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FactTransition"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_versions_api_v1_workspaces__workspace_id__facts__fact_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_VersionOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_members_api_v1_workspaces__workspace_id__members_get: {
         parameters: {
             query?: never;
@@ -698,6 +1579,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_readiness_api_v1_workspaces__workspace_id__readiness_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessOut"];
                 };
             };
             /** @description Validation Error */

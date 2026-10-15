@@ -47,6 +47,7 @@ def test_create_workspace_makes_the_creator_the_owner(
     assert body["status"] == "active"
     assert body["reply_languages"] == ["tr"]
     assert body["settings"] == {
+        "automation_reviewed_at": None,
         "disclosure_enabled": True,
         "disclosure_text": {"tr": "", "en": ""},
         "daily_report_hour": 20,

@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
 export const DEMO_PASSWORD = process.env.E2E_DEMO_PASSWORD ?? "demo-password";
@@ -62,4 +64,25 @@ export async function hasHorizontalScroll(page: Page): Promise<boolean> {
   return page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
+}
+
+/**
+ * Re-create the demo users, workspaces and facts. Tests that change facts call this first, so
+ * every test (and every project, browser and viewport) starts from the same data. Sessions of
+ * the re-created users are gone afterwards: sign in again.
+ */
+export function reseedDemo(): void {
+  const backendDir = fileURLToPath(new URL("../../backend", import.meta.url));
+  execFileSync("uv", ["run", "python", "-m", "app.cli", "seed", "--reset"], {
+    cwd: backendDir,
+    stdio: "ignore",
+  });
+}
+
+/** Sign in through the UI and open a workspace by (part of) its name. */
+export async function signInToWorkspace(page: Page, email: string, workspaceName: RegExp) {
+  await page.goto("/login");
+  await loginViaUi(page, email);
+  await page.getByRole("link", { name: workspaceName }).click();
+  await expect(page.getByRole("heading", { name: /^(Ana sayfa|Home)$/, level: 1 })).toBeVisible();
 }

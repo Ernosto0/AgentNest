@@ -1,0 +1,277 @@
+{
+  "knowledge": {
+    "title": "Business knowledge",
+    "intro": "The verified facts your replies and posts are based on. Nothing unverified is ever used.",
+    "categories": "Categories",
+    "back": "Back to business knowledge",
+    "category": {
+      "identity": "Business",
+      "contact": "Contact",
+      "location": "Location",
+      "hours": "Opening hours",
+      "service": "Services",
+      "pricing": "Prices",
+      "promotion": "Promotions",
+      "booking": "Booking",
+      "policy": "Policies",
+      "schedule": "Class schedule",
+      "faq": "Frequently asked questions",
+      "brand": "Brand voice",
+      "escalation": "Escalation",
+      "custom": "Other facts"
+    },
+    "state": {
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "contested": "Contested",
+      "expired": "Expired",
+      "not_started": "Not started yet",
+      "archived": "Archived",
+      "missing": "Missing",
+      "present": "Added"
+    },
+    "source": {
+      "owner_entry": "Entered by hand",
+      "owner_command": "Chat command",
+      "candidate_accepted": "Accepted suggestion",
+      "seed": "Demo data",
+      "template_default": "Template"
+    },
+    "candidateSource": {
+      "pasted_text": "Your pasted text",
+      "staff_proposal": "A team member",
+      "instagram_profile": "Your Instagram profile",
+      "website": "Your website"
+    },
+    "verifiedOn": "Verified {{date}}",
+    "validity": "Valid {{from}} to {{until}}",
+    "contestedNote": "A team member suggested a different value. This fact is on hold until you decide.",
+    "unverifiedNote": "Not used anywhere until it is verified.",
+    "required": {
+      "drafts": "Needed before drafts can be written.",
+      "ready": "Needed before automation can be enabled."
+    },
+    "archived": "Archived ({{count}})",
+    "actions": {
+      "add": "Add",
+      "addCustom": "Add another fact",
+      "edit": "Edit",
+      "suggest": "Suggest a value",
+      "suggestChange": "Suggest a change",
+      "verify": "Verify",
+      "verifying": "Verifying…",
+      "restore": "Restore",
+      "archive": "Archive",
+      "confirmArchive": "Yes, archive it",
+      "cancel": "Cancel",
+      "history": "History",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "editor": {
+      "addNamed": "Add to {{kind}}",
+      "labelTr": "Name (Turkish)",
+      "labelEn": "Name (English)",
+      "valueType": "Kind of information",
+      "criticality": "How important is it?",
+      "validity": "Validity period",
+      "validFrom": "Valid from",
+      "validUntil": "Valid until",
+      "reason": "Note (optional)",
+      "staffNote": "Your change is sent to the owner as a suggestion. The current value stays in use until they accept it.",
+      "sentAsSuggestion": "Thanks! Your change was sent to the owner as a suggestion."
+    },
+    "valueType": {
+      "money": "Price",
+      "weekly_hours": "Opening hours",
+      "text": "Text",
+      "localized_text": "Text in Turkish and English",
+      "phone": "Phone number",
+      "email": "Email address",
+      "address": "Address",
+      "url": "Web address",
+      "boolean": "Yes or no",
+      "enum": "Choice",
+      "string_list": "List"
+    },
+    "criticality": {
+      "standard": "Standard (may be paraphrased)",
+      "critical": "Critical (only exact verified values)"
+    },
+    "unit": {
+      "none": "No unit",
+      "month": "per month",
+      "session": "per session",
+      "package": "per package"
+    },
+    "bool": {
+      "true": "Yes",
+      "false": "No"
+    },
+    "enum": {
+      "share": "Share prices",
+      "do_not_share": "Do not share prices"
+    },
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "moneyError": {
+      "invalid_number": "This does not look like an amount.",
+      "too_many_decimals": "Use at most two decimals.",
+      "unsupported_locale": "This language is not supported."
+    },
+    "fields": {
+      "text": "Text",
+      "languages": "Languages",
+      "empty": "(empty)",
+      "language": {
+        "tr": "Turkish",
+        "en": "English"
+      },
+      "phone": "Phone number",
+      "email": "Email address",
+      "url": "Web address",
+      "boolean": "Answer",
+      "enum": "Choice",
+      "choose": "Choose…",
+      "list": "Items",
+      "listHint": "One item per line.",
+      "money": {
+        "amount": "Amount ({{currency}})",
+        "preview": "Customers will see: {{amount}}",
+        "ambiguous": "This could mean more than one amount. Which one do you mean?",
+        "unit": "Applies",
+        "conditionsTr": "Conditions (Turkish, optional)",
+        "conditionsEn": "Conditions (English, optional)"
+      },
+      "address": {
+        "lines": "Street address",
+        "linesHint": "One line per row.",
+        "district": "District",
+        "city": "City",
+        "mapsUrl": "Map link (optional)"
+      },
+      "hours": {
+        "closedHint": "Days that are not in any group are closed.",
+        "row": "Group {{n}}",
+        "days": "Days",
+        "opens": "Opens (group {{row}})",
+        "closes": "Closes (group {{row}})",
+        "addRange": "Add hours",
+        "removeRange": "Remove hours",
+        "addRow": "Add days",
+        "removeRow": "Remove group",
+        "exceptions": "Exceptions (holidays)",
+        "exceptionDate": "Date",
+        "closedAllDay": "Closed all day",
+        "addException": "Add an exception",
+        "removeException": "Remove"
+      }
+    },
+    "fieldErrors": {
+      "invalid": "Some of the information is not valid.",
+      "required": "A required value is missing.",
+      "invalid_phone": "Enter a valid phone number.",
+      "invalid_email": "Enter a valid email address.",
+      "invalid_url": "Enter a web address starting with http:// or https://.",
+      "invalid_line": "Each address line must be text.",
+      "not_allowed": "That choice is not allowed here.",
+      "amount_negative": "The amount cannot be negative.",
+      "too_many_decimals": "Use at most two decimals.",
+      "invalid_amount": "This does not look like an amount.",
+      "amount_must_be_decimal_string": "This does not look like an amount.",
+      "unknown_key": "This kind of information is not part of your template.",
+      "window_invalid": "The end date cannot be before the start date.",
+      "range_not_increasing": "Closing time must be after opening time.",
+      "ranges_overlap": "Opening hours on one day overlap.",
+      "duplicate_exception_date": "Each exception needs its own date."
+    },
+    "history": {
+      "title": "History: {{name}}",
+      "version": "Version {{version}}",
+      "change": {
+        "created": "Created",
+        "value_changed": "Changed",
+        "verified": "Verified",
+        "archived": "Archived",
+        "restored": "Restored"
+      }
+    },
+    "suggestions": {
+      "title": "Suggestions",
+      "link": "Suggestions",
+      "intro": "Values proposed by your team or found in pasted text. Nothing changes until you decide.",
+      "waiting_one": "{{count}} waiting for you",
+      "waiting_other": "{{count}} waiting for you",
+      "none": "Nothing to review",
+      "empty": "No suggestions to review",
+      "emptyHint": "When a team member proposes a change, or something differs from your verified information, it appears here.",
+      "staffNote": "Only the owner or a manager can accept or reject suggestions.",
+      "someone": "A team member",
+      "accept": "Use {{value}}",
+      "reject": "Keep current",
+      "relation": {
+        "discrepancy": "{{source}} says {{proposed}}, but your verified value is {{current}}. Your verified value stays in use.",
+        "contest": "{{name}} suggests {{proposed}} (current value: {{current}}). The current value is on hold until you decide.",
+        "new": "{{source}} suggests {{proposed}}.",
+        "newUnverified": "{{source}} suggests {{proposed}}. Accepting it verifies this value (it is currently {{current}}, unverified)."
+      }
+    }
+  },
+  "readiness": {
+    "title": "Readiness",
+    "progress": "{{done}} of {{total}} steps done",
+    "openKnowledge": "Open business knowledge",
+    "level": {
+      "not_ready": "Not ready",
+      "ready_for_drafts": "Ready for drafts",
+      "ready": "Ready"
+    },
+    "requirement": {
+      "business_name": "Business name",
+      "contact": "A way to contact you",
+      "location": "Address (or online only)",
+      "hours": "Opening hours",
+      "booking_instructions": "Booking instructions",
+      "price_policy": "Price policy",
+      "services": "At least one service",
+      "account_connected": "Instagram account connected",
+      "automation_reviewed": "Automation settings reviewed"
+    },
+    "status": {
+      "missing": "Missing or not verified",
+      "not_connected": "Not connected yet (available in a later phase)",
+      "not_reviewed": "Not reviewed yet (available in a later phase)"
+    }
+  },
+  "wizard": {
+    "title": "Create a workspace",
+    "back": "Back to my workspaces",
+    "step": "Step {{current}} of {{total}}",
+    "name": "Business name",
+    "category": "What kind of business is it?",
+    "categories": {
+      "gym": "Gym or fitness studio",
+      "pilates_studio": "Pilates studio",
+      "other": "Something else"
+    },
+    "market": "Market",
+    "markets": {
+      "tr": "Türkiye",
+      "global": "Elsewhere"
+    },
+    "locale": "Business language",
+    "timezone": "Time zone",
+    "currency": "Currency",
+    "previous": "Back",
+    "next": "Continue",
+    "create": "Create workspace",
+    "creating": "Creating…"
+  }
+}

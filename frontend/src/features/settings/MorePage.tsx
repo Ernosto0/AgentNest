@@ -18,6 +18,12 @@ export function MorePage() {
       <h1 className="text-2xl font-semibold">{t("more.title")}</h1>
       <ul className="flex flex-col gap-3">
         <li>
+          <Link to={`/w/${workspace.id}/more/knowledge`} className={ROW}>
+            {t("more.knowledge")}
+            <ChevronRightIcon className="text-xl text-slate-400" />
+          </Link>
+        </li>
+        <li>
           <Link to={`/w/${workspace.id}/more/settings`} className={ROW}>
             {t("more.settings")}
             <ChevronRightIcon className="text-xl text-slate-400" />
@@ -26,6 +32,12 @@ export function MorePage() {
         <li>
           <Link to="/" className={ROW}>
             {t("more.switchWorkspace")}
+            <ChevronRightIcon className="text-xl text-slate-400" />
+          </Link>
+        </li>
+        <li>
+          <Link to="/workspaces/new" className={ROW}>
+            {t("more.newWorkspace")}
             <ChevronRightIcon className="text-xl text-slate-400" />
           </Link>
         </li>

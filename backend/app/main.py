@@ -9,6 +9,7 @@ from app.api.router import api_router, health_router
 from app.core.clock import Clock, SystemClock
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, get_logger
+from app.knowledge.templates import validate_templates
 
 
 def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
@@ -16,6 +17,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     configure_logging(settings)
     log = get_logger(__name__)
     log.info("startup", **settings.public_dict())
+    validate_templates()  # a broken fact template fails the start, not a checklist screen
 
     in_production = settings.app_env == "production"
     app = FastAPI(

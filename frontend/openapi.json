@@ -1,6 +1,150 @@
 {
   "components": {
     "schemas": {
+      "CandidateOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "current_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Display"
+          },
+          "fact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fact Id"
+          },
+          "fact_key": {
+            "title": "Fact Key",
+            "type": "string"
+          },
+          "fact_label": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Fact Label",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "candidate",
+            "default": "candidate",
+            "title": "Kind",
+            "type": "string"
+          },
+          "proposed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed By Name"
+          },
+          "proposed_display": {
+            "title": "Proposed Display",
+            "type": "string"
+          },
+          "proposed_value": {
+            "additionalProperties": true,
+            "title": "Proposed Value",
+            "type": "object"
+          },
+          "relation": {
+            "enum": [
+              "new",
+              "same",
+              "discrepancy",
+              "contest"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "source_excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Excerpt"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected",
+              "superseded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "value_type": {
+            "title": "Value Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fact_key",
+          "fact_id",
+          "fact_label",
+          "value_type",
+          "proposed_value",
+          "proposed_display",
+          "current_display",
+          "relation",
+          "status",
+          "source_type",
+          "source_excerpt",
+          "proposed_by_name",
+          "created_at",
+          "resolved_at"
+        ],
+        "title": "CandidateOut",
+        "type": "object"
+      },
       "DisclosureText": {
         "additionalProperties": false,
         "properties": {
@@ -20,6 +164,372 @@
         "title": "DisclosureText",
         "type": "object"
       },
+      "FactCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "criticality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "critical",
+                  "standard"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criticality"
+          },
+          "key": {
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabelIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "value": {
+            "additionalProperties": true,
+            "title": "Value",
+            "type": "object"
+          },
+          "value_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Type"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "FactCreate",
+        "type": "object"
+      },
+      "FactOut": {
+        "properties": {
+          "category": {
+            "enum": [
+              "identity",
+              "contact",
+              "location",
+              "hours",
+              "service",
+              "pricing",
+              "promotion",
+              "policy",
+              "booking",
+              "faq",
+              "brand",
+              "escalation",
+              "schedule",
+              "custom"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "criticality": {
+            "enum": [
+              "critical",
+              "standard"
+            ],
+            "title": "Criticality",
+            "type": "string"
+          },
+          "current_version": {
+            "title": "Current Version",
+            "type": "integer"
+          },
+          "display": {
+            "title": "Display",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "const": "fact",
+            "default": "fact",
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Label",
+            "type": "object"
+          },
+          "last_verified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Verified At"
+          },
+          "last_verified_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Verified By Name"
+          },
+          "open_candidates_count": {
+            "title": "Open Candidates Count",
+            "type": "integer"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Type"
+          },
+          "state": {
+            "enum": [
+              "unverified",
+              "verified",
+              "contested",
+              "expired",
+              "not_started",
+              "archived"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "unverified",
+              "verified",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "usable": {
+            "title": "Usable",
+            "type": "boolean"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "value": {
+            "additionalProperties": true,
+            "title": "Value",
+            "type": "object"
+          },
+          "value_type": {
+            "title": "Value Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "category",
+          "label",
+          "value_type",
+          "value",
+          "display",
+          "status",
+          "state",
+          "criticality",
+          "current_version",
+          "valid_from",
+          "valid_until",
+          "last_verified_at",
+          "last_verified_by_name",
+          "source_type",
+          "usable",
+          "open_candidates_count"
+        ],
+        "title": "FactOut",
+        "type": "object"
+      },
+      "FactPatch": {
+        "additionalProperties": false,
+        "description": "Only the fields that are sent change. ``valid_from``/``valid_until`` may be null to\nclear the window.",
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "FactPatch",
+        "type": "object"
+      },
+      "FactTransition": {
+        "additionalProperties": false,
+        "description": "Body of verify / archive / restore.",
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "FactTransition",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -31,6 +541,37 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LabelIn": {
+        "additionalProperties": false,
+        "properties": {
+          "en": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "En"
+          },
+          "tr": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tr"
+          }
+        },
+        "title": "LabelIn",
         "type": "object"
       },
       "LoginRequest": {
@@ -221,6 +762,60 @@
         "title": "MetaResponse",
         "type": "object"
       },
+      "Page_CandidateOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[CandidateOut]",
+        "type": "object"
+      },
+      "Page_FactOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FactOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[FactOut]",
+        "type": "object"
+      },
       "Page_MemberOut_": {
         "properties": {
           "items": {
@@ -273,6 +868,298 @@
           "items"
         ],
         "title": "Page[MembershipOut]",
+        "type": "object"
+      },
+      "Page_VersionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/VersionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[VersionOut]",
+        "type": "object"
+      },
+      "ReadinessLinkOut": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "target": {
+            "enum": [
+              "knowledge",
+              "integrations",
+              "automation"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "category",
+          "key"
+        ],
+        "title": "ReadinessLinkOut",
+        "type": "object"
+      },
+      "ReadinessOut": {
+        "properties": {
+          "level": {
+            "enum": [
+              "not_ready",
+              "ready_for_drafts",
+              "ready"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementOut"
+            },
+            "title": "Requirements",
+            "type": "array"
+          }
+        },
+        "required": [
+          "level",
+          "requirements"
+        ],
+        "title": "ReadinessOut",
+        "type": "object"
+      },
+      "RequirementOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "link": {
+            "$ref": "#/components/schemas/ReadinessLinkOut"
+          },
+          "missing_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Keys",
+            "type": "array"
+          },
+          "required_for": {
+            "enum": [
+              "drafts",
+              "ready"
+            ],
+            "title": "Required For",
+            "type": "string"
+          },
+          "satisfied": {
+            "title": "Satisfied",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "required_for",
+          "satisfied",
+          "status",
+          "link",
+          "missing_keys"
+        ],
+        "title": "RequirementOut",
+        "type": "object"
+      },
+      "TemplateItemOut": {
+        "properties": {
+          "allowed_values": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Values",
+            "type": "array"
+          },
+          "category": {
+            "enum": [
+              "identity",
+              "contact",
+              "location",
+              "hours",
+              "service",
+              "pricing",
+              "promotion",
+              "policy",
+              "booking",
+              "faq",
+              "brand",
+              "escalation",
+              "schedule",
+              "custom"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "criticality": {
+            "enum": [
+              "critical",
+              "standard"
+            ],
+            "title": "Criticality",
+            "type": "string"
+          },
+          "description": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Description",
+            "type": "object"
+          },
+          "fact_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Fact Ids",
+            "type": "array"
+          },
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "label": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Label",
+            "type": "object"
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pattern"
+          },
+          "required_for": {
+            "anyOf": [
+              {
+                "enum": [
+                  "drafts",
+                  "ready"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required For"
+          },
+          "required_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Group"
+          },
+          "required_when": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required When"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "value_types": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Value Types",
+            "type": "array"
+          }
+        },
+        "required": [
+          "identifier",
+          "key",
+          "pattern",
+          "category",
+          "label",
+          "description",
+          "value_types",
+          "criticality",
+          "required_for",
+          "required_group",
+          "required_when",
+          "allowed_values",
+          "status",
+          "fact_ids"
+        ],
+        "title": "TemplateItemOut",
         "type": "object"
       },
       "UserOut": {
@@ -346,6 +1233,123 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionOut": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "actor_type": {
+            "title": "Actor Type",
+            "type": "string"
+          },
+          "change_kind": {
+            "title": "Change Kind",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "display": {
+            "title": "Display",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "unverified",
+              "verified",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "value": {
+            "additionalProperties": true,
+            "title": "Value",
+            "type": "object"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "value",
+          "display",
+          "status",
+          "valid_from",
+          "valid_until",
+          "source_type",
+          "source_ref",
+          "actor_type",
+          "actor_name",
+          "reason",
+          "change_kind",
+          "created_at"
+        ],
+        "title": "VersionOut",
         "type": "object"
       },
       "WorkspaceCreate": {
@@ -629,6 +1633,18 @@
         "additionalProperties": false,
         "description": "Validates ``workspaces.settings`` (data-model.md §3.1).",
         "properties": {
+          "automation_reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Automation Reviewed At"
+          },
           "daily_report_hour": {
             "default": 20,
             "maximum": 23.0,
@@ -659,6 +1675,18 @@
         "additionalProperties": false,
         "description": "Partial update of the settings: only the given top-level keys change.",
         "properties": {
+          "automation_reviewed": {
+            "anyOf": [
+              {
+                "const": true,
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Automation Reviewed"
+          },
           "daily_report_hour": {
             "anyOf": [
               {
@@ -1002,6 +2030,694 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/fact-candidates": {
+      "get": {
+        "operationId": "list_candidates_api_v1_workspaces__workspace_id__fact_candidates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "accepted",
+                    "rejected",
+                    "superseded"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "pending",
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CandidateOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Candidates",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/fact-candidates/{candidate_id}/accept": {
+      "post": {
+        "operationId": "accept_candidate_api_v1_workspaces__workspace_id__fact_candidates__candidate_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Candidate",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/fact-candidates/{candidate_id}/reject": {
+      "post": {
+        "operationId": "reject_candidate_api_v1_workspaces__workspace_id__fact_candidates__candidate_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject Candidate",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/facts": {
+      "get": {
+        "operationId": "list_facts_api_v1_workspaces__workspace_id__facts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "identity",
+                    "contact",
+                    "location",
+                    "hours",
+                    "service",
+                    "pricing",
+                    "promotion",
+                    "policy",
+                    "booking",
+                    "faq",
+                    "brand",
+                    "escalation",
+                    "schedule",
+                    "custom"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "unverified",
+                    "verified",
+                    "archived"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_FactOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Facts",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "post": {
+        "description": "A verifier gets the verified fact (201); staff get a pending candidate (202).",
+        "operationId": "create_fact_api_v1_workspaces__workspace_id__facts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FactOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CandidateOut"
+                    }
+                  ],
+                  "title": "Response Create Fact Api V1 Workspaces  Workspace Id  Facts Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Fact",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/facts/template": {
+      "get": {
+        "operationId": "get_template_api_v1_workspaces__workspace_id__facts_template_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateItemOut"
+                  },
+                  "title": "Response Get Template Api V1 Workspaces  Workspace Id  Facts Template Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Template",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}": {
+      "patch": {
+        "operationId": "patch_fact_api_v1_workspaces__workspace_id__facts__fact_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Fact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FactOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CandidateOut"
+                    }
+                  ],
+                  "title": "Response Patch Fact Api V1 Workspaces  Workspace Id  Facts  Fact Id  Patch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Fact",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}/archive": {
+      "post": {
+        "operationId": "archive_fact_api_v1_workspaces__workspace_id__facts__fact_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Fact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactTransition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Archive Fact",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}/restore": {
+      "post": {
+        "operationId": "restore_fact_api_v1_workspaces__workspace_id__facts__fact_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Fact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactTransition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Restore Fact",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}/verify": {
+      "post": {
+        "operationId": "verify_fact_api_v1_workspaces__workspace_id__facts__fact_id__verify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Fact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactTransition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Fact",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/facts/{fact_id}/versions": {
+      "get": {
+        "operationId": "list_versions_api_v1_workspaces__workspace_id__facts__fact_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Fact Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_VersionOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Versions",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/members": {
       "get": {
         "operationId": "list_members_api_v1_workspaces__workspace_id__members_get",
@@ -1042,6 +2758,49 @@
         "summary": "List Members",
         "tags": [
           "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/readiness": {
+      "get": {
+        "operationId": "get_readiness_api_v1_workspaces__workspace_id__readiness_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Readiness",
+        "tags": [
+          "knowledge"
         ]
       }
     },

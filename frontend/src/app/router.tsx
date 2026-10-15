@@ -2,6 +2,10 @@ import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { HomePage } from "@/features/home/HomePage";
+import { CategoryPage } from "@/features/knowledge/CategoryPage";
+import { KnowledgePage } from "@/features/knowledge/KnowledgePage";
+import { SuggestionsPage } from "@/features/knowledge/SuggestionsPage";
+import { CreateWorkspaceWizard } from "@/features/workspaces/CreateWorkspaceWizard";
 import { SectionPlaceholderPage } from "@/features/home/SectionPlaceholderPage";
 import { MorePage } from "@/features/settings/MorePage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
@@ -15,6 +19,7 @@ export const appRoutes: RouteObject[] = [
     element: <RequireAuth />,
     children: [
       { path: "/", element: <WorkspacePickerPage /> },
+      { path: "/workspaces/new", element: <CreateWorkspaceWizard /> },
       {
         path: "/w/:workspaceId",
         element: <WorkspaceGate />,
@@ -25,6 +30,9 @@ export const appRoutes: RouteObject[] = [
           { path: "approvals", element: <SectionPlaceholderPage section="approvals" /> },
           { path: "more", element: <MorePage /> },
           { path: "more/settings", element: <SettingsPage /> },
+          { path: "more/knowledge", element: <KnowledgePage /> },
+          { path: "more/knowledge/suggestions", element: <SuggestionsPage /> },
+          { path: "more/knowledge/:category", element: <CategoryPage /> },
           { path: "*", element: <NotFoundPage /> },
         ],
       },

@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.identity.models import User, Workspace
-from tests.factories import login, workspace_with_members
+from tests.factories import create_candidate, create_fact, login, money, workspace_with_members
 
 
 @dataclass
@@ -36,6 +36,9 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
     a, a_users = workspace_with_members(db_session, name="Workspace A")
     b, b_users = workspace_with_members(db_session, name="Workspace B")
     headers = login(client, a_users["owner"])
+    # Real knowledge rows in B, so fact/candidate routes are probed with genuine foreign IDs.
+    b_fact = create_fact(db_session, b, "pricing.membership_monthly", money())
+    b_candidate = create_candidate(db_session, b, "pricing.membership_monthly", money("5500"))
     return TwoWorkspaces(
         app=app,
         a=a,
@@ -44,5 +47,9 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         b_owner=b_users["owner"],
         a_client=client,
         a_headers=headers,
-        foreign_ids={"workspace_id": str(b.id)},
+        foreign_ids={
+            "workspace_id": str(b.id),
+            "fact_id": str(b_fact.id),
+            "candidate_id": str(b_candidate.id),
+        },
     )

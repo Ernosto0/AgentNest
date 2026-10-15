@@ -88,6 +88,11 @@ def get_workspace(session: Session, ctx: WorkspaceContext) -> Workspace | None:
     return session.scalars(select(Workspace).where(Workspace.id == ctx.workspace_id)).one_or_none()
 
 
+def get_workspace_by_slug(session: Session, slug: str) -> Workspace | None:
+    """For internal callers that have no context yet (seed, CLI). Not for request handling."""
+    return session.scalars(select(Workspace).where(Workspace.slug == slug)).one_or_none()
+
+
 def list_members(session: Session, ctx: WorkspaceContext) -> Sequence[tuple[WorkspaceMember, User]]:
     rows = session.execute(
         select(WorkspaceMember, User)
@@ -96,6 +101,20 @@ def list_members(session: Session, ctx: WorkspaceContext) -> Sequence[tuple[Work
         .order_by(WorkspaceMember.created_at, User.id)
     ).all()
     return [(r[0], r[1]) for r in rows]
+
+
+def member_names(
+    session: Session, ctx: WorkspaceContext, user_ids: Sequence[uuid.UUID]
+) -> dict[uuid.UUID, str]:
+    """Display names of the given users, limited to members of this workspace (INV-01)."""
+    if not user_ids:
+        return {}
+    rows = session.execute(
+        select(User.id, User.display_name)
+        .join(WorkspaceMember, WorkspaceMember.user_id == User.id)
+        .where(WorkspaceMember.workspace_id == ctx.workspace_id, User.id.in_(list(user_ids)))
+    ).all()
+    return {row[0]: row[1] for row in rows}
 
 
 def slug_exists(session: Session, slug: str) -> bool:

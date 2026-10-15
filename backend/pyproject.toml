@@ -76,6 +76,7 @@ type = "forbidden"
 source_modules = ["app.core"]
 forbidden_modules = [
     "app.identity",
+    "app.knowledge",
     "app.audit",
     "app.jobs",
     "app.api",
@@ -89,7 +90,21 @@ forbidden_modules = [
 name = "audit and jobs depend only on core"
 type = "forbidden"
 source_modules = ["app.audit", "app.jobs"]
-forbidden_modules = ["app.identity", "app.api", "app.demo", "app.main", "app.worker", "app.cli"]
+forbidden_modules = [
+    "app.identity",
+    "app.knowledge",
+    "app.api",
+    "app.demo",
+    "app.main",
+    "app.worker",
+    "app.cli",
+]
+
+[[tool.importlinter.contracts]]
+name = "identity does not depend on knowledge"
+type = "forbidden"
+source_modules = ["app.identity"]
+forbidden_modules = ["app.knowledge"]
 
 [[tool.importlinter.contracts]]
 name = "services, repositories and models do not import the API layer"
@@ -103,11 +118,32 @@ source_modules = [
     "app.identity.models",
     "app.identity.schemas",
     "app.identity.permissions",
+    "app.knowledge.service",
+    "app.knowledge.repository",
+    "app.knowledge.models",
+    "app.knowledge.schemas",
+    "app.knowledge.candidates",
+    "app.knowledge.readiness",
+    "app.knowledge.usability",
+    "app.knowledge.templates",
+    "app.knowledge.transitions",
+    "app.knowledge.values",
+    "app.knowledge.parsing",
+    "app.knowledge.formatting",
+    "app.knowledge.constants",
 ]
 forbidden_modules = ["app.api", "app.main"]
 
 [[tool.importlinter.contracts]]
 name = "demo is imported only by main and cli"
 type = "forbidden"
-source_modules = ["app.core", "app.identity", "app.audit", "app.jobs", "app.api", "app.worker"]
+source_modules = [
+    "app.core",
+    "app.identity",
+    "app.knowledge",
+    "app.audit",
+    "app.jobs",
+    "app.api",
+    "app.worker",
+]
 forbidden_modules = ["app.demo"]

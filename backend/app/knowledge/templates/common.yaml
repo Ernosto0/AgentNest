@@ -1,0 +1,152 @@
+# Facts every business is expected to have (business-knowledge.md §3).
+items:
+  - key: identity.business_name
+    category: identity
+    label: {tr: İşletme adı, en: Business name}
+    value_types: [text]
+    criticality: critical
+    required_for: drafts
+    description:
+      tr: İşletmenizin müşterilere görünen adı.
+      en: The name of your business as customers see it.
+
+  - key: identity.description
+    category: identity
+    label: {tr: İşletme tanıtımı, en: Business description}
+    value_types: [localized_text]
+    criticality: standard
+    description:
+      tr: İşletmenizi bir iki cümleyle anlatın.
+      en: Describe your business in a sentence or two.
+
+  - key: contact.phone
+    category: contact
+    label: {tr: Telefon, en: Phone}
+    value_types: [phone]
+    criticality: critical
+    required_for: drafts
+    required_group: contact
+    description:
+      tr: Müşterilerin sizi arayabileceği numara.
+      en: The number customers can call.
+
+  - key: contact.whatsapp
+    category: contact
+    label: {tr: WhatsApp, en: WhatsApp}
+    value_types: [phone]
+    criticality: critical
+    required_for: drafts
+    required_group: contact
+    description:
+      tr: Müşterilerin yazabileceği WhatsApp numarası.
+      en: The WhatsApp number customers can message.
+
+  - key: contact.email
+    category: contact
+    label: {tr: E-posta, en: Email}
+    value_types: [email]
+    criticality: critical
+    required_for: drafts
+    required_group: contact
+    description:
+      tr: Müşterilerin yazabileceği e-posta adresi.
+      en: The email address customers can write to.
+
+  - key: location.address
+    category: location
+    label: {tr: Adres, en: Address}
+    value_types: [address]
+    criticality: critical
+    required_for: drafts
+    required_group: location
+    description:
+      tr: İşletmenizin açık adresi.
+      en: The full street address of your business.
+
+  - key: location.online_only
+    category: location
+    label: {tr: Sadece çevrimiçi, en: Online only}
+    value_types: [boolean]
+    criticality: critical
+    required_group: location
+    description:
+      tr: Fiziksel bir adresiniz yoksa "evet" seçin.
+      en: Choose yes if you have no physical address.
+
+  - key: hours.weekly
+    category: hours
+    label: {tr: Çalışma saatleri, en: Opening hours}
+    value_types: [weekly_hours]
+    criticality: critical
+    required_for: drafts
+    description:
+      tr: Haftalık çalışma saatleri ve tatil istisnaları.
+      en: Weekly opening hours and holiday exceptions.
+
+  - key: booking.instructions
+    category: booking
+    label: {tr: Rezervasyon talimatı, en: Booking instructions}
+    value_types: [localized_text]
+    criticality: critical
+    required_for: ready
+    description:
+      tr: Müşteri nasıl randevu veya rezervasyon alır?
+      en: How does a customer book or reserve?
+
+  - key: policy.price_disclosure
+    category: policy
+    label: {tr: Fiyat paylaşım politikası, en: Price disclosure policy}
+    value_types: [enum]
+    criticality: critical
+    required_for: ready
+    allowed_values: [share, do_not_share]
+    description:
+      tr: Fiyatlar DM'den paylaşılsın mı?
+      en: Should prices be shared in DMs?
+
+  - key: policy.price_answer_text
+    category: policy
+    label: {tr: Fiyat sorusuna yanıt, en: Answer to price questions}
+    value_types: [localized_text]
+    criticality: critical
+    required_for: ready
+    required_when: price_disclosure=do_not_share
+    description:
+      tr: Fiyatları paylaşmıyorsanız müşteriye ne söylensin?
+      en: What should customers be told if you do not share prices?
+
+  - key: policy.cancellation
+    category: policy
+    label: {tr: İptal politikası, en: Cancellation policy}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: İptal ve değişiklik kuralları.
+      en: Cancellation and rescheduling rules.
+
+  - key: brand.voice_guidelines
+    category: brand
+    label: {tr: Marka dili, en: Brand voice}
+    value_types: [localized_text]
+    criticality: standard
+    description:
+      tr: Yanıtlarınızın tonu nasıl olmalı?
+      en: What tone should replies have?
+
+  - key: escalation.keywords
+    category: escalation
+    label: {tr: Devir anahtar kelimeleri, en: Escalation keywords}
+    value_types: [string_list]
+    criticality: standard
+    description:
+      tr: Geçtiğinde yanıtı size bırakacak kelimeler.
+      en: Words that always hand the conversation to a person.
+
+  - key_pattern: faq.*
+    category: faq
+    label: {tr: Sık sorulan soru, en: Frequently asked question}
+    value_types: [localized_text]
+    criticality: standard
+    description:
+      tr: Sık sorulan bir soru ve yanıtı.
+      en: A frequently asked question and its answer.

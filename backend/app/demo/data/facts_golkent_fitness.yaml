@@ -1,0 +1,96 @@
+# Fictional demo facts for "Gölkent Fitness & Pilates" (business-knowledge.md §10).
+# All values are invented. Statuses default to ``verified``.
+facts:
+  - key: identity.business_name
+    value: {text: Gölkent Fitness & Pilates}
+
+  - key: contact.phone
+    value: {e164: "+905550000000"}
+
+  - key: location.address
+    value:
+      lines: ["Örnek Mah. Demo Sok. No: 1"]
+      district: Bucak
+      city: Burdur
+
+  - key: hours.weekly
+    value:
+      mon: [["07:00", "23:00"]]
+      tue: [["07:00", "23:00"]]
+      wed: [["07:00", "23:00"]]
+      thu: [["07:00", "23:00"]]
+      fri: [["07:00", "23:00"]]
+      sat: [["09:00", "21:00"]]
+      sun: [["10:00", "18:00"]]
+      exceptions:
+        - {date: "2026-10-29", closed: true, note: {tr: Cumhuriyet Bayramı, en: Republic Day}}
+
+  - key: pricing.membership_monthly
+    value: {amount: "6000", unit: month}
+
+  - key: pricing.membership_3_months
+    value: {amount: "16500", unit: package}
+
+  - key: pricing.reformer_8_sessions
+    value: {amount: "4800", unit: package}
+
+  # Deliberately unverified: demonstrates a fact that is never used until someone verifies it.
+  - key: pricing.student_monthly
+    status: unverified
+    value:
+      amount: "4500"
+      unit: month
+      conditions: {tr: geçerli öğrenci belgesi, en: valid student ID}
+
+  - key: promotion.trial_session
+    label: {tr: Deneme seansı, en: Trial session}
+    value_type: localized_text
+    value:
+      tr: İlk deneme seansı ücretsiz, rezervasyon gerekir.
+      en: The first trial session is free, booking required.
+    valid_until: {end_of_month: 1}  # end of next month, in the workspace timezone
+
+  - key: booking.instructions
+    value:
+      tr: Tercih ettiğiniz günü bize arayarak veya DM ile iletin; deneme seansları için rezervasyon gerekir.
+      en: Call or DM us with your preferred day; trial sessions need booking.
+
+  - key: policy.price_disclosure
+    value: {value: share}
+
+  - key: service.reformer_pilates
+    label: {tr: Reformer Pilates, en: Reformer Pilates}
+    value_type: localized_text
+    value:
+      tr: Küçük gruplarla, uzman eğitmenler eşliğinde reformer pilates dersleri.
+      en: Reformer Pilates classes in small groups with qualified instructors.
+
+  - key: service.fitness
+    label: {tr: Fitness, en: Fitness}
+    value_type: localized_text
+    value:
+      tr: Modern ekipmanlarla donatılmış fitness salonu.
+      en: A gym floor with modern equipment.
+
+  - key: service.personal_training
+    label: {tr: Kişisel antrenman, en: Personal training}
+    value_type: localized_text
+    value:
+      tr: Hedeflerinize göre birebir kişisel antrenman programı.
+      en: One-to-one personal training programmes built around your goals.
+
+  - key: brand.voice_guidelines
+    value:
+      tr: Sıcak ve kısa yazın, "siz" diye hitap edin, en fazla bir emoji kullanın.
+      en: Warm and short, address people formally ("siz"), at most one emoji.
+
+  - key: escalation.keywords
+    value: {items: [avukat, tüketici hakem, sakatlandım]}
+
+# A pending suggestion that differs from the verified price: it must never be used (the owner
+# decides). Shown in the Suggestions list as a discrepancy.
+candidates:
+  - key: pricing.membership_monthly
+    value: {amount: "5500", unit: month}
+    source_type: pasted_text
+    excerpt: "Instagram bio: Aylık üyelik 5.500 TL"

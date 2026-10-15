@@ -30,7 +30,7 @@ Validation of values is per type (Pydantic models in `knowledge/values.py`). Mon
 
 ## 3. Key catalog and category templates
 
-Templates live in code (`knowledge/templates/{gym,pilates_studio,common}.yaml`) and define for each key: `category`, `label{tr,en}`, `value_type`, `criticality`, `required_for` (`drafts` | `ready` | none), `description` (shown to the owner and given to extraction), and `allowed_values` for enums.
+Templates live in code (`knowledge/templates/{gym,pilates_studio,common}.yaml`) and define for each key: `category`, `label{tr,en}`, `value_types` (one for a fixed key; several for a pattern such as `promotion.*`), `criticality`, `required_for` (`drafts` | `ready` | none), `description` (shown to the owner and given to extraction), and `allowed_values` for enums. Two optional fields express the conditions that `required_for` alone cannot: `required_group` (`contact`: at least one item of the group is needed; `location`: the address, or `location.online_only = true`) and `required_when` (`price_disclosure=share` or `price_disclosure=do_not_share`: the item is required only for that price policy). An item is either a fixed `key` or a `key_pattern` (`service.*`, `promotion.*`, `faq.*`) for facts the owner names. The loader validates every template when the application starts (unique identifiers, key prefix equals category, known value types, enums need `allowed_values`). The `other` business category uses `common` only. Which pricing item is required for `ready` is per template: `pricing.membership_monthly` for gyms, `pricing.reformer_8_sessions` for Pilates studios (both only when prices are shared).
 
 Common template (abridged):
 
@@ -58,6 +58,7 @@ Gym / Pilates additions (examples):
 | `pricing.membership_3_months` | money | critical | — |
 | `pricing.reformer_8_sessions` | money | critical | — |
 | `pricing.single_session` | money | critical | — |
+| `pricing.student_monthly` | money (with conditions) | critical | — |
 | `promotion.<slug>` (e.g., `promotion.trial_session`) | money or localized_text, with `valid_from`/`valid_until` | critical | — |
 | `schedule.classes` | localized_text (timetable as text; times in it must still be validated, see §7) | critical | — |
 | `faq.<slug>` | localized_text | standard | — |
@@ -103,6 +104,10 @@ Rules:
 | Tier-3 candidate differs from a verified fact | `discrepancy` | **yes** (owner is authoritative) | "Your bio says 6.000 ₺ but your verified price is 7.000 ₺. Update the bio, or accept 6.000?" |
 | Tier-2 candidate differs from a verified fact | `contest` | **no**, until resolved | "Elif proposes 7.500 ₺ (current 7.000 ₺). Accept or reject?" |
 | Several tier-3 candidates disagree and no verified fact exists | `new` (several) | (no fact) | Choose one or enter a value |
+| The fact exists but is **unverified** (any source, even an equal value) | `new` | no | "Use this value?" Accepting it verifies the fact |
+| The fact is archived | `new` | no | as for "no fact" |
+
+The relation is a pure function of the source tier and the current fact, so it is **recomputed whenever the fact changes** (value, verification, archive, restore): a candidate that now equals the verified value becomes `superseded`; a staff candidate that still differs stays `contest` (and keeps the fact on hold); a tier-3 one stays `discrepancy`. Staff may only propose fixed template keys, never `custom.*` or pattern keys (a candidate carries no label), and never a validity window.
 
 This implements the original requirement: "If the website says 6,000 TRY while the owner confirms 7,000 TRY, apply the source-priority policy, preserve the conflicting information for review, and avoid using an unresolved value in a customer response." The verified owner value is used; the website value is kept as a reviewable discrepancy; an unresolved value (no verified fact, or contested) is never used.
 
@@ -184,4 +189,4 @@ Demo gym `golkent-fitness` ("Gölkent Fitness & Pilates", Bucak/Burdur, TRY, Eur
 | `brand.voice_guidelines` | "Warm, short, uses 'siz'; max one emoji." | verified |
 | `escalation.keywords` | `avukat`, `tüketici hakem`, `sakatlandım` | verified |
 
-Plus one pending `discrepancy` candidate: `pricing.membership_monthly = 5.500 TRY` from "pasted bio" (demonstrates that it is not used). English demo studio `harbor-pilates` (EUR, Europe/Lisbon, `en`) mirrors the structure.
+Plus one pending `discrepancy` candidate: `pricing.membership_monthly = 5.500 TRY` from "pasted bio" (demonstrates that it is not used). English demo studio `harbor-pilates` (EUR, Europe/Lisbon, `en`) mirrors the structure with fictional values (`demo/data/facts_harbor_pilates.yaml`): reformer 8-class pack 120 EUR (required price), monthly membership 89 EUR, single session 18 EUR, an **unverified** student price 69 EUR, a first-class promotion valid until the end of next month, English texts, and one pending discrepancy (`pricing.reformer_8_sessions = 110 EUR`, "pasted bio"). Both studios seed to readiness `ready_for_drafts`; `ready` needs the mock account and the automation review (Phase 4). Seeding is idempotent per key and runs separately from workspace creation, so an existing workspace without facts still receives them; "valid until the end of next month" is computed from the injected clock in the workspace timezone.

@@ -57,6 +57,12 @@ export function WorkspacePickerPage() {
           ))}
         </ul>
       )}
+      <Link to="/workspaces/new" className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        <Card className="flex min-h-14 items-center justify-between gap-3 font-medium text-indigo-900">
+          {t("workspaces.create")}
+          <ChevronRightIcon className="text-xl text-slate-400" />
+        </Card>
+      </Link>
     </main>
   );
 }

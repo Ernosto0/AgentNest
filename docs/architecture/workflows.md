@@ -28,7 +28,8 @@ Notation: **[T1]**, **[T2]** = separate committed DB transactions. "Enqueue" alw
 5. **Automation review** (sync): the user views the automation policy screen and confirms. Sets `settings.automation_reviewed_at`. Audit `policy.reviewed`.
 6. **Connect account**: mock — `POST /social-accounts/mock` (demo tools or `is_demo` workspace only) inserts `social_accounts(provider_kind=mock, status=connected)` with full capabilities. Meta — Phase 7 OAuth flow ([integrations.md §3.4](integrations.md)).
 7. **Readiness** (computed on read, `GET /readiness`):
-   - `not_ready` unless all of these are verified: `identity.business_name`; at least one of `contact.phone` / `contact.whatsapp` / `contact.email`; `location.address` or `location.online_only = true`; `hours.weekly`.
+   - Requirements are judged on **usable** facts (verified, inside the validity window, not contested; [business-knowledge.md §1](business-knowledge.md)), so a contested or expired fact lowers readiness until it is resolved.
+   - `not_ready` unless all of these are usable: `identity.business_name`; at least one of `contact.phone` / `contact.whatsapp` / `contact.email`; `location.address` or `location.online_only = true`; `hours.weekly`.
    - `ready_for_drafts` once the above holds.
    - `ready` when additionally: every template item marked `required_for_ready` is usable (pricing items, or `policy.price_disclosure = do_not_share`; ≥ 1 `service.*`; `booking.instructions`), an account is `connected`, and `automation_reviewed_at` is set.
    - The response lists each requirement with status and a deep link.

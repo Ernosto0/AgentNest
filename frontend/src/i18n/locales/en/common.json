@@ -14,7 +14,8 @@
   "common": {
     "loading": "Loading…",
     "retry": "Try again",
-    "language": "Language"
+    "language": "Language",
+    "close": "Close"
   },
   "auth": {
     "title": "Sign in",
@@ -37,7 +38,8 @@
       "owner": "Owner",
       "manager": "Manager",
       "staff": "Staff"
-    }
+    },
+    "create": "Create a workspace"
   },
   "banner": {
     "simulation": "Demo workspace — simulation",
@@ -85,7 +87,9 @@
     "title": "More",
     "settings": "Settings",
     "switchWorkspace": "Switch workspace",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "knowledge": "Business knowledge",
+    "newWorkspace": "Create a workspace"
   },
   "settings": {
     "title": "Settings",
@@ -144,6 +148,14 @@
       "what": "An unexpected error occurred.",
       "next": "Try again."
     },
-    "requestId": "Request ID: {{id}}"
+    "requestId": "Request ID: {{id}}",
+    "VERSION_CONFLICT": {
+      "what": "Someone changed this while you were working.",
+      "next": "Reload the page and try again."
+    },
+    "FACT_VERSION_CONFLICT": {
+      "what": "This information was changed by someone else while you were editing.",
+      "next": "Reload to see the latest value, then edit again."
+    }
   }
 }

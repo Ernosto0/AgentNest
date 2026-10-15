@@ -91,16 +91,19 @@ cd ../frontend && npm run gen:api          # writes src/api/schema.d.ts
 
 | Workspace | Locale / currency / timezone | Contents (by phase) |
 |---|---|---|
-| `golkent-fitness` "Gölkent Fitness & Pilates" (fictional) | tr / TRY / Europe/Istanbul | P2: facts ([business-knowledge.md §10](../architecture/business-knowledge.md)); P4: simulated Instagram account `@golkent.fitness.demo`; P6: one day of history |
-| `harbor-pilates` "Harbor Pilates Studio" (fictional) | en / EUR / Europe/Lisbon | Same structure in English |
+| `golkent-fitness` "Gölkent Fitness & Pilates" (fictional) | tr / TRY / Europe/Istanbul | P2: 16 facts and one pending suggestion ([business-knowledge.md §10](../architecture/business-knowledge.md), `backend/app/demo/data/facts_golkent_fitness.yaml`); P4: simulated Instagram account `@golkent.fitness.demo`; P6: one day of history |
+| `harbor-pilates` "Harbor Pilates Studio" (fictional) | en / EUR / Europe/Lisbon | Same structure in English (`facts_harbor_pilates.yaml`) |
+| `other-workspace` | en / EUR / Europe/Berlin | No facts (isolation demo) |
 
 All demo workspaces have `is_demo = true` and show the **SİMÜLASYON / SIMULATED** banner.
+
+**Phase 2 (business knowledge)** is demonstrable now: both studios seed to readiness *Taslaklar için hazır* / *Ready for drafts* (the full *Hazır* level also needs the simulated account and the automation review, which arrive in Phase 4). Each has one **unverified** fact (the student price) and one pending **discrepancy** suggestion ("bio says 5.500 ₺"). Walkthrough: log in as `owner@demo.local` → More → İşletme bilgileri → Fiyatlar → verify the student price → Geçmiş (history) → İşletme bilgileri → Öneriler → *Mevcut değeri koru* (reject) → Ana sayfa shows what is left. Then log in as `staff@demo.local`, change the monthly price (*Değişiklik öner*): it appears as a suggestion for the owner and the fact shows *İtiraz var* (contested) until the owner accepts or rejects. More → Çalışma alanı oluştur starts the new-workspace wizard. `seed` is idempotent and also adds the facts to workspaces created before Phase 2; `seed --reset` re-creates everything.
 
 ## 6. Demo walkthrough (complete from Phase 6; about 15 minutes)
 
 Open http://localhost:5173 in a phone-sized window (DevTools device mode, 390×844) or on a real phone (§10). Log in as `owner@demo.local`, workspace `golkent-fitness`.
 
-**A. Business setup:** More → İşletme bilgileri. Show verified facts with sources, the unverified student price, and the pending suggestion "bio says 5.500 ₺". Reject it. Home shows readiness *Hazır*.
+**A. Business setup:** More → İşletme bilgileri. Show verified facts with sources, the unverified student price, and the pending suggestion "bio says 5.500 ₺". Reject it. Home shows readiness *Taslaklar için hazır* (*Hazır* once Phase 4 adds the simulated account and the automation review).
 
 **B. Customer price question:** More → Dev panel → scripted message "Ayşe: Merhaba, aylık üyelik ne kadar?" → Inbox → *Onay bekliyor*. Open the conversation and show the draft with "6.000 ₺" chip (source and version) and the reason "Onay gerekli (ayar)" → **Onayla ve gönder** → *Gönderildi · SİMÜLASYON*. Dev panel → scripted complaint → *Size devredildi* with reasons; no sendable draft. Dev panel → injection script → flagged and requiring approval; no discount in the text.
 

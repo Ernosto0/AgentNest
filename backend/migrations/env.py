@@ -11,6 +11,7 @@ from app.core.db import Base
 import app.audit.models  # noqa: F401  # isort: skip
 import app.identity.models  # noqa: F401  # isort: skip
 import app.jobs.models  # noqa: F401  # isort: skip
+import app.knowledge.models  # noqa: F401  # isort: skip
 
 config = context.config
 target_metadata = Base.metadata

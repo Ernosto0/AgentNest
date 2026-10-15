@@ -1,12 +1,20 @@
 """Test data factories. Workspace-owned rows always require an explicit workspace."""
 
 import uuid
+from typing import Any
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.core.clock import Clock, FrozenClock
+from app.core.context import ActorRef, WorkspaceContext
 from app.core.security import hash_password
+from app.identity import service as identity_service
 from app.identity.models import User, Workspace, WorkspaceMember
+from app.knowledge import candidates as knowledge_candidates
+from app.knowledge import repository as knowledge_repo
+from app.knowledge import service as knowledge_service
+from app.knowledge.models import BusinessFact, FactCandidate
 
 DEFAULT_PASSWORD = "correct-horse-battery"
 _DEFAULT_HASH = hash_password(DEFAULT_PASSWORD)  # argon2 is slow on purpose: hash once
@@ -89,3 +97,71 @@ def login(client: TestClient, user: User, password: str = DEFAULT_PASSWORD) -> d
     assert response.status_code == 204, response.text
     csrf = client.get("/api/v1/auth/me").json()["csrf_token"]
     return {"X-CSRF-Token": csrf}
+
+
+# --- knowledge ------------------------------------------------------------------------------
+
+
+def knowledge_ctx(
+    workspace: Workspace, user: User | None = None, role: str | None = None
+) -> WorkspaceContext:
+    """A service-level context: for ``user`` with ``role``, or for the system when omitted."""
+    actor = ActorRef.user(user.id) if user is not None else ActorRef.system("test")
+    return identity_service.workspace_context(workspace, actor, role)
+
+
+def money(
+    amount: str = "6000", currency: str = "TRY", unit: str | None = "month"
+) -> dict[str, Any]:
+    value: dict[str, Any] = {"amount": amount, "currency": currency}
+    if unit:
+        value["unit"] = unit
+    return value
+
+
+def create_fact(
+    session: Session,
+    workspace: Workspace,
+    key: str,
+    value: dict[str, Any],
+    *,
+    verified: bool = True,
+    clock: Clock | None = None,
+    **kwargs: Any,
+) -> BusinessFact:
+    """Insert a fact through the trusted service path (seed-like), verified by default."""
+    return knowledge_service.insert_trusted_fact(
+        session,
+        clock or FrozenClock(),
+        knowledge_ctx(workspace),
+        key=key,
+        value=value,
+        verified=verified,
+        **kwargs,
+    )
+
+
+def create_candidate(
+    session: Session,
+    workspace: Workspace,
+    key: str,
+    value: dict[str, Any],
+    *,
+    source_type: str = "pasted_text",
+    value_type: str = "money",
+    clock: Clock | None = None,
+) -> FactCandidate:
+    fact = knowledge_repo.get_live_fact_by_key(session, knowledge_ctx(workspace), key)
+    candidate = knowledge_candidates.propose_candidate(
+        session,
+        clock or FrozenClock(),
+        knowledge_ctx(workspace),
+        key=key,
+        value_type=value_type,
+        value=value,
+        source_type=source_type,
+        source_excerpt="Aylık üyelik 5.500 TL",
+        fact=fact,
+    )
+    session.commit()
+    return candidate

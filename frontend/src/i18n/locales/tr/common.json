@@ -14,7 +14,8 @@
   "common": {
     "loading": "Yükleniyor…",
     "retry": "Tekrar dene",
-    "language": "Dil"
+    "language": "Dil",
+    "close": "Kapat"
   },
   "auth": {
     "title": "Giriş yap",
@@ -37,7 +38,8 @@
       "owner": "Sahip",
       "manager": "Yönetici",
       "staff": "Personel"
-    }
+    },
+    "create": "Çalışma alanı oluştur"
   },
   "banner": {
     "simulation": "Demo çalışma alanı — simülasyon",
@@ -85,7 +87,9 @@
     "title": "Daha fazla",
     "settings": "Ayarlar",
     "switchWorkspace": "Çalışma alanını değiştir",
-    "signOut": "Çıkış yap"
+    "signOut": "Çıkış yap",
+    "knowledge": "İşletme bilgileri",
+    "newWorkspace": "Çalışma alanı oluştur"
   },
   "settings": {
     "title": "Ayarlar",
@@ -144,6 +148,14 @@
       "what": "Beklenmeyen bir hata oluştu.",
       "next": "Tekrar deneyin."
     },
-    "requestId": "İstek kimliği: {{id}}"
+    "requestId": "İstek kimliği: {{id}}",
+    "VERSION_CONFLICT": {
+      "what": "Siz çalışırken başka biri bunu değiştirdi.",
+      "next": "Sayfayı yenileyip tekrar deneyin."
+    },
+    "FACT_VERSION_CONFLICT": {
+      "what": "Bu bilgi siz düzenlerken başka biri tarafından değiştirildi.",
+      "next": "Güncel değeri görmek için sayfayı yenileyin, sonra tekrar düzenleyin."
+    }
   }
 }

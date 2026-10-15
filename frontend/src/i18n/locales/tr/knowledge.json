@@ -1,0 +1,277 @@
+{
+  "knowledge": {
+    "title": "İşletme bilgileri",
+    "intro": "Yanıtlarınızın ve paylaşımlarınızın dayandığı doğrulanmış bilgiler. Doğrulanmamış hiçbir bilgi kullanılmaz.",
+    "categories": "Kategoriler",
+    "back": "İşletme bilgilerine dön",
+    "category": {
+      "identity": "İşletme",
+      "contact": "İletişim",
+      "location": "Konum",
+      "hours": "Çalışma saatleri",
+      "service": "Hizmetler",
+      "pricing": "Fiyatlar",
+      "promotion": "Kampanyalar",
+      "booking": "Rezervasyon",
+      "policy": "Politikalar",
+      "schedule": "Ders programı",
+      "faq": "Sık sorulan sorular",
+      "brand": "Marka dili",
+      "escalation": "Devir kuralları",
+      "custom": "Diğer bilgiler"
+    },
+    "state": {
+      "verified": "Doğrulandı",
+      "unverified": "Doğrulanmamış",
+      "contested": "İtiraz var",
+      "expired": "Süresi doldu",
+      "not_started": "Henüz başlamadı",
+      "archived": "Arşivde",
+      "missing": "Eksik",
+      "present": "Eklendi"
+    },
+    "source": {
+      "owner_entry": "Elle girildi",
+      "owner_command": "Sohbet komutu",
+      "candidate_accepted": "Kabul edilen öneri",
+      "seed": "Demo verisi",
+      "template_default": "Şablon"
+    },
+    "candidateSource": {
+      "pasted_text": "Yapıştırdığınız metin",
+      "staff_proposal": "Bir ekip üyesi",
+      "instagram_profile": "Instagram profiliniz",
+      "website": "Web siteniz"
+    },
+    "verifiedOn": "{{date}} tarihinde doğrulandı",
+    "validity": "{{from}} – {{until}} arasında geçerli",
+    "contestedNote": "Bir ekip üyesi farklı bir değer önerdi. Siz karar verene kadar bu bilgi beklemede.",
+    "unverifiedNote": "Doğrulanana kadar hiçbir yerde kullanılmaz.",
+    "required": {
+      "drafts": "Taslak yazılabilmesi için gerekli.",
+      "ready": "Otomasyonun açılabilmesi için gerekli."
+    },
+    "archived": "Arşiv ({{count}})",
+    "actions": {
+      "add": "Ekle",
+      "addCustom": "Başka bilgi ekle",
+      "edit": "Düzenle",
+      "suggest": "Değer öner",
+      "suggestChange": "Değişiklik öner",
+      "verify": "Doğrula",
+      "verifying": "Doğrulanıyor…",
+      "restore": "Geri yükle",
+      "archive": "Arşivle",
+      "confirmArchive": "Evet, arşivle",
+      "cancel": "Vazgeç",
+      "history": "Geçmiş",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor…"
+    },
+    "editor": {
+      "addNamed": "{{kind}} kategorisine ekle",
+      "labelTr": "Ad (Türkçe)",
+      "labelEn": "Ad (İngilizce)",
+      "valueType": "Bilgi türü",
+      "criticality": "Ne kadar önemli?",
+      "validity": "Geçerlilik süresi",
+      "validFrom": "Başlangıç tarihi",
+      "validUntil": "Bitiş tarihi",
+      "reason": "Not (isteğe bağlı)",
+      "staffNote": "Değişikliğiniz işletme sahibine öneri olarak gönderilir. O kabul edene kadar mevcut değer kullanılmaya devam eder.",
+      "sentAsSuggestion": "Teşekkürler! Değişikliğiniz işletme sahibine öneri olarak gönderildi."
+    },
+    "valueType": {
+      "money": "Fiyat",
+      "weekly_hours": "Çalışma saatleri",
+      "text": "Metin",
+      "localized_text": "Türkçe ve İngilizce metin",
+      "phone": "Telefon numarası",
+      "email": "E-posta adresi",
+      "address": "Adres",
+      "url": "Web adresi",
+      "boolean": "Evet veya hayır",
+      "enum": "Seçenek",
+      "string_list": "Liste"
+    },
+    "criticality": {
+      "standard": "Standart (yeniden ifade edilebilir)",
+      "critical": "Kritik (yalnızca doğrulanmış değer aynen kullanılır)"
+    },
+    "unit": {
+      "none": "Birim yok",
+      "month": "aylık",
+      "session": "seans başına",
+      "package": "paket başına"
+    },
+    "bool": {
+      "true": "Evet",
+      "false": "Hayır"
+    },
+    "enum": {
+      "share": "Fiyatları paylaş",
+      "do_not_share": "Fiyatları paylaşma"
+    },
+    "days": {
+      "mon": "Pzt",
+      "tue": "Sal",
+      "wed": "Çar",
+      "thu": "Per",
+      "fri": "Cum",
+      "sat": "Cmt",
+      "sun": "Paz"
+    },
+    "moneyError": {
+      "invalid_number": "Bu bir tutara benzemiyor.",
+      "too_many_decimals": "En fazla iki ondalık kullanın.",
+      "unsupported_locale": "Bu dil desteklenmiyor."
+    },
+    "fields": {
+      "text": "Metin",
+      "languages": "Diller",
+      "empty": "(boş)",
+      "language": {
+        "tr": "Türkçe",
+        "en": "İngilizce"
+      },
+      "phone": "Telefon numarası",
+      "email": "E-posta adresi",
+      "url": "Web adresi",
+      "boolean": "Cevap",
+      "enum": "Seçenek",
+      "choose": "Seçin…",
+      "list": "Öğeler",
+      "listHint": "Her satıra bir öğe.",
+      "money": {
+        "amount": "Tutar ({{currency}})",
+        "preview": "Müşteriler şunu görecek: {{amount}}",
+        "ambiguous": "Bu birden fazla tutar anlamına gelebilir. Hangisini kastediyorsunuz?",
+        "unit": "Geçerli olduğu süre",
+        "conditionsTr": "Koşullar (Türkçe, isteğe bağlı)",
+        "conditionsEn": "Koşullar (İngilizce, isteğe bağlı)"
+      },
+      "address": {
+        "lines": "Açık adres",
+        "linesHint": "Her satıra bir adres satırı.",
+        "district": "İlçe",
+        "city": "Şehir",
+        "mapsUrl": "Harita bağlantısı (isteğe bağlı)"
+      },
+      "hours": {
+        "closedHint": "Hiçbir grupta olmayan günler kapalıdır.",
+        "row": "Grup {{n}}",
+        "days": "Günler",
+        "opens": "Açılış (grup {{row}})",
+        "closes": "Kapanış (grup {{row}})",
+        "addRange": "Saat ekle",
+        "removeRange": "Saati kaldır",
+        "addRow": "Gün grubu ekle",
+        "removeRow": "Grubu kaldır",
+        "exceptions": "İstisnalar (tatiller)",
+        "exceptionDate": "Tarih",
+        "closedAllDay": "Gün boyu kapalı",
+        "addException": "İstisna ekle",
+        "removeException": "Kaldır"
+      }
+    },
+    "fieldErrors": {
+      "invalid": "Bilgilerin bir kısmı geçerli değil.",
+      "required": "Gerekli bir değer eksik.",
+      "invalid_phone": "Geçerli bir telefon numarası girin.",
+      "invalid_email": "Geçerli bir e-posta adresi girin.",
+      "invalid_url": "http:// veya https:// ile başlayan bir web adresi girin.",
+      "invalid_line": "Her adres satırı metin olmalıdır.",
+      "not_allowed": "Bu seçeneğe burada izin verilmiyor.",
+      "amount_negative": "Tutar negatif olamaz.",
+      "too_many_decimals": "En fazla iki ondalık kullanın.",
+      "invalid_amount": "Bu bir tutara benzemiyor.",
+      "amount_must_be_decimal_string": "Bu bir tutara benzemiyor.",
+      "unknown_key": "Bu bilgi türü şablonunuzda yok.",
+      "window_invalid": "Bitiş tarihi başlangıç tarihinden önce olamaz.",
+      "range_not_increasing": "Kapanış saati açılış saatinden sonra olmalı.",
+      "ranges_overlap": "Aynı gündeki çalışma saatleri çakışıyor.",
+      "duplicate_exception_date": "Her istisnanın kendi tarihi olmalı."
+    },
+    "history": {
+      "title": "Geçmiş: {{name}}",
+      "version": "Sürüm {{version}}",
+      "change": {
+        "created": "Oluşturuldu",
+        "value_changed": "Değiştirildi",
+        "verified": "Doğrulandı",
+        "archived": "Arşivlendi",
+        "restored": "Geri yüklendi"
+      }
+    },
+    "suggestions": {
+      "title": "Öneriler",
+      "link": "Öneriler",
+      "intro": "Ekibinizin önerdiği veya yapıştırılan metinde bulunan değerler. Siz karar verene kadar hiçbir şey değişmez.",
+      "waiting_one": "{{count}} öneri sizi bekliyor",
+      "waiting_other": "{{count}} öneri sizi bekliyor",
+      "none": "İncelenecek bir şey yok",
+      "empty": "İncelenecek öneri yok",
+      "emptyHint": "Bir ekip üyesi değişiklik önerdiğinde veya bir bilgi doğrulanmış bilginizden farklı olduğunda burada görünür.",
+      "staffNote": "Önerileri yalnızca işletme sahibi veya yönetici kabul edebilir ya da reddedebilir.",
+      "someone": "Bir ekip üyesi",
+      "accept": "{{value}} değerini kullan",
+      "reject": "Mevcut değeri koru",
+      "relation": {
+        "discrepancy": "{{source}} {{proposed}} diyor, ama doğrulanmış değeriniz {{current}}. Doğrulanmış değeriniz kullanılmaya devam eder.",
+        "contest": "{{name}} {{proposed}} değerini öneriyor (mevcut değer: {{current}}). Siz karar verene kadar mevcut değer beklemede.",
+        "new": "{{source}} {{proposed}} değerini öneriyor.",
+        "newUnverified": "{{source}} {{proposed}} değerini öneriyor. Kabul ederseniz bu değer doğrulanır (şu an {{current}}, doğrulanmamış)."
+      }
+    }
+  },
+  "readiness": {
+    "title": "Hazırlık durumu",
+    "progress": "{{total}} adımdan {{done}} tanesi tamam",
+    "openKnowledge": "İşletme bilgilerini aç",
+    "level": {
+      "not_ready": "Hazır değil",
+      "ready_for_drafts": "Taslaklar için hazır",
+      "ready": "Hazır"
+    },
+    "requirement": {
+      "business_name": "İşletme adı",
+      "contact": "İletişim yolu",
+      "location": "Adres (veya yalnızca çevrimiçi)",
+      "hours": "Çalışma saatleri",
+      "booking_instructions": "Rezervasyon talimatı",
+      "price_policy": "Fiyat politikası",
+      "services": "En az bir hizmet",
+      "account_connected": "Instagram hesabı bağlı",
+      "automation_reviewed": "Otomasyon ayarları gözden geçirildi"
+    },
+    "status": {
+      "missing": "Eksik veya doğrulanmamış",
+      "not_connected": "Henüz bağlı değil (sonraki aşamada)",
+      "not_reviewed": "Henüz gözden geçirilmedi (sonraki aşamada)"
+    }
+  },
+  "wizard": {
+    "title": "Çalışma alanı oluştur",
+    "back": "Çalışma alanlarıma dön",
+    "step": "Adım {{current}} / {{total}}",
+    "name": "İşletme adı",
+    "category": "İşletmeniz ne tür bir işletme?",
+    "categories": {
+      "gym": "Spor salonu veya fitness stüdyosu",
+      "pilates_studio": "Pilates stüdyosu",
+      "other": "Başka bir şey"
+    },
+    "market": "Pazar",
+    "markets": {
+      "tr": "Türkiye",
+      "global": "Başka bir yer"
+    },
+    "locale": "İşletme dili",
+    "timezone": "Saat dilimi",
+    "currency": "Para birimi",
+    "previous": "Geri",
+    "next": "Devam",
+    "create": "Çalışma alanı oluştur",
+    "creating": "Oluşturuluyor…"
+  }
+}

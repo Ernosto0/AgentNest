@@ -89,7 +89,7 @@ Phase = the phase whose migration creates the table ([roadmap.md](../implementat
 | currency | char(3) not null | ISO 4217 (`CHECK ~ '^[A-Z]{3}$'`); the service accepts only codes in current tender use (Babel/CLDR), not historic codes or `XXX` |
 | is_demo | boolean not null default false | only demo workspaces may use mock providers in production config |
 | status | text not null default 'active' | `active`, `deleting` |
-| settings | jsonb not null default '{}' | validated by `WorkspaceSettings`: `disclosure_enabled` (default true), `disclosure_text{tr,en}`, `daily_report_hour` (default 20), `publish_max_delay_minutes` (default 360) |
+| settings | jsonb not null default '{}' | validated by `WorkspaceSettings`: `disclosure_enabled` (default true), `disclosure_text{tr,en}`, `daily_report_hour` (default 20), `publish_max_delay_minutes` (default 360), `automation_reviewed_at` (null until the owner marks the automation policy as reviewed; stamped by the server from the `Clock`, never client-supplied) |
 
 **`workspace_members`**: PK `(workspace_id, user_id)`; `role` `CHECK in ('owner','manager','staff')`; `invited_by_user_id` null. Service rule: a workspace always has ≥ 1 owner.
 
@@ -150,7 +150,7 @@ Indexes: `ix_jobs_due (run_at, priority) where status = 'queued'`; `ix_jobs_leas
 | current_version | int not null | equals the latest `fact_versions.version` |
 | valid_from / valid_until | date null | promotions; evaluated in the workspace timezone |
 | last_verified_at | timestamptz null | |
-| last_verified_by_user_id | uuid null | |
+| last_verified_by_user_id | uuid null | foreign key to `users` (`ON DELETE SET NULL`); null for seeded facts |
 
 **`fact_versions`** (append-only)
 | Column | Type | Notes |
@@ -160,6 +160,7 @@ Indexes: `ix_jobs_due (run_at, priority) where status = 'queued'`; `ix_jobs_leas
 | version | int not null | `unique (fact_id, version)` |
 | value | jsonb not null | full snapshot |
 | status | text not null | status after this change |
+| valid_from / valid_until | date null | the validity window after this change (so a window edit is a normal versioned change; added in Phase 2 because the snapshot must be complete) |
 | source_type | text not null | `owner_entry`, `owner_command`, `candidate_accepted`, `seed`, `template_default` |
 | source_ref | text null | e.g., candidate ID, command ID |
 | actor_type / actor_id | text | |
@@ -179,8 +180,8 @@ Indexes: `ix_jobs_due (run_at, priority) where status = 'queued'`; `ix_jobs_leas
 | relation | text not null | `new`, `same`, `discrepancy`, `contest` (computed at creation and recomputed when the fact changes) |
 | status | text not null | `pending`, `accepted`, `rejected`, `superseded` |
 | proposed_by_actor_type / proposed_by_actor_id | text | |
-| agent_run_id | uuid null | for extraction |
-| resolved_by_user_id / resolved_at | | |
+| agent_run_id | uuid null | for extraction. Phase 2 creates the column without a foreign key because `agent_runs` does not exist yet; Phase 3 adds the constraint |
+| resolved_by_user_id / resolved_at | | `resolved_by_user_id` is a foreign key to `users` (`ON DELETE SET NULL`) |
 
 Index: `(workspace_id, status)`, `(workspace_id, fact_key) where status = 'pending'`.
 

@@ -7,6 +7,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.core.pagination import Page as Page  # re-exported: the list envelope lives in core
+
 Locale = Literal["tr", "en"]
 Role = Literal["owner", "manager", "staff"]
 BusinessCategory = Literal["gym", "pilates_studio", "other"]
@@ -34,11 +36,15 @@ class WorkspaceSettings(StrictModel):
     disclosure_text: DisclosureText = Field(default_factory=DisclosureText)
     daily_report_hour: int = Field(default=20, ge=0, le=23)
     publish_max_delay_minutes: int = Field(default=360, ge=1, le=1440)
+    # Set by the server (PATCH ``automation_reviewed``) from the injected Clock; read-only for
+    # clients. Phase 4 replaces the temporary PATCH with the automation review screen.
+    automation_reviewed_at: datetime | None = None
 
 
 class WorkspaceSettingsPatch(StrictModel):
     """Partial update of the settings: only the given top-level keys change."""
 
+    automation_reviewed: Literal[True] | None = None
     disclosure_enabled: bool | None = None
     disclosure_text: DisclosureText | None = None
     daily_report_hour: int | None = Field(default=None, ge=0, le=23)
@@ -123,11 +129,3 @@ class MemberOut(BaseModel):
     display_name: str
     role: Role
     joined_at: datetime
-
-
-class Page[T](BaseModel):
-    """List envelope (api-design.md §1). Identity lists are small and bounded, so
-    ``next_cursor`` is always null for now."""
-
-    items: list[T]
-    next_cursor: str | None = None
