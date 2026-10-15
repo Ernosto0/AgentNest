@@ -1,0 +1,149 @@
+{
+  "app": {
+    "name": "AgentNest",
+    "skipToContent": "İçeriğe geç"
+  },
+  "nav": {
+    "label": "Ana gezinme",
+    "home": "Ana sayfa",
+    "inbox": "Gelen kutusu",
+    "content": "İçerik",
+    "approvals": "Onaylar",
+    "more": "Daha fazla"
+  },
+  "common": {
+    "loading": "Yükleniyor…",
+    "retry": "Tekrar dene",
+    "language": "Dil"
+  },
+  "auth": {
+    "title": "Giriş yap",
+    "subtitle": "Instagram işlerinizi tek yerden yönetin.",
+    "email": "E-posta",
+    "password": "Parola",
+    "submit": "Giriş yap",
+    "submitting": "Giriş yapılıyor…",
+    "signOut": "Çıkış yap",
+    "signingOut": "Çıkış yapılıyor…"
+  },
+  "workspaces": {
+    "pickerTitle": "Çalışma alanı seçin",
+    "pickerHint": "Devam etmek için bir çalışma alanı seçin.",
+    "none": "Henüz bir çalışma alanınız yok.",
+    "switcherLabel": "Çalışma alanı",
+    "switch": "Çalışma alanını değiştir",
+    "demoTag": "Demo",
+    "role": {
+      "owner": "Sahip",
+      "manager": "Yönetici",
+      "staff": "Personel"
+    }
+  },
+  "banner": {
+    "simulation": "Demo çalışma alanı — simülasyon",
+    "simulationDetail": "Bu çalışma alanı simülasyondur, gerçek Instagram'a hiçbir şey gönderilmez."
+  },
+  "badge": {
+    "simulated": "SİMÜLASYON"
+  },
+  "status": {
+    "draft": "Taslak",
+    "pending_approval": "Onay bekliyor",
+    "needs_human": "Size devredildi",
+    "scheduled": "Zamanlandı",
+    "on_hold": "Beklemede",
+    "sending": "Gönderiliyor",
+    "publishing": "Yayınlanıyor",
+    "checking": "Kontrol ediliyor",
+    "sent": "Gönderildi",
+    "published": "Yayınlandı",
+    "failed": "Başarısız",
+    "expired": "Süresi doldu"
+  },
+  "empty": {
+    "comingLater": "Bu bölüm bir sonraki aşamada gelecek",
+    "comingLaterHint": "Şimdilik çalışma alanınızın temel yapısı hazır."
+  },
+  "home": {
+    "title": "Ana sayfa",
+    "welcome": "Merhaba, {{name}}",
+    "workspace": "Çalışma alanı",
+    "yourRole": "Rolünüz",
+    "timezone": "Saat dilimi",
+    "currency": "Para birimi"
+  },
+  "inbox": {
+    "title": "Gelen kutusu"
+  },
+  "content": {
+    "title": "İçerik"
+  },
+  "approvals": {
+    "title": "Onaylar"
+  },
+  "more": {
+    "title": "Daha fazla",
+    "settings": "Ayarlar",
+    "switchWorkspace": "Çalışma alanını değiştir",
+    "signOut": "Çıkış yap"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "language": "Dil",
+    "languageHint": "Arayüz dilini seçin. Seçiminiz hesabınıza kaydedilir.",
+    "languages": {
+      "tr": "Türkçe",
+      "en": "English"
+    },
+    "account": "Hesap",
+    "signedInAs": "Giriş yapan"
+  },
+  "notFound": {
+    "title": "Bulunamadı",
+    "body": "Aradığınız sayfa ya da çalışma alanı bulunamadı.",
+    "back": "Çalışma alanlarıma dön"
+  },
+  "errors": {
+    "AUTH_REQUIRED": {
+      "what": "Oturum açmadınız.",
+      "next": "Lütfen giriş yapın."
+    },
+    "INVALID_CREDENTIALS": {
+      "what": "E-posta veya parola hatalı.",
+      "next": "Bilgilerinizi kontrol edip tekrar deneyin."
+    },
+    "CSRF_FAILED": {
+      "what": "Oturum doğrulaması başarısız oldu.",
+      "next": "Sayfayı yenileyip tekrar deneyin."
+    },
+    "FORBIDDEN": {
+      "what": "Rolünüz bu işlem için yetkili değil.",
+      "next": "Çalışma alanı sahibinden yardım isteyin."
+    },
+    "NOT_FOUND": {
+      "what": "Aradığınız kayıt bulunamadı.",
+      "next": "Adresi kontrol edin veya ana sayfaya dönün."
+    },
+    "VALIDATION_FAILED": {
+      "what": "Bazı alanlar geçersiz.",
+      "next": "İşaretli alanları düzeltin."
+    },
+    "CONFLICT_STATE": {
+      "what": "Bu işlem mevcut durumda yapılamaz.",
+      "next": "Sayfayı yenileyip tekrar deneyin."
+    },
+    "INTERNAL_ERROR": {
+      "what": "Bir şeyler ters gitti.",
+      "next": "Tekrar deneyin. Sorun sürerse istek kimliğini paylaşın."
+    },
+    "NETWORK_ERROR": {
+      "what": "Sunucuya ulaşılamadı.",
+      "next": "Bağlantınızı kontrol edip tekrar deneyin."
+    },
+    "UNKNOWN": {
+      "what": "Beklenmeyen bir hata oluştu.",
+      "next": "Tekrar deneyin."
+    },
+    "requestId": "İstek kimliği: {{id}}"
+  }
+}

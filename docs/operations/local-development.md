@@ -2,7 +2,9 @@
 
 **Purpose:** Set up, run, seed, simulate, inspect and reset the application locally, without any external credentials. It also contains the scripted demo walkthrough.
 
-> **Status:** this describes the **target** developer experience. Commands become valid as the phases deliver them (noted per section). Phase 1 task P1-14 verifies the setup commands on Windows and corrects this document where reality differs.
+> **Status:** this describes the **target** developer experience. Commands become valid as the phases deliver them (noted per section). The setup, run, test, seed and reset commands up to and including **Phase 1** were verified on Windows 11 (Windows PowerShell 5.1 and Git Bash) in task P1-14; later sections are verified by the phase that delivers them.
+>
+> **Shell syntax:** commands are written for Git Bash / PowerShell 7. In **Windows PowerShell 5.1** `&&` is not a valid separator: use `;` (or separate lines), e.g. `cd backend; uv run alembic upgrade head`. Do not redirect program output with `>` in Windows PowerShell 5.1 (it writes UTF-16): use the tools' own `-o/--output` options where they exist.
 
 ## 1. Prerequisites
 
@@ -31,6 +33,10 @@ cd ../frontend
 npm ci
 ```
 
+`docker compose up -d postgres` also creates the `agentnest_test` database used by the tests (`docker/postgres/init/`). That script only runs when the data volume is first created; if you started Postgres before it existed, create the database once: `docker compose exec postgres psql -U agentnest -c "CREATE DATABASE agentnest_test OWNER agentnest;"`.
+
+Other CLI commands (from `backend/`): `uv run python -m app.cli create-user --email … --display-name …` (prompts for the password), `uv run python -m app.cli generate-key` (a `SECRET_KEY` value; `--kind token-encryption` prints a `TOKEN_ENCRYPTION_KEYS` entry).
+
 ## 3. Running (four terminals)
 
 | Terminal | Command (from repo root) |
@@ -40,7 +46,11 @@ npm ci
 | Worker | `cd backend && uv run python -m app.worker` |
 | Frontend | `cd frontend && npm run dev` → http://localhost:5173 |
 
-The worker is required for anything asynchronous: commands, drafts, sends, publishing and reports. If a status stays at *Anlıyorum…* or *Hazırlanıyor…*, check that the worker is running.
+The worker is required for anything asynchronous: commands, drafts, sends, publishing and reports. If a status stays at *Anlıyorum…* or *Hazırlanıyor…*, check that the worker is running. (Phase 1 has no asynchronous features yet, so the worker only polls the queue and runs the scheduler tick; stop it with Ctrl+C, it finishes the running job first.)
+
+From Windows PowerShell 5.1 the same commands read, for example: `cd backend; uv run uvicorn app.main:create_app --factory --reload --port 8000`.
+
+Logs go to **stderr** (console format in development, JSON in production), so stdout stays clean for machine-readable CLI output.
 
 ## 4. Tests
 
@@ -48,13 +58,26 @@ The worker is required for anything asynchronous: commands, drafts, sends, publi
 cd backend
 uv run pytest                              # all backend tests (needs Postgres running)
 uv run pytest tests/unit                   # fast, no DB
-uv run pytest -m commits                   # queue/concurrency tests
-uv run python -m evals run --all --provider fake
+uv run pytest -m commits -k jobs           # queue/concurrency/restart tests (real commits)
+uv run ruff check . ; uv run ruff format --check . ; uv run mypy app ; uv run lint-imports
+uv run python -m evals run --all --provider fake   # Phase 3+
 cd ../frontend
 npm test                                   # Vitest
-npm run i18n:check
-npx playwright install --with-deps         # first time
-npm run e2e                                # needs API + worker + seeded DB (see testing-strategy §7)
+npm run lint ; npm run typecheck ; npm run i18n:check
+npx playwright install chromium webkit     # first time (add --with-deps on Linux)
+npm run e2e                                # Playwright, 3 projects (see below)
+```
+
+- Backend tests always run against `TEST_DATABASE_URL` (the `agentnest_test` database): the test session refuses any database whose name does not end in `_test`. The schema is dropped and rebuilt with `alembic upgrade head` at the start of every test session, so never point `TEST_DATABASE_URL` at data you care about.
+- `npm run e2e` needs Postgres running with migrations applied (`uv run alembic upgrade head`). It **re-seeds** the demo data (`seed --reset`), starts the API (`:8000`) and the Vite dev server (`:5173`) itself, and reuses them if they are already running. In CI (`CI=true`) it serves the production build with `vite preview` instead. Projects: `mobile-webkit` (iPhone 13), `mobile-chromium` (Pixel 7), `desktop-chromium`. Run one with `npm run e2e -- --project=desktop-chromium`. Phase 1 e2e does not need the worker.
+
+### Regenerating the API client
+
+The OpenAPI document and the generated TypeScript types are committed; CI fails if they drift. After changing any endpoint or response model:
+
+```bash
+cd backend && uv run python -m app.cli export-openapi -o ../frontend/openapi.json
+cd ../frontend && npm run gen:api          # writes src/api/schema.d.ts
 ```
 
 ## 5. Demo data (seeded)

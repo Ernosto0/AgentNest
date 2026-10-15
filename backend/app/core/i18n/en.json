@@ -1,0 +1,20 @@
+{
+  "errors.AUTH_REQUIRED.what": "You are not signed in.",
+  "errors.AUTH_REQUIRED.next": "Please sign in.",
+  "errors.INVALID_CREDENTIALS.what": "Email or password is incorrect.",
+  "errors.INVALID_CREDENTIALS.next": "Check your details and try again.",
+  "errors.CSRF_FAILED.what": "The session check failed.",
+  "errors.CSRF_FAILED.next": "Reload the page and try again.",
+  "errors.FORBIDDEN.what": "Your role cannot do this.",
+  "errors.FORBIDDEN.next": "Ask the workspace owner for help.",
+  "errors.NOT_FOUND.what": "We could not find what you were looking for.",
+  "errors.NOT_FOUND.next": "Check the address or go back to the home page.",
+  "errors.VALIDATION_FAILED.what": "Some fields are invalid.",
+  "errors.VALIDATION_FAILED.next": "Fix the highlighted fields.",
+  "errors.CONFLICT_STATE.what": "This action is not possible in the current state.",
+  "errors.CONFLICT_STATE.next": "Reload the page and try again.",
+  "errors.JOB_PAYLOAD_INVALID.what": "Internal error: a background job had an invalid payload.",
+  "errors.JOB_PAYLOAD_INVALID.next": "Report this to a developer.",
+  "errors.INTERNAL_ERROR.what": "Something went wrong.",
+  "errors.INTERNAL_ERROR.next": "Try again. If it keeps happening, share the request ID ({request_id})."
+}

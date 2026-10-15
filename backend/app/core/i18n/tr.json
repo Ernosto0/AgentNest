@@ -1,0 +1,20 @@
+{
+  "errors.AUTH_REQUIRED.what": "Oturum açmadınız.",
+  "errors.AUTH_REQUIRED.next": "Lütfen giriş yapın.",
+  "errors.INVALID_CREDENTIALS.what": "E-posta veya parola hatalı.",
+  "errors.INVALID_CREDENTIALS.next": "Bilgilerinizi kontrol edip tekrar deneyin.",
+  "errors.CSRF_FAILED.what": "Oturum doğrulaması başarısız oldu.",
+  "errors.CSRF_FAILED.next": "Sayfayı yenileyip tekrar deneyin.",
+  "errors.FORBIDDEN.what": "Rolünüz bu işlem için yetkili değil.",
+  "errors.FORBIDDEN.next": "Çalışma alanı sahibinden yardım isteyin.",
+  "errors.NOT_FOUND.what": "Aradığınız kayıt bulunamadı.",
+  "errors.NOT_FOUND.next": "Adresi kontrol edin veya ana sayfaya dönün.",
+  "errors.VALIDATION_FAILED.what": "Bazı alanlar geçersiz.",
+  "errors.VALIDATION_FAILED.next": "İşaretli alanları düzeltin.",
+  "errors.CONFLICT_STATE.what": "Bu işlem mevcut durumda yapılamaz.",
+  "errors.CONFLICT_STATE.next": "Sayfayı yenileyip tekrar deneyin.",
+  "errors.JOB_PAYLOAD_INVALID.what": "Dahili hata: arka plan işinin verisi geçersiz.",
+  "errors.JOB_PAYLOAD_INVALID.next": "Geliştiriciye bildirin.",
+  "errors.INTERNAL_ERROR.what": "Bir şeyler ters gitti.",
+  "errors.INTERNAL_ERROR.next": "Tekrar deneyin. Sorun sürerse istek kimliğini ({request_id}) paylaşın."
+}

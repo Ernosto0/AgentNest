@@ -72,11 +72,13 @@ Authentication: [ADR-013](decisions/ADR-013-authentication-and-tenancy.md). Pass
 | `content.edit` (create, edit, submit) | ✓ | ✓ | ✓ |
 | `content.approve` (approve/schedule/cancel) | ✓ | ✓ | |
 | `approvals.view` | ✓ | ✓ | ✓ |
-| `reports.view` (full) | ✓ | ✓ | inbox metrics only |
+| `reports.view` (full) | ✓ | ✓ | |
+| `reports.view_inbox_metrics` | ✓ | ✓ | ✓ |
 | `activity.view` / `system_health.view` | ✓ | ✓ | |
 | `data.export` / `data.delete` | ✓ | | |
 
 Notes:
+- The matrix is implemented as a static mapping in `backend/app/identity/permissions.py` and pinned by a table test. "Staff: inbox metrics only" is modelled as the separate permission `reports.view_inbox_metrics`; `activity.view` and `system_health.view` are two permissions with the same holders. Unknown permission names raise instead of denying silently.
 - Staff manual replies are sent without separate approval, because a human wrote them. Owners can restrict this later (deferred).
 - Role changes and membership removal take effect immediately: sessions remain, but the membership checks fail.
 

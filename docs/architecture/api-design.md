@@ -150,5 +150,5 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `GET /api/v1/dev/scripts` | scripted customer messages |
 
 ## 3. OpenAPI and client generation
-- `GET /openapi.json` is served in development and test. The backend command `uv run python -m app.cli export-openapi > ../frontend/openapi.json` exports it, and `npm run gen:api` produces `src/api/schema.d.ts`.
+- `GET /openapi.json` is served in development and test. The backend command `uv run python -m app.cli export-openapi -o ../frontend/openapi.json` exports it (deterministic, UTF-8, LF; `-o` is used instead of a shell redirect because Windows PowerShell 5.1 redirects write UTF-16; without `-o` the JSON goes to stdout), and `npm run gen:api` produces `src/api/schema.d.ts`.
 - CI regenerates both and fails if the committed files differ.

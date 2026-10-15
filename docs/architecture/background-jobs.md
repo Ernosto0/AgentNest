@@ -27,6 +27,8 @@ jobs.enqueue(
 
 `dedup_key` semantics: `INSERT … ON CONFLICT (dedup_key) WHERE status IN ('queued','running') DO NOTHING`, then select the existing row. For debounce (`draft_reply`), the existing queued job is kept (its `run_at` is **not** extended, so a stream of messages cannot postpone drafting forever).
 
+Implementation notes (Phase 1): `enqueue` also takes `clock` (default `SystemClock`; used for the default `run_at`) and never commits. It raises `ValueError` for an unregistered job type, `TypeError` if `payload` is not an instance of the handler's payload model, and `ValueError` if the payload contains a key named `text`, `message`, `message_text`, `body`, `caption`, `token`, `password` or `secret` (payloads carry IDs only).
+
 ## 3. Worker runtime
 
 ```
@@ -61,6 +63,13 @@ RETURNING *;
 - Other exceptions or exhausted attempts → `status='dead'`, `last_error_code`/`detail`; the handler's `on_dead` hook updates domain state (e.g., draft `failed`, command `failed`) and notifies when user-relevant.
 - **Lease** default 120 s (`JOB_LEASE_SECONDS`). Long handlers (publish polling) extend their lease by calling `heartbeat()`. A handler must **never** keep a DB transaction open across an external call.
 
+Implementation notes (Phase 1):
+- **Fencing.** Every outcome update (`succeeded`, retry, `dead`) and every heartbeat is conditional: `UPDATE jobs … WHERE id = :id AND status = 'running' AND locked_by = :worker AND attempts = :n`. An execution that lost its lease (another worker reclaimed the job after expiry) updates nothing, logs `job_lease_lost` and leaves the outcome to the new owner. `heartbeat()` raises `JobLeaseLost` in that case, which aborts the handler without finalising.
+- **Dead-letter causes.** Unregistered job type or invalid payload → `dead`, `JOB_PAYLOAD_INVALID` (the detail names fields and error types, never values, and the handler's `on_dead` is not called because there is no valid payload). A job reclaimed after more lease expiries than `max_attempts` (the handler keeps crashing) → `dead`, `INTERNAL_ERROR`, without running again. Any unexpected exception → `dead` immediately, `INTERNAL_ERROR` (no retry: only `RetryableError` retries). An `AppError` → `dead` with its own code. `last_error_detail` is truncated to 500 characters and values after `token|secret|password|authorization|api_key|cookie` are redacted. A failing `on_dead` hook is logged and does not change the `dead` state.
+- **`timeout`** in `@job_handler(…, timeout=…)` is the lease (seconds) taken for that job type when it is longer than `JOB_LEASE_SECONDS`. Python threads cannot be killed, so it is not a hard execution limit.
+- `RetryableError(code, detail, retry_after_seconds=…)` lives in `core/errors.py`. `retry_after_seconds` overrides the backoff schedule.
+- **Shutdown** uses one shared 30 s deadline for all worker threads (not 30 s per thread).
+
 **Concurrency:** `WORKER_CONCURRENCY` threads per process (default 2), each running the loop. Multiple worker processes are safe (SKIP LOCKED).
 
 **Shutdown:** on SIGTERM/SIGINT, stop claiming and let the current jobs finish up to 30 s. Unfinished jobs are recovered through lease expiry.
@@ -69,7 +78,7 @@ RETURNING *;
 
 ## 4. Scheduler (inside the worker)
 
-Every 60 s, one scheduler tick (guarded by `pg_try_advisory_lock(<constant>)`, so only one worker process schedules) enqueues periodic jobs with deterministic dedup keys:
+Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>)` held for the tick's transaction, so only one worker process schedules; a process that does not get the lock skips the tick) enqueues periodic jobs with deterministic dedup keys. Periodic functions are registered with `register_periodic(fn(session, clock) -> int)` in `jobs/scheduler.py`; each runs in its own savepoint so one failing function cannot block the others. **No periodic job is registered in Phase 1**; the table below is the plan for later phases:
 
 | Periodic job | Cadence | Dedup key |
 |---|---|---|

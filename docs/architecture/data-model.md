@@ -56,7 +56,7 @@ Phase = the phase whose migration creates the table ([roadmap.md](../implementat
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid PK | |
-| email | text not null | stored normalised (trimmed, lowercased); `unique` |
+| email | text not null | stored normalised (trimmed, lowercased); `unique`; `CHECK (email = lower(btrim(email)))` |
 | password_hash | text not null | argon2id |
 | display_name | text not null | |
 | ui_locale | text not null default 'tr' | `CHECK in ('tr','en')` |
@@ -84,9 +84,9 @@ Phase = the phase whose migration creates the table ([roadmap.md](../implementat
 | business_category | text not null | `CHECK in ('gym','pilates_studio','other')` |
 | market | text not null | `CHECK in ('tr','global')` |
 | default_locale | text not null | `tr` / `en` |
-| reply_languages | text[] not null default '{tr}' | subset of supported reply languages |
-| timezone | text not null | IANA name; validated in service |
-| currency | char(3) not null | ISO 4217 |
+| reply_languages | text[] not null default '{tr}' | subset of supported reply languages. The DB default applies to raw inserts only; `create_workspace` sets `[default_locale]` |
+| timezone | text not null | IANA name; validated in service against `zoneinfo.available_timezones()` |
+| currency | char(3) not null | ISO 4217 (`CHECK ~ '^[A-Z]{3}$'`); the service accepts only codes in current tender use (Babel/CLDR), not historic codes or `XXX` |
 | is_demo | boolean not null default false | only demo workspaces may use mock providers in production config |
 | status | text not null default 'active' | `active`, `deleting` |
 | settings | jsonb not null default '{}' | validated by `WorkspaceSettings`: `disclosure_enabled` (default true), `disclosure_text{tr,en}`, `daily_report_hour` (default 20), `publish_max_delay_minutes` (default 360) |
@@ -101,7 +101,7 @@ Phase = the phase whose migration creates the table ([roadmap.md](../implementat
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid PK | |
-| workspace_id | uuid null | null for system-level events (e.g., invalid webhook signature) |
+| workspace_id | uuid null | null for system-level events (e.g., invalid webhook signature). **Not a foreign key**: audit rows must survive workspace deletion without being updated or cascaded |
 | occurred_at | timestamptz not null | from `Clock` |
 | actor_type | text not null | `user`, `system`, `agent`, `provider` |
 | actor_id | text null | user ID, job type, agent run ID, provider name |
@@ -131,7 +131,7 @@ Index: `(workspace_id, occurred_at desc)`, `(workspace_id, action, occurred_at d
 | correlation_id | uuid null | |
 | finished_at | timestamptz null | |
 
-Indexes: `ix_jobs_due (run_at, priority) where status = 'queued'`; `ix_jobs_lease (lease_expires_at) where status = 'running'`.
+Indexes: `ix_jobs_due (run_at, priority) where status = 'queued'`; `ix_jobs_lease (lease_expires_at) where status = 'running'`; `uq_jobs_dedup_key_active` (unique on `dedup_key` where `status in ('queued','running')`); `ix_jobs_correlation_id`.
 
 ### 3.3 Knowledge (Phase 2; `approved_answers` and `fact_references` Phase 3–4)
 

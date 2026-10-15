@@ -1,0 +1,149 @@
+{
+  "app": {
+    "name": "AgentNest",
+    "skipToContent": "Skip to content"
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "inbox": "Inbox",
+    "content": "Content",
+    "approvals": "Approvals",
+    "more": "More"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Try again",
+    "language": "Language"
+  },
+  "auth": {
+    "title": "Sign in",
+    "subtitle": "Run your Instagram operations from one place.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…"
+  },
+  "workspaces": {
+    "pickerTitle": "Choose a workspace",
+    "pickerHint": "Pick a workspace to continue.",
+    "none": "You do not have a workspace yet.",
+    "switcherLabel": "Workspace",
+    "switch": "Switch workspace",
+    "demoTag": "Demo",
+    "role": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "staff": "Staff"
+    }
+  },
+  "banner": {
+    "simulation": "Demo workspace — simulation",
+    "simulationDetail": "This workspace is simulated; nothing is sent to real Instagram."
+  },
+  "badge": {
+    "simulated": "SIMULATED"
+  },
+  "status": {
+    "draft": "Draft",
+    "pending_approval": "Awaiting approval",
+    "needs_human": "Needs you",
+    "scheduled": "Scheduled",
+    "on_hold": "On hold",
+    "sending": "Sending",
+    "publishing": "Publishing",
+    "checking": "Checking",
+    "sent": "Sent",
+    "published": "Published",
+    "failed": "Failed",
+    "expired": "Expired"
+  },
+  "empty": {
+    "comingLater": "This section arrives in a later phase",
+    "comingLaterHint": "For now the basic structure of your workspace is in place."
+  },
+  "home": {
+    "title": "Home",
+    "welcome": "Hello, {{name}}",
+    "workspace": "Workspace",
+    "yourRole": "Your role",
+    "timezone": "Time zone",
+    "currency": "Currency"
+  },
+  "inbox": {
+    "title": "Inbox"
+  },
+  "content": {
+    "title": "Content"
+  },
+  "approvals": {
+    "title": "Approvals"
+  },
+  "more": {
+    "title": "More",
+    "settings": "Settings",
+    "switchWorkspace": "Switch workspace",
+    "signOut": "Sign out"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageHint": "Choose the interface language. Your choice is saved to your account.",
+    "languages": {
+      "tr": "Türkçe",
+      "en": "English"
+    },
+    "account": "Account",
+    "signedInAs": "Signed in as"
+  },
+  "notFound": {
+    "title": "Not found",
+    "body": "The page or workspace you are looking for was not found.",
+    "back": "Back to my workspaces"
+  },
+  "errors": {
+    "AUTH_REQUIRED": {
+      "what": "You are not signed in.",
+      "next": "Please sign in."
+    },
+    "INVALID_CREDENTIALS": {
+      "what": "Email or password is incorrect.",
+      "next": "Check your details and try again."
+    },
+    "CSRF_FAILED": {
+      "what": "The session check failed.",
+      "next": "Reload the page and try again."
+    },
+    "FORBIDDEN": {
+      "what": "Your role cannot do this.",
+      "next": "Ask the workspace owner for help."
+    },
+    "NOT_FOUND": {
+      "what": "We could not find what you were looking for.",
+      "next": "Check the address or go back to the home page."
+    },
+    "VALIDATION_FAILED": {
+      "what": "Some fields are invalid.",
+      "next": "Fix the highlighted fields."
+    },
+    "CONFLICT_STATE": {
+      "what": "This action is not possible in the current state.",
+      "next": "Reload the page and try again."
+    },
+    "INTERNAL_ERROR": {
+      "what": "Something went wrong.",
+      "next": "Try again. If it keeps happening, share the request ID."
+    },
+    "NETWORK_ERROR": {
+      "what": "The server could not be reached.",
+      "next": "Check your connection and try again."
+    },
+    "UNKNOWN": {
+      "what": "An unexpected error occurred.",
+      "next": "Try again."
+    },
+    "requestId": "Request ID: {{id}}"
+  }
+}

@@ -14,9 +14,18 @@
 | Simulated message produces no draft | Conversation in *human* mode, or the debounce delay (8 s) not elapsed | Release the conversation; wait or run due jobs |
 | Draft says *Size devredildi* for a simple price question | Price fact unverified/contested, or `price_disclosure=do_not_share` | Business knowledge: verify the fact or resolve the suggestion |
 | Webhook returns 401 in the simulator | `MOCK_INSTAGRAM_APP_SECRET` differs between the simulator and the API process | Use one `.env`; restart both processes |
-| `npm run gen:api` diff fails in CI | Backend schema changed without regenerating | `uv run python -m app.cli export-openapi > ../frontend/openapi.json && npm run gen:api`; commit both |
-| i18n check fails | Key missing in `tr` or `en` | Add the key to both catalogs |
-| Playwright WebKit fails to launch on Windows | Browsers not installed | `npx playwright install --with-deps` |
+| `npm run gen:api` diff fails in CI | Backend schema changed without regenerating | `cd backend && uv run python -m app.cli export-openapi -o ../frontend/openapi.json`, then `cd ../frontend && npm run gen:api`; commit both |
+| `openapi.json` is unreadable / "invalid JSON" after export | Output redirected with `>` in Windows PowerShell 5.1 (writes UTF-16) | Use the `-o` option instead of `>` |
+| `&&` or `cp` fails in PowerShell | Windows PowerShell 5.1 has no `&&`; `cp` is `Copy-Item` | Use `;` between commands and `Copy-Item .env.example .env` |
+| i18n check fails | Key missing in `tr` or `en`, different `{{placeholders}}`, or `t("x")` with an unknown key | Add/fix the key in both catalogs; the message names the file and key |
+| Playwright WebKit fails to launch on Windows | Browsers not installed | `npx playwright install chromium webkit` |
+| `npm run e2e` fails at global setup | Postgres not running or migrations not applied | `docker compose up -d postgres`, then `uv run alembic upgrade head` in `backend/` |
+| `npm run e2e`: "port 8000/5173 already in use" by something that is not the app | Another process owns the port (the runner reuses a *healthy* API/Vite, but not a foreign process) | Stop it, or free the port |
+| `database "agentnest_test" does not exist` | Postgres volume created before the init script existed | `docker compose exec postgres psql -U agentnest -c "CREATE DATABASE agentnest_test OWNER agentnest;"` |
+| pytest: `refusing to run tests against database …` | `TEST_DATABASE_URL` does not point at a database ending in `_test` | Fix `TEST_DATABASE_URL` in `.env`; the test session drops and recreates that schema |
+| Startup error `Refusing to start, unsafe configuration` | `APP_ENV=production` with demo tools on, an example/short `SECRET_KEY`, insecure cookies or no explicit `DATABASE_URL` | Fix the variables listed in the message; generate a key with `uv run python -m app.cli generate-key` |
+| `seed` fails with `DEMO_PASSWORD must be at least 10 characters` | `DEMO_PASSWORD` too short or a common password | Set a longer `DEMO_PASSWORD` in `.env` |
+| `seed` says it refuses to run | `APP_ENV=production` | The seed is for development and test only |
 | Line-ending noise in diffs on Windows | Git autocrlf | The repo's `.gitattributes` enforces LF; run `git add --renormalize .` once |
 | Real LLM mode returns `LLM_BUDGET_EXCEEDED` | Daily cap reached | Increase `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` or wait for the next UTC day |
 | Real LLM mode fails with authentication errors | Missing or invalid `ANTHROPIC_API_KEY` | Set the key in `.env` and restart API and worker; or switch back to `LLM_PROVIDER=fake` |

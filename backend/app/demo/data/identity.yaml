@@ -1,0 +1,51 @@
+# Demo identity data (docs/operations/local-development.md §5).
+# All users share the password from DEMO_PASSWORD. All workspaces are demo workspaces.
+users:
+  - email: owner@demo.local
+    display_name: Demo Sahip
+    ui_locale: tr
+  - email: manager@demo.local
+    display_name: Demo Yönetici
+    ui_locale: tr
+  - email: staff@demo.local
+    display_name: Demo Personel
+    ui_locale: tr
+  - email: other@demo.local
+    display_name: Other Owner
+    ui_locale: en
+
+workspaces:
+  - slug: golkent-fitness
+    name: Gölkent Fitness & Pilates
+    business_category: gym
+    market: tr
+    default_locale: tr
+    timezone: Europe/Istanbul
+    currency: TRY
+    members:
+      owner@demo.local: owner
+      manager@demo.local: manager
+      staff@demo.local: staff
+
+  - slug: harbor-pilates
+    name: Harbor Pilates Studio
+    business_category: pilates_studio
+    market: global
+    default_locale: en
+    timezone: Europe/Lisbon
+    currency: EUR
+    members:
+      owner@demo.local: owner
+      manager@demo.local: manager
+      staff@demo.local: staff
+
+  # Not shared with the users above: used to demonstrate tenant isolation.
+  - slug: other-workspace
+    name: Other Workspace
+    business_category: other
+    market: global
+    default_locale: en
+    timezone: Europe/Berlin
+    currency: EUR
+    members:
+      other@demo.local: owner

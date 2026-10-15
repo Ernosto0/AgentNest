@@ -24,7 +24,9 @@ The dev panel exposes "Trace" for any draft, content item or command. It shows t
 
 - structlog. JSON in production, coloured console in development. One event per line.
 - Standard fields: `ts`, `level`, `event`, `logger`, `env`, plus bound context IDs (§1), `workspace_id`, `user_id` (never email), `duration_ms` where relevant.
-- **Never logged:** tokens, secrets, cookies, authorization headers, passwords, OAuth codes, message or caption text, pasted text, customer handles. (A redaction processor is a safety net, not the primary control.)
+- **Never logged:** tokens, secrets, cookies, authorization headers, passwords, OAuth codes, message or caption text, pasted text, customer handles. (A redaction processor is a safety net, not the primary control.) The processor masks the value of any key containing `token` (but not the plural `tokens`, which is a usage counter), `secret`, `password`, `passwd`, `authorization`, `cookie` or `api_key`, and of the exact key `code` (so `error_code` stays readable); it recurses into dicts and lists, masks `Bearer …`/`Basic …` values, and leaves booleans and nulls alone (`cookie_secure=true` is a flag, not a secret).
+- Logs are written to **stderr**.
+- The request log line (`request`) carries `request_id`, `method`, `path` (without the query string), `status`, `duration_ms` and, when known, `user_id` and `workspace_id`.
 - Levels: `INFO` for state transitions and external call outcomes; `WARNING` for retries, degraded accounts and validation failures of AI output; `ERROR` for dead jobs, unexpected exceptions and signature-failure bursts.
 - Every external call logs: `provider`, `method`, `operation_id`, `outcome` (ok / error code), `duration_ms`, `http_status` (when meaningful).
 

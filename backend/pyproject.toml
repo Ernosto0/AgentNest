@@ -1,0 +1,113 @@
+[project]
+name = "agentnest-backend"
+version = "0.1.0"
+description = "AgentNest backend: API, worker and CLI"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2",
+    "alembic>=1.13",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.4",
+    "structlog>=24.1",
+    "argon2-cffi>=23.1",
+    "httpx>=0.27",
+    "babel>=2.15",
+    "pyyaml>=6.0",
+    "tzdata>=2024.1",  # zoneinfo database on Windows
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "import-linter>=2.0",
+    "types-pyyaml>=6.0",
+    "httpx2>=2.13.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "S", "C4", "PT"]
+ignore = [
+    "B008",  # FastAPI Depends() in defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S311", "PT011", "PT018"]
+"app/cli.py" = ["S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["app"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"
+markers = [
+    "commits: test performs real commits (queue/concurrency); tables are truncated afterwards",
+    "invariant(id): test proves the named invariant (INV-nn)",
+    "meta_live: needs live Meta credentials (never run in CI)",
+]
+
+[tool.importlinter]
+root_package = "app"
+
+[[tool.importlinter.contracts]]
+name = "core imports nothing from the rest of the app"
+type = "forbidden"
+source_modules = ["app.core"]
+forbidden_modules = [
+    "app.identity",
+    "app.audit",
+    "app.jobs",
+    "app.api",
+    "app.demo",
+    "app.main",
+    "app.worker",
+    "app.cli",
+]
+
+[[tool.importlinter.contracts]]
+name = "audit and jobs depend only on core"
+type = "forbidden"
+source_modules = ["app.audit", "app.jobs"]
+forbidden_modules = ["app.identity", "app.api", "app.demo", "app.main", "app.worker", "app.cli"]
+
+[[tool.importlinter.contracts]]
+name = "services, repositories and models do not import the API layer"
+type = "forbidden"
+source_modules = [
+    "app.core",
+    "app.audit",
+    "app.jobs",
+    "app.identity.service",
+    "app.identity.repository",
+    "app.identity.models",
+    "app.identity.schemas",
+    "app.identity.permissions",
+]
+forbidden_modules = ["app.api", "app.main"]
+
+[[tool.importlinter.contracts]]
+name = "demo is imported only by main and cli"
+type = "forbidden"
+source_modules = ["app.core", "app.identity", "app.audit", "app.jobs", "app.api", "app.worker"]
+forbidden_modules = ["app.demo"]

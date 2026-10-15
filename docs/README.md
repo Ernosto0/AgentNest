@@ -51,7 +51,8 @@ docs/
 │   ├── roadmap.md                phases, gates, research track, working agreement, risks
 │   ├── task-breakdown.md         task index and per-task protocol
 │   ├── testing-strategy.md       test layers, failure matrix, AI evals, CI
-│   └── phases/                   phase-01 … phase-09
+│   ├── phases/                   phase-01 … phase-09
+│   └── phase-summaries/          one review summary per finished phase
 ├── operations/
 │   ├── local-development.md      setup, run, seed, simulate, inspect, reset, demo script
 │   ├── environment-variables.md  every variable, defaults, secrets

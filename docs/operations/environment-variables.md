@@ -25,6 +25,8 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `JOB_LEASE_SECONDS` | `120` | `120` | |
 | `PRODUCT_NAME` | `AgentNest` | configurable | Shown in UI and notifications (OQ-10) |
 
+**Production safety checks (Phase 1, enforced at startup of the API, worker and CLI):** `SECRET_KEY` set explicitly, at least 32 bytes and not the example value; `DATABASE_URL` set explicitly; `DEMO_TOOLS_ENABLED=false`; `COOKIE_SECURE=true`. When these are not set in production they default to the safe values (`DEMO_TOOLS_ENABLED=false`, `COOKIE_SECURE=true`, `LOG_FORMAT=json`); setting an unsafe value explicitly refuses to start, and all problems are listed together. The seed (`seed`) refuses to run when `APP_ENV=production`. Checks for variables introduced later (fake LLM, mock Instagram, Meta keys, S3) are added by the phase that introduces the variable. Variables in `.env` that the current phase does not know yet are ignored.
+
 ## AI (Phase 3)
 
 | Variable | dev | prod | Description |
