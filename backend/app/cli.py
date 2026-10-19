@@ -42,6 +42,8 @@ def cmd_seed(args: argparse.Namespace) -> int:
     )
     for slug, added in report.seeded_facts.items():
         print(f"Facts:       {slug}: {added} added")
+    for slug in report.connected_accounts:
+        print(f"Instagram:   {slug}: simulated account connected")
     print("Log in as owner@demo.local / manager@demo.local / staff@demo.local / other@demo.local")
     print("with the value of DEMO_PASSWORD.")
     return 0

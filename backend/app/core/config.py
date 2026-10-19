@@ -23,7 +23,16 @@ MIN_SECRET_KEY_BYTES = 32
 
 # Never included in ``Settings.public_dict()`` (logs, /meta, diagnostics).
 _SECRET_FIELDS = frozenset(
-    {"secret_key", "demo_password", "database_url", "test_database_url", "openai_api_key"}
+    {
+        "secret_key",
+        "demo_password",
+        "database_url",
+        "test_database_url",
+        "openai_api_key",
+        "mock_instagram_app_secret",
+        "meta_webhook_verify_token",
+        "meta_app_secret",
+    }
 )
 
 # Per-task model overrides: task name -> Settings field (agent-runtime.md §10).
@@ -84,6 +93,18 @@ class Settings(BaseSettings):
     # cost estimates in evals and system health. Unknown models have no estimate.
     llm_price_table: str = ""
 
+    # --- Instagram (Phase 4, ADR-010). Mock only by default (INV-14). ---
+    # Comma-separated provider kinds that may be connected and that receive webhooks.
+    instagram_enabled_providers: str = "mock"
+    # Permits mock accounts on ``is_demo`` workspaces in production.
+    allow_simulated_workspaces: bool = True
+    # Development placeholders; production requires real values for the enabled providers.
+    mock_instagram_app_secret: SecretStr = SecretStr("dev-mock-instagram-app-secret")
+    meta_webhook_verify_token: SecretStr = SecretStr("dev-meta-webhook-verify-token")
+    meta_app_secret: SecretStr = SecretStr("")
+    reply_debounce_seconds: int = Field(default=8, ge=0)
+    send_reconcile_window_minutes: int = Field(default=10, ge=1)
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _upper_log_level(cls, value: Any) -> Any:
@@ -101,6 +122,10 @@ class Settings(BaseSettings):
             self.cookie_secure = True
         if "log_format" not in explicit:
             self.log_format = "json"
+        if "allow_simulated_workspaces" not in explicit:
+            self.allow_simulated_workspaces = False
+        if "instagram_enabled_providers" not in explicit:
+            self.instagram_enabled_providers = "meta"
         problems = self.safety_problems()
         if problems:
             raise ConfigError(problems)
@@ -130,6 +155,40 @@ class Settings(BaseSettings):
             problems.append("OPENAI_API_KEY must be set when LLM_PROVIDER=openai.")
         if self.llm_provider == "openai" and not self.llm_model_default.strip():
             problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
+        problems.extend(self._instagram_problems())
+        return problems
+
+    @property
+    def instagram_providers(self) -> frozenset[str]:
+        """The enabled provider kinds (``mock``, ``meta``)."""
+        return frozenset(
+            p.strip().lower() for p in self.instagram_enabled_providers.split(",") if p.strip()
+        )
+
+    def _instagram_problems(self) -> list[str]:
+        problems: list[str] = []
+        kinds = self.instagram_providers
+        unknown = kinds - {"mock", "meta"}
+        if unknown:
+            problems.append(f"INSTAGRAM_ENABLED_PROVIDERS has unknown kinds: {sorted(unknown)}.")
+        explicit = self.model_fields_set
+        if "mock" in kinds:
+            if not self.allow_simulated_workspaces:
+                problems.append(
+                    "INSTAGRAM_ENABLED_PROVIDERS contains 'mock' in production, which requires "
+                    "ALLOW_SIMULATED_WORKSPACES=true."
+                )
+            if "mock_instagram_app_secret" not in explicit or not (
+                self.mock_instagram_app_secret.get_secret_value()
+            ):
+                problems.append("MOCK_INSTAGRAM_APP_SECRET must be set when 'mock' is enabled.")
+        if "meta" in kinds:
+            if not self.meta_app_secret.get_secret_value():
+                problems.append("META_APP_SECRET must be set when 'meta' is enabled.")
+            if "meta_webhook_verify_token" not in explicit or not (
+                self.meta_webhook_verify_token.get_secret_value()
+            ):
+                problems.append("META_WEBHOOK_VERIFY_TOKEN must be set when 'meta' is enabled.")
         return problems
 
     def llm_model_for(self, task: str) -> str:

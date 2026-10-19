@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
 export const DEMO_PASSWORD = process.env.E2E_DEMO_PASSWORD ?? "demo-password";
-export const API = "http://localhost:8000";
+export const API = `http://localhost:${process.env.E2E_API_PORT ?? "8000"}`;
 
 export interface Membership {
   workspace_id: string;

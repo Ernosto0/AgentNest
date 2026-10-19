@@ -13,6 +13,7 @@ from app.core.i18n import SUPPORTED_LOCALES
 from app.identity.router import auth_router, workspaces_router
 from app.knowledge.router import router as knowledge_router
 from app.notifications.router import router as notifications_router
+from app.operations.accounts_router import router as social_accounts_router
 
 health_router = APIRouter(tags=["health"])
 # CSRF is enforced for every unsafe method under /api/v1 by default (see deps.enforce_csrf).
@@ -60,3 +61,4 @@ api_router.include_router(knowledge_router)
 api_router.include_router(approvals_router)
 api_router.include_router(commands_router)
 api_router.include_router(notifications_router)
+api_router.include_router(social_accounts_router)

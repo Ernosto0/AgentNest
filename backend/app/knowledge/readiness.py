@@ -9,7 +9,7 @@ contested), so a contested or expired fact lowers readiness. Levels:
   prices are not shared), at least one service, a connected account and a reviewed
   automation policy.
 
-The account requirement reports ``not_connected`` until Phase 4 provides connected accounts.
+The account requirement reports ``not_connected`` until the workspace has a connected account.
 """
 
 from collections.abc import Mapping
@@ -24,6 +24,7 @@ from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity import repository as identity_repo
 from app.identity.schemas import WorkspaceSettings
+from app.integrations.instagram import queries as account_queries
 from app.knowledge import service
 from app.knowledge.templates import Template, load_template
 
@@ -167,14 +168,21 @@ def compute_readiness(
 
 
 def readiness(
-    session: Session, clock: Clock, ctx: WorkspaceContext, *, account_connected: bool = False
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    *,
+    account_connected: bool | None = None,
 ) -> Readiness:
-    """Readiness of the workspace now. ``account_connected`` is wired up in Phase 4."""
+    """Readiness of the workspace now. ``account_connected`` is read from the workspace's
+    social account unless a caller already knows it."""
     workspace = identity_repo.get_workspace(session, ctx)
     if workspace is None:
         raise AppError("NOT_FOUND")
     usable = {f.key: f.value for f in service.usable_facts(session, clock, ctx)}
     settings = WorkspaceSettings.model_validate(workspace.settings)
+    if account_connected is None:
+        account_connected = account_queries.has_connected_account(session, ctx.workspace_id)
     return compute_readiness(
         load_template(workspace.business_category),
         usable,

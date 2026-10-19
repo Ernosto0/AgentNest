@@ -21,6 +21,7 @@ from app.approvals import service as approvals_service
 from app.commands.models import OwnerCommand
 from app.core.clock import FrozenClock
 from app.identity.models import User, Workspace
+from app.integrations.instagram.models import SocialAccount
 from app.notifications import service as notifications_service
 from tests.factories import (
     create_candidate,
@@ -93,6 +94,15 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         created_at=clock.now(),
     )
     db_session.add(b_run)
+    # Phase 4: B's simulated Instagram account.
+    b_account = SocialAccount(
+        workspace_id=b.id,
+        provider_kind="mock",
+        external_account_id="mock-isolation-b",
+        username="b.demo",
+        status="connected",
+    )
+    db_session.add(b_account)
     db_session.commit()
     return TwoWorkspaces(
         app=app,
@@ -110,5 +120,6 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "notification_id": str(b_notification.id),
             "command_id": str(b_command.id),
             "run_id": str(b_run.id),
+            "account_id": str(b_account.id),
         },
     )

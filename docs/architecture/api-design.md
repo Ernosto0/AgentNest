@@ -127,7 +127,7 @@ Commands are private to the member who typed them (another member's id → 404).
 ### 2.9 Integrations (mock Phase 4; Meta Phase 7)
 | Method & path | Notes |
 |---|---|
-| `GET /…/social-accounts` | `[{id, platform, provider_kind, username, status, capabilities, token_expires_at, last_error_code, is_simulated}]` (no token fields) |
+| `GET /…/social-accounts` | `[{id, platform, provider_kind, username, status, capabilities, connection_expires_at, last_error_code, is_simulated}]` (no token fields; the expiry is named `connection_expires_at` so the response-schema secret scan stays strict) |
 | `POST /…/social-accounts/mock` | connect a simulated account (only if `mock` is enabled and allowed for the workspace) |
 | `POST /…/social-accounts/instagram/connect` | → `{authorize_url}` (Phase 7) |
 | `GET /oauth/instagram/callback` | OAuth redirect target (Phase 7) |

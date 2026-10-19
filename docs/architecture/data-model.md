@@ -452,6 +452,7 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 
 | Table | Purpose | Key constraint |
 |---|---|---|
+| `sim_inbound_messages` | Customer messages the simulator delivered (`sender_id`, `mid`, `received_at`); the mock derives the 24 h messaging window from these, independently of the application's `messages` | `unique (social_account_id, mid)` |
 | `sim_sent_messages` | Messages the simulator "delivered" (`message_id`, `recipient_id`, `text`, `sent_at`) | `unique (message_id)` |
 | `sim_containers` | Media containers (`container_id`, `media_type`, `media_url`, `caption`, `status`, `ready_at`, `expires_at`, `published_media_id`) | `unique (container_id)` |
 | `sim_published_media` | Published posts and stories (`media_id`, `container_id`, `permalink`, `published_at`) | `unique (container_id)`, so a container can never publish twice |

@@ -1,6 +1,6 @@
 """Seed demo data: users, workspaces and memberships (Phase 1), business facts (Phase 2).
 
-Later phases extend the seed (accounts, history). The seed is idempotent: existing users,
+Later phases extend the seed (history, content). The seed is idempotent: existing users,
 workspaces and facts are left alone; ``reset=True`` removes the seeded ones first.
 """
 
@@ -17,6 +17,7 @@ from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import ActorRef
+from app.demo.connections_seed import seed_connections
 from app.demo.facts_seed import seed_facts
 from app.identity import repository as repo
 from app.identity import service
@@ -86,6 +87,7 @@ class SeedReport:
     removed_users: int = 0
     removed_workspaces: int = 0
     seeded_facts: dict[str, int] = field(default_factory=dict)  # workspace slug -> items added
+    connected_accounts: list[str] = field(default_factory=list)  # slugs given a simulated account
 
 
 def reset_identity_data(session: Session, data: SeedData) -> tuple[int, int]:
@@ -184,4 +186,5 @@ def seed(
     # Facts are seeded separately from workspace creation: a workspace that already exists
     # (for example from Phase 1) still receives the facts it is missing.
     report.seeded_facts = seed_facts(session_factory, clock)
+    report.connected_accounts = seed_connections(session_factory, clock)
     return report

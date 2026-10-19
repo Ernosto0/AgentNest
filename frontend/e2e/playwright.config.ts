@@ -4,6 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
 const CI = Boolean(process.env.CI);
 const backendDir = fileURLToPath(new URL("../../backend", import.meta.url));
 const frontendDir = fileURLToPath(new URL("..", import.meta.url));
+// Ports can be moved (e.g. a second checkout running its own stack); the defaults are the documented ones.
+const API_PORT = process.env.E2E_API_PORT ?? "8000";
+const WEB_PORT = process.env.E2E_WEB_PORT ?? "5173";
 
 /**
  * End-to-end tests run against the real stack: Postgres (docker compose) with migrations
@@ -21,7 +24,7 @@ export default defineConfig({
   retries: CI ? 1 : 0,
   reporter: CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: `http://localhost:${WEB_PORT}`,
     trace: "retain-on-failure",
     // The primary market: the app picks the browser language until an account language is known.
     locale: "tr-TR",
@@ -34,9 +37,9 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "uv run uvicorn app.main:create_app --factory --port 8000",
+      command: `uv run uvicorn app.main:create_app --factory --port ${API_PORT}`,
       cwd: backendDir,
-      url: "http://localhost:8000/readyz",
+      url: `http://localhost:${API_PORT}/readyz`,
       reuseExistingServer: !CI,
       timeout: 60_000,
     },
@@ -52,10 +55,10 @@ export default defineConfig({
     {
       // CI serves the production build; locally the dev server is faster to start.
       command: CI
-        ? "npm run build && npm run preview -- --strictPort"
-        : "npm run dev -- --strictPort",
+        ? `npm run build && npm run preview -- --strictPort --port ${WEB_PORT}`
+        : `npm run dev -- --strictPort --port ${WEB_PORT}`,
       cwd: frontendDir,
-      url: "http://localhost:5173",
+      url: `http://localhost:${WEB_PORT}`,
       reuseExistingServer: !CI,
       timeout: 120_000,
     },

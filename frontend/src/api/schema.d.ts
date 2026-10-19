@@ -532,6 +532,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/social-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Accounts */
+        get: operations["list_accounts_api_v1_workspaces__workspace_id__social_accounts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/social-accounts/mock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Connect Mock Account */
+        post: operations["connect_mock_account_api_v1_workspaces__workspace_id__social_accounts_mock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/social-accounts/{account_id}/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disconnect Account */
+        post: operations["disconnect_account_api_v1_workspaces__workspace_id__social_accounts__account_id__disconnect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1011,6 +1062,11 @@ export interface components {
             /** Supported Locales */
             supported_locales: string[];
         };
+        /** MockAccountCreate */
+        MockAccountCreate: {
+            /** Username */
+            username?: string | null;
+        };
         /** NotificationList */
         NotificationList: {
             /** Items */
@@ -1091,6 +1147,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[SocialAccountOut] */
+        Page_SocialAccountOut_: {
+            /** Items */
+            items: components["schemas"]["SocialAccountOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[VersionOut] */
         Page_VersionOut_: {
             /** Items */
@@ -1136,6 +1199,35 @@ export interface components {
             satisfied: boolean;
             /** Status */
             status: string;
+        };
+        /**
+         * SocialAccountOut
+         * @description An allow-list: no credential, token or key column is ever part of a response.
+         */
+        SocialAccountOut: {
+            /** Capabilities */
+            capabilities: {
+                [key: string]: unknown;
+            };
+            /** Connection Expires At */
+            connection_expires_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /** Platform */
+            platform: string;
+            /** Provider Kind */
+            provider_kind: string;
+            /** Status */
+            status: string;
+            /** Username */
+            username: string | null;
         };
         /**
          * SubjectLinkOut
@@ -2505,6 +2597,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadinessOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_accounts_api_v1_workspaces__workspace_id__social_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_SocialAccountOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    connect_mock_account_api_v1_workspaces__workspace_id__social_accounts_mock_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MockAccountCreate"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialAccountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_account_api_v1_workspaces__workspace_id__social_accounts__account_id__disconnect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialAccountOut"];
                 };
             };
             /** @description Validation Error */

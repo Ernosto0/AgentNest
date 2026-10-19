@@ -45,7 +45,7 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | Variable | dev | prod | Description |
 |---|---|---|---|
 | `INSTAGRAM_ENABLED_PROVIDERS` | `mock` | `meta` (+`mock` only with `ALLOW_SIMULATED_WORKSPACES`) | Comma list |
-| `ALLOW_SIMULATED_WORKSPACES` | `true` | `false` (default) | Permits mock accounts on `is_demo` workspaces in prod |
+| `ALLOW_SIMULATED_WORKSPACES` | `true` | `false` (default) | Permits mock accounts on `is_demo` workspaces in prod. Production refuses `mock` in `INSTAGRAM_ENABLED_PROVIDERS` unless this is `true`, and refuses a missing mock/Meta secret for an enabled provider (Phase 4) |
 | `MOCK_INSTAGRAM_APP_SECRET` 🔒 | dev placeholder | required if mock enabled | Signs simulated webhooks |
 | `META_WEBHOOK_VERIFY_TOKEN` 🔒 | dev placeholder | required if meta | Handshake token |
 | `META_APP_ID` | empty | required if meta | |

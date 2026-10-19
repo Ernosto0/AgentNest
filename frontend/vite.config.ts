@@ -5,7 +5,7 @@ import { defineConfig } from "vitest/config";
 
 // The API serves /api, /webhooks and /oauth. The proxy keeps the SPA and the API on one
 // origin in development, so the session cookie is first-party and CORS is not involved.
-const API_TARGET = "http://localhost:8000";
+const API_TARGET = `http://localhost:${process.env.E2E_API_PORT ?? "8000"}`;
 const proxy = Object.fromEntries(
   ["/api", "/webhooks", "/oauth"].map((path) => [path, { target: API_TARGET, changeOrigin: false }]),
 );

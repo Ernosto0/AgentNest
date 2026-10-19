@@ -22,6 +22,11 @@ def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "LLM_PROVIDER",
         "OPENAI_API_KEY",
         "LLM_MODEL_DEFAULT",
+        "INSTAGRAM_ENABLED_PROVIDERS",
+        "ALLOW_SIMULATED_WORKSPACES",
+        "MOCK_INSTAGRAM_APP_SECRET",
+        "META_WEBHOOK_VERIFY_TOKEN",
+        "META_APP_SECRET",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -33,6 +38,8 @@ def prod(**overrides: object) -> Settings:
         "database_url": PROD_DB,
         "llm_provider": "openai",
         "openai_api_key": "sk-test-key",
+        "meta_app_secret": "meta-secret",
+        "meta_webhook_verify_token": "verify-token",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)  # type: ignore[arg-type]
@@ -127,3 +134,46 @@ def test_public_dict_contains_no_secrets() -> None:
 
 def test_log_level_is_case_insensitive() -> None:
     assert Settings(_env_file=None, log_level="debug").log_level == "DEBUG"
+
+
+def test_production_defaults_to_the_real_provider_only() -> None:
+    settings = prod()
+    assert settings.instagram_providers == {"meta"}
+    assert settings.allow_simulated_workspaces is False
+
+
+def test_mock_provider_needs_allow_simulated_workspaces_in_production() -> None:
+    with pytest.raises(ConfigError, match="ALLOW_SIMULATED_WORKSPACES"):
+        prod(instagram_enabled_providers="meta,mock", mock_instagram_app_secret="s")
+
+
+def test_mock_provider_is_accepted_for_demo_workspaces_with_a_real_secret() -> None:
+    settings = prod(
+        instagram_enabled_providers="meta,mock",
+        allow_simulated_workspaces=True,
+        mock_instagram_app_secret="mock-secret",
+    )
+    assert settings.instagram_providers == {"meta", "mock"}
+
+
+def test_mock_secret_must_be_set_explicitly_in_production() -> None:
+    with pytest.raises(ConfigError, match="MOCK_INSTAGRAM_APP_SECRET"):
+        prod(instagram_enabled_providers="mock", allow_simulated_workspaces=True)
+
+
+def test_meta_needs_its_secrets_in_production() -> None:
+    with pytest.raises(ConfigError, match="META_APP_SECRET"):
+        prod(meta_app_secret="")
+    with pytest.raises(ConfigError, match="META_WEBHOOK_VERIFY_TOKEN"):
+        prod(meta_webhook_verify_token="")
+
+
+def test_unknown_instagram_provider_kinds_are_refused() -> None:
+    with pytest.raises(ConfigError, match="unknown kinds"):
+        prod(instagram_enabled_providers="meta,whatsapp")
+
+
+def test_instagram_secrets_are_not_in_the_public_settings() -> None:
+    public = prod().public_dict()
+    for name in ("mock_instagram_app_secret", "meta_webhook_verify_token", "meta_app_secret"):
+        assert name not in public

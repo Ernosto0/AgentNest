@@ -136,6 +136,9 @@ source_modules = [
     "app.knowledge.render",
     "app.knowledge.claims",
     "app.knowledge.impact",
+    "app.integrations",
+    "app.operations.accounts",
+    "app.operations.schemas",
     "app.ai",
     "app.approvals.service",
     "app.approvals.repository",
@@ -186,7 +189,7 @@ source_modules = [
     "app.worker",
     "app.cli",
 ]
-forbidden_modules = ["app.integrations"]
+forbidden_modules = ["app.integrations.llm"]
 allow_indirect_imports = true  # app.ai legitimately reaches it; only direct imports matter
 
 [[tool.importlinter.contracts]]
@@ -233,3 +236,23 @@ source_modules = [
     "app.knowledge.values",
 ]
 forbidden_modules = ["app.ai", "app.approvals", "app.commands"]
+
+[[tool.importlinter.contracts]]
+name = "Instagram integrations import only core (component-design.md §3)"
+type = "forbidden"
+source_modules = ["app.integrations.instagram"]
+forbidden_modules = [
+    "app.identity",
+    "app.knowledge",
+    "app.audit",
+    "app.jobs",
+    "app.ai",
+    "app.approvals",
+    "app.notifications",
+    "app.commands",
+    "app.inbox",
+    "app.policy",
+    "app.operations",
+    "app.demo",
+    "app.api",
+]
