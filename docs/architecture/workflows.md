@@ -25,7 +25,7 @@ Notation: **[T1]**, **[T2]** = separate committed DB transactions. "Enqueue" alw
    - [T1] `POST /knowledge/extractions {text}` stores the request as a job payload reference: the text is stored in `agent_runs.input_snapshot` only (retention 30 days). Enqueue `extract_fact_candidates`. Return 202 with the run ID.
    - [T2] Job: run the LLM task with the template key catalog. Validate output. For each item, deterministically parse and normalise the value by type, compute `relation` and insert `fact_candidates (pasted_text)` with `source_excerpt`. Items whose excerpt is not a substring of the pasted text (normalised whitespace) are **dropped** (anti-hallucination check). Audit `fact_candidate.created` (count only).
 4. **Resolve candidates** (sync): accept → `update_fact` (verified, `source_type = candidate_accepted`); reject → `rejected`. Audit.
-5. **Automation review** (sync): the user views the automation policy screen and confirms. Sets `settings.automation_reviewed_at`. Audit `policy.reviewed`.
+5. **Automation review** (sync): the owner opens the automation screen and saves the policies (`PUT /automation-policies`). The first save sets `settings.automation_reviewed_at` (server clock). Audit `policy.updated`, `policy.reviewed`.
 6. **Connect account**: mock — `POST /social-accounts/mock` (demo tools or `is_demo` workspace only) inserts `social_accounts(provider_kind=mock, status=connected)` with full capabilities. Meta — Phase 7 OAuth flow ([integrations.md §3.4](integrations.md)).
 7. **Readiness** (computed on read, `GET /readiness`):
    - Requirements are judged on **usable** facts (verified, inside the validity window, not contested; [business-knowledge.md §1](business-knowledge.md)), so a contested or expired fact lowers readiness until it is resolved.
@@ -150,6 +150,8 @@ Notation: **[T1]**, **[T2]** = separate committed DB transactions. "Enqueue" alw
 | — | None of the above restricts and policy = `auto` | auto | `POLICY_AUTO` |
 
 **Invariant check ([INV-04](../invariants.md)):** rules R5 and R7 take the *union* of model flags and deterministic keyword flags. No model output can remove a reason.
+
+**Details fixed in Phase 4:** (a) only the reasons of the *winning* outcome are reported (the chips explain why this level); (b) R10 also covers `LLM_REFUSED`; (c) R17 applies to the intent `other` (the model schema has no `unknown`); (d) R13 to R16 use the **effective mode**: the strictest mode among the intent's class and the classes of the facts the reply quotes (`pricing.*` is `reply.pricing`, and so on), so a price question labelled "faq" still needs the pricing policy; (e) a missing or unverified `policy.price_disclosure` counts as `do_not_share`; (f) R1 requires status `connected` exactly (the automatic `degraded` transition arrives in Phase 6).
 
 | Aspect | Contract |
 |---|---|

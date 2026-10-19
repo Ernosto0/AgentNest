@@ -150,43 +150,18 @@ def test_a_contested_required_fact_lowers_readiness_until_resolved(env: Knowledg
     assert env.call(env.owner, "GET", "/readiness").json()["level"] == "ready_for_drafts"
 
 
-# --- automation_reviewed_at (temporary PATCH, G1) -------------------------------------------
+# --- automation_reviewed_at is server-stamped by the policy review (Phase 4) -----------------
 
 
-def test_the_owner_marks_the_automation_policy_as_reviewed_using_the_server_clock(
+def test_automation_review_cannot_be_forged_through_the_workspace_settings(
     env: KnowledgeEnv,
 ) -> None:
-    env.clock.advance(hours=2)
-    response = env.call(env.owner, "PATCH", "", json={"settings": {"automation_reviewed": True}})
-    assert response.status_code == 200, response.text
-    assert response.json()["settings"]["automation_reviewed_at"] == "2026-01-15T14:00:00Z"
-    assert (
-        len(list_entries(env.session, workspace_id=env.workspace.id, action="policy.reviewed")) == 1
-    )
-    codes = {r["code"]: r for r in env.call(env.owner, "GET", "/readiness").json()["requirements"]}
-    assert codes["automation_reviewed"]["satisfied"] is True
-
-
-def test_automation_review_cannot_be_forged_or_delegated(env: KnowledgeEnv) -> None:
-    forged = env.call(
-        env.owner,
-        "PATCH",
-        "",
-        json={"settings": {"automation_reviewed_at": "2020-01-01T00:00:00Z"}},
-    )
-    assert forged.status_code == 422  # the timestamp is not client-settable
-    assert (
-        env.call(
-            env.owner, "PATCH", "", json={"settings": {"automation_reviewed": False}}
-        ).status_code
-        == 422
-    )
-    assert (
-        env.call(
-            env.manager, "PATCH", "", json={"settings": {"automation_reviewed": True}}
-        ).status_code
-        == 403
-    )
+    for settings in (
+        {"automation_reviewed_at": "2020-01-01T00:00:00Z"},
+        {"automation_reviewed": True},  # the Phase 2 stand-in is gone
+    ):
+        response = env.call(env.owner, "PATCH", "", json={"settings": settings})
+        assert response.status_code == 422
     assert list_entries(env.session, workspace_id=env.workspace.id, action="policy.reviewed") == []
 
 

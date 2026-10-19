@@ -365,21 +365,15 @@ def update_workspace(
         if getattr(workspace, field) != value:
             setattr(workspace, field, value)
             changed.append(field)
-    reviewed = False
     if settings_patch:
-        reviewed = bool(settings_patch.pop("automation_reviewed", None))
         current = WorkspaceSettings.model_validate(workspace.settings).model_dump(mode="json")
         merged = {**current, **{k: v for k, v in settings_patch.items() if v is not None}}
-        if reviewed:  # server-stamped (INV-19: time comes from the injected Clock)
-            merged["automation_reviewed_at"] = clock.now().isoformat()
         validated = WorkspaceSettings.model_validate(merged).model_dump(mode="json")
         for key in validated:
             if key != "automation_reviewed_at" and validated[key] != current[key]:
                 changed.append(f"settings.{key}")
         workspace.settings = validated  # new dict: JSONB change detection
 
-    if reviewed:
-        audit.record(session, ctx, "policy.reviewed", "workspace", workspace.id, {}, clock=clock)
     if changed:
         audit.record(
             session,
@@ -390,6 +384,6 @@ def update_workspace(
             {"changed": sorted(changed)},
             clock=clock,
         )
-    if changed or reviewed:
+    if changed:
         session.commit()
     return workspace

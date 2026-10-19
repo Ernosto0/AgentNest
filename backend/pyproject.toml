@@ -154,6 +154,12 @@ source_modules = [
     "app.inbox.language",
     "app.inbox.escalation",
     "app.knowledge.approved_answers",
+    "app.policy.models",
+    "app.policy.service",
+    "app.policy.classes",
+    "app.policy.schemas",
+    "app.policy.rules_reply",
+    "app.policy.engine",
     "app.ai",
     "app.approvals.service",
     "app.approvals.repository",
@@ -229,6 +235,7 @@ source_modules = [
     "app.inbox",
     "app.operations",
     "app.integrations",
+    "app.policy",
 ]
 forbidden_modules = ["app.commands"]
 
@@ -278,6 +285,22 @@ forbidden_modules = [
 [[tool.importlinter.contracts]]
 name = "inbox uses only the webhook side of the Instagram integration (INV-15)"
 type = "forbidden"
-source_modules = ["app.inbox", "app.knowledge"]
+source_modules = ["app.inbox", "app.knowledge", "app.policy"]
 forbidden_modules = ["app.integrations.instagram.mock"]
 allow_indirect_imports = true  # the registry builds the mock; only direct use is forbidden
+
+[[tool.importlinter.contracts]]
+name = "the policy rules are pure"
+type = "forbidden"
+source_modules = ["app.policy.rules_reply", "app.policy.engine", "app.policy.classes"]
+forbidden_modules = [
+    "app.ai",
+    "app.integrations",
+    "app.knowledge",
+    "app.identity",
+    "app.audit",
+    "app.jobs",
+    "app.inbox",
+    "app.core.db",
+    "sqlalchemy",
+]

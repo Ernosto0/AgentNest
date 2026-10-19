@@ -36,15 +36,14 @@ class WorkspaceSettings(StrictModel):
     disclosure_text: DisclosureText = Field(default_factory=DisclosureText)
     daily_report_hour: int = Field(default=20, ge=0, le=23)
     publish_max_delay_minutes: int = Field(default=360, ge=1, le=1440)
-    # Set by the server (PATCH ``automation_reviewed``) from the injected Clock; read-only for
-    # clients. Phase 4 replaces the temporary PATCH with the automation review screen.
+    # Set by the server from the injected Clock when the owner saves the automation policies
+    # (PUT /automation-policies); read-only for clients.
     automation_reviewed_at: datetime | None = None
 
 
 class WorkspaceSettingsPatch(StrictModel):
     """Partial update of the settings: only the given top-level keys change."""
 
-    automation_reviewed: Literal[True] | None = None
     disclosure_enabled: bool | None = None
     disclosure_text: DisclosureText | None = None
     daily_report_hour: int | None = Field(default=None, ge=0, le=23)

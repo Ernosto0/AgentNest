@@ -1568,6 +1568,97 @@
         "title": "Page[VersionOut]",
         "type": "object"
       },
+      "PoliciesIn": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyItem"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PoliciesIn",
+        "type": "object"
+      },
+      "PoliciesOut": {
+        "properties": {
+          "auto_allowed": {
+            "title": "Auto Allowed",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "readiness_level": {
+            "title": "Readiness Level",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          }
+        },
+        "required": [
+          "items",
+          "readiness_level",
+          "auto_allowed",
+          "reviewed_at"
+        ],
+        "title": "PoliciesOut",
+        "type": "object"
+      },
+      "PolicyItem": {
+        "additionalProperties": false,
+        "properties": {
+          "action_class": {
+            "enum": [
+              "reply.hours",
+              "reply.location_contact",
+              "reply.pricing",
+              "reply.services",
+              "reply.booking",
+              "reply.promotions",
+              "reply.general_faq",
+              "content.publish"
+            ],
+            "title": "Action Class",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "auto",
+              "approval",
+              "off"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_class",
+          "mode"
+        ],
+        "title": "PolicyItem",
+        "type": "object"
+      },
       "ReadinessLinkOut": {
         "properties": {
           "category": {
@@ -2484,18 +2575,6 @@
         "additionalProperties": false,
         "description": "Partial update of the settings: only the given top-level keys change.",
         "properties": {
-          "automation_reviewed": {
-            "anyOf": [
-              {
-                "const": true,
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Automation Reviewed"
-          },
           "daily_report_hour": {
             "anyOf": [
               {
@@ -3052,6 +3131,100 @@
         "summary": "Decide",
         "tags": [
           "approvals"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/automation-policies": {
+      "get": {
+        "operationId": "get_policies_api_v1_workspaces__workspace_id__automation_policies_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliciesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Policies",
+        "tags": [
+          "automation"
+        ]
+      },
+      "put": {
+        "operationId": "put_policies_api_v1_workspaces__workspace_id__automation_policies_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoliciesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliciesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Policies",
+        "tags": [
+          "automation"
         ]
       }
     },

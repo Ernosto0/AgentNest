@@ -40,7 +40,7 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `PATCH /api/v1/auth/me` | `{display_name?, ui_locale?}` |
 | `GET /api/v1/workspaces` | memberships list |
 | `POST /api/v1/workspaces` | `{name, business_category, market, default_locale, timezone, currency}` → workspace |
-| `GET/PATCH /api/v1/workspaces/{ws}` | settings (`workspace.manage` for PATCH). Temporary until the Phase 4 automation screen: `settings: {automation_reviewed: true}` makes the server stamp `settings.automation_reviewed_at` from its clock and write the audit entry `policy.reviewed`; the timestamp itself cannot be sent |
+| `GET/PATCH /api/v1/workspaces/{ws}` | settings (`workspace.manage` for PATCH). `settings.automation_reviewed_at` is read-only: the server stamps it when the owner saves the automation policies (`PUT /automation-policies`) |
 | `GET /api/v1/workspaces/{ws}/members` | |
 | `PATCH/DELETE /api/v1/workspaces/{ws}/members/{user_id}` | role change, removal (`members.manage`). The last owner cannot be removed. |
 | `POST /api/v1/workspaces/{ws}/invites` | `{role}` → `{invite_url, expires_at}` (Phase 6) |
@@ -60,10 +60,10 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `POST /…/fact-candidates/{id}/accept` / `reject` | `knowledge.verify`. Accept → fact (200); reject → candidate. A candidate that is no longer pending → 409 `CONFLICT_STATE` |
 | `POST /…/knowledge/extractions` | `{text (≤ 8000 chars), client_request_id}` → 202 `{run_id, status, candidates_created, error_code, injection_suspected}` (`knowledge.edit`; idempotent per user and `client_request_id`). The text is stored only in the run's redacted input snapshot, never in the job payload |
 | `GET /…/knowledge/extractions/{run_id}` | same shape. `status` is `queued`, `running`, `succeeded` or `failed`; `candidates_created` counts candidates that need a decision (equal values are not counted). Items whose excerpt is not verbatim, or that sit in an instruction-like line, are dropped, so the count can be 0 |
-| `GET /…/readiness` | `{level: not_ready \| ready_for_drafts \| ready, requirements: [{code, required_for: drafts \| ready, satisfied, status, link: {target: knowledge \| integrations \| automation, category, key}, missing_keys}]}`. The `link` is structured so the API stays free of frontend routes. `status` is `ok`, `missing`, `not_connected` (no account before Phase 4) or `not_reviewed`. Codes: `business_name`, `contact`, `location`, `hours`, `booking_instructions`, `price_policy`, `services`, `account_connected`, `automation_reviewed`. Read: any member |
+| `GET /…/readiness` | `{level: not_ready \| ready_for_drafts \| ready, requirements: [{code, required_for: drafts \| ready, satisfied, status, link: {target: knowledge \| integrations \| automation, category, key}, missing_keys}]}`. The `link` is structured so the API stays free of frontend routes. `status` is `ok`, `missing`, `not_connected` (no usable account) or `not_reviewed`. Codes: `business_name`, `contact`, `location`, `hours`, `booking_instructions`, `price_policy`, `services`, `account_connected`, `automation_reviewed`. Read: any member |
 | `GET/POST/PATCH /…/approved-answers` | CRUD |
 | `POST /…/approved-answers/from-message/{message_id}` | create from a sent reply |
-| `GET/PUT /…/automation-policies` | `[{action_class, mode}]` (`automation.manage`) |
+| `GET/PUT /…/automation-policies` | `{items: [{action_class, mode: auto \| approval \| off}], readiness_level, auto_allowed, reviewed_at}`. GET: any member. PUT (`automation.manage`) takes `{items: [...]}` (classes not listed keep their mode; unlisted classes default to `approval`). Saving is the owner's review: the server stamps `automation_reviewed_at` once, from its clock, and audits `policy.updated` and `policy.reviewed`. `auto` is refused with `422 READINESS_NOT_READY` unless everything for `ready` except the review itself is in place |
 
 ### 2.4 Commands (Phase 3)
 | Method & path | Request → Response |

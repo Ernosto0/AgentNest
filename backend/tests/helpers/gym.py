@@ -45,6 +45,7 @@ def seed_gym_facts(
     def add(key: str, value: dict[str, Any], **kwargs: Any) -> None:
         facts[key] = create_fact(session, workspace, key, value, clock=clock, **kwargs)
 
+    add("identity.business_name", {"text": "Gölkent Fitness & Pilates"})
     add(MONTHLY, money("6000"))
     add(QUARTER, money("16500", unit="package"))
     add(STUDENT, money("4500"), verified=False)

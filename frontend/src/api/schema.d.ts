@@ -167,6 +167,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/automation-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Policies */
+        get: operations["get_policies_api_v1_workspaces__workspace_id__automation_policies_get"];
+        /** Put Policies */
+        put: operations["put_policies_api_v1_workspaces__workspace_id__automation_policies_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/commands": {
         parameters: {
             query?: never;
@@ -1178,6 +1196,35 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** PoliciesIn */
+        PoliciesIn: {
+            /** Items */
+            items: components["schemas"]["PolicyItem"][];
+        };
+        /** PoliciesOut */
+        PoliciesOut: {
+            /** Auto Allowed */
+            auto_allowed: boolean;
+            /** Items */
+            items: components["schemas"]["PolicyItem"][];
+            /** Readiness Level */
+            readiness_level: string;
+            /** Reviewed At */
+            reviewed_at: string | null;
+        };
+        /** PolicyItem */
+        PolicyItem: {
+            /**
+             * Action Class
+             * @enum {string}
+             */
+            action_class: "reply.hours" | "reply.location_contact" | "reply.pricing" | "reply.services" | "reply.booking" | "reply.promotions" | "reply.general_faq" | "content.publish";
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "auto" | "approval" | "off";
+        };
         /** ReadinessLinkOut */
         ReadinessLinkOut: {
             /** Category */
@@ -1499,8 +1546,6 @@ export interface components {
          * @description Partial update of the settings: only the given top-level keys change.
          */
         WorkspaceSettingsPatch: {
-            /** Automation Reviewed */
-            automation_reviewed?: true | null;
             /** Daily Report Hour */
             daily_report_hour?: number | null;
             /** Disclosure Enabled */
@@ -1849,6 +1894,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApprovalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_policies_api_v1_workspaces__workspace_id__automation_policies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PoliciesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_policies_api_v1_workspaces__workspace_id__automation_policies_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PoliciesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PoliciesOut"];
                 };
             };
             /** @description Validation Error */

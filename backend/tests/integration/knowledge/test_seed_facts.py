@@ -82,15 +82,13 @@ def test_the_gym_has_one_pending_discrepancy_that_is_not_used(seeded: SessionFac
 
 
 @pytest.mark.parametrize("slug", ["golkent-fitness", "harbor-pilates"])
-def test_seeded_workspaces_are_ready_for_drafts(
-    seeded: SessionFactory, clock: FrozenClock, slug: str
-) -> None:
+def test_seeded_workspaces_are_ready(seeded: SessionFactory, clock: FrozenClock, slug: str) -> None:
     with seeded() as session:
         workspace, ctx = _ctx(session, slug)
         report = readiness.readiness(session, clock, ctx)
         unmet = [r.code for r in report.requirements if not r.satisfied]
-        assert report.level == "ready_for_drafts"
-        assert unmet == ["account_connected", "automation_reviewed"]
+        assert report.level == "ready"  # Phase 4 connects a simulated account and reviews it
+        assert unmet == []
         assert workspace.is_demo
 
 
