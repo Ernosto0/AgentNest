@@ -30,10 +30,10 @@ test("A1: Home shows the workspace, its readiness and the simulation banner", as
   await expect(page.getByRole("main").getByText("Gölkent Fitness & Pilates")).toBeVisible();
   await expect(page.getByTestId("simulation-banner")).toContainText("simülasyon");
   await expect(page.getByTestId("simulated-badge").first()).toBeVisible();
-  // The seeded gym is ready for drafts; the account and the automation review come in Phase 4.
-  await expect(page.getByTestId("readiness-level")).toHaveText("Taslaklar için hazır");
-  await expect(page.getByTestId("readiness-level")).toHaveAttribute("data-level", "ready_for_drafts");
-  await expect(page.locator('[data-requirement="account_connected"]')).toContainText("Instagram hesabı bağlı");
+  // The seeded gym has a simulated Instagram account and a reviewed automation setup: fully ready.
+  await expect(page.getByTestId("readiness-level")).toHaveText("Hazır");
+  await expect(page.getByTestId("readiness-level")).toHaveAttribute("data-level", "ready");
+  await expect(page.locator('[data-requirement="account_connected"]')).toHaveCount(0); // done items are hidden
   expect(await hasHorizontalScroll(page)).toBe(false);
 });
 
@@ -93,9 +93,9 @@ test("A4: the bio discrepancy is explained and rejected, and Home shows what is 
   await expect(page.getByText("İncelenecek öneri yok")).toBeVisible();
 
   await navLink(page, "Ana sayfa").click();
-  await expect(page.getByTestId("readiness-level")).toHaveText("Taslaklar için hazır");
-  await expect(page.locator('[data-requirement="account_connected"]')).toBeVisible();
-  await expect(page.locator('[data-requirement="automation_reviewed"]')).toBeVisible();
+  await expect(page.getByTestId("readiness-level")).toHaveText("Hazır");
+  await expect(page.locator('[data-requirement="account_connected"]')).toHaveCount(0);
+  await expect(page.locator('[data-requirement="automation_reviewed"]')).toHaveCount(0);
   await expect(page.locator('[data-requirement="business_name"]')).toHaveCount(0); // done items are hidden
 });
 

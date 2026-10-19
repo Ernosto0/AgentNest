@@ -26,7 +26,19 @@
 
 ## 2. Test results
 
-@@RESULTS@@
+| Check | Result |
+|---|---|
+| `ruff check` / `ruff format --check` / `mypy app evals` | clean (301 files formatted, 180 source files) |
+| `lint-imports` | 13 contracts kept, 0 broken |
+| Evals (`--all --provider fake --strict`) | `interpret_command` 45/45, `extract_fact_candidates` 12/12, `draft_reply` 61/61; 0 hard failures |
+| Backend `pytest` | **1558 passed** |
+| Frontend lint / typecheck / i18n check | clean (625 keys, tr + en) |
+| Frontend `npm test` | **214 passed** (15 files) |
+| E2E (3 projects: desktop-chromium, mobile-chromium, mobile-webkit) | all passed on ports 8001/5174: scenario B (B5, B6, B7, timeout then echo), plus the Phase 1 and scenario A/C specs |
+
+Two Phase 1/2 E2E specs asserted the pre-Phase-4 state and were updated: A1/A4 (the seeded gym is now fully "Hazır" because the seed connects a simulated account and reviews automation; done requirements are hidden) and the Phase 1 deep link (the inbox is no longer a placeholder). The real iOS Safari (mobile-webkit runs on Playwright WebKit only) and GitHub CI have not run.
+
+Not run: the mutation spot-checks listed in the plan (R5 union, `outcome_unknown → in_progress`, window check, workspace filter) were not repeated as separate mutation runs; the equivalent properties are covered by named tests (see §3).
 
 ## 3. Acceptance criteria
 

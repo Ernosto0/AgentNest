@@ -88,7 +88,7 @@ test("a deep link asks for sign-in first and then returns to the page", async ({
   await loginViaUi(page, OWNER);
   await expect(page).toHaveURL(new RegExp(`/w/${golkent}/inbox$`));
   await expect(page.getByRole("heading", { name: "Gelen kutusu", level: 1 })).toBeVisible();
-  await expect(page.getByText("Bu bölüm bir sonraki aşamada gelecek").first()).toBeVisible();
+  await expect(page.getByRole("tablist", { name: "Konuşmaları filtrele" })).toBeVisible();
 });
 
 test("tenant isolation: the other user lists only their workspace and gets 'not found' elsewhere", async ({
