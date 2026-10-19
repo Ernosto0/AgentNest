@@ -183,7 +183,7 @@ def test_human_mode_skips_drafting_and_asks_for_a_person(inbox: InboxEnv) -> Non
         inbox.env.owner.user.id,
         inbox.env.manager.user.id,
     }
-    assert all(n.params["reason"] == "HUMAN_TAKEOVER" for n in notified)
+    assert all(n.params["reasons"] == ["HUMAN_TAKEOVER"] for n in notified)
     assert all(n.is_simulated for n in notified)
 
 
@@ -355,7 +355,7 @@ def test_an_account_disconnected_after_ingest_ignores_the_event(inbox: InboxEnv)
 
 def test_a_failing_event_is_marked_failed_after_the_last_attempt(inbox: InboxEnv) -> None:
     """The dead-job hook records the failure on the event instead of losing it silently."""
-    from app.inbox.jobs import _on_dead
+    from app.inbox.jobs import _on_event_dead as _on_dead
     from app.inbox.payloads import ProcessInboundEventPayload
     from app.jobs.registry import JobContext
 

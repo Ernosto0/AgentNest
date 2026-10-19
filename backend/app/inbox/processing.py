@@ -200,7 +200,7 @@ def _on_customer_message(
             permission="reply.approve",
             type="conversation.needs_human",
             severity="attention",
-            params={"conversation_id": str(conversation.id), "reason": "HUMAN_TAKEOVER"},
+            params={"conversation_id": str(conversation.id), "reasons": ["HUMAN_TAKEOVER"]},
             subject_type="conversation",
             subject_id=conversation.id,
             dedup_key=f"needs-human:{conversation.id}",

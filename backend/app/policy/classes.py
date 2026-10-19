@@ -38,20 +38,43 @@ def _any_prefix(keys: Collection[str], *prefixes: str) -> bool:
     return any(key.startswith(prefixes) for key in keys)
 
 
+# The fact keys that belong to an intent (see ``required_facts_usable``).
+_FAMILIES = {
+    "pricing": ("pricing.", "policy.price_answer_text"),
+    "hours": ("hours.",),
+    "location_contact": ("location.", "contact."),
+    "services": ("service.",),
+    "booking": ("booking.",),
+    "promotions": ("promotion.",),
+    "faq": ("faq.",),
+}
+
+
 def required_facts_usable(
     intent: str | None,
     usable_keys: Collection[str],
     *,
     price_disclosure: str,
     approved_answer_used: bool,
+    model_can_answer: bool = True,
+    unusable_keys: Collection[str] = (),
 ) -> bool:
     """Rule R8: is a fact the intent needs usable (verified, in window, uncontested)?
 
     An approved answer carries its own content (rendered and validated like any reply), so it
     satisfies any intent. Intents without requirements (greeting, the always-human ones) pass.
+    When the model could not answer and a fact of the intent's kind exists but is *not usable*,
+    that is the reason (the information is there, just not verified), not "no such fact".
     """
     if approved_answer_used or intent is None:
         return True
+    if not _present(intent, usable_keys, price_disclosure):
+        return False
+    family = _FAMILIES.get(intent)
+    return not (family and not model_can_answer and _any_prefix(unusable_keys, *family))
+
+
+def _present(intent: str, usable_keys: Collection[str], price_disclosure: str) -> bool:
     if intent == "pricing":
         if price_disclosure == "do_not_share":
             return "policy.price_answer_text" in usable_keys

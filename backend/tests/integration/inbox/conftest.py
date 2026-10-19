@@ -21,7 +21,7 @@ from app.handlers import load_handlers
 from app.inbox.context import DraftContext, DraftSkip, prepare
 from app.inbox.drafting import DraftPlan, make_plan
 from app.inbox.models import Conversation, Message, ReplyDraft
-from app.inbox.payloads import DraftReplyPayload
+from app.inbox.payloads import SendReplyPayload
 from app.integrations.instagram import webhook_format as wf
 from app.integrations.instagram.models import SocialAccount
 from app.integrations.llm import FakeLLMProvider
@@ -132,6 +132,35 @@ class InboxEnv:
         deps = runtime.runner_deps(self.factory, self.clock)
         return make_plan(deps, context, uuid.uuid4())
 
+    def draft_now(self) -> int:
+        """Let the debounce pass and run what is due (the drafting job)."""
+        self.clock.advance(timedelta(seconds=self.settings.reply_debounce_seconds))
+        return self.process()
+
+    def ask(self, text: str | None = "Aylık üyelik ne kadar?", **kwargs: Any) -> ReplyDraft:
+        """A customer message, all the way to the stored draft."""
+        self.deliver_and_process(text, **kwargs)
+        self.draft_now()
+        draft = self.draft(kwargs.get("customer", "cust-1"))
+        assert draft is not None, "no draft was created"
+        return draft
+
+    def approval_of(self, draft: ReplyDraft) -> Approval:
+        self.session.expire_all()
+        assert draft.approval_id is not None
+        approval = self.session.get(Approval, draft.approval_id)
+        assert approval is not None
+        return approval
+
+    def decide(
+        self, draft: ReplyDraft, decision: str = "approve", role: str = "owner", **overrides: Any
+    ) -> Any:
+        approval = self.approval_of(draft)
+        body = {"decision": decision, "payload_hash": approval.payload_hash, **overrides}
+        return self.env.call(
+            getattr(self.env, role), "POST", f"/approvals/{approval.id}/decision", json=body
+        )
+
     def drafted(self, text: str | None, **kwargs: Any) -> DraftPlan:
         """Deliver ``text``, process it, and run the pipeline on the result."""
         self.deliver_and_process(text, **kwargs)
@@ -239,14 +268,14 @@ class InboxEnv:
 
 
 @pytest.fixture(autouse=True)
-def _draft_reply_stub() -> Iterator[None]:
-    """Until the drafting job exists, processing only needs the job type to be enqueueable."""
-    if get_handler("draft_reply") is not None:
+def _send_reply_stub() -> Iterator[None]:
+    """Until the send job exists (P4-08), approving only needs the job type to be enqueueable."""
+    if get_handler("send_reply") is not None:
         yield
         return
     with registry_snapshot():
 
-        @job_handler("draft_reply", DraftReplyPayload)
+        @job_handler("send_reply", SendReplyPayload)
         def _noop(job: JobContext) -> None:
             return None
 

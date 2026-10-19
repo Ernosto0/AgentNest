@@ -29,7 +29,12 @@ from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
 
 from app.core.clock import FrozenClock  # noqa: E402
 from app.core.db import BACKEND_DIR, Base, get_db, get_engine  # noqa: E402
+from app.handlers import load_handlers  # noqa: E402
 from app.main import create_app  # noqa: E402
+
+# Register every job handler and approval subject once, before any test snapshots a registry:
+# a module first imported inside a snapshot would lose its registrations when it is restored.
+load_handlers()
 
 
 @pytest.fixture(scope="session")

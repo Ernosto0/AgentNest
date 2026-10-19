@@ -119,13 +119,14 @@ GREETING = re.compile(
     r"^(merhaba|selam|gunaydin|iyi gunler|hello|hi|hey|good (?:morning|evening))\b"
 )
 
-# A specific product named by the customer; without one, the monthly membership is the answer.
+# A specific product named by the customer. Without one, the monthly membership is the default.
 PRICE_HINTS = (
     (re.compile(r"3 ay|uc ay|3 month|quarter"), "pricing.membership_3_months"),
     (re.compile(r"reformer|8 seans|8 session"), "pricing.reformer_8_sessions"),
     (re.compile(r"ogrenci|student"), "pricing.student_monthly"),
     (re.compile(r"tek seans|single|drop.?in"), "pricing.single_session"),
 )
+MONTHLY = re.compile(r"aylik|monthly|month")
 
 TEXT = {
     "tr": {
@@ -232,12 +233,16 @@ def _price_reply(
     prices = _by_prefix(facts, "pricing.")
     if not prices:
         return _cannot(task_input, "pricing")
-    chosen = [
-        fact
-        for pattern, key in PRICE_HINTS
-        if pattern.search(folded) and (fact := _get(prices, key)) is not None
-    ]
-    if not chosen:
+    named = [key for pattern, key in PRICE_HINTS if pattern.search(folded)]
+    if not named and MONTHLY.search(folded):
+        named = ["pricing.membership_monthly"]
+    if named:
+        # The customer asked about a particular product: answer with that price or not at all.
+        # Another product's price is never substituted for one that is not usable.
+        chosen = [fact for key in named if (fact := _get(prices, key)) is not None]
+        if len(chosen) < len(named):
+            return _cannot(task_input, "pricing")
+    else:
         monthly = _get(prices, "pricing.membership_monthly")
         chosen = [monthly] if monthly else prices[:3]
     if len(chosen) == 1:

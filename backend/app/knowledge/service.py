@@ -897,6 +897,18 @@ def usable_facts(
     return result
 
 
+def unusable_fact_keys(session: Session, clock: Clock, ctx: WorkspaceContext) -> set[str]:
+    """Keys of live facts that exist but cannot be used now: unverified, contested, expired or
+    not yet valid. (Drafting uses this to tell "we have no such information" from "we have it
+    but it is not verified", which are different reasons for handing a conversation over.)"""
+    usable = {f.key for f in usable_facts(session, clock, ctx)}
+    return {
+        f.key
+        for f in repo.list_facts(session, ctx)
+        if f.status != "archived" and f.key not in usable
+    }
+
+
 @dataclass(frozen=True)
 class FactView:
     fact: BusinessFact

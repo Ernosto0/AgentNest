@@ -90,6 +90,7 @@ class DraftContext:
     readiness_level: str
     auto_replies_last_hour: int
     usable_keys: frozenset[str] = field(default_factory=frozenset)
+    unusable_keys: frozenset[str] = field(default_factory=frozenset)  # exist, but not usable
 
     @property
     def customer_text(self) -> str:
@@ -234,9 +235,11 @@ def prepare(
         reply_languages=list(workspace.reply_languages),
     )
     usable: list[UsableFact] = []
+    unusable: set[str] = set()
     answers: list[approved_answers.AnswerView] = []
     if language.code is not None:
         usable = knowledge_service.usable_facts(session, clock, ctx, locale=language.code)
+        unusable = knowledge_service.unusable_fact_keys(session, clock, ctx)
         answers = approved_answers.list_for_drafting(session, ctx, language.code)
     disclosure_fact = _fact(usable, "policy.price_disclosure")
     # An unknown policy is treated as "do not share": a price is never guessed into a reply.
@@ -282,6 +285,7 @@ def prepare(
         readiness_level=readiness_module.readiness(session, clock, ctx).level,
         auto_replies_last_hour=_auto_replies_last_hour(session, clock, conversation),
         usable_keys=frozenset(f.key for f in usable),
+        unusable_keys=frozenset(unusable),
     )
 
 

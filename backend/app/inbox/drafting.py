@@ -304,3 +304,34 @@ def _chosen_answer(context: DraftContext, proposal: ReplyProposal) -> AnswerView
     return next(
         (a for a in context.approved_answers if str(a.id) == proposal.approved_answer_id), None
     )
+
+
+def failed_plan(context: DraftContext, error_code: str) -> DraftPlan:
+    """The plan for a draft job that could not get a proposal at all (retries exhausted): a
+    person answers (rule R10)."""
+    return DraftPlan(
+        language=context.language.code,
+        detected_language=context.language.detected,
+        intent=None,
+        model_flags=(),
+        keyword_flags=tuple(sorted(keyword_flags(context.customer_text))),
+        injection=bool(detect_injection(context.customer_text)),
+        escalation_keyword=matches_escalation_keywords(
+            context.customer_text, context.escalation_keywords
+        ),
+        can_answer=False,
+        model_needs_human=False,
+        attachment_only=False,
+        language_unsupported=False,
+        llm_error=error_code,
+        source="ai",
+        approved_answer_id=None,
+        template=None,
+        text=None,
+        suggestion_text=None,
+        validation=_validation(None, False),
+        used_facts=(),
+        render_failed=False,
+        grounding_failed=False,
+        usable_keys=context.usable_keys,
+    )

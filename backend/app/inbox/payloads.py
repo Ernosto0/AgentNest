@@ -22,3 +22,11 @@ class DraftReplyPayload(_Payload):
     conversation_id: uuid.UUID
     message_id: uuid.UUID | None = None
     requested: bool = False
+
+
+class SendReplyPayload(_Payload):
+    reply_draft_id: uuid.UUID
+
+
+class ExpireReplyDraftsPayload(_Payload):
+    pass

@@ -469,3 +469,31 @@ def test_required_facts(
         )
         is expected
     )
+
+
+@pytest.mark.parametrize(
+    ("intent", "usable", "unusable", "can_answer", "expected"),
+    [
+        # the information exists but is not usable, and the model could not answer: that is why
+        ("pricing", ["pricing.membership_monthly"], ["pricing.student_monthly"], False, False),
+        ("pricing", ["pricing.membership_monthly"], ["pricing.student_monthly"], True, True),
+        ("hours", ["hours.weekly"], ["hours.holiday"], False, False),
+        # nothing relevant is unusable: the model simply had nothing to say (R7 covers it)
+        ("pricing", ["pricing.membership_monthly"], ["hours.weekly"], False, True),
+        ("pricing", ["pricing.membership_monthly"], [], False, True),
+    ],
+)
+def test_an_unusable_fact_of_the_asked_kind_is_the_reason_when_the_model_cannot_answer(
+    intent: str, usable: list[str], unusable: list[str], can_answer: bool, expected: bool
+) -> None:
+    assert (
+        required_facts_usable(
+            intent,
+            usable,
+            price_disclosure="share",
+            approved_answer_used=False,
+            model_can_answer=can_answer,
+            unusable_keys=unusable,
+        )
+        is expected
+    )
