@@ -49,7 +49,7 @@ export default defineConfig({
       command: "uv run python -m app.worker",
       cwd: backendDir,
       wait: { stderr: /startup/ },
-      env: { WORKER_POLL_INTERVAL_SECONDS: "0.2" },
+      env: { WORKER_POLL_INTERVAL_SECONDS: "0.2", REPLY_DEBOUNCE_SECONDS: "1" },
       timeout: 60_000,
     },
     {

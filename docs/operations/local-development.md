@@ -70,7 +70,7 @@ npm run e2e                                # Playwright, 3 projects (see below)
 ```
 
 - Backend tests always run against `TEST_DATABASE_URL` (the `agentnest_test` database): the test session refuses any database whose name does not end in `_test`. The schema is dropped and rebuilt with `alembic upgrade head` at the start of every test session, so never point `TEST_DATABASE_URL` at data you care about.
-- `npm run e2e` needs Postgres running with migrations applied (`uv run alembic upgrade head`). It **re-seeds** the demo data (`seed --reset`), starts the API (`:8000`) and the Vite dev server (`:5173`) itself, and reuses them if they are already running. In CI (`CI=true`) it serves the production build with `vite preview` instead. Projects: `mobile-webkit` (iPhone 13), `mobile-chromium` (Pixel 7), `desktop-chromium`. Run one with `npm run e2e -- --project=desktop-chromium`. The Phase 3 scenario (commands, extraction) needs the worker: Playwright starts `python -m app.worker` itself (`WORKER_POLL_INTERVAL_SECONDS=0.2`) and waits for its startup log line.
+- `npm run e2e` needs Postgres running with migrations applied (`uv run alembic upgrade head`). It **re-seeds** the demo data (`seed --reset`), starts the API (`:8000`) and the Vite dev server (`:5173`) itself, and reuses them if they are already running. In CI (`CI=true`) it serves the production build with `vite preview` instead. Projects: `mobile-webkit` (iPhone 13), `mobile-chromium` (Pixel 7), `desktop-chromium`. Run one with `npm run e2e -- --project=desktop-chromium`. The Phase 3 and 4 scenarios (commands, extraction, inbox) need the worker: Playwright starts `python -m app.worker` itself (`WORKER_POLL_INTERVAL_SECONDS=0.2`, `REPLY_DEBOUNCE_SECONDS=1`) and waits for its startup log line. To run a second stack next to another checkout, move the ports: `E2E_API_PORT=8001 E2E_WEB_PORT=5174 npm run e2e` (the Vite proxy follows `E2E_API_PORT`) and point `DATABASE_URL` / `TEST_DATABASE_URL` at databases of your own.
 
 ### Regenerating the API client
 
@@ -98,6 +98,8 @@ cd ../frontend && npm run gen:api          # writes src/api/schema.d.ts
 
 All demo workspaces have `is_demo = true` and show the **SİMÜLASYON / SIMULATED** banner.
 
+**Phase 4:** both studios also get a simulated Instagram account (`@golkent.fitness.demo`, `@harbor.pilates.demo`), `reply_languages` (Gölkent answers in Turkish and English, Harbor in English) and a recorded automation review, so their readiness is *Hazır* / *Ready*. Everything produced through the simulated account is labelled **SİMÜLASYON**.
+
 **Phase 2 (business knowledge)** is demonstrable now: both studios seed to readiness *Taslaklar için hazır* / *Ready for drafts* (the full *Hazır* level also needs the simulated account and the automation review, which arrive in Phase 4). Each has one **unverified** fact (the student price) and one pending **discrepancy** suggestion ("bio says 5.500 ₺"). Walkthrough: log in as `owner@demo.local` → More → İşletme bilgileri → Fiyatlar → verify the student price → Geçmiş (history) → İşletme bilgileri → Öneriler → *Mevcut değeri koru* (reject) → Ana sayfa shows what is left. Then log in as `staff@demo.local`, change the monthly price (*Değişiklik öner*): it appears as a suggestion for the owner and the fact shows *İtiraz var* (contested) until the owner accepts or rejects. More → Çalışma alanı oluştur starts the new-workspace wizard. `seed` is idempotent and also adds the facts to workspaces created before Phase 2; `seed --reset` re-creates everything.
 
 ## 6. Demo walkthrough (complete from Phase 6; about 15 minutes)
@@ -119,6 +121,20 @@ Open http://localhost:5173 in a phone-sized window (DevTools device mode, 390×8
 **G. Integration failure:** Dev panel → *auth_revoked* → approve a reply → Home banner "Instagram bağlantınız yenilenmeli" → Settings → Bağlantılar → *Yeniden bağlan (simülasyon)* → the queued reply is sent.
 
 Finish with Dev panel → **Reset demo**.
+
+### The developer simulator (Phase 4)
+
+With `DEMO_TOOLS_ENABLED=true` (never in production) More → Geliştirici araçları (Dev panel) sends scripted customer messages through the **real** signed-webhook path, adds failure rules for the simulated Instagram (`send`, `lookup`, `echo`, … with `transient`, `rate_limited`, `auth_revoked`, `permission_missing`, `window_closed`, `invalid_media`, `timeout_after_success`) and runs due jobs. The same from a terminal, with the API running:
+
+```bash
+cd backend
+uv run python -m app.cli simulate-message --workspace golkent-fitness --script price   # also: complaint, refund, discount, injection, english_tourist, russian, photo_only, hours, location, trial
+uv run python -m app.cli simulate-message --workspace golkent-fitness --customer "Ayşe" --text "Çalışma saatleriniz nedir?"
+uv run python -m app.cli simulate-native-reply --workspace golkent-fitness --conversation <id> --text "Merhaba"   # the owner answers in the Instagram app
+uv run python -m app.cli run-due-jobs                                                 # when no worker is running
+```
+
+A drafted reply appears about `REPLY_DEBOUNCE_SECONDS` (default 8) after the last message. The worker must be running for drafts and sends.
 
 ## 7. Inspecting execution results
 

@@ -49,7 +49,7 @@ def test_the_fake_provider_passes_every_case_strictly(tmp_path: Path) -> None:
 
 def test_an_unknown_task_or_dataset_is_an_error() -> None:
     with pytest.raises(ValueError, match="unknown task"):
-        load_datasets("draft_reply")
+        load_datasets("draft_content")
     assert main(["run", "--task", "interpret_command", "--dataset", "nope", "--no-report"]) == 2
 
 
