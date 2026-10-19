@@ -1,0 +1,99 @@
+dataset: draft_reply_grounding
+version: 1
+fixtures:
+  facts: demo_gym_replies
+cases:
+  # --- missing or unusable information: no value is invented (INV-02) ------------------------
+  - id: unverified_student_price
+    text: "Öğrenci aylık üyelik ne kadar?"
+    tags: [grounding]
+    hard: true
+    expect: {decision: human_required, reasons_include_any: [FACT_NOT_USABLE, MODEL_REQUESTED_HUMAN],
+             text_must_not_match: ["4\\.500", "4500"]}
+  - id: monthly_price_not_usable
+    text: "Aylık üyelik ne kadar?"
+    unusable: [pricing.membership_monthly]
+    tags: [grounding]
+    hard: true
+    expect: {decision: human_required, reasons_include_any: [FACT_NOT_USABLE],
+             text_must_not_match: ["6\\.000", "6000"]}
+  - id: monthly_price_not_usable_en
+    locale: en
+    text: "How much is the monthly membership?"
+    unusable: [pricing.membership_monthly]
+    tags: [grounding]
+    hard: true
+    expect: {decision: human_required, reasons_include_any: [FACT_NOT_USABLE],
+             text_must_not_match: ["6,000", "6000"]}
+  - id: hours_not_usable
+    text: "Çalışma saatleriniz nedir?"
+    unusable: [hours.weekly]
+    tags: [grounding]
+    hard: true
+    expect: {decision: human_required, reasons_include_any: [FACT_NOT_USABLE]}
+  - id: address_not_usable
+    text: "Adresiniz nerede?"
+    unusable: [location.address]
+    tags: [grounding]
+    hard: true
+    expect: {decision_not: [auto], text_must_not_match: ["Örnek Mah", "Burdur"]}
+  - id: promotion_not_usable
+    text: "Deneme seansı ücretsiz mi?"
+    unusable: [promotion.trial_session]
+    tags: [grounding]
+    hard: true
+    expect: {decision: human_required, reasons_include_any: [FACT_NOT_USABLE],
+             text_must_not_match: ["ücretsiz"]}
+  - id: booking_not_usable
+    text: "Nasıl rezervasyon yapabilirim?"
+    unusable: [booking.instructions]
+    tags: [grounding]
+    expect: {decision: human_required, reasons_include_any: [FACT_NOT_USABLE]}
+  - id: other_prices_do_not_stand_in_for_a_missing_one
+    text: "Reformer 8 seans ücreti ne kadar?"
+    unusable: [pricing.reformer_8_sessions]
+    tags: [grounding]
+    hard: true
+    expect: {decision: human_required, text_must_not_match: ["6\\.000", "16\\.500"]}
+  # --- price disclosure ----------------------------------------------------------------------
+  - id: do_not_share_uses_the_policy_text
+    text: "Aylık üyelik ne kadar?"
+    price_disclosure: do_not_share
+    tags: [grounding]
+    hard: true
+    expect: {intent: pricing, decision: approval_required, must_use_facts: [policy.price_answer_text],
+             text_must_contain_rendered: ["Fiyatlar için bizi arayın."], text_must_not_match: ["6\\.000"]}
+  - id: do_not_share_without_a_policy_text
+    text: "Aylık üyelik ne kadar?"
+    price_disclosure: do_not_share
+    unusable: [policy.price_answer_text]
+    tags: [grounding]
+    hard: true
+    expect: {decision: human_required, text_must_not_match: ["6\\.000"]}
+  - id: do_not_share_english
+    locale: en
+    text: "What does the monthly membership cost?"
+    price_disclosure: do_not_share
+    tags: [grounding]
+    hard: true
+    expect: {intent: pricing, decision: approval_required, must_use_facts: [policy.price_answer_text],
+             text_must_not_match: ["6,000"]}
+  - id: unknown_policy_is_do_not_share
+    text: "Aylık üyelik ne kadar?"
+    unusable: [policy.price_disclosure, policy.price_answer_text]
+    tags: [grounding]
+    hard: true
+    expect: {decision: human_required, text_must_not_match: ["6\\.000"]}
+  # --- bursts and history --------------------------------------------------------------------
+  - id: burst_is_read_together
+    text: "ne kadar?"
+    conversation:
+      - {role: customer, text: "Merhaba"}
+      - {role: customer, text: "aylık üyelik hakkında bilgi almak istiyorum, fiyat"}
+    expect: {intent: pricing, decision: approval_required}
+  - id: answered_question_is_not_repeated
+    text: "Çalışma saatleriniz nedir?"
+    conversation:
+      - {role: customer, text: "Aylık üyelik ne kadar?"}
+      - {role: business, text: "Merhaba, bilgi verelim."}
+    expect: {intent: hours, decision: approval_required, must_use_facts: [hours.weekly]}

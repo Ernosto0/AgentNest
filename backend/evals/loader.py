@@ -10,7 +10,19 @@ import yaml
 from app.commands.resolver import FactSnapshot
 
 EVALS_DIR = Path(__file__).parent
-TASKS = ("interpret_command", "extract_fact_candidates")
+# What a case may carry besides its expectations (draft_reply uses most of them).
+INPUT_KEYS = (
+    "text",
+    "conversation",
+    "price_disclosure",
+    "unusable",
+    "languages",
+    "automation",
+    "attachments",
+    "approved_answers",
+    "handling_mode",
+)
+TASKS = ("interpret_command", "extract_fact_candidates", "draft_reply")
 
 
 @dataclass(frozen=True)
@@ -84,7 +96,7 @@ def load_dataset(task: str, path: Path) -> Dataset:
                 locale=raw.get("locale", fixture.default_locale),
                 hard=bool(raw.get("hard", False)),
                 tags=tuple(raw.get("tags", ())),
-                inputs={k: raw[k] for k in ("text",) if k in raw},
+                inputs={k: raw[k] for k in INPUT_KEYS if k in raw},
                 expect=raw.get("expect", {}),
             )
         )

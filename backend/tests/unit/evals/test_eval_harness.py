@@ -35,7 +35,11 @@ def test_the_fake_provider_passes_every_case_strictly(tmp_path: Path) -> None:
     (report_json,) = tmp_path.glob("*-fake.json")
     (report_md,) = tmp_path.glob("*-fake.md")
     data = json.loads(report_json.read_text(encoding="utf-8"))
-    assert {r["task"] for r in data["reports"]} == {"interpret_command", "extract_fact_candidates"}
+    assert {r["task"] for r in data["reports"]} == {
+        "interpret_command",
+        "extract_fact_candidates",
+        "draft_reply",
+    }
     for report in data["reports"]:
         assert report["metrics"]["hard_failures"] == 0
         assert report["metrics"]["accuracy"] == 1.0

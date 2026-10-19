@@ -13,11 +13,12 @@ the model and of the keyword scan are kept apart so that policy can take their u
 """
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 from app.ai.injection import detect_injection
-from app.ai.runner import RunnerDeps, run_task
+from app.ai.runner import RunnerDeps, TaskOutcome, run_task
 from app.ai.schemas import (
     DraftApprovedAnswer,
     DraftFact,
@@ -187,6 +188,11 @@ def _validation(checked: _Checked | None, passed: bool) -> dict[str, Any]:
     }
 
 
+# One model call: the task input in, the runner's outcome out. The job passes the real runner;
+# the eval harness passes a database-free one, so both exercise exactly this pipeline.
+ModelCall = Callable[[DraftReplyInput], TaskOutcome[ReplyProposal]]
+
+
 def make_plan(
     deps: RunnerDeps,
     context: DraftContext,
@@ -195,6 +201,16 @@ def make_plan(
 ) -> DraftPlan:
     """Run the pipeline. Raises ``RetryableError`` (from the runner) for transient LLM errors so
     that the job retries; every other failure is recorded in the plan."""
+    return plan_with(
+        context,
+        lambda task_input: run_task(
+            deps, context.ctx, DRAFT_REPLY, task_input, correlation_id, job_id=job_id
+        ),
+    )
+
+
+def plan_with(context: DraftContext, call: ModelCall) -> DraftPlan:
+    """The pipeline around an injectable model call."""
     text = context.customer_text
     flags = tuple(sorted(keyword_flags(text)))
     base: dict[str, Any] = {
@@ -234,14 +250,7 @@ def make_plan(
     run_ids: list[uuid.UUID] = []
     feedback: list[str] = []
     for attempt in range(2):
-        outcome = run_task(
-            deps,
-            context.ctx,
-            DRAFT_REPLY,
-            _task_input(context, facts, language, feedback),
-            correlation_id,
-            job_id=job_id,
-        )
+        outcome = call(_task_input(context, facts, language, feedback))
         run_ids.append(outcome.agent_run_id)
         if not outcome.ok or outcome.output is None:
             code = outcome.error_code if outcome.error_code in LLM_ERRORS else "LLM_UNAVAILABLE"

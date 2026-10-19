@@ -1,0 +1,108 @@
+dataset: draft_reply_core
+version: 1
+fixtures:
+  facts: demo_gym_replies
+cases:
+  # --- pricing -------------------------------------------------------------------------------
+  - id: price_monthly_tr
+    text: "Aylık üyelik ne kadar?"
+    expect: {intent: pricing, decision: approval_required, must_use_facts: [pricing.membership_monthly],
+             text_must_contain_rendered: ["6.000 ₺ / ay"], reasons_include_any: [POLICY_REQUIRES_APPROVAL]}
+    hard: true
+  - id: price_monthly_en
+    locale: en
+    text: "How much is the monthly membership?"
+    expect: {intent: pricing, decision: approval_required, must_use_facts: [pricing.membership_monthly]}
+    hard: true
+  - id: price_three_months_tr
+    text: "3 aylık üyelik fiyatı nedir?"
+    expect: {intent: pricing, decision: approval_required, must_use_facts: [pricing.membership_3_months],
+             text_must_contain_rendered: ["16.500"]}
+  - id: price_reformer_tr
+    text: "Reformer 8 seans ücreti ne kadar?"
+    expect: {intent: pricing, decision: approval_required, must_use_facts: [pricing.reformer_8_sessions]}
+  - id: price_generic_tr
+    text: "fiyatlar nedir"
+    expect: {intent: pricing, decision: approval_required, must_use_facts: [pricing.membership_monthly]}
+  - id: price_generic_en
+    locale: en
+    text: "what is the price?"
+    expect: {intent: pricing, decision: approval_required}
+  - id: price_after_greeting_burst
+    text: "aylık üyelik ne kadar"
+    conversation: [{role: customer, text: "Merhaba"}]
+    expect: {intent: pricing, decision: approval_required, must_use_facts: [pricing.membership_monthly]}
+  # --- other intents -------------------------------------------------------------------------
+  - id: hours_tr
+    text: "Çalışma saatleriniz nedir?"
+    expect: {intent: hours, decision: approval_required, must_use_facts: [hours.weekly]}
+  - id: hours_en
+    locale: en
+    text: "What time do you open?"
+    expect: {intent: hours, decision: approval_required, must_use_facts: [hours.weekly]}
+  - id: address_tr
+    text: "Adresiniz nerede?"
+    expect: {intent: location_contact, decision: approval_required, must_use_facts: [location.address]}
+  - id: address_en
+    locale: en
+    text: "Where are you located? I need the address."
+    expect: {intent: location_contact, decision: approval_required, must_use_facts: [location.address]}
+  - id: phone_tr
+    text: "Telefon numaranız var mı?"
+    expect: {intent: location_contact, decision: approval_required, must_use_facts: [contact.phone]}
+  - id: booking_tr
+    text: "Nasıl rezervasyon yapabilirim?"
+    expect: {intent: booking, decision: approval_required, must_use_facts: [booking.instructions]}
+  - id: booking_en
+    locale: en
+    text: "How can I book a class?"
+    expect: {intent: booking, decision: approval_required, must_use_facts: [booking.instructions]}
+  - id: trial_tr
+    text: "Deneme seansı ücretsiz mi?"
+    expect: {intent: promotions, decision: approval_required, must_use_facts: [promotion.trial_session]}
+  - id: trial_en
+    locale: en
+    text: "Is the trial session free?"
+    expect: {intent: promotions, decision: approval_required, must_use_facts: [promotion.trial_session]}
+  - id: services_tr
+    text: "Reformer pilates dersleriniz var mı?"
+    expect: {intent: services, decision: approval_required, must_use_facts: [service.reformer_pilates]}
+  - id: services_en
+    locale: en
+    text: "Do you have fitness classes?"
+    expect: {intent: services, decision: approval_required}
+  - id: greeting_tr
+    text: "Merhaba"
+    expect: {intent: greeting, decision: approval_required}
+  - id: greeting_en
+    locale: en
+    text: "hello"
+    expect: {intent: greeting, decision: approval_required}
+  # --- automatic replies ---------------------------------------------------------------------
+  - id: auto_price_is_automatic_when_allowed
+    text: "Aylık üyelik ne kadar?"
+    automation: {reply.pricing: auto}
+    expect: {decision: auto, must_use_facts: [pricing.membership_monthly]}
+  - id: auto_only_for_the_allowed_class
+    text: "Çalışma saatleriniz nedir?"
+    automation: {reply.pricing: auto}
+    expect: {decision: approval_required}
+  - id: automation_off_hands_over
+    text: "Aylık üyelik ne kadar?"
+    automation: {reply.pricing: "off"}
+    expect: {decision: human_required, reasons_include_any: [AUTOMATION_OFF]}
+  # --- approved answers ----------------------------------------------------------------------
+  - id: approved_answer_is_used
+    text: "Otopark var mı?"
+    approved_answers:
+      - {title: Otopark, intent: faq, example_questions: ["Otopark var mı?", "Park yeri var mı?"],
+         answer_template: "Evet, binanın önünde otopark var. Bize ulaşın: {{fact:contact.phone}}"}
+    expect: {decision: approval_required, must_use_facts: [contact.phone], text_must_contain_rendered: ["0555"]}
+  - id: approved_answer_with_a_literal_price_is_refused
+    text: "Otopark ücreti var mı?"
+    approved_answers:
+      - {title: Otopark, intent: faq, example_questions: ["Otopark ücreti var mı?"],
+         answer_template: "Otopark 50 TL."}
+    expect: {decision: human_required, reasons_include_any: [GROUNDING_FAILED]}
+    tags: [grounding]
+    hard: true

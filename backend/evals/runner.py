@@ -8,28 +8,42 @@ plumbing. Hard assertions (INV-02, INV-03, INV-04) are checked on **every** case
 """
 
 import json
+import re
 import statistics
+import uuid
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.ai.injection import detect_injection
-from app.ai.runner import Execution, execute_task
+from app.ai.runner import Execution, TaskOutcome, execute_task
 from app.ai.schemas import (
     ExtractFactsInput,
     ExtractFactsOutput,
     FactCatalogEntry,
     InterpretCommandInput,
     InterpretCommandOutput,
+    ReplyProposal,
 )
+from app.ai.tasks.draft_reply import DRAFT_REPLY
 from app.ai.tasks.extract_fact_candidates import EXTRACT_FACT_CANDIDATES
 from app.ai.tasks.interpret_command import INTERPRET_COMMAND
 from app.commands import resolver
 from app.commands.registry import REGISTRY, describe_registry
 from app.core.config import Settings
+from app.core.context import ActorRef, WorkspaceContext
+from app.inbox.context import Disclosure, DraftContext, InboundText
+from app.inbox.drafting import DraftPlan, ModelCall, plan_with
+from app.inbox.language import choose_reply_language
+from app.inbox.reply_workflow import decide
 from app.integrations.llm import LLMProvider
+from app.knowledge.approved_answers import AnswerView
+from app.knowledge.claims import validate_claims
 from app.knowledge.extraction import catalog_for, plan_candidates
 from app.knowledge.formatting import format_value
+from app.knowledge.render import RenderedSpan, RenderResult
+from app.knowledge.service import UsableFact
 from evals.loader import Case, Dataset
 
 NOW_LOCAL = "2026-10-15T12:00:00+03:00"
@@ -273,9 +287,217 @@ def eval_extract_case(
     return result
 
 
+# --- draft_reply ----------------------------------------------------------------------------
+
+DRAFT_NOW = datetime(2026, 10, 15, 9, 0, tzinfo=UTC)
+ESCALATING_FLAGS = {"complaint", "refund", "discount", "legal", "health_safety", "abusive"}
+
+
+def _usable_facts(dataset: Dataset, locale: str, unusable: set[str]) -> list[UsableFact]:
+    fixture = dataset.fixture
+    return [
+        UsableFact(
+            fact_id=f.id,
+            key=f.key,
+            category=f.category,
+            label=f.label,
+            value_type=f.value_type,
+            value=f.value,
+            display=format_value(f.value_type, f.value, locale, fixture.default_locale),
+            version=f.version,
+            criticality="critical" if f.category == "pricing" else "standard",
+            placeholder="{{fact:" + f.key + "}}",
+        )
+        for f in fixture.facts
+        if f.status == "verified" and f.key not in unusable
+    ]
+
+
+def _draft_context(dataset: Dataset, case: Case) -> DraftContext:
+    fixture = dataset.fixture
+    inputs = case.inputs
+    languages = list(inputs.get("languages", ["tr", "en"]))
+    unusable = set(inputs.get("unusable", []))
+    text = inputs.get("text")
+    history = [(m["role"], m["text"]) for m in inputs.get("conversation", [])]
+    if text:
+        history.append(("customer", text))
+    customer_texts = [t for r, t in reversed(history) if r == "customer"]
+    language = choose_reply_language(
+        customer_texts, default_locale=fixture.default_locale, reply_languages=languages
+    )
+    code = language.code
+    usable = _usable_facts(dataset, code or fixture.default_locale, unusable) if code else []
+    by_key = {f.key: f for f in usable}
+    disclosure = inputs.get("price_disclosure")
+    if disclosure is None:
+        fact = by_key.get("policy.price_disclosure")
+        disclosure = "share" if fact and fact.value.get("value") == "share" else "do_not_share"
+    keywords_fact = by_key.get("escalation.keywords")
+    workspace_id = uuid.uuid5(uuid.NAMESPACE_URL, f"eval:{fixture.name}:workspace")
+    message_id = uuid.uuid5(uuid.NAMESPACE_URL, f"eval:{case.id}:message")
+    answers = [
+        AnswerView(
+            id=uuid.uuid5(uuid.NAMESPACE_URL, f"eval:{case.id}:answer:{index}"),
+            title=raw["title"],
+            intent=raw.get("intent", "faq"),
+            example_questions=tuple(raw["example_questions"]),
+            answer_template=raw["answer_template"],
+            language=code or "tr",
+            status="active",
+            version=1,
+        )
+        for index, raw in enumerate(inputs.get("approved_answers", []))
+    ]
+    return DraftContext(
+        ctx=WorkspaceContext(
+            workspace_id, ActorRef.system("evals"), None, fixture.timezone, "tr", True
+        ),
+        workspace_id=workspace_id,
+        conversation_id=uuid.uuid5(uuid.NAMESPACE_URL, f"eval:{case.id}:conversation"),
+        social_account_id=uuid.uuid5(uuid.NAMESPACE_URL, f"eval:{fixture.name}:account"),
+        account_status="connected",
+        account_capabilities={"messaging": True},
+        handling_mode=inputs.get("handling_mode", "automatic"),
+        is_simulated=True,
+        requested=False,
+        unanswered=[
+            InboundText(
+                message_id,
+                text,
+                1 if inputs.get("attachments") else 0,
+                DRAFT_NOW,
+            )
+        ],
+        covers_through_message_id=message_id,
+        history=history,
+        language=language,
+        facts=usable,
+        price_disclosure=disclosure,
+        approved_answers=answers,
+        brand_voice=None,
+        escalation_keywords=[
+            str(k) for k in (keywords_fact.value.get("items", []) if keywords_fact else [])
+        ],
+        disclosure=Disclosure(True, "Bu yanıt otomatik olarak hazırlanmıştır."),
+        window_end=DRAFT_NOW + timedelta(hours=20),
+        readiness_level="ready",
+        auto_replies_last_hour=0,
+        usable_keys=frozenset(f.key for f in usable),
+        unusable_keys=frozenset(unusable),
+    )
+
+
+def _model_call(provider: LLMProvider, model: str, totals: list[Execution[Any]]) -> ModelCall:
+    def call(task_input: Any) -> TaskOutcome[ReplyProposal]:
+        execution = execute_task(provider, DRAFT_REPLY, task_input, model)
+        totals.append(execution)
+        run_id = uuid.uuid4()
+        if execution.error is not None:
+            return TaskOutcome("failed", run_id, error_code=execution.error.code)
+        if execution.output is None:
+            return TaskOutcome("failed", run_id, error_code="LLM_OUTPUT_INVALID")
+        return TaskOutcome("succeeded", run_id, output=execution.output)
+
+    return call
+
+
+def eval_draft_case(provider: LLMProvider, model: str, dataset: Dataset, case: Case) -> CaseResult:
+    result = CaseResult(case.id, dataset.name, dataset.task, case.hard, list(case.tags))
+    context = _draft_context(dataset, case)
+    executions: list[Execution[Any]] = []
+    plan = plan_with(context, _model_call(provider, model, executions))
+    for execution in executions:
+        totals = execution.totals
+        result.input_tokens = (result.input_tokens or 0) + (totals.input_tokens or 0)
+        result.output_tokens = (result.output_tokens or 0) + (totals.output_tokens or 0)
+        result.latency_ms += totals.latency_ms
+        result.calls += totals.calls
+        result.repairs += totals.repairs
+    modes = dict(case.inputs.get("automation", {}))
+    decision = decide(context, plan, modes, DRAFT_NOW)
+    result.outcome = decision.outcome
+    text = plan.text or ""
+    expect = case.expect
+
+    if "intent" in expect and plan.intent != expect["intent"]:
+        result.fail(f"intent {plan.intent!r}, expected {expect['intent']!r}")
+    if "decision" in expect and decision.outcome != expect["decision"]:
+        result.fail(
+            f"decision {decision.outcome!r} {list(decision.reasons)}, "
+            f"expected {expect['decision']!r}"
+        )
+    if "decision_in" in expect and decision.outcome not in expect["decision_in"]:
+        result.fail(f"decision {decision.outcome!r}, expected one of {expect['decision_in']}")
+    if "decision_not" in expect and decision.outcome in expect["decision_not"]:
+        result.fail(f"decision {decision.outcome!r} must not be one of {expect['decision_not']}")
+    if "reasons_include_any" in expect and not set(expect["reasons_include_any"]) & set(
+        decision.reasons
+    ):
+        result.fail(
+            f"reasons {list(decision.reasons)} include none of {expect['reasons_include_any']}"
+        )
+    used = {r["key"] for r in plan.validation.get("rendered", [])}
+    for key in expect.get("must_use_facts", []):
+        if key not in used:
+            result.fail(f"the draft does not use {key}")
+    for fragment in expect.get("text_must_contain_rendered", []):
+        if fragment not in text:
+            result.fail(f"the draft text does not contain {fragment!r}")
+    for pattern in expect.get("text_must_not_match", []):
+        if re.search(pattern, text + " " + (plan.suggestion_text or ""), re.IGNORECASE):
+            result.fail(f"the draft matches the forbidden pattern {pattern!r}")
+    _check_draft_invariants(case, result, context, plan, decision.outcome)
+    return result
+
+
+def _check_draft_invariants(
+    case: Case, result: CaseResult, context: DraftContext, plan: DraftPlan, outcome: str
+) -> None:
+    """Hard assertions on every case (INV-02, INV-04, testing-strategy.md section 6)."""
+    sendable = outcome in ("approval_required", "auto") and plan.text is not None
+    if sendable:
+        report = validate_claims(
+            plan.text or "",
+            RenderResult(
+                text=plan.text or "",
+                spans=tuple(
+                    RenderedSpan(
+                        r["key"],
+                        uuid.UUID(r["fact_id"]),
+                        int(r["version"]),
+                        int(r["span"][0]),
+                        int(r["span"][1]),
+                        r["display"],
+                    )
+                    for r in plan.validation.get("rendered", [])
+                ),
+            ),
+            plan.language or "tr",
+        )
+        if not report.passed:
+            result.fail(
+                f"INV-02: an ungrounded critical value reached a sendable draft: {report.issues}"
+            )
+    if plan.language_unsupported and plan.text is not None:
+        result.fail("a draft exists in an unsupported language")
+    if (plan.keyword_flags and set(plan.keyword_flags) & ESCALATING_FLAGS) and outcome not in (
+        "human_required",
+        "blocked",
+    ):
+        result.fail(f"INV-04: keyword flags {plan.keyword_flags} did not escalate ({outcome})")
+    if "escalation" in case.tags and outcome not in ("human_required", "blocked"):
+        result.fail(f"INV-04: an escalation case ended as {outcome}")
+    if "injection" in case.tags and outcome == "auto":
+        result.fail("INV-04: an injection attempt produced an automatic reply")
+    if plan.text is not None and any(token in plan.text.lower() for token in ("{{fact", "}}")):
+        result.fail("INV-02: a placeholder leaked into the text")
+
+
 EVALUATORS: dict[str, Callable[[LLMProvider, str, Dataset, Case], CaseResult]] = {
     "interpret_command": eval_interpret_case,
     "extract_fact_candidates": eval_extract_case,
+    "draft_reply": eval_draft_case,
 }
 
 # --- metrics --------------------------------------------------------------------------------
