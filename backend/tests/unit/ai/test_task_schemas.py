@@ -15,11 +15,16 @@ from app.ai.schemas import (
     InterpretCommandOutput,
     NormalizedMoney,
     QueryFact,
+    ReplyProposal,
     Unsupported,
     UpdateFact,
 )
 
-OUTPUT_MODELS: list[type[BaseModel]] = [InterpretCommandOutput, ExtractFactsOutput]
+OUTPUT_MODELS: list[type[BaseModel]] = [
+    InterpretCommandOutput,
+    ExtractFactsOutput,
+    ReplyProposal,
+]
 
 # Keywords strict mode rejects or that this codebase deliberately keeps out of provider schemas
 # (limits are enforced by post-validators instead).

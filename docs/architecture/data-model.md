@@ -356,7 +356,7 @@ Index: `(conversation_id, provider_timestamp)`.
 | template | text null | pre-render text with placeholders (debugging) |
 | text | text null | rendered final text (null for `human_required` without suggestion) |
 | suggestion_text | text null | for `needs_human`: optional, not sendable as-is |
-| validation | jsonb not null | claim report |
+| validation | jsonb not null | claim report `{passed, issues[{code, span, text}], rendered[{key, fact_id, version, span, display}]}`; `rendered` lets the UI draw fact chips without re-rendering |
 | decision | text not null | `auto`, `approval_required`, `human_required`, `blocked` |
 | decision_reasons | text[] not null | |
 | status | text not null | [state-machines.md §4](state-machines.md) |

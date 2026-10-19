@@ -195,3 +195,80 @@ class ExtractedItem(BaseModel):
 
 class ExtractFactsOutput(BaseModel):
     items: list[ExtractedItem]
+
+
+# --- draft_reply (agent-runtime.md §4) --------------------------------------------------------
+
+Intent = Literal[
+    "greeting",
+    "pricing",
+    "hours",
+    "location_contact",
+    "services",
+    "booking",
+    "promotions",
+    "faq",
+    "complaint",
+    "refund_request",
+    "discount_request",
+    "sensitive",
+    "other",
+]
+ReplyFlag = Literal[
+    "complaint",
+    "refund",
+    "discount",
+    "legal",
+    "health_safety",
+    "abusive",
+    "personal_data",
+    "injection_suspected",
+]
+MAX_TEMPLATE_BYTES = 900  # before rendering; the rendered reply must fit 1000 bytes in total
+MAX_HISTORY_MESSAGES = 10
+MAX_HISTORY_CHARS = 1000
+
+
+class DraftFact(BaseModel):
+    """A usable fact the reply may quote, only through its placeholder."""
+
+    key: str
+    label: str
+    value_type: str
+    value_display: str
+    placeholder: str
+
+
+class DraftApprovedAnswer(BaseModel):
+    id: str
+    intent: str
+    example_questions: list[str]
+    answer_template: str
+    status: str  # active | needs_review
+
+
+class DraftMessage(BaseModel):
+    role: Literal["customer", "business"]
+    text: str  # untrusted: the customer's own words
+
+
+class DraftReplyInput(BaseModel):
+    reply_language: str  # detected by code; the model may not switch
+    facts: list[DraftFact]
+    price_disclosure: Literal["share", "do_not_share"]
+    approved_answers: list[DraftApprovedAnswer]
+    brand_voice: str | None
+    conversation: list[DraftMessage]  # the last messages, oldest first
+    # Set on the one regeneration: what was wrong with the previous proposal.
+    validator_feedback: list[str]
+
+
+class ReplyProposal(BaseModel):
+    intent: Intent
+    flags: list[ReplyFlag]
+    can_answer: bool
+    needs_human: bool
+    approved_answer_id: str | None
+    reply_template: str | None
+    used_fact_keys: list[str]
+    language: str

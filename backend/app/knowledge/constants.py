@@ -30,3 +30,15 @@ STAFF_SOURCES = frozenset({"staff_proposal"})
 
 KEY_PATTERN = r"^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$"
 KEY_RE = re.compile(KEY_PATTERN)
+
+APPROVED_ANSWER_STATUSES = ("active", "needs_review", "archived")
+APPROVED_ANSWER_INTENTS = (
+    "greeting",
+    "pricing",
+    "hours",
+    "location_contact",
+    "services",
+    "booking",
+    "promotions",
+    "faq",
+)

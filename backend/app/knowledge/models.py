@@ -28,6 +28,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
 from app.knowledge.constants import (
+    APPROVED_ANSWER_INTENTS,
+    APPROVED_ANSWER_STATUSES,
     CANDIDATE_RELATIONS,
     CANDIDATE_SOURCES,
     CANDIDATE_STATUSES,
@@ -206,4 +208,41 @@ class FactReference(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     referrer_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ApprovedAnswer(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
+    """An answer the owner approved once and wants reused (business-knowledge.md §9).
+
+    The template may contain ``{{fact:key}}`` placeholders, never literal prices or hours. A
+    change to a fact it uses sets it to ``needs_review`` (the model still sees it, flagged).
+    """
+
+    __tablename__ = "approved_answers"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        CheckConstraint(_in("status", APPROVED_ANSWER_STATUSES), name="status"),
+        CheckConstraint(_in("intent", APPROVED_ANSWER_INTENTS), name="intent"),
+        # By table name only: knowledge never imports the inbox.
+        ForeignKeyConstraint(
+            ["workspace_id", "created_from_message_id"],
+            ["messages.workspace_id", "messages.id"],
+        ),
+        CheckConstraint("language IN ('tr', 'en')", name="language"),
+        CheckConstraint("version >= 1", name="version"),
+        Index("ix_approved_answers_workspace_status", "workspace_id", "status"),
+    )
+
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    intent: Mapped[str] = mapped_column(Text, nullable=False)
+    example_questions: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    answer_template: Mapped[str] = mapped_column(Text, nullable=False)
+    language: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="active")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+    created_from_message_id: Mapped[uuid.UUID | None] = mapped_column()
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
     )

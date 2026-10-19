@@ -109,7 +109,11 @@ language: str               # must equal reply_language
 | `complaint`, `refund_request`, `discount_request`, `sensitive` | — (always human) | — |
 | `other` | — (human) | — |
 
-**Post-validator:** `used_fact_keys` ⊆ provided keys; placeholders in the template ⊆ `used_fact_keys`; `language == reply_language`; if `approved_answer_id` is set it must exist; `can_answer=false` ⇒ no template required.
+**Post-validator** (structure only): `language == reply_language`; if `approved_answer_id` is set it must be one of the provided answers and `reply_template` must then be empty; `reply_template` ≤ 900 bytes; `can_answer=false` ⇒ no template required. Which facts a template uses is **not** checked here but by the renderer: a placeholder naming a fact that was not provided fails with `FACT_NOT_USABLE`, gets the one regeneration with feedback, and then goes to a person. (Treating it as invalid output would give the generic repair and the reason `LLM_OUTPUT_INVALID` instead.)
+
+**Facts shown to the model:** the usable facts except the internal categories (`escalation`, `brand`, `schedule`) and `policy.price_disclosure`; with `price_disclosure = do_not_share` all `pricing.*` facts are also withheld, and the renderer refuses them even if a template names one. `policy.price_answer_text` is an ordinary fact in the list. A workspace without a usable `policy.price_disclosure` is treated as `do_not_share`.
+
+**Regeneration:** a render error or a claim-validator issue (including `TOO_LONG`, with the disclosure notice budgeted) triggers exactly one more call with `validator_feedback`; an approved answer chosen by the model is never regenerated. The run snapshot keeps keys and counts, never the customer's words.
 
 Then: render → claim validator → policy ([workflows.md §C](workflows.md)). The disclosure suffix is appended by code (never by the model) for `auto` decisions when enabled.
 

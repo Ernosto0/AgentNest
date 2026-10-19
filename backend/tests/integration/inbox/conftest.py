@@ -12,19 +12,25 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.ai import runtime
 from app.approvals import service as approvals_service
 from app.approvals.models import Approval
 from app.core.clock import FrozenClock
 from app.core.config import Settings
 from app.handlers import load_handlers
+from app.inbox.context import DraftContext, DraftSkip, prepare
+from app.inbox.drafting import DraftPlan, make_plan
 from app.inbox.models import Conversation, Message, ReplyDraft
 from app.inbox.payloads import DraftReplyPayload
 from app.integrations.instagram import webhook_format as wf
 from app.integrations.instagram.models import SocialAccount
+from app.integrations.llm import FakeLLMProvider
 from app.jobs.models import Job
 from app.jobs.registry import JobContext, get_handler, job_handler, registry_snapshot
 from app.jobs.testing import run_due_jobs
+from app.knowledge.models import BusinessFact
 from tests.helpers.env import Env, build_env
+from tests.helpers.gym import seed_gym_facts
 
 # Register every job handler before any test snapshots the registry: a module imported for the
 # first time inside a snapshot would lose its handlers when the snapshot is restored.
@@ -98,6 +104,40 @@ class InboxEnv:
         assert response.status_code == 200, response.text
         self.process()
         return response
+
+    # --- drafting ---
+
+    def seed_facts(self, **kwargs: Any) -> dict[str, BusinessFact]:
+        return seed_gym_facts(self.session, self.env.workspace, self.clock, **kwargs)
+
+    def context(
+        self,
+        *,
+        message_id: uuid.UUID | None = None,
+        requested: bool = False,
+        customer: str = "cust-1",
+    ) -> DraftContext | DraftSkip:
+        self.session.expire_all()
+        conversation = self.conversation(customer)
+        return prepare(
+            self.session,
+            self.clock,
+            self.env.workspace.id,
+            conversation.id,
+            message_id=message_id,
+            requested=requested,
+        )
+
+    def plan(self, context: DraftContext) -> DraftPlan:
+        deps = runtime.runner_deps(self.factory, self.clock)
+        return make_plan(deps, context, uuid.uuid4())
+
+    def drafted(self, text: str | None, **kwargs: Any) -> DraftPlan:
+        """Deliver ``text``, process it, and run the pipeline on the result."""
+        self.deliver_and_process(text, **kwargs)
+        context = self.context()
+        assert isinstance(context, DraftContext), context
+        return self.plan(context)
 
     # --- reading state ---
 
@@ -211,6 +251,16 @@ def _draft_reply_stub() -> Iterator[None]:
             return None
 
         yield
+
+
+@pytest.fixture
+def provider() -> Iterator[FakeLLMProvider]:
+    """The process-wide fake LLM provider, scripted per test and reset afterwards."""
+    fake = runtime.get_provider()
+    assert isinstance(fake, FakeLLMProvider)
+    fake.reset()
+    yield fake
+    fake.reset()
 
 
 @pytest.fixture
