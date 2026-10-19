@@ -1,9 +1,8 @@
 """P4-03: webhook ingestion. AC-B2 (dedup), AC-G4 (signature), account resolution, handshake."""
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 from sqlalchemy import func, select
@@ -11,25 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.audit.models import AuditLog
 from app.inbox.models import InboundEvent
-from app.inbox.payloads import ProcessInboundEventPayload
 from app.integrations.instagram import webhook_format as wf
 from app.integrations.instagram.models import SocialAccount
 from app.jobs.models import Job
-from app.jobs.registry import JobContext, job_handler, registry_snapshot
 from tests.factories import create_workspace
 from tests.integration.inbox.conftest import APP_SECRET, WEBHOOK_PATH, InboxEnv
-
-
-@pytest.fixture(autouse=True)
-def _processing_stub() -> Iterator[None]:
-    """The processing job arrives in P4-04; ingestion only needs the job type to exist."""
-    with registry_snapshot():
-
-        @job_handler("process_inbound_event", ProcessInboundEventPayload)
-        def _noop(job: JobContext) -> None:
-            return None
-
-        yield
 
 
 def events(session: Session) -> list[InboundEvent]:

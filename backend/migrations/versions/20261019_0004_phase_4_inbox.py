@@ -2,7 +2,7 @@
 
 Revision ID: 0004
 Revises: 0003
-Create Date: 2026-10-19 20:49:33.815789
+Create Date: 2026-10-19 20:56:59.412095
 """
 
 from collections.abc import Sequence
@@ -52,6 +52,30 @@ def upgrade() -> None:
     op.create_index(op.f('ix_social_accounts_workspace_id'), 'social_accounts', ['workspace_id'], unique=False)
     op.create_index('uq_social_accounts_active_external', 'social_accounts', ['provider_kind', 'external_account_id'], unique=True, postgresql_where=sa.text("status <> 'disconnected'"))
     op.create_index('uq_social_accounts_active_workspace', 'social_accounts', ['workspace_id'], unique=True, postgresql_where=sa.text("status <> 'disconnected'"))
+    op.create_table('conversations',
+    sa.Column('social_account_id', sa.Uuid(), nullable=False),
+    sa.Column('customer_external_id', sa.Text(), nullable=False),
+    sa.Column('customer_handle', sa.Text(), nullable=True),
+    sa.Column('handling_mode', sa.Text(), server_default='automatic', nullable=False),
+    sa.Column('attention', sa.Text(), server_default='none', nullable=False),
+    sa.Column('last_inbound_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('last_outbound_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('last_message_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('is_simulated', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('workspace_id', sa.Uuid(), nullable=False),
+    sa.CheckConstraint("attention IN ('none', 'needs_approval', 'needs_human', 'failed')", name=op.f('ck_conversations_attention')),
+    sa.CheckConstraint("handling_mode IN ('automatic', 'human')", name=op.f('ck_conversations_handling_mode')),
+    sa.ForeignKeyConstraint(['workspace_id', 'social_account_id'], ['social_accounts.workspace_id', 'social_accounts.id'], name=op.f('fk_conversations_workspace_id_social_account_id_social_accounts'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['workspace_id'], ['workspaces.id'], name=op.f('fk_conversations_workspace_id_workspaces'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_conversations')),
+    sa.UniqueConstraint('social_account_id', 'customer_external_id', name=op.f('uq_conversations_social_account_id_customer_external_id')),
+    sa.UniqueConstraint('workspace_id', 'id', name=op.f('uq_conversations_workspace_id_id'))
+    )
+    op.create_index('ix_conversations_attention', 'conversations', ['workspace_id', 'attention', sa.literal_column('last_message_at DESC')], unique=False)
+    op.create_index(op.f('ix_conversations_workspace_id'), 'conversations', ['workspace_id'], unique=False)
     op.create_table('inbound_events',
     sa.Column('workspace_id', sa.Uuid(), nullable=True),
     sa.Column('social_account_id', sa.Uuid(), nullable=True),
@@ -130,11 +154,102 @@ def upgrade() -> None:
     )
     op.create_index('ix_sim_sent_account_recipient', 'sim_sent_messages', ['social_account_id', 'recipient_id', 'sent_at'], unique=False)
     op.create_index(op.f('ix_sim_sent_messages_workspace_id'), 'sim_sent_messages', ['workspace_id'], unique=False)
+    op.create_table('messages',
+    sa.Column('conversation_id', sa.Uuid(), nullable=False),
+    sa.Column('social_account_id', sa.Uuid(), nullable=False),
+    sa.Column('direction', sa.Text(), nullable=False),
+    sa.Column('sender_kind', sa.Text(), nullable=False),
+    sa.Column('external_message_id', sa.Text(), nullable=True),
+    sa.Column('text', sa.Text(), nullable=True),
+    sa.Column('attachments', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), nullable=False),
+    sa.Column('provider_timestamp', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('reply_draft_id', sa.Uuid(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('is_simulated', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('workspace_id', sa.Uuid(), nullable=False),
+    sa.CheckConstraint("direction IN ('inbound', 'outbound')", name=op.f('ck_messages_direction')),
+    sa.CheckConstraint("sender_kind IN ('customer', 'business_app', 'business_native')", name=op.f('ck_messages_sender_kind')),
+    sa.ForeignKeyConstraint(['workspace_id', 'conversation_id'], ['conversations.workspace_id', 'conversations.id'], name=op.f('fk_messages_workspace_id_conversation_id_conversations'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['workspace_id', 'social_account_id'], ['social_accounts.workspace_id', 'social_accounts.id'], name=op.f('fk_messages_workspace_id_social_account_id_social_accounts'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['workspace_id'], ['workspaces.id'], name=op.f('fk_messages_workspace_id_workspaces'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_messages')),
+    sa.UniqueConstraint('workspace_id', 'id', name=op.f('uq_messages_workspace_id_id'))
+    )
+    op.create_index('ix_messages_conversation_time', 'messages', ['conversation_id', 'provider_timestamp'], unique=False)
+    op.create_index(op.f('ix_messages_workspace_id'), 'messages', ['workspace_id'], unique=False)
+    op.create_index('uq_messages_account_external_id', 'messages', ['social_account_id', 'external_message_id'], unique=True, postgresql_where=sa.text('external_message_id IS NOT NULL'))
+    op.create_table('reply_drafts',
+    sa.Column('conversation_id', sa.Uuid(), nullable=False),
+    sa.Column('covers_through_message_id', sa.Uuid(), nullable=False),
+    sa.Column('source', sa.Text(), nullable=False),
+    sa.Column('language', sa.Text(), nullable=True),
+    sa.Column('intent', sa.Text(), nullable=True),
+    sa.Column('flags', sa.ARRAY(sa.Text()), server_default=sa.text("'{}'"), nullable=False),
+    sa.Column('template', sa.Text(), nullable=True),
+    sa.Column('text', sa.Text(), nullable=True),
+    sa.Column('suggestion_text', sa.Text(), nullable=True),
+    sa.Column('validation', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
+    sa.Column('decision', sa.Text(), nullable=False),
+    sa.Column('decision_reasons', sa.ARRAY(sa.Text()), server_default=sa.text("'{}'"), nullable=False),
+    sa.Column('status', sa.Text(), nullable=False),
+    sa.Column('version', sa.Integer(), server_default=sa.text('1'), nullable=False),
+    sa.Column('approval_id', sa.Uuid(), nullable=True),
+    sa.Column('operation_id', sa.Uuid(), nullable=True),
+    sa.Column('agent_run_id', sa.Uuid(), nullable=True),
+    sa.Column('superseded_by_id', sa.Uuid(), nullable=True),
+    sa.Column('failure_code', sa.Text(), nullable=True),
+    sa.Column('created_by_actor_type', sa.Text(), nullable=False),
+    sa.Column('created_by_actor_id', sa.Text(), nullable=True),
+    sa.Column('client_request_id', sa.Text(), nullable=True),
+    sa.Column('is_simulated', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('workspace_id', sa.Uuid(), nullable=False),
+    sa.CheckConstraint("decision IN ('auto', 'approval_required', 'human_required', 'blocked')", name=op.f('ck_reply_drafts_decision')),
+    sa.CheckConstraint("source IN ('ai', 'approved_answer', 'owner')", name=op.f('ck_reply_drafts_source')),
+    sa.CheckConstraint("status IN ('pending_approval', 'needs_human', 'queued', 'sending', 'outcome_unknown', 'sent', 'failed', 'rejected', 'expired', 'superseded', 'cancelled', 'blocked')", name=op.f('ck_reply_drafts_status')),
+    sa.CheckConstraint('version >= 1', name=op.f('ck_reply_drafts_version')),
+    sa.ForeignKeyConstraint(['workspace_id', 'agent_run_id'], ['agent_runs.workspace_id', 'agent_runs.id'], name=op.f('fk_reply_drafts_workspace_id_agent_run_id_agent_runs')),
+    sa.ForeignKeyConstraint(['workspace_id', 'approval_id'], ['approvals.workspace_id', 'approvals.id'], name=op.f('fk_reply_drafts_workspace_id_approval_id_approvals')),
+    sa.ForeignKeyConstraint(['workspace_id', 'conversation_id'], ['conversations.workspace_id', 'conversations.id'], name=op.f('fk_reply_drafts_workspace_id_conversation_id_conversations'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['workspace_id', 'covers_through_message_id'], ['messages.workspace_id', 'messages.id'], name=op.f('fk_reply_drafts_workspace_id_covers_through_message_id_messages')),
+    sa.ForeignKeyConstraint(['workspace_id', 'superseded_by_id'], ['reply_drafts.workspace_id', 'reply_drafts.id'], name=op.f('fk_reply_drafts_workspace_id_superseded_by_id_reply_drafts')),
+    sa.ForeignKeyConstraint(['workspace_id'], ['workspaces.id'], name=op.f('fk_reply_drafts_workspace_id_workspaces'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_reply_drafts')),
+    sa.UniqueConstraint('workspace_id', 'id', name=op.f('uq_reply_drafts_workspace_id_id'))
+    )
+    op.create_index('ix_reply_drafts_conversation_created', 'reply_drafts', ['conversation_id', 'created_at'], unique=False)
+    op.create_index('ix_reply_drafts_status', 'reply_drafts', ['status'], unique=False)
+    op.create_index(op.f('ix_reply_drafts_workspace_id'), 'reply_drafts', ['workspace_id'], unique=False)
+    op.create_index('uq_reply_drafts_client_request', 'reply_drafts', ['workspace_id', 'created_by_actor_id', 'client_request_id'], unique=True, postgresql_where=sa.text('client_request_id IS NOT NULL'))
+    op.create_index('uq_reply_drafts_open_conversation', 'reply_drafts', ['conversation_id'], unique=True, postgresql_where=sa.text("status IN ('pending_approval', 'needs_human', 'queued', 'sending', 'outcome_unknown')"))
+    # messages and reply_drafts reference each other: this side is added once both exist.
+    op.create_foreign_key(
+        'fk_messages_reply_draft',
+        'messages',
+        'reply_drafts',
+        ['workspace_id', 'reply_draft_id'],
+        ['workspace_id', 'id'],
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_constraint('fk_messages_reply_draft', 'messages', type_='foreignkey')
+    op.drop_index('uq_reply_drafts_open_conversation', table_name='reply_drafts', postgresql_where=sa.text("status IN ('pending_approval', 'needs_human', 'queued', 'sending', 'outcome_unknown')"))
+    op.drop_index('uq_reply_drafts_client_request', table_name='reply_drafts', postgresql_where=sa.text('client_request_id IS NOT NULL'))
+    op.drop_index(op.f('ix_reply_drafts_workspace_id'), table_name='reply_drafts')
+    op.drop_index('ix_reply_drafts_status', table_name='reply_drafts')
+    op.drop_index('ix_reply_drafts_conversation_created', table_name='reply_drafts')
+    op.drop_table('reply_drafts')
+    op.drop_index('uq_messages_account_external_id', table_name='messages', postgresql_where=sa.text('external_message_id IS NOT NULL'))
+    op.drop_index(op.f('ix_messages_workspace_id'), table_name='messages')
+    op.drop_index('ix_messages_conversation_time', table_name='messages')
+    op.drop_table('messages')
     op.drop_index(op.f('ix_sim_sent_messages_workspace_id'), table_name='sim_sent_messages')
     op.drop_index('ix_sim_sent_account_recipient', table_name='sim_sent_messages')
     op.drop_table('sim_sent_messages')
@@ -147,6 +262,9 @@ def downgrade() -> None:
     op.drop_index('ix_inbound_events_workspace_received', table_name='inbound_events')
     op.drop_index('ix_inbound_events_status_received', table_name='inbound_events')
     op.drop_table('inbound_events')
+    op.drop_index(op.f('ix_conversations_workspace_id'), table_name='conversations')
+    op.drop_index('ix_conversations_attention', table_name='conversations')
+    op.drop_table('conversations')
     op.drop_index('uq_social_accounts_active_workspace', table_name='social_accounts', postgresql_where=sa.text("status <> 'disconnected'"))
     op.drop_index('uq_social_accounts_active_external', table_name='social_accounts', postgresql_where=sa.text("status <> 'disconnected'"))
     op.drop_index(op.f('ix_social_accounts_workspace_id'), table_name='social_accounts')

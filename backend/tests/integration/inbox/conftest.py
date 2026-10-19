@@ -2,21 +2,33 @@
 Instagram account and helpers to deliver signed webhooks the way the simulator does."""
 
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.approvals import service as approvals_service
+from app.approvals.models import Approval
 from app.core.clock import FrozenClock
 from app.core.config import Settings
+from app.handlers import load_handlers
+from app.inbox.models import Conversation, Message, ReplyDraft
+from app.inbox.payloads import DraftReplyPayload
 from app.integrations.instagram import webhook_format as wf
 from app.integrations.instagram.models import SocialAccount
+from app.jobs.models import Job
+from app.jobs.registry import JobContext, get_handler, job_handler, registry_snapshot
 from app.jobs.testing import run_due_jobs
 from tests.helpers.env import Env, build_env
+
+# Register every job handler before any test snapshots the registry: a module imported for the
+# first time inside a snapshot would lose its handlers when the snapshot is restored.
+load_handlers()
 
 APP_SECRET = "dev-mock-instagram-app-secret"  # the test default of MOCK_INSTAGRAM_APP_SECRET
 WEBHOOK_PATH = "/webhooks/instagram/mock"
@@ -78,6 +90,127 @@ class InboxEnv:
     def process(self) -> int:
         """Run every due job the way the worker would."""
         return run_due_jobs(self.clock, session_factory=self.factory)
+
+    def deliver_and_process(
+        self, text: str | None = "Aylık üyelik ne kadar?", **kwargs: Any
+    ) -> Any:
+        response = self.deliver(text, **kwargs)
+        assert response.status_code == 200, response.text
+        self.process()
+        return response
+
+    # --- reading state ---
+
+    def conversation(self, customer: str = "cust-1") -> Conversation:
+        self.session.expire_all()
+        return self.session.scalars(
+            select(Conversation).where(Conversation.customer_external_id == customer)
+        ).one()
+
+    def messages(self, customer: str = "cust-1") -> list[Message]:
+        self.session.expire_all()
+        conversation = self.conversation(customer)
+        return list(
+            self.session.scalars(
+                select(Message)
+                .where(Message.conversation_id == conversation.id)
+                .order_by(Message.provider_timestamp, Message.created_at)
+            )
+        )
+
+    def jobs(self, job_type: str) -> list[Job]:
+        self.session.expire_all()
+        return list(
+            self.session.scalars(
+                select(Job).where(Job.job_type == job_type).order_by(Job.created_at, Job.id)
+            )
+        )
+
+    def draft(self, customer: str = "cust-1") -> ReplyDraft | None:
+        self.session.expire_all()
+        conversation = self.conversation(customer)
+        return self.session.scalars(
+            select(ReplyDraft)
+            .where(ReplyDraft.conversation_id == conversation.id)
+            .order_by(ReplyDraft.created_at.desc(), ReplyDraft.id)
+        ).first()
+
+    # --- building state ---
+
+    def make_draft(
+        self,
+        status: str = "pending_approval",
+        *,
+        customer: str = "cust-1",
+        with_approval: bool | None = None,
+        text: str = "Aylık üyelik ücretimiz 6.000 ₺.",
+    ) -> ReplyDraft:
+        """A draft on the customer's conversation, with a pending approval where one belongs."""
+        conversation = self.conversation(customer)
+        last = self.messages(customer)[-1]
+        decision = {
+            "pending_approval": "approval_required",
+            "needs_human": "human_required",
+            "blocked": "blocked",
+        }.get(status, "approval_required")
+        draft = ReplyDraft(
+            workspace_id=self.env.workspace.id,
+            conversation_id=conversation.id,
+            covers_through_message_id=last.id,
+            source="ai",
+            language="tr",
+            intent="pricing",
+            text=text,
+            decision=decision,
+            decision_reasons=["POLICY_REQUIRES_APPROVAL"],
+            status=status,
+            created_by_actor_type="system",
+            is_simulated=True,
+            created_at=self.clock.now(),
+        )
+        self.session.add(draft)
+        self.session.flush()
+        if with_approval if with_approval is not None else status == "pending_approval":
+            approval = approvals_service.request(
+                self.session,
+                self.clock,
+                self.env.ctx(self.env.owner),
+                kind="authorization",
+                action="reply.send",
+                subject_type="reply_draft",
+                subject_id=draft.id,
+                subject_version=draft.version,
+                payload={"draft_id": str(draft.id)},
+                summary={"text": text},
+                required_permission="reply.approve",
+                expires_at=self.clock.now() + timedelta(hours=1),
+                is_simulated=True,
+            )
+            draft.approval_id = approval.id
+        self.session.commit()
+        return draft
+
+    def approval_status(self, draft: ReplyDraft) -> str | None:
+        self.session.expire_all()
+        if draft.approval_id is None:
+            return None
+        approval = self.session.get(Approval, draft.approval_id)
+        return approval.status if approval else None
+
+
+@pytest.fixture(autouse=True)
+def _draft_reply_stub() -> Iterator[None]:
+    """Until the drafting job exists, processing only needs the job type to be enqueueable."""
+    if get_handler("draft_reply") is not None:
+        yield
+        return
+    with registry_snapshot():
+
+        @job_handler("draft_reply", DraftReplyPayload)
+        def _noop(job: JobContext) -> None:
+            return None
+
+        yield
 
 
 @pytest.fixture

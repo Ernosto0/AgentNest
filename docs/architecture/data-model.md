@@ -333,7 +333,7 @@ Index: `(workspace_id, attention, last_message_at desc)`.
 | conversation_id | uuid | composite FK |
 | direction | text not null | `inbound`, `outbound` |
 | sender_kind | text not null | `customer`, `business_app` (sent by us), `business_native` (owner via the Instagram app, from echo) |
-| external_message_id | text null | `mid`; `unique (workspace_id, external_message_id) where external_message_id is not null` |
+| external_message_id | text null | `mid`; `unique (social_account_id, external_message_id) where external_message_id is not null` (INV-06; `messages` therefore also carries `social_account_id`) |
 | text | text null | subject to retention |
 | attachments | jsonb not null default '[]' | `[{type, url?, note}]`; URLs are provider CDN links, which may expire |
 | provider_timestamp | timestamptz not null | |
@@ -363,7 +363,7 @@ Index: `(conversation_id, provider_timestamp)`.
 | version | int not null default 1 | incremented on edit |
 | approval_id / operation_id / agent_run_id | uuid null | |
 | superseded_by_id | uuid null | |
-| failure_code | text null | |
+| failure_code | text null | the reason code of any terminal state other than `sent`: `failed` (e.g. `OUTCOME_UNCONFIRMED`), `superseded` / `cancelled` (`NEW_INBOUND`, `OWNER_REPLIED_NATIVELY`, `FACT_CHANGED`, `HUMAN_TAKEOVER`, `SUBJECT_EDITED`), `expired` (`MESSAGING_WINDOW_CLOSED`) |
 | created_by_actor_type / created_by_actor_id | text | |
 | is_simulated | boolean | |
 

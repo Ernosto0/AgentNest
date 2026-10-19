@@ -139,6 +139,16 @@ source_modules = [
     "app.integrations",
     "app.operations.accounts",
     "app.operations.schemas",
+    "app.inbox.models",
+    "app.inbox.ingest",
+    "app.inbox.processing",
+    "app.inbox.drafts",
+    "app.inbox.attention",
+    "app.inbox.transitions",
+    "app.inbox.system",
+    "app.inbox.echoes",
+    "app.inbox.payloads",
+    "app.inbox.jobs",
     "app.ai",
     "app.approvals.service",
     "app.approvals.repository",
@@ -211,6 +221,9 @@ source_modules = [
     "app.ai",
     "app.approvals",
     "app.notifications",
+    "app.inbox",
+    "app.operations",
+    "app.integrations",
 ]
 forbidden_modules = ["app.commands"]
 
@@ -256,3 +269,10 @@ forbidden_modules = [
     "app.demo",
     "app.api",
 ]
+
+[[tool.importlinter.contracts]]
+name = "inbox uses only the webhook side of the Instagram integration (INV-15)"
+type = "forbidden"
+source_modules = ["app.inbox", "app.knowledge"]
+forbidden_modules = ["app.integrations.instagram.mock"]
+allow_indirect_imports = true  # the registry builds the mock; only direct use is forbidden

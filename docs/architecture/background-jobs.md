@@ -108,7 +108,7 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 | Job type | Payload | Enqueued by | Max attempts | Notes |
 |---|---|---|---|---|
 | `process_inbound_event` | `{event_id}` | webhook ingest | 3 | workflow C step 2 |
-| `draft_reply` | `{conversation_id}` | inbound processing, fact change, manual "suggest reply" | 3 | dedup `draft_reply:{conversation_id}`, debounce `run_at = now + 8 s` |
+| `draft_reply` | `{conversation_id, message_id?, requested}` | inbound processing (one job per inbound message), fact change, manual "suggest reply" | 3 | dedup `draft_reply:{conversation_id}:{message_id}`, `run_at = now + 8 s`. The job proceeds only if its `message_id` is still the newest inbound message, so the delay is a trailing-edge debounce and no message arriving while a draft is being made is swallowed by a running job's dedup key |
 | `send_reply` | `{reply_draft_id}` | approval decided / auto decision / owner reply / account resumed | 6 | retries only pre-acceptance errors; stops at the window end |
 | `reconcile_send` | `{operation_id}` | send outcome unknown | 5 (every 2 min) | echo / lookup; then `OUTCOME_UNCONFIRMED` |
 | `interpret_command` | `{command_id}` | command submit, clarification answer | 3 | |
