@@ -14,6 +14,11 @@ import { useMarkAllRead, useMarkRead, useNotifications } from "./hooks";
 function target(workspaceId: string, notification: AppNotification): string | null {
   if (notification.type.startsWith("approval.")) return `/w/${workspaceId}/approvals`;
   if (notification.type === "knowledge.fact_changed") return `/w/${workspaceId}/more/knowledge`;
+  if (notification.type === "conversation.needs_human" || notification.type === "reply.failed") {
+    const id = (notification.params as Record<string, unknown>).conversation_id;
+    return typeof id === "string" ? `/w/${workspaceId}/inbox/${id}` : `/w/${workspaceId}/inbox`;
+  }
+  if (notification.type === "account.needs_reauth") return `/w/${workspaceId}/more/automation`;
   return null;
 }
 

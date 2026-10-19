@@ -15,7 +15,9 @@
     "loading": "Loading…",
     "retry": "Try again",
     "language": "Language",
-    "close": "Close"
+    "close": "Close",
+    "cancel": "Cancel",
+    "saving": "Saving…"
   },
   "auth": {
     "title": "Sign in",
@@ -89,7 +91,10 @@
     "switchWorkspace": "Switch workspace",
     "signOut": "Sign out",
     "knowledge": "Business knowledge",
-    "newWorkspace": "Create a workspace"
+    "newWorkspace": "Create a workspace",
+    "answers": "Approved answers",
+    "automation": "Automation and Instagram",
+    "devPanel": "Developer tools"
   },
   "settings": {
     "title": "Settings",
@@ -192,6 +197,14 @@
     "LLM_BUDGET_EXCEEDED": {
       "what": "Today's AI usage limit has been reached.",
       "next": "Try again tomorrow, or do it manually."
+    },
+    "MESSAGING_WINDOW_CLOSED": {
+      "what": "Instagram only allows a reply within 24 hours of the customer's last message, and that time is over.",
+      "next": "Wait for the customer to write again, or contact them another way."
+    },
+    "ACCOUNT_NOT_CONNECTED": {
+      "what": "The Instagram account is not connected right now.",
+      "next": "Connect the account again under Automation, then try once more."
     }
   }
 }

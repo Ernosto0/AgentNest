@@ -73,9 +73,10 @@ describe("Home readiness card", () => {
     const open = within(screen.getByRole("heading", { name: "Hazırlık durumu" }).closest("div")!.parentElement!);
     const booking = open.getByRole("link", { name: /Rezervasyon talimatı/ });
     expect(booking).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/knowledge/booking`);
-    // The account step has no screen before Phase 4: no link, but the reason is stated.
-    expect(open.queryByRole("link", { name: /Instagram hesabı bağlı/ })).toBeNull();
-    expect(open.getByText("Henüz bağlı değil (sonraki aşamada)")).toBeInTheDocument();
+    // The account step and the automation review share one screen (Phase 4).
+    const account = open.getByRole("link", { name: /Instagram hesabı bağlı/ });
+    expect(account).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/automation`);
+    expect(open.getByText("Henüz bağlı değil")).toBeInTheDocument();
     expect(open.queryByText("İşletme adı")).toBeNull(); // satisfied items are not repeated
   });
 });

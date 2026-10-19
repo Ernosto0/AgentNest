@@ -144,7 +144,10 @@
       "approval_expired": "Expired without approval: {{label}}",
       "knowledge_fact_changed": "{{label}} changed: {{old}} → {{new}}",
       "knowledge_fact_archived": "{{label}} was archived",
-      "unknown": "New notification"
+      "unknown": "New notification",
+      "conversation_needs_human": "A conversation needs your own reply",
+      "reply_failed": "A reply could not be sent",
+      "account_needs_reauth": "Reconnect your Instagram account"
     },
     "open": "Open"
   },

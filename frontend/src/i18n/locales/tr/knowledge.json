@@ -246,8 +246,8 @@
     },
     "status": {
       "missing": "Eksik veya doğrulanmamış",
-      "not_connected": "Henüz bağlı değil (sonraki aşamada)",
-      "not_reviewed": "Henüz gözden geçirilmedi (sonraki aşamada)"
+      "not_connected": "Henüz bağlı değil",
+      "not_reviewed": "Henüz gözden geçirilmedi"
     }
   },
   "wizard": {

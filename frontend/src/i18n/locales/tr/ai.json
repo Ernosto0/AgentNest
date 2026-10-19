@@ -144,7 +144,10 @@
       "approval_expired": "Süresi doldu, onaylanmadı: {{label}}",
       "knowledge_fact_changed": "{{label}} değişti: {{old}} → {{new}}",
       "knowledge_fact_archived": "{{label}} arşivlendi",
-      "unknown": "Yeni bildirim"
+      "unknown": "Yeni bildirim",
+      "conversation_needs_human": "Bir konuşma kendi yanıtınızı bekliyor",
+      "reply_failed": "Bir yanıt gönderilemedi",
+      "account_needs_reauth": "Instagram hesabınızı yeniden bağlayın"
     },
     "open": "Aç"
   },

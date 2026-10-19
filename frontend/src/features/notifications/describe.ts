@@ -30,6 +30,12 @@ export function describeNotification(
             old: String(params.old_display ?? ""),
             new: String(params.new_display ?? ""),
           });
+    case "conversation.needs_human":
+      return t("notifications.type.conversation_needs_human");
+    case "reply.failed":
+      return t("notifications.type.reply_failed");
+    case "account.needs_reauth":
+      return t("notifications.type.account_needs_reauth");
     default:
       return t("notifications.type.unknown");
   }

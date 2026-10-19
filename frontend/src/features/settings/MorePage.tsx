@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRightIcon } from "@/components/icons";
-import { useLogout } from "@/features/auth/hooks";
+import { useLogout, useMeta } from "@/features/auth/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 const ROW =
@@ -12,6 +12,7 @@ export function MorePage() {
   const navigate = useNavigate();
   const { workspace } = useCurrentWorkspace();
   const logout = useLogout();
+  const meta = useMeta();
 
   return (
     <div className="flex flex-col gap-5">
@@ -23,6 +24,26 @@ export function MorePage() {
             <ChevronRightIcon className="text-xl text-slate-400" />
           </Link>
         </li>
+        <li>
+          <Link to={`/w/${workspace.id}/more/knowledge/answers`} className={ROW}>
+            {t("more.answers")}
+            <ChevronRightIcon className="text-xl text-slate-400" />
+          </Link>
+        </li>
+        <li>
+          <Link to={`/w/${workspace.id}/more/automation`} className={ROW}>
+            {t("more.automation")}
+            <ChevronRightIcon className="text-xl text-slate-400" />
+          </Link>
+        </li>
+        {meta.data?.demo_tools_enabled ? (
+          <li>
+            <Link to={`/w/${workspace.id}/more/dev`} className={ROW}>
+              {t("more.devPanel")}
+              <ChevronRightIcon className="text-xl text-slate-400" />
+            </Link>
+          </li>
+        ) : null}
         <li>
           <Link to={`/w/${workspace.id}/more/settings`} className={ROW}>
             {t("more.settings")}

@@ -7,6 +7,7 @@ import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useDecideApproval } from "@/features/commands/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { ChangeSummary, ImpactSummary } from "./ChangeSummary";
+import { ReplyApprovalBody } from "./ReplyApprovalBody";
 import { actionKey } from "./format";
 
 function localTime(value: string, language: string, timezone: string): string {
@@ -19,7 +20,18 @@ function localTime(value: string, language: string, timezone: string): string {
 
 /** Strings of the summary that the generic body does not know about, shown as plain rows. */
 function ExtraFields({ summary }: { summary: Record<string, unknown> }) {
-  const known = new Set(["label", "old_formatted", "new_formatted", "impact", "key", "category"]);
+  const known = new Set([
+    "label",
+    "old_formatted",
+    "new_formatted",
+    "impact",
+    "key",
+    "category",
+    "draft_id",
+    "conversation_id",
+    "window_ends_at",
+    "reasons",
+  ]);
   const rows = Object.entries(summary).filter(
     ([name, value]) => !known.has(name) && typeof value === "string" && value !== "",
   );
@@ -85,6 +97,7 @@ export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval;
           </span>
           {approval.is_simulated ? <SimulatedBadge /> : null}
         </div>
+        {approval.action === "reply.send" ? <ReplyApprovalBody approval={approval} /> : null}
         <ChangeSummary summary={approval.summary} fromKey="approvals.detail.from" toKey="approvals.detail.to" />
         <ExtraFields summary={approval.summary} />
         <ImpactSummary

@@ -27,3 +27,18 @@ export type Approval = Schemas["ApprovalOut"];
 export type AppNotification = Schemas["NotificationOut"];
 export type NotificationList = Schemas["NotificationList"];
 export type Extraction = Schemas["ExtractionOut"];
+
+// Phase 4: inbox, automation, approved answers, developer tools.
+export type Conversation = Schemas["ConversationOut"];
+export type ConversationDetail = Schemas["ConversationDetailOut"];
+export type ChatMessage = Schemas["MessageOut"];
+export type ReplyDraft = Schemas["ReplyDraftOut"];
+export type ReplyWithWarnings = Schemas["ReplyWithWarningsOut"];
+export type ValidationIssue = Schemas["ValidationIssueOut"];
+export type ApprovedAnswer = Schemas["ApprovedAnswerOut"];
+export type AutomationPolicies = Schemas["PoliciesOut"];
+export type PolicyItem = Schemas["PolicyItem"];
+export type SocialAccount = Schemas["SocialAccountOut"];
+export type DevScript = Schemas["ScriptOut"];
+export type FailureRule = Schemas["FailureRuleOut"];
+export type DevJob = Schemas["JobOut"];

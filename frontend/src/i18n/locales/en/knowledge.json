@@ -246,8 +246,8 @@
     },
     "status": {
       "missing": "Missing or not verified",
-      "not_connected": "Not connected yet (available in a later phase)",
-      "not_reviewed": "Not reviewed yet (available in a later phase)"
+      "not_connected": "Not connected yet",
+      "not_reviewed": "Not reviewed yet"
     }
   },
   "wizard": {

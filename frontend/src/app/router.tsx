@@ -3,11 +3,16 @@ import { ApprovalsList } from "@/features/approvals/ApprovalsList";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { HomePage } from "@/features/home/HomePage";
+import { DevPanel } from "@/features/dev/DevPanel";
+import { ConversationPage } from "@/features/inbox/ConversationPage";
+import { InboxPage } from "@/features/inbox/InboxPage";
+import { ApprovedAnswers } from "@/features/knowledge/ApprovedAnswers";
 import { CategoryPage } from "@/features/knowledge/CategoryPage";
 import { KnowledgePage } from "@/features/knowledge/KnowledgePage";
 import { SuggestionsPage } from "@/features/knowledge/SuggestionsPage";
 import { CreateWorkspaceWizard } from "@/features/workspaces/CreateWorkspaceWizard";
 import { SectionPlaceholderPage } from "@/features/home/SectionPlaceholderPage";
+import { AutomationSettings } from "@/features/settings/AutomationSettings";
 import { MorePage } from "@/features/settings/MorePage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { WorkspaceGate } from "@/features/workspaces/WorkspaceGate";
@@ -26,13 +31,17 @@ export const appRoutes: RouteObject[] = [
         element: <WorkspaceGate />,
         children: [
           { index: true, element: <HomePage /> },
-          { path: "inbox", element: <SectionPlaceholderPage section="inbox" /> },
+          { path: "inbox", element: <InboxPage /> },
+          { path: "inbox/:conversationId", element: <ConversationPage /> },
           { path: "content", element: <SectionPlaceholderPage section="content" /> },
           { path: "approvals", element: <ApprovalsList /> },
           { path: "more", element: <MorePage /> },
           { path: "more/settings", element: <SettingsPage /> },
           { path: "more/knowledge", element: <KnowledgePage /> },
           { path: "more/knowledge/suggestions", element: <SuggestionsPage /> },
+          { path: "more/knowledge/answers", element: <ApprovedAnswers /> },
+          { path: "more/automation", element: <AutomationSettings /> },
+          { path: "more/dev", element: <DevPanel /> },
           { path: "more/knowledge/:category", element: <CategoryPage /> },
           { path: "*", element: <NotFoundPage /> },
         ],

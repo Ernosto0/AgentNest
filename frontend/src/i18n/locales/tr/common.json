@@ -15,7 +15,9 @@
     "loading": "Yükleniyor…",
     "retry": "Tekrar dene",
     "language": "Dil",
-    "close": "Kapat"
+    "close": "Kapat",
+    "cancel": "Vazgeç",
+    "saving": "Kaydediliyor…"
   },
   "auth": {
     "title": "Giriş yap",
@@ -89,7 +91,10 @@
     "switchWorkspace": "Çalışma alanını değiştir",
     "signOut": "Çıkış yap",
     "knowledge": "İşletme bilgileri",
-    "newWorkspace": "Çalışma alanı oluştur"
+    "newWorkspace": "Çalışma alanı oluştur",
+    "answers": "Onaylı yanıtlar",
+    "automation": "Otomasyon ve Instagram",
+    "devPanel": "Geliştirici araçları"
   },
   "settings": {
     "title": "Ayarlar",
@@ -192,6 +197,14 @@
     "LLM_BUDGET_EXCEEDED": {
       "what": "Bugünkü yapay zekâ kullanım sınırına ulaşıldı.",
       "next": "Yarın tekrar deneyin veya işlemi elle yapın."
+    },
+    "MESSAGING_WINDOW_CLOSED": {
+      "what": "Instagram, müşterinin son mesajından sonra yalnızca 24 saat içinde yanıt vermeye izin verir ve bu süre doldu.",
+      "next": "Müşterinin yeniden yazmasını bekleyin ya da onunla başka bir yoldan iletişime geçin."
+    },
+    "ACCOUNT_NOT_CONNECTED": {
+      "what": "Instagram hesabı şu anda bağlı değil.",
+      "next": "Hesabı Otomasyon bölümünden yeniden bağlayın, sonra tekrar deneyin."
     }
   }
 }
