@@ -33,6 +33,7 @@ ACCOUNT_STATUSES = ("connected", "needs_reauth", "degraded", "disconnected")
 FAILURE_OPERATIONS = (
     "send",
     "lookup",
+    "echo",
     "create_container",
     "container_status",
     "publish",

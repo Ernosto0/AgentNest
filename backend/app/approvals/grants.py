@@ -36,9 +36,17 @@ def record_policy_grant(
     expires_at: datetime,
     execute_before: datetime | None = None,
     is_simulated: bool = False,
+    self_approved: bool = False,
 ) -> Approval:
-    """Create an already-approved authorization (in the caller's transaction, no commit)."""
+    """Create an already-approved authorization (in the caller's transaction, no commit).
+
+    By default it is granted by policy. With ``self_approved`` it records a person who holds the
+    permission and sends their own reply: the same person requests and decides it, in one
+    request, so every send still has an approval bound to its exact text (ADR-014).
+    """
     now = clock.now()
+    approver = uuid.UUID(ctx.actor.id) if self_approved and ctx.actor.id else None
+    channel = "web" if self_approved else "policy"
     approval = Approval(
         workspace_id=ctx.workspace_id,
         kind="authorization",
@@ -50,10 +58,11 @@ def record_policy_grant(
         summary=dict(summary),
         required_permission=required_permission,
         status=apply_approval_event(apply_approval_event(None, "request"), "approve"),
-        requested_by_actor_type="system",
+        requested_by_actor_type=ctx.actor.type if self_approved else "system",
         requested_by_actor_id=ctx.actor.id,
+        decided_by_user_id=approver,
         decided_at=now,
-        decision_channel="policy",
+        decision_channel=channel,
         expires_at=expires_at,
         execute_before=execute_before,
         is_simulated=is_simulated,
@@ -64,7 +73,7 @@ def record_policy_grant(
     audit.record(
         session,
         ctx,
-        "approval.granted",
+        "approval.approved" if self_approved else "approval.granted",
         "approval",
         approval.id,
         {
@@ -72,7 +81,7 @@ def record_policy_grant(
             "kind": "authorization",
             "subject_type": subject_type,
             "subject_id": subject_id,
-            "channel": "policy",
+            "channel": channel,
         },
         is_simulated=is_simulated,
         clock=clock,

@@ -207,6 +207,9 @@ class ReplyDraft(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
             ["workspace_id", "agent_run_id"], ["agent_runs.workspace_id", "agent_runs.id"]
         ),
         ForeignKeyConstraint(
+            ["workspace_id", "operation_id"], ["operations.workspace_id", "operations.id"]
+        ),
+        ForeignKeyConstraint(
             ["workspace_id", "superseded_by_id"],
             ["reply_drafts.workspace_id", "reply_drafts.id"],
         ),

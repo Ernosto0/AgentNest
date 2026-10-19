@@ -400,8 +400,9 @@ def automate(inbox: InboxEnv, *classes: str) -> None:
 
 def test_an_automatic_class_sends_without_asking_and_says_so(inbox: InboxEnv, gym) -> None:
     automate(inbox, "reply.pricing")
-    draft = inbox.ask(PRICE_Q)
-    assert (draft.decision, draft.status) == ("auto", "queued")
+    draft = inbox.ask(PRICE_Q)  # the worker also runs the send that the grant queued
+    assert draft.decision == "auto"
+    assert inbox.refreshed(draft).status == "sent"
     assert draft.decision_reasons == ["POLICY_AUTO"]
     assert draft.text is not None
     assert draft.text.startswith("Merhaba! Aylık üyelik ücretimiz 6.000 ₺ / ay.")
@@ -414,7 +415,9 @@ def test_an_automatic_class_sends_without_asking_and_says_so(inbox: InboxEnv, gy
     assert approval.requested_by_actor_type == "system" and approval.decided_by_user_id is None
     assert approval.payload_hash == payload_hash(approval_payload(draft, inbox.conversation()))
     (job,) = jobs(inbox, "send_reply")
-    assert job.payload == {"reply_draft_id": str(draft.id)}
+    assert job.payload == {"reply_draft_id": str(draft.id)} and job.status == "succeeded"
+    (sent,) = inbox.sim_sent()
+    assert sent.text == draft.text  # the notice went out with it
     inbox.session.expire_all()
     asked = inbox.session.scalars(
         select(Notification).where(Notification.type == "approval.requested")
@@ -464,9 +467,7 @@ def test_the_rate_guard_holds_the_fourth_automatic_reply_of_an_hour(inbox: Inbox
     automate(inbox, "reply.pricing")
     for number in range(3):
         draft = inbox.ask(PRICE_Q, mid=f"m-{number}")
-        assert draft.status == "queued"
-        draft.status = "sent"  # the send is not part of this test
-        inbox.session.commit()
+        assert inbox.refreshed(draft).status == "sent"
         inbox.clock.advance(timedelta(minutes=1))
     fourth = inbox.ask(PRICE_Q, mid="m-4")
     assert (fourth.decision, fourth.decision_reasons) == ("approval_required", ["AUTO_RATE_GUARD"])

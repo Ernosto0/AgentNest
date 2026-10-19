@@ -121,6 +121,8 @@ stateDiagram-v2
   queued --> cancelled: owner cancels / owner replied natively
   sending --> sent: provider message_id
   sending --> failed: definitive provider error
+  sending --> queued: pre-acceptance error, retried (the provider certainly did not accept it)
+  sending --> expired: the provider says the window closed (nothing was sent)
   sending --> outcome_unknown: ambiguous error
   outcome_unknown --> sent: echo or lookup confirms
   outcome_unknown --> failed: not confirmed within window (OUTCOME_UNCONFIRMED)

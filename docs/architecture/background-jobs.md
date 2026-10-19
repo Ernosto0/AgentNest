@@ -109,8 +109,8 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 |---|---|---|---|---|
 | `process_inbound_event` | `{event_id}` | webhook ingest | 3 | workflow C step 2 |
 | `draft_reply` | `{conversation_id, message_id?, requested}` | inbound processing (one job per inbound message), fact change, manual "suggest reply" | 3 | dedup `draft_reply:{conversation_id}:{message_id}`, `run_at = now + 8 s`. The job proceeds only if its `message_id` is still the newest inbound message, so the delay is a trailing-edge debounce and no message arriving while a draft is being made is swallowed by a running job's dedup key |
-| `send_reply` | `{reply_draft_id}` | approval decided / auto decision / owner reply / account resumed | 6 | retries only pre-acceptance errors; stops at the window end |
-| `reconcile_send` | `{operation_id}` | send outcome unknown | 5 (every 2 min) | echo / lookup; then `OUTCOME_UNCONFIRMED` |
+| `send_reply` | `{reply_draft_id}` | approval decided / auto decision / owner reply / account resumed | 6 (backoff 1 / 5 / 15 / 30 / 30 min; a larger `Retry-After` wins) | retries only pre-acceptance errors; stops at the window end. An unusable account (needs reauth, disconnected) keeps the draft `queued` and retries every 5 minutes; the expiry sweep ends it at the window end. Phase 4 does not re-enqueue on reconnection (Phase 6, `resume_account`) |
+| `reconcile_send` | `{operation_id, round}` | send outcome unknown | one job per check, at +2 min and then every 2 min for `SEND_RECONCILE_WINDOW_MINUTES` (own dedup key per round) | echo / lookup; then `OUTCOME_UNCONFIRMED`. A late echo after that is recorded as our message (`reply.late_confirmation`) |
 | `interpret_command` | `{command_id}` | command submit, clarification answer | 3 | |
 | `generate_content` | `{content_id}` | `content.create_draft` | 3 | |
 | `extract_fact_candidates` | `{extraction_run_id}` | paste & extract | 2 | |

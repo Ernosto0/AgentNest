@@ -429,7 +429,7 @@ Index: `(workspace_id, status, scheduled_at)`.
 | attempts / max_attempts | int | |
 | next_attempt_at | timestamptz null | |
 | deadline_at | timestamptz null | no attempts after this |
-| provider_ref | jsonb not null default '{}' | e.g., `{"container_id": "..."}` |
+| provider_ref | jsonb not null default '{}' | `send_reply`: `{recipient_id, text_sha256, echo_mid?}` (a hash, never the text; used to recognise the echo and the lookup result). Publishing: e.g. `{"container_id": "..."}` |
 | result | jsonb not null default '{}' | e.g., `{"message_id": "..."}`, `{"media_id": "...", "permalink": "..."}` |
 | last_error_code / last_error_detail | text null | |
 | correlation_id | uuid | |

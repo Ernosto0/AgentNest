@@ -1,6 +1,7 @@
 """Command line: ``python -m app.cli <command>``.
 
-Commands: ``seed [--reset]``, ``create-user``, ``generate-key``, ``export-openapi``.
+Commands: ``seed [--reset]``, ``create-user``, ``generate-key``, ``export-openapi``,
+``simulate-message``, ``simulate-native-reply``, ``run-due-jobs`` (the developer simulator).
 Machine-readable output goes to stdout; logs go to stderr.
 """
 
@@ -8,17 +9,23 @@ import argparse
 import getpass
 import json
 import sys
+import urllib.error
+import urllib.request
+import uuid
 from collections.abc import Sequence
 from pathlib import Path
 
 from app.core.clock import SystemClock
-from app.core.config import ConfigError, get_settings
+from app.core.config import ConfigError, Settings, get_settings
 from app.core.db import get_session_factory
 from app.core.errors import AppError
 from app.core.logging import configure_logging
 from app.core.security import generate_encryption_key, generate_secret_key
+from app.demo import simulator
 from app.demo.seed import SeedError, seed
+from app.identity import repository as identity_repo
 from app.identity import service
+from app.jobs.testing import run_due_jobs
 from app.main import create_app
 
 
@@ -91,6 +98,99 @@ def cmd_export_openapi(args: argparse.Namespace) -> int:
     return 0
 
 
+def _post_webhook(settings: Settings, prepared: simulator.PreparedWebhook) -> int:
+    """Post a signed simulated webhook to the running API, like Instagram would."""
+    url = f"{settings.app_base_url.rstrip('/')}/webhooks/instagram/mock"
+    if not url.startswith(("http://", "https://")):
+        print("error: APP_BASE_URL must be an http(s) URL", file=sys.stderr)
+        return 1
+    request = urllib.request.Request(  # noqa: S310  (scheme checked above)
+        url,
+        data=prepared.body,
+        headers={"Content-Type": "application/json", **prepared.headers},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310
+            print(f"{response.status} {response.read().decode()}")
+            return 0
+    except urllib.error.HTTPError as exc:
+        print(f"error: the API answered {exc.code}", file=sys.stderr)
+    except urllib.error.URLError as exc:
+        print(f"error: cannot reach {url}: {exc.reason}", file=sys.stderr)
+    return 1
+
+
+def _workspace_id(slug: str) -> uuid.UUID | None:
+    with get_session_factory()() as session:
+        workspace = identity_repo.get_workspace_by_slug(session, slug)
+        if workspace is None:
+            print(f"error: no workspace {slug!r}", file=sys.stderr)
+            return None
+        return workspace.id
+
+
+def cmd_simulate_message(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    if not settings.demo_tools_enabled:
+        print("error: DEMO_TOOLS_ENABLED is false", file=sys.stderr)
+        return 1
+    workspace_id = _workspace_id(args.workspace)
+    if workspace_id is None:
+        return 1
+    try:
+        if args.script:
+            script = simulator.get_script(args.script)
+            alias, text, attachments = script.customer_alias, script.text, script.attachments
+        elif args.customer and args.text:
+            alias, text, attachments = args.customer, args.text, []
+        else:
+            print("error: give --script, or --customer and --text", file=sys.stderr)
+            return 1
+        prepared = simulator.prepare_customer_message(
+            get_session_factory(),
+            SystemClock(),
+            settings,
+            workspace_id,
+            customer_alias=alias,
+            text=text,
+            attachments=attachments,
+        )
+    except AppError as exc:
+        print(f"error: {exc.code}", file=sys.stderr)
+        return 1
+    return _post_webhook(settings, prepared)
+
+
+def cmd_simulate_native_reply(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    if not settings.demo_tools_enabled:
+        print("error: DEMO_TOOLS_ENABLED is false", file=sys.stderr)
+        return 1
+    workspace_id = _workspace_id(args.workspace)
+    if workspace_id is None:
+        return 1
+    try:
+        prepared = simulator.prepare_native_reply(
+            get_session_factory(),
+            SystemClock(),
+            settings,
+            workspace_id,
+            conversation_id=uuid.UUID(args.conversation),
+            text=args.text,
+        )
+    except (AppError, ValueError) as exc:
+        print(f"error: {getattr(exc, 'code', exc)}", file=sys.stderr)
+        return 1
+    return _post_webhook(settings, prepared)
+
+
+def cmd_run_due_jobs(args: argparse.Namespace) -> int:
+    ran = run_due_jobs(SystemClock(), session_factory=get_session_factory())
+    print(f"ran {ran} due job(s)")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli", description="AgentNest commands")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -119,6 +219,24 @@ def build_parser() -> argparse.ArgumentParser:
     p_api = sub.add_parser("export-openapi", help="print the OpenAPI document as JSON")
     p_api.add_argument("-o", "--output", help="write UTF-8 to this file instead of stdout")
     p_api.set_defaults(func=cmd_export_openapi)
+
+    p_msg = sub.add_parser("simulate-message", help="send a simulated customer DM to the API")
+    p_msg.add_argument("--workspace", required=True, help="workspace slug, e.g. golkent-fitness")
+    p_msg.add_argument("--script", help="a script id from app/demo/scripts/customer_messages.yaml")
+    p_msg.add_argument("--customer", help="customer name (with --text)")
+    p_msg.add_argument("--text", help="message text (with --customer)")
+    p_msg.set_defaults(func=cmd_simulate_message)
+
+    p_native = sub.add_parser(
+        "simulate-native-reply", help="simulate the owner answering in the Instagram app"
+    )
+    p_native.add_argument("--workspace", required=True)
+    p_native.add_argument("--conversation", required=True, help="conversation id")
+    p_native.add_argument("--text", required=True)
+    p_native.set_defaults(func=cmd_simulate_native_reply)
+
+    p_run = sub.add_parser("run-due-jobs", help="run the jobs that are due now, once")
+    p_run.set_defaults(func=cmd_run_due_jobs)
     return parser
 
 

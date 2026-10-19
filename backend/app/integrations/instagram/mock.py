@@ -134,6 +134,11 @@ class MockInstagramProvider:
             raise ProviderInvalidRequest("INVALID_MEDIA", "simulated invalid media")
         raise ProviderTransientError(f"unknown simulated failure mode {mode}")
 
+    def should_emit_echo(self, account: AccountRef) -> bool:
+        """Simulator support: whether the "Instagram" echoes a message it accepted. A scripted
+        ``echo`` failure rule suppresses it (and is consumed), so the no-echo path can be tried."""
+        return self._consume_failure(account, "echo") is None
+
     # --- reads --------------------------------------------------------------------------------
 
     def get_account_profile(self, account: AccountRef) -> AccountProfile:

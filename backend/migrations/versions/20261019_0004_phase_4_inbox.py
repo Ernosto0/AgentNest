@@ -114,7 +114,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('workspace_id', sa.Uuid(), nullable=False),
     sa.CheckConstraint("mode IN ('transient', 'rate_limited', 'auth_revoked', 'permission_missing', 'invalid_media', 'timeout_after_success', 'window_closed')", name=op.f('ck_sim_failure_rules_mode')),
-    sa.CheckConstraint("operation IN ('send', 'lookup', 'create_container', 'container_status', 'publish', 'refresh', 'profile', 'any')", name=op.f('ck_sim_failure_rules_operation')),
+    sa.CheckConstraint("operation IN ('send', 'lookup', 'echo', 'create_container', 'container_status', 'publish', 'refresh', 'profile', 'any')", name=op.f('ck_sim_failure_rules_operation')),
     sa.CheckConstraint('remaining IS NULL OR remaining >= 0', name=op.f('ck_sim_failure_rules_remaining')),
     sa.ForeignKeyConstraint(['workspace_id', 'social_account_id'], ['social_accounts.workspace_id', 'social_accounts.id'], name=op.f('fk_sim_failure_rules_workspace_id_social_account_id_social_accounts'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['workspace_id'], ['workspaces.id'], name=op.f('fk_sim_failure_rules_workspace_id_workspaces'), ondelete='CASCADE'),

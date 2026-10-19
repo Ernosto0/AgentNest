@@ -11,6 +11,7 @@ from app.core.config import Settings
 from app.core.db import check_readiness
 from app.core.i18n import SUPPORTED_LOCALES
 from app.identity.router import auth_router, workspaces_router
+from app.inbox.router import router as inbox_router
 from app.knowledge.router import router as knowledge_router
 from app.notifications.router import router as notifications_router
 from app.operations.accounts_router import router as social_accounts_router
@@ -64,3 +65,4 @@ api_router.include_router(commands_router)
 api_router.include_router(notifications_router)
 api_router.include_router(social_accounts_router)
 api_router.include_router(policy_router)
+api_router.include_router(inbox_router)

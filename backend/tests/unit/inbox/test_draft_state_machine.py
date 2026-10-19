@@ -23,6 +23,8 @@ ALLOWED = [
     ("sending", "succeed", "sent"),
     ("sending", "fail", "failed"),
     ("sending", "unknown", "outcome_unknown"),
+    ("sending", "retry", "queued"),
+    ("sending", "expire", "expired"),
     ("outcome_unknown", "succeed", "sent"),
     ("outcome_unknown", "fail", "failed"),
 ]

@@ -20,15 +20,21 @@ from app.core.config import Settings
 from app.handlers import load_handlers
 from app.inbox.context import DraftContext, DraftSkip, prepare
 from app.inbox.drafting import DraftPlan, make_plan
-from app.inbox.models import Conversation, Message, ReplyDraft
+from app.inbox.models import OPEN_DRAFT_STATUSES, Conversation, Message, ReplyDraft
 from app.inbox.payloads import SendReplyPayload
 from app.integrations.instagram import webhook_format as wf
-from app.integrations.instagram.models import SocialAccount
+from app.integrations.instagram.models import (
+    SimFailureRule,
+    SimInboundMessage,
+    SimSentMessage,
+    SocialAccount,
+)
 from app.integrations.llm import FakeLLMProvider
 from app.jobs.models import Job
 from app.jobs.registry import JobContext, get_handler, job_handler, registry_snapshot
 from app.jobs.testing import run_due_jobs
 from app.knowledge.models import BusinessFact
+from app.operations.models import Operation
 from tests.helpers.env import Env, build_env
 from tests.helpers.gym import seed_gym_facts
 
@@ -91,7 +97,77 @@ class InboxEnv:
         )
 
     def deliver(self, text: str | None = "Aylık üyelik ne kadar?", **kwargs: Any) -> Any:
-        return self.post(self.message_payload(text, **kwargs))
+        payload = self.message_payload(text, **kwargs)
+        self._open_simulated_window(payload)
+        return self.post(payload)
+
+    def _open_simulated_window(self, payload: dict[str, Any]) -> None:
+        """What the simulator does besides sending the webhook: the mock only accepts a reply
+        inside the 24 h window of a customer message it knows about."""
+        for event in wf.parse(payload):
+            if event.event_type != "message" or not event.mid or not event.customer_id:
+                continue
+            exists = self.session.scalars(
+                select(SimInboundMessage).where(
+                    SimInboundMessage.social_account_id == self.account.id,
+                    SimInboundMessage.mid == event.mid,
+                )
+            ).first()
+            if exists is None:
+                self.session.add(
+                    SimInboundMessage(
+                        workspace_id=self.env.workspace.id,
+                        social_account_id=self.account.id,
+                        sender_id=event.customer_id,
+                        mid=event.mid,
+                        received_at=event.provider_timestamp or self.clock.now(),
+                    )
+                )
+                self.session.commit()
+
+    # --- the simulated Instagram ---
+
+    def sim_sent(self) -> list[SimSentMessage]:
+        self.session.expire_all()
+        return list(self.session.scalars(select(SimSentMessage).order_by(SimSentMessage.sent_at)))
+
+    def fail(
+        self,
+        operation: str,
+        mode: str,
+        *,
+        remaining: int | None = 1,
+        retry_after: int | None = None,
+    ) -> None:
+        self.session.add(
+            SimFailureRule(
+                workspace_id=self.env.workspace.id,
+                social_account_id=self.account.id,
+                operation=operation,
+                mode=mode,
+                remaining=remaining,
+                retry_after_s=retry_after,
+            )
+        )
+        self.session.commit()
+
+    def operation(self, draft: ReplyDraft) -> Operation | None:
+        self.session.expire_all()
+        return self.session.scalars(
+            select(Operation).where(Operation.subject_id == draft.id)
+        ).one_or_none()
+
+    def refreshed(self, draft: ReplyDraft) -> ReplyDraft:
+        self.session.expire_all()
+        fresh = self.session.get(ReplyDraft, draft.id)
+        assert fresh is not None
+        return fresh
+
+    def approve_and_send(self, draft: ReplyDraft) -> ReplyDraft:
+        """Approve through the API and let the worker run what is due."""
+        assert self.decide(draft).status_code == 200
+        self.process()
+        return self.refreshed(draft)
 
     def process(self) -> int:
         """Run every due job the way the worker would."""
@@ -198,10 +274,15 @@ class InboxEnv:
     def draft(self, customer: str = "cust-1") -> ReplyDraft | None:
         self.session.expire_all()
         conversation = self.conversation(customer)
+        # the open draft if there is one (they can share a timestamp on the frozen clock)
         return self.session.scalars(
             select(ReplyDraft)
             .where(ReplyDraft.conversation_id == conversation.id)
-            .order_by(ReplyDraft.created_at.desc(), ReplyDraft.id)
+            .order_by(
+                ReplyDraft.status.in_(OPEN_DRAFT_STATUSES).desc(),
+                ReplyDraft.created_at.desc(),
+                ReplyDraft.id,
+            )
         ).first()
 
     # --- building state ---

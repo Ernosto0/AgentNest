@@ -28,6 +28,8 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "APPROVAL_ALREADY_DECIDED": ErrorSpec(409),
     "APPROVAL_EXPIRED": ErrorSpec(409),
     "APPROVAL_STALE": ErrorSpec(409),
+    "MESSAGING_WINDOW_CLOSED": ErrorSpec(409),
+    "ACCOUNT_NOT_CONNECTED": ErrorSpec(409),
     # Not API errors: reasons recorded on commands, agent runs and render results.
     "FACT_NOT_USABLE": ErrorSpec(None, retryable=False),
     "FACT_CHANGED_MEANWHILE": ErrorSpec(None, retryable=False),

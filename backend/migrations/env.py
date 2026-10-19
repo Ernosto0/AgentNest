@@ -18,6 +18,7 @@ import app.integrations.instagram.models  # noqa: F401  # isort: skip
 import app.jobs.models  # noqa: F401  # isort: skip
 import app.knowledge.models  # noqa: F401  # isort: skip
 import app.notifications.models  # noqa: F401  # isort: skip
+import app.operations.models  # noqa: F401  # isort: skip
 import app.policy.models  # noqa: F401  # isort: skip
 
 config = context.config

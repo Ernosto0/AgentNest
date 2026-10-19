@@ -21,6 +21,8 @@ _TRANSITIONS: dict[tuple[str, str], str] = {
     ("sending", "succeed"): "sent",
     ("sending", "fail"): "failed",
     ("sending", "unknown"): "outcome_unknown",
+    ("sending", "expire"): "expired",  # the provider says the window closed: nothing was sent
+    ("sending", "retry"): "queued",  # the provider certainly did not accept it: try again
     ("outcome_unknown", "succeed"): "sent",
     ("outcome_unknown", "fail"): "failed",
 }

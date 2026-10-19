@@ -21,7 +21,9 @@ from app.approvals import service as approvals_service
 from app.commands.models import OwnerCommand
 from app.core.clock import FrozenClock
 from app.identity.models import User, Workspace
+from app.inbox.models import Conversation, Message, ReplyDraft
 from app.integrations.instagram.models import SocialAccount
+from app.knowledge.models import ApprovedAnswer
 from app.notifications import service as notifications_service
 from tests.factories import (
     create_candidate,
@@ -103,6 +105,53 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         status="connected",
     )
     db_session.add(b_account)
+    db_session.flush()
+    # Phase 4: a conversation with a message, a draft and an approved answer in B.
+    b_conversation = Conversation(
+        workspace_id=b.id,
+        social_account_id=b_account.id,
+        customer_external_id="cust-b",
+        last_inbound_at=clock.now(),
+        is_simulated=True,
+    )
+    db_session.add(b_conversation)
+    db_session.flush()
+    b_message = Message(
+        workspace_id=b.id,
+        conversation_id=b_conversation.id,
+        social_account_id=b_account.id,
+        direction="inbound",
+        sender_kind="customer",
+        external_message_id="mid-b",
+        text="Aylık üyelik ne kadar?",
+        provider_timestamp=clock.now(),
+        is_simulated=True,
+    )
+    db_session.add(b_message)
+    db_session.flush()
+    b_draft = ReplyDraft(
+        workspace_id=b.id,
+        conversation_id=b_conversation.id,
+        covers_through_message_id=b_message.id,
+        source="ai",
+        text="Merhaba",
+        decision="approval_required",
+        decision_reasons=["POLICY_REQUIRES_APPROVAL"],
+        status="pending_approval",
+        created_by_actor_type="system",
+        is_simulated=True,
+        created_at=clock.now(),
+    )
+    db_session.add(b_draft)
+    b_answer = ApprovedAnswer(
+        workspace_id=b.id,
+        title="Otopark",
+        intent="faq",
+        example_questions=["Otopark var mı?"],
+        answer_template="Evet.",
+        language="tr",
+    )
+    db_session.add(b_answer)
     db_session.commit()
     return TwoWorkspaces(
         app=app,
@@ -121,5 +170,9 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "command_id": str(b_command.id),
             "run_id": str(b_run.id),
             "account_id": str(b_account.id),
+            "conversation_id": str(b_conversation.id),
+            "message_id": str(b_message.id),
+            "draft_id": str(b_draft.id),
+            "answer_id": str(b_answer.id),
         },
     )

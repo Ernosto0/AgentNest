@@ -44,6 +44,23 @@ def get_open_draft(
     return session.scalars(stmt.with_for_update() if lock else stmt).one_or_none()
 
 
+def recent_drafts(
+    session: Session, workspace_id: uuid.UUID, conversation_id: uuid.UUID, limit: int = 5
+) -> list[ReplyDraft]:
+    """The conversation's latest drafts, newest first (open or not)."""
+    return list(
+        session.scalars(
+            select(ReplyDraft)
+            .where(
+                ReplyDraft.workspace_id == workspace_id,
+                ReplyDraft.conversation_id == conversation_id,
+            )
+            .order_by(ReplyDraft.created_at.desc(), ReplyDraft.id)
+            .limit(limit)
+        )
+    )
+
+
 def transition(
     session: Session,
     clock: Clock,

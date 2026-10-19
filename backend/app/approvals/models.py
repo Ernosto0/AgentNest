@@ -14,6 +14,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     Text,
@@ -56,6 +57,9 @@ class Approval(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
             f"decision_channel IS NULL OR {_in('decision_channel', DECISION_CHANNELS)}",
             name="decision_channel",
         ),
+        ForeignKeyConstraint(
+            ["workspace_id", "operation_id"], ["operations.workspace_id", "operations.id"]
+        ),
         # At most one pending approval per subject.
         Index(
             "uq_approvals_pending_subject",
@@ -93,6 +97,6 @@ class Approval(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
     decision_note: Mapped[str | None] = mapped_column(Text)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     execute_before: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    operation_id: Mapped[uuid.UUID | None] = mapped_column()  # FK arrives with `operations` (P4)
+    operation_id: Mapped[uuid.UUID | None] = mapped_column()  # the one operation it authorised
     cancel_reason: Mapped[str | None] = mapped_column(Text)
     is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
