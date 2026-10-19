@@ -38,6 +38,22 @@ def verify(raw_body: bytes, signature_header: str | None, secret: str) -> bool:
     return hmac.compare_digest(sign(raw_body, secret), signature_header.strip())
 
 
+class WebhookCodec:
+    """Verify and parse for one app secret: what ingestion needs, with no database access.
+
+    The mock provider and the Meta adapter (Phase 7) both delegate to it.
+    """
+
+    def __init__(self, secret: str) -> None:
+        self._secret = secret
+
+    def verify_signature(self, raw_body: bytes, signature_header: str | None) -> bool:
+        return verify(raw_body, signature_header, self._secret)
+
+    def parse_webhook(self, payload: Any) -> list[NormalizedInboundEvent]:
+        return parse(payload)
+
+
 # --- building -------------------------------------------------------------------------------
 
 

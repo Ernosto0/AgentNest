@@ -10,6 +10,7 @@ from app.core.clock import Clock, SystemClock
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, get_logger
 from app.handlers import load_handlers
+from app.inbox.webhooks_router import create_webhooks_router
 from app.knowledge.templates import validate_templates
 
 
@@ -46,4 +47,5 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     register_error_handlers(app)
     app.include_router(health_router)
     app.include_router(api_router)
+    app.include_router(create_webhooks_router(settings))  # signature-authenticated, no /api/v1
     return app

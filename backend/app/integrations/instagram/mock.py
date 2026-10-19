@@ -60,15 +60,15 @@ class MockInstagramProvider:
     def __init__(self, session_factory: SessionFactory, clock: Clock, app_secret: str) -> None:
         self._session_factory = session_factory
         self._clock = clock
-        self._secret = app_secret
+        self._codec = webhook_format.WebhookCodec(app_secret)
 
     # --- webhooks -----------------------------------------------------------------------------
 
     def verify_signature(self, raw_body: bytes, signature_header: str | None) -> bool:
-        return webhook_format.verify(raw_body, signature_header, self._secret)
+        return self._codec.verify_signature(raw_body, signature_header)
 
     def parse_webhook(self, payload: dict[str, Any]) -> list[NormalizedInboundEvent]:
-        return webhook_format.parse(payload)
+        return self._codec.parse_webhook(payload)
 
     # --- simulator support (not part of the provider protocol) --------------------------------
 

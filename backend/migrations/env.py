@@ -13,6 +13,7 @@ import app.approvals.models  # noqa: F401  # isort: skip
 import app.audit.models  # noqa: F401  # isort: skip
 import app.commands.models  # noqa: F401  # isort: skip
 import app.identity.models  # noqa: F401  # isort: skip
+import app.inbox.models  # noqa: F401  # isort: skip
 import app.integrations.instagram.models  # noqa: F401  # isort: skip
 import app.jobs.models  # noqa: F401  # isort: skip
 import app.knowledge.models  # noqa: F401  # isort: skip

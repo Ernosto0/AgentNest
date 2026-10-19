@@ -8,6 +8,7 @@ from app.core.clock import Clock
 from app.core.config import Settings
 from app.integrations.instagram.base import InstagramProvider
 from app.integrations.instagram.mock import MockInstagramProvider
+from app.integrations.instagram.webhook_format import WebhookCodec
 
 
 class ProviderNotEnabled(Exception):
@@ -16,6 +17,17 @@ class ProviderNotEnabled(Exception):
 
 def enabled_kinds(settings: Settings) -> frozenset[str]:
     return settings.instagram_providers
+
+
+def get_webhook_codec(kind: str, settings: Settings) -> WebhookCodec:
+    """Signature verification and parsing for a webhook path. Needs no database."""
+    if kind not in enabled_kinds(settings):
+        raise ProviderNotEnabled(kind)
+    if kind == "mock":
+        return WebhookCodec(settings.mock_instagram_app_secret.get_secret_value())
+    if kind == "meta":
+        return WebhookCodec(settings.meta_app_secret.get_secret_value())
+    raise ProviderNotEnabled(kind)
 
 
 def get_provider(

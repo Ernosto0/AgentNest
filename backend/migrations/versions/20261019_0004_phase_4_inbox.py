@@ -2,7 +2,7 @@
 
 Revision ID: 0004
 Revises: 0003
-Create Date: 2026-10-19 20:36:33.460657
+Create Date: 2026-10-19 20:49:33.815789
 """
 
 from collections.abc import Sequence
@@ -52,6 +52,33 @@ def upgrade() -> None:
     op.create_index(op.f('ix_social_accounts_workspace_id'), 'social_accounts', ['workspace_id'], unique=False)
     op.create_index('uq_social_accounts_active_external', 'social_accounts', ['provider_kind', 'external_account_id'], unique=True, postgresql_where=sa.text("status <> 'disconnected'"))
     op.create_index('uq_social_accounts_active_workspace', 'social_accounts', ['workspace_id'], unique=True, postgresql_where=sa.text("status <> 'disconnected'"))
+    op.create_table('inbound_events',
+    sa.Column('workspace_id', sa.Uuid(), nullable=True),
+    sa.Column('social_account_id', sa.Uuid(), nullable=True),
+    sa.Column('provider_kind', sa.Text(), nullable=False),
+    sa.Column('dedup_key', sa.Text(), nullable=False),
+    sa.Column('event_type', sa.Text(), nullable=False),
+    sa.Column('payload', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('status', sa.Text(), server_default='received', nullable=False),
+    sa.Column('ignore_reason', sa.Text(), nullable=True),
+    sa.Column('error_code', sa.Text(), nullable=True),
+    sa.Column('correlation_id', sa.Uuid(), nullable=False),
+    sa.Column('is_simulated', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('received_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('processed_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.CheckConstraint("event_type IN ('message', 'echo', 'reaction', 'read', 'postback', 'other')", name=op.f('ck_inbound_events_event_type')),
+    sa.CheckConstraint("ignore_reason IS NULL OR ignore_reason IN ('UNKNOWN_ACCOUNT', 'ACCOUNT_DISCONNECTED', 'UNSUPPORTED_EVENT')", name=op.f('ck_inbound_events_ignore_reason')),
+    sa.CheckConstraint("provider_kind IN ('mock', 'meta')", name=op.f('ck_inbound_events_provider_kind')),
+    sa.CheckConstraint("status IN ('received', 'processed', 'ignored', 'failed')", name=op.f('ck_inbound_events_status')),
+    sa.ForeignKeyConstraint(['workspace_id', 'social_account_id'], ['social_accounts.workspace_id', 'social_accounts.id'], name=op.f('fk_inbound_events_workspace_id_social_account_id_social_accounts'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['workspace_id'], ['workspaces.id'], name=op.f('fk_inbound_events_workspace_id_workspaces'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_inbound_events')),
+    sa.UniqueConstraint('dedup_key', name=op.f('uq_inbound_events_dedup_key')),
+    sa.UniqueConstraint('workspace_id', 'id', name=op.f('uq_inbound_events_workspace_id_id'))
+    )
+    op.create_index('ix_inbound_events_status_received', 'inbound_events', ['status', 'received_at'], unique=False)
+    op.create_index('ix_inbound_events_workspace_received', 'inbound_events', ['workspace_id', 'received_at'], unique=False)
     op.create_table('sim_failure_rules',
     sa.Column('social_account_id', sa.Uuid(), nullable=False),
     sa.Column('operation', sa.Text(), nullable=False),
@@ -117,6 +144,9 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_sim_failure_rules_workspace_id'), table_name='sim_failure_rules')
     op.drop_index('ix_sim_failure_rules_account', table_name='sim_failure_rules')
     op.drop_table('sim_failure_rules')
+    op.drop_index('ix_inbound_events_workspace_received', table_name='inbound_events')
+    op.drop_index('ix_inbound_events_status_received', table_name='inbound_events')
+    op.drop_table('inbound_events')
     op.drop_index('uq_social_accounts_active_workspace', table_name='social_accounts', postgresql_where=sa.text("status <> 'disconnected'"))
     op.drop_index('uq_social_accounts_active_external', table_name='social_accounts', postgresql_where=sa.text("status <> 'disconnected'"))
     op.drop_index(op.f('ix_social_accounts_workspace_id'), table_name='social_accounts')

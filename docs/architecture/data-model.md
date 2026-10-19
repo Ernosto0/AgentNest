@@ -305,7 +305,7 @@ Constraints: `unique (workspace_id) where status <> 'disconnected'` (one active 
 | dedup_key | text not null unique | `ig:{account_ext_id}:mid:{mid}` for messages and echoes; `ig:{account}:{field}:sha256(entry)` otherwise |
 | workspace_id / social_account_id | uuid null | resolved at ingest from the receiving account |
 | event_type | text not null | `message`, `echo`, `reaction`, `read`, `postback`, `other` |
-| payload | jsonb not null | the single normalised entry item (raw form kept for 30 days, then nulled) |
+| payload | jsonb null | the single webhook item (raw form kept for 30 days, then nulled, so the column is nullable) |
 | status | text not null | `received`, `processed`, `ignored`, `failed` |
 | ignore_reason / error_code | text null | |
 | correlation_id | uuid not null | |

@@ -31,7 +31,7 @@ frontend/e2e/scenario-b.spec.ts
 
 ## Key interfaces and contracts
 - `InstagramProvider` ([integrations.md §3.1](../../architecture/integrations.md)). Implement the methods needed for messaging. Container methods may raise `NotImplementedError` in the mock until Phase 5.
-- `inbox.ingest_webhook(provider_kind, raw_body: bytes, headers) -> IngestResult` (shared by HTTP and simulator).
+- `inbox.ingest_webhook(session, clock, settings, provider_kind, raw_body: bytes, headers) -> IngestResult` (shared by HTTP and simulator).
 - `policy.evaluate_reply(ctx, ReplyPolicyInput) -> Decision{outcome, reasons}` (rules R1–R17).
 - `operations.execute_send_reply(draft_id)`, `operations.reconcile(operation_id)`.
 - Approval payload for replies: `{conversation_id, recipient_id, text, draft_id, draft_version}`.
