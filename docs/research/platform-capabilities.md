@@ -152,10 +152,19 @@ Status legend:
 
 ---
 
-## 4. LLM provider (Anthropic Claude API) facts used in the design
+## 4. LLM provider (OpenAI API) facts used in the design
 
 | Capability | Status | Detail | Source |
 |---|---|---|---|
+| Structured outputs | Confirmed in code (Phase 3: `openai` SDK 3.x, adapter and request body tested against a stubbed transport) | The Responses API accepts a Pydantic model as `text_format` and sends a strict JSON schema. Strict mode needs an object at the root, closed objects with all fields required and `anyOf` (not `oneOf`) unions. `responses.parse` returns the parsed object and the raw text. | SDK source, adapter tests |
+| No retention | Confirmed in code | `store=false` on every request. | Adapter test |
+| Reasoning tokens | Per SDK signature (`reasoning={"effort": ...}`); behaviour to be measured in the manual eval | Reasoning models spend output tokens on reasoning, so `max_output_tokens` must leave room: low effort by default. | SDK |
+| Current model IDs | **Unverified**: sources disagreed at planning time (`gpt-6-luna` as the efficient tier, `gpt-6.1-sol` / `gpt-6-sol` as flagships, `gpt-5.6-*` before them) | `LLM_MODEL_DEFAULT=gpt-6-luna`, to be confirmed against OpenAI's model list before the first real run. | Web search, not the official list |
+| Data retention / processing location | Unverified for this use case | Needed for KVKK/GDPR analysis (sub-processor terms, regional processing options). | — |
+
+**Implications:** the LLM adapter uses structured outputs, **not tools**, for all four LLM tasks ([ADR-009](../architecture/decisions/ADR-009-llm-provider-abstraction.md)). Outputs are re-validated with Pydantic regardless of provider guarantees, because other providers (or local models) may not enforce schemas. The model is configurable per task. Other model tiers are a cost decision for the founder, measured with the eval suite ([open-questions.md](open-questions.md) OQ-09).
+
+---|---|---|---|
 | Structured outputs | Confirmed (docs, via Claude API reference bundled with tooling, cached 2026-10-06) | `output_config: {format: {...}}` constrains the response to a JSON schema. The SDK provides a parse helper. The older `output_format` parameter is deprecated. | Claude API skill reference |
 | Strict tool schemas | Confirmed (same) | `strict: true` on tool definitions guarantees schema-valid tool inputs. Forced `tool_choice` (`any`/`tool`) returns 400 on the newest models (Opus 5.5, Sonnet 5.5, Fable 5.1). | same |
 | Current model IDs | Confirmed (same) | `claude-opus-5-5` (default), `claude-sonnet-5-5`, `claude-haiku-5-5`. | same |

@@ -1,0 +1,43 @@
+dataset: extract_fact_candidates_bios
+version: 1
+fixtures:
+  facts: demo_gym
+cases:
+  - id: single_price_line
+    text: "Aylık üyelik 6.000 TL"
+    expect:
+      items: [{fact_key: pricing.membership_monthly, amount: "6000.00"}]
+    hard: true
+  - id: bio_with_prices_and_phone
+    text: |
+      Gölkent Fitness 💪
+      Aylık üyelik 6.000 TL
+      3 aylık üyelik: 16.500 TL
+      Tel: 0555 123 45 67
+      Bucak / Burdur
+    expect:
+      items:
+        - {fact_key: pricing.membership_monthly, amount: "6000.00"}
+        - {fact_key: pricing.membership_3_months, amount: "16500.00"}
+        - {fact_key: contact.phone, e164: "+905551234567"}
+    hard: true
+  - id: emoji_decorated_price
+    text: "🔥 Reformer 8 seans: 4.800 TL 🔥"
+    expect:
+      items: [{fact_key: pricing.reformer_8_sessions, amount: "4800.00"}]
+  - id: price_with_bin
+    text: "Aylık üyelik 6 bin TL"
+    expect:
+      items: [{fact_key: pricing.membership_monthly, amount: "6000.00"}]
+  - id: email_line
+    text: "İletişim: info@golkent.example"
+    expect:
+      items: [{fact_key: contact.email, email: "info@golkent.example"}]
+  - id: nothing_to_extract
+    text: "Hoş geldiniz! Bizi takip edin ve etiketleyin."
+    expect: {none: true}
+    hard: true
+  - id: price_on_request_only
+    text: "Fiyatlar için DM atın"
+    expect: {none: true}
+    hard: true

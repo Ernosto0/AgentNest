@@ -5,11 +5,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.api.deps import enforce_csrf, get_app_settings
+from app.approvals.router import router as approvals_router
+from app.commands.router import router as commands_router
 from app.core.config import Settings
 from app.core.db import check_readiness
 from app.core.i18n import SUPPORTED_LOCALES
 from app.identity.router import auth_router, workspaces_router
 from app.knowledge.router import router as knowledge_router
+from app.notifications.router import router as notifications_router
 
 health_router = APIRouter(tags=["health"])
 # CSRF is enforced for every unsafe method under /api/v1 by default (see deps.enforce_csrf).
@@ -46,7 +49,7 @@ def meta(settings: Settings = Depends(get_app_settings)) -> MetaResponse:
     return MetaResponse(
         product_name=settings.product_name,
         demo_tools_enabled=settings.demo_tools_enabled,
-        llm_mode="fake",  # the LLM provider setting arrives in Phase 3
+        llm_mode="fake" if settings.llm_provider == "fake" else "real",
         supported_locales=list(SUPPORTED_LOCALES),
     )
 
@@ -54,3 +57,6 @@ def meta(settings: Settings = Depends(get_app_settings)) -> MetaResponse:
 api_router.include_router(auth_router)
 api_router.include_router(workspaces_router)
 api_router.include_router(knowledge_router)
+api_router.include_router(approvals_router)
+api_router.include_router(commands_router)
+api_router.include_router(notifications_router)

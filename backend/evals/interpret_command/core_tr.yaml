@@ -1,0 +1,89 @@
+dataset: interpret_command_core_tr
+version: 1
+fixtures:
+  facts: demo_gym
+cases:
+  - id: update_monthly_dot_thousands
+    locale: tr
+    text: "Aylık üyelik artık 7.000 TL"
+    expect: {outcome: confirm, type: knowledge.update_fact, fact_key: pricing.membership_monthly, new_amount: "7000.00"}
+    hard: true
+  - id: update_three_months
+    locale: tr
+    text: "3 aylık üyelik artık 17.000 TL"
+    expect: {outcome: confirm, type: knowledge.update_fact, fact_key: pricing.membership_3_months, new_amount: "17000.00"}
+    hard: true
+  - id: update_reformer_olsun
+    locale: tr
+    text: "Reformer 8 seans paketi 5.000 TL olsun"
+    expect: {outcome: confirm, fact_key: pricing.reformer_8_sessions, new_amount: "5000.00"}
+    hard: true
+  - id: update_with_bin
+    locale: tr
+    text: "Aylık üyelik fiyatını 7 bin TL yap"
+    expect: {outcome: confirm, fact_key: pricing.membership_monthly, new_amount: "7000.00"}
+    hard: true
+  - id: update_uppercase_lira_sign
+    locale: tr
+    text: "AYLIK ÜYELİK ARTIK 7500 ₺"
+    expect: {outcome: confirm, fact_key: pricing.membership_monthly, new_amount: "7500.00"}
+  - id: update_student_unverified_fact
+    locale: tr
+    text: "öğrenci aylık üyelik 5000 TL oldu"
+    expect: {outcome: confirm, fact_key: pricing.student_monthly, new_amount: "5000.00"}
+  - id: update_decimal_comma
+    locale: tr
+    text: "Aylık üyelik artık 7.500,50 TL"
+    expect: {outcome: confirm, fact_key: pricing.membership_monthly, new_amount: "7500.50"}
+    hard: true
+  - id: update_without_currency_word
+    locale: tr
+    text: "aylık üyelik artık 6500"
+    expect: {outcome: confirm, fact_key: pricing.membership_monthly, new_amount: "6500.00"}
+  - id: same_value_is_already_done
+    locale: tr
+    text: "Aylık üyelik artık 6.000 TL"
+    expect: {outcome: completed}
+  - id: ambiguous_price_asks_which
+    locale: tr
+    text: "fiyat artık 7000"
+    expect:
+      outcome: needs_clarification
+      type: clarify
+      question_key: command.clarify.which_fact
+      options_include: [pricing.membership_monthly, pricing.membership_3_months, pricing.reformer_8_sessions]
+      options_exclude: [pricing.student_monthly]
+    hard: true
+  - id: ask_monthly_price
+    locale: tr
+    text: "Aylık üyelik ne kadar?"
+    expect: {outcome: execute, type: query.fact, fact_key: pricing.membership_monthly}
+  - id: ask_three_month_price
+    locale: tr
+    text: "3 aylık üyelik fiyatı nedir"
+    expect: {outcome: execute, type: query.fact, fact_key: pricing.membership_3_months}
+  - id: ask_hours
+    locale: tr
+    text: "Çalışma saatlerimiz neydi"
+    expect: {outcome: execute, type: query.fact, fact_key: hours.weekly}
+  - id: pending_approvals
+    locale: tr
+    text: "bekleyen onaylar neler"
+    expect: {outcome: execute, type: query.pending_approvals}
+    hard: true
+  - id: activity_today
+    locale: tr
+    text: "bugün neler oldu"
+    expect: {outcome: execute, type: query.activity_summary, period: today}
+  - id: activity_yesterday
+    locale: tr
+    text: "Dün ne oldu özet geç"
+    expect: {outcome: execute, type: query.activity_summary, period: yesterday}
+  - id: activity_last_week
+    locale: tr
+    text: "son 7 gün özeti"
+    expect: {outcome: execute, type: query.activity_summary, period: last_7_days}
+  - id: brand_voice_warmer
+    locale: tr
+    text: "Marka dilimiz daha samimi olsun"
+    expect: {outcome: confirm, type: knowledge.update_brand_voice}

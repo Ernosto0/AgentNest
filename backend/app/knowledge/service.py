@@ -22,7 +22,7 @@ from app.core.errors import AppError
 from app.identity import repository as identity_repo
 from app.identity.models import Workspace
 from app.identity.permissions import has_permission
-from app.knowledge import candidates, usability
+from app.knowledge import candidates, impact, usability
 from app.knowledge import repository as repo
 from app.knowledge.formatting import format_value
 from app.knowledge.models import BusinessFact, FactCandidate, FactVersion
@@ -429,6 +429,33 @@ def _verify_row(
     return fact
 
 
+def _propagate(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    fact: BusinessFact,
+    change: impact.ChangeKind,
+    *,
+    old_version: int,
+    old_display: str,
+) -> None:
+    """Let referrers react to the change and tell the other verifiers (workflow B step 3.4).
+
+    Runs in the update's own transaction, so a failing handler undoes the whole change.
+    """
+    effects = impact.apply_change(session, clock, ctx, fact, change, old_version)
+    impact.notify_fact_changed(
+        session,
+        clock,
+        ctx,
+        fact,
+        change=change,
+        old_display=old_display,
+        new_display="" if change == "archived" else _display(fact, ctx),
+        effects=effects,
+    )
+
+
 def _apply_change(
     session: Session,
     clock: Clock,
@@ -487,15 +514,25 @@ def _apply_change(
         "fact.updated",
         fact,
         source_type=source_type,
+        source_ref=source_ref,
         old_display=old_display,
         new_display=_display(fact, ctx),
         old_window=old_window,
         new_window=_window_text(fact.valid_from, fact.valid_until),
     )
+    _propagate(
+        session,
+        clock,
+        ctx,
+        fact,
+        "value_changed",
+        old_version=fact.current_version - 1,
+        old_display=old_display,
+    )
     return fact
 
 
-def update_fact(
+def apply_update(
     session: Session,
     clock: Clock,
     ctx: WorkspaceContext,
@@ -509,8 +546,9 @@ def update_fact(
     source_type: str = "owner_entry",
     source_ref: str | None = None,
 ) -> BusinessFact | FactCandidate:
-    """Edit a fact (``knowledge.edit``). Verifiers write a new verified version; staff edits
-    become a ``contest`` candidate (the caller answers 202) and cannot touch the window."""
+    """Edit a fact (``knowledge.edit``) **without committing**: for callers that own a larger
+    transaction (an approval decided-callback). Verifiers write a new verified version; staff
+    edits become a ``contest`` candidate and cannot touch the window."""
     _require(ctx, "knowledge.edit")
     fact = repo.get_fact(session, ctx, fact_id, lock=True)
     if fact is None:
@@ -546,7 +584,6 @@ def update_fact(
             source_type="staff_proposal",
             fact=fact,
         )
-        session.commit()
         return candidate
 
     result = _apply_change(
@@ -560,6 +597,39 @@ def update_fact(
         source_type=source_type,
         source_ref=source_ref,
         reason=reason,
+    )
+    return result
+
+
+def update_fact(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    fact_id: uuid.UUID,
+    *,
+    expected_version: int,
+    value: dict[str, Any] | _Unset = UNSET,
+    valid_from: date | None | _Unset = UNSET,
+    valid_until: date | None | _Unset = UNSET,
+    reason: str | None = None,
+    source_type: str = "owner_entry",
+    source_ref: str | None = None,
+) -> BusinessFact | FactCandidate:
+    """Edit a fact (``knowledge.edit``) and commit. Verifiers write a new verified version;
+    staff edits become a ``contest`` candidate (the caller answers 202) and cannot touch the
+    window."""
+    result = apply_update(
+        session,
+        clock,
+        ctx,
+        fact_id,
+        expected_version=expected_version,
+        value=value,
+        valid_from=valid_from,
+        valid_until=valid_until,
+        reason=reason,
+        source_type=source_type,
+        source_ref=source_ref,
     )
     session.commit()
     return result
@@ -598,6 +668,7 @@ def archive_fact(
     if fact is None:
         raise AppError("NOT_FOUND")
     _check_version(fact, expected_version)
+    old_display = _display(fact, ctx)
     fact.status = apply_fact_event(fact.status, "archive")
     fact.current_version += 1
     _snapshot(
@@ -612,6 +683,15 @@ def archive_fact(
     )
     candidates.recompute_relations(session, ctx, fact.key, fact)
     _audit(session, clock, ctx, "fact.archived", fact, source_type="owner_entry")
+    _propagate(
+        session,
+        clock,
+        ctx,
+        fact,
+        "archived",
+        old_version=fact.current_version - 1,
+        old_display=old_display,
+    )
     session.commit()
     return fact
 

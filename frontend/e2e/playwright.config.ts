@@ -41,6 +41,15 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
+      // The worker runs the background jobs (command interpretation, extraction). It has no
+      // port, so we wait for its startup log line; the poll interval is short for the tests.
+      command: "uv run python -m app.worker",
+      cwd: backendDir,
+      wait: { stderr: /startup/ },
+      env: { WORKER_POLL_INTERVAL_SECONDS: "0.2" },
+      timeout: 60_000,
+    },
+    {
       // CI serves the production build; locally the dev server is faster to start.
       command: CI
         ? "npm run build && npm run preview -- --strictPort"

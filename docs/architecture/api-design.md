@@ -29,7 +29,7 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 |---|---|
 | `GET /healthz` | Liveness (no DB). |
 | `GET /readyz` | DB reachable, migrations at head. |
-| `GET /api/v1/meta` | Public non-secret config for the SPA: `{product_name, demo_tools_enabled, llm_mode: "fake"|"real", supported_locales}`. |
+| `GET /api/v1/meta` | Public non-secret config for the SPA: `{product_name, demo_tools_enabled, llm_mode: "fake"|"real" (from `LLM_PROVIDER`), supported_locales}`. |
 
 ### 2.2 Auth and identity (Phase 1; invites Phase 6)
 | Method & path | Request → Response |
@@ -58,8 +58,8 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `GET /…/facts/{id}/versions` | version history, newest first: `{version, value, display, status, valid_from, valid_until, source_type, source_ref, actor_type, actor_name, reason, change_kind, created_at}` |
 | `GET /…/fact-candidates?status=pending` | candidates with `relation`, `source_excerpt`, `fact_label`, `proposed_display`, `current_display`, `proposed_by_name` |
 | `POST /…/fact-candidates/{id}/accept` / `reject` | `knowledge.verify`. Accept → fact (200); reject → candidate. A candidate that is no longer pending → 409 `CONFLICT_STATE` |
-| `POST /…/knowledge/extractions` | `{text, client_request_id}` → 202 `{run_id, status}` |
-| `GET /…/knowledge/extractions/{run_id}` | `{status, candidates_created}` |
+| `POST /…/knowledge/extractions` | `{text (≤ 8000 chars), client_request_id}` → 202 `{run_id, status, candidates_created, error_code, injection_suspected}` (`knowledge.edit`; idempotent per user and `client_request_id`). The text is stored only in the run's redacted input snapshot, never in the job payload |
+| `GET /…/knowledge/extractions/{run_id}` | same shape. `status` is `queued`, `running`, `succeeded` or `failed`; `candidates_created` counts candidates that need a decision (equal values are not counted). Items whose excerpt is not verbatim, or that sit in an instruction-like line, are dropped, so the count can be 0 |
 | `GET /…/readiness` | `{level: not_ready \| ready_for_drafts \| ready, requirements: [{code, required_for: drafts \| ready, satisfied, status, link: {target: knowledge \| integrations \| automation, category, key}, missing_keys}]}`. The `link` is structured so the API stays free of frontend routes. `status` is `ok`, `missing`, `not_connected` (no account before Phase 4) or `not_reviewed`. Codes: `business_name`, `contact`, `location`, `hours`, `booking_instructions`, `price_policy`, `services`, `account_connected`, `automation_reviewed`. Read: any member |
 | `GET/POST/PATCH /…/approved-answers` | CRUD |
 | `POST /…/approved-answers/from-message/{message_id}` | create from a sent reply |
@@ -74,14 +74,16 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `POST /…/commands/{id}/cancel` | |
 | `GET /…/commands?limit=` | recent commands of the current user |
 
-`Command = {id, status, raw_text, command_type, result: {message_key, params, links[]}|null, clarification: {question_key, params, options: [{id, label}]}|null, approval: ApprovalSummary|null, error_code, created_at}`
+`Command = {id, status, raw_text, command_type, result: {message_key, params, links[]}|null, clarification: {question_key, params, options: [{id, label}]}|null, approval: ApprovalSummary|null, error_code, created_at, expires_at, completed_at}`
+
+Commands are private to the member who typed them (another member's id → 404). `POST /…/commands` validates `text` (1–1000 characters after trimming) and `client_request_id` (non-empty, ≤ 100) with 422 `VALIDATION_FAILED`, and is idempotent per user and `client_request_id`. A clarification answer continues deterministically from the stored question (no new model call); an `option_id` that was not offered → 422. `cancel` is allowed from `needs_clarification` and `awaiting_confirmation` only (else 409 `CONFLICT_STATE`). Reads expire waiting commands lazily. `result.links` are structured (`{target: knowledge|approvals|content|inbox|integrations|automation|members, category?, key?}`), and results are keys plus pre-formatted params: the client renders the sentence.
 
 ### 2.5 Approvals (Phase 3)
 | Method & path | Request → Response |
 |---|---|
-| `GET /…/approvals?status=pending&action=` | list of `ApprovalSummary` |
-| `GET /…/approvals/{id}` | `{id, kind, action, status, summary, payload_hash, subject: {type, id, version, link}, expires_at, execute_before, required_permission, can_decide, is_simulated}` |
-| `POST /…/approvals/{id}/decision` | `{decision: "approve"|"reject", payload_hash, note?}` → updated approval + subject status. 409 codes `APPROVAL_ALREADY_DECIDED`, `APPROVAL_EXPIRED`, `APPROVAL_STALE`. |
+| `GET /…/approvals?status=pending&action=` | `{items: ApprovalSummary[], next_cursor}` (`approvals.view`). Expires due approvals first, so a stale `pending` is never shown. `ApprovalSummary` has the same fields as the detail below |
+| `GET /…/approvals/{id}` | `{id, kind, action, status, summary, payload_hash, subject: {type, id, version, status, link: {target, id}}, expires_at, execute_before, required_permission, can_decide, is_simulated, created_at, decided_at, cancel_reason}`. `can_decide` is true for holders of `required_permission` and, for a `confirmation`, for its requester |
+| `POST /…/approvals/{id}/decision` | `{decision: "approve"|"reject", payload_hash (64 hex), note?}` → the updated approval (its `subject.status` shows the outcome). Any member reaches the route; permission is per approval (403 otherwise). 409 codes `APPROVAL_ALREADY_DECIDED`, `APPROVAL_EXPIRED` (also for an approval that expired earlier), `APPROVAL_STALE` (hash or subject version differs). No other word decides anything: `ok`, `evet`, `tamam` are 422. The subject's callback runs in the same transaction; if it fails, nothing is saved |
 
 ### 2.6 Inbox (Phase 4)
 | Method & path | Request → Response |
@@ -117,8 +119,8 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `GET /…/reports/daily?date=YYYY-MM-DD` | computed or stored report with `metrics`, `summary` (localised), links |
 | `POST /…/reports/daily/generate` | `{date}` regenerate |
 | `GET /…/activity?type=&cursor=` | audit feed rendered for owners |
-| `GET /…/notifications?unread=true` | |
-| `POST /…/notifications/{id}/read` / `POST /…/notifications/read-all` | |
+| `GET /…/notifications?unread=true` | `{items: [{id, type, severity, params, subject_type, subject_id, is_simulated, read_at, created_at}], unread_count, next_cursor}`: the caller's own notifications only |
+| `POST /…/notifications/{id}/read` / `POST /…/notifications/read-all` | read → the notification (someone else's → 404); read-all → 204 |
 | `GET /…/system-health` | accounts, failed operations (24 h), dead jobs, signature failures, LLM failure rate (owner/manager) |
 | `GET /…/operations/{id}` | operation detail for failure explanations |
 

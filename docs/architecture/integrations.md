@@ -109,7 +109,7 @@ CI runs them against `mock`. The `meta` run is manual (`-m meta_live`, requires 
 | Reels / video / carousel | no | — |
 
 ## 4. LLM provider
-Contract and behaviour: [ADR-009](decisions/ADR-009-llm-provider-abstraction.md), [agent-runtime.md](agent-runtime.md). Adapters: `fake` (default), `anthropic`. Only `app/ai` imports `integrations.llm`.
+Contract and behaviour: [ADR-009](decisions/ADR-009-llm-provider-abstraction.md), [agent-runtime.md](agent-runtime.md). Adapters: `fake` (default), `openai`. Only `app/ai` imports `integrations.llm`.
 
 ## 5. Owner channels
 

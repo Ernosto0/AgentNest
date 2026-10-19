@@ -161,3 +161,16 @@ class RequirementOut(BaseModel):
 class ReadinessOut(BaseModel):
     level: Literal["not_ready", "ready_for_drafts", "ready"]
     requirements: list[RequirementOut]
+
+
+class ExtractionCreate(StrictModel):
+    text: str
+    client_request_id: str
+
+
+class ExtractionOut(BaseModel):
+    run_id: uuid.UUID
+    status: Literal["queued", "running", "succeeded", "failed"]
+    candidates_created: int
+    error_code: str | None = None
+    injection_suspected: bool = False

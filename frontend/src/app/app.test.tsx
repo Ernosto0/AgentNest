@@ -111,12 +111,21 @@ describe("workspace shell", () => {
   it.each([
     ["inbox", "Gelen kutusu"],
     ["content", "İçerik"],
-    ["approvals", "Onaylar"],
   ])("the %s tab shows a localised empty state", async (section, title) => {
     mockApi(signedIn);
     renderApp(`/w/${WS_GOLKENT}/${section}`);
     expect(await screen.findByRole("heading", { name: title })).toBeInTheDocument();
     expect(screen.getByText("Bu bölüm bir sonraki aşamada gelecek")).toBeInTheDocument();
+  });
+
+  it("the approvals tab is a real screen with its own empty state (Phase 3)", async () => {
+    mockApi({
+      ...signedIn,
+      [`GET /api/v1/workspaces/${WS_GOLKENT}/approvals`]: () => json({ items: [], next_cursor: null }),
+    });
+    renderApp(`/w/${WS_GOLKENT}/approvals`);
+    expect(await screen.findByRole("heading", { name: "Onaylar" })).toBeInTheDocument();
+    expect(await screen.findByText("Bekleyen onay yok")).toBeInTheDocument();
   });
 
   it("answers 'not found' for a workspace the user is not a member of", async () => {

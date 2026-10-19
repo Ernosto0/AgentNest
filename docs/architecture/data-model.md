@@ -208,7 +208,7 @@ Index: `(workspace_id, status)`, `(workspace_id, fact_key) where status = 'pendi
 | referrer_type | text not null | `reply_draft`, `content_item`, `approved_answer` |
 | referrer_id | uuid not null | |
 
-Index: `(workspace_id, fact_id)`. Rows are replaced whenever the referrer's text is regenerated or edited. Impact analysis joins on `fact_id` ([workflows.md §B](workflows.md)).
+Index: `(workspace_id, fact_id)`; `unique (referrer_type, referrer_id, fact_id)` (one row per fact per referrer). Rows are replaced whenever the referrer's text is regenerated or edited. Impact analysis joins on `fact_id` ([workflows.md §B](workflows.md)).
 
 ### 3.4 Commands, AI, approvals, policy (Phase 3–4)
 
@@ -239,7 +239,7 @@ Index: `(workspace_id, fact_id)`. Rows are replaced whenever the referrer's text
 | id, workspace_id | uuid | |
 | task | text not null | `interpret_command`, `draft_reply`, `draft_content`, `extract_fact_candidates` |
 | provider / model / prompt_version | text | |
-| status | text not null | `running`, `succeeded`, `failed` |
+| status | text not null | `queued`, `running`, `succeeded`, `failed`. `queued` exists so an endpoint can store the redacted input (pasted text) on the run before the job starts; queued rows do not count against the daily budget |
 | input_snapshot | jsonb null | redacted; deleted after retention (30 days) |
 | output | jsonb null | validated output |
 | validation_errors | jsonb null | |
@@ -270,7 +270,7 @@ Index: `(workspace_id, fact_id)`. Rows are replaced whenever the referrer's text
 | cancel_reason | text null | e.g., `SUBJECT_EDITED`, `SUPERSEDED`, `FACT_CHANGED` |
 | is_simulated | boolean | |
 
-Constraint: `unique (workspace_id, subject_type, subject_id) where status = 'pending'`. Index: `(workspace_id, status, expires_at)`.
+Constraint: `unique (workspace_id, subject_type, subject_id) where status = 'pending'`. Index: `(workspace_id, status, expires_at)`. There is no `payload` column: the payload lives with the subject (for a command, `owner_commands.resolution`), and execution recomputes its hash and compares it with `payload_hash`.
 
 **`automation_policies`**: PK `(workspace_id, action_class)`; `mode` `CHECK in ('auto','approval','off')`; `updated_by_user_id`; `updated_at`. Missing rows mean the default (`approval`).
 
@@ -438,7 +438,7 @@ Index: `(workspace_id, status, scheduled_at)`.
 
 ### 3.8 Notifications and reports (notifications Phase 3; reports Phase 6)
 
-**`notifications`**: `id`, `workspace_id`, `recipient_user_id` (FK users), `type`, `severity` (`info`, `attention`, `critical`), `params` jsonb, `subject_type`, `subject_id`, `dedup_key` (`unique (recipient_user_id, dedup_key) where read_at is null`), `is_simulated`, `read_at`.
+**`notifications`**: `id`, `workspace_id`, `recipient_user_id` (FK users), `type`, `severity` (`info`, `attention`, `critical`), `params` jsonb, `subject_type`, `subject_id`, `dedup_key` (`unique (recipient_user_id, dedup_key) where read_at is null and dedup_key is not null`), `is_simulated`, `read_at`.
 
 **`notification_deliveries`** (Phase 9): `id`, `notification_id`, `channel`, `status` (`pending`, `sent`, `failed`), `attempts`, `external_ref`, `delivered_at`.
 

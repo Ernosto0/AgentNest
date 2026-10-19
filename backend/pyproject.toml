@@ -14,9 +14,11 @@ dependencies = [
     "structlog>=24.1",
     "argon2-cffi>=23.1",
     "httpx>=0.27",
+    "httpx2>=2.13.1",  # the OpenAI SDK 3.x HTTP client; the stub transport in tests
     "babel>=2.15",
     "pyyaml>=6.0",
     "tzdata>=2024.1",  # zoneinfo database on Windows
+    "openai>=3.31.0",
 ]
 
 [dependency-groups]
@@ -26,7 +28,6 @@ dev = [
     "mypy>=1.11",
     "import-linter>=2.0",
     "types-pyyaml>=6.0",
-    "httpx2>=2.13.1",
 ]
 
 [tool.uv]
@@ -69,6 +70,7 @@ markers = [
 
 [tool.importlinter]
 root_package = "app"
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "core imports nothing from the rest of the app"
@@ -131,6 +133,27 @@ source_modules = [
     "app.knowledge.parsing",
     "app.knowledge.formatting",
     "app.knowledge.constants",
+    "app.knowledge.render",
+    "app.knowledge.claims",
+    "app.knowledge.impact",
+    "app.ai",
+    "app.approvals.service",
+    "app.approvals.repository",
+    "app.approvals.models",
+    "app.approvals.guards",
+    "app.approvals.callbacks",
+    "app.approvals.transitions",
+    "app.approvals.jobs",
+    "app.notifications.service",
+    "app.notifications.models",
+    "app.commands.service",
+    "app.commands.repository",
+    "app.commands.models",
+    "app.commands.resolver",
+    "app.commands.registry",
+    "app.commands.transitions",
+    "app.commands.jobs",
+    "app.commands.executors",
 ]
 forbidden_modules = ["app.api", "app.main"]
 
@@ -147,3 +170,66 @@ source_modules = [
     "app.worker",
 ]
 forbidden_modules = ["app.demo"]
+
+[[tool.importlinter.contracts]]
+name = "only app.ai imports the LLM integration (ADR-009)"
+type = "forbidden"
+source_modules = [
+    "app.core",
+    "app.identity",
+    "app.knowledge",
+    "app.audit",
+    "app.jobs",
+    "app.api",
+    "app.demo",
+    "app.main",
+    "app.worker",
+    "app.cli",
+]
+forbidden_modules = ["app.integrations"]
+allow_indirect_imports = true  # app.ai legitimately reaches it; only direct imports matter
+
+[[tool.importlinter.contracts]]
+name = "only the OpenAI adapter imports the openai SDK"
+type = "forbidden"
+source_modules = ["app"]
+forbidden_modules = ["openai"]
+ignore_imports = ["app.integrations.llm.openai_provider -> openai"]
+
+[[tool.importlinter.contracts]]
+name = "only the API, the loader and the worker reach the command system (INV-03)"
+type = "forbidden"
+source_modules = [
+    "app.core",
+    "app.identity",
+    "app.knowledge",
+    "app.audit",
+    "app.jobs",
+    "app.ai",
+    "app.approvals",
+    "app.notifications",
+]
+forbidden_modules = ["app.commands"]
+
+[[tool.importlinter.contracts]]
+name = "approvals and notifications know no subject module"
+type = "forbidden"
+source_modules = ["app.approvals", "app.notifications"]
+forbidden_modules = ["app.knowledge", "app.commands", "app.ai"]
+
+[[tool.importlinter.contracts]]
+name = "knowledge core does not depend on ai, approvals or commands"
+type = "forbidden"
+source_modules = [
+    "app.knowledge.service",
+    "app.knowledge.repository",
+    "app.knowledge.models",
+    "app.knowledge.candidates",
+    "app.knowledge.impact",
+    "app.knowledge.render",
+    "app.knowledge.claims",
+    "app.knowledge.formatting",
+    "app.knowledge.parsing",
+    "app.knowledge.values",
+]
+forbidden_modules = ["app.ai", "app.approvals", "app.commands"]

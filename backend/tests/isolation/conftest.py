@@ -7,15 +7,29 @@ Later phases register the IDs of the resources they create in B through ``foreig
 (path parameter name -> B's value), so their routes are tested with real foreign IDs.
 """
 
+import uuid
 from dataclasses import dataclass, field
+from datetime import timedelta
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.ai.models import AgentRun
+from app.approvals import service as approvals_service
+from app.commands.models import OwnerCommand
+from app.core.clock import FrozenClock
 from app.identity.models import User, Workspace
-from tests.factories import create_candidate, create_fact, login, money, workspace_with_members
+from app.notifications import service as notifications_service
+from tests.factories import (
+    create_candidate,
+    create_fact,
+    knowledge_ctx,
+    login,
+    money,
+    workspace_with_members,
+)
 
 
 @dataclass
@@ -39,6 +53,47 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
     # Real knowledge rows in B, so fact/candidate routes are probed with genuine foreign IDs.
     b_fact = create_fact(db_session, b, "pricing.membership_monthly", money())
     b_candidate = create_candidate(db_session, b, "pricing.membership_monthly", money("5500"))
+    # An approval and a notification in B (Phase 3).
+    clock = FrozenClock()
+    b_ctx = knowledge_ctx(b, b_users["owner"], "owner")
+    b_approval = approvals_service.request(
+        db_session,
+        clock,
+        b_ctx,
+        kind="confirmation",
+        action="command.update_fact",
+        subject_type="owner_command",
+        subject_id=uuid.uuid4(),
+        subject_version=1,
+        payload={"x": 1},
+        summary={"label": "B"},
+        required_permission="knowledge.verify",
+        expires_at=clock.now() + timedelta(minutes=30),
+    )
+    b_notification = notifications_service.notify(
+        db_session, clock, b_ctx, recipient_user_id=b_users["owner"].id, type="test.note"
+    )
+    assert b_notification is not None
+    b_command = OwnerCommand(
+        workspace_id=b.id,
+        user_id=b_users["owner"].id,
+        channel="web",
+        client_request_id="isolation",
+        raw_text="Aylık üyelik ne kadar?",
+        status="needs_clarification",
+        correlation_id=uuid.uuid4(),
+        created_at=clock.now(),
+    )
+    db_session.add(b_command)
+    b_run = AgentRun(
+        workspace_id=b.id,
+        task="extract_fact_candidates",
+        status="queued",
+        input_snapshot={"user_id": str(b_users["owner"].id), "client_request_id": "isolation"},
+        created_at=clock.now(),
+    )
+    db_session.add(b_run)
+    db_session.commit()
     return TwoWorkspaces(
         app=app,
         a=a,
@@ -51,5 +106,9 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "workspace_id": str(b.id),
             "fact_id": str(b_fact.id),
             "candidate_id": str(b_candidate.id),
+            "approval_id": str(b_approval.id),
+            "notification_id": str(b_notification.id),
+            "command_id": str(b_command.id),
+            "run_id": str(b_run.id),
         },
     )

@@ -1,0 +1,4 @@
+# Reports of the deterministic fake provider are regenerated in CI; real-provider reports are
+# committed (testing-strategy.md §6.3).
+*-fake.json
+*-fake.md

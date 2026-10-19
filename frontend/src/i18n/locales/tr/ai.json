@@ -1,0 +1,169 @@
+{
+  "aiMode": {
+    "offline": "Çevrimdışı demo yapay zekâsı"
+  },
+  "command": {
+    "label": "Komut",
+    "placeholder": "Örn. “Aylık üyelik artık 7.000 TL”",
+    "send": "Gönder",
+    "hint": "Fiyat güncelleyin, bir bilgiyi sorun veya özet isteyin.",
+    "interpreting": "Anlıyorum…",
+    "dismiss": "Kapat",
+    "yourCommand": "Komutunuz",
+    "submitting": "Gönderiliyor…",
+    "confirm": {
+      "title": "Bu değişikliği onaylıyor musunuz?",
+      "from": "Şimdi",
+      "to": "Yeni",
+      "impactTitle": "Etkilenecek öğeler",
+      "impactNone": "Bu değişiklik başka bir taslağı veya içeriği etkilemiyor.",
+      "impactCount": "{{count}} adet",
+      "expires": "{{time}} saatine kadar geçerli",
+      "approve": "Onayla",
+      "withdraw": "Vazgeç",
+      "deciding": "Kaydediliyor…",
+      "staffNote": "Bu bilgiyi doğrulama yetkiniz yok: onaylarsanız bir öneri olarak sahibe iletilir, bilgi hemen değişmez."
+    },
+    "clarify": {
+      "which_fact": "Hangi bilgiyi kastettiniz?",
+      "which_fact_value": "“{{raw}}” hangi bilgi için?",
+      "which_value": "“{{raw}}” ({{label}}) için hangi tutarı kastettiniz?",
+      "cancel": "Vazgeç"
+    },
+    "msg": {
+      "fact_value": "{{label}}: {{display}}",
+      "fact_not_usable": "{{label}} şu an kullanılamıyor ({{stateLabel}}). Önce İşletme bilgileri bölümünden doğrulayın.",
+      "fact_unchanged": "{{label}} zaten {{display}}. Değişiklik gerekmedi.",
+      "fact_updated": "{{label}} güncellendi: {{old_display}} → {{new_display}} (sürüm {{version}}).",
+      "fact_proposed": "{{label}} için {{new_display}} önerisi sahibe iletildi. Onaylanana kadar bilgi değişmez.",
+      "brand_voice_updated": "Marka dili güncellendi.",
+      "brand_voice_proposed": "Marka dili önerisi sahibe iletildi. Onaylanana kadar değişmez.",
+      "fact_changed_meanwhile": "Bilgi siz onaylarken değişmişti, bu yüzden güncellenmedi. Güncel değeri kontrol edip komutu yeniden verin.",
+      "pending_approvals_one": "Bekleyen {{count}} onay var.",
+      "pending_approvals_other": "Bekleyen {{count}} onay var.",
+      "pending_none": "Bekleyen onay yok.",
+      "activity_basic": "{{periodLabel}}: {{fact_changes}} bilgi değişikliği, {{commands}} komut, {{approvals_decided}} onay kararı.",
+      "activity_basic_note": "Temel özet: kayıtlardan sayılmıştır.",
+      "forbidden": "Bu işlem için yetkiniz yok.",
+      "value_unreadable": "“{{raw}}” değerini okuyamadım ({{label}}). Örneğin “7.000 TL” yazın.",
+      "brand_voice_missing": "Marka dili bilgisi henüz yok. İşletme bilgileri bölümünden ekleyin.",
+      "failed": "Komut tamamlanamadı."
+    },
+    "period": {
+      "today": "Bugün",
+      "yesterday": "Dün",
+      "last_7_days": "Son 7 gün"
+    },
+    "unsupported": {
+      "title": "Bunu henüz yapamıyorum",
+      "suggestionsTitle": "Bunları deneyebilirsiniz:",
+      "reason": {
+        "publish": "Gönderi yayınlamak komutla yapılamaz. Bunu İçerik bölümünden siz yapın.",
+        "send_message": "Müşteriye mesaj göndermek komutla yapılamaz. Gelen kutusundan siz yanıtlayın.",
+        "approve": "Onaylamak ve reddetmek komutla yapılamaz. Onay kartındaki düğmeleri kullanın.",
+        "manage_account": "Hesap bağlamak veya kaldırmak komutla yapılamaz. Ayarlardan yapın.",
+        "settings": "Otomasyon ayarları komutla değiştirilemez. Ayarlardan yapın.",
+        "members": "Ekip üyelerini komutla yönetemezsiniz. Ayarlardan yapın.",
+        "other": "Bu isteği anlayamadım ya da komutla yapılamıyor."
+      }
+    },
+    "suggest": {
+      "update_price": "“Aylık üyelik artık 7.000 TL”",
+      "ask_price": "“Aylık üyelik ne kadar?”",
+      "activity": "“Bugün neler oldu?”"
+    },
+    "link": {
+      "knowledge": "İşletme bilgilerini aç",
+      "approvals": "Onaylara git",
+      "content": "İçeriğe git",
+      "inbox": "Gelen kutusuna git",
+      "integrations": "Ayarları aç",
+      "automation": "Ayarları aç",
+      "members": "Ayarları aç"
+    },
+    "status": {
+      "cancelled": "İptal edildi. Hiçbir şey değişmedi.",
+      "expired": "Süresi doldu. Hiçbir şey değişmedi."
+    }
+  },
+  "approvals": {
+    "title": "Onaylar",
+    "intro": "Karar vermeniz gereken işler burada. Hiçbir şey siz onaylamadan yapılmaz.",
+    "tabs": {
+      "label": "Onay listesi",
+      "pending": "Bekleyen",
+      "history": "Geçmiş"
+    },
+    "empty": "Bekleyen onay yok",
+    "emptyHint": "Bir komut verdiğinizde onayınız gereken değişiklikler burada görünür.",
+    "emptyHistory": "Henüz karar verilmiş bir onay yok",
+    "action": {
+      "command_update_fact": "Bilgi güncelleme",
+      "command_update_brand_voice": "Marka dili güncelleme",
+      "command_cancel_content": "İçerik iptali",
+      "reply_send": "Yanıt gönderme",
+      "content_publish": "İçerik yayınlama"
+    },
+    "status": {
+      "pending": "Bekliyor",
+      "approved": "Onaylandı",
+      "rejected": "Reddedildi",
+      "expired": "Süresi doldu",
+      "cancelled": "İptal edildi"
+    },
+    "detail": {
+      "title": "Onay ayrıntısı",
+      "from": "Şimdi",
+      "to": "Yeni",
+      "expires": "Geçerlilik: {{time}}",
+      "decidedAt": "Karar: {{time}}",
+      "approve": "Onayla",
+      "reject": "Reddet",
+      "deciding": "Kaydediliyor…",
+      "cannotDecide": "Bu onay için karar verme yetkiniz yok.",
+      "kindConfirmation": "Komut onayı",
+      "kindAuthorization": "İzin isteği",
+      "impactTitle": "Etkilenecek öğeler",
+      "impactNone": "Başka bir öğeyi etkilemiyor."
+    },
+    "referrer": {
+      "reply_draft": "Yanıt taslağı",
+      "content_item": "İçerik",
+      "approved_answer": "Onaylı yanıt"
+    }
+  },
+  "notifications": {
+    "bell": "Bildirimler",
+    "title": "Bildirimler",
+    "empty": "Yeni bildirim yok",
+    "markAll": "Tümünü okundu say",
+    "unread_one": "{{count}} okunmamış bildirim",
+    "unread_other": "{{count}} okunmamış bildirim",
+    "type": {
+      "approval_requested": "Onayınız bekleniyor: {{label}}",
+      "approval_expired": "Süresi doldu, onaylanmadı: {{label}}",
+      "knowledge_fact_changed": "{{label}} değişti: {{old}} → {{new}}",
+      "knowledge_fact_archived": "{{label}} arşivlendi",
+      "unknown": "Yeni bildirim"
+    },
+    "open": "Aç"
+  },
+  "extract": {
+    "open": "Metinden öneri al",
+    "title": "Metinden öneri al",
+    "intro": "Instagram biyografinizi veya fiyat listenizi yapıştırın. Bulunan bilgiler yalnızca öneri olur; siz kabul etmeden hiçbir şey değişmez.",
+    "label": "Yapıştırılan metin",
+    "placeholder": "Örn. “Aylık üyelik 6.000 TL”",
+    "counter": "{{count}} / {{max}}",
+    "submit": "Önerileri bul",
+    "working": "Metin inceleniyor…",
+    "done_one": "{{count}} öneri bulundu. Sizi bekliyor.",
+    "done_other": "{{count}} öneri bulundu. Sizi bekliyor.",
+    "none": "Bu metinde önerilecek bir bilgi bulunamadı. Bilgileri elle de girebilirsiniz.",
+    "injection": "Metinde talimat gibi görünen bölümler vardı; bunlar yok sayıldı.",
+    "goToSuggestions": "Önerilere git",
+    "failed": "Öneriler çıkarılamadı. Metniniz korundu; tekrar deneyebilir veya bilgileri elle girebilirsiniz.",
+    "again": "Başka metin ekle",
+    "close": "Kapat"
+  }
+}

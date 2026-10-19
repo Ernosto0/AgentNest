@@ -52,6 +52,11 @@ def _redact(value: Any) -> Any:
     return value
 
 
+def redact_value(value: Any) -> Any:
+    """Mask sensitive keys anywhere inside ``value`` (also used for ``agent_runs`` snapshots)."""
+    return _redact(value)
+
+
 def redact_processor(
     logger: Any, method_name: str, event_dict: MutableMapping[str, Any]
 ) -> MutableMapping[str, Any]:

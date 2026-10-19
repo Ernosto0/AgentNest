@@ -25,6 +25,16 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "CONFLICT_STATE": ErrorSpec(409),
     "VERSION_CONFLICT": ErrorSpec(409),
     "FACT_VERSION_CONFLICT": ErrorSpec(409),
+    "APPROVAL_ALREADY_DECIDED": ErrorSpec(409),
+    "APPROVAL_EXPIRED": ErrorSpec(409),
+    "APPROVAL_STALE": ErrorSpec(409),
+    # Not API errors: reasons recorded on commands, agent runs and render results.
+    "FACT_NOT_USABLE": ErrorSpec(None, retryable=False),
+    "FACT_CHANGED_MEANWHILE": ErrorSpec(None, retryable=False),
+    "LLM_UNAVAILABLE": ErrorSpec(None, retryable=True),
+    "LLM_OUTPUT_INVALID": ErrorSpec(None, retryable=False),
+    "LLM_REFUSED": ErrorSpec(None, retryable=False),
+    "LLM_BUDGET_EXCEEDED": ErrorSpec(None, retryable=False),
     "JOB_PAYLOAD_INVALID": ErrorSpec(None, retryable=False),
     "INTERNAL_ERROR": ErrorSpec(500),
 }

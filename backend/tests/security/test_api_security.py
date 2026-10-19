@@ -17,7 +17,9 @@ PARAM = re.compile(r"\{(\w+)(?::\w+)?\}")
 
 # Fields that legitimately carry a secret-looking name. Everything else is a failure.
 # ``csrf_token`` is handed to the signed-in user so the SPA can echo it in X-CSRF-Token.
-ALLOWED_SECRETISH_FIELDS = {"csrf_token"}
+# ``payload_hash`` is the public integrity binding of an approval (a SHA-256 of what will
+# happen): the client must send back the hash it displayed (ADR-014). It is not a credential.
+ALLOWED_SECRETISH_FIELDS = {"csrf_token", "payload_hash"}
 SECRETISH = re.compile(r"password|secret|token|hash|cipher|api_key|credential", re.I)
 
 

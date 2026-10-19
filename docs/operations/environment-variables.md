@@ -31,13 +31,14 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 
 | Variable | dev | prod | Description |
 |---|---|---|---|
-| `LLM_PROVIDER` | `fake` | `anthropic` (fake refused) | |
-| `ANTHROPIC_API_KEY` 🔒 | empty | required if anthropic | |
-| `LLM_MODEL_DEFAULT` | `claude-opus-5-5` | per OQ-09 | |
+| `LLM_PROVIDER` | `fake` | `openai` (fake refused) | `fake` \| `openai` |
+| `OPENAI_API_KEY` 🔒 | empty | required if openai | |
+| `LLM_MODEL_DEFAULT` | `gpt-6-luna` | per OQ-09 (required if openai) | Verify the exact ID against OpenAI's model list |
 | `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS` | empty (= default) | optional | Per-task overrides |
 | `LLM_TIMEOUT_SECONDS` | `30` | `30` | Default; per-task values in code |
 | `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` | `500` | per plan | Budget guard |
-| `LLM_PRICE_TABLE` | built-in | optional JSON | For cost estimates in system health |
+| `LLM_REASONING_EFFORT` | `low` | `low` | `` (off) \| `minimal` \| `low` \| `medium` \| `high`. Reasoning tokens count against each task's `max_output_tokens` |
+| `LLM_PRICE_TABLE` | empty | optional JSON | `{"<model>": {"input_per_mtok": 0.0, "output_per_mtok": 0.0}}` (USD). Cost estimates in evals and system health; unpriced models have no estimate |
 
 ## Instagram and inbox (Phase 4; Meta in Phase 7)
 

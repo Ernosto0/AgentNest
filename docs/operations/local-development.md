@@ -60,7 +60,8 @@ uv run pytest                              # all backend tests (needs Postgres r
 uv run pytest tests/unit                   # fast, no DB
 uv run pytest -m commits -k jobs           # queue/concurrency/restart tests (real commits)
 uv run ruff check . ; uv run ruff format --check . ; uv run mypy app ; uv run lint-imports
-uv run python -m evals run --all --provider fake   # Phase 3+
+uv run python -m evals run --all --provider fake --strict   # Phase 3+: CI runs this; exit 1 on any failure
+uv run python -m evals run --all --provider openai --max-cost-usd 2   # by hand, with OPENAI_API_KEY; reports go to backend/evals/reports/
 cd ../frontend
 npm test                                   # Vitest
 npm run lint ; npm run typecheck ; npm run i18n:check
@@ -69,7 +70,7 @@ npm run e2e                                # Playwright, 3 projects (see below)
 ```
 
 - Backend tests always run against `TEST_DATABASE_URL` (the `agentnest_test` database): the test session refuses any database whose name does not end in `_test`. The schema is dropped and rebuilt with `alembic upgrade head` at the start of every test session, so never point `TEST_DATABASE_URL` at data you care about.
-- `npm run e2e` needs Postgres running with migrations applied (`uv run alembic upgrade head`). It **re-seeds** the demo data (`seed --reset`), starts the API (`:8000`) and the Vite dev server (`:5173`) itself, and reuses them if they are already running. In CI (`CI=true`) it serves the production build with `vite preview` instead. Projects: `mobile-webkit` (iPhone 13), `mobile-chromium` (Pixel 7), `desktop-chromium`. Run one with `npm run e2e -- --project=desktop-chromium`. Phase 1 e2e does not need the worker.
+- `npm run e2e` needs Postgres running with migrations applied (`uv run alembic upgrade head`). It **re-seeds** the demo data (`seed --reset`), starts the API (`:8000`) and the Vite dev server (`:5173`) itself, and reuses them if they are already running. In CI (`CI=true`) it serves the production build with `vite preview` instead. Projects: `mobile-webkit` (iPhone 13), `mobile-chromium` (Pixel 7), `desktop-chromium`. Run one with `npm run e2e -- --project=desktop-chromium`. The Phase 3 scenario (commands, extraction) needs the worker: Playwright starts `python -m app.worker` itself (`WORKER_POLL_INTERVAL_SECONDS=0.2`) and waits for its startup log line.
 
 ### Regenerating the API client
 
@@ -139,7 +140,7 @@ Finish with Dev panel → **Reset demo**.
 
 ## 9. Optional: real LLM (Phase 3+)
 
-Set `LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY=…` in `.env`. Restart the API and worker. The status strip changes from "Çevrimdışı demo yapay zekâsı" to the real mode. Costs are recorded per run (System health). Use `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` to cap spending.
+Set `LLM_PROVIDER=openai` and `OPENAI_API_KEY=…` in `.env` (optionally `LLM_MODEL_DEFAULT`). Restart the API and worker. The status strip changes from "Çevrimdışı demo yapay zekâsı" to the real mode. Costs are recorded per run (System health). Use `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` to cap spending.
 
 ## 10. Testing on a real phone
 
@@ -149,7 +150,7 @@ Set `LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY=…` in `.env`. Restart the 
 
 | Feature | Real requirement | Default local alternative |
 |---|---|---|
-| AI drafting, commands, extraction | LLM API key (`anthropic`) | `fake` deterministic provider |
+| AI drafting, commands, extraction | LLM API key (`openai`) | `fake` deterministic provider |
 | Instagram messaging and publishing | Meta app, Instagram Login, professional account, public HTTPS webhook (Phase 7) | `mock` stateful simulator + Dev panel |
 | Media hosting for publishing | S3-compatible bucket (Phase 7) | local filesystem |
 | Owner messenger | Telegram bot token + public HTTPS or polling (Phase 9) | web notifications |

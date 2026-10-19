@@ -3,6 +3,7 @@ import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useMe } from "@/features/auth/hooks";
+import { CommandBar } from "@/features/commands/CommandBar";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { ReadinessCard } from "./ReadinessCard";
 
@@ -12,8 +13,10 @@ export function HomePage() {
   const me = useMe();
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 pb-20 md:pb-0">
       <h1 className="text-2xl font-semibold">{t("home.title")}</h1>
+
+      <CommandBar />
 
       <Card className="flex flex-col gap-3">
         <p className="text-lg font-medium">

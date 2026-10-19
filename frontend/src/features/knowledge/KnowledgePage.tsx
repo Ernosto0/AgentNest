@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ChevronRightIcon } from "@/components/icons";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { FactStatusChip } from "./FactStatusChip";
 import { useCandidates, useFacts, useReadiness, useTemplate } from "./hooks";
+import { PasteExtractSheet } from "./PasteExtractSheet";
 import { ReadinessChecklist } from "./ReadinessChecklist";
 import { summarize } from "./summary";
 
@@ -21,6 +24,7 @@ export function KnowledgePage() {
   const facts = useFacts(workspace.id);
   const candidates = useCandidates(workspace.id);
   const readiness = useReadiness(workspace.id);
+  const [pasting, setPasting] = useState(false);
 
   const loadError = template.error ?? facts.error;
   const summaries = template.data && facts.data ? summarize(template.data, facts.data) : [];
@@ -42,6 +46,13 @@ export function KnowledgePage() {
           <ReadinessChecklist workspaceId={workspace.id} readiness={readiness.data} />
         </Card>
       ) : null}
+
+      <div>
+        <Button variant="secondary" onClick={() => setPasting(true)} data-testid="open-paste-extract">
+          {t("extract.open")}
+        </Button>
+      </div>
+      {pasting ? <PasteExtractSheet onClose={() => setPasting(false)} /> : null}
 
       <Link to={`${base}/suggestions`} className={ROW}>
         <span className="min-w-0">

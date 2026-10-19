@@ -4,14 +4,8 @@ from app.core.clock import SystemClock
 from app.core.config import get_settings
 from app.core.db import get_session_factory
 from app.core.logging import configure_logging, get_logger
+from app.handlers import load_handlers
 from app.jobs.worker import Worker
-
-
-def load_handlers() -> None:
-    """Import every module that registers job handlers.
-
-    Later phases add their ``jobs`` modules here, so the worker knows their job types.
-    """
 
 
 def main() -> None:

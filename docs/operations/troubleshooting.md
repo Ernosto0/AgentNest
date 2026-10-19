@@ -28,6 +28,6 @@
 | `seed` says it refuses to run | `APP_ENV=production` | The seed is for development and test only |
 | Line-ending noise in diffs on Windows | Git autocrlf | The repo's `.gitattributes` enforces LF; run `git add --renormalize .` once |
 | Real LLM mode returns `LLM_BUDGET_EXCEEDED` | Daily cap reached | Increase `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` or wait for the next UTC day |
-| Real LLM mode fails with authentication errors | Missing or invalid `ANTHROPIC_API_KEY` | Set the key in `.env` and restart API and worker; or switch back to `LLM_PROVIDER=fake` |
+| Real LLM mode fails with authentication errors | Missing or invalid `OPENAI_API_KEY` | Set the key in `.env` and restart API and worker; or switch back to `LLM_PROVIDER=fake` |
 | (Phase 7) Meta webhook verification fails | Verify token mismatch or the tunnel URL changed | Match `META_WEBHOOK_VERIFY_TOKEN` with the app dashboard; update the callback URL after a tunnel restart |
 | (Phase 7) Container `ERROR` on publish | Media URL unreachable by Meta, not JPEG, or out-of-range aspect ratio | Check the presigned URL from outside your network; check the media validation report |

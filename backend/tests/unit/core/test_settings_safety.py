@@ -19,6 +19,9 @@ def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "COOKIE_SECURE",
         "LOG_FORMAT",
         "LOG_LEVEL",
+        "LLM_PROVIDER",
+        "OPENAI_API_KEY",
+        "LLM_MODEL_DEFAULT",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -28,6 +31,8 @@ def prod(**overrides: object) -> Settings:
         "app_env": "production",
         "secret_key": GOOD_SECRET,
         "database_url": PROD_DB,
+        "llm_provider": "openai",
+        "openai_api_key": "sk-test-key",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)  # type: ignore[arg-type]
@@ -68,6 +73,35 @@ def test_insecure_cookies_are_refused_in_production() -> None:
 def test_database_url_must_be_explicit_in_production() -> None:
     with pytest.raises(ConfigError, match="DATABASE_URL"):
         Settings(_env_file=None, app_env="production", secret_key=GOOD_SECRET)
+
+
+def test_fake_llm_is_refused_in_production() -> None:
+    with pytest.raises(ConfigError, match="LLM_PROVIDER must not be 'fake'"):
+        prod(llm_provider="fake")
+
+
+def test_default_llm_provider_is_fake_so_production_must_choose_one() -> None:
+    with pytest.raises(ConfigError, match="LLM_PROVIDER"):
+        Settings(_env_file=None, app_env="production", secret_key=GOOD_SECRET, database_url=PROD_DB)
+
+
+def test_openai_requires_a_key_and_a_model_in_production() -> None:
+    with pytest.raises(ConfigError, match="OPENAI_API_KEY"):
+        prod(openai_api_key="")
+    with pytest.raises(ConfigError, match="LLM_MODEL_DEFAULT"):
+        prod(llm_model_default=" ")
+
+
+def test_openai_key_never_appears_in_the_public_dict() -> None:
+    settings = prod(openai_api_key="sk-super-secret-value")
+    assert "sk-super-secret-value" not in str(settings.public_dict())
+    assert "openai_api_key" not in settings.public_dict()
+
+
+def test_task_model_override_falls_back_to_the_default() -> None:
+    settings = Settings(_env_file=None, llm_model_default="base", llm_model_extract_facts="mini")
+    assert settings.llm_model_for("interpret_command") == "base"
+    assert settings.llm_model_for("extract_fact_candidates") == "mini"
 
 
 def test_all_problems_are_reported_together() -> None:

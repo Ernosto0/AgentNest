@@ -43,7 +43,7 @@
 | **Reconciliation** | Checking provider state (container status, echoes, conversation lookup) to resolve an ambiguous operation. | `reconcile_*` jobs |
 | **Job** | A unit of background work in the PostgreSQL queue. Only a trigger; domain tables hold user-visible state. | `jobs` |
 | **Inbound event** | A raw, signature-checked, deduplicated webhook item stored before processing. | `inbound_events` |
-| **Provider** | An external service adapter behind an interface: Instagram (`mock`/`meta`), LLM (`fake`/`anthropic`), storage (`local`/`s3`). | `app/integrations/` |
+| **Provider** | An external service adapter behind an interface: Instagram (`mock`/`meta`), LLM (`fake`/`openai`), storage (`local`/`s3`). | `app/integrations/` |
 | **Provider kind** | Which implementation backs a connected account: `mock` or `meta`. | `social_accounts.provider_kind` |
 | **Simulated** | Produced via a mock provider. Must be labelled in the UI and reports. | `is_simulated` |
 | **Owner channel** | How users talk to the product: `web` (MVP), `telegram` (Phase 9), maybe `whatsapp`. Distinct from Instagram, which is a customer channel. | `owner_commands.channel` |

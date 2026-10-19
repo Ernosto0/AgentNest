@@ -94,6 +94,21 @@ def session_factory(engine: Engine) -> Iterator[sessionmaker[Session]]:
 
 
 @pytest.fixture
+def shared_session_factory(db_session: Session) -> sessionmaker[Session]:
+    """Sessions that commit into the test's outer transaction (rolled back with the test).
+
+    For code that opens its own short sessions (the task runner, job handlers) but is tested
+    without real commits: ``db_session`` sees everything those sessions write.
+    """
+    return sessionmaker(
+        bind=db_session.get_bind(),
+        expire_on_commit=False,
+        autoflush=False,
+        join_transaction_mode="create_savepoint",
+    )
+
+
+@pytest.fixture
 def clock() -> FrozenClock:
     return FrozenClock()
 

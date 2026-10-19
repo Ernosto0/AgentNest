@@ -19,3 +19,11 @@ export type FactState = Fact["state"];
 export type FactCreateBody = Schemas["FactCreate"];
 export type FactPatchBody = Schemas["FactPatch"];
 export type WorkspaceCreateBody = Schemas["WorkspaceCreate"];
+
+export type Command = Schemas["CommandOut"];
+export type CommandStatus = Command["status"];
+export type CommandResult = NonNullable<Command["result"]>;
+export type Approval = Schemas["ApprovalOut"];
+export type AppNotification = Schemas["NotificationOut"];
+export type NotificationList = Schemas["NotificationList"];
+export type Extraction = Schemas["ExtractionOut"];

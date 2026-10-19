@@ -22,7 +22,17 @@ DEFAULT_TEST_DATABASE_URL = "postgresql+psycopg://agentnest:agentnest@localhost:
 MIN_SECRET_KEY_BYTES = 32
 
 # Never included in ``Settings.public_dict()`` (logs, /meta, diagnostics).
-_SECRET_FIELDS = frozenset({"secret_key", "demo_password", "database_url", "test_database_url"})
+_SECRET_FIELDS = frozenset(
+    {"secret_key", "demo_password", "database_url", "test_database_url", "openai_api_key"}
+)
+
+# Per-task model overrides: task name -> Settings field (agent-runtime.md §10).
+LLM_TASK_MODEL_FIELDS: dict[str, str] = {
+    "interpret_command": "llm_model_interpret_command",
+    "draft_reply": "llm_model_draft_reply",
+    "draft_content": "llm_model_draft_content",
+    "extract_fact_candidates": "llm_model_extract_facts",
+}
 
 
 class ConfigError(RuntimeError):
@@ -57,6 +67,22 @@ class Settings(BaseSettings):
     worker_concurrency: int = Field(default=2, ge=1)
     worker_poll_interval_seconds: float = Field(default=1.0, gt=0)
     job_lease_seconds: int = Field(default=120, ge=1)
+
+    # --- AI (Phase 3, ADR-009). The default keeps the demo credential-free (INV-14). ---
+    llm_provider: Literal["fake", "openai"] = "fake"
+    openai_api_key: SecretStr = SecretStr("")
+    llm_model_default: str = "gpt-6-luna"
+    llm_model_interpret_command: str = ""  # empty = use llm_model_default
+    llm_model_draft_reply: str = ""
+    llm_model_draft_content: str = ""
+    llm_model_extract_facts: str = ""
+    llm_timeout_seconds: float = Field(default=30.0, gt=0)
+    llm_max_calls_per_workspace_per_day: int = Field(default=500, ge=1)
+    # Reasoning models spend output tokens on reasoning; keep it low for short structured tasks.
+    llm_reasoning_effort: Literal["", "minimal", "low", "medium", "high"] = "low"
+    # Optional JSON ``{"<model>": {"input_per_mtok": 0.0, "output_per_mtok": 0.0}}`` (USD) for
+    # cost estimates in evals and system health. Unknown models have no estimate.
+    llm_price_table: str = ""
 
     @field_validator("log_level", mode="before")
     @classmethod
@@ -98,7 +124,19 @@ class Settings(BaseSettings):
             problems.append("DEMO_TOOLS_ENABLED must be false in production.")
         if not self.cookie_secure:
             problems.append("COOKIE_SECURE must be true in production.")
+        if self.llm_provider == "fake":
+            problems.append("LLM_PROVIDER must not be 'fake' in production.")
+        elif not self.openai_api_key.get_secret_value():
+            problems.append("OPENAI_API_KEY must be set when LLM_PROVIDER=openai.")
+        if self.llm_provider == "openai" and not self.llm_model_default.strip():
+            problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
         return problems
+
+    def llm_model_for(self, task: str) -> str:
+        """The model for ``task``: its override if set, else the default."""
+        field = LLM_TASK_MODEL_FIELDS.get(task)
+        override = getattr(self, field) if field else ""
+        return str(override or self.llm_model_default)
 
     def public_dict(self) -> dict[str, Any]:
         """Effective non-secret configuration, safe to log at startup."""

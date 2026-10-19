@@ -9,6 +9,7 @@ from app.api.router import api_router, health_router
 from app.core.clock import Clock, SystemClock
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, get_logger
+from app.handlers import load_handlers
 from app.knowledge.templates import validate_templates
 
 
@@ -18,6 +19,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     log = get_logger(__name__)
     log.info("startup", **settings.public_dict())
     validate_templates()  # a broken fact template fails the start, not a checklist screen
+    load_handlers()  # the API enqueues jobs, so it must know their types
 
     in_production = settings.app_env == "production"
     app = FastAPI(

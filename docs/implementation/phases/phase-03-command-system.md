@@ -1,13 +1,13 @@
 # Phase 3: AI Runtime, Commands and Approvals Core
 
 ## Objective
-Introduce the bounded LLM runtime (fake and Anthropic providers), fact placeholder rendering and the claim validator, the generic approval mechanism, basic notifications, and the natural-language command system. Deliver the complete fact-update workflow (B) and paste-and-extract onboarding. Set up the eval harness.
+Introduce the bounded LLM runtime (fake and OpenAI providers), fact placeholder rendering and the claim validator, the generic approval mechanism, basic notifications, and the natural-language command system. Deliver the complete fact-update workflow (B) and paste-and-extract onboarding. Set up the eval harness.
 
 ## Read first
 [agent-runtime.md](../../architecture/agent-runtime.md) · [workflows.md §B, §D](../../architecture/workflows.md) · [state-machines.md §1, §3](../../architecture/state-machines.md) · [business-knowledge.md §6–8](../../architecture/business-knowledge.md) · [data-model.md §3.3–3.4](../../architecture/data-model.md) · [api-design.md §2.3–2.5](../../architecture/api-design.md) · ADRs [007](../../architecture/decisions/ADR-007-deterministic-workflows-bounded-llm-tasks.md), [008](../../architecture/decisions/ADR-008-structured-business-knowledge.md), [009](../../architecture/decisions/ADR-009-llm-provider-abstraction.md), [014](../../architecture/decisions/ADR-014-approval-and-policy-model.md) · [testing-strategy.md §6](../testing-strategy.md) · [user-journeys.md J3](../../product/user-journeys.md)
 
 ## Scope
-**In:** `integrations/llm` (protocol, fake, anthropic); `ai` (task runner, prompt templates v1, `agent_runs`, task definitions for `interpret_command` and `extract_fact_candidates`); renderer and claim validator; `approvals` (model, service, decision API, expiry sweep job, decided-callbacks registry); `notifications` (model, create, list, read; the web bell); `commands` (model, submit, interpret job, resolver, clarification, confirmation via approvals, executors for `query.fact`, `query.pending_approvals`, `query.activity_summary` (basic: counts available so far), `knowledge.update_fact`, `knowledge.update_brand_voice`, `unsupported`); `fact_references` + impact framework (handler registry; this phase handles no referrers yet except its own tests); extraction endpoint and job; eval harness with initial datasets.
+**In:** `integrations/llm` (protocol, fake, openai); `ai` (task runner, prompt templates v1, `agent_runs`, task definitions for `interpret_command` and `extract_fact_candidates`); renderer and claim validator; `approvals` (model, service, decision API, expiry sweep job, decided-callbacks registry); `notifications` (model, create, list, read; the web bell); `commands` (model, submit, interpret job, resolver, clarification, confirmation via approvals, executors for `query.fact`, `query.pending_approvals`, `query.activity_summary` (basic: counts available so far), `knowledge.update_fact`, `knowledge.update_brand_voice`, `unsupported`); `fact_references` + impact framework (handler registry; this phase handles no referrers yet except its own tests); extraction endpoint and job; eval harness with initial datasets.
 **Out:** `draft_reply` and `draft_content` tasks (Phases 4–5), content references in commands (Phase 5), Telegram.
 
 ## Prerequisites
@@ -15,7 +15,7 @@ Phase 2 accepted.
 
 ## Files and modules expected to change
 ```
-backend/app/integrations/llm/{base.py, fake.py, anthropic.py, errors.py}
+backend/app/integrations/llm/{base.py, fake.py, openai_provider.py, errors.py}
 backend/app/ai/{models.py, runner.py, prompts/{interpret_command,extract_fact_candidates}/v1.md, tasks/{interpret_command.py, extract_fact_candidates.py}, injection.py, schemas.py}
 backend/app/knowledge/{render.py, claims.py, impact.py, extraction.py}, knowledge/models.py (fact_references)
 backend/app/approvals/{models.py, service.py, callbacks.py, jobs.py, router.py, schemas.py}
@@ -37,13 +37,13 @@ frontend/src/features/knowledge/PasteExtractSheet.tsx
 - `CommandInterpretation` union ([agent-runtime.md §3](../../architecture/agent-runtime.md)). Registry entries: `{type, mutating, required_permission, params_model, executor, confirmation_summary_builder}`.
 - `knowledge.analyze_impact(ctx, fact_id) -> ImpactReport` with a pluggable `ReferrerHandler` registry (`count`, `apply_change`).
 - Tables: `agent_runs`, `approvals`, `notifications`, `owner_commands`, `fact_references`.
-- Config added: `LLM_PROVIDER`, `LLM_MODEL_DEFAULT`, `LLM_MODEL_<TASK>`, `ANTHROPIC_API_KEY`, `LLM_TIMEOUT_SECONDS`, `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`. The production check refuses `fake`.
+- Config added: `LLM_PROVIDER`, `LLM_MODEL_DEFAULT`, `LLM_MODEL_<TASK>`, `OPENAI_API_KEY`, `LLM_REASONING_EFFORT`, `LLM_TIMEOUT_SECONDS`, `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`. The production check refuses `fake`.
 
 ## Tasks (in order)
 
 | ID | Task | Details | Size |
 |---|---|---|---|
-| P3-01 | LLM integration | Protocol, result and error types; `FakeLLMProvider` (dispatch per task to deterministic implementations + scripting queue); `AnthropicProvider` using the official SDK with structured outputs (JSON schema from Pydantic), timeouts, usage capture, error mapping. Unit tests use the fake only. The Anthropic adapter is tested with a stubbed HTTP transport (no network). | M |
+| P3-01 | LLM integration | Protocol, result and error types; `FakeLLMProvider` (dispatch per task to deterministic implementations + scripting queue); `OpenAIProvider` using the official SDK (Responses API, strict structured outputs from Pydantic, `store=false`, no tools), timeouts, usage capture, error mapping. Unit tests use the fake only. The OpenAI adapter is tested with a stubbed HTTP transport (no network). | M |
 | P3-02 | Task runner and agent runs | `agent_runs` model; runner with budget check, prompt loading by version, run record committed before the call, validation + one repair, error classification for job retries; sweeper job for abandoned runs; redaction of input snapshots. | M |
 | P3-03 | Renderer and claim validator | Placeholder parsing; rendering by type and locale with spans; validator patterns tr/en ([business-knowledge.md §7](../../architecture/business-knowledge.md)) with allow-lists; byte-length check helper. ≥ 60 unit cases. | M |
 | P3-04 | Approvals and notifications | Models + migration; service with all guards and conditional updates; callback registry; `expire_approvals` periodic job; API (list, detail with `can_decide`, decision); notifications model, service with dedup, list/read API; `approval.requested` notifications. | L |
@@ -64,7 +64,7 @@ frontend/src/features/knowledge/PasteExtractSheet.tsx
 ## Acceptance criteria
 - AC-A6, AC-C1, AC-C2, AC-C6 and AC-C7 pass. AC-C3–C5 are deferred to Phases 4–5 where referrers exist.
 - INV-04 test: no command type can approve, publish or send. The decision API only accepts explicit approval IDs and payload hashes.
-- With `LLM_PROVIDER=anthropic` and a key set, the same demo commands work manually (manual check; not in CI).
+- With `LLM_PROVIDER=openai` and a key set, the same demo commands work manually (manual check; not in CI).
 - `agent_runs` rows exist for every task execution, with tokens (real provider) and `is_fake` (fake).
 
 ## Demo scenario

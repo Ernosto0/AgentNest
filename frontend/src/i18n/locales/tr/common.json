@@ -156,6 +156,42 @@
     "FACT_VERSION_CONFLICT": {
       "what": "Bu bilgi siz düzenlerken başka biri tarafından değiştirildi.",
       "next": "Güncel değeri görmek için sayfayı yenileyin, sonra tekrar düzenleyin."
+    },
+    "APPROVAL_ALREADY_DECIDED": {
+      "what": "Bu onay için zaten karar verildi.",
+      "next": "Güncel durumu görmek için sayfayı yenileyin."
+    },
+    "APPROVAL_EXPIRED": {
+      "what": "Bu onayın süresi doldu.",
+      "next": "İşlemi yeniden başlatın."
+    },
+    "APPROVAL_STALE": {
+      "what": "Onaylamak üzere olduğunuz bilgi değişti.",
+      "next": "Güncel özeti inceleyin ve yeniden karar verin."
+    },
+    "FACT_NOT_USABLE": {
+      "what": "Bu bilgi henüz doğrulanmadığı için kullanılamıyor.",
+      "next": "Önce bilgiyi İşletme bilgileri bölümünden doğrulayın."
+    },
+    "FACT_CHANGED_MEANWHILE": {
+      "what": "Bilgi siz onaylarken başka biri tarafından değiştirildi, bu yüzden güncellenmedi.",
+      "next": "Güncel değeri kontrol edip komutu yeniden verin."
+    },
+    "LLM_UNAVAILABLE": {
+      "what": "Yapay zekâ hizmetine şu anda ulaşılamıyor.",
+      "next": "Biraz sonra tekrar deneyin veya bilgiyi elle girin."
+    },
+    "LLM_OUTPUT_INVALID": {
+      "what": "Komutunuzu anlayamadım.",
+      "next": "Daha basit bir cümleyle tekrar deneyin veya bilgiyi elle girin."
+    },
+    "LLM_REFUSED": {
+      "what": "Yapay zekâ bu isteğe yanıt vermedi.",
+      "next": "İsteği farklı yazın veya işlemi elle yapın."
+    },
+    "LLM_BUDGET_EXCEEDED": {
+      "what": "Bugünkü yapay zekâ kullanım sınırına ulaşıldı.",
+      "next": "Yarın tekrar deneyin veya işlemi elle yapın."
     }
   }
 }

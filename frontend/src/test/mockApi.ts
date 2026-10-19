@@ -32,6 +32,14 @@ export const problem = (status: number, code: string, extra: Record<string, unkn
 
 export const noContent = () => new Response(null, { status: 204 });
 
+/** Requests every screen makes in the background; a test overrides them to assert on them. */
+const BACKGROUND: [RegExp, () => Response][] = [
+  [
+    /^GET \/api\/v1\/workspaces\/[^/]+\/notifications$/,
+    () => json({ items: [], unread_count: 0, next_cursor: null }),
+  ],
+];
+
 /**
  * Replace the global `fetch` with a router keyed by "METHOD /path". Unmatched requests fail the
  * test loudly instead of silently hitting the network. Returns the recorded requests.
@@ -50,8 +58,9 @@ export function mockApi(routes: Record<string, Handler>): RecordedRequest[] {
         body: text ? JSON.parse(text) : undefined,
       };
       recorded.push(entry);
-      const handler = routes[`${input.method} ${url.pathname}`];
-      if (!handler) throw new Error(`unmocked request: ${input.method} ${url.pathname}`);
+      const key = `${input.method} ${url.pathname}`;
+      const handler = routes[key] ?? BACKGROUND.find(([pattern]) => pattern.test(key))?.[1];
+      if (!handler) throw new Error(`unmocked request: ${key}`);
       return handler(entry);
     }),
   );

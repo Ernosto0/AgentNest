@@ -41,7 +41,7 @@
 - `content_catalog`: upcoming and recent content `[{ref_id (short alias "C1".."Cn"), title, content_type, status, local_schedule}]` (aliases, not UUIDs).
 - `registry`: names, descriptions and parameter schemas of command types (static, cached).
 
-**Output** (`CommandInterpretation`, discriminated union on `type`)
+**Output** (`CommandInterpretation`, a union tagged by `type`; the provider schema wraps it as `{interpretation: …}` because structured outputs need an object at the root. A `type` outside this table is converted to `unsupported` by the schema itself, so a hallucinated `approve` can never be executable)
 
 | `type` | Parameters | Mutating? | Executor |
 |---|---|---|---|
@@ -50,14 +50,16 @@
 | `query.content_status` | `content_ref: ContentRef` | no | content lookup |
 | `query.explain_failure` | `content_ref: ContentRef \| "latest_failure"` | no | error catalog explanation |
 | `query.fact` | `fact_key` | no | fact lookup (rendered) |
-| `knowledge.update_fact` | `fact_key`, `raw_value_text`, `normalized_value` (typed), `reason?` | yes | `knowledge.update_fact` / `propose_candidate` |
+| `knowledge.update_fact` | `fact_key`, `raw_value_text`, `normalized_value` (typed: `money`, `text` or `boolean`), `reason?` | yes | `knowledge.update_fact` / `propose_candidate` |
 | `knowledge.update_brand_voice` | `instruction`, `proposed_guidelines` (full new text) | yes | `update_fact(brand.voice_guidelines)` |
 | `content.create_draft` | `content_type: feed_image \| story_image`, `objective`, `notes?` | no confirmation: creates only a draft, which is non-destructive and still needs approval to publish | `content.generate_draft` |
 | `content.cancel_scheduled` | `content_ref: ContentRef` | yes | `content.cancel` |
-| `clarify` | `question`, `candidate_types[]` | — | returns a clarification |
-| `unsupported` | `reason`, `suggestions[]` (example commands) | — | returns help |
+| `clarify` | `intent`, `candidate_fact_keys[]`, `raw_value_text?` | — | returns a clarification. The question and the options are built by code from the candidates; the model's wording is never shown. `raw_value_text` carries the typed value, so choosing a fact resumes the update without asking again |
+| `unsupported` | `reason` (closed code: `publish`, `send_message`, `approve`, `manage_account`, `settings`, `members`, `other`) | — | returns help. Suggestions and the pointer into the app are chosen by code from `reason` |
 
 `ContentRef = {alias?: "C3", description?: str, local_date?: date, content_type?: str}`.
+
+**Phase 3 implements** `query.fact`, `query.pending_approvals`, `query.activity_summary` (basic counts from the audit log), `knowledge.update_fact`, `knowledge.update_brand_voice`, `clarify` and `unsupported`. The content types arrive with Phases 4–5 together with their referrers. `knowledge.update_fact` supports money, phone, text, e-mail, URL, localized text, boolean and enum values; opening hours, addresses and lists are edited in the app (the command answers `unsupported`).
 
 **Deterministic post-processing (commands module):**
 1. Validate referenced `fact_key`/`alias` against the catalogs. If not found → clarification with the closest options.
@@ -182,9 +184,10 @@ Input snapshots stored in `agent_runs` follow the same rule and are deleted afte
 
 ## 10. Model and provider configuration
 
-- `LLM_PROVIDER` = `fake` | `anthropic`. `LLM_MODEL_DEFAULT` (default `claude-opus-5-5`), with per-task overrides `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS`.
-- The `anthropic` adapter uses structured outputs (`output_config.format` with a JSON schema generated from the Pydantic model), no tools, a stable system prompt ordering (to allow provider prompt caching), and records usage.
-- Model downgrades for cost (e.g., `claude-sonnet-5-5` or `claude-haiku-5-5` for `draft_reply`) are a founder decision based on eval results (OQ-09).
+- `LLM_PROVIDER` = `fake` | `openai`. `LLM_MODEL_DEFAULT` (default `gpt-6-luna`; verify the exact ID against OpenAI's model list before a pilot), with per-task overrides `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS`.
+- The `openai` adapter uses the **Responses API** with structured outputs (`text_format` = the Pydantic model, sent as a strict JSON schema), `store=false` (nothing is retained by the provider), **no tools**, low reasoning effort (`LLM_REASONING_EFFORT`, default `low`, because reasoning tokens count against `max_output_tokens`), a stable system prompt ordering (OpenAI caches prefixes automatically), and records usage. Strict mode needs an object at the root and no `oneOf`, length or pattern keywords, so `interpret_command` returns `{interpretation: <union>}` (plain `anyOf`) and size limits are checked by the task's post-validator. A test builds the strict schema of every task output and fails on anything strict mode would reject.
+- Model changes for cost or quality (e.g., a larger model for `draft_reply`) are a founder decision based on eval results (OQ-09).
+- `LLM_PRICE_TABLE` (optional JSON, USD per million tokens per model) feeds cost estimates in evals and system health.
 
 ## 11. Evaluation
 

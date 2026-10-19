@@ -194,6 +194,8 @@ def test_seed_refuses_to_run_in_production(
         app_env="production",
         secret_key="p" * 48,
         database_url="postgresql+psycopg://u:p@db.internal:5432/agentnest",
+        llm_provider="openai",
+        openai_api_key="sk-test-key",
     )
     with pytest.raises(SeedError, match="production"):
         seed(session_factory, clock, production)

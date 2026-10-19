@@ -1,0 +1,31 @@
+# Named fact fixture for the eval datasets: the demo gym (Gölkent Fitness & Pilates).
+name: demo_gym
+workspace:
+  business_category: gym
+  default_locale: tr
+  currency: TRY
+  timezone: Europe/Istanbul
+facts:
+  - {key: identity.business_name, category: identity, value_type: text, status: verified,
+     label: {tr: İşletme adı, en: Business name}, value: {text: Gölkent Fitness & Pilates}}
+  - {key: contact.phone, category: contact, value_type: phone, status: verified,
+     label: {tr: Telefon, en: Phone}, value: {e164: "+905550000000"}}
+  - {key: contact.email, category: contact, value_type: email, status: verified,
+     label: {tr: E-posta, en: Email}, value: {email: info@golkent.example}}
+  - {key: hours.weekly, category: hours, value_type: weekly_hours, status: verified,
+     label: {tr: Çalışma saatleri, en: Opening hours}, value: {mon: [["07:00", "23:00"]], exceptions: []}}
+  - {key: pricing.membership_monthly, category: pricing, value_type: money, status: verified,
+     label: {tr: Aylık üyelik, en: Monthly membership},
+     value: {amount: "6000.00", currency: TRY, unit: month}}
+  - {key: pricing.membership_3_months, category: pricing, value_type: money, status: verified,
+     label: {tr: 3 aylık üyelik, en: 3-month membership},
+     value: {amount: "16500.00", currency: TRY, unit: package}}
+  - {key: pricing.reformer_8_sessions, category: pricing, value_type: money, status: verified,
+     label: {tr: Reformer 8 seans, en: Reformer 8 sessions},
+     value: {amount: "4800.00", currency: TRY, unit: package}}
+  - {key: pricing.student_monthly, category: pricing, value_type: money, status: unverified,
+     label: {tr: Öğrenci aylık üyelik, en: Student monthly membership},
+     value: {amount: "4500.00", currency: TRY, unit: month}}
+  - {key: brand.voice_guidelines, category: brand, value_type: localized_text, status: verified,
+     label: {tr: Marka dili, en: Brand voice},
+     value: {tr: "Sıcak, kısa, 'siz' kullanır.", en: "Warm, short, uses formal you."}}

@@ -136,6 +136,11 @@ class FactCandidate(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, B
             ["business_facts.workspace_id", "business_facts.id"],
             ondelete="CASCADE",
         ),
+        # The extraction run that produced it (Phase 3 adds the constraint).
+        ForeignKeyConstraint(
+            ["workspace_id", "agent_run_id"],
+            ["agent_runs.workspace_id", "agent_runs.id"],
+        ),
         CheckConstraint(f"fact_key ~ '{KEY_PATTERN}'", name="fact_key_format"),
         CheckConstraint(_in("value_type", VALUE_TYPES), name="value_type"),
         CheckConstraint(_in("source_type", CANDIDATE_SOURCES), name="source_type"),
@@ -163,9 +168,42 @@ class FactCandidate(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, B
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
     proposed_by_actor_type: Mapped[str] = mapped_column(Text, nullable=False)
     proposed_by_actor_id: Mapped[str | None] = mapped_column(Text)
-    # No FK yet: ``agent_runs`` arrives in Phase 3, which adds the constraint.
     agent_run_id: Mapped[uuid.UUID | None] = mapped_column()
     resolved_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+REFERRER_TYPES = ("reply_draft", "content_item", "approved_answer")
+
+
+class FactReference(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """Which fact version a referrer (draft, content item, approved answer) rendered.
+
+    Impact analysis joins on ``fact_id`` (business-knowledge.md §8). The referrer is
+    polymorphic, so ``referrer_id`` carries no foreign key; referrers replace their rows
+    whenever their text is regenerated or edited.
+    """
+
+    __tablename__ = "fact_references"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "fact_id"],
+            ["business_facts.workspace_id", "business_facts.id"],
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint("referrer_type", "referrer_id", "fact_id"),
+        CheckConstraint("fact_version >= 1", name="fact_version"),
+        CheckConstraint(_in("referrer_type", REFERRER_TYPES), name="referrer_type"),
+        Index("ix_fact_references_workspace_fact", "workspace_id", "fact_id"),
+    )
+
+    fact_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    fact_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    referrer_type: Mapped[str] = mapped_column(Text, nullable=False)
+    referrer_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

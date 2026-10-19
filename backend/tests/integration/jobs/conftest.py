@@ -26,7 +26,7 @@ class EchoPayload(BaseModel):
 @pytest.fixture(autouse=True)
 def isolated_registries() -> Iterator[None]:
     """Handlers registered by a test disappear with it."""
-    with registry_snapshot(), periodic_snapshot():
+    with registry_snapshot(), periodic_snapshot(clear=True):
         yield
 
 

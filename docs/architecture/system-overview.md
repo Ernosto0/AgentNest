@@ -16,7 +16,7 @@ flowchart LR
     media[("Media storage<br/>local | S3")]
   end
   ig["Instagram Platform<br/>(Meta Graph API + webhooks)"]
-  llm["LLM provider<br/>(fake | Anthropic)"]
+  llm["LLM provider<br/>(fake | OpenAI)"]
   tg["Owner messenger<br/>(Telegram, Phase 9)"]
 
   owner --> web --> api
@@ -58,7 +58,7 @@ In production the SPA is built to static files and served by the reverse proxy (
 | Backend | Python 3.12, FastAPI (sync handlers), SQLAlchemy 2.0 (sync, psycopg 3), Pydantic v2, Alembic, httpx, Babel, structlog, argon2-cffi, cryptography, Pillow | [003](decisions/ADR-003-backend-stack.md) |
 | Datastore | PostgreSQL 16 only | [004](decisions/ADR-004-postgresql-only-datastore.md) |
 | Jobs | In-house Postgres queue (`SKIP LOCKED`, leases, dedup keys) + scheduler loop | [006](decisions/ADR-006-postgres-job-queue.md) |
-| AI | Four bounded LLM tasks with structured outputs; `fake` and `anthropic` providers | [007](decisions/ADR-007-deterministic-workflows-bounded-llm-tasks.md), [009](decisions/ADR-009-llm-provider-abstraction.md) |
+| AI | Four bounded LLM tasks with structured outputs; `fake` and `openai` providers | [007](decisions/ADR-007-deterministic-workflows-bounded-llm-tasks.md), [009](decisions/ADR-009-llm-provider-abstraction.md) |
 | Knowledge | Typed versioned facts, candidates, placeholder rendering, claim validator | [008](decisions/ADR-008-structured-business-knowledge.md) |
 | Instagram | `InstagramProvider` interface; stateful `mock`; `meta` (Instagram Login) | [010](decisions/ADR-010-instagram-provider-adapter.md) |
 | Side effects | Operations ledger with reconciliation | [011](decisions/ADR-011-external-operations-ledger.md) |
@@ -111,7 +111,7 @@ sequenceDiagram
 
 | | development | test (CI) | production |
 |---|---|---|---|
-| LLM | `fake` (default) or `anthropic` | `fake` only | `anthropic` (fake refused) |
+| LLM | `fake` (default) or `openai` | `fake` only | `openai` (fake refused) |
 | Instagram | `mock` | `mock` | `meta` (+ `mock` for `is_demo` workspaces if `ALLOW_SIMULATED_WORKSPACES`) |
 | Media | `local` | `local` (tmp dir) | `s3` |
 | Demo tools | enabled | enabled in tests | **refused** |

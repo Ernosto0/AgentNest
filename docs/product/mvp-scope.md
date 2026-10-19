@@ -25,7 +25,7 @@ The test for inclusion: **is it needed to demonstrate the core value loop credib
 | Approvals | Confirmation and authorisation kinds, binding, expiry, sweep, approvals screen | Multi-level approval chains |
 | Reporting | Daily report (computed, templated), activity feed, notification centre, Home dashboard, integration health | Charts, exports, insights from Instagram |
 | Simulation | Seed data, dev panel and CLI, failure injection, run-due-jobs, reset, simulation labelling | — |
-| AI | `fake` provider (default) and `anthropic` provider, agent run records, eval datasets and runner | Fine-tuning, other providers, vision |
+| AI | `fake` provider (default) and `openai` provider, agent run records, eval datasets and runner | Fine-tuning, other providers, vision |
 | Ops | Docker Compose Postgres, CI, structured logs | Deployment, backups (S3 stage) |
 
 ### Features judged essential to show the value (the demo must not skip them)

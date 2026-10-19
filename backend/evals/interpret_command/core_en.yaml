@@ -1,0 +1,39 @@
+dataset: interpret_command_core_en
+version: 1
+fixtures:
+  facts: demo_gym
+cases:
+  - id: update_monthly_en
+    locale: en
+    text: "The monthly membership is now 7,000 TRY"
+    expect: {outcome: confirm, type: knowledge.update_fact, fact_key: pricing.membership_monthly, new_amount: "7000.00"}
+    hard: true
+  - id: update_reformer_en
+    locale: en
+    text: "Change reformer 8 sessions to 5000 TL"
+    expect: {outcome: confirm, fact_key: pricing.reformer_8_sessions, new_amount: "5000.00"}
+  - id: foreign_notation_is_a_question
+    locale: en
+    text: "Monthly membership is now 7.000 TL"
+    expect: {outcome: needs_clarification, question_key: command.clarify.which_value, option_ids: ["0", "1"]}
+    hard: true
+  - id: ambiguous_price_en
+    locale: en
+    text: "the price is now 7000 TL"
+    expect: {outcome: needs_clarification, type: clarify, question_key: command.clarify.which_fact}
+  - id: ask_monthly_en
+    locale: en
+    text: "How much is the monthly membership?"
+    expect: {outcome: execute, type: query.fact, fact_key: pricing.membership_monthly}
+  - id: pending_en
+    locale: en
+    text: "any pending approvals?"
+    expect: {outcome: execute, type: query.pending_approvals}
+  - id: activity_en
+    locale: en
+    text: "what happened today"
+    expect: {outcome: execute, type: query.activity_summary, period: today}
+  - id: brand_voice_formal_en
+    locale: en
+    text: "Make our tone more formal"
+    expect: {outcome: confirm, type: knowledge.update_brand_voice}

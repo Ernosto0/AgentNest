@@ -24,7 +24,7 @@ A solo founder must be able to answer "what happened to this customer's message?
 
 ### AI evaluation
 - Versioned YAML datasets in `backend/evals/<task>/` (customer messages, owner commands, injection attempts, content requests) with expected labels and **hard assertions** (must escalate, must not contain an unrendered money value, must produce `unsupported`).
-- Runner `uv run python -m evals run --task draft_reply --provider fake|anthropic` outputs a JSON + Markdown report (accuracy per label, invariant violations, tokens, cost estimate) under `backend/evals/reports/`.
+- Runner `uv run python -m evals run --task draft_reply --provider fake|openai` outputs a JSON + Markdown report (accuracy per label, invariant violations, tokens, cost estimate) under `backend/evals/reports/`.
 - CI runs evals against the **fake** provider (pipeline correctness). Real-provider evals run manually or on demand with a cost cap, and results are committed as baselines when prompts or models change.
 
 ## Alternatives considered

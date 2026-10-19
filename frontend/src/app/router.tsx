@@ -1,4 +1,5 @@
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router-dom";
+import { ApprovalsList } from "@/features/approvals/ApprovalsList";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { HomePage } from "@/features/home/HomePage";
@@ -27,7 +28,7 @@ export const appRoutes: RouteObject[] = [
           { index: true, element: <HomePage /> },
           { path: "inbox", element: <SectionPlaceholderPage section="inbox" /> },
           { path: "content", element: <SectionPlaceholderPage section="content" /> },
-          { path: "approvals", element: <SectionPlaceholderPage section="approvals" /> },
+          { path: "approvals", element: <ApprovalsList /> },
           { path: "more", element: <MorePage /> },
           { path: "more/settings", element: <SettingsPage /> },
           { path: "more/knowledge", element: <KnowledgePage /> },

@@ -32,9 +32,12 @@ def register_periodic(func_: PeriodicFn) -> PeriodicFn:
 
 
 @contextmanager
-def periodic_snapshot() -> Iterator[None]:
-    """Restore the periodic registry on exit (tests)."""
+def periodic_snapshot(*, clear: bool = False) -> Iterator[None]:
+    """Restore the periodic registry on exit (tests). ``clear`` starts from an empty registry,
+    so a test sees only the periodic functions it registers itself."""
     saved = list(_PERIODIC)
+    if clear:
+        _PERIODIC.clear()
     try:
         yield
     finally:

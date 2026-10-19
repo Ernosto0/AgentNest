@@ -156,6 +156,42 @@
     "FACT_VERSION_CONFLICT": {
       "what": "This information was changed by someone else while you were editing.",
       "next": "Reload to see the latest value, then edit again."
+    },
+    "APPROVAL_ALREADY_DECIDED": {
+      "what": "A decision was already made on this approval.",
+      "next": "Reload the page to see the current state."
+    },
+    "APPROVAL_EXPIRED": {
+      "what": "This approval has expired.",
+      "next": "Start the action again."
+    },
+    "APPROVAL_STALE": {
+      "what": "What you were about to approve has changed.",
+      "next": "Review the current summary and decide again."
+    },
+    "FACT_NOT_USABLE": {
+      "what": "This information is not verified yet, so it cannot be used.",
+      "next": "Verify it first under Business information."
+    },
+    "FACT_CHANGED_MEANWHILE": {
+      "what": "The information was changed by someone else while you were confirming, so it was not updated.",
+      "next": "Check the current value and give the command again."
+    },
+    "LLM_UNAVAILABLE": {
+      "what": "The AI service is not reachable right now.",
+      "next": "Try again in a moment, or enter the information manually."
+    },
+    "LLM_OUTPUT_INVALID": {
+      "what": "I could not understand that command.",
+      "next": "Try a simpler sentence, or enter the information manually."
+    },
+    "LLM_REFUSED": {
+      "what": "The AI did not answer this request.",
+      "next": "Rephrase it, or do it manually."
+    },
+    "LLM_BUDGET_EXCEEDED": {
+      "what": "Today's AI usage limit has been reached.",
+      "next": "Try again tomorrow, or do it manually."
     }
   }
 }

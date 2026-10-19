@@ -106,7 +106,7 @@ cases:
 
 ### 6.3 Running
 - `uv run python -m evals run --task draft_reply --provider fake` runs in CI on every push. It proves the pipeline (render, validate, policy) and the fake's rules.
-- `uv run python -m evals run --all --provider anthropic --max-cost-usd 2` is run manually: before changing prompts or models, before pilots, and weekly during pilots. The report is committed.
+- `uv run python -m evals run --all --provider openai --max-cost-usd 2` is run manually: before changing prompts or models, before pilots, and weekly during pilots. The report is committed.
 - Metrics: accuracy per expected label, escalation recall and precision, hard-assertion failures (must be 0), validation failure rate, tokens, latency, estimated cost.
 - Baselines: the first real run sets the baseline. Prompt or model changes must not reduce hard-assertion pass rates (must stay 100 %) and must justify regressions elsewhere in the PR summary.
 

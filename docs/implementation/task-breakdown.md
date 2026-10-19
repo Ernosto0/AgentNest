@@ -52,7 +52,7 @@
 | P2-10 | Workspace creation wizard | P2-07 | M |
 | P2-11 | Phase 2 tests and E2E | all P2 | M |
 | **Phase 3: AI runtime, commands, approvals** | | | |
-| P3-01 | LLM integration (fake, Anthropic) | Phase 2 | M |
+| P3-01 | LLM integration (fake, OpenAI) | Phase 2 | M |
 | P3-02 | Task runner and agent runs | P3-01 | M |
 | P3-03 | Renderer and claim validator | P2-01 | M |
 | P3-04 | Approvals and notifications | Phase 2 | L |

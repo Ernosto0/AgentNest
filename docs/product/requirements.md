@@ -109,7 +109,7 @@ Phase numbers refer to [roadmap.md](../implementation/roadmap.md).
 | FR-095 | Disconnect an account: revoke and delete tokens, stop processing. Data deletion follows retention rules. | P | 7–8 | §10.6 |
 | FR-096 | Meta data deletion callback endpoint with a status URL. | P | 8 | §10.6 |
 | FR-097 | An owner messaging channel (Telegram provisional) for notifications, commands, media and approvals, through the channel abstraction. | P | 9 | §4.7 |
-| FR-098 | LLM providers `fake` (default) and `anthropic` behind one interface. | M | 3 | §7.1 AI |
+| FR-098 | LLM providers `fake` (default) and `openai` behind one interface. | M | 3 | §7.1 AI |
 | FR-099 | WhatsApp owner channel. | L | after OQ-01 | §4.7 |
 
 ### 1.9 Demo and simulation

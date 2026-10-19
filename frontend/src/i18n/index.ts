@@ -1,7 +1,9 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import enAi from "./locales/en/ai.json";
 import en from "./locales/en/common.json";
 import enKnowledge from "./locales/en/knowledge.json";
+import trAi from "./locales/tr/ai.json";
 import tr from "./locales/tr/common.json";
 import trKnowledge from "./locales/tr/knowledge.json";
 
@@ -44,8 +46,8 @@ i18n.on("languageChanged", (language) => {
 void i18n.use(initReactI18next).init({
   // One namespace; the knowledge catalog is a separate file merged into it (top-level keys differ).
   resources: {
-    tr: { common: { ...tr, ...trKnowledge } },
-    en: { common: { ...en, ...enKnowledge } },
+    tr: { common: { ...tr, ...trKnowledge, ...trAi } },
+    en: { common: { ...en, ...enKnowledge, ...enAi } },
   },
   lng: detectLanguage(),
   fallbackLng: DEFAULT_LANGUAGE,

@@ -26,7 +26,7 @@ The full list is in [gap-analysis.md](gap-analysis.md) (31 findings). These are 
 | Every LLM call and external side effect runs in a job; HTTP does sync internal changes only | 005 |
 | Four bounded LLM tasks with structured outputs and no tools; deterministic orchestration | 007 |
 | Typed, versioned facts + candidates + `{{fact:key}}` placeholders + claim validator; no RAG in MVP | 008 |
-| Own thin LLM interface; deterministic `fake` provider by default; `anthropic` first real adapter | 009 |
+| Own thin LLM interface; deterministic `fake` provider by default; `openai` first real adapter (changed from `anthropic` at Phase 3, see the ADR-009 amendment) | 009 |
 | Instagram Login (no Facebook Page needed); stateful mock simulator sharing the real contract and webhook path | 010 |
 | Write-ahead operations ledger with reconciliation | 011 |
 | Owner channel abstraction; web first; Telegram provisional; WhatsApp never a hard dependency | 012 |
@@ -84,7 +84,7 @@ Inconsistencies found and fixed during cross-check: an approval-column name coll
 - **OQ-03** Do Standard Access tester pilots work? Verify via V-01.
 - **OQ-04** Hosting region and transfer basis. Needs legal review.
 - **OQ-08** Default autonomy for pilots. Provisional: approval for everything.
-- **OQ-09** Model per task and cost per workspace. Provisional: `claude-opus-5-5` everywhere; measure cheaper models with evals.
+- **OQ-09** Model per task and cost per workspace. Provisional: `gpt-6-luna` everywhere; measure other OpenAI tiers with evals.
 
 None of these blocks Phases 1–6.
 

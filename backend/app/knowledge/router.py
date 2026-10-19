@@ -15,14 +15,16 @@ from app.core.context import WorkspaceContext
 from app.core.db import get_db
 from app.core.pagination import Page
 from app.identity.service import AuthenticatedSession
+from app.knowledge import extraction, service
 from app.knowledge import readiness as readiness_module
 from app.knowledge import repository as repo
-from app.knowledge import service
 from app.knowledge.models import BusinessFact, FactCandidate
 from app.knowledge.schemas import (
     CandidateOut,
     CandidateStatus,
     Category,
+    ExtractionCreate,
+    ExtractionOut,
     FactCreate,
     FactOut,
     FactPatch,
@@ -336,3 +338,37 @@ def get_readiness(
             for r in report.requirements
         ],
     )
+
+
+# --- paste and extract ----------------------------------------------------------------------
+
+
+def _extraction_out(status: extraction.ExtractionStatus) -> ExtractionOut:
+    return ExtractionOut(
+        run_id=status.run_id,
+        status=status.status,
+        candidates_created=status.candidates_created,
+        error_code=status.error_code,
+        injection_suspected=status.injection_suspected,
+    )
+
+
+@router.post("/knowledge/extractions", response_model=ExtractionOut, status_code=202)
+def start_extraction(
+    body: ExtractionCreate,
+    ctx: WorkspaceContext = Depends(require_membership("knowledge.edit")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> ExtractionOut:
+    """Suggestions from pasted text: candidates only, never facts (INV-02)."""
+    run = extraction.start(db, clock, ctx, text=body.text, client_request_id=body.client_request_id)
+    return _extraction_out(extraction.status_of(db, ctx, run.id))
+
+
+@router.get("/knowledge/extractions/{run_id}", response_model=ExtractionOut)
+def get_extraction(
+    run_id: uuid.UUID,
+    ctx: WorkspaceContext = Depends(require_membership()),
+    db: Session = Depends(get_db),
+) -> ExtractionOut:
+    return _extraction_out(extraction.status_of(db, ctx, run_id))

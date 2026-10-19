@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
 import { useMeta } from "@/features/auth/hooks";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { WorkspaceSwitcher } from "@/features/workspaces/WorkspaceSwitcher";
 import { NAV_ITEMS } from "./navigation";
@@ -56,10 +57,20 @@ export function AppShell() {
         {workspace.is_demo ? <SimulationBanner /> : null}
         <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2">
           <span className="truncate font-semibold text-indigo-800 md:hidden">{productName}</span>
-          <div className="ml-auto flex min-w-0 items-center">
+          <div className="ml-auto flex min-w-0 items-center gap-1">
             <WorkspaceSwitcher />
+            <NotificationBell />
           </div>
         </header>
+        {meta.data?.llm_mode === "fake" ? (
+          <p
+            role="status"
+            data-testid="ai-mode"
+            className="border-b border-slate-200 bg-slate-100 px-4 py-1 text-center text-xs text-slate-700"
+          >
+            {t("aiMode.offline")}
+          </p>
+        ) : null}
         <main id="main" className="mx-auto w-full min-w-0 max-w-3xl flex-1 px-4 py-5 pb-28 md:px-8 md:pb-8">
           <Outlet />
         </main>

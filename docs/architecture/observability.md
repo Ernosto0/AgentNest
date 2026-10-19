@@ -52,7 +52,7 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `APPROVAL_EXPIRED` | 409 | — | The approval expired / request a new draft or schedule |
 | `APPROVAL_STALE` | 409 | — | Content changed after you opened it / review the new version |
 | `FACT_NOT_USABLE` | — | — | Needed information is missing or unverified / verify it in Business knowledge |
-| `FACT_CHANGED_MEANWHILE` | 409 | — | The fact changed before confirmation / repeat the command |
+| `FACT_CHANGED_MEANWHILE` | — | — | The fact changed before confirmation, so nothing was overwritten / check the current value and repeat the command. Recorded as the command's `error_code`; never an HTTP error, because the decision itself succeeded |
 | `GROUNDING_FAILED` | — | — | The draft contained values not matching verified facts / edit or write the reply |
 | `CONTENT_VALIDATION_FAILED` | 422 | — | Content cannot be submitted (list of issues) |
 | `CONTENT_MEDIA_REQUIRED` | 422 | — | An image is required |
@@ -95,12 +95,12 @@ Reason codes are not errors. They explain *why* something was decided or changed
 
 ## 5. Audit action catalog
 
-Written in the same transaction as the change ([INV-12](../invariants.md)). `metadata` holds IDs, codes and, for facts, formatted old and new values (`old_display`, `new_display`; also `old_window`/`new_window` for validity changes, `key`, `version`, `source_type`); **never** message text or tokens. `audit.record` rejects metadata keys such as `text`, `message` and `body`. Every fact change writes exactly one `fact.*` entry and one `fact_versions` row; accepting a candidate additionally writes `fact_candidate.accepted`. `policy.reviewed` is written when the owner marks the automation policy as reviewed.
+Written in the same transaction as the change ([INV-12](../invariants.md)). `metadata` holds IDs, codes and, for facts, formatted old and new values (`old_display`, `new_display`; also `old_window`/`new_window` for validity changes, `key`, `version`, `source_type`, and `source_ref` — the command or candidate ID that caused the change); **never** message text or tokens. `audit.record` rejects metadata keys such as `text`, `message` and `body`. Every fact change writes exactly one `fact.*` entry and one `fact_versions` row; accepting a candidate additionally writes `fact_candidate.accepted`. `policy.reviewed` is written when the owner marks the automation policy as reviewed.
 
 | Area | Actions |
 |---|---|
 | Auth & members | `auth.login`, `auth.logout`, `auth.login_failed` (system-level, no workspace), `workspace.created`, `workspace.updated`, `member.invited`, `member.joined`, `member.role_changed`, `member.removed` |
-| Knowledge | `fact.created`, `fact.updated`, `fact.verified`, `fact.archived`, `fact.restored`, `fact_candidate.created`, `fact_candidate.accepted`, `fact_candidate.rejected`, `approved_answer.created/updated/archived`, `policy.updated`, `policy.reviewed` |
+| Knowledge | `fact.created`, `fact.updated`, `fact.verified`, `fact.archived`, `fact.restored`, `fact_candidate.created`, `fact_candidate.accepted`, `fact_candidate.rejected`, `knowledge.extraction_requested` (character count and an injection flag, never the text), `approved_answer.created/updated/archived`, `policy.updated`, `policy.reviewed` |
 | Commands | `command.received`, `command.interpreted`, `command.executed`, `command.failed`, `command.cancelled`, `command.expired` |
 | Approvals | `approval.requested`, `approval.approved`, `approval.rejected`, `approval.expired`, `approval.cancelled` |
 | Inbox | `message.received`, `message.native_reply_detected`, `reply_draft.created`, `reply_draft.edited`, `reply_draft.superseded`, `reply.sent`, `reply.failed`, `reply.outcome_unknown`, `conversation.takeover`, `conversation.released` |

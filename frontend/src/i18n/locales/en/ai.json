@@ -1,0 +1,169 @@
+{
+  "aiMode": {
+    "offline": "Offline demo AI"
+  },
+  "command": {
+    "label": "Command",
+    "placeholder": "e.g. “Monthly membership is now 7,000 TL”",
+    "send": "Send",
+    "hint": "Update a price, ask about a fact, or ask for a summary.",
+    "interpreting": "Understanding…",
+    "dismiss": "Close",
+    "yourCommand": "Your command",
+    "submitting": "Sending…",
+    "confirm": {
+      "title": "Confirm this change?",
+      "from": "Now",
+      "to": "New",
+      "impactTitle": "What this touches",
+      "impactNone": "This change does not affect any other draft or content.",
+      "impactCount": "{{count}} item(s)",
+      "expires": "Valid until {{time}}",
+      "approve": "Confirm",
+      "withdraw": "Cancel",
+      "deciding": "Saving…",
+      "staffNote": "You cannot verify this information: if you confirm, it is sent to the owner as a suggestion and nothing changes yet."
+    },
+    "clarify": {
+      "which_fact": "Which information did you mean?",
+      "which_fact_value": "Which information is “{{raw}}” for?",
+      "which_value": "Which amount did you mean by “{{raw}}” ({{label}})?",
+      "cancel": "Cancel"
+    },
+    "msg": {
+      "fact_value": "{{label}}: {{display}}",
+      "fact_not_usable": "{{label}} cannot be used right now ({{stateLabel}}). Verify it first under Business information.",
+      "fact_unchanged": "{{label}} is already {{display}}. No change was needed.",
+      "fact_updated": "{{label}} updated: {{old_display}} → {{new_display}} (version {{version}}).",
+      "fact_proposed": "Your suggestion of {{new_display}} for {{label}} was sent to the owner. Nothing changes until it is accepted.",
+      "brand_voice_updated": "Brand voice updated.",
+      "brand_voice_proposed": "Your brand voice suggestion was sent to the owner. Nothing changes until it is accepted.",
+      "fact_changed_meanwhile": "The information changed while you were confirming, so it was not updated. Check the current value and give the command again.",
+      "pending_approvals_one": "{{count}} approval is waiting.",
+      "pending_approvals_other": "{{count}} approvals are waiting.",
+      "pending_none": "Nothing is waiting for approval.",
+      "activity_basic": "{{periodLabel}}: {{fact_changes}} information changes, {{commands}} commands, {{approvals_decided}} approval decisions.",
+      "activity_basic_note": "Basic summary: counted from the records.",
+      "forbidden": "Your role cannot do this.",
+      "value_unreadable": "I could not read “{{raw}}” as a value ({{label}}). Try something like “7,000 TL”.",
+      "brand_voice_missing": "There is no brand voice yet. Add it under Business information.",
+      "failed": "The command could not be completed."
+    },
+    "period": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last_7_days": "Last 7 days"
+    },
+    "unsupported": {
+      "title": "This is not something I can do yet",
+      "suggestionsTitle": "You could try:",
+      "reason": {
+        "publish": "Publishing a post cannot be done by command. Do it yourself under Content.",
+        "send_message": "Sending a customer message cannot be done by command. Reply from the Inbox.",
+        "approve": "Approving and rejecting cannot be done by command. Use the buttons on the approval card.",
+        "manage_account": "Connecting or disconnecting accounts cannot be done by command. Use Settings.",
+        "settings": "Automation settings cannot be changed by command. Use Settings.",
+        "members": "Team members cannot be managed by command. Use Settings.",
+        "other": "I did not understand that, or it cannot be done by command."
+      }
+    },
+    "suggest": {
+      "update_price": "“Monthly membership is now 7,000 TL”",
+      "ask_price": "“How much is the monthly membership?”",
+      "activity": "“What happened today?”"
+    },
+    "link": {
+      "knowledge": "Open business information",
+      "approvals": "Go to approvals",
+      "content": "Go to content",
+      "inbox": "Go to the inbox",
+      "integrations": "Open settings",
+      "automation": "Open settings",
+      "members": "Open settings"
+    },
+    "status": {
+      "cancelled": "Cancelled. Nothing changed.",
+      "expired": "Expired. Nothing changed."
+    }
+  },
+  "approvals": {
+    "title": "Approvals",
+    "intro": "What needs your decision is here. Nothing happens without your approval.",
+    "tabs": {
+      "label": "Approval list",
+      "pending": "Pending",
+      "history": "History"
+    },
+    "empty": "Nothing is waiting for approval",
+    "emptyHint": "When you give a command, the changes that need your confirmation appear here.",
+    "emptyHistory": "No approval has been decided yet",
+    "action": {
+      "command_update_fact": "Information update",
+      "command_update_brand_voice": "Brand voice update",
+      "command_cancel_content": "Content cancellation",
+      "reply_send": "Sending a reply",
+      "content_publish": "Publishing content"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "detail": {
+      "title": "Approval details",
+      "from": "Now",
+      "to": "New",
+      "expires": "Valid until {{time}}",
+      "decidedAt": "Decided {{time}}",
+      "approve": "Approve",
+      "reject": "Reject",
+      "deciding": "Saving…",
+      "cannotDecide": "You cannot decide this approval.",
+      "kindConfirmation": "Command confirmation",
+      "kindAuthorization": "Permission request",
+      "impactTitle": "What this touches",
+      "impactNone": "It does not affect anything else."
+    },
+    "referrer": {
+      "reply_draft": "Reply draft",
+      "content_item": "Content item",
+      "approved_answer": "Approved answer"
+    }
+  },
+  "notifications": {
+    "bell": "Notifications",
+    "title": "Notifications",
+    "empty": "No new notifications",
+    "markAll": "Mark all as read",
+    "unread_one": "{{count}} unread notification",
+    "unread_other": "{{count}} unread notifications",
+    "type": {
+      "approval_requested": "Waiting for your approval: {{label}}",
+      "approval_expired": "Expired without approval: {{label}}",
+      "knowledge_fact_changed": "{{label}} changed: {{old}} → {{new}}",
+      "knowledge_fact_archived": "{{label}} was archived",
+      "unknown": "New notification"
+    },
+    "open": "Open"
+  },
+  "extract": {
+    "open": "Suggest from pasted text",
+    "title": "Suggest from pasted text",
+    "intro": "Paste your Instagram bio or price list. What is found becomes a suggestion only; nothing changes until you accept it.",
+    "label": "Pasted text",
+    "placeholder": "e.g. “Monthly membership 6,000 TL”",
+    "counter": "{{count}} / {{max}}",
+    "submit": "Find suggestions",
+    "working": "Reading the text…",
+    "done_one": "{{count}} suggestion found. It is waiting for you.",
+    "done_other": "{{count}} suggestions found. They are waiting for you.",
+    "none": "Nothing to suggest was found in this text. You can also enter the information manually.",
+    "injection": "The text had parts that looked like instructions; they were ignored.",
+    "goToSuggestions": "Go to suggestions",
+    "failed": "Suggestions could not be extracted. Your text was kept; try again or enter the information manually.",
+    "again": "Add another text",
+    "close": "Close"
+  }
+}
