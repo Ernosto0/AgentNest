@@ -15,6 +15,9 @@ export const STATUS_KEYS = [
   "published",
   "failed",
   "expired",
+  "retry_scheduled",
+  "rejected",
+  "cancelled",
 ] as const;
 
 export type StatusKey = (typeof STATUS_KEYS)[number];

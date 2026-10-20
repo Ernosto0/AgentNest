@@ -62,7 +62,10 @@
     "sent": "Sent",
     "published": "Published",
     "failed": "Failed",
-    "expired": "Expired"
+    "expired": "Expired",
+    "retry_scheduled": "Will retry {{time}}",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled"
   },
   "empty": {
     "comingLater": "This section arrives in a later phase",
@@ -78,9 +81,6 @@
   },
   "inbox": {
     "title": "Inbox"
-  },
-  "content": {
-    "title": "Content"
   },
   "approvals": {
     "title": "Approvals"

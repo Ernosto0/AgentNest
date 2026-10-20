@@ -3,6 +3,8 @@ import { vi } from "vitest";
 export interface RecordedRequest {
   method: string;
   path: string;
+  /** The query string, e.g. "?tab=drafts" ("" if none). */
+  search: string;
   headers: Headers;
   body: unknown;
 }
@@ -50,10 +52,14 @@ export function mockApi(routes: Record<string, Handler>): RecordedRequest[] {
     "fetch",
     vi.fn(async (input: Request) => {
       const url = new URL(input.url, "http://localhost");
-      const text = await input.clone().text();
+      const multipart = (input.headers.get("content-type") ?? "").startsWith("multipart/");
+      // jsdom files cannot be streamed by Node's Request, so a multipart body is not read: tests spy on
+      // FormData.append to see the file. Every other body is JSON.
+      const text = multipart ? "" : await input.clone().text();
       const entry: RecordedRequest = {
         method: input.method,
         path: url.pathname,
+        search: url.search,
         headers: input.headers,
         body: text ? JSON.parse(text) : undefined,
       };

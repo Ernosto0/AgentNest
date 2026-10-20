@@ -44,16 +44,21 @@ const PRESENTATION: Record<StatusKey, { tone: Tone; icon: Icon; spins?: boolean 
   published: { tone: "green", icon: CheckIcon },
   failed: { tone: "red", icon: AlertIcon },
   expired: { tone: "grey", icon: HourglassIcon },
+  retry_scheduled: { tone: "blue", icon: ClockIcon },
+  rejected: { tone: "red", icon: AlertIcon },
+  cancelled: { tone: "grey", icon: PauseIcon },
 };
 
 interface StatusBadgeProps {
   status: StatusKey;
   /** Append the SİMÜLASYON / SIMULATED badge (the item came from a mock provider). */
   simulated?: boolean;
+  /** Values for labels that carry one (`retry_scheduled` shows `{{time}}`). */
+  params?: Record<string, string | number>;
   className?: string;
 }
 
-export function StatusBadge({ status, simulated = false, className = "" }: StatusBadgeProps) {
+export function StatusBadge({ status, simulated = false, params, className = "" }: StatusBadgeProps) {
   const { t } = useTranslation();
   const { tone, icon: Icon, spins } = PRESENTATION[status];
   return (
@@ -63,7 +68,7 @@ export function StatusBadge({ status, simulated = false, className = "" }: Statu
         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium ring-1 ring-inset ${TONES[tone]}`}
       >
         <Icon className={spins ? "motion-safe:animate-spin" : undefined} />
-        <span>{t(`status.${status}`)}</span>
+        <span>{t(`status.${status}`, params)}</span>
       </span>
       {simulated ? <SimulatedBadge /> : null}
     </span>

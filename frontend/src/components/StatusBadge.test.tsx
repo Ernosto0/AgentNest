@@ -17,11 +17,14 @@ const TR_LABELS: Record<(typeof STATUS_KEYS)[number], string> = {
   published: "Yayınlandı",
   failed: "Başarısız",
   expired: "Süresi doldu",
+  retry_scheduled: "Tekrar denenecek 19:05",
+  rejected: "Reddedildi",
+  cancelled: "İptal edildi",
 };
 
 describe("StatusBadge", () => {
   it.each(STATUS_KEYS)("renders the documented Turkish label and an icon for %s", (status) => {
-    const { container } = render(<StatusBadge status={status} />);
+    const { container } = render(<StatusBadge status={status} params={{ time: "19:05" }} />);
     expect(screen.getByText(TR_LABELS[status])).toBeInTheDocument();
     expect(container.querySelector(`[data-status="${status}"]`)).not.toBeNull();
     // Never colour alone: every badge also carries an icon.
@@ -32,7 +35,7 @@ describe("StatusBadge", () => {
     for (const language of ["tr", "en"] as const) {
       await setLanguage(language);
       const labels = STATUS_KEYS.map((status) => {
-        const { container, unmount } = render(<StatusBadge status={status} />);
+        const { container, unmount } = render(<StatusBadge status={status} params={{ time: "19:05" }} />);
         const text = container.textContent;
         unmount();
         return text;
@@ -45,7 +48,7 @@ describe("StatusBadge", () => {
     await setLanguage("en");
     // The intermediate states must not read as the final ones.
     for (const status of ["scheduled", "pending_approval", "sending", "publishing", "checking"] as const) {
-      const { container, unmount } = render(<StatusBadge status={status} />);
+      const { container, unmount } = render(<StatusBadge status={status} params={{ time: "19:05" }} />);
       expect(container.textContent).not.toMatch(/^(Sent|Published)$/);
       unmount();
     }
@@ -73,7 +76,7 @@ describe("StatusBadge", () => {
     for (const language of ["tr", "en"] as const) {
       await setLanguage(language);
       for (const status of STATUS_KEYS) {
-        const { container, unmount } = render(<StatusBadge status={status} />);
+        const { container, unmount } = render(<StatusBadge status={status} params={{ time: "19:05" }} />);
         expect(container.textContent).not.toContain("status."); // a raw key would leak through
         unmount();
       }

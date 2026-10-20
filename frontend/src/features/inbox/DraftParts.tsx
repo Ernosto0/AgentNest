@@ -3,8 +3,15 @@ import { useTranslation } from "react-i18next";
 import type { ReplyDraft } from "@/api/types";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
+/** What a chip needs: the text, and where it comes from. A value found by matching (not rendered) has no version. */
+export interface ChipFact {
+  display: string;
+  label: string;
+  version?: number | null;
+}
+
 /** A value taken from a verified fact. Tapping it shows where it comes from. */
-export function FactChip({ fact }: { fact: ReplyDraft["rendered_facts"][number] }) {
+export function FactChip({ fact }: { fact: ChipFact }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
@@ -23,7 +30,9 @@ export function FactChip({ fact }: { fact: ReplyDraft["rendered_facts"][number] 
           role="status"
           className="absolute top-full left-0 z-10 mt-1 w-56 rounded-lg bg-slate-900 p-2 text-sm font-normal text-white shadow-lg"
         >
-          {t("convo.draft.source", { label: fact.label, version: fact.version })}
+          {fact.version == null
+            ? t("convo.draft.sourceUnversioned", { label: fact.label })
+            : t("convo.draft.source", { label: fact.label, version: fact.version })}
         </span>
       ) : null}
     </span>

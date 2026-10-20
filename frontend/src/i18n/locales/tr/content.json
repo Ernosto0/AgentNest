@@ -1,0 +1,108 @@
+{
+  "content": {
+    "title": "İçerik",
+    "intro": "Instagram gönderileriniz ve story'leriniz: taslaklar, zamanlananlar ve yayınlananlar.",
+    "tabsLabel": "İçerik listesi",
+    "tabs": {
+      "drafts": "Taslaklar",
+      "scheduled": "Zamanlanan",
+      "published": "Yayınlanan",
+      "problems": "Sorunlar"
+    },
+    "empty": {
+      "drafts": "Taslak yok",
+      "scheduled": "Zamanlanmış içerik yok",
+      "published": "Henüz yayınlanan içerik yok",
+      "problems": "Sorun yok",
+      "hint": "Hazırladığınız gönderi ve story'ler durumuna göre burada listelenir."
+    },
+    "type": {
+      "feed_image": "Gönderi",
+      "story_image": "Story"
+    },
+    "status": {
+      "soon": "kısa süre sonra"
+    },
+    "card": {
+      "scheduledFor": "Zamanlanan: {{time}}",
+      "publishedAt": "Yayın: {{time}}",
+      "updatedAt": "Güncellendi: {{time}}",
+      "generating": "Hazırlanıyor…",
+      "untitled": "Başlıksız"
+    },
+    "back": "← İçerik",
+    "notFound": "Bu içerik bulunamadı.",
+    "generation": {
+      "running": "Hazırlanıyor…",
+      "slow": "Beklenenden uzun sürüyor. Beklemek yerine metni kendiniz de yazabilirsiniz.",
+      "failed": "Taslak otomatik hazırlanamadı. Metni kendiniz yazabilirsiniz.",
+      "hint": "Hazır olunca metin kendiliğinden görünür. Bu sırada yazdıklarınız korunur."
+    },
+    "editor": {
+      "titleLabel": "Başlık",
+      "captionLabel": "Açıklama",
+      "counter": "{{count}} / {{max}}",
+      "counterOver": "{{count}} / {{max}}: çok uzun",
+      "overlayLabel": "Görsel üzerindeki metin önerileri",
+      "overlayItem": "Öneri {{n}}",
+      "overlayAdd": "Öneri ekle",
+      "overlayRemove": "Öneri {{n}} sil",
+      "overlayNote": "Story'de metin görselin üzerinde olmalı: bu öneriler görsele yazmanız içindir, ayrıca yayınlanmaz.",
+      "visualNotesLabel": "Görsel notları",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor…",
+      "saved": "Kaydedildi",
+      "unsaved": "Kaydedilmemiş değişiklikler var",
+      "check": "Yayın öncesi kontrol",
+      "checking": "Kontrol ediliyor…",
+      "checkClean": "Kontrol tamam: engelleyen bir sorun yok.",
+      "conflict": "Siz düzenlerken başka biri bu içeriği değiştirdi. Güncel hali yüklendi; yazdıklarınız duruyor, gözden geçirip tekrar kaydedin.",
+      "editVoidsApproval": "Bu içerik onaya gönderilmiş ya da zamanlanmış. Düzenlerseniz onay geçersiz olur ve içerik taslağa döner.",
+      "readOnly": "Bu içerik artık değiştirilemez.",
+      "issues": {
+        "label": "Metin kontrolü",
+        "blockingHint": "Bunlar düzeltilmeden yayına gönderilemez.",
+        "grounded": "“{{text}}” doğrulanmış bilginizle eşleşiyor.",
+        "blocking": "“{{text}}” doğrulanmış bir bilgi değil. Değeri düzeltin ya da işletme bilgilerinizde doğrulayın.",
+        "PLACEHOLDER_UNRENDERED": "“{{text}}” yer tutucusu doldurulamadı. Doğrulanmış bir bilgiyle değiştirin ya da silin.",
+        "CLAIM_UNBACKED": "“{{text}}” iddiası doğrulanmış bir bilgiye dayanmıyor. Kaldırın ya da bilgiyi doğrulayın.",
+        "stale": "Bir bilgi sonradan değişti. Metin kaydedilince yeniden kontrol edilir."
+      },
+      "checks": {
+        "errorsLabel": "Yayından önce düzeltilmeli",
+        "warningsLabel": "Dikkat edin",
+        "CONTENT_MEDIA_REQUIRED": "Bir görsel ekleyin.",
+        "MEDIA_NOT_READY": "Görsel henüz hazır değil.",
+        "CAPTION_REQUIRED": "Bir açıklama yazın.",
+        "CAPTION_TOO_LONG": "Açıklama çok uzun ({{length}} / {{max}} karakter).",
+        "CAPTION_NOT_ALLOWED": "Story'nin açıklaması olmaz. Metni görselin üzerine ekleyin.",
+        "ASPECT_RATIO_OUT_OF_RANGE": "Görselin oranı gönderi için uygun değil (4:5 ile 1,91:1 arasında olmalı).",
+        "CLAIM_VALIDATION_FAILED": "Metinde doğrulanmamış bilgiler var.",
+        "ACCOUNT_NOT_CONNECTED": "Bağlı bir Instagram hesabı yok.",
+        "CAPABILITY_MISSING": "Bağlı hesap bu içerik türünü yayınlayamıyor.",
+        "STORY_ASPECT_NOT_9_16": "Görsel 9:16 değil ({{width}}×{{height}}). Story'de kırpılabilir ya da kenarlarda boşluk kalabilir.",
+        "OVERLAY_TOO_LONG": "Bu öneri uzun: en fazla 3 satır ve satır başına 40 karakter okunaklı olur."
+      }
+    },
+    "media": {
+      "label": "Görsel",
+      "feedHint": "Gönderi için dikey ya da kare bir görsel ekleyin (4:5 ile 1,91:1 arası).",
+      "storyHint": "Story için 9:16 bir görsel ekleyin. Instagram'da story metni görselin üzerinde olmalıdır.",
+      "choose": "Görsel seç",
+      "replace": "Görseli değiştir",
+      "uploading": "Yükleniyor…",
+      "loadingPreview": "Görsel yükleniyor…",
+      "previewFailed": "Görsel gösterilemedi.",
+      "previewAlt": "Seçilen görselin önizlemesi",
+      "size": "{{width}} × {{height}} piksel",
+      "attached": "Görsel eklendi.",
+      "tooLarge": "Bu görsel çok büyük (sınır {{limit}}). Daha küçük bir görsel seçin.",
+      "reason": {
+        "EMPTY_FILE": "Dosya boş. Başka bir görsel seçin.",
+        "NOT_AN_IMAGE": "Bu dosya desteklenen bir görsel değil. JPEG veya PNG yükleyin.",
+        "CORRUPT_IMAGE": "Görsel dosyası bozuk görünüyor. Başka bir görsel seçin.",
+        "TOO_MANY_PIXELS": "Görsel çok yüksek çözünürlüklü. Daha küçük bir görsel seçin."
+      }
+    }
+  }
+}

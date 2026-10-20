@@ -62,7 +62,10 @@
     "sent": "Gönderildi",
     "published": "Yayınlandı",
     "failed": "Başarısız",
-    "expired": "Süresi doldu"
+    "expired": "Süresi doldu",
+    "retry_scheduled": "Tekrar denenecek {{time}}",
+    "rejected": "Reddedildi",
+    "cancelled": "İptal edildi"
   },
   "empty": {
     "comingLater": "Bu bölüm bir sonraki aşamada gelecek",
@@ -78,9 +81,6 @@
   },
   "inbox": {
     "title": "Gelen kutusu"
-  },
-  "content": {
-    "title": "İçerik"
   },
   "approvals": {
     "title": "Onaylar"

@@ -42,3 +42,17 @@ export type SocialAccount = Schemas["SocialAccountOut"];
 export type DevScript = Schemas["ScriptOut"];
 export type FailureRule = Schemas["FailureRuleOut"];
 export type DevJob = Schemas["JobOut"];
+
+// Phase 5: content and media.
+export type ContentItem = Schemas["ContentItemOut"];
+export type ContentStatus = ContentItem["status"];
+export type ContentType = ContentItem["content_type"];
+export type ContentTab = "drafts" | "scheduled" | "published" | "problems";
+export type ContentValidation = Schemas["ContentValidationOut"];
+export type ContentIssue = Schemas["ContentIssueOut"];
+export type ContentCheckItem = Schemas["ContentCheckItemOut"];
+export type ContentOperation = Schemas["ContentOperationOut"];
+export type ContentGeneration = Schemas["GenerationOut"];
+export type ContentCreateBody = Schemas["ContentCreate"];
+export type ContentPatchBody = Schemas["ContentPatch"];
+export type MediaAsset = Schemas["MediaAssetOut"];

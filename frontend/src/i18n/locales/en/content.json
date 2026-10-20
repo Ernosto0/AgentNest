@@ -1,0 +1,108 @@
+{
+  "content": {
+    "title": "Content",
+    "intro": "Your Instagram posts and stories: drafts, scheduled and published.",
+    "tabsLabel": "Content list",
+    "tabs": {
+      "drafts": "Drafts",
+      "scheduled": "Scheduled",
+      "published": "Published",
+      "problems": "Problems"
+    },
+    "empty": {
+      "drafts": "No drafts",
+      "scheduled": "Nothing scheduled",
+      "published": "Nothing published yet",
+      "problems": "No problems",
+      "hint": "The posts and stories you prepare are listed here by their status."
+    },
+    "type": {
+      "feed_image": "Post",
+      "story_image": "Story"
+    },
+    "status": {
+      "soon": "shortly"
+    },
+    "card": {
+      "scheduledFor": "Scheduled: {{time}}",
+      "publishedAt": "Published: {{time}}",
+      "updatedAt": "Updated: {{time}}",
+      "generating": "Preparing…",
+      "untitled": "Untitled"
+    },
+    "back": "← Content",
+    "notFound": "This content could not be found.",
+    "generation": {
+      "running": "Preparing…",
+      "slow": "This is taking longer than expected. You can also write the text yourself instead of waiting.",
+      "failed": "The draft could not be prepared automatically. You can write the text yourself.",
+      "hint": "The text appears by itself when it is ready. What you type meanwhile is kept."
+    },
+    "editor": {
+      "titleLabel": "Title",
+      "captionLabel": "Caption",
+      "counter": "{{count}} / {{max}}",
+      "counterOver": "{{count}} / {{max}}: too long",
+      "overlayLabel": "Suggested text on the image",
+      "overlayItem": "Suggestion {{n}}",
+      "overlayAdd": "Add a suggestion",
+      "overlayRemove": "Remove suggestion {{n}}",
+      "overlayNote": "On a story the text has to be on the image: these suggestions are for you to put on the picture, they are not published separately.",
+      "visualNotesLabel": "Image notes",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "unsaved": "You have unsaved changes",
+      "check": "Check before publishing",
+      "checking": "Checking…",
+      "checkClean": "Check complete: nothing blocks publishing.",
+      "conflict": "Someone else changed this while you were editing. The latest version has been loaded; what you typed is still there, review it and save again.",
+      "editVoidsApproval": "This content was sent for approval or scheduled. If you edit it, the approval is voided and it goes back to a draft.",
+      "readOnly": "This content can no longer be changed.",
+      "issues": {
+        "label": "Text check",
+        "blockingHint": "These must be fixed before it can be sent for publishing.",
+        "grounded": "“{{text}}” matches your verified information.",
+        "blocking": "“{{text}}” is not a verified fact. Correct the value or verify it in your business information.",
+        "PLACEHOLDER_UNRENDERED": "The placeholder “{{text}}” could not be filled in. Replace it with a verified fact or delete it.",
+        "CLAIM_UNBACKED": "The claim “{{text}}” is not backed by a verified fact. Remove it or verify the information.",
+        "stale": "A fact changed since this was checked. The text is checked again when you save."
+      },
+      "checks": {
+        "errorsLabel": "Fix before publishing",
+        "warningsLabel": "Worth a look",
+        "CONTENT_MEDIA_REQUIRED": "Add an image.",
+        "MEDIA_NOT_READY": "The image is not ready yet.",
+        "CAPTION_REQUIRED": "Write a caption.",
+        "CAPTION_TOO_LONG": "The caption is too long ({{length}} / {{max}} characters).",
+        "CAPTION_NOT_ALLOWED": "A story has no caption. Put the text on the image.",
+        "ASPECT_RATIO_OUT_OF_RANGE": "The image ratio does not suit a post (it must be between 4:5 and 1.91:1).",
+        "CLAIM_VALIDATION_FAILED": "The text contains information that is not verified.",
+        "ACCOUNT_NOT_CONNECTED": "There is no connected Instagram account.",
+        "CAPABILITY_MISSING": "The connected account cannot publish this kind of content.",
+        "STORY_ASPECT_NOT_9_16": "The image is not 9:16 ({{width}}×{{height}}). It may be cropped or leave gaps at the edges on a story.",
+        "OVERLAY_TOO_LONG": "This suggestion is long: up to 3 lines of 40 characters stay readable."
+      }
+    },
+    "media": {
+      "label": "Image",
+      "feedHint": "Add a portrait or square image for the post (between 4:5 and 1.91:1).",
+      "storyHint": "Add a 9:16 image for the story. On Instagram the story text has to be on the image.",
+      "choose": "Choose an image",
+      "replace": "Replace the image",
+      "uploading": "Uploading…",
+      "loadingPreview": "Loading the image…",
+      "previewFailed": "The image could not be shown.",
+      "previewAlt": "Preview of the chosen image",
+      "size": "{{width}} × {{height}} pixels",
+      "attached": "Image added.",
+      "tooLarge": "This image is too large (limit {{limit}}). Choose a smaller one.",
+      "reason": {
+        "EMPTY_FILE": "The file is empty. Choose another image.",
+        "NOT_AN_IMAGE": "This file is not a supported image. Upload a JPEG or PNG.",
+        "CORRUPT_IMAGE": "The image file looks damaged. Choose another image.",
+        "TOO_MANY_PIXELS": "The image resolution is too high. Choose a smaller image."
+      }
+    }
+  }
+}

@@ -53,6 +53,7 @@
     },
     "draft": {
       "source": "Kaynak: {{label}}, doğrulandı (sürüm {{version}})",
+      "sourceUnversioned": "Kaynak: {{label}}, doğrulanmış bilgi",
       "reasons": "Neden sizin onayınız gerekiyor",
       "suggestionTitle": "Önerilen metin (gönderilmedi)",
       "useSuggestion": "Yanıtım olarak kullan",

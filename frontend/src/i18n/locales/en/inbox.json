@@ -53,6 +53,7 @@
     },
     "draft": {
       "source": "Source: {{label}}, verified (version {{version}})",
+      "sourceUnversioned": "Source: {{label}}, verified fact",
       "reasons": "Why this needs you",
       "suggestionTitle": "Suggested wording (not sent)",
       "useSuggestion": "Use as my reply",

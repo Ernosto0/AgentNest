@@ -2,6 +2,8 @@ import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react
 import { ApprovalsList } from "@/features/approvals/ApprovalsList";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
+import { ContentDetailPage } from "@/features/content/ContentDetailPage";
+import { ContentPage } from "@/features/content/ContentPage";
 import { HomePage } from "@/features/home/HomePage";
 import { DevPanel } from "@/features/dev/DevPanel";
 import { ConversationPage } from "@/features/inbox/ConversationPage";
@@ -11,7 +13,6 @@ import { CategoryPage } from "@/features/knowledge/CategoryPage";
 import { KnowledgePage } from "@/features/knowledge/KnowledgePage";
 import { SuggestionsPage } from "@/features/knowledge/SuggestionsPage";
 import { CreateWorkspaceWizard } from "@/features/workspaces/CreateWorkspaceWizard";
-import { SectionPlaceholderPage } from "@/features/home/SectionPlaceholderPage";
 import { AutomationSettings } from "@/features/settings/AutomationSettings";
 import { MorePage } from "@/features/settings/MorePage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
@@ -33,7 +34,8 @@ export const appRoutes: RouteObject[] = [
           { index: true, element: <HomePage /> },
           { path: "inbox", element: <InboxPage /> },
           { path: "inbox/:conversationId", element: <ConversationPage /> },
-          { path: "content", element: <SectionPlaceholderPage section="content" /> },
+          { path: "content", element: <ContentPage /> },
+          { path: "content/:id", element: <ContentDetailPage /> },
           { path: "approvals", element: <ApprovalsList /> },
           { path: "more", element: <MorePage /> },
           { path: "more/settings", element: <SettingsPage /> },

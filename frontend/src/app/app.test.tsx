@@ -108,11 +108,14 @@ describe("workspace shell", () => {
     expect(screen.queryByTestId("simulated-badge")).toBeNull();
   });
 
-  it("the content tab shows a localised empty state", async () => {
-    mockApi(signedIn);
+  it("the content tab is a real screen with its own empty state (Phase 5)", async () => {
+    mockApi({
+      ...signedIn,
+      [`GET /api/v1/workspaces/${WS_GOLKENT}/content-items`]: () => json({ items: [], next_cursor: null }),
+    });
     renderApp(`/w/${WS_GOLKENT}/content`);
     expect(await screen.findByRole("heading", { name: "İçerik" })).toBeInTheDocument();
-    expect(screen.getByText("Bu bölüm bir sonraki aşamada gelecek")).toBeInTheDocument();
+    expect(await screen.findByText("Taslak yok")).toBeInTheDocument();
   });
 
   it("the inbox tab is a real screen with its own empty state (Phase 4)", async () => {
