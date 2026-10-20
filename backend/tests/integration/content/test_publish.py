@@ -171,6 +171,34 @@ def test_a_job_of_an_old_version_publishes_nothing_after_an_edit(pub: Publishing
 
 
 @pytest.mark.invariant("INV-16")
+def test_a_job_of_an_old_version_publishes_nothing_while_a_newer_version_is_scheduled(
+    pub: Publishing, env: Env
+) -> None:
+    """T1 compares the version itself: the item is ``scheduled`` again (as version 2), so the
+    status alone would let the stale version-1 job through (AC-D6, INV-16)."""
+    item = pub.scheduled()
+    edit = env.call(
+        env.owner, "PATCH", f"{ITEMS}/{item.id}", json={"expected_version": 1, "caption": "Yeni"}
+    )
+    assert edit.status_code == 200 and edit.json()["version"] == 2
+    resubmitted = pub.schedule(pub.reload(item))
+    assert (resubmitted.status, resubmitted.version) == ("scheduled", 2)
+    pub.calls.clear()
+
+    stale = pub.execute(item, version=1)
+
+    assert stale.kind == "skipped" and stale.detail == "not_due:scheduled"
+    assert pub.calls == [] and pub.posts() == [] and pub.containers() == []
+    assert pub.operation(item, version=1) is None  # the stale run left no ledger row
+    assert pub.reload(item).status == "scheduled"  # version 2 is untouched and still due
+
+    assert pub.execute(pub.reload(item)).kind == "published"  # the current version goes out
+    op = pub.operation(item, version=2)
+    assert op is not None and op.status == "succeeded"
+    assert len(pub.posts()) == 1
+
+
+@pytest.mark.invariant("INV-16")
 def test_an_approval_whose_payload_no_longer_matches_is_refused(pub: Publishing) -> None:
     item = pub.scheduled()
     row = pub.reload(item)

@@ -23,7 +23,7 @@ from app.content.models import ContentItem, MediaAsset
 from app.core.clock import FrozenClock
 from app.identity.models import User, Workspace
 from app.inbox.models import Conversation, Message, ReplyDraft
-from app.integrations.instagram.models import SocialAccount
+from app.integrations.instagram.models import SimContainer, SimPublishedMedia, SocialAccount
 from app.knowledge.models import ApprovedAnswer
 from app.notifications import service as notifications_service
 from tests.factories import (
@@ -180,6 +180,48 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         updated_at=clock.now(),
     )
     db_session.add(b_content)
+    db_session.flush()
+    # Phase 5: a pending publish authorisation for that item, and a post that B's simulated
+    # Instagram "published" (A's dev listing must never show it).
+    b_content_approval = approvals_service.request(
+        db_session,
+        clock,
+        b_ctx,
+        kind="authorization",
+        action="content.publish",
+        subject_type="content_item",
+        subject_id=b_content.id,
+        subject_version=1,
+        payload={"x": 1},
+        summary={"label": "B içeriği"},
+        required_permission="content.approve",
+        expires_at=clock.now() + timedelta(hours=1),
+    )
+    db_session.add(
+        SimContainer(
+            workspace_id=b.id,
+            social_account_id=b_account.id,
+            container_id="mock-container-isolation-b",
+            media_type="IMAGE",
+            media_url="http://localhost/b.jpg",
+            caption="B gönderisi",
+            status="PUBLISHED",
+            ready_at=clock.now(),
+            expires_at=clock.now() + timedelta(hours=1),
+            published_media_id="mock-media-isolation-b",
+        )
+    )
+    db_session.flush()
+    db_session.add(
+        SimPublishedMedia(
+            workspace_id=b.id,
+            social_account_id=b_account.id,
+            media_id="mock-media-isolation-b",
+            container_id="mock-container-isolation-b",
+            permalink="https://instagram.example/sim/mock-media-isolation-b",
+            published_at=clock.now(),
+        )
+    )
     db_session.commit()
     return TwoWorkspaces(
         app=app,
@@ -204,5 +246,7 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "answer_id": str(b_answer.id),
             "media_id": str(b_media.id),
             "content_id": str(b_content.id),
+            "content_approval_id": str(b_content_approval.id),
+            "sim_media_id": "mock-media-isolation-b",
         },
     )

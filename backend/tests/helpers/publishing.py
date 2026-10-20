@@ -11,6 +11,7 @@ import io
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from PIL import Image
@@ -40,7 +41,7 @@ from app.jobs.testing import run_due_jobs
 from app.notifications.models import Notification
 from app.operations import publish
 from app.operations.models import Operation
-from tests.factories import knowledge_ctx
+from tests.factories import knowledge_ctx, workspace_with_members
 
 MOCK_CAPABILITIES = {"messaging": True, "publish_feed_image": True, "publish_story_image": True}
 TRACKED = frozenset(
@@ -343,3 +344,17 @@ class Publishing:
     def advance_past(self, run_at: datetime | None) -> None:
         assert run_at is not None
         self.clock.advance(max(run_at - self.clock.now(), timedelta()))
+
+
+def committing_publishing(
+    factory: sessionmaker[Session], clock: FrozenClock, settings: Settings, media_root: Path
+) -> Publishing:
+    """A publishing harness on **real commits** (for ``@pytest.mark.commits`` tests): what a
+    step commits is durable, so a crash test can prove what survives a killed worker."""
+    session = factory()
+    workspace, users = workspace_with_members(session, roles=("owner",))
+    session.commit()
+    cfg = settings.model_copy(
+        update={"media_local_root": str(media_root), "sim_container_delay_seconds": 0}
+    )
+    return Publishing(session, factory, clock, cfg, workspace, users["owner"])
