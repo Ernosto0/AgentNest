@@ -200,7 +200,7 @@ Input snapshots stored in `agent_runs` follow the same rule and are deleted afte
 
 ## 10. Model and provider configuration
 
-- `LLM_PROVIDER` = `fake` | `openai`. `LLM_MODEL_DEFAULT` (default `gpt-6-luna`; verify the exact ID against OpenAI's model list before a pilot), with per-task overrides `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS`.
+- `LLM_PROVIDER` = `fake` | `openai`. `LLM_MODEL_DEFAULT` (default `gpt-6-luna`, the cheapest GPT-6 model; the ID was confirmed on OpenAI's model page on 2026-10-21), with per-task overrides `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS`.
 - The `openai` adapter uses the **Responses API** with structured outputs (`text_format` = the Pydantic model, sent as a strict JSON schema), `store=false` (nothing is retained by the provider), **no tools**, low reasoning effort (`LLM_REASONING_EFFORT`, default `low`, because reasoning tokens count against `max_output_tokens`), a stable system prompt ordering (OpenAI caches prefixes automatically), and records usage. Strict mode needs an object at the root and no `oneOf`, length or pattern keywords, so `interpret_command` returns `{interpretation: <union>}` (plain `anyOf`) and size limits are checked by the task's post-validator. A test builds the strict schema of every task output and fails on anything strict mode would reject.
 - Model changes for cost or quality (e.g., a larger model for `draft_reply`) are a founder decision based on eval results (OQ-09).
 - `LLM_PRICE_TABLE` (optional JSON, USD per million tokens per model) feeds cost estimates in evals and system health.

@@ -33,7 +33,7 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 |---|---|---|---|
 | `LLM_PROVIDER` | `fake` | `openai` (fake refused) | `fake` \| `openai` |
 | `OPENAI_API_KEY` 🔒 | empty | required if openai | |
-| `LLM_MODEL_DEFAULT` | `gpt-6-luna` | per OQ-09 (required if openai) | Verify the exact ID against OpenAI's model list |
+| `LLM_MODEL_DEFAULT` | `gpt-6-luna` | per OQ-09 (required if openai) | `gpt-6-luna` is the cheapest GPT-6 model; the ID was confirmed on OpenAI's model page on 2026-10-21 |
 | `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS` | empty (= default) | optional | Per-task overrides |
 | `LLM_TIMEOUT_SECONDS` | `30` | `30` | Default; per-task values in code |
 | `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` | `500` | per plan | Budget guard |

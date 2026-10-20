@@ -111,7 +111,7 @@ Verified on a fresh seed with the API, the worker and the Vite dev server (a thr
 | G13 | DST gap → `SCHEDULE_TIME_NONEXISTENT`; fold → the earlier instant | workflows §E |
 | G14 | New `content.on_hold` / `content.published` / `content.failed`; `content.on_hold` also reaches the author of a fact change | observability |
 | G15 | Tabs: Drafts, Scheduled, Published, Problems; `cancelled` in none | user-journeys §1 (sharpened in P5-10c) |
-| G16 | `publish_max_delay_minutes` workspace setting (default 360), not an env var; the ADR-014 note was missing and was added in P5-10c | ADR-014, workflows §E |
+| G16 | `publish_max_delay_minutes` workspace setting (default 360 at the time; 1440 since Q3), not an env var; the ADR-014 note was missing and was added in P5-10c | ADR-014, workflows §E |
 | G17 | Submit item codes and warnings | observability §4 |
 | G18 | Mock publishing failure modes | integrations §3.3 |
 | G19 | Sample images `story-sample.png`, `feed-sample.jpg` | local-development §6 |
@@ -145,11 +145,11 @@ Verified on a fresh seed with the API, the worker and the Vite dev server (a thr
 | S6-2 | Claim issues carry `fact_key`; new issue `PLACEHOLDER_UNRENDERED` | |
 | S6-3 | The 15-minute lead applies to any submission that waits for an approver, not only to staff | |
 | S6-4 | The quota forecast counts `scheduled`, `publishing`, `retry_scheduled` and `published` items | |
-| S6-5 | Re-approval needs `content.approve`; **cancel needs `content.approve`**, so staff cannot withdraw their own pending submission (per workflows §E step 7) | OPEN QUESTION Q1 |
+| S6-5 | Re-approval needs `content.approve`; **cancel needs `content.approve`**, so staff could not withdraw their own pending submission (per workflows §E step 7) | RESOLVED by Q1 (§7): staff may now cancel their own pending submission |
 | S7-1 | An overdue deadline goes `scheduled → publishing → failed` inside T1 (no direct edge) | |
 | S7-2 | `ContainerStatus` gained an optional `media_id` (for the permalink after a reconcile) | OPEN QUESTION Q2 |
 | S7-3 | The quota-retry time is derived from the account's own published items (falls back to now + 1 h); a quota deferral raises `RescheduleJob` and spends no attempt | |
-| S7-4 | With the default 6 h `publish_max_delay_minutes`, an exhausted quota mostly ends in `failed (PUBLISH_DEADLINE_PASSED)` | OPEN QUESTION Q3 |
+| S7-4 | With the former 6 h default of `publish_max_delay_minutes`, an exhausted quota mostly ended in `failed (PUBLISH_DEADLINE_PASSED)` | RESOLVED by Q3 (§7): the default is 24 h |
 | S7-5 | A dead `publish_content` job with the item `in_progress` becomes `outcome_unknown` → reconcile, never a blind failure | |
 | S7-6 | Reconcile does not call `handle_auth_error` when its own read fails with an auth error | |
 | S8-1 | No `content.on_hold` for `pending_approval → draft` (counted in the impact result instead) | observability |
@@ -164,7 +164,7 @@ Verified on a fresh seed with the API, the worker and the Vite dev server (a thr
 | S10-2 | Interpreter prompt v1 was extended in place; `client_request_id` of a command execution is `command:{id}` | |
 | S11-1 | New `StatusBadge` keys; `FactChip` generalised; the caption limit 2200 mirrors the backend `CAPTION_MAX_CHARS` (V-05 unverified) | |
 | S12-1 | The generate sheet shows the active account read-only and offers a blank manual draft; "Zamanla" is disabled while there are unsaved changes; the dev panel has only the failure-rule operations and the published list | |
-| S12-2 | Editing a `rejected` / `failed` item with only a title or note change cannot be resubmitted: submit needs `draft`, and such an edit does not change the payload | OPEN QUESTION Q4 |
+| S12-2 | Editing a `rejected` / `failed` item with only a title or note change cannot be resubmitted: submit needs `draft`, and such an edit did not change the payload | RESOLVED by Q4 (§7): any edit of such an item is a new version and a draft |
 | S12-3 | Staff see the full status panel (including the approval expiry) when their item is `pending_approval` | OPEN QUESTION Q5 |
 | S13-1 | Media assets and simulator containers carry no `is_simulated` column; the item, approval, operation, notification and audit rows and the API responses do, and are tested | OPEN QUESTION Q6 |
 | S13-2 | Mutation (c) initially survived; a test was added | |
@@ -189,13 +189,13 @@ Verified on a fresh seed with the API, the worker and the Vite dev server (a thr
 
 Each one needs a decision from the owner; none blocks the next phase.
 
-- **Q1 (S6-5) OPEN QUESTION:** Cancelling a content item needs `content.approve`, so staff cannot withdraw their own pending submission (the only way out for them is to edit it, which returns it to draft). That follows workflows §E step 7. Is it intended, or should the submitter be able to cancel their own submission?
+- **Q1 (S6-5) RESOLVED (owner decision, follow-up commit "Q1"):** Staff can withdraw (cancel) their **own pending submission**. The cancel route now admits any member and the service decides (`content.service.may_cancel`): owners and managers keep their rights; anyone else may cancel only a `pending_approval` item they created or whose current approval they requested, and its pending approval is cancelled (`SUBJECT_CANCELLED`). Their own draft, scheduled or held items and other people's items stay `403`. `ContentItem` gained `can_cancel` (so the UI shows Cancel only when it will work). Docs: workflows §E step 7, api-design §2.7, security matrix. Tests: `test_cancel.py` (withdraw own, created-by, someone else's, other statuses, owners/managers unchanged) and Vitest in `flows.test.tsx`.
 - **Q2 (S7-2) OPEN QUESTION:** `ContainerStatus.media_id` is optional and set by the mock when the container is `PUBLISHED`; reconcile uses it to fetch the permalink. Can the Phase 7 Meta adapter supply the media id from the container status?
-- **Q3 (S7-4) OPEN QUESTION:** With the default 6 h `publish_max_delay_minutes`, a publishing quota that stays exhausted for longer ends the post as `failed`. Raise the default (for example to 24 h)?
-- **Q4 (S12-2) OPEN QUESTION:** A `rejected` or `failed` item edited only in title or note stays in its status and cannot be resubmitted (submit needs `draft`). Should the server allow resubmitting from `rejected` / `failed`, or should such an edit return the item to `draft`?
+- **Q3 (S7-4) RESOLVED (owner decision, commit "Q3"):** The default `publish_max_delay_minutes` is now 1440 (24 h), which is also the top of the validation range (1 to 1440). Docs: ADR-014 note, workflows §E, data-model, user-journeys, plan G16. Tests that assumed 360 were updated; the ones about a short deadline set it explicitly (`Publishing.set_max_delay`); a new test covers the default and the range. A workspace created earlier keeps the value stored in its settings (the default is written at creation): change it with `PATCH /workspaces/{id}`.
+- **Q4 (S12-2) RESOLVED (owner decision, commit "Q4"):** Any edit of a `rejected` or `failed` item, a title or note only included, now uses the existing `edit` transition: `version + 1`, back to `draft`. The next submission therefore has a new approval and a new `publish:{id}:v{n}` job key (INV-16); a title or note on other statuses is still saved in place, an edit that changes nothing is a no-op, and `published` stays immutable (INV-17). No new state or edge. Docs: state-machines §5, api-design §2.7, workflows §E step 2. Tests: `test_resubmit.py` and Vitest ("Düzenle ve yeniden gönder" after a title-only edit, for `failed` and `rejected`). No frontend code change was needed: the PATCH answer is a draft, which the page already schedules.
 - **Q5 (S12-3) OPEN QUESTION:** Staff see the full status panel (expiry time of the approval) for their pending item. Fine?
 - **Q6 (S13-1) OPEN QUESTION:** Media assets and the simulator containers have no `is_simulated` column (the content item that uses them has). Was a schema change meant, or is the item's flag enough?
 - **Q7 (S13-3) OPEN QUESTION:** Under mutation (a) (the T2 commit dropped) one reconcile test appeared to hang in session 13; it was not investigated. Do you want it investigated (a hang instead of a failure would be a testing hazard)? The unmutated full suite ran to the end without any hang in this session.
 - **Q8 (S9-4) OPEN QUESTION:** Typed values are grounded by value, not meaning (`07:00` typed for Saturday passes if it appears in the verified hours). Accept for the MVP?
 - **Q9 (S5-3) OPEN QUESTION:** The mock honours `timeout_after_success` on `create_container` although the plan defined it for send and publish only. Keep (documented now) or remove it from the mock?
-- **Q10 (carried over):** The questions of Phases 1–3 that Phase 4 listed (merge strategy of the stacked branches, OpenAI model ID, accessibility tests) are moot for the stacking (everything is on `main`) but the OpenAI model ID (`gpt-6-luna`) is still unverified against the real API; no key was available.
+- **Q10 (carried over) RESOLVED for the model ID (owner decision, commit "Q10"):** OpenAI's official docs (developers.openai.com models, pricing and `gpt-6-luna` pages, read 2026-10-21) list `gpt-6-luna` as the cheapest GPT-6 model ($0.10 / $0.50 per 1M tokens; the others are `gpt-6.1-sol` and `gpt-6-astra`), with model ID and only snapshot `gpt-6-luna`, the Responses API and `structured_outputs`. It is what config, `.env.example` and the docs already used, so no value changed; the "unverified" wording was replaced and the memory note updated. `LLM_PROVIDER=fake` stays the default; no key was used and no paid call was made, so the adapter is **still not proven against the real API**. Open detail: the model page lists reasoning effort `none`, `low`, `medium`, `high`, `xhigh`, `max`, while the config accepts `minimal | low | medium | high`; the default `low` is valid, but check before choosing another value.
