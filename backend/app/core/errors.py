@@ -34,6 +34,19 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "CONTENT_VALIDATION_FAILED": ErrorSpec(422),
     "MEDIA_INVALID": ErrorSpec(422),
     "MEDIA_TOO_LARGE": ErrorSpec(413),
+    # Not API errors: why a publish failed (``content_items.last_error_code``, shown by
+    # ``query.explain_failure`` and the content screen) and what a command could not find.
+    "MEDIA_REJECTED": ErrorSpec(None, retryable=False),
+    "PUBLISH_DEADLINE_PASSED": ErrorSpec(None, retryable=False),
+    "PUBLISH_QUOTA_EXHAUSTED": ErrorSpec(None, retryable=True),
+    "PROVIDER_UNAVAILABLE": ErrorSpec(None, retryable=True),
+    "PROVIDER_RATE_LIMITED": ErrorSpec(None, retryable=True),
+    "PROVIDER_REJECTED": ErrorSpec(None, retryable=False),
+    "CAPABILITY_MISSING": ErrorSpec(None, retryable=False),
+    "ACCOUNT_NEEDS_REAUTH": ErrorSpec(None, retryable=False),
+    "OUTCOME_UNKNOWN": ErrorSpec(None),  # reconciled, not retried
+    "OUTCOME_UNCONFIRMED": ErrorSpec(None, retryable=False),
+    "REFERENCE_NOT_FOUND": ErrorSpec(None),
     # Not API errors: reasons recorded on commands, agent runs and render results.
     "FACT_NOT_USABLE": ErrorSpec(None, retryable=False),
     "FACT_CHANGED_MEANWHILE": ErrorSpec(None, retryable=False),

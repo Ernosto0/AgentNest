@@ -8,7 +8,9 @@ from app.commands.transitions import COMMAND_EVENTS, TERMINAL, apply_command_eve
 from app.core.errors import AppError
 from app.identity.permissions import PERMISSION_MATRIX
 
-FORBIDDEN_WORDS = ("approve", "reject", "publish", "send", "schedule", "connect", "disconnect")
+FORBIDDEN_WORDS = ("approve", "reject", "publish", "send", "connect", "disconnect")
+# ``content.cancel_scheduled`` only *cancels* what is scheduled; nothing may schedule or submit.
+FORBIDDEN_CONTENT_VERBS = ("content.schedule", "content.submit", "content.reapprove")
 
 
 @pytest.mark.invariant("INV-04")
@@ -17,9 +19,11 @@ def test_no_command_type_can_approve_publish_or_send() -> None:
     for command_type in types:
         for word in FORBIDDEN_WORDS:
             assert word not in command_type, (command_type, word)
+        assert not command_type.startswith(FORBIDDEN_CONTENT_VERBS), command_type
     assert {s.type for s in REGISTRY.values() if s.mutating} == {
         "knowledge.update_fact",
         "knowledge.update_brand_voice",
+        "content.cancel_scheduled",
     }
 
 
@@ -62,6 +66,7 @@ ALLOWED = {
     (None, "submit"): "interpreting",
     ("interpreting", "complete"): "completed",
     ("interpreting", "ask_confirmation"): "awaiting_confirmation",
+    ("interpreting", "execute"): "executing",
     ("interpreting", "clarify"): "needs_clarification",
     ("interpreting", "unsupported"): "unsupported",
     ("interpreting", "fail"): "failed",

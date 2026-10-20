@@ -74,7 +74,7 @@ def initial_title(objective: str) -> str:
 # --- the request -----------------------------------------------------------------------------
 
 
-def request(
+def stage_request(
     session: Session,
     clock: Clock,
     ctx: WorkspaceContext,
@@ -84,9 +84,10 @@ def request(
     notes: str | None,
     client_request_id: str,
 ) -> tuple[ContentItem, bool]:
-    """A draft with a queued generation. Returns ``(item, created)``; the same
-    ``client_request_id`` by the same author returns the first draft and ``False`` (G7).
-    Commits."""
+    """A draft with a queued generation, **without committing** (the caller owns the
+    transaction: the command executor runs inside the command's). Returns ``(item, created)``;
+    the same ``client_request_id`` by the same author returns the first draft and ``False``
+    (G7)."""
     user_id = service.author_id(ctx)
     existing = service.existing_for_request(session, ctx, user_id, client_request_id)
     if existing is not None:
@@ -154,8 +155,31 @@ def request(
         dedup_key=generate_job_key(item.id),
         clock=clock,
     )
-    session.commit()
     return item, True
+
+
+def request(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    *,
+    content_type: str,
+    objective: str,
+    notes: str | None,
+    client_request_id: str,
+) -> tuple[ContentItem, bool]:
+    """``stage_request`` and commit (``POST /content-items/generate``)."""
+    result = stage_request(
+        session,
+        clock,
+        ctx,
+        content_type=content_type,
+        objective=objective,
+        notes=notes,
+        client_request_id=client_request_id,
+    )
+    session.commit()
+    return result
 
 
 # --- phase 1: what the model is shown ---------------------------------------------------------

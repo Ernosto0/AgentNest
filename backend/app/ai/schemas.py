@@ -9,7 +9,9 @@ by deterministic code before anything happens (ADR-007, INV-04).
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
+
+ContentKind = Literal["feed_image", "story_image"]
 
 # --- interpret_command: input ---------------------------------------------------------------
 
@@ -33,6 +35,17 @@ class RegistryEntry(BaseModel):
     parameters: dict[str, str]  # parameter name -> short description
 
 
+class ContentCatalogEntry(BaseModel):
+    """One content item the owner may refer to. ``ref_id`` is a short alias (``C1``..``Cn``),
+    never the item's UUID: the model cannot name anything the owner's workspace does not have."""
+
+    ref_id: str
+    title: str
+    content_type: str
+    status: str
+    local_schedule: str | None  # ISO 8601 in the workspace timezone (INV-19), if scheduled
+
+
 class InterpretCommandInput(BaseModel):
     text: str
     user_locale: str
@@ -42,11 +55,14 @@ class InterpretCommandInput(BaseModel):
     currency: str
     fact_catalog: list[FactCatalogEntry]
     registry: list[RegistryEntry]
-    # content_catalog (upcoming content, as short aliases) arrives with Phase 5.
+    # Upcoming content (next 14 days) and recent failures, as short aliases (Phase 5).
+    content_catalog: list[ContentCatalogEntry] = Field(default_factory=list)
 
 
 MAX_COMMAND_CHARS = 1000
 MAX_CATALOG_FACTS = 300
+MAX_CATALOG_CONTENT = 30
+MAX_CONTENT_REF_TEXT_CHARS = 200
 
 # --- interpret_command: output --------------------------------------------------------------
 
@@ -100,6 +116,39 @@ class UpdateBrandVoice(BaseModel):
     proposed_guidelines: str  # the full new text
 
 
+class ContentRef(BaseModel):
+    """How the owner pointed at a content item. The alias names a catalog entry; the other
+    fields are filters that code applies (workspace timezone, closed status sets) when there is
+    no usable alias. The model never supplies an id."""
+
+    alias: str | None  # "C3"
+    description: str | None  # a few words about it, e.g. "deneme dersi"
+    local_date: str | None  # ISO date in the workspace timezone: "yarın" resolved by the model
+    content_type: ContentKind | None
+
+
+class QueryContentStatus(BaseModel):
+    type: Literal["query.content_status"]
+    content_ref: ContentRef
+
+
+class QueryExplainFailure(BaseModel):
+    type: Literal["query.explain_failure"]
+    content_ref: ContentRef | Literal["latest_failure"]
+
+
+class ContentCreateDraft(BaseModel):
+    type: Literal["content.create_draft"]
+    content_type: ContentKind
+    objective: str  # the owner's words about what the post is for
+    notes: str | None
+
+
+class ContentCancelScheduled(BaseModel):
+    type: Literal["content.cancel_scheduled"]
+    content_ref: ContentRef
+
+
 class Clarify(BaseModel):
     """The command is ambiguous. The question shown to the owner is built by code from the
     candidates; the model's wording is never displayed."""
@@ -130,6 +179,10 @@ CommandInterpretation = (
     | QueryFact
     | UpdateFact
     | UpdateBrandVoice
+    | QueryContentStatus
+    | QueryExplainFailure
+    | ContentCreateDraft
+    | ContentCancelScheduled
     | Clarify
     | Unsupported
 )
@@ -141,6 +194,10 @@ INTERPRETATION_TYPES = frozenset(
         "query.fact",
         "knowledge.update_fact",
         "knowledge.update_brand_voice",
+        "query.content_status",
+        "query.explain_failure",
+        "content.create_draft",
+        "content.cancel_scheduled",
         "clarify",
         "unsupported",
     }
@@ -276,7 +333,6 @@ class ReplyProposal(BaseModel):
 
 # --- draft_content (agent-runtime.md §5) ------------------------------------------------------
 
-ContentKind = Literal["feed_image", "story_image"]
 MAX_HASHTAGS = 10
 MAX_CAPTION_TEMPLATE_CHARS = 2200  # Instagram's caption limit, before rendering
 MAX_OVERLAY_SUGGESTIONS = 5

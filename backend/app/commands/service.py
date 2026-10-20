@@ -12,7 +12,8 @@ without passing ``resolver.resolve`` and a permission check of the human (INV-04
 """
 
 import uuid
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -30,8 +31,8 @@ from app.ai.schemas import (
 from app.approvals import service as approvals
 from app.approvals.models import Approval
 from app.audit import service as audit
+from app.commands import content_refs, resolver
 from app.commands import repository as repo
-from app.commands import resolver
 from app.commands.models import OwnerCommand
 from app.commands.payloads import InterpretCommandPayload
 from app.commands.registry import REGISTRY, CommandSpec, describe_registry
@@ -216,6 +217,9 @@ class Interpretation:
     task_input: InterpretCommandInput
     correlation_id: uuid.UUID
     user_locale: str
+    # The aliases of the content catalog the model is shown (``C1`` -> item), kept in memory
+    # between the model call and the resolution so an alias means what the model saw.
+    content_aliases: Mapping[str, uuid.UUID] = field(default_factory=dict)
 
 
 def _requester_context(
@@ -288,6 +292,7 @@ def prepare_interpretation(
     ctx, workspace, user = found
     locale = identity_service_locale(user)
     snapshots = _snapshots(session, ctx, workspace)
+    content = content_refs.load(session, clock, ctx, workspace.timezone)
     task_input = InterpretCommandInput(
         text=command.raw_text,
         user_locale=locale,
@@ -299,8 +304,11 @@ def prepare_interpretation(
         currency=workspace.currency,
         fact_catalog=_catalog(snapshots, locale, workspace.default_locale),
         registry=describe_registry(),
+        content_catalog=content.catalog,
     )
-    return Interpretation(ctx, task_input, command.correlation_id, locale)
+    return Interpretation(
+        ctx, task_input, command.correlation_id, locale, dict(content.context.aliases)
+    )
 
 
 def identity_service_locale(user: User) -> str:
@@ -316,6 +324,7 @@ def finish_interpretation(
     output: InterpretCommandOutput | None,
     error_code: str | None,
     agent_run_id: uuid.UUID | None,
+    content_aliases: Mapping[str, uuid.UUID] | None = None,
 ) -> None:
     """Apply the task outcome to the command. Commits.
 
@@ -344,6 +353,9 @@ def finish_interpretation(
         user_locale=identity_service_locale(user),
         workspace_locale=workspace.default_locale,
         currency=workspace.currency,
+        content=content_refs.load(
+            session, clock, ctx, workspace.timezone, aliases=content_aliases or {}
+        ).context,
     )
     command.interpreted = interpretation.model_dump(mode="json")
     command.command_type = interpretation.type
@@ -499,6 +511,8 @@ def _apply_outcome(
                 ),
             )
             return
+        if spec.starts_executing:  # no confirmation: interpreting -> executing
+            command.status = apply_command_event(command.status, "execute")
         try:
             result = spec.executor(exec_ctx, outcome.resolution)
         except AppError as exc:
@@ -537,9 +551,12 @@ def _request_confirmation(
         return
     if spec.confirmation_summary_builder is None or spec.approval_action is None:
         raise RuntimeError(f"mutating command {spec.type!r} needs a summary builder and an action")
-    summary = spec.confirmation_summary_builder(
-        outcome.summary, impact.analyze_impact(session, ctx, outcome.fact_id)
+    report = (
+        impact.analyze_impact(session, ctx, outcome.fact_id)
+        if outcome.fact_id is not None
+        else None
     )
+    summary = spec.confirmation_summary_builder(outcome.summary, report)
     expires_at = clock.now() + CONFIRMATION_TTL
     approval = approvals.request(
         session,
@@ -554,7 +571,7 @@ def _request_confirmation(
         summary=summary,
         # Whoever holds this may decide it; the requester may too (ADR-014). Execution then
         # follows the *decider's* role: owners and managers write, staff only propose.
-        required_permission="knowledge.verify",
+        required_permission=spec.approval_permission,
         expires_at=expires_at,
     )
     command.status = apply_command_event(command.status, "ask_confirmation")
@@ -598,6 +615,7 @@ def answer_clarification(
         user_locale=locale,
         workspace_locale=workspace.default_locale,
         currency=workspace.currency,
+        content=content_refs.load(session, clock, requester_ctx, workspace.timezone).context,
     )
     if outcome is None:
         session.rollback()

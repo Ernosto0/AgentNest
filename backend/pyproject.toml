@@ -201,6 +201,7 @@ source_modules = [
     "app.commands.transitions",
     "app.commands.jobs",
     "app.commands.executors",
+    "app.commands.content_refs",
     "app.content.models",
     "app.content.media",
     "app.content.schemas",

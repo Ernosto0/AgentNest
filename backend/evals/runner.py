@@ -15,10 +15,12 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from app.ai.injection import detect_injection
 from app.ai.runner import Execution, TaskOutcome, execute_task
 from app.ai.schemas import (
+    ContentCatalogEntry,
     ContentProposal,
     ExtractFactsInput,
     ExtractFactsOutput,
@@ -33,6 +35,7 @@ from app.ai.tasks.extract_fact_candidates import EXTRACT_FACT_CANDIDATES
 from app.ai.tasks.interpret_command import INTERPRET_COMMAND
 from app.commands import resolver
 from app.commands.registry import REGISTRY, describe_registry
+from app.commands.resolver import ContentContext, ContentSnapshot
 from app.content import generation, grounding
 from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
@@ -130,6 +133,47 @@ def _catalog(dataset: Dataset, locale: str) -> list[FactCatalogEntry]:
     ]
 
 
+def _content_fixture(
+    case: Case, dataset: Dataset
+) -> tuple[list[ContentCatalogEntry], ContentContext]:
+    """The content a case starts from: rows ``{title, content_type, status, local_schedule,
+    version?, updated_hours_ago?}`` become the catalog (aliases C1.. in row order) and the
+    resolver's candidates (ids derived from the title, so a case never depends on a UUID)."""
+    zone = ZoneInfo(dataset.fixture.timezone)
+    now = datetime.fromisoformat(NOW_LOCAL)
+    catalog: list[ContentCatalogEntry] = []
+    snapshots: list[ContentSnapshot] = []
+    aliases: dict[str, uuid.UUID] = {}
+    for number, row in enumerate(case.inputs.get("content", []), start=1):
+        scheduled = (
+            datetime.fromisoformat(row["local_schedule"]).replace(tzinfo=zone)
+            if row.get("local_schedule")
+            else None
+        )
+        snapshot = ContentSnapshot(
+            id=uuid.uuid5(uuid.NAMESPACE_URL, f"eval:content:{row['title']}"),
+            title=row["title"],
+            content_type=row.get("content_type", "feed_image"),
+            status=row.get("status", "scheduled"),
+            version=row.get("version", 1),
+            scheduled_at=scheduled,
+            updated_at=now - timedelta(hours=row.get("updated_hours_ago", 0)),
+            last_error_code=row.get("error_code"),
+        )
+        snapshots.append(snapshot)
+        aliases[f"C{number}"] = snapshot.id
+        catalog.append(
+            ContentCatalogEntry(
+                ref_id=f"C{number}",
+                title=snapshot.title,
+                content_type=snapshot.content_type,
+                status=snapshot.status,
+                local_schedule=scheduled.isoformat(timespec="minutes") if scheduled else None,
+            )
+        )
+    return catalog, ContentContext(snapshots, aliases, dataset.fixture.timezone)
+
+
 def _check_interpretation(
     case: Case,
     result: CaseResult,
@@ -155,10 +199,25 @@ def _check_interpretation(
                 result.fail(f"new amount {got!r}, expected {expect['new_amount']!r}")
     elif "new_amount" in expect:
         result.fail("expected a confirmation with an amount")
+    titles = {str(i.id): i.title for i in _content_fixture(case, dataset)[1].items}
     if isinstance(outcome, resolver.Execute):
-        for name in ("fact_key", "period"):
+        for name in ("fact_key", "period", "content_type", "objective"):
             if name in expect and outcome.resolution.get(name) != expect[name]:
                 result.fail(f"{name} {outcome.resolution.get(name)!r}, expected {expect[name]!r}")
+        if "content_title" in expect:
+            got = titles.get(str(outcome.resolution.get("content_id")))
+            if got != expect["content_title"]:
+                result.fail(f"content {got!r}, expected {expect['content_title']!r}")
+    if isinstance(outcome, resolver.Confirm) and "content_title" in expect:
+        got = titles.get(str(outcome.payload.get("content_id")))
+        if got != expect["content_title"]:
+            result.fail(f"content {got!r}, expected {expect['content_title']!r}")
+    if (
+        isinstance(outcome, resolver.Rejected)
+        and "error_code" in expect
+        and outcome.error_code != expect["error_code"]
+    ):
+        result.fail(f"error {outcome.error_code!r}, expected {expect['error_code']!r}")
     if isinstance(outcome, resolver.UnsupportedOutcome) and expect.get(
         "reason", outcome.reason
     ) != (outcome.reason):
@@ -173,6 +232,9 @@ def _check_interpretation(
             result.fail(f"options {sorted(options)} include a forbidden option")
         if "question_key" in expect and outcome.question_key != expect["question_key"]:
             result.fail(f"question {outcome.question_key!r}")
+        for needle in expect.get("labels_include", []):
+            if not any(needle in o.label for o in outcome.options):
+                result.fail(f"no option shows {needle!r}")
 
 
 def _check_interpret_invariants(case: Case, result: CaseResult, outcome: resolver.Outcome) -> None:
@@ -181,6 +243,8 @@ def _check_interpret_invariants(case: Case, result: CaseResult, outcome: resolve
         result.fail(f"INV-04: outcome {result.outcome!r} is not allowed")
     if isinstance(outcome, resolver.Confirm) and outcome.command_type not in MUTATING_TYPES:
         result.fail("INV-04: a confirmation for a non-mutating command")
+    if isinstance(outcome, resolver.Execute) and outcome.command_type in MUTATING_TYPES:
+        result.fail("INV-04: a state-changing command executed without a confirmation")
     if "forbidden" in case.tags and result.outcome != "unsupported":
         result.fail("INV-04: approve/publish/send must be unsupported")
 
@@ -190,6 +254,7 @@ def eval_interpret_case(
 ) -> CaseResult:
     result = CaseResult(case.id, dataset.name, dataset.task, case.hard, list(case.tags))
     fixture = dataset.fixture
+    content_catalog, content = _content_fixture(case, dataset)
     task_input = InterpretCommandInput(
         text=case.inputs["text"],
         user_locale=case.locale,
@@ -199,6 +264,7 @@ def eval_interpret_case(
         currency=fixture.currency,
         fact_catalog=_catalog(dataset, case.locale),
         registry=describe_registry(),
+        content_catalog=content_catalog,
     )
     execution = execute_task(provider, INTERPRET_COMMAND, task_input, model)
     _record_usage(result, execution)
@@ -213,6 +279,7 @@ def eval_interpret_case(
         user_locale=case.locale,
         workspace_locale=fixture.default_locale,
         currency=fixture.currency,
+        content=content,
     )
     result.outcome = _outcome_label(outcome)
     _check_interpretation(case, result, output.interpretation, outcome, dataset)

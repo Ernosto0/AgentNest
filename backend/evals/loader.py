@@ -24,6 +24,7 @@ INPUT_KEYS = (
     "objective",  # draft_content
     "content_type",
     "notes",
+    "content",  # interpret_command: the workspace's content, as rows of the catalog
 )
 TASKS = ("interpret_command", "extract_fact_candidates", "draft_reply", "draft_content")
 

@@ -58,7 +58,7 @@ Notation: **[T1]**, **[T2]** = separate committed DB transactions. "Enqueue" alw
 **Main steps**
 1. [T1] Insert `owner_commands(status=interpreting, correlation_id=new)`. Enqueue `interpret_command(command_id)`. Audit `command.received`. Return 202.
 2. [T2] Job `interpret_command`:
-   1. Build the context: the fact catalog (keys, owner-facing labels, types, current values) for the workspace, content references for the next 14 days (IDs, titles, local schedule), the current local date and time, and the command registry description. The owner's own data is allowed in the prompt ([agent-runtime.md §8](agent-runtime.md)).
+   1. Build the context: the fact catalog (keys, owner-facing labels, types, current values) for the workspace, the content catalog (the next 14 days and the last 14 days' failures as aliases `C1`..`Cn` with title, type, status and local schedule, never ids; [agent-runtime.md §3](agent-runtime.md)), the current local date and time, and the command registry description. The owner's own data is allowed in the prompt ([agent-runtime.md §8](agent-runtime.md)).
    2. Run `interpret_command` → `CommandInterpretation` (discriminated union).
    3. **Deterministic resolution:**
       - `fact_key` must exist in the catalog; otherwise use the top 3 similar keys by category/label → `needs_clarification`.
@@ -90,6 +90,18 @@ Notation: **[T1]**, **[T2]** = separate committed DB transactions. "Enqueue" alw
 | Failure paths | LLM transient error → job retry (max 3, backoff), then command `failed (LLM_UNAVAILABLE)`. Invalid output after one repair → `failed (LLM_OUTPUT_INVALID)`. Unsupported → `unsupported` with suggestions. Confirmation expires → `expired`, nothing changed. Concurrent fact change → `failed (FACT_CHANGED_MEANWHILE)`. |
 | Idempotency | `unique (user_id, client_request_id)`: resubmitting returns the existing command. The approval decision is single-use. The fact update is guarded by the version check. Redraft jobs use dedup key `draft_reply:{conversation_id}`. |
 | Acceptance tests | AC-C1…C7. |
+
+### B.1 Content commands (Phase 5, P5-03b)
+
+The same pipeline (`interpret_command` → deterministic resolution → answer, question or confirmation) with four more intents; the closed registry still has no approve, publish or send ([agent-runtime.md §3](agent-runtime.md)).
+
+| Intent | Permission | Flow |
+|---|---|---|
+| `content.create_draft` ("Deneme dersi için bir story hazırla") | `content.edit` (all roles) | No confirmation: `interpreting → executing → completed` in one transaction. The executor calls `generation.stage_request` (draft v1, queued `agent_runs` row, `generate_content` job; workflow E step 1) with `client_request_id = command:{id}` and returns `command.draft_created` with a link to the draft. The draft still needs a time and an approval. |
+| `content.cancel_scheduled` ("yarınki postu iptal et") | `content.approve` for the requester **and** for the person who decides | ContentRef resolution (alias, else local date, type and status; none → `REFERENCE_NOT_FOUND`, several → `command.clarify.which_content` with title and time options). Then a confirmation (`command.cancel_content`, payload `{content_id, content_version}`, 30 minutes). On approval, as the decider: `content.service.apply_cancel(expected_version)` = workflow E step 7 (the item's pending approval, its queued `publish_content` job and a waiting operation are cancelled; audit `content.cancelled`). An item that changed meanwhile is not cancelled: the command fails `VERSION_CONFLICT` / `CONFLICT_STATE` and the decision stands. |
+| `query.content_status` | `commands.use` | `command.content_status`: the item's own state, local time, simulated flag. |
+| `query.explain_failure` ("son hata neydi?") | `commands.use` | `latest_failure` or a reference; the failed / retrying item's `last_error_code` (or the held item's `hold_reason`) explained from the error catalog, in the user's language, with the next step and a link to the item. |
+
 
 ---
 

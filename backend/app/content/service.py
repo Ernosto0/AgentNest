@@ -649,7 +649,7 @@ def reapprove(
 # --- cancelling ------------------------------------------------------------------------------
 
 
-def cancel(
+def apply_cancel(
     session: Session,
     clock: Clock,
     ctx: WorkspaceContext,
@@ -658,7 +658,8 @@ def cancel(
     expected_version: int | None = None,
 ) -> ContentItem:
     """Cancel a draft, an item waiting for approval, a scheduled one, one on hold or one waiting
-    for a retry (workflows.md section E step 7). Commits.
+    for a retry (workflows.md section E step 7). **No commit**: the caller owns the transaction
+    (the route commits; the command executor runs inside an approval's decision).
 
     A pending approval is cancelled (``SUBJECT_CANCELLED``), the queued publish job is
     cancelled, and a waiting operation is cancelled through the ledger hook. An item that is
@@ -672,5 +673,18 @@ def cancel(
     cancel_queued(session, publish_job_key(item.id, item.version), clock)
     hooks.get().cancel_operation(session, clock, ctx, item, SUBJECT_CANCELLED)
     transitions.apply(session, clock, ctx, item, "cancel")
+    return item
+
+
+def cancel(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    content_id: uuid.UUID,
+    *,
+    expected_version: int | None = None,
+) -> ContentItem:
+    """``apply_cancel`` and commit (the cancel route)."""
+    item = apply_cancel(session, clock, ctx, content_id, expected_version=expected_version)
     session.commit()
     return item

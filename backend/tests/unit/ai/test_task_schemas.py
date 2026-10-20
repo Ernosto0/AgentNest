@@ -84,6 +84,10 @@ def test_the_interpretation_is_a_union_of_closed_types() -> None:
         "query.fact",
         "knowledge.update_fact",
         "knowledge.update_brand_voice",
+        "query.content_status",
+        "query.explain_failure",
+        "content.create_draft",
+        "content.cancel_scheduled",
         "clarify",
         "unsupported",
     }

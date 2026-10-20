@@ -59,3 +59,12 @@ def format_local_datetime(value: datetime, timezone: str, locale: str | None) ->
         format="medium",
         locale=_BABEL_LOCALES[normalize_locale(locale)],
     )
+
+
+def format_local_slot(value: datetime, timezone: str, locale: str | None) -> str:
+    """A short local day and time for choices and results ("16 Eki 19:00"); INV-19."""
+    return format_datetime(
+        value.astimezone(ZoneInfo(timezone)),
+        format="d MMM HH:mm",
+        locale=_BABEL_LOCALES[normalize_locale(locale)],
+    )

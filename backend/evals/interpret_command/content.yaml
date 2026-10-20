@@ -1,0 +1,116 @@
+# Content commands (agent-runtime.md §3, P5-03b). `content` lists the workspace's posts as the
+# interpreter's catalog rows (aliases C1.. in row order); "now" is Thursday 2026-10-15 12:00 in
+# Istanbul, so "yarın" / "tomorrow" is 2026-10-16. A cancel must never end as `execute` (INV-04).
+dataset: interpret_command_content
+version: 1
+fixtures:
+  facts: demo_gym
+cases:
+  - id: draft_story_trial_tr
+    locale: tr
+    text: "Deneme dersi için bir story hazırla"
+    expect: {outcome: execute, type: content.create_draft, content_type: story_image, objective: "Deneme dersi"}
+    hard: true
+  - id: draft_post_summer_en
+    locale: en
+    text: "Write a post for summer memberships"
+    expect: {outcome: execute, type: content.create_draft, content_type: feed_image, objective: "summer memberships"}
+  - id: draft_and_publish_is_unsupported_tr
+    locale: tr
+    text: "Deneme dersi için bir story hazırla ve yayınla"
+    tags: [forbidden]
+    hard: true
+    expect: {outcome: unsupported, reason: publish}
+  - id: approve_tomorrows_post_is_unsupported_tr
+    locale: tr
+    text: "yarınki postu onayla"
+    tags: [forbidden]
+    hard: true
+    expect: {outcome: unsupported, reason: approve}
+  - id: cancel_tomorrows_post_tr
+    locale: tr
+    text: "yarınki postu iptal et"
+    content:
+      - {title: "Yarınki duyuru", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+      - {title: "Haftaya program", content_type: feed_image, status: scheduled, local_schedule: "2026-10-22T10:00"}
+    expect: {outcome: confirm, type: content.cancel_scheduled, content_title: "Yarınki duyuru"}
+    hard: true
+  - id: cancel_tomorrows_post_en
+    locale: en
+    text: "cancel tomorrow's post"
+    content:
+      - {title: "Trial class announcement", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+    expect: {outcome: confirm, type: content.cancel_scheduled, content_title: "Trial class announcement"}
+    hard: true
+  - id: cancel_two_posts_is_a_question_tr
+    locale: tr
+    text: "yarınki postu iptal et"
+    content:
+      - {title: "Sabah duyurusu", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T09:00"}
+      - {title: "Akşam duyurusu", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+    expect:
+      outcome: needs_clarification
+      question_key: command.clarify.which_content
+      option_ids: ["1", "2"]
+      labels_include: ["Sabah duyurusu", "Akşam duyurusu", "19:00"]
+    hard: true
+  - id: cancel_nothing_tomorrow_tr
+    locale: tr
+    text: "yarınki postu iptal et"
+    content:
+      - {title: "Haftaya program", content_type: feed_image, status: scheduled, local_schedule: "2026-10-22T10:00"}
+    expect: {outcome: rejected, error_code: REFERENCE_NOT_FOUND}
+    hard: true
+  - id: cancel_story_filter_tr
+    locale: tr
+    text: "yarınki story'yi iptal et"
+    content:
+      - {title: "Yarınki post", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+      - {title: "Yarınki hikaye", content_type: story_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+    expect: {outcome: confirm, content_title: "Yarınki hikaye"}
+  - id: cancel_by_alias_tr
+    locale: tr
+    text: "C2 postunu iptal et"
+    content:
+      - {title: "Birinci", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T09:00"}
+      - {title: "İkinci", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+    expect: {outcome: confirm, content_title: "İkinci"}
+  - id: cancel_by_the_owners_words_tr
+    locale: tr
+    text: "deneme dersi postunu iptal et"
+    content:
+      - {title: "Deneme dersi duyurusu", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+      - {title: "Haftalık program", content_type: feed_image, status: scheduled, local_schedule: "2026-10-17T10:00"}
+    expect: {outcome: confirm, content_title: "Deneme dersi duyurusu"}
+  - id: cancel_a_published_post_is_a_conflict_en
+    locale: en
+    text: "cancel post C1"
+    content:
+      - {title: "Already live", content_type: feed_image, status: published, local_schedule: "2026-10-14T19:00"}
+    expect: {outcome: rejected, error_code: CONFLICT_STATE}
+  - id: status_tomorrows_post_tr
+    locale: tr
+    text: "yarınki postun durumu ne"
+    content:
+      - {title: "Yarınki duyuru", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+    expect: {outcome: execute, type: query.content_status, content_title: "Yarınki duyuru"}
+  - id: explain_last_error_tr
+    locale: tr
+    text: "son hata neydi?"
+    content:
+      - {title: "Eski hata", content_type: feed_image, status: failed, local_schedule: "2026-10-10T19:00", error_code: MEDIA_REJECTED, updated_hours_ago: 120}
+      - {title: "Haftalık program", content_type: feed_image, status: failed, local_schedule: "2026-10-14T19:00", error_code: PUBLISH_DEADLINE_PASSED, updated_hours_ago: 20}
+    expect: {outcome: execute, type: query.explain_failure, content_title: "Haftalık program"}
+    hard: true
+  - id: explain_last_error_none_en
+    locale: en
+    text: "what was the last error"
+    content:
+      - {title: "Fine", content_type: feed_image, status: scheduled, local_schedule: "2026-10-16T19:00"}
+    expect: {outcome: completed}
+  - id: explain_a_named_post_en
+    locale: en
+    text: "why did tomorrow's post fail"
+    content:
+      - {title: "Broken one", content_type: feed_image, status: failed, local_schedule: "2026-10-16T19:00", error_code: MEDIA_REJECTED}
+    expect: {outcome: execute, type: query.explain_failure, content_title: "Broken one"}

@@ -96,7 +96,7 @@ stateDiagram-v2
 
 - `interpreting` covers the LLM call and deterministic resolution. The UI polls.
 - `needs_clarification` and `awaiting_confirmation` expire after 30 minutes (`expires_at`).
-- `content.create_draft` skips confirmation: `interpreting → executing` directly. `executing` enqueues generation and completes when the draft exists (or fails).
+- `content.create_draft` skips confirmation: `interpreting → executing` directly (event `execute`, the only such shortcut). `executing` creates the draft and enqueues its generation in the same transaction and completes when the draft exists (or fails); the generation itself runs later in the `generate_content` job.
 - A staff member's `knowledge.update_fact` executes as "propose candidate" (FR-014), still after confirmation.
 
 ---

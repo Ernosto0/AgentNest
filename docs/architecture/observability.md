@@ -81,6 +81,8 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `JOB_PAYLOAD_INVALID` | — | no | Internal error (dev) |
 | `INTERNAL_ERROR` | 500 | — | Something went wrong / try again; reference `request_id` |
 
+Since P5-03b `app/core/errors.py` also holds the codes a publish can fail with or a command can end in, all with tr and en texts and none of them an HTTP error: `MEDIA_REJECTED`, `PUBLISH_DEADLINE_PASSED`, `PUBLISH_QUOTA_EXHAUSTED`, `PROVIDER_UNAVAILABLE`, `PROVIDER_RATE_LIMITED`, `PROVIDER_REJECTED`, `CAPABILITY_MISSING`, `ACCOUNT_NEEDS_REAUTH`, `OUTCOME_UNKNOWN`, `OUTCOME_UNCONFIRMED`, `REFERENCE_NOT_FOUND` (recorded as a command's `error_code`). `query.explain_failure` explains a failed or retrying item's `last_error_code` from `errors.<CODE>.what` / `.next`; a held item's `hold_reason` (`FACT_CHANGED`, `ACCOUNT_UNAVAILABLE`) from `content.hold.<REASON>.what` / `.next`; anything else from `content.failure.unknown.what` / `.next`.
+
 ### 4.1 Reason codes
 Reason codes are not errors. They explain *why* something was decided or changed, and appear as chips and explanations in the UI. They live in the same module with i18n keys `reasons.<CODE>`.
 

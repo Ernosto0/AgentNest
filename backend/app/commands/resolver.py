@@ -8,19 +8,27 @@ that the service turns into state. No database, no clock, no LLM: all inputs are
 """
 
 import difflib
+import re
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
+from zoneinfo import ZoneInfo
 
 from app.ai.schemas import (
     Clarify,
     CommandInterpretation,
+    ContentCancelScheduled,
+    ContentCreateDraft,
+    ContentRef,
     NormalizedBoolean,
     NormalizedMoney,
     NormalizedValue,
     QueryActivitySummary,
+    QueryContentStatus,
+    QueryExplainFailure,
     QueryFact,
     QueryPendingApprovals,
     Unsupported,
@@ -29,6 +37,7 @@ from app.ai.schemas import (
 )
 from app.commands.results import CommandResult
 from app.core.errors import AppError
+from app.core.i18n import format_local_slot
 from app.knowledge.claims import fold
 from app.knowledge.formatting import format_money_amount, format_value
 from app.knowledge.parsing import (
@@ -80,7 +89,7 @@ class ClarifyOption:
 
 @dataclass(frozen=True)
 class NeedsClarification:
-    kind: Literal["fact", "value"]
+    kind: Literal["fact", "value", "content"]
     question_key: str
     params: dict[str, Any]
     options: tuple[ClarifyOption, ...]
@@ -122,9 +131,10 @@ class Confirm:
 
     command_type: str
     action: str  # approval action
-    fact_id: uuid.UUID
     payload: dict[str, Any]  # hashed into the approval
     summary: dict[str, Any]  # shown on the confirmation card
+    # The fact whose impact the card previews; ``None`` for commands that change no fact.
+    fact_id: uuid.UUID | None = None
 
 
 Outcome = NeedsClarification | UnsupportedOutcome | Rejected | Completed | Execute | Confirm
@@ -409,6 +419,233 @@ def resolve_brand_voice(
     )
 
 
+# --- content references ---------------------------------------------------------------------
+
+CANCEL_FILTER_STATUSES = ("pending_approval", "scheduled", "retry_scheduled", "on_hold")
+CANCELLABLE_STATUSES = frozenset({"draft", *CANCEL_FILTER_STATUSES})  # content/transitions.py
+FAILURE_STATUSES = ("failed", "on_hold", "retry_scheduled")
+STATUS_QUERY_STATUSES = (
+    "draft",
+    "pending_approval",
+    "scheduled",
+    "publishing",
+    "retry_scheduled",
+    "on_hold",
+    "published",
+    "rejected",
+    "failed",
+)  # everything but ``cancelled``
+MAX_CONTENT_OPTIONS = 5
+LATEST_FAILURE = "latest_failure"
+_WORD = re.compile(r"[a-z0-9]{3,}")
+
+
+@dataclass(frozen=True)
+class ContentSnapshot:
+    """A content item as the resolver needs it (the model never sees ids)."""
+
+    id: uuid.UUID
+    title: str
+    content_type: str
+    status: str
+    version: int
+    scheduled_at: datetime | None
+    updated_at: datetime
+    last_error_code: str | None = None
+    hold_reason: str | None = None
+    is_simulated: bool = False
+
+
+@dataclass(frozen=True)
+class ContentContext:
+    """What a content reference is resolved against: the candidates, the aliases the model
+    was shown (alias -> item id) and the workspace timezone (INV-19)."""
+
+    items: Sequence[ContentSnapshot]
+    aliases: Mapping[str, uuid.UUID]
+    timezone: str
+
+
+def _sort_key(item: ContentSnapshot) -> tuple[bool, datetime, str]:
+    return (item.scheduled_at is None, item.scheduled_at or item.updated_at, str(item.id))
+
+
+def _local_day(item: ContentSnapshot, tz: ZoneInfo) -> date | None:
+    return item.scheduled_at.astimezone(tz).date() if item.scheduled_at else None
+
+
+def _words(text: str) -> set[str]:
+    return set(_WORD.findall(fold(text)))
+
+
+def _described(item: ContentSnapshot, description: str) -> bool:
+    """A loose match of the owner's few words against the title: every word of the
+    description is a word of the title or shares its first five letters (Turkish suffixes)."""
+    wanted = _words(description)
+    if not wanted:
+        return False
+    title = _words(item.title)
+    return all(any(t[:5] == w[:5] for t in title) for w in wanted)
+
+
+def _find_content(
+    ref: ContentRef, content: ContentContext, statuses: Sequence[str]
+) -> tuple[list[ContentSnapshot], bool]:
+    """The items ``ref`` may mean, soonest first, and whether the alias named one directly.
+
+    An alias the model was shown is the owner's pick and skips the filters. Otherwise the
+    candidates are narrowed by local date (workspace timezone), type and the status set of the
+    command; the description only narrows, it never empties a result by itself."""
+    alias = (ref.alias or "").strip().upper()
+    if alias:
+        wanted_id = content.aliases.get(alias)
+        found = next((i for i in content.items if i.id == wanted_id), None)
+        if found is not None:
+            return [found], True
+    description = (ref.description or "").strip()
+    if alias and not (ref.local_date or ref.content_type or description):
+        return [], False  # an alias that names nothing, and nothing else to go by
+    candidates = [item for item in content.items if item.status in statuses]
+    if ref.local_date:
+        try:
+            wanted_day = date.fromisoformat(ref.local_date.strip())
+        except ValueError:
+            return [], False
+        tz = ZoneInfo(content.timezone)
+        candidates = [i for i in candidates if _local_day(i, tz) == wanted_day]
+    if ref.content_type:
+        candidates = [i for i in candidates if i.content_type == ref.content_type]
+    if description and len(candidates) > 1:
+        narrowed = [i for i in candidates if _described(i, description)]
+        candidates = narrowed or candidates
+    return sorted(candidates, key=_sort_key), False
+
+
+def _slot(item: ContentSnapshot, content: ContentContext, locale: str) -> str | None:
+    if item.scheduled_at is None:
+        return None
+    return format_local_slot(item.scheduled_at, content.timezone, locale)
+
+
+def content_link(content_id: uuid.UUID | str) -> dict[str, Any]:
+    """A result link to one content item (structured, no frontend route)."""
+    return {"target": "content", "id": str(content_id)}
+
+
+def _not_found(description: str | None) -> Rejected:
+    return Rejected(
+        "REFERENCE_NOT_FOUND",
+        CommandResult(
+            "command.reference_not_found",
+            {"description": (description or "").strip()[:MAX_REASON_CHARS] or None},
+            [{"target": "content"}],
+            error_code="REFERENCE_NOT_FOUND",
+        ),
+    )
+
+
+def _content_choice(
+    intent: str, matches: Sequence[ContentSnapshot], content: ContentContext, locale: str
+) -> NeedsClarification:
+    options = []
+    for index, item in enumerate(matches[:MAX_CONTENT_OPTIONS], start=1):
+        slot = _slot(item, content, locale)
+        options.append(
+            ClarifyOption(
+                id=str(index),
+                label=f"{item.title} · {slot}" if slot else item.title,
+                value={"content_id": str(item.id)},
+            )
+        )
+    return NeedsClarification(
+        kind="content",
+        question_key="command.clarify.which_content",
+        params={"count": len(matches)},
+        options=tuple(options),
+        pending={"intent": intent},
+    )
+
+
+def _cancel_outcome(item: ContentSnapshot, content: ContentContext, locale: str) -> Outcome:
+    if item.status not in CANCELLABLE_STATUSES:
+        return Rejected(
+            "CONFLICT_STATE",
+            CommandResult(
+                "command.content_not_cancellable",
+                {"title": item.title, "status": item.status},
+                [content_link(item.id)],
+                error_code="CONFLICT_STATE",
+            ),
+        )
+    return Confirm(
+        command_type="content.cancel_scheduled",
+        action="command.cancel_content",
+        payload={"content_id": str(item.id), "content_version": item.version},
+        summary={
+            "label": item.title,
+            "content_type": item.content_type,
+            "status": item.status,
+            "when": _slot(item, content, locale),
+            "content_id": str(item.id),
+        },
+    )
+
+
+def _content_outcome(
+    intent: str, item: ContentSnapshot, content: ContentContext, locale: str
+) -> Outcome:
+    if intent == "content.cancel_scheduled":
+        return _cancel_outcome(item, content, locale)
+    return Execute(intent, {"content_id": str(item.id)})
+
+
+def resolve_content_ref(
+    intent: str,
+    ref: ContentRef | Literal["latest_failure"],
+    content: ContentContext | None,
+    *,
+    user_locale: str,
+) -> Outcome:
+    """Turn a content reference into one item (then the command's own outcome), a question
+    (several candidates) or ``REFERENCE_NOT_FOUND`` (none). Never guesses (agent-runtime.md §3)."""
+    context = content or ContentContext((), {}, "UTC")
+    if not isinstance(ref, ContentRef):  # "latest_failure"
+        failures = [i for i in context.items if i.status in FAILURE_STATUSES]
+        if not failures:
+            return Completed(CommandResult("command.no_failure", {}, [{"target": "content"}]))
+        latest = max(failures, key=lambda i: (i.updated_at, str(i.id)))
+        return Execute(intent, {"content_id": str(latest.id)})
+    if intent == "content.cancel_scheduled":
+        statuses: Sequence[str] = CANCEL_FILTER_STATUSES
+    elif intent == "query.explain_failure":
+        statuses = FAILURE_STATUSES
+    else:
+        statuses = STATUS_QUERY_STATUSES
+    matches, _direct = _find_content(ref, context, statuses)
+    if not matches:
+        return _not_found(ref.description)
+    if len(matches) > 1:
+        return _content_choice(intent, matches, context, user_locale)
+    return _content_outcome(intent, matches[0], context, user_locale)
+
+
+def resolve_create_draft(interpretation: ContentCreateDraft) -> Outcome:
+    objective = interpretation.objective.strip()
+    if not objective:
+        return Rejected(
+            "VALIDATION_FAILED",
+            CommandResult("command.draft_unreadable", {}, error_code="VALIDATION_FAILED"),
+        )
+    return Execute(
+        "content.create_draft",
+        {
+            "content_type": interpretation.content_type,
+            "objective": objective,
+            "notes": (interpretation.notes or "").strip() or None,
+        },
+    )
+
+
 # --- entry points ---------------------------------------------------------------------------
 
 
@@ -419,12 +656,33 @@ def resolve(
     user_locale: str,
     workspace_locale: str,
     currency: str,
+    content: ContentContext | None = None,
 ) -> Outcome:
     """Turn the model's proposal into an outcome. Anything not in the registry is
     ``unsupported``; there is no branch here that can approve, publish or send."""
     match interpretation:
         case Unsupported():
             return UnsupportedOutcome(interpretation.reason)
+        case QueryContentStatus():
+            return resolve_content_ref(
+                "query.content_status", interpretation.content_ref, content, user_locale=user_locale
+            )
+        case QueryExplainFailure():
+            return resolve_content_ref(
+                "query.explain_failure",
+                interpretation.content_ref,
+                content,
+                user_locale=user_locale,
+            )
+        case ContentCancelScheduled():
+            return resolve_content_ref(
+                "content.cancel_scheduled",
+                interpretation.content_ref,
+                content,
+                user_locale=user_locale,
+            )
+        case ContentCreateDraft():
+            return resolve_create_draft(interpretation)
         case QueryPendingApprovals():
             return Execute("query.pending_approvals", {})
         case QueryActivitySummary():
@@ -539,6 +797,7 @@ def resolve_choice(
     user_locale: str,
     workspace_locale: str,
     currency: str,
+    content: ContentContext | None = None,
 ) -> Outcome | None:
     """Continue after the owner picked ``option_id``. ``None`` if it is not one of the
     options that were offered (a client cannot choose something we never asked about)."""
@@ -547,6 +806,13 @@ def resolve_choice(
     if chosen is None:
         return None
     pending = clarification.get("pending", {})
+    if clarification.get("kind") == "content":
+        context = content or ContentContext((), {}, "UTC")
+        wanted = (chosen.get("value") or {}).get("content_id")
+        item = next((i for i in context.items if str(i.id) == wanted), None)
+        if item is None:  # gone since the question was asked
+            return _not_found(None)
+        return _content_outcome(str(pending.get("intent", "")), item, context, user_locale)
     if clarification.get("kind") == "fact":
         return _continue_with_fact(
             chosen["id"],

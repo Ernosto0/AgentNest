@@ -71,6 +71,7 @@ def interpret_command(job: JobContext) -> None:
             output=outcome.output,
             error_code=outcome.error_code,
             agent_run_id=outcome.agent_run_id,
+            content_aliases=prepared.content_aliases,
         )
 
 

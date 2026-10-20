@@ -1,7 +1,8 @@
 """The only place where command states change (state-machines.md §3).
 
-Pure: ``(current state, event) -> next state`` or ``CONFLICT_STATE``. The Phase 3 registry has
-no ``content.create_draft``, so the ``interpreting -> executing`` shortcut does not exist yet.
+Pure: ``(current state, event) -> next state`` or ``CONFLICT_STATE``. ``interpreting ->
+executing`` (event ``execute``) is the one shortcut past the confirmation: ``content.create_draft``,
+which only creates a draft.
 """
 
 from app.core.errors import AppError
@@ -10,6 +11,7 @@ _TRANSITIONS: dict[tuple[str | None, str], str] = {
     (None, "submit"): "interpreting",
     ("interpreting", "complete"): "completed",  # read-only command executed, or nothing to do
     ("interpreting", "ask_confirmation"): "awaiting_confirmation",
+    ("interpreting", "execute"): "executing",  # content.create_draft: no confirmation
     ("interpreting", "clarify"): "needs_clarification",
     ("interpreting", "unsupported"): "unsupported",
     ("interpreting", "fail"): "failed",
