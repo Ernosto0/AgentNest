@@ -125,7 +125,7 @@ Defined in `app/content/notifications.py`; recipients are every member who holds
 | `content.published` | info | The publish succeeded | |
 | `content.failed` | attention | The publish failed for good | the error code (`MEDIA_REJECTED`, `PUBLISH_DEADLINE_PASSED`, ...) |
 
-The kinds exist from P5-04; the producers arrive with the publish executor (`published`, `failed`, `on_hold` for an unavailable account) and the impact handlers (`on_hold` for a changed fact). An approval that expires is announced by the approvals service (`approval.expired`) to the requester.
+The kinds exist from P5-04. The publish executor (P5-06) produces `content.published`, `content.failed` and `content.on_hold` (`ACCOUNT_UNAVAILABLE`: an account that is not usable at the due time, or an auth error during the attempt); the impact handlers (P5-07) produce `content.on_hold` for a changed fact. Audit entries come from the content transitions (`content.publishing`, `content.published`, `content.failed`, `content.on_hold`, `content.retry_scheduled`) plus `operation.outcome_unknown` and `operation.reconciled`. An approval that expires is announced by the approvals service (`approval.expired`) to the requester.
 
 ## 5. Audit action catalog
 

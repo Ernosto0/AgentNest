@@ -176,6 +176,8 @@ source_modules = [
     "app.operations.health",
     "app.operations.payloads",
     "app.operations.jobs",
+    "app.operations.publish",
+    "app.operations.content_ledger",
     "app.policy.service",
     "app.policy.classes",
     "app.policy.schemas",

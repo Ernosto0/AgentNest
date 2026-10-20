@@ -16,4 +16,5 @@ def load_handlers() -> None:
     import app.inbox.subject  # noqa: F401
     import app.knowledge.extraction  # noqa: F401
     import app.knowledge.impact_handlers  # noqa: F401
+    import app.operations.content_ledger  # noqa: F401
     import app.operations.jobs  # noqa: F401

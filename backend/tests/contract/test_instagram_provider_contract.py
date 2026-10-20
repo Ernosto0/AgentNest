@@ -434,11 +434,14 @@ def test_a_container_goes_from_in_progress_to_finished_to_published(h: Harness) 
     h.clock.advance(seconds=CONTAINER_DELAY_S - 1)
     assert h.provider.get_container_status(h.account, container_id).status_code == "IN_PROGRESS"
     h.clock.advance(seconds=1)
-    assert h.provider.get_container_status(h.account, container_id).status_code == "FINISHED"
+    finished = h.provider.get_container_status(h.account, container_id)
+    assert (finished.status_code, finished.media_id) == ("FINISHED", None)
 
     media_id = h.provider.publish_container(h.account, container_id)
 
-    assert h.provider.get_container_status(h.account, container_id).status_code == "PUBLISHED"
+    published = h.provider.get_container_status(h.account, container_id)
+    assert published.status_code == "PUBLISHED"
+    assert published.media_id == media_id  # lets reconciliation find the post after a lost answer
     (row,) = h.published()
     assert (row.media_id, row.container_id) == (media_id, container_id)
     assert row.published_at == h.clock.now()

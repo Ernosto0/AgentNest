@@ -220,7 +220,7 @@ class MockInstagramProvider:
         container that was not published expires 24 h after creation, and one that is still
         ``IN_PROGRESS`` finishes at ``ready_at``."""
         if container.status == "PUBLISHED":
-            return ContainerStatus("PUBLISHED")
+            return ContainerStatus("PUBLISHED", media_id=container.published_media_id)
         now = self._clock.now()
         if now >= container.expires_at:
             return ContainerStatus("EXPIRED")

@@ -14,6 +14,13 @@ class ReconcileSendPayload(_Payload):
     round: int = 1  # which check this is (a new job per check, so each has its own dedup key)
 
 
+class ReconcilePublishPayload(_Payload):
+    """A publish whose outcome is unknown (or whose container is still processing): read the
+    container and conclude. One job per operation, checked again by rescheduling the same row."""
+
+    operation_id: uuid.UUID
+
+
 class EmitEchoPayload(_Payload):
     """Simulator only: deliver the echo webhook of a message the mock "sent"."""
 

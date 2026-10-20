@@ -79,6 +79,9 @@ class ContainerSpec:
 class ContainerStatus:
     status_code: Literal["IN_PROGRESS", "FINISHED", "ERROR", "EXPIRED", "PUBLISHED"]
     error_detail: str | None = None
+    # Only with ``PUBLISHED``: the media the container became. It lets reconciliation fetch the
+    # permalink after a lost ``publish_container`` answer (plan.md G18, P5-06 decision).
+    media_id: str | None = None
 
 
 @dataclass(frozen=True)

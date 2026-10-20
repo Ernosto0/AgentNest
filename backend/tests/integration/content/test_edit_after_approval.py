@@ -192,13 +192,15 @@ def test_a_failed_edit_leaves_the_approval_and_the_job_alone(env: Env) -> None:
 
 
 def test_without_a_registered_ledger_the_item_has_no_operation(env: Env) -> None:
-    assert hooks.get() is NO_LEDGER
     item = make(env, status="scheduled")
-    assert env.call(env.owner, "GET", f"{ITEMS}/{item.id}").json()["operation"] is None
+    with hooks.hooks_snapshot(clear=True):  # the operations module registers its hooks at startup
+        assert hooks.get() is NO_LEDGER
+        assert env.call(env.owner, "GET", f"{ITEMS}/{item.id}").json()["operation"] is None
 
 
 def test_a_registered_ledger_hook_supplies_the_operation_summary(env: Env) -> None:
     item = make(env, status="retry_scheduled")
+    startup = hooks.get()
     summary = hooks.OperationSummary(
         status="retry_wait", attempts=2, next_attempt_at=env.clock.now(), last_error_code="X"
     )
@@ -214,4 +216,4 @@ def test_a_registered_ledger_hook_supplies_the_operation_summary(env: Env) -> No
         body = env.call(env.owner, "GET", f"{ITEMS}/{item.id}").json()
     assert body["operation"]["status"] == "retry_wait"
     assert body["operation"]["attempts"] == 2
-    assert hooks.get() is NO_LEDGER  # restored
+    assert hooks.get() is startup  # restored

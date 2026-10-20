@@ -46,7 +46,8 @@ def handle_auth_error(
     )
 
 
-def handle_permission_error(account: SocialAccount) -> None:
-    """A required permission is missing: messaging is unavailable until it is granted."""
-    account.capabilities = {**account.capabilities, "messaging": False}
+def handle_permission_error(account: SocialAccount, capability: str = "messaging") -> None:
+    """A required permission is missing: ``capability`` (messaging, or the publishing capability
+    of a content type) is unavailable until it is granted."""
+    account.capabilities = {**account.capabilities, capability: False}
     account.last_error_code = "CAPABILITY_MISSING"

@@ -33,7 +33,7 @@ from app.core.errors import AppError
 APPROVAL_EXPIRED = "APPROVAL_EXPIRED"
 
 
-def _bound_payload_hash(session: Session, item: ContentItem) -> str | None:
+def bound_payload_hash(session: Session, item: ContentItem) -> str | None:
     """The hash of the payload the item would be submitted with right now, for the account and
     instant it was submitted with; ``None`` if the media or the schedule is gone."""
     if item.media_asset_id is None or item.scheduled_at is None or item.social_account_id is None:
@@ -74,7 +74,7 @@ def on_decided(session: Session, clock: Clock, ctx: WorkspaceContext, approval: 
         raise AppError("APPROVAL_STALE")
 
     if approval.status == "approved":
-        if _bound_payload_hash(session, item) != approval.payload_hash:
+        if bound_payload_hash(session, item) != approval.payload_hash:
             raise AppError("APPROVAL_STALE")
         transitions.apply(session, clock, ctx, item, "approve")
         service.enqueue_publish(session, clock, item)
