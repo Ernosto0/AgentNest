@@ -16,7 +16,7 @@ export const RESULT_MESSAGE_KEYS = [
   "brand_voice_proposed",
   "fact_changed_meanwhile",
   "pending_approvals",
-  "activity_basic",
+  "activity_summary",
   "forbidden",
   "value_unreadable",
   "brand_voice_missing",
@@ -27,6 +27,7 @@ export const RESULT_MESSAGE_KEYS = [
   "content_not_cancellable",
   "content_status",
   "content_failure",
+  "reply_failure",
   "no_failure",
   "no_failure_for_item",
   "reference_not_found",
@@ -53,6 +54,7 @@ export const LINK_TARGETS = [
   "integrations",
   "automation",
   "members",
+  "report",
 ] as const;
 export const PERIODS = ["today", "yesterday", "last_7_days"] as const;
 export const CLARIFY_QUESTIONS = ["which_fact", "which_fact_value", "which_value", "which_content"] as const;
@@ -66,8 +68,10 @@ export interface ResultLink {
   target: string;
   category?: string;
   key?: string;
-  /** A content item's id (`target: content`); absent on the link to the list. */
+  /** An item's id (`target: content`, `target: inbox`); absent on the link to the list. */
   id?: string;
+  /** The local day of a report (`target: report`), as `YYYY-MM-DD`. */
+  date?: string;
 }
 
 /** Where a result link leads (structured by the API, so it holds no frontend route). */
@@ -81,7 +85,9 @@ export function linkPath(workspaceId: string, link: ResultLink): string {
     case "content":
       return link.id ? `${base}/content/${link.id}` : `${base}/content`;
     case "inbox":
-      return `${base}/inbox`;
+      return link.id ? `${base}/inbox/${link.id}` : `${base}/inbox`;
+    case "report":
+      return link.date ? `${base}/more/reports?date=${link.date}` : `${base}/more/reports`;
     default:
       return `${base}/more`;
   }
@@ -108,7 +114,7 @@ export function describeResult(
   if (suffix === "fact_not_usable") {
     values.stateLabel = t(`knowledge.state.${String(params.state)}`, { defaultValue: String(params.state) });
   }
-  if (suffix === "activity_basic") {
+  if (suffix === "activity_summary") {
     values.periodLabel = t(`command.period.${String(params.period)}`, {
       defaultValue: String(params.period),
     });

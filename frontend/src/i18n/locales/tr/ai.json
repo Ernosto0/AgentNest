@@ -52,8 +52,7 @@
       "pending_approvals_one": "Bekleyen {{count}} onay var.",
       "pending_approvals_other": "Bekleyen {{count}} onay var.",
       "pending_none": "Bekleyen onay yok.",
-      "activity_basic": "{{periodLabel}}: {{fact_changes}} bilgi değişikliği, {{commands}} komut, {{approvals_decided}} onay kararı.",
-      "activity_basic_note": "Temel özet: kayıtlardan sayılmıştır.",
+      "activity_summary": "{{periodLabel}} · gelen mesaj: {{inbound_messages}}, konuşma: {{conversations}}, gönderilen yanıt: {{replies_sent}} (otomatik {{replies_auto}}, onaylı {{replies_approved}}, sizin yazdığınız {{replies_by_owner}}), size yönlendirilen: {{escalations}}, şu an ilgi bekleyen: {{attention_now}}.",
       "forbidden": "Bu işlem için yetkiniz yok.",
       "value_unreadable": "“{{raw}}” değerini okuyamadım ({{label}}). Örneğin “7.000 TL” yazın.",
       "brand_voice_missing": "Marka dili bilgisi henüz yok. İşletme bilgileri bölümünden ekleyin.",
@@ -64,6 +63,9 @@
       "content_not_cancellable": "“{{title}}” iptal edilemez (durumu: {{statusLabel}}).",
       "content_status": "“{{title}}” ({{typeLabel}}): {{statusLabel}}{{whenPart}}",
       "content_failure": "“{{title}}”: {{what}} {{next}}",
+      "reply_failure": "{{what}} {{next}}",
+      "reply_failure_title": "Yanıt neden iletilmedi?",
+      "failureWhen": "Ne zaman: {{when}}",
       "no_failure": "Başarısız olmuş ya da beklemeye alınmış bir içerik yok.",
       "no_failure_for_item": "“{{title}}” sorunlu değil (durumu: {{statusLabel}}).",
       "reference_not_found": "Söylediğiniz içeriği bulamadım. Tarihini ya da başlığını söyleyin, ya da İçerik bölümünden seçin.",
@@ -104,7 +106,9 @@
       "integrations": "Ayarları aç",
       "automation": "Ayarları aç",
       "members": "Ayarları aç",
-      "content_item": "İçeriği aç"
+      "report": "Raporu aç",
+      "content_item": "İçeriği aç",
+      "conversation": "Konuşmayı aç"
     },
     "status": {
       "cancelled": "İptal edildi. Hiçbir şey değişmedi.",

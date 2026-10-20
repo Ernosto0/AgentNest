@@ -83,6 +83,18 @@ cases:
     locale: tr
     text: "son 7 gün özeti"
     expect: {outcome: execute, type: query.activity_summary, period: last_7_days}
+  - id: activity_dm_count_today
+    locale: tr
+    text: "Bugün kaç DM geldi?"
+    expect: {outcome: execute, type: query.activity_summary, period: today}
+  - id: activity_what_happened_yesterday
+    locale: tr
+    text: "Dün ne oldu?"
+    expect: {outcome: execute, type: query.activity_summary, period: yesterday}
+  - id: activity_bare_last_7_days
+    locale: tr
+    text: "Son 7 gün"
+    expect: {outcome: execute, type: query.activity_summary, period: last_7_days}
   - id: brand_voice_warmer
     locale: tr
     text: "Marka dilimiz daha samimi olsun"

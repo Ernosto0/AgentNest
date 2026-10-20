@@ -52,22 +52,6 @@ def test_pending_approvals_are_listed_and_never_decided(cmd: CommandEnv) -> None
     assert cmd.env.session.get(Approval, waiting["approval"]["id"]).status == "pending"  # type: ignore[union-attr]
 
 
-def test_the_activity_summary_is_basic_counts_from_records(cmd: CommandEnv) -> None:
-    owner = cmd.env.owner
-    first = cmd.run(owner, "Aylık üyelik artık 7.000 TL")
-    cmd.decide(owner, first["approval"])
-    summary = cmd.run(owner, "bugün neler oldu")
-    assert summary["result"]["message_key"] == "command.activity_basic"
-    params = summary["result"]["params"]
-    assert params["basic"] is True and params["period"] == "today"
-    setup_facts = 6  # the fixture created six facts "today" too
-    assert params["fact_changes"] == setup_facts + 1 and params["approvals_decided"] == 1
-    assert params["commands"] == 2  # the update and this question
-    cmd.env.clock.advance(days=1)
-    tomorrow = cmd.run(owner, "dün ne oldu özet")
-    assert tomorrow["result"]["params"]["fact_changes"] == setup_facts + 1  # by local day
-
-
 def test_staff_cannot_ask_for_the_activity_summary(cmd: CommandEnv) -> None:
     command = cmd.run(cmd.env.staff, "bugün neler oldu")
     assert command["status"] == "failed" and command["error_code"] == "FORBIDDEN"

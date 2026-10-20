@@ -104,7 +104,7 @@ REGISTRY: dict[str, CommandSpec] = {
             params_model=QueryActivitySummary,
             executor=query_activity_summary.execute,
             confirmation_summary_builder=None,
-            description="Basic counts of what happened in a period.",
+            description="The daily report's numbers (messages, replies, escalations) for a period.",
             parameters={"period": "today | yesterday | last_7_days"},
         ),
         CommandSpec(

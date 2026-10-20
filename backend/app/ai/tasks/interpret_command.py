@@ -177,8 +177,10 @@ _BRAND = re.compile(
 )
 _ACTIVITY_TOPIC = re.compile(
     r"\b(ozet\w*|neler|ne\s+oldu|ne\s+yapildi|aktivite\w*|activity|summary|what\s+happened|"
-    r"happened|how\s+many|kac\s+mesaj)\b"
+    r"happened|how\s+many|kac\s+(?:mesaj|dm)\w*)\b"
 )
+# A bare period ("Son 7 gün", "last 7 days") is a request for the summary of that period.
+_PERIOD_ONLY = re.compile(r"\b(?:son\s*7\s*gun|last\s*7\s*days)\b")
 _PERIODS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "last_7_days",
@@ -499,7 +501,10 @@ def fake_interpret_command(
                 )
             )
 
-    activity = _ACTIVITY_TOPIC.search(folded)
+    # "Son 7 gün" holds a number, which must not read as an amount when it is the period itself.
+    activity = _ACTIVITY_TOPIC.search(folded) or (
+        _PERIOD_ONLY.search(folded) and not AMOUNT.search(_PERIOD_ONLY.sub(" ", folded))
+    )
     if activity:
         for period, pattern in _PERIODS:
             if pattern.search(folded):

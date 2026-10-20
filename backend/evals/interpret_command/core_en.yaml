@@ -33,6 +33,18 @@ cases:
     locale: en
     text: "what happened today"
     expect: {outcome: execute, type: query.activity_summary, period: today}
+  - id: activity_dm_count_en
+    locale: en
+    text: "How many DMs did we get today?"
+    expect: {outcome: execute, type: query.activity_summary, period: today}
+  - id: activity_yesterday_en
+    locale: en
+    text: "what happened yesterday"
+    expect: {outcome: execute, type: query.activity_summary, period: yesterday}
+  - id: activity_bare_last_7_days_en
+    locale: en
+    text: "last 7 days"
+    expect: {outcome: execute, type: query.activity_summary, period: last_7_days}
   - id: brand_voice_formal_en
     locale: en
     text: "Make our tone more formal"
