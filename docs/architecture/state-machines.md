@@ -190,10 +190,10 @@ stateDiagram-v2
 | `submit` | `draft → pending_approval` | `service.submit` without `self_approve`: validation passed (G17), a pending `content.publish` approval was requested; the item gets its `social_account_id`, `scheduled_at` and `schedule_input` in the same statement |
 | `schedule` | `draft → scheduled` | `service.submit` with `self_approve` by a `content.approve` holder: the approval is recorded as decided in the same transaction and the `publish_content` job is queued |
 | `approve` / `reject` | `pending_approval → scheduled` / `rejected` | The approval's decided-callback (`content/subject.py`). `approve` also queues the job; `reject` stores the decision note in `rejection_note`; a decision on an approval whose item moved on, or whose payload no longer hashes to the approval's, is `409 APPROVAL_STALE` |
-| `withdraw` / `expire` | `pending_approval → draft` | `expire` (the approval reached `scheduled_at` undecided) carries `APPROVAL_EXPIRED` and clears `scheduled_at`; a fact change withdraws with `FACT_CHANGED`. The reason is stored in `hold_reason` |
+| `withdraw` / `expire` | `pending_approval → draft` | `expire` (the approval reached `scheduled_at` undecided) carries `APPROVAL_EXPIRED` and clears `scheduled_at`; a fact change withdraws with `FACT_CHANGED` (and cancels the pending approval). The reason is stored in `hold_reason` |
 | `cancel` | `draft`, `pending_approval`, `scheduled`, `on_hold`, `retry_scheduled → cancelled` | Never from `publishing` |
 | `start` | `scheduled`, `retry_scheduled → publishing` | The publish job, after the due-time checks |
-| `hold` | `scheduled`, `retry_scheduled → on_hold`; `publishing → on_hold` | `reason` is `FACT_CHANGED` or `ACCOUNT_UNAVAILABLE`; from `publishing` only `ACCOUNT_UNAVAILABLE` |
+| `hold` | `scheduled`, `retry_scheduled → on_hold`; `publishing → on_hold` | `reason` is `FACT_CHANGED` (the impact handler, P5-07: never from `publishing`, whose provider call is already in flight) or `ACCOUNT_UNAVAILABLE`; from `publishing` only `ACCOUNT_UNAVAILABLE`. The item's `approved` approval stays `approved` (an approval never leaves that state); the queued job and a waiting operation are cancelled |
 | `reapprove` | `on_hold → scheduled` | **Increments `version`** (G2). `service.reapprove` (`POST .../reapprove`, `content.approve`): validation runs again, the new approval is bound to version + 1 and the new schedule |
 | `succeed` / `retry` / `fail` | `publishing → published` / `retry_scheduled` / `failed`; `retry_scheduled → failed` | `fail` and `retry` record `last_error_code` |
 
