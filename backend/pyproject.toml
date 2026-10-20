@@ -202,6 +202,12 @@ source_modules = [
     "app.content.models",
     "app.content.media",
     "app.content.schemas",
+    "app.content.transitions",
+    "app.content.service",
+    "app.content.grounding",
+    "app.content.payload",
+    "app.content.hooks",
+    "app.content.views",
 ]
 forbidden_modules = ["app.api", "app.main"]
 

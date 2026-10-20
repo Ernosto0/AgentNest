@@ -393,13 +393,13 @@ Constraint: `unique (conversation_id) where status in ('pending_approval','needs
 |---|---|---|
 | id, workspace_id | uuid | |
 | social_account_id | uuid null | composite FK; required at submit |
-| content_type | text not null | `feed_image`, `story_image` |
-| status | text not null | [state-machines.md §5](state-machines.md) |
-| version | int not null default 1 | increments on any payload change |
+| content_type | text not null | `feed_image`, `story_image` (check constraint) |
+| status | text not null | [state-machines.md §5](state-machines.md) (check constraint); changes only through `content.transitions.apply` |
+| version | int not null default 1 | `>= 1`. Increments on a payload change (caption, overlay suggestions, media) and on re-approval (state-machines §5, G2). A title or a visual note is not a payload change |
 | title | text not null | internal label |
 | objective | text null | owner's request |
-| caption | text null | feed only; ≤ 2200 chars (**Instagram caption limit is an assumption to verify**, V-05) |
-| overlay_text_suggestions | jsonb not null default '[]' | story only |
+| caption | text null | feed only; ≤ 2200 chars (**Instagram caption limit is an assumption to verify**, V-05). The *rendered* text: generation renders `{{fact:key}}` placeholders and stores the result, an edit is plain text (plan G6). The API stores up to 5000 characters; the 2200 limit is a submit rule |
+| overlay_text_suggestions | jsonb not null default '[]' | story only; list of strings (up to 10 of 500 characters at the API). Claim validation covers them too |
 | visual_notes | text null | concept for the owner |
 | media_asset_id | uuid null | composite FK |
 | scheduled_at | timestamptz null | UTC |
@@ -407,15 +407,19 @@ Constraint: `unique (conversation_id) where status in ('pending_approval','needs
 | approval_id | uuid null | current approval |
 | hold_reason | text null | `FACT_CHANGED`, `ACCOUNT_UNAVAILABLE`, `APPROVAL_EXPIRED` |
 | rejection_note | text null | |
-| validation | jsonb not null default '{}' | last validation report |
+| validation | jsonb not null default '{}' | last validation report: `{passed, issues: [{code, field, span, text, matches_verified}], stale}`. `field` is `caption` or `overlay_text_suggestions.{index}`; `stale` is set when a referenced fact changed after the check (P5-07) |
 | published_at | timestamptz null | |
 | external_media_id / external_permalink | text null | |
 | last_error_code | text null | |
-| agent_run_id | uuid null | |
-| created_by_user_id | uuid | |
-| is_simulated | boolean | set from the target account at submit |
+| agent_run_id | uuid null | composite FK; the `draft_content` run of a generated draft (P5-03) |
+| created_by_user_id | uuid not null | FK `users` |
+| client_request_id | text null | idempotent creation (plan G7): a second create or generate with the same id by the same author returns the first item |
+| created_at / updated_at | timestamptz | |
+| is_simulated | boolean not null default false | set from the target account at submit |
 
-Index: `(workspace_id, status, scheduled_at)`.
+Constraints: `unique (workspace_id, id)`; composite FKs `(workspace_id, social_account_id)`, `(workspace_id, media_asset_id)`, `(workspace_id, approval_id)` and `(workspace_id, agent_run_id)` to the parent's `(workspace_id, id)`, so an item can never point at another workspace's row (INV-01); `unique (workspace_id, created_by_user_id, client_request_id)`; `version >= 1`. `approval_id` is the current or latest approval and is kept after the item returns to `draft`, so the author can still see how it ended. Index: `(workspace_id, status, scheduled_at)`. Migration 0009.
+
+The facts a text states are recorded in `fact_references` (`referrer_type = 'content_item'`): the usable facts whose display value occurs in a flagged claim of the caption or the suggestions (the same matcher as an owner's own reply), replaced on every payload change.
 
 ### 3.7 Operations (Phase 4)
 

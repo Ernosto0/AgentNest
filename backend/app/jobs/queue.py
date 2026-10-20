@@ -265,6 +265,25 @@ def expedite(session: Session, dedup_key: str, clock: Clock) -> bool:
     return result.rowcount == 1  # type: ignore[attr-defined, no-any-return]
 
 
+def cancel_queued(session: Session, dedup_key: str, clock: Clock | None = None) -> bool:
+    """Cancel a *queued* job with this dedup key. True if one was cancelled.
+
+    A running job is left alone: it re-checks the domain state when it runs, and a job that
+    already finished has nothing left to cancel. Runs in the caller's transaction and never
+    commits. With a ``clock`` the job gets its ``finished_at``.
+    """
+    values: dict[str, Any] = {"status": "cancelled"}
+    if clock is not None:
+        values["finished_at"] = clock.now()
+    result = session.execute(
+        update(Job)
+        .where(Job.dedup_key == dedup_key, Job.status == "queued")
+        .values(**values)
+        .execution_options(synchronize_session=False)
+    )
+    return result.rowcount == 1  # type: ignore[attr-defined, no-any-return]
+
+
 def mark_dead(
     session_factory: sessionmaker[Session],
     job: ClaimedJob,

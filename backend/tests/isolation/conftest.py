@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from app.ai.models import AgentRun
 from app.approvals import service as approvals_service
 from app.commands.models import OwnerCommand
-from app.content.models import MediaAsset
+from app.content.models import ContentItem, MediaAsset
 from app.core.clock import FrozenClock
 from app.identity.models import User, Workspace
 from app.inbox.models import Conversation, Message, ReplyDraft
@@ -167,6 +167,19 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         created_by_user_id=b_users["owner"].id,
     )
     db_session.add(b_media)
+    db_session.flush()
+    b_content = ContentItem(
+        workspace_id=b.id,
+        content_type="feed_image",
+        status="draft",
+        title="B taslağı",
+        caption="Merhaba",
+        media_asset_id=b_media.id,
+        created_by_user_id=b_users["owner"].id,
+        created_at=clock.now(),
+        updated_at=clock.now(),
+    )
+    db_session.add(b_content)
     db_session.commit()
     return TwoWorkspaces(
         app=app,
@@ -190,5 +203,6 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "draft_id": str(b_draft.id),
             "answer_id": str(b_answer.id),
             "media_id": str(b_media.id),
+            "content_id": str(b_content.id),
         },
     )

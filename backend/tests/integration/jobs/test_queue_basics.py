@@ -329,6 +329,44 @@ def test_expedite_leaves_running_finished_due_and_unknown_jobs_alone(
         assert queue.expedite(session, "due", clock) is False  # finished: no queued row
 
 
+def test_cancel_queued_removes_a_waiting_job_and_frees_its_key(
+    session_factory: SessionFactory, clock: FrozenClock, register_echo: Callable[..., None]
+) -> None:
+    register_echo()
+    job_id = enqueue_committed(
+        session_factory, clock, dedup_key="publish:1", run_at=clock.now() + timedelta(minutes=5)
+    )
+    with session_factory() as session:
+        assert queue.cancel_queued(session, "publish:1", clock) is True
+        assert queue.cancel_queued(session, "publish:1", clock) is False  # nothing left queued
+        session.commit()
+    job = load_job(session_factory, job_id)
+    assert (job.status, job.finished_at) == ("cancelled", clock.now())
+    clock.advance(minutes=10)
+    assert run(session_factory, clock) == 0  # a cancelled job never runs
+    # The dedup key is free again: the same work can be scheduled anew.
+    again = enqueue_committed(session_factory, clock, dedup_key="publish:1")
+    assert again != job_id
+
+
+def test_cancel_queued_leaves_running_finished_and_unknown_jobs_alone(
+    session_factory: SessionFactory, clock: FrozenClock, register_echo: Callable[..., None]
+) -> None:
+    register_echo()
+    running = enqueue_committed(session_factory, clock, dedup_key="running")
+    done = enqueue_committed(session_factory, clock, dedup_key="done")
+    with session_factory() as session:
+        session.execute(update(Job).where(Job.id == running).values(status="running"))
+        session.execute(update(Job).where(Job.id == done).values(status="succeeded"))
+        session.commit()
+        assert queue.cancel_queued(session, "running") is False  # being done: it re-checks itself
+        assert queue.cancel_queued(session, "done") is False
+        assert queue.cancel_queued(session, "nope") is False
+        session.commit()
+    assert load_job(session_factory, running).status == "running"
+    assert load_job(session_factory, done).status == "succeeded"
+
+
 def test_retry_after_overrides_the_backoff_schedule(
     session_factory: SessionFactory, clock: FrozenClock, register_echo: Callable[..., None]
 ) -> None:

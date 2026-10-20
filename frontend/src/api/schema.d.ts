@@ -452,6 +452,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/content-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Content Items */
+        get: operations["list_content_items_api_v1_workspaces__workspace_id__content_items_get"];
+        put?: never;
+        /** Create Content Item */
+        post: operations["create_content_item_api_v1_workspaces__workspace_id__content_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Content Item */
+        get: operations["get_content_item_api_v1_workspaces__workspace_id__content_items__content_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Content Item */
+        patch: operations["patch_content_item_api_v1_workspaces__workspace_id__content_items__content_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate Content Item */
+        post: operations["validate_content_item_api_v1_workspaces__workspace_id__content_items__content_id__validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/conversations": {
         parameters: {
             query?: never;
@@ -1331,6 +1384,180 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * ContentApprovalStateOut
+         * @description Where the approval of the item stands, for anyone who may read content (staff cannot
+         *     decide, but they see whether their submission is waiting, approved or turned down).
+         */
+        ContentApprovalStateOut: {
+            /** Cancel Reason */
+            cancel_reason: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By Name */
+            decided_by_name: string | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected" | "expired" | "cancelled";
+            /** Subject Version */
+            subject_version: number;
+        };
+        /** ContentCreate */
+        ContentCreate: {
+            /** Caption */
+            caption?: string | null;
+            /** Client Request Id */
+            client_request_id?: string | null;
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "feed_image" | "story_image";
+            /** Media Asset Id */
+            media_asset_id?: string | null;
+            /** Overlay Text Suggestions */
+            overlay_text_suggestions?: string[];
+            /** Title */
+            title: string;
+        };
+        /** ContentIssueOut */
+        ContentIssueOut: {
+            /** Code */
+            code: string;
+            /** Field */
+            field: string;
+            /**
+             * Matches Verified
+             * @default false
+             */
+            matches_verified: boolean;
+            /** Span */
+            span: number[] | null;
+            /** Text */
+            text: string;
+        };
+        /** ContentItemOut */
+        ContentItemOut: {
+            approval: components["schemas"]["ContentApprovalStateOut"] | null;
+            /** Approval Id */
+            approval_id: string | null;
+            /** Caption */
+            caption: string | null;
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "feed_image" | "story_image";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Created By User Id
+             * Format: uuid
+             */
+            created_by_user_id: string;
+            /** External Media Id */
+            external_media_id: string | null;
+            /** External Permalink */
+            external_permalink: string | null;
+            /** Hold Reason */
+            hold_reason: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /** Media Asset Id */
+            media_asset_id: string | null;
+            /** Objective */
+            objective: string | null;
+            operation: components["schemas"]["ContentOperationOut"] | null;
+            /** Overlay Text Suggestions */
+            overlay_text_suggestions: string[];
+            /** Published At */
+            published_at: string | null;
+            /** Rejection Note */
+            rejection_note: string | null;
+            schedule_local: components["schemas"]["ScheduleLocalOut"] | null;
+            /** Scheduled At */
+            scheduled_at: string | null;
+            /** Social Account Id */
+            social_account_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "pending_approval" | "scheduled" | "publishing" | "retry_scheduled" | "on_hold" | "published" | "rejected" | "failed" | "cancelled";
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            validation: components["schemas"]["ContentValidationOut"];
+            /** Version */
+            version: number;
+            /** Visual Notes */
+            visual_notes: string | null;
+        };
+        /** ContentOperationOut */
+        ContentOperationOut: {
+            /** Attempts */
+            attempts: number;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /** Next Attempt At */
+            next_attempt_at: string | null;
+            /** Status */
+            status: string;
+        };
+        /**
+         * ContentPatch
+         * @description A field that is absent is left alone; a field sent as ``null`` is cleared (caption,
+         *     media). ``title`` cannot be cleared.
+         */
+        ContentPatch: {
+            /** Caption */
+            caption?: string | null;
+            /** Expected Version */
+            expected_version: number;
+            /** Media Asset Id */
+            media_asset_id?: string | null;
+            /** Overlay Text Suggestions */
+            overlay_text_suggestions?: string[] | null;
+            /** Title */
+            title?: string | null;
+            /** Visual Notes */
+            visual_notes?: string | null;
+        };
+        /** ContentValidationOut */
+        ContentValidationOut: {
+            /** Issues */
+            issues: components["schemas"]["ContentIssueOut"][];
+            /** Passed */
+            passed: boolean;
+            /**
+             * Stale
+             * @default false
+             */
+            stale: boolean;
+        };
         /** ConversationDetailOut */
         ConversationDetailOut: {
             conversation: components["schemas"]["ConversationOut"];
@@ -1847,6 +2074,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[ContentItemOut] */
+        Page_ContentItemOut_: {
+            /** Items */
+            items: components["schemas"]["ContentItemOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[ConversationOut] */
         Page_ConversationOut_: {
             /** Items */
@@ -2052,6 +2286,15 @@ export interface components {
         RunDueOut: {
             /** Ran */
             ran: number;
+        };
+        /** ScheduleLocalOut */
+        ScheduleLocalOut: {
+            /** Date */
+            date: string;
+            /** Time */
+            time: string;
+            /** Timezone */
+            timezone: string;
         };
         /** ScriptOut */
         ScriptOut: {
@@ -3374,6 +3617,176 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommandOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_content_items_api_v1_workspaces__workspace_id__content_items_get: {
+        parameters: {
+            query?: {
+                tab?: ("drafts" | "scheduled" | "published" | "problems") | null;
+                status?: ("draft" | "pending_approval" | "scheduled" | "publishing" | "retry_scheduled" | "on_hold" | "published" | "rejected" | "failed" | "cancelled") | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ContentItemOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_content_item_api_v1_workspaces__workspace_id__content_items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_content_item_api_v1_workspaces__workspace_id__content_items__content_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_content_item_api_v1_workspaces__workspace_id__content_items__content_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_content_item_api_v1_workspaces__workspace_id__content_items__content_id__validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentValidationOut"];
                 };
             };
             /** @description Validation Error */
