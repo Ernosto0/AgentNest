@@ -70,6 +70,10 @@ PUBLISHING_HOLD_REASON = "ACCOUNT_UNAVAILABLE"
 # Statuses from which a payload edit is allowed (they all lead back to ``draft``).
 EDITABLE_STATUSES = frozenset(status for (status, event) in _TRANSITIONS if event == "edit")
 
+# Finished-without-publishing statuses: *any* edit (a title or a note too) starts a new version,
+# so the item can be submitted again (Q4). Other statuses only do so for a payload change.
+RESUBMIT_AFTER_EDIT = frozenset({"rejected", "failed"})
+
 # Statuses from which the cancel event is allowed.
 CANCELLABLE_STATUSES = frozenset(status for (status, event) in _TRANSITIONS if event == "cancel")
 

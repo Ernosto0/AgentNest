@@ -248,7 +248,11 @@ def update(
     if changed.get("media_asset_id") is not None:
         media.get_asset(session, ctx, changed["media_asset_id"])
 
-    if not payload_changed:  # a title or a note: nothing that was approved is touched
+    # A title or a note touches nothing that was approved, so it is saved in place. Except on a
+    # rejected or failed item (Q4): there any edit is a new version and a draft again, because the
+    # old version's approval, job and operation are spent (``publish:{id}:v{n}`` keys are unique)
+    # and the item can only go out again as a new version.
+    if not payload_changed and item.status not in transitions.RESUBMIT_AFTER_EDIT:
         for name, value in changed.items():
             setattr(item, name, value)
         item.updated_at = clock.now()

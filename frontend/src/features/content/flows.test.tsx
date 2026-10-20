@@ -607,6 +607,40 @@ describe("failure detail", () => {
     expect(screen.getByLabelText("Başlık")).toHaveFocus();
   });
 
+  it.each(["failed", "rejected"] as const)(
+    "a %s post edited only in its title comes back as a draft that can be scheduled again (Q4)",
+    async (status) => {
+      let current = draftWithMedia({ status, last_error_code: status === "failed" ? "MEDIA_REJECTED" : null });
+      const requests = mockApi(
+        routes({
+          [`GET ${ITEM_URL}`]: () => json(current),
+          [`GET ${BASE}/media/${MEDIA_ID}/content`]: image,
+          [`PATCH ${ITEM_URL}`]: () => {
+            // The server starts a new version for any edit of a failed or rejected item.
+            current = draftWithMedia({ status: "draft", version: 2, title: "Yeni başlık", last_error_code: null });
+            return json(current);
+          },
+        }),
+      );
+      renderApp(ITEM_PAGE);
+      const user = userEvent.setup();
+      if (status === "failed") {
+        await user.click(await within(await screen.findByTestId("failure-detail")).findByRole("button", { name: "Düzenle ve yeniden gönder" }));
+      }
+      const title = await screen.findByLabelText("Başlık");
+      expect(screen.queryByRole("button", { name: "Zamanla" })).toBeNull(); // not submittable yet
+      await user.clear(title);
+      await user.type(title, "Yeni başlık");
+      await user.click(screen.getByRole("button", { name: "Kaydet" }));
+
+      expect(await screen.findByRole("button", { name: "Zamanla" })).toBeEnabled();
+      expect(screen.queryByTestId("failure-detail")).toBeNull();
+      const sent = requests.filter((r) => r.method === "PATCH" && r.path === ITEM_URL);
+      expect(sent).toHaveLength(1);
+      expect(sent[0]!.body).toEqual({ title: "Yeni başlık", expected_version: 1 });
+    },
+  );
+
   it("a failure after retries ran out does not promise another try", async () => {
     mockApi(
       routes({
