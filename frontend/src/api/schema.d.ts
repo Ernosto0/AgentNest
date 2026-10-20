@@ -508,6 +508,57 @@ export interface paths {
         patch: operations["patch_content_item_api_v1_workspaces__workspace_id__content_items__content_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Content Item */
+        post: operations["cancel_content_item_api_v1_workspaces__workspace_id__content_items__content_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/reapprove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reapprove Content Item */
+        post: operations["reapprove_content_item_api_v1_workspaces__workspace_id__content_items__content_id__reapprove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Content Item */
+        post: operations["submit_content_item_api_v1_workspaces__workspace_id__content_items__content_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/validate": {
         parameters: {
             query?: never;
@@ -517,7 +568,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Validate Content Item */
+        /**
+         * Validate Content Item
+         * @description A dry run of the claim validation and every submit rule. Changes nothing.
+         */
         post: operations["validate_content_item_api_v1_workspaces__workspace_id__content_items__content_id__validate_post"];
         delete?: never;
         options?: never;
@@ -1431,6 +1485,25 @@ export interface components {
             /** Subject Version */
             subject_version: number;
         };
+        /**
+         * ContentCheckItemOut
+         * @description One submit rule that was broken (``errors``) or only worth a look (``warnings``)
+         *     (plan.md G17). ``field`` names what it is about (``caption``, ``media_asset_id``,
+         *     ``schedule``, ``scheduled_at``, ``social_account_id``, ``overlay_text_suggestions.{i}``);
+         *     ``null`` for the claim check, whose ``params.issues`` lists the claim issues.
+         */
+        ContentCheckItemOut: {
+            /** Code */
+            code: string;
+            /** Field */
+            field?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Params */
+            params?: {
+                [key: string]: unknown;
+            };
+        };
         /** ContentCreate */
         ContentCreate: {
             /** Caption */
@@ -1453,6 +1526,8 @@ export interface components {
         ContentIssueOut: {
             /** Code */
             code: string;
+            /** Fact Key */
+            fact_key?: string | null;
             /** Field */
             field: string;
             /**
@@ -1568,6 +1643,8 @@ export interface components {
         };
         /** ContentValidationOut */
         ContentValidationOut: {
+            /** Errors */
+            errors?: components["schemas"]["ContentCheckItemOut"][];
             /** Issues */
             issues: components["schemas"]["ContentIssueOut"][];
             /** Passed */
@@ -1577,6 +1654,8 @@ export interface components {
              * @default false
              */
             stale: boolean;
+            /** Warnings */
+            warnings?: components["schemas"]["ContentCheckItemOut"][];
         };
         /** ConversationDetailOut */
         ConversationDetailOut: {
@@ -1873,6 +1952,19 @@ export interface components {
             en?: string | null;
             /** Tr */
             tr?: string | null;
+        };
+        /**
+         * LocalScheduleIn
+         * @description A wall-clock time in the workspace timezone (never an instant: the server converts).
+         */
+        LocalScheduleIn: {
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /** Local Time */
+            local_time: string;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -2238,6 +2330,13 @@ export interface components {
             /** Requirements */
             requirements: components["schemas"]["RequirementOut"][];
         };
+        /** ReapproveIn */
+        ReapproveIn: {
+            /** Expected Version */
+            expected_version: number;
+            /** Schedule */
+            schedule: components["schemas"]["LocalScheduleIn"] | "now";
+        };
         /** RenderedFactOut */
         RenderedFactOut: {
             /** Display */
@@ -2431,6 +2530,18 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** SubmitIn */
+        SubmitIn: {
+            /** Expected Version */
+            expected_version: number;
+            /** Schedule */
+            schedule: components["schemas"]["LocalScheduleIn"] | "now";
+            /**
+             * Self Approve
+             * @default false
+             */
+            self_approve: boolean;
+        };
         /** TemplateItemOut */
         TemplateItemOut: {
             /** Allowed Values */
@@ -2488,6 +2599,19 @@ export interface components {
              * @enum {string}
              */
             ui_locale: "tr" | "en";
+        };
+        /**
+         * ValidateIn
+         * @description Optional body of the dry run: with a schedule the schedule and quota rules run too.
+         */
+        ValidateIn: {
+            /** Schedule */
+            schedule?: components["schemas"]["LocalScheduleIn"] | "now" | null;
+            /**
+             * Self Approve
+             * @default false
+             */
+            self_approve: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -3849,7 +3973,7 @@ export interface operations {
             };
         };
     };
-    validate_content_item_api_v1_workspaces__workspace_id__content_items__content_id__validate_post: {
+    cancel_content_item_api_v1_workspaces__workspace_id__content_items__content_id__cancel_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3860,6 +3984,114 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reapprove_content_item_api_v1_workspaces__workspace_id__content_items__content_id__reapprove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReapproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_content_item_api_v1_workspaces__workspace_id__content_items__content_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_content_item_api_v1_workspaces__workspace_id__content_items__content_id__validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ValidateIn"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

@@ -403,11 +403,11 @@ Constraint: `unique (conversation_id) where status in ('pending_approval','needs
 | visual_notes | text null | concept for the owner |
 | media_asset_id | uuid null | composite FK |
 | scheduled_at | timestamptz null | UTC |
-| schedule_input | jsonb null | `{local_date, local_time, timezone}` as entered |
+| schedule_input | jsonb null | what was asked for: `{mode: "local", local_date, local_time, timezone, ambiguous?}` (`ambiguous` when the local time exists twice and the earlier instant was taken, G13) or `{mode: "now"}`. Cleared when an approval expires |
 | approval_id | uuid null | current approval |
 | hold_reason | text null | `FACT_CHANGED`, `ACCOUNT_UNAVAILABLE`, `APPROVAL_EXPIRED` |
 | rejection_note | text null | |
-| validation | jsonb not null default '{}' | last validation report: `{passed, issues: [{code, field, span, text, matches_verified}], stale}`. `field` is `caption` or `overlay_text_suggestions.{index}`; `stale` is set when a referenced fact changed after the check (P5-07) |
+| validation | jsonb not null default '{}' | last validation report: `{passed, issues: [{code, field, span, text, matches_verified, fact_key}], stale, warnings?: [{code, field, params}]}`. `field` is `caption` or `overlay_text_suggestions.{index}`; `warnings` are the non-blocking submit warnings of the last successful submission (P5-04); `stale` is set when a referenced fact changed after the check (P5-07) |
 | published_at | timestamptz null | |
 | external_media_id / external_permalink | text null | |
 | last_error_code | text null | |

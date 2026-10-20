@@ -118,7 +118,7 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 | `interpret_command` | `{command_id}` | command submit, clarification answer | 3 | |
 | `generate_content` | `{content_id}` | `content.create_draft` | 3 | |
 | `extract_fact_candidates` | `{extraction_run_id}` | paste & extract | 2 | |
-| `publish_content` | `{content_id, version}` | content scheduled, retries | 5 | dedup `publish:{content_id}:v{version}`; `run_at = scheduled_at` |
+| `publish_content` | `{content_id, version}` | content scheduled (`service.submit` self-approved, the `content_item` approval callback, `service.reapprove`), retries | 5 | dedup `publish:{content_id}:v{version}`; `run_at = scheduled_at`. **Until P5-06 the registered handler is a placeholder that raises `NotImplementedError`** (the job type has to exist for `enqueue`), so a queued job retries and dies visibly rather than finishing without publishing |
 | `reconcile_publish` | `{operation_id}` | publish outcome unknown, container still processing | 10 | container status check |
 | `expire_approvals` | `{}` | scheduler | 1 | |
 | `generate_daily_report` | `{workspace_id, local_date}` | scheduler, on demand | 3 | |

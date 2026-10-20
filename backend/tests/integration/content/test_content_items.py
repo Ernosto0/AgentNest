@@ -17,6 +17,7 @@ from tests.helpers.env import Env, Role
 from tests.helpers.images import png_bytes
 
 ITEMS = "/content-items"
+CLEAN_VALIDATION = {"passed": True, "issues": [], "stale": False, "errors": [], "warnings": []}
 
 
 def create(env: Env, role: Role | None = None, **body: Any) -> Any:
@@ -67,7 +68,7 @@ def test_create_makes_a_version_one_draft_and_audits_it(env: Env) -> None:
     assert (body["status"], body["version"], body["content_type"]) == ("draft", 1, "feed_image")
     assert body["caption"] == "Yarın görüşürüz!"
     assert body["overlay_text_suggestions"] == []
-    assert body["validation"] == {"passed": True, "issues": [], "stale": False}
+    assert body["validation"] == {**CLEAN_VALIDATION}
     assert body["approval"] is None and body["operation"] is None
     assert body["schedule_local"] is None
     assert body["is_simulated"] is False
@@ -358,7 +359,7 @@ def test_a_price_typed_into_a_caption_is_an_issue_and_a_fact_reference(env: Env)
 
     # Take the price out again: the report is clean and the reference is gone.
     clean = patch(env, item["id"], 2, caption="Aylık üyelik için bize yazın").json()
-    assert clean["validation"] == {"passed": True, "issues": [], "stale": False}
+    assert clean["validation"] == CLEAN_VALIDATION
     assert references(env, item["id"]) == set()
 
 

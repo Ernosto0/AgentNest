@@ -1,14 +1,18 @@
 """Content item builders for tests that need an item in a given status before submission exists."""
 
+import uuid
 from datetime import timedelta
 from typing import Any
 
 from app.approvals import service as approvals_service
 from app.approvals.models import Approval
-from app.content.models import ContentItem
+from app.content.models import ContentItem, MediaAsset
 from app.content.payload import publish_job_key
+from app.integrations.instagram.models import SocialAccount
 from app.jobs.models import Job
 from tests.helpers.env import Env, Role
+
+MOCK_CAPABILITIES = {"messaging": True, "publish_feed_image": True, "publish_story_image": True}
 
 
 def make_item(
@@ -79,3 +83,61 @@ def publish_job(env: Env, item: ContentItem, *, status: str = "queued") -> Job:
     env.session.add(job)
     env.session.flush()
     return job
+
+
+def connect_account(env: Env, **overrides: Any) -> SocialAccount:
+    """The workspace's connected simulated account (all publishing capabilities)."""
+    values: dict[str, Any] = {
+        "workspace_id": env.workspace.id,
+        "platform": "instagram",
+        "provider_kind": "mock",
+        "external_account_id": "mock-golkent",
+        "username": "golkent.demo",
+        "status": "connected",
+        "capabilities": dict(MOCK_CAPABILITIES),
+        "connected_at": env.clock.now(),
+    }
+    account = SocialAccount(**{**values, **overrides})
+    env.session.add(account)
+    env.session.flush()
+    return account
+
+
+def make_media(
+    env: Env,
+    *,
+    width: int = 1080,
+    height: int = 1350,
+    status: str = "ready",
+    sha256: str | None = None,
+) -> MediaAsset:
+    """A ready JPEG asset row (the bytes are not needed until the publish executor)."""
+    key = f"{env.workspace.id}/2026/01/{uuid.uuid4().hex}.jpg"
+    asset = MediaAsset(
+        workspace_id=env.workspace.id,
+        storage_backend="local",
+        storage_key=key,
+        mime_type="image/jpeg",
+        byte_size=1000,
+        width=width,
+        height=height,
+        sha256=sha256 or "a" * 64,
+        status=status,
+        created_by_user_id=env.owner.user.id,
+    )
+    env.session.add(asset)
+    env.session.flush()
+    return asset
+
+
+def submittable_item(env: Env, **overrides: Any) -> ContentItem:
+    """A valid feed draft (caption and image) with a connected account in the workspace."""
+    if not env.session.query(SocialAccount).filter_by(workspace_id=env.workspace.id).count():
+        connect_account(env)
+    media = overrides.pop("media", None) or make_media(env)
+    values: dict[str, Any] = {
+        "caption": "Cuma günü görüşürüz",
+        "media_asset_id": media.id,
+        **overrides,
+    }
+    return make_item(env, **values)

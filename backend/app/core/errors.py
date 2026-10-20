@@ -30,6 +30,8 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "APPROVAL_STALE": ErrorSpec(409),
     "MESSAGING_WINDOW_CLOSED": ErrorSpec(409),
     "ACCOUNT_NOT_CONNECTED": ErrorSpec(409),
+    # Submitting content: the blocking item codes are in params.errors / the problem's ``errors``.
+    "CONTENT_VALIDATION_FAILED": ErrorSpec(422),
     "MEDIA_INVALID": ErrorSpec(422),
     "MEDIA_TOO_LARGE": ErrorSpec(413),
     # Not API errors: reasons recorded on commands, agent runs and render results.

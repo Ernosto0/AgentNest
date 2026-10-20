@@ -1,7 +1,11 @@
 """Another workspace's content items are invisible, even through *my own* workspace URL (INV-01)."""
 
-import pytest
+import uuid
 
+import pytest
+from sqlalchemy.orm import Session
+
+from app.content.models import ContentItem
 from tests.isolation.conftest import TwoWorkspaces
 
 
@@ -17,6 +21,17 @@ def test_b_content_item_is_not_found_through_any_workspace_url(
             ("GET", base, None),
             ("PATCH", base, {"expected_version": 1, "caption": "ele geçirildi"}),
             ("POST", f"{base}/validate", None),
+            (
+                "POST",
+                f"{base}/submit",
+                {"schedule": "now", "self_approve": True, "expected_version": 1},
+            ),
+            ("POST", f"{base}/cancel", None),
+            (
+                "POST",
+                f"{base}/reapprove",
+                {"schedule": "now", "expected_version": 1},
+            ),
         ):
             response = client.request(method, url, json=body, headers=headers)
             assert response.status_code == 404, (method, url)
@@ -46,3 +61,22 @@ def test_b_media_cannot_be_attached_to_an_item_of_a(two_workspaces: TwoWorkspace
     )
     assert response.status_code == 404
     assert two_workspaces.a_client.get(url, headers=two_workspaces.a_headers).json()["items"] == []
+
+
+@pytest.mark.invariant("INV-01")
+def test_b_item_is_untouched_after_every_attempt_through_a(
+    two_workspaces: TwoWorkspaces, db_session: Session
+) -> None:
+    """Besides the 404, nothing happened: the foreign item is still a draft with no approval."""
+    content_id = two_workspaces.foreign_ids["content_id"]
+    base = f"/api/v1/workspaces/{two_workspaces.a.id}/content-items/{content_id}"
+    client, headers = two_workspaces.a_client, two_workspaces.a_headers
+    client.post(
+        f"{base}/submit",
+        json={"schedule": "now", "self_approve": True, "expected_version": 1},
+        headers=headers,
+    )
+    client.post(f"{base}/cancel", headers=headers)
+    item = db_session.get(ContentItem, uuid.UUID(content_id))
+    assert item is not None
+    assert (item.status, item.approval_id, item.scheduled_at) == ("draft", None, None)

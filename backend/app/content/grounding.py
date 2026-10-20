@@ -5,7 +5,7 @@ generated caption already holds the display value of the facts it used. A person
 plain text. Either way the validator scans the final text for critical values; whatever it
 finds is reported as an issue and, because nothing in the text is a rendered span, shows up
 as ungrounded. Issues never stop an edit (a human is reviewing), but they block submission
-(P5-04).
+(P5-04). An issue whose value equals a verified fact carries that fact's ``fact_key``.
 
 A value that equals a **verified** fact's display is recorded as a ``fact_references`` row, so a
 later change of that fact reaches the item (impact analysis, P5-07). This is the same matcher
@@ -23,7 +23,11 @@ from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.knowledge import service as knowledge_service
 from app.knowledge.claims import validate_claims
-from app.knowledge.render import RenderResult
+from app.knowledge.render import PLACEHOLDER, RenderResult
+
+# A ``{{fact:key}}`` that is still in the stored text would be published as it is: the stored
+# text is the rendered text (plan.md G6), so a placeholder here was never rendered.
+PLACEHOLDER_UNRENDERED = "PLACEHOLDER_UNRENDERED"
 
 
 @dataclass(frozen=True)
@@ -63,6 +67,20 @@ def check(
                     "span": [issue.start, issue.end],
                     "text": issue.text,
                     "matches_verified": bool(matching),
+                    # The verified fact whose value this is, so a client can offer to use the
+                    # fact instead of the typed value (it is not a fix the server applies).
+                    "fact_key": matching[0].key if matching else None,
+                }
+            )
+        for found in PLACEHOLDER.finditer(text):
+            issues.append(
+                {
+                    "code": PLACEHOLDER_UNRENDERED,
+                    "field": field,
+                    "span": [found.start(), found.end()],
+                    "text": found.group(0),
+                    "matches_verified": False,
+                    "fact_key": found.group("key"),
                 }
             )
     report_dict = {"passed": not issues, "issues": issues, "stale": False}

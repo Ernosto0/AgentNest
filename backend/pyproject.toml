@@ -208,6 +208,10 @@ source_modules = [
     "app.content.payload",
     "app.content.hooks",
     "app.content.views",
+    "app.content.validation",
+    "app.content.scheduling",
+    "app.content.subject",
+    "app.content.notifications",
 ]
 forbidden_modules = ["app.api", "app.main"]
 
@@ -341,6 +345,23 @@ name = "content does not depend on operations or commands (plan.md section 1)"
 type = "forbidden"
 source_modules = ["app.content"]
 forbidden_modules = ["app.operations", "app.commands"]
+
+[[tool.importlinter.contracts]]
+name = "the content submit rules are pure"
+type = "forbidden"
+source_modules = ["app.content.validation", "app.content.scheduling"]
+forbidden_modules = [
+    "app.ai",
+    "app.integrations",
+    "app.knowledge",
+    "app.identity",
+    "app.audit",
+    "app.jobs",
+    "app.approvals",
+    "app.inbox",
+    "app.core.db",
+    "sqlalchemy",
+]
 
 [[tool.importlinter.contracts]]
 name = "media storage imports only core (ADR-015)"

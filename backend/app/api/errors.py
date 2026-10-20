@@ -95,9 +95,14 @@ def _validation_errors(exc: RequestValidationError) -> list[dict[str, Any]]:
 async def _app_error_handler(request: Request, exc: Exception) -> JSONResponse:
     error = cast(AppError, exc)
     params = dict(error.params)
-    # Services raise VALIDATION_FAILED with ``errors=[{field, code, params}]``, which belongs
-    # at the top level of the problem document (api-design.md §1), not inside ``params``.
-    errors = params.pop("errors", None) if error.code == "VALIDATION_FAILED" else None
+    # Services raise VALIDATION_FAILED (and, for a submission, CONTENT_VALIDATION_FAILED) with
+    # ``errors=[{field, code, params}]``, which belongs at the top level of the problem document
+    # (api-design.md §1), not inside ``params``.
+    errors = (
+        params.pop("errors", None)
+        if error.code in ("VALIDATION_FAILED", "CONTENT_VALIDATION_FAILED")
+        else None
+    )
     return problem_response(
         request, code=error.code, status=error.http_status or 500, params=params, errors=errors
     )

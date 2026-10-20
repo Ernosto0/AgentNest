@@ -10,6 +10,7 @@ def load_handlers() -> None:
     import app.approvals.jobs  # noqa: F401
     import app.commands.jobs  # noqa: F401
     import app.commands.subject  # noqa: F401
+    import app.content.subject  # noqa: F401
     import app.inbox.impact  # noqa: F401
     import app.inbox.jobs  # noqa: F401
     import app.inbox.subject  # noqa: F401

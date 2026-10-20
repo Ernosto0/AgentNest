@@ -7,21 +7,39 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.approvals import repository as approvals_repo
-from app.content import hooks
+from app.content import hooks, validation
 from app.content.models import ContentItem
 from app.content.schemas import (
     ContentApprovalStateOut,
+    ContentCheckItemOut,
     ContentIssueOut,
     ContentItemOut,
     ContentOperationOut,
     ContentValidationOut,
     ScheduleLocalOut,
 )
+from app.content.service import Checked
 from app.core.context import WorkspaceContext
+from app.core.i18n import t
 from app.identity.models import User
 
 
-def validation_out(raw: dict[str, Any]) -> ContentValidationOut:
+def check_item_out(raw: dict[str, Any], locale: str | None = None) -> ContentCheckItemOut:
+    code = str(raw.get("code", ""))
+    params = raw.get("params")
+    params = params if isinstance(params, dict) else {}
+    message = raw.get("message")
+    if not isinstance(message, str) and locale is not None:
+        message = t(f"content.issue.{code}", locale, **params)
+    return ContentCheckItemOut(
+        code=code,
+        field=raw.get("field") if isinstance(raw.get("field"), str) else None,
+        params=params,
+        message=message if isinstance(message, str) else None,
+    )
+
+
+def validation_out(raw: dict[str, Any], locale: str | None = None) -> ContentValidationOut:
     """The stored report (or ``{}`` for an item nobody has checked yet)."""
     issues = [
         ContentIssueOut(
@@ -30,12 +48,27 @@ def validation_out(raw: dict[str, Any]) -> ContentValidationOut:
             span=[int(x) for x in i["span"]] if isinstance(i.get("span"), list) else None,
             text=str(i.get("text", "")),
             matches_verified=bool(i.get("matches_verified")),
+            fact_key=i.get("fact_key") if isinstance(i.get("fact_key"), str) else None,
         )
         for i in raw.get("issues", [])
     ]
     return ContentValidationOut(
-        passed=bool(raw.get("passed", not issues)), issues=issues, stale=bool(raw.get("stale"))
+        passed=bool(raw.get("passed", not issues)),
+        issues=issues,
+        stale=bool(raw.get("stale")),
+        errors=[check_item_out(e, locale) for e in raw.get("errors", [])],
+        warnings=[check_item_out(w, locale) for w in raw.get("warnings", [])],
     )
+
+
+def check_out(checked: Checked, locale: str) -> ContentValidationOut:
+    """The result of a dry run: the claim report plus every submit rule found broken."""
+    raw = {
+        **checked.claims.report,
+        "errors": [validation.as_dict(i, locale) for i in checked.result.errors],
+        "warnings": [validation.as_dict(i, locale) for i in checked.result.warnings],
+    }
+    return validation_out(raw, locale)
 
 
 def schedule_local(item: ContentItem, timezone: str) -> ScheduleLocalOut | None:
@@ -108,7 +141,7 @@ def item_out(session: Session, ctx: WorkspaceContext, item: ContentItem) -> Cont
         ),
         hold_reason=item.hold_reason,
         rejection_note=item.rejection_note,
-        validation=validation_out(item.validation or {}),
+        validation=validation_out(item.validation or {}, ctx.locale),
         published_at=item.published_at,
         external_media_id=item.external_media_id,
         external_permalink=item.external_permalink,

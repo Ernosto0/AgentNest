@@ -9,6 +9,7 @@ from datetime import timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.content.payload import PublishContentPayload
 from app.core.clock import Clock
 from app.core.config import get_settings
 from app.core.errors import RetryableError
@@ -67,6 +68,16 @@ def send_reply(job: JobContext) -> None:
         raise RetryableError(
             outcome.error_code or "ACCOUNT_NOT_CONNECTED", retry_after_seconds=WAIT_BACKOFF_SECONDS
         )
+
+
+# TODO(P5-06): PLACEHOLDER. The real handler (``operations.publish.execute_publish``) arrives with
+# the publish executor in session 7 and replaces this function. The job type has to be
+# registered now because ``jobs.queue.enqueue`` refuses unknown types and submission (P5-04)
+# queues ``publish_content``. It raises, on purpose: a no-op would finish the job and silently
+# lose the scheduled post, whereas this way the job retries and ends up visible as dead.
+@job_handler("publish_content", PublishContentPayload, max_attempts=5)
+def publish_content(job: JobContext) -> None:
+    raise NotImplementedError("publish_content is implemented by the publish executor (P5-06)")
 
 
 @job_handler("resume_account", ResumeAccountPayload, max_attempts=3)

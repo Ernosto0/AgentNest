@@ -54,8 +54,7 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `FACT_NOT_USABLE` | — | — | Needed information is missing or unverified / verify it in Business knowledge |
 | `FACT_CHANGED_MEANWHILE` | — | — | The fact changed before confirmation, so nothing was overwritten / check the current value and repeat the command. Recorded as the command's `error_code`; never an HTTP error, because the decision itself succeeded |
 | `GROUNDING_FAILED` | — | — | The draft contained values not matching verified facts / edit or write the reply |
-| `CONTENT_VALIDATION_FAILED` | 422 | — | Content cannot be submitted (list of issues) |
-| `CONTENT_MEDIA_REQUIRED` | 422 | — | An image is required |
+| `CONTENT_VALIDATION_FAILED` | 422 | — | Content cannot be submitted / fix the listed items (§4.2). The problem document's top-level `errors` lists them (`{code, field, params, message}`) and `params.warnings` the non-blocking ones |
 | `MEDIA_INVALID` | 422 | — | The file is not a supported image / upload a JPEG or PNG |
 | `MEDIA_TOO_LARGE` | 413 | — | The file exceeds 8 MB |
 | `MESSAGING_WINDOW_CLOSED` | — | no | Instagram allows replies only within 24 h / reply in the Instagram app |
@@ -92,6 +91,41 @@ Reason codes are not errors. They explain *why* something was decided or changed
 | Approval cancellation (`approvals.cancel_reason`) | `SUBJECT_EDITED`, `SUPERSEDED`, `FACT_CHANGED`, `WITHDRAWN`, `SUBJECT_CANCELLED` |
 | Draft supersession | `NEW_INBOUND`, `OWNER_REPLIED_NATIVELY`, `OWNER_REPLIED`, `FACT_CHANGED`, `REGENERATED` |
 | Inbound event ignore (`inbound_events.ignore_reason`) | `UNKNOWN_ACCOUNT`, `ACCOUNT_DISCONNECTED`, `UNSUPPORTED_EVENT` |
+
+### 4.2 Content submission item codes (G17)
+Item codes are not error codes: they are the entries of `errors` (blocking) and `warnings` in a `CONTENT_VALIDATION_FAILED` response, in the dry run `POST /content-items/{id}/validate` and in a submitted item's `validation.warnings`. Each has a text in both languages under `content.issue.<CODE>` (a test enforces it). The rules are in [workflows.md §E step 4.1](workflows.md); `content/validation.py` is the single source.
+
+| Code | Kind | `field` | Params | Meaning |
+|---|---|---|---|---|
+| `CONTENT_MEDIA_REQUIRED` | error | `media_asset_id` | | No image attached |
+| `MEDIA_NOT_READY` | error | `media_asset_id` | `status` | The attached asset is not `ready` |
+| `CAPTION_REQUIRED` | error | `caption` | | A feed post needs a caption |
+| `CAPTION_TOO_LONG` | error | `caption` | `length`, `max` (2200) | |
+| `CAPTION_NOT_ALLOWED` | error | `caption` | | A story is published without a caption |
+| `ASPECT_RATIO_OUT_OF_RANGE` | error | `media_asset_id` | `width`, `height` | Feed images must be 4:5 to 1.91:1 |
+| `CLAIM_VALIDATION_FAILED` | error | `null` | `issues[]` | The claim validator's issues over the caption **and** the overlay suggestions: `{code, field, span, text, matches_verified, fact_key}` |
+| `SCHEDULE_IN_PAST` | error | `schedule` | | Earlier than now - 1 min |
+| `SCHEDULE_TOO_FAR` | error | `schedule` | | Later than now + 60 days |
+| `SCHEDULE_TIME_NONEXISTENT` | error | `schedule` | `local_date`, `local_time`, `timezone` | The local time falls in a DST gap (G13) |
+| `SCHEDULE_TOO_SOON_FOR_APPROVAL` | error | `schedule` | `minutes` (15) | The item will wait for an approver (staff, or no `self_approve`) and is less than 15 minutes ahead; "now" is impossible for staff |
+| `ACCOUNT_NOT_CONNECTED` | error | `social_account_id` | | No active account, or it is not `connected` |
+| `CAPABILITY_MISSING` | error | `social_account_id` | `capability` | The account lacks `publish_feed_image` / `publish_story_image` |
+| `PUBLISH_QUOTA_FORECAST_EXCEEDED` | error | `scheduled_at` | | More than `PUBLISH_DAILY_LIMIT` posts in a rolling 24 h window around the time |
+| `STORY_ASPECT_NOT_9_16` | warning | `media_asset_id` | `width`, `height` | A story image far from 9:16 may be cropped |
+| `OVERLAY_TOO_LONG` | warning | `overlay_text_suggestions.{i}` | | More than 3 lines or a line over 40 characters |
+
+A claim issue's own `code` is the validator's (`MONEY`, `PERCENT`, `TIME`, ...) plus `PLACEHOLDER_UNRENDERED` (a `{{fact:key}}` left in the stored text, which would be published literally). `fact_key` is the verified fact whose display contains the value, or the key a placeholder names.
+
+### 4.3 Content notification kinds (G14)
+Defined in `app/content/notifications.py`; recipients are every member who holds `content.approve` **including the person who caused the event**, plus the item's author. Params carry ids, the internal title, the version and a reason code, never the caption. One notification per recipient and event (`dedup_key = {kind}:{content_id}:v{version}`) until it is read; `is_simulated` follows the item.
+
+| Kind | Severity | Produced when | `params.reason` |
+|---|---|---|---|
+| `content.on_hold` | attention | A referenced fact changed, or the account was unavailable at the due time | `FACT_CHANGED`, `ACCOUNT_UNAVAILABLE` |
+| `content.published` | info | The publish succeeded | |
+| `content.failed` | attention | The publish failed for good | the error code (`MEDIA_REJECTED`, `PUBLISH_DEADLINE_PASSED`, ...) |
+
+The kinds exist from P5-04; the producers arrive with the publish executor (`published`, `failed`, `on_hold` for an unavailable account) and the impact handlers (`on_hold` for a changed fact). An approval that expires is announced by the approvals service (`approval.expired`) to the requester.
 
 ## 5. Audit action catalog
 

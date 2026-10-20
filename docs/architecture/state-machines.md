@@ -187,14 +187,14 @@ stateDiagram-v2
 | Event | From → To | Notes |
 |---|---|---|
 | `edit` | `draft → draft`; `pending_approval`, `scheduled`, `on_hold`, `rejected`, `failed` → `draft` | A payload change: `version + 1`; clears `hold_reason`, `rejection_note` and `last_error_code`. Not allowed in `publishing`, `retry_scheduled`, `published`, `cancelled` |
-| `submit` | `draft → pending_approval` | Submitter lacks `content.approve` (Phase 5, P5-04) |
-| `schedule` | `draft → scheduled` | Submit + self-approve |
-| `approve` / `reject` | `pending_approval → scheduled` / `rejected` | The approval's decided-callback |
-| `withdraw` / `expire` | `pending_approval → draft` | `expire` carries `APPROVAL_EXPIRED`; a fact change withdraws with `FACT_CHANGED`. The reason is stored in `hold_reason` |
+| `submit` | `draft → pending_approval` | `service.submit` without `self_approve`: validation passed (G17), a pending `content.publish` approval was requested; the item gets its `social_account_id`, `scheduled_at` and `schedule_input` in the same statement |
+| `schedule` | `draft → scheduled` | `service.submit` with `self_approve` by a `content.approve` holder: the approval is recorded as decided in the same transaction and the `publish_content` job is queued |
+| `approve` / `reject` | `pending_approval → scheduled` / `rejected` | The approval's decided-callback (`content/subject.py`). `approve` also queues the job; `reject` stores the decision note in `rejection_note`; a decision on an approval whose item moved on, or whose payload no longer hashes to the approval's, is `409 APPROVAL_STALE` |
+| `withdraw` / `expire` | `pending_approval → draft` | `expire` (the approval reached `scheduled_at` undecided) carries `APPROVAL_EXPIRED` and clears `scheduled_at`; a fact change withdraws with `FACT_CHANGED`. The reason is stored in `hold_reason` |
 | `cancel` | `draft`, `pending_approval`, `scheduled`, `on_hold`, `retry_scheduled → cancelled` | Never from `publishing` |
 | `start` | `scheduled`, `retry_scheduled → publishing` | The publish job, after the due-time checks |
 | `hold` | `scheduled`, `retry_scheduled → on_hold`; `publishing → on_hold` | `reason` is `FACT_CHANGED` or `ACCOUNT_UNAVAILABLE`; from `publishing` only `ACCOUNT_UNAVAILABLE` |
-| `reapprove` | `on_hold → scheduled` | **Increments `version`** (G2) |
+| `reapprove` | `on_hold → scheduled` | **Increments `version`** (G2). `service.reapprove` (`POST .../reapprove`, `content.approve`): validation runs again, the new approval is bound to version + 1 and the new schedule |
 | `succeed` / `retry` / `fail` | `publishing → published` / `retry_scheduled` / `failed`; `retry_scheduled → failed` | `fail` and `retry` record `last_error_code` |
 
 Notes:
@@ -205,6 +205,8 @@ Notes:
 - `published` items are immutable ([INV-17](../invariants.md)): no event leaves `published`, and an edit is `409 CONFLICT_STATE`.
 - **G1 (transitions the workflows need).** `draft → cancelled` and `pending_approval → cancelled` (workflow E step 7), `retry_scheduled → on_hold` (workflow B step 3.4: a fact changes while a retry waits) and `publishing → on_hold` with `ACCOUNT_UNAVAILABLE` only (an auth error during the attempt: the operation becomes `failed ACCOUNT_NEEDS_REAUTH`, and the item waits for the owner instead of failing).
 - **G2 (re-approval).** Entering `on_hold` cancels the queued publish job and moves a `pending`/`retry_wait` operation to `cancelled` (through the content ledger hook, `content/hooks.py`). Re-approving an item **increments `version`**: `scheduled_at` is part of the approval payload, so the new approval, the job (`publish:{id}:v{n}`) and the operation get fresh keys, and the old ones can never fire. The content is unchanged, but full validation runs again, so a caption that still shows an old price fails and must be edited.
+- **Submit and cancel (Phase 5, P5-04).** `cancel` is `service.cancel` (`POST .../cancel`, `content.approve`): it checks the transition first (`publishing` and every finished status are `409 CONFLICT_STATE` before anything is touched), then cancels the pending approval (`SUBJECT_CANCELLED`), the queued job and, through the ledger hook, a `pending`/`retry_wait` operation. An approval that was already `approved` stays `approved` (an approval never leaves that state); it authorises nothing because the executor refuses by the item's status.
+- **Overdue items (`PUBLISH_DEADLINE_PASSED`).** There is no `scheduled → failed`. An item that is overdue when the job finally runs goes `scheduled → publishing` inside the executor's first transaction and then `publishing → failed` (session P5-06); the diagram above is therefore complete as it stands.
 - **Edit voids the approval.** An edit that changes the payload (caption, overlay suggestions, media) is a new version. A `pending` approval is `cancelled (SUBJECT_EDITED)`; an approval that was already `approved` stays `approved` (an approval never leaves that state) but is bound to the old version, so `assert_executable` rejects it with `APPROVAL_STALE` (INV-16). The queued publish job of the old version is cancelled (`queue.cancel_queued`); a job that is already running re-checks status and version itself. A title or a visual note is not part of the payload: it changes nothing here.
 
 Spec mapping (original §4.5): "Validation Failed" = validation errors shown on a `draft` (no state) or `failed` with `VALIDATION_FAILED` at due time. "Approval Rejected" = `rejected`. "Publishing Failed" = `failed`. "Retry Scheduled" = `retry_scheduled`. "Cancelled" = `cancelled`. "Approved" is folded into `scheduled`, because approval always includes the schedule.

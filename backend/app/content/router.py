@@ -21,8 +21,13 @@ from app.content.schemas import (
     ContentTab,
     ContentValidationOut,
     MediaAssetOut,
+    ReapproveIn,
+    ScheduleIn,
+    SubmitIn,
+    ValidateIn,
 )
-from app.content.views import item_out, validation_out
+from app.content.service import ScheduleRequest
+from app.content.views import check_out, item_out
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
@@ -163,11 +168,83 @@ def patch_content_item(
     return item_out(db, ctx, item)
 
 
+def _schedule(schedule: ScheduleIn) -> ScheduleRequest:
+    if schedule == "now":
+        return ScheduleRequest(publish_now=True)
+    return ScheduleRequest(local_date=schedule.local_date, local_time=schedule.local_time)
+
+
 @router.post("/content-items/{content_id}/validate", response_model=ContentValidationOut)
 def validate_content_item(
     content_id: uuid.UUID,
+    body: ValidateIn | None = None,
     ctx: WorkspaceContext = Depends(require_membership("content.edit")),
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
 ) -> ContentValidationOut:
-    return validation_out(service.validate(db, clock, ctx, content_id))
+    """A dry run of the claim validation and every submit rule. Changes nothing."""
+    body = body or ValidateIn()
+    checked = service.validate(
+        db,
+        clock,
+        settings,
+        ctx,
+        content_id,
+        schedule=None if body.schedule is None else _schedule(body.schedule),
+        self_approve=body.self_approve,
+    )
+    return check_out(checked, ctx.locale)
+
+
+@router.post("/content-items/{content_id}/submit", response_model=ContentItemOut)
+def submit_content_item(
+    content_id: uuid.UUID,
+    body: SubmitIn,
+    ctx: WorkspaceContext = Depends(require_membership("content.edit")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> ContentItemOut:
+    item = service.submit(
+        db,
+        clock,
+        settings,
+        ctx,
+        content_id,
+        schedule=_schedule(body.schedule),
+        self_approve=body.self_approve,
+        expected_version=body.expected_version,
+    )
+    return item_out(db, ctx, item)
+
+
+@router.post("/content-items/{content_id}/cancel", response_model=ContentItemOut)
+def cancel_content_item(
+    content_id: uuid.UUID,
+    ctx: WorkspaceContext = Depends(require_membership("content.approve")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> ContentItemOut:
+    return item_out(db, ctx, service.cancel(db, clock, ctx, content_id))
+
+
+@router.post("/content-items/{content_id}/reapprove", response_model=ContentItemOut)
+def reapprove_content_item(
+    content_id: uuid.UUID,
+    body: ReapproveIn,
+    ctx: WorkspaceContext = Depends(require_membership("content.approve")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> ContentItemOut:
+    item = service.reapprove(
+        db,
+        clock,
+        settings,
+        ctx,
+        content_id,
+        schedule=_schedule(body.schedule),
+        expected_version=body.expected_version,
+    )
+    return item_out(db, ctx, item)

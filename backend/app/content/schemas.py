@@ -1,7 +1,7 @@
 """API models of the content module (api-design.md section 2.7)."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
@@ -82,13 +82,34 @@ class ContentIssueOut(BaseModel):
     text: str
     # Does the value equal a verified fact (so the owner can see it is right but not grounded)?
     matches_verified: bool = False
+    # The key of the verified fact whose display the value equals (``null`` if none). For a
+    # ``PLACEHOLDER_UNRENDERED`` issue, the key the placeholder names.
+    fact_key: str | None = None
+
+
+class ContentCheckItemOut(BaseModel):
+    """One submit rule that was broken (``errors``) or only worth a look (``warnings``)
+    (plan.md G17). ``field`` names what it is about (``caption``, ``media_asset_id``,
+    ``schedule``, ``scheduled_at``, ``social_account_id``, ``overlay_text_suggestions.{i}``);
+    ``null`` for the claim check, whose ``params.issues`` lists the claim issues."""
+
+    code: str
+    field: str | None = None
+    params: dict[str, Any] = Field(default_factory=dict)
+    # Localised text (the caller's locale); absent in a stored report.
+    message: str | None = None
 
 
 class ContentValidationOut(BaseModel):
+    # No claim issue: the caption and the overlay suggestions hold no ungrounded value.
     passed: bool
     issues: list[ContentIssueOut]
     # A fact changed since the last check; the report may be out of date (P5-07).
     stale: bool = False
+    # The submit rules (G17). Filled by ``POST .../validate``; on an item, only the warnings of
+    # the last successful submission (an item with errors was never submitted).
+    errors: list[ContentCheckItemOut] = Field(default_factory=list)
+    warnings: list[ContentCheckItemOut] = Field(default_factory=list)
 
 
 class ContentApprovalStateOut(BaseModel):
@@ -147,6 +168,35 @@ class ContentItemOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     is_simulated: bool
+
+
+class LocalScheduleIn(BaseModel):
+    """A wall-clock time in the workspace timezone (never an instant: the server converts)."""
+
+    local_date: date
+    local_time: Annotated[str, StringConstraints(pattern=r"^([01]\d|2[0-3]):[0-5]\d$")]
+
+
+# ``"now"`` is the whole value, not a field.
+ScheduleIn = LocalScheduleIn | Literal["now"]
+
+
+class SubmitIn(BaseModel):
+    schedule: ScheduleIn
+    self_approve: bool = False
+    expected_version: int = Field(ge=1)
+
+
+class ReapproveIn(BaseModel):
+    schedule: ScheduleIn
+    expected_version: int = Field(ge=1)
+
+
+class ValidateIn(BaseModel):
+    """Optional body of the dry run: with a schedule the schedule and quota rules run too."""
+
+    schedule: ScheduleIn | None = None
+    self_approve: bool = False
 
 
 def empty_validation() -> dict[str, Any]:

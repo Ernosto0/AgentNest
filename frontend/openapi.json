@@ -913,6 +913,47 @@
         "title": "ContentApprovalStateOut",
         "type": "object"
       },
+      "ContentCheckItemOut": {
+        "description": "One submit rule that was broken (``errors``) or only worth a look (``warnings``)\n(plan.md G17). ``field`` names what it is about (``caption``, ``media_asset_id``,\n``schedule``, ``scheduled_at``, ``social_account_id``, ``overlay_text_suggestions.{i}``);\n``null`` for the claim check, whose ``params.issues`` lists the claim issues.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "ContentCheckItemOut",
+        "type": "object"
+      },
       "ContentCreate": {
         "properties": {
           "caption": {
@@ -988,6 +1029,17 @@
           "code": {
             "title": "Code",
             "type": "string"
+          },
+          "fact_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fact Key"
           },
           "field": {
             "title": "Field",
@@ -1430,6 +1482,13 @@
       },
       "ContentValidationOut": {
         "properties": {
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ContentCheckItemOut"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
           "issues": {
             "items": {
               "$ref": "#/components/schemas/ContentIssueOut"
@@ -1445,6 +1504,13 @@
             "default": false,
             "title": "Stale",
             "type": "boolean"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/ContentCheckItemOut"
+            },
+            "title": "Warnings",
+            "type": "array"
           }
         },
         "required": [
@@ -2346,6 +2412,27 @@
           }
         },
         "title": "LabelIn",
+        "type": "object"
+      },
+      "LocalScheduleIn": {
+        "description": "A wall-clock time in the workspace timezone (never an instant: the server converts).",
+        "properties": {
+          "local_date": {
+            "format": "date",
+            "title": "Local Date",
+            "type": "string"
+          },
+          "local_time": {
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "title": "Local Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "local_date",
+          "local_time"
+        ],
+        "title": "LocalScheduleIn",
         "type": "object"
       },
       "LoginRequest": {
@@ -3446,6 +3533,33 @@
         "title": "ReadinessOut",
         "type": "object"
       },
+      "ReapproveIn": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocalScheduleIn"
+              },
+              {
+                "const": "now",
+                "type": "string"
+              }
+            ],
+            "title": "Schedule"
+          }
+        },
+        "required": [
+          "schedule",
+          "expected_version"
+        ],
+        "title": "ReapproveIn",
+        "type": "object"
+      },
       "RenderedFactOut": {
         "properties": {
           "display": {
@@ -3984,6 +4098,38 @@
         "title": "SubjectOut",
         "type": "object"
       },
+      "SubmitIn": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocalScheduleIn"
+              },
+              {
+                "const": "now",
+                "type": "string"
+              }
+            ],
+            "title": "Schedule"
+          },
+          "self_approve": {
+            "default": false,
+            "title": "Self Approve",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "schedule",
+          "expected_version"
+        ],
+        "title": "SubmitIn",
+        "type": "object"
+      },
       "TemplateItemOut": {
         "properties": {
           "allowed_values": {
@@ -4168,6 +4314,33 @@
           "ui_locale"
         ],
         "title": "UserOut",
+        "type": "object"
+      },
+      "ValidateIn": {
+        "description": "Optional body of the dry run: with a schedule the schedule and quota rules run too.",
+        "properties": {
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocalScheduleIn"
+              },
+              {
+                "const": "now",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule"
+          },
+          "self_approve": {
+            "default": false,
+            "title": "Self Approve",
+            "type": "boolean"
+          }
+        },
+        "title": "ValidateIn",
         "type": "object"
       },
       "ValidationError": {
@@ -6572,8 +6745,188 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/cancel": {
+      "post": {
+        "operationId": "cancel_content_item_api_v1_workspaces__workspace_id__content_items__content_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Content Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Content Item",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/reapprove": {
+      "post": {
+        "operationId": "reapprove_content_item_api_v1_workspaces__workspace_id__content_items__content_id__reapprove_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Content Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReapproveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reapprove Content Item",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/submit": {
+      "post": {
+        "operationId": "submit_content_item_api_v1_workspaces__workspace_id__content_items__content_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Content Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Content Item",
+        "tags": [
+          "content"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/validate": {
       "post": {
+        "description": "A dry run of the claim validation and every submit rule. Changes nothing.",
         "operationId": "validate_content_item_api_v1_workspaces__workspace_id__content_items__content_id__validate_post",
         "parameters": [
           {
@@ -6597,6 +6950,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ValidateIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
