@@ -1,5 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
-import { hasHorizontalScroll, navLink, reseedDemo, signInToWorkspace } from "./helpers";
+import {
+  SAMPLE_FEED,
+  attachImage,
+  hasHorizontalScroll,
+  localFields,
+  navLink,
+  openScheduleSheet,
+  reseedDemo,
+  say,
+  signInToWorkspace,
+  statusBadge,
+} from "./helpers";
 
 // Scenario C: natural-language commands (docs/product/acceptance-criteria.md AC-C1, AC-C2, AC-C6)
 // and paste-and-extract (AC-A6). The fake AI is deterministic; the worker runs the jobs.
@@ -11,11 +22,6 @@ const GYM = /Gölkent Fitness & Pilates/;
 test.beforeEach(() => {
   reseedDemo(); // the commands below change facts; every test starts from the same data
 });
-
-async function say(page: Page, text: string) {
-  await page.getByLabel("Komut").fill(text);
-  await page.getByRole("button", { name: "Gönder" }).click();
-}
 
 async function openPricing(page: Page) {
   await navLink(page, "Daha fazla").click();
@@ -161,4 +167,55 @@ test("A6: pasted text yields suggestions with excerpts and changes no fact", asy
   await page.getByRole("link", { name: "İşletme bilgilerine dön" }).click();
   await page.getByRole("link", { name: /Fiyatlar/ }).click();
   await expect(page.getByTestId("fact-pricing.membership_monthly")).toContainText("6.000 ₺ / ay"); // unchanged
+});
+
+test("fact change holds the scheduled post (AC-C4)", async ({
+  page,
+}) => {
+  await signInToWorkspace(page, OWNER, GYM);
+
+  // A feed post with the monthly price, generated from the verified fact, and scheduled for later.
+  await navLink(page, "İçerik").click();
+  await page.getByRole("button", { name: "Taslak iste" }).click();
+  const sheet = page.getByTestId("generate-sheet");
+  await sheet.getByLabel("Ne paylaşmak istiyorsunuz?").fill("Aylık üyelik fiyatı hakkında bir gönderi");
+  await sheet.getByRole("button", { name: "Taslağı hazırla" }).click();
+  await sheet.getByRole("button", { name: "Taslağı aç" }).click();
+  await expect(page.getByLabel("Açıklama", { exact: true })).toHaveValue(/6\.000 ₺ \/ ay/, {
+    timeout: 30_000,
+  });
+  await attachImage(page, SAMPLE_FEED);
+
+  const scheduling = await openScheduleSheet(page);
+  const when = localFields(180);
+  await scheduling.getByLabel("Tarih").fill(when.date);
+  await scheduling.getByLabel("Saat", { exact: true }).fill(when.time);
+  await scheduling.getByRole("button", { name: "Onayla ve zamanla" }).click();
+  await expect(scheduling).toHaveCount(0);
+  await expect(statusBadge(page)).toHaveAttribute("data-status", "scheduled");
+
+  // The owner changes the price by command; the confirmation says what it touches.
+  await navLink(page, "Ana sayfa").click();
+  await say(page, "Aylık üyelik artık 7.000 TL");
+  const card = page.getByTestId("confirmation-card");
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await expect(card.getByTestId("change-to")).toHaveText("7.000 ₺ / ay");
+  await expect(card).toContainText("Etkilenecek öğeler");
+  await card.getByRole("button", { name: "Onayla" }).click();
+  await expect(page.getByTestId("command-result")).toContainText("güncellendi", { timeout: 15_000 });
+
+  // Nothing is scheduled any more: the post is on hold, with the reason and the way forward.
+  await navLink(page, "İçerik").click();
+  await page.getByRole("tab", { name: "Zamanlanan" }).click();
+  await expect(page.getByText("Zamanlanmış içerik yok")).toBeVisible();
+  await page.getByRole("tab", { name: "Sorunlar" }).click();
+  const held = page.getByTestId("content-card");
+  await expect(held).toHaveCount(1);
+  await expect(held.locator("[data-status]")).toHaveAttribute("data-status", "on_hold");
+  await held.click();
+  await expect(statusBadge(page)).toHaveAttribute("data-status", "on_hold");
+  const hold = page.getByTestId("on-hold");
+  await expect(hold).toHaveAttribute("data-reason", "FACT_CHANGED");
+  await expect(hold).toContainText("Kullandığı işletme bilgisi değiştiği için beklemeye alındı.");
+  await expect(hold.getByRole("button", { name: "Olduğu gibi yeniden onayla" })).toBeVisible();
 });
