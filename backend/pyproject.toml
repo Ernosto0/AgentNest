@@ -221,6 +221,8 @@ source_modules = [
     "app.reporting.periods",
     "app.reporting.definitions",
     "app.reporting.metrics",
+    "app.reporting.service",
+    "app.reporting.jobs",
 ]
 forbidden_modules = ["app.api", "app.main"]
 

@@ -20,3 +20,4 @@ def load_handlers() -> None:
     import app.knowledge.impact_handlers  # noqa: F401
     import app.operations.content_ledger  # noqa: F401
     import app.operations.jobs  # noqa: F401
+    import app.reporting.jobs  # noqa: F401
