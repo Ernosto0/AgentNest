@@ -217,6 +217,10 @@ source_modules = [
     "app.content.notifications",
     "app.content.generation",
     "app.content.jobs",
+    "app.reporting.models",
+    "app.reporting.periods",
+    "app.reporting.definitions",
+    "app.reporting.metrics",
 ]
 forbidden_modules = ["app.api", "app.main"]
 
@@ -390,3 +394,50 @@ forbidden_modules = [
     "app.demo",
     "app.api",
 ]
+
+[[tool.importlinter.contracts]]
+name = "reporting reads other modules' models only (plan.md section 1)"
+type = "forbidden"
+source_modules = ["app.reporting"]
+forbidden_modules = [
+    "app.commands",
+    "app.api",
+    "app.main",
+    "app.worker",
+    "app.cli",
+    "app.demo",
+    "app.operations.accounts",
+    "app.operations.accounts_router",
+    "app.operations.content_ledger",
+    "app.operations.health",
+    "app.operations.jobs",
+    "app.operations.payloads",
+    "app.operations.publish",
+    "app.operations.reconcile",
+    "app.operations.resolution",
+    "app.operations.resume",
+    "app.operations.schemas",
+    "app.operations.send",
+    "app.operations.transitions",
+]
+
+[[tool.importlinter.contracts]]
+name = "only executors, the API, the demo and the worker reach reporting"
+type = "forbidden"
+source_modules = [
+    "app.core",
+    "app.identity",
+    "app.knowledge",
+    "app.audit",
+    "app.jobs",
+    "app.ai",
+    "app.approvals",
+    "app.notifications",
+    "app.inbox",
+    "app.operations",
+    "app.integrations",
+    "app.policy",
+    "app.content",
+]
+forbidden_modules = ["app.reporting"]
+

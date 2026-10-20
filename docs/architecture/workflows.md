@@ -306,6 +306,19 @@ The same pipeline (`interpret_command` → deterministic resolution → answer, 
 | `fact_changes` | audit `fact.updated` + `fact.verified` + `fact.archived` in period | period |
 | `integration_errors` | operations that became `failed` in period + `inbound_events.status=failed` in period + account transitions to `needs_reauth`/`degraded` in period | period |
 
+**Row-set rule (H1).** Every metric is defined once, in `reporting/definitions.py`, as a SQL **row set** over persisted records, and its value is computed from that set: the count of its rows (for `median_first_response_minutes` the median of the rows' `measure`). The drill-down list behind a number (`GET /reports/daily/{date}/metrics/{key}`) runs the same row set, so the count of its rows equals the number by construction (AC-E3). Every row set has the same seven columns: `subject_type`, `subject_id`, `occurred_at`, `is_simulated`, `link_id` (the record a link opens: the conversation for a message or draft, the content item, the approval), `measure` (minutes, median metric only) and `group_key` (the approval action, `pending_approvals_now` only, which also carries a `breakdown` per action). `has_simulated_data` is true when any row of any metric is simulated.
+
+**Inbox keys (H2).** Staff (`reports.view_inbox_metrics`) see only: `inbound_messages`, `conversations_with_inbound`, `new_conversations`, `replies_sent`, `replies_sent_auto`, `replies_sent_approved`, `replies_sent_by_owner`, `native_replies`, `escalations`, `missed_conversations`, `median_first_response_minutes`, `attention_now`, `unanswered_open_now`. The other keys are dropped from their report and their drill-down is `403`.
+
+**Details the table leaves open (decided in P6-01).**
+- A period is `[start, end)`: a record stamped exactly at `end` belongs to the next period. For a live "today" (`end = now`) this means a record stamped at the same instant as `now` is not yet counted.
+- `replies_sent_auto`, `replies_sent_approved` and `replies_sent_by_owner` join the message to its `reply_drafts` row through `messages.reply_draft_id`. A reply without a draft is in `replies_sent` only. The three subsets do not overlap.
+- `missed_conversations` treats any outbound message after `last_inbound_at` as a reply, including one written in the Instagram app.
+- `median_first_response_minutes`: a **burst** is a run of customer messages with no outbound message between them (deleted inbound messages are ignored; messages are ordered by `(provider_timestamp, id)`). It is **in the period** when its first message is. It counts only when it is **answered inside the period**: the next outbound message of the conversation, of any sender kind, is before `period_end`. The response time is the minutes from the burst's first message to that outbound message. The median of these is rounded to one decimal; with no answered burst it is `null`. A report for a day therefore does not change when it is generated later.
+- `unanswered_open_now` uses the same test as the conversation attention logic: the last inbound message is newer than the last outbound one, and `last_inbound_at + 24 h` is after `now`.
+- `content_failed` counts distinct content items, so an item that failed twice counts once. `fact_changes` counts audit entries, so an update followed by a verification counts twice.
+- `integration_errors` counts a failed inbound event at `coalesce(processed_at, received_at)` and a failed operation at `completed_at`.
+
 | Aspect | Contract |
 |---|---|
 | Persistence | `daily_reports`, `notifications`, `audit_logs`. |
