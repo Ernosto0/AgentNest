@@ -111,7 +111,7 @@ Backend: `app/handlers.py`, `app/main.py`, `app/api/router.py`, `app/core/{confi
 
 ## 7. Known limitations
 
-- **Reconnecting an account does not re-send queued replies.** A reply that waits for a re-authorisation stays `queued` (the job retries every 5 minutes, then the expiry sweep ends it at the window end). The reconnection UX and `resume_account` are Phase 6.
+- ~~**Reconnecting an account does not re-send queued replies.**~~ **Resolved in Phase 5 (P5-00 Q6):** `POST /social-accounts/{id}/reconnect` (mock) reconnects the account and enqueues `resume_account`, which makes the waiting `send_reply` jobs due (or replaces ones that ran out of attempts). A reply that waits for a re-authorisation still stays `queued` until then; the expiry sweep still ends it at the window end. The circuit breaker and the other reconnection UX remain Phase 6.
 - No automatic `degraded` state and no circuit breaker: Phase 4 counts consecutive failures and reacts to an invalid token (`needs_reauth` + a critical notification) and a missing permission (messaging capability off). Phase 6.
 - The Meta adapter does not exist: `POST /webhooks/instagram` and the handshake are mounted only if `meta` is enabled, and the registry refuses to build a Meta provider ("arrives in Phase 7"). Echo matching by text hash and the lookup fallback depend on the platform checks V-02.
 - The fake drafting is template-like and keyword-based (documented demo phrases); exploratory typing is better with the real provider. The real provider has not been run against `draft_reply` (no key here): the prompt and strict schema are tested offline only.

@@ -19,6 +19,8 @@ from app.identity import repository as identity_repo
 from app.integrations.instagram import queries
 from app.integrations.instagram.models import SocialAccount
 from app.integrations.instagram.transitions import apply_account_transition
+from app.jobs.queue import enqueue
+from app.operations.payloads import ResumeAccountPayload
 
 MOCK_CAPABILITIES = {"messaging": True, "content_publish": True}
 
@@ -41,8 +43,13 @@ def transition_account(
     target: str,
     *,
     error_code: str | None = None,
+    audit_action: str | None = None,
 ) -> SocialAccount:
-    """Move ``account`` to ``target`` (row locked by the caller) and audit it. No commit."""
+    """Move ``account`` to ``target`` (row locked by the caller) and audit it. No commit.
+
+    The audit action defaults to ``social_account.<target>``; a caller whose change has a name of
+    its own in the audit catalog (``account.reconnected``) passes it instead.
+    """
     previous = account.status
     account.status = apply_account_transition(previous, target)
     now = clock.now()
@@ -60,7 +67,7 @@ def transition_account(
     audit.record(
         session,
         ctx,
-        f"social_account.{target}",
+        audit_action or f"social_account.{target}",
         "social_account",
         account.id,
         {"from": previous, "provider_kind": account.provider_kind, "error_code": error_code},
@@ -110,6 +117,47 @@ def connect_mock(
         account.id,
         {"from": None, "provider_kind": "mock"},
         is_simulated=True,
+        clock=clock,
+    )
+    session.commit()
+    return account
+
+
+def reconnect_mock(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    settings: Settings,
+    account_id: uuid.UUID,
+) -> SocialAccount:
+    """Connect a simulated account again after its token was revoked, and commit.
+
+    ``needs_reauth`` becomes ``connected`` for the **same** external account. The replies that
+    waited for the connection are resumed by the ``resume_account`` job enqueued here, in the same
+    transaction (a transactional outbox). A real (Meta) account is reconnected through OAuth in
+    Phase 7, never here.
+    """
+    if not mock_connect_allowed(settings, ctx):
+        raise AppError("FORBIDDEN", permission="integrations.mock")
+    account = queries.get_account(session, ctx, account_id, lock=True)
+    if account is None:
+        raise AppError("NOT_FOUND")
+    if account.provider_kind != "mock":
+        raise AppError("CONFLICT_STATE", entity="social_account", reason="not_a_mock_account")
+    if account.status != "needs_reauth":  # connected, degraded or disconnected: nothing to resume
+        raise AppError(
+            "CONFLICT_STATE", entity="social_account", status=account.status, target="connected"
+        )
+    transition_account(
+        session, clock, ctx, account, "connected", audit_action="account.reconnected"
+    )
+    enqueue(
+        session,
+        "resume_account",
+        ResumeAccountPayload(social_account_id=account.id),
+        workspace_id=ctx.workspace_id,
+        correlation_id=None,
+        dedup_key=f"resume_account:{account.id}",
         clock=clock,
     )
     session.commit()

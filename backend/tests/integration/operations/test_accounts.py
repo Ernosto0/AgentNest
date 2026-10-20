@@ -1,5 +1,7 @@
 """P4-01: social accounts. Constraints, connect eligibility, API, readiness, audit."""
 
+import uuid
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -31,6 +33,26 @@ def new_account(session: Session, env: Env, **overrides: object) -> SocialAccoun
     session.add(account)
     session.flush()
     return account
+
+
+def new_account_in(
+    env: Env, workspace_id: uuid.UUID, external_id: str, status: str, **overrides: object
+) -> SocialAccount:
+    account = SocialAccount(
+        workspace_id=workspace_id,
+        provider_kind=str(overrides.pop("provider_kind", "mock")),
+        external_account_id=external_id,
+        username=external_id,
+        status=status,
+        **overrides,
+    )
+    env.session.add(account)
+    env.session.flush()
+    return account
+
+
+def reconnect(env: Env, account_id: uuid.UUID, role: str = "owner"):  # type: ignore[no-untyped-def]
+    return env.call(getattr(env, role), "POST", f"/social-accounts/{account_id}/reconnect")
 
 
 # --- database constraints ---------------------------------------------------------------------
@@ -200,6 +222,37 @@ def test_an_account_of_another_workspace_is_not_found(env: Env) -> None:
     response = env.call(env.owner, "POST", f"/social-accounts/{foreign.id}/disconnect")
     assert response.status_code == 404
     assert env.call(env.owner, "GET", "/social-accounts").json()["items"] == []
+
+
+def test_reconnect_rejects_foreign_ids_other_providers_and_other_states(env: Env) -> None:
+    other = create_workspace(env.session, name="Other")
+    foreign = new_account_in(env, other.id, "foreign", "needs_reauth")
+    assert reconnect(env, foreign.id).status_code == 404  # INV-01: a foreign id does not exist
+
+    meta = new_account_in(env, env.workspace.id, "meta-1", "needs_reauth", provider_kind="meta")
+    assert reconnect(env, meta.id).status_code == 409  # a real account reconnects via OAuth
+    meta.status = "disconnected"
+    env.session.flush()
+
+    gone = new_account_in(env, env.workspace.id, "gone", "disconnected")
+    assert reconnect(env, gone.id).status_code == 409  # disconnected is terminal
+    assert reconnect(env, uuid.uuid4()).status_code == 404
+
+    lapsed = new_account_in(env, env.workspace.id, "lapsed", "needs_reauth")
+    assert reconnect(env, lapsed.id, role="staff").status_code == 403
+    done = reconnect(env, lapsed.id)
+    assert done.status_code == 200 and done.json()["status"] == "connected"
+    assert "token" not in str(done.json()).lower()
+
+
+def test_reconnect_is_refused_when_the_mock_provider_is_not_enabled(
+    env: Env, settings: Settings
+) -> None:
+    account = new_account_in(env, env.workspace.id, "lapsed", "needs_reauth")
+    off = settings.model_copy(update={"instagram_enabled_providers": "meta"})
+    with pytest.raises(AppError) as raised:
+        accounts.reconnect_mock(env.session, env.clock, env.ctx(env.owner), off, account.id)
+    assert raised.value.code == "FORBIDDEN"
 
 
 # --- queries and readiness ---------------------------------------------------------------------

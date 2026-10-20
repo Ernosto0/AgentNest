@@ -119,6 +119,8 @@
     "connection": "Instagram connection",
     "notConnected": "No Instagram account is connected.",
     "connectMock": "Connect a simulated account",
+    "reconnectMock": "Reconnect (simulated)",
+    "reconnectHint": "The connection was lost. When you reconnect, replies that were approved and waiting are sent.",
     "ownerOnly": "Only the owner can change this.",
     "accountStatus": {
       "connected": "connected",

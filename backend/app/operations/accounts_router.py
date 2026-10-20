@@ -53,6 +53,17 @@ def connect_mock_account(
     return account_out(accounts.connect_mock(db, clock, ctx, settings, username=username))
 
 
+@router.post("/{account_id}/reconnect", response_model=SocialAccountOut)
+def reconnect_account(
+    account_id: uuid.UUID,
+    ctx: WorkspaceContext = Depends(require_membership("integrations.manage")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> SocialAccountOut:
+    return account_out(accounts.reconnect_mock(db, clock, ctx, settings, account_id))
+
+
 @router.post("/{account_id}/disconnect", response_model=SocialAccountOut)
 def disconnect_account(
     account_id: uuid.UUID,

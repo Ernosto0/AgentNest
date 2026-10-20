@@ -224,6 +224,24 @@ export function useConnectMock(ws: string) {
   });
 }
 
+export function useReconnectMock(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<SocialAccount, AppError, string>({
+    mutationFn: (accountId) =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/social-accounts/{account_id}/reconnect", {
+          params: { path: { workspace_id: ws, account_id: accountId } },
+        }),
+      ),
+    onSuccess: () =>
+      Promise.all(
+        ["social-accounts", "readiness", "automation", "conversations"].map((name) =>
+          queryClient.invalidateQueries({ queryKey: [name, ws] }),
+        ),
+      ),
+  });
+}
+
 // --- approved answers ---
 
 export function useAnswers(ws: string) {

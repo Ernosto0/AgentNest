@@ -132,6 +132,7 @@ Commands are private to the member who typed them (another member's id → 404).
 | `POST /…/social-accounts/mock` | connect a simulated account (only if `mock` is enabled and allowed for the workspace) |
 | `POST /…/social-accounts/instagram/connect` | → `{authorize_url}` (Phase 7) |
 | `GET /oauth/instagram/callback` | OAuth redirect target (Phase 7) |
+| `POST /…/social-accounts/{id}/reconnect` | `integrations.manage`; **mock accounts only** (a real account reconnects through OAuth, Phase 7). `needs_reauth → connected` for the same external account, audit `account.reconnected`, enqueues `resume_account` (queued replies are sent). Returns the account. A foreign id → 404; another provider, or an account that is not `needs_reauth` → 409 `CONFLICT_STATE`; mock provider not enabled → 403 |
 | `POST /…/social-accounts/{id}/disconnect` | |
 | `GET /webhooks/instagram` | Meta verification handshake |
 | `POST /webhooks/instagram` | signed Meta webhooks (Phase 7) |

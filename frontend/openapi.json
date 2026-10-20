@@ -6988,6 +6988,59 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/social-accounts/{account_id}/reconnect": {
+      "post": {
+        "operationId": "reconnect_account_api_v1_workspaces__workspace_id__social_accounts__account_id__reconnect_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialAccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reconnect Account",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
     "/healthz": {
       "get": {
         "description": "Liveness: the process is up. Never touches the database.",

@@ -119,6 +119,8 @@
     "connection": "Instagram bağlantısı",
     "notConnected": "Bağlı bir Instagram hesabı yok.",
     "connectMock": "Simüle edilmiş hesap bağla",
+    "reconnectMock": "Yeniden bağlan (simülasyon)",
+    "reconnectHint": "Bağlantı koptu. Yeniden bağlandığınızda onaylanmış ve bekleyen yanıtlar gönderilir.",
     "ownerOnly": "Bunu yalnızca sahip değiştirebilir.",
     "accountStatus": {
       "connected": "bağlı",

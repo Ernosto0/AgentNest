@@ -112,7 +112,7 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 |---|---|---|---|---|
 | `process_inbound_event` | `{event_id}` | webhook ingest | 3 | workflow C step 2 |
 | `draft_reply` | `{conversation_id, message_id?, requested}` (`message_id` is optional and no longer set) | inbound processing, release to automatic, fact change, manual "suggest reply" | 3 | **One job per conversation**: dedup `draft_reply:{conversation_id}`, `run_at = now + 8 s` on the first trigger and **not extended** by later ones. The job drafts for the newest inbound message at the time it runs. A message that arrives *while it runs* cannot enqueue (the running job owns the key), so at the end of T3 the job checks, under the conversation lock, whether a newer inbound message exists; if so it discards its result and raises `RescheduleJob(now + debounce)` (no attempt consumed). Nothing is swallowed and no second job exists. An explicit "suggest reply" uses its own key `draft_reply:{conversation_id}:requested` because it carries `requested = true`, which a job queued by a customer message does not. A fact change, a release and a customer message all share the first key, so a redraft waits for the conversation's debounce window |
-| `send_reply` | `{reply_draft_id}` | approval decided / auto decision / owner reply / account resumed | 6 (backoff 1 / 5 / 15 / 30 / 30 min; a larger `Retry-After` wins) | retries only pre-acceptance errors; stops at the window end. An unusable account (needs reauth, disconnected) keeps the draft `queued` and retries every 5 minutes; the expiry sweep ends it at the window end. Phase 4 does not re-enqueue on reconnection (Phase 6, `resume_account`) |
+| `send_reply` | `{reply_draft_id}` | approval decided / auto decision / owner reply / account resumed | 6 (backoff 1 / 5 / 15 / 30 / 30 min; a larger `Retry-After` wins) | retries only pre-acceptance errors; stops at the window end. An unusable account (needs reauth, disconnected) keeps the draft `queued` and retries every 5 minutes (the job may run out of attempts before the window ends; the expiry sweep ends the draft at the window end). Reconnecting the account resumes it: `resume_account` (below) makes the job due now, or creates a new one if it ended |
 | `reconcile_send` | `{operation_id, round}` | send outcome unknown | one job per check, at +2 min and then every 2 min for `SEND_RECONCILE_WINDOW_MINUTES` (own dedup key per round) | echo / lookup; then `OUTCOME_UNCONFIRMED`. A late echo after that is recorded as our message (`reply.late_confirmation`) |
 | `interpret_command` | `{command_id}` | command submit, clarification answer | 3 | |
 | `generate_content` | `{content_id}` | `content.create_draft` | 3 | |
@@ -124,7 +124,7 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 | `refresh_tokens` | `{}` (fans out `refresh_token` per account) | scheduler | 1 | |
 | `refresh_token` | `{social_account_id}` | `refresh_tokens` | 3 | operation `refresh_token:{account}:{date}` |
 | `account_health_check` | `{social_account_id}` | scheduler | 1 | |
-| `resume_account` | `{social_account_id}` | reconnect / health restored | 3 | re-enqueue queued sends |
+| `resume_account` | `{social_account_id}` | reconnect (`accounts.reconnect_mock`, Phase 5); health restored (Phase 6) | 3 | dedup `resume_account:{account}`. Does nothing unless the account is `connected` with `messaging`. For every `queued` reply draft of the account whose messaging window is still open (> 60 s left): `enqueue(send_reply, dedup send_reply:{draft}, run_at = now)` then `queue.expedite(...)`, so a sleeping job is made due, a running job is left alone and a dead or missing job is replaced. The send itself is the ordinary `send_reply` (ledger, reconcile, one operation per draft). It does **not** resume `on_hold` content (workflows.md §G.2) |
 | `promotion_expiry_notices` | `{workspace_id, local_date}` | scheduler | 1 | |
 | `retention_cleanup` | `{}` | scheduler | 1 | [security-and-privacy.md §8](security-and-privacy.md) |
 | `media_cleanup` | `{}` | scheduler | 1 | |
@@ -151,7 +151,7 @@ Key event flows:
 | `fact.updated` | impact handling (drafts, content, answers) | redrafts |
 | `operation.outcome_unknown` | subject → outcome_unknown / publishing | `reconcile_send` / `reconcile_publish` |
 | `account.status_changed` (→ needs_reauth / degraded) | hold due content; notification | `account_health_check` (degraded) |
-| `account.reconnected` | — | `resume_account` |
+| `account.reconnected` | audit (Phase 5: the mock reconnect action) | `resume_account` |
 
 ## 8. Testing hooks
 

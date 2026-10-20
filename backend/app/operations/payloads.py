@@ -22,3 +22,9 @@ class EmitEchoPayload(_Payload):
 
 class ReconcileStuckPayload(_Payload):
     pass
+
+
+class ResumeAccountPayload(_Payload):
+    """An account is connected again: send what waited for it."""
+
+    social_account_id: uuid.UUID

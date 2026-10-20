@@ -5,7 +5,13 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
-import { useAutomation, useConnectMock, useSaveAutomation, useSocialAccounts } from "@/features/inbox/hooks";
+import {
+  useAutomation,
+  useConnectMock,
+  useReconnectMock,
+  useSaveAutomation,
+  useSocialAccounts,
+} from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 type Mode = PolicyItem["mode"];
@@ -18,6 +24,7 @@ export function AutomationSettings() {
   const owner = role === "owner";
   const accounts = useSocialAccounts(workspace.id);
   const connect = useConnectMock(workspace.id);
+  const reconnect = useReconnectMock(workspace.id);
   const automation = useAutomation(workspace.id);
   const save = useSaveAutomation(workspace.id);
   // Only what the owner changed on this screen; everything else shows the saved value.
@@ -32,11 +39,28 @@ export function AutomationSettings() {
       <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">{t("automation.connection")}</h2>
         {account ? (
-          <p data-testid="account-status">
-            <span className="font-medium">@{account.username ?? account.id}</span> ·{" "}
-            {t(`automation.accountStatus.${account.status}`)}{" "}
-            {account.is_simulated ? <SimulatedBadge /> : null}
-          </p>
+          <>
+            <p data-testid="account-status">
+              <span className="font-medium">@{account.username ?? account.id}</span> ·{" "}
+              {t(`automation.accountStatus.${account.status}`)}{" "}
+              {account.is_simulated ? <SimulatedBadge /> : null}
+            </p>
+            {account.status === "needs_reauth" && account.provider_kind === "mock" ? (
+              owner ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-slate-600">{t("automation.reconnectHint")}</p>
+                  <div>
+                    <Button disabled={reconnect.isPending} onClick={() => reconnect.mutate(account.id)}>
+                      {t("automation.reconnectMock")}
+                    </Button>
+                  </div>
+                  {reconnect.error ? <ErrorMessage error={reconnect.error} /> : null}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-600">{t("automation.ownerOnly")}</p>
+              )
+            ) : null}
+          </>
         ) : (
           <>
             <p>{t("automation.notConnected")}</p>

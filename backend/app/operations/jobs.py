@@ -23,9 +23,14 @@ from app.integrations.instagram.models import SimSentMessage
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, job_handler
 from app.jobs.scheduler import register_periodic
-from app.operations import reconcile, send
+from app.operations import reconcile, resume, send
 from app.operations.models import Operation
-from app.operations.payloads import EmitEchoPayload, ReconcileSendPayload, ReconcileStuckPayload
+from app.operations.payloads import (
+    EmitEchoPayload,
+    ReconcileSendPayload,
+    ReconcileStuckPayload,
+    ResumeAccountPayload,
+)
 from app.operations.resolution import set_operation, text_sha256
 
 STUCK_AFTER = timedelta(minutes=15)
@@ -62,6 +67,23 @@ def send_reply(job: JobContext) -> None:
         raise RetryableError(
             outcome.error_code or "ACCOUNT_NOT_CONNECTED", retry_after_seconds=WAIT_BACKOFF_SECONDS
         )
+
+
+@job_handler("resume_account", ResumeAccountPayload, max_attempts=3)
+def resume_account(job: JobContext) -> None:
+    """The account is connected again: make the queued replies that can still go out due now."""
+    payload = job.payload
+    if not isinstance(payload, ResumeAccountPayload) or job.workspace_id is None:
+        return
+    with job.session_factory() as session:
+        resume.resume_queued_replies(
+            session,
+            job.clock,
+            job.workspace_id,
+            payload.social_account_id,
+            correlation_id=job.correlation_id,
+        )
+        session.commit()
 
 
 @job_handler("reconcile_send", ReconcileSendPayload, max_attempts=3, timeout=60)
