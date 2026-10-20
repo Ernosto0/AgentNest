@@ -95,7 +95,7 @@ Reason codes are not errors. They explain *why* something was decided or changed
 
 ## 5. Audit action catalog
 
-Written in the same transaction as the change ([INV-12](../invariants.md)). `metadata` holds IDs, codes and, for facts, formatted old and new values (`old_display`, `new_display`; also `old_window`/`new_window` for validity changes, `key`, `version`, `source_type`, and `source_ref` — the command or candidate ID that caused the change); **never** message text or tokens. `audit.record` rejects metadata keys such as `text`, `message` and `body`. Every fact change writes exactly one `fact.*` entry and one `fact_versions` row; accepting a candidate additionally writes `fact_candidate.accepted`. `policy.reviewed` is written when the owner marks the automation policy as reviewed.
+Written in the same transaction as the change ([INV-12](../invariants.md)). `metadata` holds IDs, codes and, for facts, formatted old and new values (`old_display`, `new_display`; also `old_window`/`new_window` for validity changes, `key`, `version`, `source_type`, and `source_ref` — the command or candidate ID that caused the change); **never** message text or tokens. `audit.record` rejects metadata keys such as `text`, `message` and `body`. Every fact change writes exactly one `fact.*` entry and one `fact_versions` row; accepting a candidate additionally writes `fact_candidate.accepted`. `policy.reviewed` is written once, when the owner confirms the review (`POST /automation-policies/review`); saving the policies writes only `policy.updated`.
 
 | Area | Actions |
 |---|---|

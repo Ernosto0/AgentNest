@@ -5033,6 +5033,50 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/automation-policies/review": {
+      "post": {
+        "description": "The owner confirms the automation settings were looked at. Idempotent.",
+        "operationId": "review_policies_api_v1_workspaces__workspace_id__automation_policies_review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliciesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Review Policies",
+        "tags": [
+          "automation"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/commands": {
       "get": {
         "operationId": "list_commands_api_v1_workspaces__workspace_id__commands_get",

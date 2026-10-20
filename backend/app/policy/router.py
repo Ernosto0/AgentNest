@@ -40,3 +40,14 @@ def put_policies(
     clock: Clock = Depends(get_clock),
 ) -> PoliciesOut:
     return _out(db, clock, ctx, service.set_policies(db, clock, ctx, body))
+
+
+@router.post("/review", response_model=PoliciesOut)
+def review_policies(
+    ctx: WorkspaceContext = Depends(require_membership("automation.manage")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> PoliciesOut:
+    """The owner confirms the automation settings were looked at. Idempotent."""
+    service.mark_reviewed(db, clock, ctx)
+    return _out(db, clock, ctx, service.get_policies(db, ctx.workspace_id))

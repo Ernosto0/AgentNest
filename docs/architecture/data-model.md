@@ -89,7 +89,7 @@ Phase = the phase whose migration creates the table ([roadmap.md](../implementat
 | currency | char(3) not null | ISO 4217 (`CHECK ~ '^[A-Z]{3}$'`); the service accepts only codes in current tender use (Babel/CLDR), not historic codes or `XXX` |
 | is_demo | boolean not null default false | only demo workspaces may use mock providers in production config |
 | status | text not null default 'active' | `active`, `deleting` |
-| settings | jsonb not null default '{}' | validated by `WorkspaceSettings`: `disclosure_enabled` (default true), `disclosure_text{tr,en}`, `daily_report_hour` (default 20), `publish_max_delay_minutes` (default 360), `automation_reviewed_at` (null until the owner marks the automation policy as reviewed; stamped by the server from the `Clock`, never client-supplied) |
+| settings | jsonb not null default '{}' | validated by `WorkspaceSettings`: `disclosure_enabled` (default true), `disclosure_text{tr,en}`, `daily_report_hour` (default 20), `publish_max_delay_minutes` (default 360), `automation_reviewed_at` (null until the owner confirms the review with `POST /automation-policies/review`; stamped once by the server from the `Clock`, never client-supplied; saving the policies does not stamp it) |
 
 **`workspace_members`**: PK `(workspace_id, user_id)`; `role` `CHECK in ('owner','manager','staff')`; `invited_by_user_id` null. Service rule: a workspace always has ≥ 1 owner.
 

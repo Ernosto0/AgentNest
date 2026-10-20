@@ -1,5 +1,5 @@
 """P4-06: the automation policy API. Defaults, the readiness gate for `auto`, the review stamp
-(server clock, once), permissions and audit."""
+(an explicit step, server clock, once), permissions and audit."""
 
 import pytest
 
@@ -26,7 +26,7 @@ def modes(response_json: dict) -> dict[str, str]:  # type: ignore[type-arg]
 
 
 def make_ready(env: Env) -> None:
-    """Everything for `ready` except the review, which saving the policies provides."""
+    """Everything for `ready` except the review, which is a separate explicit step."""
     seed_gym_facts(env.session, env.workspace, env.clock)
     env.session.add(
         SocialAccount(
@@ -49,7 +49,7 @@ def test_every_class_defaults_to_approval(env: Env) -> None:
     assert body["auto_allowed"] is False
 
 
-def test_the_owner_saves_policies_and_the_save_is_the_review(env: Env) -> None:
+def test_the_owner_saves_policies_and_saving_does_not_review(env: Env) -> None:
     env.clock.advance(hours=2)
     response = env.call(
         env.owner,
@@ -66,19 +66,56 @@ def test_the_owner_saves_policies_and_the_save_is_the_review(env: Env) -> None:
     body = response.json()
     assert modes(body)["reply.hours"] == "off"
     assert modes(body)["reply.services"] == "approval"  # untouched classes keep the default
-    assert body["reviewed_at"] == "2026-01-15T14:00:00+00:00"  # server clock (INV-19)
+    assert body["reviewed_at"] is None
     assert modes(env.call(env.staff, "GET", URL).json())["reply.hours"] == "off"
 
     actions = [e.action for e in list_entries(env.session, workspace_id=env.workspace.id)]
-    assert "policy.updated" in actions and "policy.reviewed" in actions
+    assert "policy.updated" in actions and "policy.reviewed" not in actions
+    assert env.call(env.owner, "GET", URL).json()["reviewed_at"] is None
 
 
-def test_the_first_review_time_is_kept(env: Env) -> None:
-    body = {"items": [{"action_class": "reply.hours", "mode": "approval"}]}
-    first = env.call(env.owner, "PUT", URL, json=body).json()["reviewed_at"]
+def test_the_review_stamps_once_with_the_server_clock_and_audits_once(env: Env) -> None:
+    env.clock.advance(hours=2)
+    response = env.call(env.owner, "POST", f"{URL}/review")
+    assert response.status_code == 200, response.text
+    first = response.json()["reviewed_at"]
+    assert first == "2026-01-15T14:00:00+00:00"  # server clock (INV-19)
+    assert env.call(env.staff, "GET", URL).json()["reviewed_at"] == first
+
     env.clock.advance(days=1)
-    again = env.call(env.owner, "PUT", URL, json=body).json()["reviewed_at"]
-    assert first == again
+    again = env.call(env.owner, "POST", f"{URL}/review")
+    assert again.status_code == 200 and again.json()["reviewed_at"] == first
+    env.call(
+        env.owner, "PUT", URL, json={"items": [{"action_class": "reply.hours", "mode": "off"}]}
+    )
+    assert env.call(env.owner, "GET", URL).json()["reviewed_at"] == first
+
+    entries = list_entries(env.session, workspace_id=env.workspace.id, action="policy.reviewed")
+    assert len(entries) == 1
+
+
+@pytest.mark.parametrize("role", ["manager", "staff"])
+def test_only_the_owner_may_review(env: Env, role: str) -> None:
+    assert env.call(getattr(env, role), "POST", f"{URL}/review").status_code == 403
+    assert env.call(env.owner, "GET", URL).json()["reviewed_at"] is None
+    assert list_entries(env.session, workspace_id=env.workspace.id, action="policy.reviewed") == []
+
+
+def test_reviewing_another_workspace_is_a_404(env: Env) -> None:
+    from tests.factories import create_workspace
+
+    other = create_workspace(env.session, name="Other")
+    response = env.owner.client.post(
+        f"/api/v1/workspaces/{other.id}{URL}/review", headers=env.owner.headers
+    )
+    assert response.status_code == 404
+
+
+def test_the_review_completes_readiness(env: Env) -> None:
+    make_ready(env)
+    assert env.call(env.owner, "GET", URL).json()["readiness_level"] == "ready_for_drafts"
+    body = env.call(env.owner, "POST", f"{URL}/review").json()
+    assert body["readiness_level"] == "ready"
 
 
 def test_auto_is_refused_until_the_workspace_is_ready(env: Env) -> None:
@@ -99,7 +136,7 @@ def test_auto_is_allowed_once_everything_else_for_ready_is_in_place(env: Env) ->
     assert response.status_code == 200, response.text
     body = response.json()
     assert modes(body)["reply.hours"] == "auto"
-    assert body["readiness_level"] == "ready"  # the save completed the review
+    assert body["readiness_level"] == "ready_for_drafts"  # still waiting for the review
 
 
 def test_a_disconnected_account_takes_auto_away_again(env: Env) -> None:

@@ -191,6 +191,22 @@ export function useSaveAutomation(ws: string) {
   });
 }
 
+export function useReviewAutomation(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<AutomationPolicies, AppError, void>({
+    mutationFn: () =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/automation-policies/review", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["automation", ws], data);
+      void queryClient.invalidateQueries({ queryKey: ["readiness", ws] });
+    },
+  });
+}
+
 export function useSocialAccounts(ws: string) {
   return useQuery<SocialAccount[], AppError>({
     queryKey: ["social-accounts", ws],

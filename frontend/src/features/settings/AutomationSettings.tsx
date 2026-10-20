@@ -9,6 +9,7 @@ import {
   useAutomation,
   useConnectMock,
   useReconnectMock,
+  useReviewAutomation,
   useSaveAutomation,
   useSocialAccounts,
 } from "@/features/inbox/hooks";
@@ -27,6 +28,7 @@ export function AutomationSettings() {
   const reconnect = useReconnectMock(workspace.id);
   const automation = useAutomation(workspace.id);
   const save = useSaveAutomation(workspace.id);
+  const review = useReviewAutomation(workspace.id);
   // Only what the owner changed on this screen; everything else shows the saved value.
   const [edits, setEdits] = useState<Record<string, Mode>>({});
 
@@ -136,6 +138,17 @@ export function AutomationSettings() {
         )}
         {save.isSuccess ? <p role="status">{t("automation.saved")}</p> : null}
         {save.error ? <ErrorMessage error={save.error} /> : null}
+        {owner && automation.data && !automation.data.reviewed_at ? (
+          <div className="flex flex-col gap-2 border-t border-slate-200 pt-3">
+            <p className="text-sm text-slate-600">{t("automation.reviewHint")}</p>
+            <div>
+              <Button variant="secondary" disabled={review.isPending} onClick={() => review.mutate()}>
+                {t("automation.review")}
+              </Button>
+            </div>
+            {review.error ? <ErrorMessage error={review.error} /> : null}
+          </div>
+        ) : null}
       </Card>
     </div>
   );

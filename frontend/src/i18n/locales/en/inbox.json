@@ -139,6 +139,8 @@
     "intro": "By default every reply waits for your approval. Turn on automatic sending per topic once you trust it.",
     "autoNeedsReady": "Automatic sending becomes available when your business information is complete and an account is connected.",
     "reviewed": "You have reviewed these settings.",
+    "review": "I have reviewed these settings",
+    "reviewHint": "Saving does not count as a review. Confirm once you have looked at the settings above; it is the last setup step.",
     "save": "Save",
     "saved": "Saved",
     "mode": {

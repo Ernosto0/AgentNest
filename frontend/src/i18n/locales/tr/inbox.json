@@ -139,6 +139,8 @@
     "intro": "Varsayılan olarak her yanıt sizin onayınızı bekler. Güvendiğinizde konu bazında otomatik göndermeyi açın.",
     "autoNeedsReady": "İşletme bilgileriniz tamamlandığında ve bir hesap bağlandığında otomatik gönderim açılabilir.",
     "reviewed": "Bu ayarları gözden geçirdiniz.",
+    "review": "Bu ayarları inceledim",
+    "reviewHint": "Ayarları kaydetmek incelemek anlamına gelmez. Yukarıdaki ayarlara baktıysanız onaylayın; bu kurulumun son adımıdır.",
     "save": "Kaydet",
     "saved": "Kaydedildi",
     "mode": {

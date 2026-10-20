@@ -1,8 +1,10 @@
-"""Automation policies: read with defaults, write with the review stamp (ADR-014).
+"""Automation policies: read with defaults, write, and the explicit review (ADR-014).
 
-Saving the policies is the owner's review of the automation (the readiness requirement
-``automation_reviewed``): the server stamps ``automation_reviewed_at`` from the injected clock
-(INV-19) and audits ``policy.reviewed``. ``auto`` is refused unless the workspace is ``ready``.
+Saving the policies does not review them. The owner's explicit review (``mark_reviewed``, the
+readiness requirement ``automation_reviewed``) stamps ``automation_reviewed_at`` from the injected
+clock (INV-19), once, and audits ``policy.reviewed``. ``auto`` is refused unless everything for
+``ready`` except that review is in place; until it is reviewed, readiness stays below ``ready``,
+so rule R15 still sends every reply for approval.
 """
 
 import uuid
@@ -15,6 +17,7 @@ from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity import repository as identity_repo
+from app.identity.models import Workspace
 from app.identity.schemas import WorkspaceSettings
 from app.knowledge import readiness as readiness_module
 from app.policy.classes import ACTION_CLASSES, DEFAULT_MODE
@@ -32,8 +35,9 @@ def get_policies(session: Session, workspace_id: uuid.UUID) -> dict[str, str]:
 
 
 def auto_allowed(session: Session, clock: Clock, ctx: WorkspaceContext) -> tuple[bool, str]:
-    """May any class be set to ``auto``? Only when everything for ``ready`` is in place; saving
-    the policies is itself the review, so that one requirement does not hold it back."""
+    """May any class be set to ``auto``? Only when everything for ``ready`` is in place; the
+    review is a separate step the owner takes on the automation screen, so that one requirement
+    does not hold it back (until it is done, R15 keeps replies on approval)."""
     report = readiness_module.readiness(session, clock, ctx)
     open_items = [r.code for r in report.requirements if not r.satisfied]
     return all(code == "automation_reviewed" for code in open_items), report.level
@@ -48,7 +52,7 @@ def mode_for(session: Session, workspace_id: uuid.UUID, action_class: str | None
 def set_policies(
     session: Session, clock: Clock, ctx: WorkspaceContext, data: PoliciesIn
 ) -> dict[str, str]:
-    """Save the given modes and mark the policy as reviewed. Commits."""
+    """Save the given modes. Does not stamp the review. Commits."""
     workspace = identity_repo.get_workspace(session, ctx)
     if workspace is None:
         raise AppError("NOT_FOUND")
@@ -102,14 +106,25 @@ def set_policies(
             {"changed": {a: {"from": before[a], "to": after[a]} for a in changed}},
             clock=clock,
         )
+    session.commit()
+    return after
+
+
+def mark_reviewed(session: Session, clock: Clock, ctx: WorkspaceContext) -> None:
+    """The owner's explicit review: stamp ``automation_reviewed_at`` once and audit it. A repeat
+    changes nothing and writes no second entry. Commits."""
+    workspace = session.scalars(
+        select(Workspace).where(Workspace.id == ctx.workspace_id).with_for_update()
+    ).one_or_none()  # the row lock makes two simultaneous clicks stamp and audit once
+    if workspace is None:
+        raise AppError("NOT_FOUND")
     settings = WorkspaceSettings.model_validate(workspace.settings)
     if settings.automation_reviewed_at is None:
         merged = settings.model_dump(mode="json")
-        merged["automation_reviewed_at"] = now.isoformat()  # server-stamped (INV-19)
+        merged["automation_reviewed_at"] = clock.now().isoformat()  # server-stamped (INV-19)
         workspace.settings = merged  # a new dict: JSONB change detection
-    audit.record(session, ctx, "policy.reviewed", "workspace", workspace.id, {}, clock=clock)
+        audit.record(session, ctx, "policy.reviewed", "workspace", workspace.id, {}, clock=clock)
     session.commit()
-    return after
 
 
 def reviewed_at(session: Session, ctx: WorkspaceContext) -> str | None:

@@ -396,6 +396,9 @@ def automate(inbox: InboxEnv, *classes: str) -> None:
     items = [{"action_class": c, "mode": "auto"} for c in classes]
     response = inbox.env.call(inbox.env.owner, "PUT", "/automation-policies", json={"items": items})
     assert response.status_code == 200, response.text
+    # auto only sends once the owner has also reviewed the settings (readiness `ready`)
+    reviewed = inbox.env.call(inbox.env.owner, "POST", "/automation-policies/review")
+    assert reviewed.status_code == 200, reviewed.text
 
 
 def test_an_automatic_class_sends_without_asking_and_says_so(inbox: InboxEnv, gym) -> None:

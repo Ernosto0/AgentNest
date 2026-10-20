@@ -222,6 +222,7 @@ def test_the_automatic_reply_notice_is_not_saved_into_the_answer(inbox: InboxEnv
         "/automation-policies",
         json={"items": [{"action_class": "reply.pricing", "mode": "auto"}]},
     )
+    call(inbox, "owner", "POST", "/automation-policies/review")
     inbox.ask(PRICE_Q)
     message = next(m for m in inbox.messages() if m.direction == "outbound")
     assert "otomatik" in (message.text or "")
