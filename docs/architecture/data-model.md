@@ -451,7 +451,7 @@ The facts a text states are recorded in `fact_references` (`referrer_type = 'con
 
 **`channel_links`** (Phase 9, user-level, not tenant): `id`, `user_id`, `channel`, `external_user_id`, `external_chat_id`, `default_workspace_id`, `status` (`active`, `revoked`), `linked_at`, `revoked_at`. `unique (channel, external_user_id) where status='active'`.
 
-**`daily_reports`**: `id`, `workspace_id`, `local_date` (date), `timezone`, `period_start`, `period_end` (UTC), `metrics` jsonb, `definitions_version` text, `has_simulated_data` boolean, `generated_at`. `unique (workspace_id, local_date)` (regeneration overwrites; the previous value is not needed because records are the source).
+**`daily_reports`**: `id`, `workspace_id`, `local_date` (date), `timezone`, `period_start`, `period_end` (UTC), `metrics` jsonb (`{key: {"value": number | null, "breakdown"?: {action: count}}}` for the keys of the registry in `definitions_version`), `definitions_version` text, `has_simulated_data` boolean, `generated_at`. `unique (workspace_id, local_date)` (regeneration overwrites; the previous value is not needed because records are the source).
 
 ### 3.9 Simulator tables (Phase 4–5; written only by `MockInstagramProvider`)
 

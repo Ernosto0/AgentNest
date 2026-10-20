@@ -17,6 +17,7 @@ from app.knowledge.router import router as knowledge_router
 from app.notifications.router import router as notifications_router
 from app.operations.accounts_router import router as social_accounts_router
 from app.policy.router import router as policy_router
+from app.reporting.router import router as reports_router
 
 health_router = APIRouter(tags=["health"])
 # CSRF is enforced for every unsafe method under /api/v1 by default (see deps.enforce_csrf).
@@ -68,3 +69,4 @@ api_router.include_router(social_accounts_router)
 api_router.include_router(policy_router)
 api_router.include_router(inbox_router)
 api_router.include_router(content_router)
+api_router.include_router(reports_router)

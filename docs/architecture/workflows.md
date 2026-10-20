@@ -269,7 +269,7 @@ The same pipeline (`interpret_command` → deterministic resolution → answer, 
 
 | Aspect | Contract |
 |---|---|
-| Trigger | (a) Scheduler at `settings.daily_report_hour` (default 20:00) workspace-local time: job `generate_daily_report(workspace_id, local_date)` with `dedup_key=daily_report:{ws}:{date}`. (b) On demand `POST /reports/daily {local_date}` or `GET` (computed if missing). (c) Commands `query.activity_summary`. |
+| Trigger | (a) Scheduler at the workspace's `daily_report_hour` (setting, default 20:00) workspace-local time: job `generate_daily_report(workspace_id, local_date)` with `dedup_key=daily_report:{ws}:{date}`, one per workspace and local day. (b) On demand: `POST /reports/daily/generate {date}` (regenerate, overwrites) or `GET /reports/daily?date=` (H3 below). (c) Command `query.activity_summary`. |
 | Preconditions | None. |
 | Inputs | Workspace ID, local date (default today), timezone. |
 | Permissions | `reports.view` (owner, manager; staff sees inbox-related metrics only). |
@@ -279,7 +279,11 @@ The same pipeline (`interpret_command` → deterministic resolution → answer, 
 2. Run the metric queries below (pure SQL, read-only transaction).
 3. Build `metrics` JSON + `has_simulated_data` (any contributing row simulated).
 4. Upsert `daily_reports`. Notification `report.daily_ready` (scheduled runs only). Audit `report.generated`.
-5. Render (on read): localised templated summary from backend catalogs. Sections with zero values are omitted. Every metric includes a `link` (filtered list endpoint) whose result count equals the metric (AC-E3).
+5. Render (on read): localised templated summary from backend catalogs. Sections with zero values are omitted. Every metric includes a `link` (the drill-down list `GET /reports/daily/{date}/metrics/{key}`) whose result count equals the metric (AC-E3).
+
+**Today and stored days (H3).** `GET` computes **today** live (`period_end = now`, `is_partial`) and never stores it. A **past** day is the stored row if there is one, else it is computed, stored and returned; a later read returns that stored row unchanged (the records are the source, so `POST …/generate` recomputes it on request). The scheduled run for today stores what it sees at the run time (a 20:00 run is partial), announces it with `report.daily_ready` (info, every `reports.view` holder, dedup `report:{local_date}`, `is_simulated` from the report) and audits `report.generated` (workspace-level, resource `daily_report`, metadata `local_date`, `scheduled`, `definitions_version`, `is_partial`). Snapshot (`*_now`) metrics are as of the generation and are not recomputed when a stored day is read.
+
+**Summary text (H4).** Sections Mesajlar, Onaylar, İçerik, Bilgi değişiklikleri, Sorunlar (`report.section.*`), each with one line per non-zero metric (`report.summary.<section>.<metric>`, a label and the number, so there is no plural form to get wrong). A section whose values are all zero or `null` is omitted; with nothing left the text is `report.summary.empty`. Rendered in the reader's UI language, from the stored numbers only (INV-08).
 
 ### F.1 Metric definitions (`definitions_version = "1"`)
 

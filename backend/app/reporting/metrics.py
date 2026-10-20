@@ -5,6 +5,8 @@ INV-08: nothing here is estimated or model-generated. INV-01: every row set filt
 timezone (``app.reporting.periods``).
 """
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -87,19 +89,36 @@ def _compute_one(
     return Metric(definition.key, int(count), breakdown, bool(simulated))
 
 
-def compute_metrics(
-    session: Session, ctx: WorkspaceContext, start: datetime, end: datetime, now: datetime
-) -> Metrics:
-    """All metrics for ``[start, end)``; snapshot metrics are as of ``now``.
-
-    Runs in a read-only savepoint: the database refuses any write inside it, and the savepoint is
-    rolled back so the caller's transaction is left exactly as it was (it commits nothing).
-    """
+@contextmanager
+def _read_only(session: Session) -> Iterator[None]:
+    """A read-only savepoint: the database refuses any write inside it, and the savepoint is
+    rolled back so the caller's transaction is left exactly as it was (it commits nothing)."""
     session.flush()
     savepoint = session.begin_nested()
     try:
         session.execute(text("SET LOCAL transaction_read_only = on"))
-        computed = tuple(_compute_one(session, ctx, d, start, end, now) for d in DEFINITIONS)
+        yield
     finally:
         savepoint.rollback()
+
+
+def compute_metrics(
+    session: Session, ctx: WorkspaceContext, start: datetime, end: datetime, now: datetime
+) -> Metrics:
+    """All metrics for ``[start, end)``; snapshot metrics are as of ``now``."""
+    with _read_only(session):
+        computed = tuple(_compute_one(session, ctx, d, start, end, now) for d in DEFINITIONS)
     return Metrics(computed)
+
+
+def compute_metric(
+    session: Session,
+    ctx: WorkspaceContext,
+    definition: Definition,
+    start: datetime,
+    end: datetime,
+    now: datetime,
+) -> Metric:
+    """One metric, from the very row set its drill-down list shows (H1)."""
+    with _read_only(session):
+        return _compute_one(session, ctx, definition, start, end, now)

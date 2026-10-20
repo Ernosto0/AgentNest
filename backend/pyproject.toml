@@ -222,6 +222,10 @@ source_modules = [
     "app.reporting.definitions",
     "app.reporting.metrics",
     "app.reporting.service",
+    "app.reporting.links",
+    "app.reporting.summary",
+    "app.reporting.drilldown",
+    "app.reporting.schemas",
     "app.reporting.jobs",
 ]
 forbidden_modules = ["app.api", "app.main"]
@@ -422,6 +426,8 @@ forbidden_modules = [
     "app.operations.send",
     "app.operations.transitions",
 ]
+# The router is the one place that touches the API layer, through its shared dependencies.
+ignore_imports = ["app.reporting.router -> app.api.deps"]
 
 [[tool.importlinter.contracts]]
 name = "only executors, the API, the demo and the worker reach reporting"

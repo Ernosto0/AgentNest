@@ -1070,6 +1070,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/reports/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Daily Report
+         * @description Today live, a past day as stored (stored now if it never was).
+         */
+        get: operations["get_daily_report_api_v1_workspaces__workspace_id__reports_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/reports/daily/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Daily Report
+         * @description Compute the day again and store it, overwriting the stored report.
+         */
+        post: operations["generate_daily_report_api_v1_workspaces__workspace_id__reports_daily_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/reports/daily/{local_date}/metrics/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Metric Items
+         * @description The records behind one number; their count is the number (AC-E3).
+         */
+        get: operations["get_metric_items_api_v1_workspaces__workspace_id__reports_daily__local_date__metrics__key__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/social-accounts": {
         parameters: {
             query?: never;
@@ -1747,6 +1807,40 @@ export interface components {
             /** Text */
             text?: string | null;
         };
+        /** DailyReportOut */
+        DailyReportOut: {
+            /** Definitions Version */
+            definitions_version: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Has Simulated Data */
+            has_simulated_data: boolean;
+            /** Is Partial */
+            is_partial: boolean;
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /** Metrics */
+            metrics: components["schemas"]["MetricOut"][];
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            summary: components["schemas"]["SummaryOut"];
+            /** Timezone */
+            timezone: string;
+        };
         /**
          * DecisionIn
          * @description What the user saw and chose. The hash must be the one the client displayed.
@@ -1965,6 +2059,14 @@ export interface components {
             /** Retry After S */
             retry_after_s: number | null;
         };
+        /** GenerateReportRequest */
+        GenerateReportRequest: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+        };
         /**
          * GenerationOut
          * @description Where the AI draft of an item stands: the status of its ``agent_runs`` row (G7). A run
@@ -2160,6 +2262,53 @@ export interface components {
             product_name: string;
             /** Supported Locales */
             supported_locales: string[];
+        };
+        /** MetricItemOut */
+        MetricItemOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            link: components["schemas"]["ReportLinkOut"] | null;
+            /** Measure */
+            measure: number | null;
+            /** Occurred At */
+            occurred_at: string | null;
+        };
+        /** MetricItemsOut */
+        MetricItemsOut: {
+            /** Items */
+            items: components["schemas"]["MetricItemOut"][];
+            /** Key */
+            key: string;
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Value */
+            value: number | null;
+        };
+        /** MetricOut */
+        MetricOut: {
+            /** Breakdown */
+            breakdown: {
+                [key: string]: number;
+            } | null;
+            /** Key */
+            key: string;
+            /** Kind */
+            kind: string;
+            link: components["schemas"]["ReportLinkOut"];
+            screen_link: components["schemas"]["ReportLinkOut"] | null;
+            /** Section */
+            section: string;
+            /** Value */
+            value: number | null;
         };
         /** MockAccountCreate */
         MockAccountCreate: {
@@ -2470,6 +2619,16 @@ export interface components {
             /** Warnings */
             warnings: components["schemas"]["ValidationIssueOut"][];
         };
+        /**
+         * ReportLinkOut
+         * @description Where something leads: an API path and/or a frontend route.
+         */
+        ReportLinkOut: {
+            /** Api */
+            api: string | null;
+            /** Route */
+            route: string | null;
+        };
         /** RequirementOut */
         RequirementOut: {
             /** Code */
@@ -2597,6 +2756,24 @@ export interface components {
              * @default false
              */
             self_approve: boolean;
+        };
+        /** SummaryOut */
+        SummaryOut: {
+            /** Empty */
+            empty: boolean;
+            /** Sections */
+            sections: components["schemas"]["SummarySectionOut"][];
+            /** Text */
+            text: string;
+        };
+        /** SummarySectionOut */
+        SummarySectionOut: {
+            /** Lines */
+            lines: string[];
+            /** Section */
+            section: string;
+            /** Title */
+            title: string;
         };
         /** TemplateItemOut */
         TemplateItemOut: {
@@ -5152,6 +5329,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReplyDraftOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_daily_report_api_v1_workspaces__workspace_id__reports_daily_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_daily_report_api_v1_workspaces__workspace_id__reports_daily_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_metric_items_api_v1_workspaces__workspace_id__reports_daily__local_date__metrics__key__get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                local_date: string;
+                key: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricItemsOut"];
                 };
             };
             /** @description Validation Error */

@@ -1755,6 +1755,70 @@
         "title": "CustomerMessageIn",
         "type": "object"
       },
+      "DailyReportOut": {
+        "properties": {
+          "definitions_version": {
+            "title": "Definitions Version",
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "has_simulated_data": {
+            "title": "Has Simulated Data",
+            "type": "boolean"
+          },
+          "is_partial": {
+            "title": "Is Partial",
+            "type": "boolean"
+          },
+          "local_date": {
+            "format": "date",
+            "title": "Local Date",
+            "type": "string"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricOut"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/SummaryOut"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "local_date",
+          "timezone",
+          "period_start",
+          "period_end",
+          "generated_at",
+          "is_partial",
+          "definitions_version",
+          "has_simulated_data",
+          "metrics",
+          "summary"
+        ],
+        "title": "DailyReportOut",
+        "type": "object"
+      },
       "DecisionIn": {
         "additionalProperties": false,
         "description": "What the user saw and chose. The hash must be the one the client displayed.",
@@ -2383,6 +2447,21 @@
         "title": "FailureRuleOut",
         "type": "object"
       },
+      "GenerateReportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date"
+        ],
+        "title": "GenerateReportRequest",
+        "type": "object"
+      },
       "GenerationOut": {
         "description": "Where the AI draft of an item stands: the status of its ``agent_runs`` row (G7). A run\nthat has succeeded counts as ``running`` until its text has been saved on the draft.",
         "properties": {
@@ -2880,6 +2959,187 @@
           "supported_locales"
         ],
         "title": "MetaResponse",
+        "type": "object"
+      },
+      "MetricItemOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportLinkOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "measure": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measure"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "label",
+          "occurred_at",
+          "is_simulated",
+          "measure",
+          "link"
+        ],
+        "title": "MetricItemOut",
+        "type": "object"
+      },
+      "MetricItemsOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MetricItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "items",
+          "next_cursor"
+        ],
+        "title": "MetricItemsOut",
+        "type": "object"
+      },
+      "MetricOut": {
+        "properties": {
+          "breakdown": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakdown"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "link": {
+            "$ref": "#/components/schemas/ReportLinkOut"
+          },
+          "screen_link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportLinkOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "section": {
+            "title": "Section",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "kind",
+          "section",
+          "breakdown",
+          "link",
+          "screen_link"
+        ],
+        "title": "MetricOut",
         "type": "object"
       },
       "MockAccountCreate": {
@@ -3893,6 +4153,39 @@
         "title": "ReplyWithWarningsOut",
         "type": "object"
       },
+      "ReportLinkOut": {
+        "description": "Where something leads: an API path and/or a frontend route.",
+        "properties": {
+          "api": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          }
+        },
+        "required": [
+          "api",
+          "route"
+        ],
+        "title": "ReportLinkOut",
+        "type": "object"
+      },
       "RequirementOut": {
         "properties": {
           "code": {
@@ -4218,6 +4511,58 @@
           "expected_version"
         ],
         "title": "SubmitIn",
+        "type": "object"
+      },
+      "SummaryOut": {
+        "properties": {
+          "empty": {
+            "title": "Empty",
+            "type": "boolean"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/SummarySectionOut"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "empty",
+          "text",
+          "sections"
+        ],
+        "title": "SummaryOut",
+        "type": "object"
+      },
+      "SummarySectionOut": {
+        "properties": {
+          "lines": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "section": {
+            "title": "Section",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "section",
+          "title",
+          "lines"
+        ],
+        "title": "SummarySectionOut",
         "type": "object"
       },
       "TemplateItemOut": {
@@ -8767,6 +9112,212 @@
         "summary": "Cancel Draft",
         "tags": [
           "inbox"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/reports/daily": {
+      "get": {
+        "description": "Today live, a past day as stored (stored now if it never was).",
+        "operationId": "get_daily_report_api_v1_workspaces__workspace_id__reports_daily_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Daily Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/reports/daily/generate": {
+      "post": {
+        "description": "Compute the day again and store it, overwriting the stored report.",
+        "operationId": "generate_daily_report_api_v1_workspaces__workspace_id__reports_daily_generate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Daily Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/reports/daily/{local_date}/metrics/{key}": {
+      "get": {
+        "description": "The records behind one number; their count is the number (AC-E3).",
+        "operationId": "get_metric_items_api_v1_workspaces__workspace_id__reports_daily__local_date__metrics__key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "local_date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Local Date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricItemsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Metric Items",
+        "tags": [
+          "reports"
         ]
       }
     },

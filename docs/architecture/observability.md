@@ -146,6 +146,8 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 
 **Account audit names.** Every status change of a social account is audited as `social_account.<new status>` (entity type `social_account`; the previous status is in the metadata), which is what the code does (`operations/accounts.transition_account`). The one exception is the reconnect of a simulated account, which has a name of its own, `account.reconnected` (Phase 5, passed as `audit_action`). Earlier drafts of these docs called the status changes `account.connected`, `account.disconnected` and `account.status_changed`; those names are not used.
 
+`report.generated` is written with the workspace id (resource type `daily_report`; metadata `local_date`, `scheduled`, `definitions_version`, `is_partial`), by the scheduled run and by every on-demand regeneration, so it appears in the workspace's Activity feed (group *system*).
+
 The **Activity** view renders entries with i18n templates (`activity.<action>`), with actor labels ("Sistem", "Yapay zekâ taslağı", user display name) and a simulated badge.
 
 ## 6. System health panel (owner/manager, Phase 6)
