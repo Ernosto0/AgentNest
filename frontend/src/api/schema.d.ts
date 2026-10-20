@@ -2848,7 +2848,7 @@ export interface components {
             disclosure_text?: components["schemas"]["DisclosureText"];
             /**
              * Publish Max Delay Minutes
-             * @default 360
+             * @default 1440
              */
             publish_max_delay_minutes: number;
         };

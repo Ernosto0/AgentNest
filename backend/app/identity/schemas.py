@@ -35,7 +35,7 @@ class WorkspaceSettings(StrictModel):
     disclosure_enabled: bool = True
     disclosure_text: DisclosureText = Field(default_factory=DisclosureText)
     daily_report_hour: int = Field(default=20, ge=0, le=23)
-    publish_max_delay_minutes: int = Field(default=360, ge=1, le=1440)
+    publish_max_delay_minutes: int = Field(default=1440, ge=1, le=1440)
     # Set by the server from the injected Clock when the owner reviews the automation policies
     # (POST /automation-policies/review); read-only for clients.
     automation_reviewed_at: datetime | None = None

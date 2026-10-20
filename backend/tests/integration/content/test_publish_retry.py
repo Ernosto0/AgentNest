@@ -91,7 +91,7 @@ def test_ac_f2_transient_always_ends_failed_after_the_attempts_and_notifies(
 
 def test_a_retry_after_beyond_the_deadline_fails_at_once(pub: Publishing) -> None:
     item = pub.scheduled()
-    pub.fail("publish", "rate_limited", retry_after=8 * 3600)  # the deadline is 6 h away
+    pub.fail("publish", "rate_limited", retry_after=25 * 3600)  # the deadline is 24 h away
     outcome = pub.execute(item)
     assert (outcome.kind, outcome.error_code) == ("failed", "PROVIDER_RATE_LIMITED")
     row = pub.reload(item)

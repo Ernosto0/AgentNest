@@ -117,7 +117,7 @@ def test_ac_d4_an_owner_approving_and_scheduling_19_00_istanbul_gets_16_00_utc(e
     )
     assert approval.payload_hash == approval_payload_hash(expected)
     assert approval.expires_at == scheduled_at
-    assert approval.execute_before == scheduled_at + timedelta(minutes=360)  # G16
+    assert approval.execute_before == scheduled_at + timedelta(minutes=1440)  # G16
     assert approval.is_simulated is True
     assert body["approval"]["status"] == "approved" and body["approval"]["subject_version"] == 1
 

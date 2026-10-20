@@ -38,7 +38,7 @@ export function workspace(id: string, overrides: Partial<Workspace> = {}): Works
       disclosure_enabled: true,
       disclosure_text: { tr: "", en: "" },
       daily_report_hour: 20,
-      publish_max_delay_minutes: 360,
+      publish_max_delay_minutes: 1440,
     },
     created_at: "2026-10-15T12:00:00Z",
     ...overrides,

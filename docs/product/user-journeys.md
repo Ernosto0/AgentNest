@@ -91,7 +91,7 @@ UI copy examples are in Turkish (the primary market) with English in brackets. F
 5. The card shows *Zamanlandı · Bugün 19:00*. At 19:00 → *Yayınlanıyor* → *Yayınlandı* with a link to the post (in mock: a simulated permalink, badge SİMÜLASYON).
 
 **Edge cases:** the time is in the past → validation error. The schedule is more than 60 days ahead → validation error (configurable). No image → cannot submit a story. Staff submits → pending approval for owner/manager. The account is disconnected before the scheduled time → *Beklemede: hesap bağlantısı yok* (On hold: account not connected). Edited after approval → back to draft, and approval is required again.
-**Failure states:** publish failed (transient) → *Tekrar denenecek 19:05* (will retry 19:05). Still failing after the deadline (default 6 h) → *Başarısız* with the reason and "Düzenle ve yeniden gönder". Invalid media → failure with "Görsel Instagram tarafından kabul edilmedi" and a fix suggestion.
+**Failure states:** publish failed (transient) → *Tekrar denenecek 19:05* (will retry 19:05). Still failing after the deadline (default 24 h) → *Başarısız* with the reason and "Düzenle ve yeniden gönder". Invalid media → failure with "Görsel Instagram tarafından kabul edilmedi" and a fix suggestion.
 
 ### J5: "What happened today?" [UC-12, UC-17, UC-18]
 - The command "Bugün kaç DM geldi?" → answer card: "Bugün 14 mesaj, 9 konuşma. 6 yanıt gönderildi (2 otomatik, 4 onaylı), 2 konuşma sizi bekliyor." with links. Simulated data is labelled.

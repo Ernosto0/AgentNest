@@ -194,6 +194,11 @@ class Publishing:
         self.session.commit()
         return item
 
+    def set_max_delay(self, minutes: int) -> None:
+        """The workspace's ``publish_max_delay_minutes`` (read when an item is submitted)."""
+        self.workspace.settings = {**self.workspace.settings, "publish_max_delay_minutes": minutes}
+        self.session.commit()
+
     def schedule(
         self,
         item: ContentItem,

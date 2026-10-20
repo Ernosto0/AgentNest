@@ -195,6 +195,7 @@ def test_an_error_status_found_by_reconciliation_fails_the_item_as_media_rejecte
 
 def test_a_container_that_never_finishes_ends_at_the_deadline(make_pub: Any) -> None:
     pub: Publishing = make_pub(sim_container_delay_seconds=86_400)
+    pub.set_max_delay(360)  # a workspace with a 6 h window, shorter than the container delay
     item = pub.scheduled()
     pub.execute(item)
     pub.clock.advance(minutes=361)
@@ -206,6 +207,7 @@ def test_a_container_that_never_finishes_ends_at_the_deadline(make_pub: Any) -> 
 def test_an_unreadable_container_past_the_deadline_is_reported_as_unconfirmed(
     pub: Publishing,
 ) -> None:
+    pub.set_max_delay(360)
     item = pub.scheduled()
     pub.fail("publish", "timeout_after_success")
     pub.execute(item)

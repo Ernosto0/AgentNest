@@ -63,7 +63,7 @@ def test_ac_d8_staff_submission_creates_a_pending_authorisation(env: Env) -> Non
     assert approval.subject_version == 1 and approval.decided_by_user_id is None
     # Pending approvals expire when the post would have gone out.
     assert approval.expires_at == SCHEDULED_AT
-    assert approval.execute_before == SCHEDULED_AT + timedelta(minutes=360)
+    assert approval.execute_before == SCHEDULED_AT + timedelta(minutes=1440)
     assert item.scheduled_at == SCHEDULED_AT and item.social_account_id is not None
     assert publish_jobs(env) == []  # nothing runs before somebody approves
     # The approvers are told; the requester is not.

@@ -214,7 +214,7 @@ def test_an_approval_whose_payload_no_longer_matches_is_refused(pub: Publishing)
 
 def test_a_deadline_that_has_passed_fails_the_item_without_publishing(pub: Publishing) -> None:
     item = pub.scheduled()
-    pub.clock.advance(minutes=361)  # publish_max_delay_minutes is 360
+    pub.clock.advance(minutes=1441)  # publish_max_delay_minutes is 1440 (24 h)
 
     outcome = pub.execute(item)
 
@@ -376,7 +376,7 @@ def test_an_exhausted_quota_reschedules_the_item_for_when_the_oldest_post_leaves
     second = pub.draft()
     pub.execute(first)
     first_published_at = pub.clock.now()
-    pub.clock.advance(hours=20)  # 4 h to go: inside the 6 h deadline of the next one
+    pub.clock.advance(hours=20)  # 4 h to go: inside the 24 h deadline of the next one
     pub.schedule(second)
     second = pub.reload(second)
     pub.calls.clear()
@@ -403,6 +403,7 @@ def test_an_exhausted_quota_reschedules_the_item_for_when_the_oldest_post_leaves
 
 def test_a_quota_that_frees_up_after_the_deadline_fails_the_item(make_pub: Any) -> None:
     pub: Publishing = make_pub(publish_daily_limit=1)
+    pub.set_max_delay(360)  # a workspace that keeps the old 6 h window
     first = pub.scheduled()
     second = pub.scheduled()
     pub.execute(first)

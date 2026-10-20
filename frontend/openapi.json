@@ -4958,7 +4958,7 @@
             "$ref": "#/components/schemas/DisclosureText"
           },
           "publish_max_delay_minutes": {
-            "default": 360,
+            "default": 1440,
             "maximum": 1440.0,
             "minimum": 1.0,
             "title": "Publish Max Delay Minutes",

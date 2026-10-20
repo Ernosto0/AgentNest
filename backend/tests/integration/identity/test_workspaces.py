@@ -51,7 +51,7 @@ def test_create_workspace_makes_the_creator_the_owner(
         "disclosure_enabled": True,
         "disclosure_text": {"tr": "", "en": ""},
         "daily_report_hour": 20,
-        "publish_max_delay_minutes": 360,
+        "publish_max_delay_minutes": 1440,
     }
 
     member = db_session.get(WorkspaceMember, (uuid.UUID(body["id"]), user.id))
@@ -215,7 +215,7 @@ def test_owner_can_patch_and_it_is_audited(
     assert body["timezone"] == "Europe/Lisbon"
     assert body["reply_languages"] == ["tr", "en"]
     assert body["settings"]["daily_report_hour"] == 18
-    assert body["settings"]["publish_max_delay_minutes"] == 360  # untouched keys survive
+    assert body["settings"]["publish_max_delay_minutes"] == 1440  # untouched keys survive
 
     (entry,) = list_entries(db_session, workspace_id=ws.id, action="workspace.updated")
     assert entry.metadata_["changed"] == [
@@ -226,6 +226,21 @@ def test_owner_can_patch_and_it_is_audited(
     ]
     assert entry.occurred_at == clock.now()
     assert "New name" not in str(entry.metadata_)
+
+
+def test_publish_max_delay_defaults_to_24_hours_and_is_limited_to_24_hours(
+    client: TestClient, db_session: Session
+) -> None:
+    ws, users = workspace_with_members(db_session)
+    headers = login(client, users["owner"])
+    url = f"/api/v1/workspaces/{ws.id}"
+    assert client.get(url).json()["settings"]["publish_max_delay_minutes"] == 1440
+
+    for minutes, expected in ((1440, 200), (360, 200), (1441, 422), (0, 422)):
+        response = client.patch(
+            url, json={"settings": {"publish_max_delay_minutes": minutes}}, headers=headers
+        )
+        assert response.status_code == expected, (minutes, response.text)
 
 
 def test_settings_patches_merge_nested_values(client: TestClient, db_session: Session) -> None:
