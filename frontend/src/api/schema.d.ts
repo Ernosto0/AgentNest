@@ -1077,6 +1077,29 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * ApprovalStateOut
+         * @description Where the approval of a reply stands, for anyone who may read the conversation (staff
+         *     cannot decide, but they see whether their reply is waiting, approved or turned down).
+         */
+        ApprovalStateOut: {
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By Name */
+            decided_by_name: string | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected" | "expired" | "cancelled";
+        };
         /** ApprovedAnswerIn */
         ApprovedAnswerIn: {
             /** Answer Template */
@@ -1884,6 +1907,7 @@ export interface components {
         ReplyDraftOut: {
             /** Approval Id */
             approval_id: string | null;
+            approval_state: components["schemas"]["ApprovalStateOut"] | null;
             /**
              * Conversation Id
              * Format: uuid

@@ -58,6 +58,17 @@ class ValidationOut(BaseModel):
     issues: list[ValidationIssueOut]
 
 
+class ApprovalStateOut(BaseModel):
+    """Where the approval of a reply stands, for anyone who may read the conversation (staff
+    cannot decide, but they see whether their reply is waiting, approved or turned down)."""
+
+    status: Literal["pending", "approved", "rejected", "expired", "cancelled"]
+    expires_at: datetime
+    decided_by_name: str | None
+    decided_at: datetime | None
+    decision_note: str | None
+
+
 class ReplyDraftOut(BaseModel):
     id: uuid.UUID
     conversation_id: uuid.UUID
@@ -73,6 +84,7 @@ class ReplyDraftOut(BaseModel):
     decision: str
     decision_reasons: list[str]
     approval_id: uuid.UUID | None
+    approval_state: ApprovalStateOut | None
     version: int
     failure_code: str | None
     window_ends_at: datetime | None

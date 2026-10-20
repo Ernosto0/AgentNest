@@ -99,6 +99,8 @@ Commands are private to the member who typed them (another member's id → 404).
 
 `ReplyDraft = {id, status, source, language, intent, text, suggestion_text, rendered_facts: [{fact_id, key, label, display, version, span:[start,end]}], validation: {passed, issues: [{code, span, text}]}, decision, decision_reasons[], approval_id, version, failure_code, is_simulated}`
 
+`approval_state = {status: pending | approved | rejected | expired | cancelled, expires_at, decided_by_name, decided_at, decision_note} | null` is the state of the draft's approval (`null` when it has none). Anyone who may read the conversation (`reply.write`, so staff too) sees it, within their own workspace as everywhere (a foreign ID is a 404); it never includes the payload or the hash. `decided_by_name` is the user's display name, and `null` for a reply approved by policy or not yet decided. Staff cannot decide: the inbox shows them who must approve and by when while pending, and the name, time and note once approved, rejected or expired.
+
 ### 2.7 Content and media (Phase 5)
 | Method & path | Request → Response |
 |---|---|

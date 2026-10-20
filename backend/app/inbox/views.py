@@ -7,11 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
+from app.approvals import repository as approvals_repo
 from app.core.context import WorkspaceContext
+from app.identity.models import User
 from app.inbox.attention import customer_number
 from app.inbox.context import MESSAGING_WINDOW
 from app.inbox.models import Conversation, Message, ReplyDraft
 from app.inbox.schemas import (
+    ApprovalStateOut,
     ConversationOut,
     MessageOut,
     RenderedFactOut,
@@ -93,6 +96,30 @@ def issue_out(issue: dict[str, object], *, matches_verified: bool = False) -> Va
     )
 
 
+def approval_state(
+    session: Session, ctx: WorkspaceContext, draft: ReplyDraft
+) -> ApprovalStateOut | None:
+    """The state of the draft's approval, or ``None`` if it has none. Workspace-scoped; shows
+    who decided and the note, never the payload."""
+    if draft.approval_id is None:
+        return None
+    approval = approvals_repo.get_approval(session, ctx, draft.approval_id)
+    if approval is None:
+        return None
+    name = (
+        session.scalar(select(User.display_name).where(User.id == approval.decided_by_user_id))
+        if approval.decided_by_user_id
+        else None
+    )
+    return ApprovalStateOut(
+        status=approval.status,
+        expires_at=approval.expires_at,
+        decided_by_name=name,
+        decided_at=approval.decided_at,
+        decision_note=approval.decision_note,
+    )
+
+
 def draft_out(
     session: Session, ctx: WorkspaceContext, draft: ReplyDraft, conversation: Conversation
 ) -> ReplyDraftOut:
@@ -140,6 +167,7 @@ def draft_out(
         decision=draft.decision,
         decision_reasons=list(draft.decision_reasons),
         approval_id=draft.approval_id,
+        approval_state=approval_state(session, ctx, draft),
         version=draft.version,
         failure_code=draft.failure_code,
         window_ends_at=window_end(conversation),

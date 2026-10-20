@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReplyDraft } from "@/api/types";
+import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 /** A value taken from a verified fact. Tapping it shows where it comes from. */
 export function FactChip({ fact }: { fact: ReplyDraft["rendered_facts"][number] }) {
@@ -89,5 +90,39 @@ export function WindowTimer({ endsAt }: { endsAt: string | null }) {
     <span className={`text-sm ${minutes < 120 ? "text-amber-800" : "text-slate-600"}`} data-testid="window-timer">
       {label}
     </span>
+  );
+}
+
+type ApprovalState = NonNullable<ReplyDraft["approval_state"]>;
+
+/**
+ * Where the approval of a reply stands, for people who cannot decide it: who must approve and
+ * by when, or who approved or rejected it, when, and their note. A reply approved by policy has
+ * no person to name, so nothing is said (the reason chip already does).
+ */
+export function ApprovalStateNote({ state, showPending }: { state: ApprovalState; showPending: boolean }) {
+  const { t, i18n } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
+  const when = (value: string) =>
+    new Date(value).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "short", timeZone: workspace.timezone });
+  const name = state.decided_by_name ?? t("convo.draft.approvalState.someone");
+  let line: string | null = null;
+  if (state.status === "pending" && showPending) {
+    line = t("convo.draft.approvalState.pending", { time: when(state.expires_at) });
+  } else if (state.status === "approved" && state.decided_by_name && state.decided_at) {
+    line = t("convo.draft.approvalState.approved", { name, time: when(state.decided_at) });
+  } else if (state.status === "rejected" && state.decided_at) {
+    line = t("convo.draft.approvalState.rejected", { name, time: when(state.decided_at) });
+  } else if (state.status === "expired") {
+    line = t("convo.draft.approvalState.expired", { time: when(state.expires_at) });
+  }
+  if (line === null) return null;
+  return (
+    <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700" data-testid="approval-state" data-approval-status={state.status}>
+      <p>{line}</p>
+      {state.decision_note ? (
+        <p className="mt-1">{t("convo.draft.approvalState.note", { note: state.decision_note })}</p>
+      ) : null}
+    </div>
   );
 }

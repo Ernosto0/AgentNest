@@ -182,6 +182,70 @@
         "title": "ApprovalOut",
         "type": "object"
       },
+      "ApprovalStateOut": {
+        "description": "Where the approval of a reply stands, for anyone who may read the conversation (staff\ncannot decide, but they see whether their reply is waiting, approved or turned down).",
+        "properties": {
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By Name"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "expired",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "expires_at",
+          "decided_by_name",
+          "decided_at",
+          "decision_note"
+        ],
+        "title": "ApprovalStateOut",
+        "type": "object"
+      },
       "ApprovedAnswerIn": {
         "additionalProperties": false,
         "properties": {
@@ -2628,6 +2692,16 @@
             ],
             "title": "Approval Id"
           },
+          "approval_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalStateOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "conversation_id": {
             "format": "uuid",
             "title": "Conversation Id",
@@ -2775,6 +2849,7 @@
           "decision",
           "decision_reasons",
           "approval_id",
+          "approval_state",
           "version",
           "failure_code",
           "window_ends_at",

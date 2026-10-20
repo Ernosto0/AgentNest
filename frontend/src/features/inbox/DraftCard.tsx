@@ -6,7 +6,7 @@ import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useDecideApproval } from "@/features/commands/hooks";
-import { DraftText, ReasonChips } from "./DraftParts";
+import { ApprovalStateNote, DraftText, ReasonChips } from "./DraftParts";
 import { useApproval, useCancelDraft, useEditDraft } from "./hooks";
 
 /**
@@ -140,6 +140,9 @@ export function DraftCard({
         ) : (
           <p className="text-sm text-slate-700">{t("convo.draft.waitingForOwner")}</p>
         )
+      ) : null}
+      {draft.approval_state && !editing ? (
+        <ApprovalStateNote state={draft.approval_state} showPending={pending && approval.isSuccess && !canDecide} />
       ) : null}
       {draft.status === "queued" ? (
         <Button variant="secondary" disabled={busy} onClick={() => cancel.mutate(draft.id)}>

@@ -68,7 +68,15 @@
       "editLabel": "Yanıt metni",
       "save": "Kaydet",
       "saveAndSend": "Kaydet ve gönder",
-      "waitingForOwner": "Bu yanıtı bir sahip ya da yönetici onaylamalı."
+      "waitingForOwner": "Bu yanıtı bir sahip ya da yönetici onaylamalı.",
+      "approvalState": {
+        "someone": "Bir yetkili",
+        "pending": "Son onay zamanı: {{time}}",
+        "approved": "{{name}} onayladı ({{time}})",
+        "rejected": "{{name}} reddetti ({{time}})",
+        "expired": "Onay süresi doldu ({{time}})",
+        "note": "Not: {{note}}"
+      }
     },
     "composer": {
       "label": "Yanıtınız",

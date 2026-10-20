@@ -68,7 +68,15 @@
       "editLabel": "Reply text",
       "save": "Save",
       "saveAndSend": "Save and send",
-      "waitingForOwner": "An owner or manager has to approve this reply."
+      "waitingForOwner": "An owner or manager has to approve this reply.",
+      "approvalState": {
+        "someone": "An approver",
+        "pending": "Approval is needed by {{time}}",
+        "approved": "{{name}} approved this ({{time}})",
+        "rejected": "{{name}} rejected this ({{time}})",
+        "expired": "Approval expired ({{time}})",
+        "note": "Note: {{note}}"
+      }
     },
     "composer": {
       "label": "Your reply",

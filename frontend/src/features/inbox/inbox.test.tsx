@@ -56,6 +56,7 @@ function draft(overrides: Partial<ReplyDraft> = {}): ReplyDraft {
     decision: "approval_required",
     decision_reasons: ["POLICY_REQUIRES_APPROVAL"],
     approval_id: APPROVAL_ID,
+    approval_state: null,
     version: 1,
     failure_code: null,
     window_ends_at: null,
@@ -161,6 +162,121 @@ describe("inbox", () => {
     renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
     expect(await screen.findByText("Bu yanıtı bir sahip ya da yönetici onaylamalı.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Onayla ve gönder" })).not.toBeInTheDocument();
+  });
+
+  it("tells staff who must approve a pending reply and by when", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(
+            detail(
+              draft({
+                approval_state: {
+                  status: "pending",
+                  expires_at: "2026-10-16T09:30:00Z",
+                  decided_by_name: null,
+                  decided_at: null,
+                  decision_note: null,
+                },
+              }),
+            ),
+          ),
+        [`GET ${BASE}/approvals/${APPROVAL_ID}`]: () => json(approval({ id: APPROVAL_ID, can_decide: false })),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const card = await screen.findByTestId("draft-card");
+    expect(await within(card).findByText("Bu yanıtı bir sahip ya da yönetici onaylamalı.")).toBeInTheDocument();
+    const note = await within(card).findByTestId("approval-state");
+    expect(note).toHaveAttribute("data-approval-status", "pending");
+    expect(note).toHaveTextContent(/Son onay zamanı: .*(16|10)/);
+  });
+
+  it("does not show the pending note to someone who can approve", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(
+            detail(
+              draft({
+                approval_state: {
+                  status: "pending",
+                  expires_at: "2026-10-16T09:30:00Z",
+                  decided_by_name: null,
+                  decided_at: null,
+                  decision_note: null,
+                },
+              }),
+            ),
+          ),
+        [`GET ${BASE}/approvals/${APPROVAL_ID}`]: () => json(approval({ id: APPROVAL_ID, can_decide: true })),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const card = await screen.findByTestId("draft-card");
+    expect(await within(card).findByRole("button", { name: "Onayla ve gönder" })).toBeInTheDocument();
+    expect(within(card).queryByTestId("approval-state")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [
+      "approved",
+      "queued",
+      { decided_by_name: "Cem Yılmaz", decided_at: "2026-10-15T13:00:00Z", decision_note: "Fiyat doğru." },
+      [/Cem Yılmaz onayladı/, /Not: Fiyat doğru\./],
+    ],
+    [
+      "rejected",
+      "rejected",
+      { decided_by_name: "Cem Yılmaz", decided_at: "2026-10-15T13:00:00Z", decision_note: "Önce fiyatı güncelleyin." },
+      [/Cem Yılmaz reddetti/, /Not: Önce fiyatı güncelleyin\./],
+    ],
+    ["expired", "expired", { decided_by_name: null, decided_at: null, decision_note: null }, [/Onay süresi doldu/]],
+  ] as const)("shows staff a %s reply with who decided and the note", async (status, draftStatus, decision, texts) => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(
+            detail(
+              draft({
+                status: draftStatus,
+                approval_state: { status, expires_at: "2026-10-16T09:30:00Z", ...decision },
+              }),
+            ),
+          ),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const card = await screen.findByTestId("draft-card");
+    const note = await within(card).findByTestId("approval-state");
+    expect(note).toHaveAttribute("data-approval-status", status);
+    for (const text of texts) expect(note).toHaveTextContent(text);
+    expect(within(card).queryByRole("button", { name: "Onayla ve gönder" })).not.toBeInTheDocument();
+  });
+
+  it("says nothing about a reply that policy approved", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(
+            detail(
+              draft({
+                status: "sent",
+                approval_state: {
+                  status: "approved",
+                  expires_at: "2026-10-16T09:30:00Z",
+                  decided_by_name: null,
+                  decided_at: "2026-10-15T12:00:00Z",
+                  decision_note: null,
+                },
+              }),
+            ),
+          ),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const card = await screen.findByTestId("draft-card");
+    expect(within(card).queryByTestId("approval-state")).not.toBeInTheDocument();
   });
 
   it("hands a complaint to you: no sendable text, the suggestion can seed your reply", async () => {
