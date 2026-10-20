@@ -18,7 +18,7 @@ them in rendered text: when the text holds the whole display of a verified ``pro
 """
 
 import uuid
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -108,18 +108,30 @@ def check(
     rendered: Iterable[tuple[uuid.UUID, int]] = (),
     unbacked_claims: Iterable[str] = (),
 ) -> Grounding:
-    """Validate ``texts`` and find the verified facts whose value they contain.
+    """``analyse`` against the workspace's usable facts today."""
+    facts = knowledge_service.usable_facts(session, clock, ctx, locale=ctx.locale)
+    return analyse(facts, ctx.locale, texts, rendered=rendered, unbacked_claims=unbacked_claims)
+
+
+def analyse(
+    facts: Sequence[UsableFact],
+    locale: str,
+    texts: Mapping[str, str],
+    *,
+    rendered: Iterable[tuple[uuid.UUID, int]] = (),
+    unbacked_claims: Iterable[str] = (),
+) -> Grounding:
+    """Validate ``texts`` and find the verified ``facts`` whose value they contain (pure).
 
     ``rendered`` are the ``(fact_id, version)`` pairs that generation rendered into the texts
     (G6): they are references even when their value is not a critical one (an address).
     ``unbacked_claims`` are commercial claims the model declared that no rendered fact backs;
     each is a blocking ``CLAIM_UNBACKED`` issue.
     """
-    facts = knowledge_service.usable_facts(session, clock, ctx, locale=ctx.locale)
     issues: list[dict[str, Any]] = []
     references: dict[uuid.UUID, int] = dict(rendered)
     for field, text in texts.items():
-        report = validate_claims(text, RenderResult(text=text), ctx.locale)
+        report = validate_claims(text, RenderResult(text=text), locale)
         for issue in report.issues:
             matching = _grounding_facts(issue.code, issue.text, text, facts)
             for fact in matching:

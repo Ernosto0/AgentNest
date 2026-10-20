@@ -1,0 +1,48 @@
+# Fact fixture for the draft_content evals: the demo gym with prices, hours, one verified
+# promotion, one promotion nobody has verified, the price policy and the brand voice.
+name: demo_gym_content
+workspace:
+  business_category: gym
+  default_locale: tr
+  currency: TRY
+  timezone: Europe/Istanbul
+facts:
+  - {key: identity.business_name, category: identity, value_type: text, status: verified,
+     label: {tr: İşletme adı, en: Business name}, value: {text: Gölkent Fitness & Pilates}}
+  - {key: contact.phone, category: contact, value_type: phone, status: verified,
+     label: {tr: Telefon, en: Phone}, value: {e164: "+905550000000"}}
+  - {key: location.address, category: location, value_type: address, status: verified,
+     label: {tr: Adres, en: Address},
+     value: {lines: ["Örnek Mah. Demo Sok. No: 1"], district: Bucak, city: Burdur}}
+  - {key: hours.weekly, category: hours, value_type: weekly_hours, status: verified,
+     label: {tr: Çalışma saatleri, en: Opening hours},
+     value: {mon: [["07:00", "23:00"]], tue: [["07:00", "23:00"]], wed: [["07:00", "23:00"]],
+             thu: [["07:00", "23:00"]], fri: [["07:00", "23:00"]], sat: [["09:00", "21:00"]],
+             sun: [["10:00", "18:00"]], exceptions: []}}
+  - {key: pricing.membership_monthly, category: pricing, value_type: money, status: verified,
+     label: {tr: Aylık üyelik, en: Monthly membership},
+     value: {amount: "6000.00", currency: TRY, unit: month}}
+  - {key: pricing.membership_3_months, category: pricing, value_type: money, status: verified,
+     label: {tr: 3 aylık üyelik, en: 3-month membership},
+     value: {amount: "16500.00", currency: TRY, unit: package}}
+  - {key: pricing.reformer_8_sessions, category: pricing, value_type: money, status: verified,
+     label: {tr: Reformer 8 seans, en: Reformer 8 sessions},
+     value: {amount: "4800.00", currency: TRY, unit: package}}
+  - {key: pricing.student_monthly, category: pricing, value_type: money, status: unverified,
+     label: {tr: Öğrenci aylık üyelik, en: Student monthly membership},
+     value: {amount: "4500.00", currency: TRY, unit: month}}
+  - {key: promotion.trial_session, category: promotion, value_type: localized_text, status: verified,
+     label: {tr: Deneme seansı, en: Trial session},
+     value: {tr: İlk deneme seansı ücretsiz., en: The first trial session is free.}}
+  - {key: promotion.summer_towel, category: promotion, value_type: localized_text, status: unverified,
+     label: {tr: Yaz havlusu, en: Summer towel},
+     value: {tr: Yaz boyunca ücretsiz havlu hediye., en: A free towel all summer.}}
+  - {key: policy.price_disclosure, category: policy, value_type: enum, status: verified,
+     label: {tr: Fiyat paylaşım politikası, en: Price disclosure policy},
+     value: {value: share}, allowed_values: [share, do_not_share]}
+  - {key: policy.price_answer_text, category: policy, value_type: localized_text, status: verified,
+     label: {tr: Fiyat sorusuna yanıt, en: Answer to price questions},
+     value: {tr: Fiyatlar için bizi arayın., en: Please call us for prices.}}
+  - {key: brand.voice_guidelines, category: brand, value_type: localized_text, status: verified,
+     label: {tr: Marka dili, en: Brand voice},
+     value: {tr: "Sıcak, kısa, 'siz' kullanır.", en: "Warm, short, uses formal you."}}

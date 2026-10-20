@@ -39,6 +39,7 @@ def test_the_fake_provider_passes_every_case_strictly(tmp_path: Path) -> None:
         "interpret_command",
         "extract_fact_candidates",
         "draft_reply",
+        "draft_content",
     }
     for report in data["reports"]:
         assert report["metrics"]["hard_failures"] == 0
@@ -49,7 +50,7 @@ def test_the_fake_provider_passes_every_case_strictly(tmp_path: Path) -> None:
 
 def test_an_unknown_task_or_dataset_is_an_error() -> None:
     with pytest.raises(ValueError, match="unknown task"):
-        load_datasets("draft_content")
+        load_datasets("publish_content")
     assert main(["run", "--task", "interpret_command", "--dataset", "nope", "--no-report"]) == 2
 
 

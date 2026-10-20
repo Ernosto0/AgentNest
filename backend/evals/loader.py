@@ -21,8 +21,11 @@ INPUT_KEYS = (
     "attachments",
     "approved_answers",
     "handling_mode",
+    "objective",  # draft_content
+    "content_type",
+    "notes",
 )
-TASKS = ("interpret_command", "extract_fact_candidates", "draft_reply")
+TASKS = ("interpret_command", "extract_fact_candidates", "draft_reply", "draft_content")
 
 
 @dataclass(frozen=True)

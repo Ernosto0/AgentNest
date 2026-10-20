@@ -12,13 +12,14 @@ import re
 import statistics
 import uuid
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.ai.injection import detect_injection
 from app.ai.runner import Execution, TaskOutcome, execute_task
 from app.ai.schemas import (
+    ContentProposal,
     ExtractFactsInput,
     ExtractFactsOutput,
     FactCatalogEntry,
@@ -26,11 +27,13 @@ from app.ai.schemas import (
     InterpretCommandOutput,
     ReplyProposal,
 )
+from app.ai.tasks.draft_content import DRAFT_CONTENT
 from app.ai.tasks.draft_reply import DRAFT_REPLY
 from app.ai.tasks.extract_fact_candidates import EXTRACT_FACT_CANDIDATES
 from app.ai.tasks.interpret_command import INTERPRET_COMMAND
 from app.commands import resolver
 from app.commands.registry import REGISTRY, describe_registry
+from app.content import generation, grounding
 from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
 from app.inbox.context import Disclosure, DraftContext, InboundText
@@ -494,10 +497,164 @@ def _check_draft_invariants(
         result.fail("INV-02: a placeholder leaked into the text")
 
 
+# --- draft_content --------------------------------------------------------------------------
+
+STORY_MAX_LINES = 3
+STORY_MAX_LINE_CHARS = 40
+
+
+def _content_facts(dataset: Dataset, case: Case) -> list[UsableFact]:
+    """The usable facts of a case, with the price policy overridden when the case says so."""
+    facts = _usable_facts(dataset, case.locale, set(case.inputs.get("unusable", [])))
+    disclosure = case.inputs.get("price_disclosure")
+    if disclosure is not None:
+        facts = [
+            replace(f, value={"value": disclosure}) if f.key == "policy.price_disclosure" else f
+            for f in facts
+        ]
+    return facts
+
+
+def _brand_voice(facts: list[UsableFact], locale: str) -> str | None:
+    voice = next((f for f in facts if f.key == "brand.voice_guidelines"), None)
+    if voice is None:
+        return None
+    text = voice.value.get(locale) or voice.value.get("tr") or voice.value.get("en")
+    return str(text) if text else None
+
+
+def _overlay_within_limits(text: str) -> bool:
+    lines = text.splitlines() or [text]
+    return len(lines) <= STORY_MAX_LINES and all(len(x) <= STORY_MAX_LINE_CHARS for x in lines)
+
+
+def eval_content_case(
+    provider: LLMProvider, model: str, dataset: Dataset, case: Case
+) -> CaseResult:
+    result = CaseResult(case.id, dataset.name, dataset.task, case.hard, list(case.tags))
+    content_type = case.inputs.get("content_type", "feed_image")
+    facts = _content_facts(dataset, case)
+    task_input = generation.build_input(
+        generation.offer(facts),
+        content_type=content_type,
+        objective=case.inputs["objective"],
+        notes=case.inputs.get("notes"),
+        language=case.locale,
+        brand_voice=_brand_voice(facts, case.locale),
+    )
+    execution = execute_task(provider, DRAFT_CONTENT, task_input, model)
+    _record_usage(result, execution)
+    if execution.output is None:
+        return result
+    proposal: ContentProposal = execution.output
+    # The same assembly the generate_content job runs: render, hashtags, claim validation.
+    assembled = generation.assemble(
+        proposal, facts, language=case.locale, content_type=content_type
+    )
+    if isinstance(assembled, list):
+        result.outcome = "render_failed"
+        _check_content_expectations(case, result, None, proposal)
+        return result
+    result.outcome = "clean" if assembled.checked.report["passed"] else "flagged"
+    _check_content_expectations(case, result, assembled, proposal)
+    _check_content_invariants(case, result, assembled, proposal, content_type)
+    return result
+
+
+def _content_text(assembled: generation.Assembled) -> str:
+    rendered = assembled.rendered
+    return "\n".join([rendered.caption or "", *rendered.overlay])
+
+
+def _check_content_expectations(
+    case: Case,
+    result: CaseResult,
+    assembled: generation.Assembled | None,
+    proposal: ContentProposal,
+) -> None:
+    expect = case.expect
+    if "outcome" in expect and result.outcome != expect["outcome"]:
+        result.fail(f"outcome {result.outcome!r}, expected {expect['outcome']!r}")
+    if assembled is None:
+        return
+    rendered = assembled.rendered
+    text = _content_text(assembled)
+    for key in expect.get("must_use_facts", []):
+        if key not in rendered.used_keys:
+            result.fail(f"the draft does not use {key}")
+    for key in expect.get("must_not_use_facts", []):
+        if key in rendered.used_keys:
+            result.fail(f"the draft uses {key}")
+    for fragment in expect.get("text_must_contain", []):
+        if fragment not in text:
+            result.fail(f"the draft text does not contain {fragment!r}")
+    for pattern in expect.get("text_must_not_match", []):
+        if re.search(pattern, text, re.IGNORECASE):
+            result.fail(f"the draft matches the forbidden pattern {pattern!r}")
+    codes = {i["code"] for i in assembled.checked.report["issues"]}
+    for code in expect.get("issue_codes_include", []):
+        if code not in codes:
+            result.fail(f"the issues {sorted(codes)} do not include {code}")
+    if "unbacked_claims" in expect and len(assembled.unbacked) != expect["unbacked_claims"]:
+        result.fail(
+            f"{len(assembled.unbacked)} unbacked claims, expected {expect['unbacked_claims']}"
+        )
+    if expect.get("caption") == "none" and rendered.caption is not None:
+        result.fail("the story has a caption")
+    if expect.get("overlay_within_limits") and not all(
+        _overlay_within_limits(o) for o in rendered.overlay
+    ):
+        result.fail(f"an overlay suggestion is over {STORY_MAX_LINES} x {STORY_MAX_LINE_CHARS}")
+
+
+def _check_content_invariants(
+    case: Case,
+    result: CaseResult,
+    assembled: generation.Assembled,
+    proposal: ContentProposal,
+    content_type: str,
+) -> None:
+    """Hard assertions on every case (INV-02, INV-11, testing-strategy.md section 6)."""
+    rendered, checked = assembled.rendered, assembled.checked
+    texts = grounding.texts_of(rendered.caption, rendered.overlay)
+    # 0 ungrounded critical values in a passing draft: checked against the validator with the
+    # spans the renderer really inserted, not against the matcher that let the draft pass.
+    if checked.report["passed"]:
+        for field_name, text in texts.items():
+            report = validate_claims(
+                text,
+                RenderResult(text=text, spans=rendered.spans.get(field_name, ())),
+                case.locale,
+            )
+            if not report.passed:
+                result.fail(
+                    f"INV-02: an ungrounded critical value in a passing draft "
+                    f"({field_name}): {[i.text for i in report.issues]}"
+                )
+    # Every claim that no rendered fact backs must be among the stored issues.
+    flagged = {i["text"] for i in checked.report["issues"] if i["code"] == "CLAIM_UNBACKED"}
+    for claim in proposal.commercial_claims:
+        backed = claim.fact_key is not None and claim.fact_key in rendered.used_keys
+        if not backed and claim.claim not in flagged:
+            result.fail(f"INV-02: the unbacked claim {claim.claim!r} was not flagged")
+        if not backed and checked.report["passed"]:
+            result.fail(f"INV-02: a draft with the unbacked claim {claim.claim!r} passes")
+    if content_type == "story_image" and rendered.caption is not None:
+        result.fail("INV-11: a story has a caption")
+    if content_type == "feed_image" and rendered.overlay:
+        result.fail("a feed post has overlay suggestions")
+    text = _content_text(assembled)
+    if "{{" in text or "}}" in text:
+        result.fail("INV-02: a placeholder leaked into the text")
+    if rendered.caption is not None and rendered.caption.count("#") > 10:
+        result.fail("more than 10 hashtags")
+
+
 EVALUATORS: dict[str, Callable[[LLMProvider, str, Dataset, Case], CaseResult]] = {
     "interpret_command": eval_interpret_case,
     "extract_fact_candidates": eval_extract_case,
     "draft_reply": eval_draft_case,
+    "draft_content": eval_content_case,
 }
 
 # --- metrics --------------------------------------------------------------------------------
@@ -604,7 +761,10 @@ def run_task_evals(
     max_cost_usd: float | None = None,
 ) -> TaskReport:
     evaluate = EVALUATORS[task]
-    prompt_version = INTERPRET_COMMAND.prompt_version if task == "interpret_command" else "v1"
+    prompt_version = {
+        "interpret_command": INTERPRET_COMMAND.prompt_version,
+        "draft_content": DRAFT_CONTENT.prompt_version,
+    }.get(task, "v1")
     report = TaskReport(task, provider.name, model, prompt_version, [d.name for d in datasets], [])
     spent = 0.0
     priced = False

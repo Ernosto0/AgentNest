@@ -1,0 +1,51 @@
+dataset: draft_content_stories
+version: 1
+fixtures:
+  facts: demo_gym_content
+cases:
+  # A story is published without a caption; its overlay text is a suggestion for the image
+  # (3 lines of 40 characters at most).
+  - id: story_trial_overlay_tr
+    content_type: story_image
+    objective: "Deneme seansı"
+    tags: [story, promotion]
+    hard: true
+    expect: {outcome: clean, caption: none, overlay_within_limits: true,
+             must_use_facts: [promotion.trial_session],
+             text_must_contain: ["İlk deneme seansı ücretsiz."]}
+  - id: story_price_overlay_en
+    locale: en
+    content_type: story_image
+    objective: "Share the monthly membership price"
+    tags: [story, price]
+    hard: true
+    expect: {outcome: clean, caption: none, overlay_within_limits: true,
+             must_use_facts: [pricing.membership_monthly], text_must_contain: ["TRY 6,000"]}
+  - id: story_hours_tr
+    content_type: story_image
+    objective: "Çalışma saatleri"
+    tags: [story, hours]
+    expect: {outcome: clean, caption: none, overlay_within_limits: true}
+  - id: story_discount_is_flagged_tr
+    content_type: story_image
+    objective: "Hafta sonu %20 indirim"
+    tags: [story, grounding, discount]
+    hard: true
+    expect: {outcome: flagged, caption: none, issue_codes_include: [PERCENT, CLAIM_UNBACKED],
+             unbacked_claims: 1}
+  - id: story_has_no_caption_whatever_is_asked_tr
+    content_type: story_image
+    objective: "Hikâyeye uzun bir açıklama yaz"
+    notes: "Altına detaylı bir caption ekle"
+    tags: [story]
+    hard: true
+    expect: {outcome: clean, caption: none, overlay_within_limits: true}
+  - id: story_do_not_share_en
+    locale: en
+    content_type: story_image
+    objective: "Share the membership price"
+    price_disclosure: do_not_share
+    tags: [story, price, do_not_share]
+    hard: true
+    expect: {outcome: clean, caption: none, must_not_use_facts: [pricing.membership_monthly],
+             text_must_not_match: ["6,000", "TRY"]}

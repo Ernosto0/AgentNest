@@ -15,7 +15,8 @@ is overwritten). An LLM failure leaves the manual draft as it is.
 """
 
 import uuid
-from dataclasses import dataclass
+from collections.abc import Iterable
+from dataclasses import dataclass, replace
 from typing import Any
 
 from pydantic import ValidationError
@@ -47,7 +48,7 @@ from app.inbox.context import INTERNAL_CATEGORIES, INTERNAL_KEYS
 from app.jobs.queue import enqueue
 from app.knowledge import impact
 from app.knowledge import service as knowledge_service
-from app.knowledge.render import RenderError, RenderResult, render
+from app.knowledge.render import RenderedSpan, RenderError, RenderResult, render
 from app.knowledge.service import UsableFact
 
 SUBJECT_TYPE = transitions.SUBJECT_TYPE
@@ -160,24 +161,57 @@ def request(
 # --- phase 1: what the model is shown ---------------------------------------------------------
 
 
-def offered_facts(session: Session, clock: Clock, ctx: WorkspaceContext) -> list[UsableFact]:
+def offer(usable: Iterable[UsableFact]) -> list[UsableFact]:
     """The facts the model may quote and the renderer will accept: the usable ones except the
     internal settings, and without prices when the business does not share them (an unknown
     policy counts as ``do_not_share``)."""
-    usable = knowledge_service.usable_facts(session, clock, ctx, locale=ctx.locale)
-    policy = next((f for f in usable if f.key == "policy.price_disclosure"), None)
+    facts = list(usable)
+    policy = next((f for f in facts if f.key == "policy.price_disclosure"), None)
     share = policy is not None and policy.value.get("value") == "share"
     return [
         f
-        for f in usable
+        for f in facts
         if f.category not in INTERNAL_CATEGORIES
         and f.key not in INTERNAL_KEYS
         and (share or f.category != "pricing")
     ]
 
 
+def offered_facts(session: Session, clock: Clock, ctx: WorkspaceContext) -> list[UsableFact]:
+    return offer(knowledge_service.usable_facts(session, clock, ctx, locale=ctx.locale))
+
+
 def _label(fact: UsableFact, language: str) -> str:
     return fact.label.get(language) or fact.label.get("tr") or fact.label.get("en") or fact.key
+
+
+def build_input(
+    offered: Iterable[UsableFact],
+    *,
+    content_type: str,
+    objective: str,
+    notes: str | None,
+    language: str,
+    brand_voice: str | None,
+) -> DraftContentInput:
+    """What the model is shown (pure, so the evals build exactly the same input)."""
+    return DraftContentInput(
+        content_type=content_type,
+        objective=objective,
+        notes=notes,
+        language=language,
+        facts=[
+            DraftFact(
+                key=f.key,
+                label=_label(f, language),
+                value_type=f.value_type,
+                value_display=f.display,
+                placeholder=f.placeholder,
+            )
+            for f in offered
+        ],
+        brand_voice=brand_voice,
+    )
 
 
 def _brand_voice(session: Session, clock: Clock, ctx: WorkspaceContext) -> str | None:
@@ -249,21 +283,12 @@ def prepare(
     ctx = identity_service.workspace_context(workspace, ActorRef.system(GENERATED_BY), None)
     snapshot = run.input_snapshot or {}
     facts = offered_facts(session, clock, ctx)
-    task_input = DraftContentInput(
+    task_input = build_input(
+        facts,
         content_type=item.content_type,
         objective=item.objective or "",
         notes=str(snapshot["notes"]) if snapshot.get("notes") else None,
         language=ctx.locale,
-        facts=[
-            DraftFact(
-                key=f.key,
-                label=_label(f, ctx.locale),
-                value_type=f.value_type,
-                value_display=f.display,
-                placeholder=f.placeholder,
-            )
-            for f in facts
-        ],
         brand_voice=_brand_voice(session, clock, ctx),
     )
     return Prepared(
@@ -287,6 +312,20 @@ class Rendered:
     overlay: list[str]
     used: tuple[tuple[uuid.UUID, int], ...]
     used_keys: frozenset[str]
+    # The rendered spans of each text by field name, indexing the stored text (the evals check
+    # them against the validator independently of the matcher).
+    spans: dict[str, tuple[RenderedSpan, ...]]
+
+
+@dataclass(frozen=True)
+class Assembled:
+    rendered: Rendered
+    checked: grounding.Grounding
+    unbacked: tuple[str, ...]
+
+
+def _shift(spans: tuple[RenderedSpan, ...], by: int) -> tuple[RenderedSpan, ...]:
+    return tuple(replace(s, start=s.start - by, end=s.end - by) for s in spans)
 
 
 def _render_all(
@@ -299,7 +338,7 @@ def _render_all(
         templates["caption"] = proposal.caption_template
     elif content_type == "story_image":
         for index, suggestion in enumerate(proposal.overlay_text_suggestions):
-            templates[f"overlay.{index}"] = suggestion
+            templates[f"overlay_text_suggestions.{index}"] = suggestion
     results: dict[str, RenderResult] = {}
     errors: list[RenderError] = []
     for name, template in templates.items():
@@ -311,26 +350,55 @@ def _render_all(
 
     used: dict[tuple[uuid.UUID, int], None] = {}
     keys: set[str] = set()
-    for result in results.values():
+    spans: dict[str, tuple[RenderedSpan, ...]] = {}
+    texts: dict[str, str] = {}
+    for name, result in results.items():
         used.update(dict.fromkeys(result.used))
         keys.update(result.used_keys)
+        texts[name] = result.text.strip()
+        spans[name] = _shift(result.spans, len(result.text) - len(result.text.lstrip()))
     caption: str | None = None
-    if "caption" in results:
+    if "caption" in texts:
         tags: list[str] = []
         for raw in proposal.hashtags:
             tag = clean_hashtag(raw)
             if tag and tag not in tags:
                 tags.append(tag)
-        text = results["caption"].text.strip()
-        caption = text + ("\n\n" + " ".join(f"#{t}" for t in tags[:MAX_HASHTAGS]) if tags else "")
-    overlay = [r.text.strip() for name, r in results.items() if name.startswith("overlay.")]
-    return Rendered(caption, overlay, tuple(used), frozenset(keys))
+        suffix = "\n\n" + " ".join(f"#{t}" for t in tags[:MAX_HASHTAGS]) if tags else ""
+        caption = texts["caption"] + suffix
+    overlay = [t for name, t in texts.items() if name.startswith("overlay_text_suggestions.")]
+    return Rendered(caption, overlay, tuple(used), frozenset(keys), spans)
 
 
 def _unbacked(claims: list[CommercialClaim], rendered_keys: frozenset[str]) -> list[str]:
     """The commercial claims that no fact the text really renders backs (code decides, not the
     model: a ``fact_key`` the model names but the text does not use backs nothing)."""
     return [c.claim for c in claims if c.fact_key is None or c.fact_key not in rendered_keys]
+
+
+def assemble(
+    proposal: ContentProposal, usable: Iterable[UsableFact], *, language: str, content_type: str
+) -> Assembled | list[RenderError]:
+    """The model's proposal as the text to store: render, append the hashtags, validate the
+    claims (pure; the job and the evals run exactly this).
+
+    Rendering and grounding use the **offered** facts only: a value the model typed is grounded
+    by a fact it was allowed to quote, so a price the business does not share never passes as
+    "equal to a verified fact" just because the model typed it.
+    """
+    offered = offer(usable)
+    rendered = _render_all(proposal, offered, language, content_type)
+    if isinstance(rendered, list):
+        return rendered
+    unbacked = _unbacked(proposal.commercial_claims, rendered.used_keys)
+    checked = grounding.analyse(
+        offered,
+        language,
+        grounding.texts_of(rendered.caption, rendered.overlay),
+        rendered=rendered.used,
+        unbacked_claims=unbacked,
+    )
+    return Assembled(rendered, checked, tuple(unbacked))
 
 
 def _audit(
@@ -385,24 +453,17 @@ def store(session: Session, clock: Clock, prepared: Prepared, proposal: ContentP
         _audit(session, clock, prepared, item, DISCARDED)
         return DISCARDED
 
-    facts = offered_facts(session, clock, ctx)  # fresh: a fact may have changed meanwhile
-    rendered = _render_all(proposal, facts, ctx.locale, item.content_type)
-    if isinstance(rendered, list):
-        codes = sorted({e.code for e in rendered})
+    usable = knowledge_service.usable_facts(session, clock, ctx, locale=ctx.locale)  # fresh
+    assembled = assemble(proposal, usable, language=ctx.locale, content_type=item.content_type)
+    if isinstance(assembled, list):
+        codes = sorted({e.code for e in assembled})
         run.status, run.error_code = "failed", codes[0]
-        run.validation_errors = [{"code": e.code, "key": e.key} for e in rendered]
+        run.validation_errors = [{"code": e.code, "key": e.key} for e in assembled]
         run.completed_at = clock.now()
         _audit(session, clock, prepared, item, FAILED, error_code=codes[0])
         return FAILED
 
-    checked = grounding.check(
-        session,
-        clock,
-        ctx,
-        grounding.texts_of(rendered.caption, rendered.overlay),
-        rendered=rendered.used,
-        unbacked_claims=_unbacked(proposal.commercial_claims, rendered.used_keys),
-    )
+    rendered, checked = assembled.rendered, assembled.checked
     changes: dict[str, Any] = {
         "caption": rendered.caption,
         "overlay_text_suggestions": rendered.overlay,

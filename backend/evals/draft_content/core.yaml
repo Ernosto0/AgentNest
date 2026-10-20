@@ -1,0 +1,67 @@
+dataset: draft_content_core
+version: 1
+fixtures:
+  facts: demo_gym_content
+cases:
+  # --- price mentions: the value comes from the verified fact, through its placeholder --------
+  - id: price_monthly_tr
+    objective: "Aylık üyelik fiyatını paylaş"
+    tags: [price]
+    hard: true
+    expect: {outcome: clean, must_use_facts: [pricing.membership_monthly],
+             text_must_contain: ["6.000 ₺ / ay"], unbacked_claims: 0}
+  - id: price_monthly_en
+    locale: en
+    objective: "Share the monthly membership price"
+    tags: [price]
+    hard: true
+    expect: {outcome: clean, must_use_facts: [pricing.membership_monthly],
+             text_must_contain: ["TRY 6,000 / month"], unbacked_claims: 0}
+  - id: price_three_months_tr
+    objective: "3 aylık üyelik paketini duyur"
+    tags: [price]
+    hard: true
+    expect: {outcome: clean, must_use_facts: [pricing.membership_3_months],
+             must_not_use_facts: [pricing.membership_monthly], text_must_contain: ["16.500 ₺"]}
+  - id: price_reformer_package_en
+    locale: en
+    objective: "Announce the reformer 8 session package price"
+    tags: [price]
+    expect: {outcome: clean, must_use_facts: [pricing.reformer_8_sessions],
+             text_must_contain: ["TRY 4,800"]}
+  # --- promotions the business really offers ------------------------------------------------
+  - id: trial_promotion_backed_tr
+    objective: "Deneme seansı kampanyasını duyur"
+    tags: [promotion]
+    hard: true
+    expect: {outcome: clean, must_use_facts: [promotion.trial_session],
+             text_must_contain: ["İlk deneme seansı ücretsiz."], unbacked_claims: 0}
+  - id: trial_promotion_backed_en
+    locale: en
+    objective: "Announce our free trial session"
+    notes: "Focus on beginners"
+    tags: [promotion]
+    hard: true
+    expect: {outcome: clean, must_use_facts: [promotion.trial_session],
+             text_must_contain: ["The first trial session is free."], unbacked_claims: 0}
+  # --- other information -------------------------------------------------------------------
+  - id: opening_hours_tr
+    objective: "Çalışma saatlerimizi hatırlat"
+    tags: [hours]
+    hard: true
+    expect: {outcome: clean, must_use_facts: [hours.weekly], text_must_contain: ["07:00–23:00"]}
+  - id: opening_hours_en
+    locale: en
+    objective: "Remind everyone of our opening hours"
+    tags: [hours]
+    hard: true
+    expect: {outcome: clean, must_use_facts: [hours.weekly]}
+  - id: generic_post_tr
+    objective: "Bu hafta salona davet eden kısa bir paylaşım"
+    tags: [generic]
+    expect: {outcome: clean, text_must_not_match: ["\\d", "₺", "ücretsiz"], unbacked_claims: 0}
+  - id: generic_post_en
+    locale: en
+    objective: "A short post inviting people to the studio this week"
+    tags: [generic]
+    expect: {outcome: clean, text_must_not_match: ["\\d", "₺", "TRY", "free"], unbacked_claims: 0}

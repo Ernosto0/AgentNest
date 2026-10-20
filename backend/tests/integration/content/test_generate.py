@@ -437,7 +437,7 @@ def test_a_model_that_stays_unavailable_leaves_a_manual_draft_with_generation_fa
 
     run_jobs(env, factory)
     assert get(env, item_id).json()["generation"]["status"] == "failed"  # the first attempt
-    env.clock.advance(timedelta(seconds=11))
+    env.clock.advance(timedelta(seconds=30))
     run_jobs(env, factory)
     env.clock.advance(timedelta(seconds=120))
     run_jobs(env, factory)
@@ -466,7 +466,7 @@ def test_a_transient_failure_is_retried_and_then_succeeds(
     provider.queue("draft_content", LLMTransientError("blip"))
 
     run_jobs(env, factory)
-    env.clock.advance(timedelta(seconds=11))
+    env.clock.advance(timedelta(seconds=30))
     run_jobs(env, factory)
 
     body = get(env, item_id).json()

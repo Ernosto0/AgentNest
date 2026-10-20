@@ -20,12 +20,14 @@ from app.core.config import Settings
 from app.core.errors import RetryableError
 from app.identity.models import Workspace
 from app.integrations.llm import FakeLLMProvider, LLMMessage
+from app.integrations.llm import fake as fake_module
 from app.integrations.llm.base import LLMResult, LLMUsage
 from app.integrations.llm.errors import LLMConfigError, LLMRefusal, LLMTransientError
-from app.integrations.llm.fake import fake_implementation
 from tests.factories import create_workspace, knowledge_ctx
 
-TASK = "draft_content"  # any task name the table allows; Phase 3 has no real user of it
+# Any task name the table allows. It is a real task now (Phase 5), so the stand-in fake below is
+# installed per test and the real one comes back afterwards.
+TASK = "draft_content"
 
 
 class Out(BaseModel):
@@ -45,7 +47,6 @@ class In:
     api_key: str = "sk-should-be-redacted"
 
 
-@fake_implementation(TASK)
 def _impl(context: In, schema: type[BaseModel]) -> BaseModel:
     return schema(value=context.number)
 
@@ -62,6 +63,11 @@ def _definition(post_validate: Any = None) -> TaskDefinition[In, Out]:
         post_validate=post_validate or (lambda _i, _o: []),
         snapshot=lambda i: {"number": i.number, "api_key": i.api_key},
     )
+
+
+@pytest.fixture(autouse=True)
+def _stand_in_fake(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(fake_module._IMPLEMENTATIONS, TASK, _impl)
 
 
 @pytest.fixture(autouse=True)
