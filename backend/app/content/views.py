@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.ai.models import AgentRun
 from app.approvals import repository as approvals_repo
-from app.content import hooks, validation
+from app.content import hooks, service, validation
 from app.content.models import ContentItem
 from app.content.schemas import (
     ContentApprovalStateOut,
@@ -21,6 +21,7 @@ from app.content.schemas import (
     ScheduleLocalOut,
 )
 from app.content.service import Checked
+from app.content.transitions import CANCELLABLE_STATUSES
 from app.core.context import WorkspaceContext
 from app.core.i18n import t
 from app.identity.models import User
@@ -178,4 +179,5 @@ def item_out(session: Session, ctx: WorkspaceContext, item: ContentItem) -> Cont
         created_at=item.created_at,
         updated_at=item.updated_at,
         is_simulated=item.is_simulated,
+        can_cancel=service.may_cancel(session, ctx, item) and item.status in CANCELLABLE_STATUSES,
     )

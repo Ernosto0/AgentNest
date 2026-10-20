@@ -247,7 +247,7 @@ def submit_content_item(
 @router.post("/content-items/{content_id}/cancel", response_model=ContentItemOut)
 def cancel_content_item(
     content_id: uuid.UUID,
-    ctx: WorkspaceContext = Depends(require_membership("content.approve")),
+    ctx: WorkspaceContext = Depends(require_membership()),  # the service decides (may_cancel)
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
 ) -> ContentItemOut:

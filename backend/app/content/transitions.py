@@ -70,6 +70,9 @@ PUBLISHING_HOLD_REASON = "ACCOUNT_UNAVAILABLE"
 # Statuses from which a payload edit is allowed (they all lead back to ``draft``).
 EDITABLE_STATUSES = frozenset(status for (status, event) in _TRANSITIONS if event == "edit")
 
+# Statuses from which the cancel event is allowed.
+CANCELLABLE_STATUSES = frozenset(status for (status, event) in _TRANSITIONS if event == "cancel")
+
 # Audit action per resulting status (observability.md section 5).
 _AUDIT_ACTION = {
     "draft": "content.updated",

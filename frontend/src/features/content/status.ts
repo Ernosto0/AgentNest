@@ -75,13 +75,6 @@ export function editVoidsApproval(status: ContentStatus): boolean {
   return status === "pending_approval" || status === "scheduled";
 }
 
-/** Statuses an approver can cancel from (`publishing` is mid-flight and `409`; finished items are final). */
-const CANCELLABLE: readonly ContentStatus[] = ["draft", "pending_approval", "scheduled", "retry_scheduled", "on_hold"];
-
-export function canCancel(status: ContentStatus): boolean {
-  return CANCELLABLE.includes(status);
-}
-
 const ALL_STATUSES: readonly ContentStatus[] = [
   "draft",
   "pending_approval",

@@ -1146,6 +1146,10 @@
             ],
             "title": "Approval Id"
           },
+          "can_cancel": {
+            "title": "Can Cancel",
+            "type": "boolean"
+          },
           "caption": {
             "anyOf": [
               {
@@ -1406,7 +1410,8 @@
           "created_by_user_id",
           "created_at",
           "updated_at",
-          "is_simulated"
+          "is_simulated",
+          "can_cancel"
         ],
         "title": "ContentItemOut",
         "type": "object"

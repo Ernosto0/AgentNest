@@ -498,7 +498,10 @@ describe("on hold", () => {
 
   it("staff can only edit a held item (no re-approve, no cancel)", async () => {
     mockApi(
-      routes({ [`GET ${ITEM_URL}`]: () => json(held("FACT_CHANGED")), [`GET ${BASE}/media/${MEDIA_ID}/content`]: image }, "staff"),
+      routes(
+        { [`GET ${ITEM_URL}`]: () => json(held("FACT_CHANGED", { can_cancel: false })), [`GET ${BASE}/media/${MEDIA_ID}/content`]: image },
+        "staff",
+      ),
     );
     renderApp(ITEM_PAGE);
     const panel = await screen.findByTestId("on-hold");
@@ -730,11 +733,15 @@ describe("published post", () => {
 });
 
 describe("approval and cancel", () => {
-  it("staff do not see Cancel anywhere; owners and managers do", async () => {
-    for (const status of ["draft", "pending_approval", "scheduled", "retry_scheduled", "on_hold"] as const) {
+  it("staff do not see Cancel on drafts, scheduled or held items; owners and managers do", async () => {
+    // The server decides (`can_cancel`); for staff it is false outside their own pending submission.
+    for (const status of ["draft", "scheduled", "retry_scheduled", "on_hold"] as const) {
       mockApi(
         routes(
-          { [`GET ${ITEM_URL}`]: () => json(draftWithMedia({ status, hold_reason: "FACT_CHANGED" })), [`GET ${BASE}/media/${MEDIA_ID}/content`]: image },
+          {
+            [`GET ${ITEM_URL}`]: () => json(draftWithMedia({ status, hold_reason: "FACT_CHANGED", can_cancel: false })),
+            [`GET ${BASE}/media/${MEDIA_ID}/content`]: image,
+          },
           "staff",
         ),
       );
@@ -747,6 +754,64 @@ describe("approval and cancel", () => {
     mockApi(routes({ [`GET ${ITEM_URL}`]: () => json(draftWithMedia({ status: "scheduled" })), [`GET ${BASE}/media/${MEDIA_ID}/content`]: image }, "manager"));
     renderApp(ITEM_PAGE);
     expect(await screen.findByRole("button", { name: "İptal et" })).toBeInTheDocument();
+  });
+
+  it("staff can withdraw their own pending submission, but not someone else's", async () => {
+    mockApi(
+      routes(
+        {
+          [`GET ${ITEM_URL}`]: () => json(draftWithMedia({ status: "pending_approval", can_cancel: true })),
+          [`GET ${BASE}/media/${MEDIA_ID}/content`]: image,
+        },
+        "staff",
+      ),
+    );
+    const { unmount } = renderApp(ITEM_PAGE);
+    expect(await screen.findByRole("button", { name: "İptal et" })).toBeInTheDocument();
+    unmount();
+    vi.unstubAllGlobals();
+
+    mockApi(
+      routes(
+        {
+          [`GET ${ITEM_URL}`]: () => json(draftWithMedia({ status: "pending_approval", can_cancel: false })),
+          [`GET ${BASE}/media/${MEDIA_ID}/content`]: image,
+        },
+        "staff",
+      ),
+    );
+    renderApp(ITEM_PAGE);
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByRole("button", { name: "İptal et" })).toBeNull();
+  });
+
+  it("a staff member withdraws their pending submission: asks once, then posts the cancel", async () => {
+    let cancelled = false;
+    const requests = mockApi(
+      routes(
+        {
+          [`GET ${ITEM_URL}`]: () =>
+            json(
+              cancelled
+                ? draftWithMedia({ status: "cancelled", can_cancel: false })
+                : draftWithMedia({ status: "pending_approval", can_cancel: true }),
+            ),
+          [`GET ${BASE}/media/${MEDIA_ID}/content`]: image,
+          [`POST ${ITEM_URL}/cancel`]: () => {
+            cancelled = true;
+            return json(draftWithMedia({ status: "cancelled", can_cancel: false }));
+          },
+        },
+        "staff",
+      ),
+    );
+    renderApp(ITEM_PAGE);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "İptal et" }));
+    expect(posts(requests, `${ITEM_URL}/cancel`)).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Evet, iptal et" }));
+    expect(await screen.findByText("Bu içerik iptal edildi ve yayınlanmayacak.")).toBeInTheDocument();
+    expect(posts(requests, `${ITEM_URL}/cancel`)).toHaveLength(1);
   });
 
   it("cancel asks once, then cancels, and the item reads İptal edildi", async () => {

@@ -23,6 +23,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.approvals import repository as approvals_repo
 from app.approvals import service as approvals
 from app.approvals.grants import record_policy_grant
 from app.audit import service as audit
@@ -676,6 +677,30 @@ def apply_cancel(
     return item
 
 
+def may_cancel(session: Session, ctx: WorkspaceContext, item: ContentItem) -> bool:
+    """Whether ``ctx``'s user may cancel ``item`` through the cancel route.
+
+    Owners and managers (``content.approve``) may cancel any cancellable item. Anybody else may
+    only **withdraw their own submission**: the item is ``pending_approval`` and they created it
+    or submitted it (the requester of its current approval). Status is not checked for approvers
+    here: ``apply_cancel`` answers ``CONFLICT_STATE`` for an item that cannot be cancelled.
+    """
+    if may_approve(ctx):
+        return True
+    if item.status != "pending_approval" or ctx.actor.type != "user" or ctx.actor.id is None:
+        return False
+    if str(item.created_by_user_id) == ctx.actor.id:
+        return True
+    if item.approval_id is None:
+        return False
+    approval = approvals_repo.get_approval(session, ctx, item.approval_id)
+    return (
+        approval is not None
+        and approval.requested_by_actor_type == "user"
+        and approval.requested_by_actor_id == ctx.actor.id
+    )
+
+
 def cancel(
     session: Session,
     clock: Clock,
@@ -684,7 +709,11 @@ def cancel(
     *,
     expected_version: int | None = None,
 ) -> ContentItem:
-    """``apply_cancel`` and commit (the cancel route)."""
+    """``apply_cancel`` and commit (the cancel route). Someone who may not cancel this item (see
+    ``may_cancel``) gets ``FORBIDDEN``; a foreign id is a 404 before that."""
+    item = get_item(session, ctx, content_id, lock=True)
+    if not may_cancel(session, ctx, item):
+        raise AppError("FORBIDDEN", permission=APPROVAL_PERMISSION)
     item = apply_cancel(session, clock, ctx, content_id, expected_version=expected_version)
     session.commit()
     return item

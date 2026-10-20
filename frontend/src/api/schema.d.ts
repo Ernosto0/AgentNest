@@ -1584,6 +1584,8 @@ export interface components {
             approval: components["schemas"]["ContentApprovalStateOut"] | null;
             /** Approval Id */
             approval_id: string | null;
+            /** Can Cancel */
+            can_cancel: boolean;
             /** Caption */
             caption: string | null;
             /**

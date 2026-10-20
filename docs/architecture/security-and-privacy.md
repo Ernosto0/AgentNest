@@ -70,7 +70,7 @@ Authentication: [ADR-013](decisions/ADR-013-authentication-and-tenancy.md). Pass
 | `reply.approve` (approve AI drafts) | ✓ | ✓ | |
 | `conversation.takeover` | ✓ | ✓ | ✓ |
 | `content.edit` (create, edit, submit) | ✓ | ✓ | ✓ |
-| `content.approve` (approve/schedule/cancel) | ✓ | ✓ | |
+| `content.approve` (approve/schedule/cancel; staff may still withdraw their own pending submission) | ✓ | ✓ | |
 | `approvals.view` | ✓ | ✓ | ✓ |
 | `reports.view` (full) | ✓ | ✓ | |
 | `reports.view_inbox_metrics` | ✓ | ✓ | ✓ |

@@ -197,6 +197,8 @@ class ContentItemOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     is_simulated: bool
+    # Whether the viewer may cancel this item now (the UI only hides the button; the route decides).
+    can_cancel: bool
 
 
 class LocalScheduleIn(BaseModel):

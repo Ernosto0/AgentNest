@@ -129,6 +129,7 @@ def test_draft_hold_and_retry_can_be_cancelled(env: Env, status: str) -> None:
 def test_publishing_and_finished_items_cannot_be_cancelled(env: Env, status: str) -> None:
     item = make_item(env, status=status)
     job = publish_job(env, item)
+    assert env.call(env.owner, "GET", f"{ITEMS}/{item.id}").json()["can_cancel"] is False
     response = cancel(env, item)
     assert response.status_code == 409
     assert response.json()["code"] == "CONFLICT_STATE"
@@ -160,12 +161,92 @@ def test_an_item_with_a_pending_approval_in_draft_state_cancels_cleanly(env: Env
     assert approval.status == "cancelled"
 
 
-def test_staff_cannot_cancel(env: Env) -> None:
+def test_staff_cannot_cancel_a_draft_they_do_not_own(env: Env) -> None:
     item = make_item(env)
     response = cancel(env, item, "staff")
     assert response.status_code == 403
     env.session.refresh(item)
     assert item.status == "draft"
+
+
+# --- Q1: staff withdraw their own pending submission -----------------------------------------
+
+
+def test_staff_can_withdraw_their_own_pending_submission(env: Env) -> None:
+    item, approval = staff_submit(env)  # created by the owner, submitted by staff
+    assert env.call(env.staff, "GET", f"{ITEMS}/{item.id}").json()["can_cancel"] is True
+
+    response = cancel(env, item, "staff")
+
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "cancelled" and response.json()["can_cancel"] is False
+    env.session.refresh(approval)
+    env.session.refresh(item)
+    assert (item.status, approval.status, approval.cancel_reason) == (
+        "cancelled",
+        "cancelled",
+        "SUBJECT_CANCELLED",
+    )
+    assert len(audit_for(env, item, "content.cancelled")) == 1
+    late = decide(env, env.owner, approval)
+    assert late.status_code == 409 and late.json()["code"] == "APPROVAL_ALREADY_DECIDED"
+    assert jobs_for(env, item) == []
+
+
+def test_staff_can_cancel_a_pending_item_they_created(env: Env) -> None:
+    item = make_item(env, status="pending_approval", caption="Taslak", owner=env.staff)
+    approval = request_approval(env, item, requester=env.manager)  # somebody else submitted it
+    assert cancel(env, item, "staff").status_code == 200
+    env.session.refresh(approval)
+    assert approval.status == "cancelled"
+
+
+def test_staff_cannot_cancel_somebody_elses_pending_submission(env: Env) -> None:
+    item = make_item(env, status="pending_approval", caption="Taslak")  # created by the owner
+    approval = request_approval(env, item, requester=env.manager)
+    assert env.call(env.staff, "GET", f"{ITEMS}/{item.id}").json()["can_cancel"] is False
+
+    response = cancel(env, item, "staff")
+
+    assert response.status_code == 403 and response.json()["code"] == "FORBIDDEN"
+    env.session.refresh(item)
+    env.session.refresh(approval)
+    assert (item.status, approval.status) == ("pending_approval", "pending")
+
+
+@pytest.mark.parametrize("status", ["draft", "scheduled", "on_hold", "retry_scheduled"])
+def test_staff_cannot_cancel_their_own_item_outside_pending_approval(env: Env, status: str) -> None:
+    item = make_item(env, status=status, owner=env.staff)
+    job = publish_job(env, item) if status != "draft" else None
+    assert env.call(env.staff, "GET", f"{ITEMS}/{item.id}").json()["can_cancel"] is False
+
+    response = cancel(env, item, "staff")
+
+    assert response.status_code == 403
+    env.session.refresh(item)
+    assert item.status == status
+    if job is not None:
+        env.session.refresh(job)
+        assert job.status == "queued"
+
+
+def test_a_self_approved_item_is_not_the_submitters_to_withdraw(env: Env) -> None:
+    """The grant of a self-approved item is recorded as requested by the system, and the item is
+    ``scheduled`` anyway: staff created nothing here."""
+    item = submittable_item(env)
+    assert submit(env, item, self_approve=True).status_code == 200
+    assert cancel(env, item, "staff").status_code == 403
+
+
+def test_owners_and_managers_keep_their_cancel_rights(env: Env) -> None:
+    for role in ("owner", "manager"):
+        item, _approval = staff_submit(env)
+        response = cancel(env, item, role)
+        assert response.status_code == 200 and response.json()["status"] == "cancelled"
+    scheduled = submittable_item(env)
+    submit(env, scheduled, self_approve=True)
+    assert env.call(env.manager, "GET", f"{ITEMS}/{scheduled.id}").json()["can_cancel"] is True
+    assert cancel(env, scheduled, "manager").status_code == 200
 
 
 def test_cancelling_leaves_other_items_jobs_alone(env: Env) -> None:

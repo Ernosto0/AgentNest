@@ -5,19 +5,19 @@ import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useCancelContent } from "./hooks";
-import { canCancel } from "./status";
 
 /**
- * Cancel an item that has not gone out. Only someone with `content.approve` (owner, manager)
- * sees it: staff can edit and submit, but not cancel. A cancel is a decision, so it asks once.
+ * Cancel an item that has not gone out. The server says whether this viewer may (`can_cancel`):
+ * owners and managers for any cancellable item, staff only for their own pending submission
+ * (withdrawing it). A cancel is a decision, so it asks once.
  */
 export function CancelAction({ item }: { item: ContentItem }) {
   const { t } = useTranslation();
-  const { workspace, role } = useCurrentWorkspace();
+  const { workspace } = useCurrentWorkspace();
   const cancel = useCancelContent(workspace.id, item.id);
   const [asking, setAsking] = useState(false);
 
-  if (role === "staff" || !canCancel(item.status)) return null;
+  if (!item.can_cancel) return null;
 
   if (!asking) {
     return (

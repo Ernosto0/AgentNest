@@ -3,8 +3,19 @@ import type { ContentIssue, ContentItem, MediaAsset, SocialAccount } from "@/api
 export const CONTENT_ID = "c5000000-0000-4000-8000-000000000001";
 export const MEDIA_ID = "e5000000-0000-4000-8000-000000000001";
 
+const CANCELLABLE_STATUSES: readonly ContentItem["status"][] = [
+  "draft",
+  "pending_approval",
+  "scheduled",
+  "retry_scheduled",
+  "on_hold",
+];
+
+/** `can_cancel` defaults to what an owner would get; a staff view sets it explicitly. */
 export function contentItem(overrides: Partial<ContentItem> = {}): ContentItem {
+  const status = overrides.status ?? "draft";
   return {
+    can_cancel: CANCELLABLE_STATUSES.includes(status),
     id: CONTENT_ID,
     content_type: "feed_image",
     status: "draft",
