@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import { isContentStatus } from "@/features/content/status";
 
 /**
  * The backend answers commands with a stable `message_key` plus formatted `params` (never a
@@ -19,6 +20,17 @@ export const RESULT_MESSAGE_KEYS = [
   "forbidden",
   "value_unreadable",
   "brand_voice_missing",
+  // Content commands (api-design §2.4, P5-03b).
+  "draft_created",
+  "content_cancelled",
+  "content_changed_meanwhile",
+  "content_not_cancellable",
+  "content_status",
+  "content_failure",
+  "no_failure",
+  "no_failure_for_item",
+  "reference_not_found",
+  "draft_unreadable",
   "failed",
 ] as const;
 
@@ -43,7 +55,7 @@ export const LINK_TARGETS = [
   "members",
 ] as const;
 export const PERIODS = ["today", "yesterday", "last_7_days"] as const;
-export const CLARIFY_QUESTIONS = ["which_fact", "which_fact_value", "which_value"] as const;
+export const CLARIFY_QUESTIONS = ["which_fact", "which_fact_value", "which_value", "which_content"] as const;
 
 /** `command.fact_updated` -> `fact_updated`. */
 export function messageSuffix(messageKey: string): string {
@@ -54,6 +66,8 @@ export interface ResultLink {
   target: string;
   category?: string;
   key?: string;
+  /** A content item's id (`target: content`); absent on the link to the list. */
+  id?: string;
 }
 
 /** Where a result link leads (structured by the API, so it holds no frontend route). */
@@ -65,12 +79,21 @@ export function linkPath(workspaceId: string, link: ResultLink): string {
     case "approvals":
       return `${base}/approvals`;
     case "content":
-      return `${base}/content`;
+      return link.id ? `${base}/content/${link.id}` : `${base}/content`;
     case "inbox":
       return `${base}/inbox`;
     default:
       return `${base}/more`;
   }
+}
+
+/**
+ * The status of a content item as a word, by the same mapping as the badges (INV-18): only
+ * `published` reads "published", and a retry reads "will be retried" (the time is not known here).
+ */
+export function contentStatusLabel(t: TFunction, status: unknown): string {
+  if (!isContentStatus(status)) return String(status ?? "");
+  return status === "retry_scheduled" ? t("content.status.retrying") : t(`status.${status}`);
 }
 
 /** The sentence for a command result, in the user's language. */
@@ -89,6 +112,16 @@ export function describeResult(
     values.periodLabel = t(`command.period.${String(params.period)}`, {
       defaultValue: String(params.period),
     });
+  }
+  if (suffix.startsWith("content_") || suffix.startsWith("draft_") || suffix === "no_failure_for_item") {
+    values.typeLabel =
+      params.content_type === "feed_image" || params.content_type === "story_image"
+        ? t(`content.type.${params.content_type}`)
+        : "";
+    values.statusLabel = contentStatusLabel(t, params.status);
+    // The time follows the title and status only when the server knew one (a draft has none).
+    const when = typeof params.when === "string" && params.when !== "" ? params.when : null;
+    values.whenPart = when ? (suffix === "content_status" ? ` · ${when}` : ` (${when})`) : "";
   }
   if (suffix === "pending_approvals" && Number(params.count) === 0) {
     return t("command.msg.pending_none");

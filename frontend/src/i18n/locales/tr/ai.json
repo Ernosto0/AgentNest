@@ -22,13 +22,23 @@
       "approve": "Onayla",
       "withdraw": "Vazgeç",
       "deciding": "Kaydediliyor…",
-      "staffNote": "Bu bilgiyi doğrulama yetkiniz yok: onaylarsanız bir öneri olarak sahibe iletilir, bilgi hemen değişmez."
+      "staffNote": "Bu bilgiyi doğrulama yetkiniz yok: onaylarsanız bir öneri olarak sahibe iletilir, bilgi hemen değişmez.",
+      "cancelContent": {
+        "title": "Bu içerik iptal edilsin mi?",
+        "type": "Tür",
+        "status": "Şu anki durumu",
+        "when": "Zamanı",
+        "consequence": "İptal ederseniz bu içerik yayınlanmaz ve bekleyen onayı ya da zamanlaması da iptal olur.",
+        "approve": "Evet, iptal et",
+        "open": "İçeriği aç"
+      }
     },
     "clarify": {
       "which_fact": "Hangi bilgiyi kastettiniz?",
       "which_fact_value": "“{{raw}}” hangi bilgi için?",
       "which_value": "“{{raw}}” ({{label}}) için hangi tutarı kastettiniz?",
-      "cancel": "Vazgeç"
+      "cancel": "Vazgeç",
+      "which_content": "{{count}} içerik buldum. Hangisini kastettiniz?"
     },
     "msg": {
       "fact_value": "{{label}}: {{display}}",
@@ -47,7 +57,21 @@
       "forbidden": "Bu işlem için yetkiniz yok.",
       "value_unreadable": "“{{raw}}” değerini okuyamadım ({{label}}). Örneğin “7.000 TL” yazın.",
       "brand_voice_missing": "Marka dili bilgisi henüz yok. İşletme bilgileri bölümünden ekleyin.",
-      "failed": "Komut tamamlanamadı."
+      "failed": "Komut tamamlanamadı.",
+      "draft_created": "“{{title}}” taslağı oluşturuldu ({{typeLabel}}). Metin hazırlanıyor; hazır olunca açıp zaman seçebilirsiniz.",
+      "content_cancelled": "“{{title}}” iptal edildi{{whenPart}}. Yayınlanmayacak.",
+      "content_changed_meanwhile": "İçerik siz onaylarken değişti ya da artık iptal edilemiyor, bu yüzden iptal edilmedi. Güncel durumuna bakın.",
+      "content_not_cancellable": "“{{title}}” iptal edilemez (durumu: {{statusLabel}}).",
+      "content_status": "“{{title}}” ({{typeLabel}}): {{statusLabel}}{{whenPart}}",
+      "content_failure": "“{{title}}”: {{what}} {{next}}",
+      "no_failure": "Başarısız olmuş ya da beklemeye alınmış bir içerik yok.",
+      "no_failure_for_item": "“{{title}}” sorunlu değil (durumu: {{statusLabel}}).",
+      "reference_not_found": "Söylediğiniz içeriği bulamadım. Tarihini ya da başlığını söyleyin, ya da İçerik bölümünden seçin.",
+      "draft_unreadable": "Taslak için ne istediğinizi anlayamadım. Örneğin “Deneme dersi için bir story hazırla” deyin.",
+      "failureRetryAt": "Tekrar denenecek: {{time}}.",
+      "failureRetryable": "Otomatik olarak tekrar denenir.",
+      "failureFinal": "Otomatik olarak tekrar denenmeyecek.",
+      "content_failure_title": "“{{title}}” neden yayınlanmadı?"
     },
     "period": {
       "today": "Bugün",
@@ -79,7 +103,8 @@
       "inbox": "Gelen kutusuna git",
       "integrations": "Ayarları aç",
       "automation": "Ayarları aç",
-      "members": "Ayarları aç"
+      "members": "Ayarları aç",
+      "content_item": "İçeriği aç"
     },
     "status": {
       "cancelled": "İptal edildi. Hiçbir şey değişmedi.",
@@ -147,7 +172,12 @@
       "unknown": "Yeni bildirim",
       "conversation_needs_human": "Bir konuşma kendi yanıtınızı bekliyor",
       "reply_failed": "Bir yanıt gönderilemedi",
-      "account_needs_reauth": "Instagram hesabınızı yeniden bağlayın"
+      "account_needs_reauth": "Instagram hesabınızı yeniden bağlayın",
+      "content_on_hold": "“{{title}}” beklemeye alındı.",
+      "content_on_hold_FACT_CHANGED": "“{{title}}” beklemeye alındı: kullandığı işletme bilgisi değişti.",
+      "content_on_hold_ACCOUNT_UNAVAILABLE": "“{{title}}” beklemeye alındı: Instagram hesabı kullanılamıyor.",
+      "content_published": "“{{title}}” yayınlandı.",
+      "content_failed": "“{{title}}” yayınlanamadı: {{what}}"
     },
     "open": "Aç"
   },

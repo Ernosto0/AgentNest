@@ -42,6 +42,7 @@ export type SocialAccount = Schemas["SocialAccountOut"];
 export type DevScript = Schemas["ScriptOut"];
 export type FailureRule = Schemas["FailureRuleOut"];
 export type DevJob = Schemas["JobOut"];
+export type SimPublishedMedia = Schemas["PublishedMediaOut"];
 
 // Phase 5: content and media.
 export type ContentItem = Schemas["ContentItemOut"];

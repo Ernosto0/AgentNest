@@ -6,9 +6,12 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useDecideApproval } from "@/features/commands/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { useContentItem } from "@/features/content/hooks";
+import { CancelContentSummary } from "./CancelContentSummary";
 import { ChangeSummary, ImpactSummary } from "./ChangeSummary";
+import { ContentApprovalBody } from "./ContentApprovalBody";
 import { ReplyApprovalBody } from "./ReplyApprovalBody";
-import { actionKey } from "./format";
+import { actionKey, isStaleFor } from "./format";
 
 function localTime(value: string, language: string, timezone: string): string {
   return new Date(value).toLocaleString(language, {
@@ -31,6 +34,13 @@ function ExtraFields({ summary }: { summary: Record<string, unknown> }) {
     "conversation_id",
     "window_ends_at",
     "reasons",
+    // Content approvals: the ids and raw fields are shown by their own bodies.
+    "content_id",
+    "content_type",
+    "status",
+    "when",
+    "title",
+    "scheduled_at",
   ]);
   const rows = Object.entries(summary).filter(
     ([name, value]) => !known.has(name) && typeof value === "string" && value !== "",
@@ -57,6 +67,11 @@ export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval;
   const { workspace } = useCurrentWorkspace();
   const decide = useDecideApproval(workspace.id);
   const pending = approval.status === "pending";
+  const isPublish = approval.action === "content.publish";
+  const isCancel = approval.action === "command.cancel_content";
+  // A publish approval is decided on what it covers, so the item is read first.
+  const content = useContentItem(workspace.id, approval.subject.id, isPublish);
+  const cannotApprove = isPublish && (!content.data || isStaleFor(approval, content.data));
 
   const decideWith = (decision: "approve" | "reject") =>
     decide.mutate({ approval, decision }, { onSuccess: onClose });
@@ -69,7 +84,7 @@ export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval;
         pending ? (
           approval.can_decide ? (
             <div className="flex flex-wrap gap-2">
-              <Button disabled={decide.isPending} onClick={() => decideWith("approve")}>
+              <Button disabled={decide.isPending || cannotApprove} onClick={() => decideWith("approve")}>
                 {decide.isPending ? t("approvals.detail.deciding") : t("approvals.detail.approve")}
               </Button>
               <Button variant="secondary" disabled={decide.isPending} onClick={() => decideWith("reject")}>
@@ -98,13 +113,28 @@ export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval;
           {approval.is_simulated ? <SimulatedBadge /> : null}
         </div>
         {approval.action === "reply.send" ? <ReplyApprovalBody approval={approval} /> : null}
-        <ChangeSummary summary={approval.summary} fromKey="approvals.detail.from" toKey="approvals.detail.to" />
-        <ExtraFields summary={approval.summary} />
-        <ImpactSummary
-          summary={approval.summary}
-          titleKey="approvals.detail.impactTitle"
-          noneKey="approvals.detail.impactNone"
-        />
+        {isPublish ? (
+          <ContentApprovalBody
+            approval={approval}
+            item={content.data}
+            loading={content.isPending}
+            failed={content.isError}
+          />
+        ) : null}
+        {isCancel ? <CancelContentSummary summary={approval.summary} /> : null}
+        {isPublish ? null : (
+          <>
+            {isCancel ? null : (
+              <ChangeSummary summary={approval.summary} fromKey="approvals.detail.from" toKey="approvals.detail.to" />
+            )}
+            <ExtraFields summary={approval.summary} />
+            <ImpactSummary
+              summary={approval.summary}
+              titleKey="approvals.detail.impactTitle"
+              noneKey="approvals.detail.impactNone"
+            />
+          </>
+        )}
         <p className="text-sm text-slate-600">
           {pending
             ? t("approvals.detail.expires", {

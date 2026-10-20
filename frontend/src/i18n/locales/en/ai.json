@@ -22,13 +22,23 @@
       "approve": "Confirm",
       "withdraw": "Cancel",
       "deciding": "Saving…",
-      "staffNote": "You cannot verify this information: if you confirm, it is sent to the owner as a suggestion and nothing changes yet."
+      "staffNote": "You cannot verify this information: if you confirm, it is sent to the owner as a suggestion and nothing changes yet.",
+      "cancelContent": {
+        "title": "Cancel this item?",
+        "type": "Type",
+        "status": "Its status now",
+        "when": "Its time",
+        "consequence": "If you cancel, this item will not be published, and its pending approval or schedule is cancelled too.",
+        "approve": "Yes, cancel it",
+        "open": "Open the content"
+      }
     },
     "clarify": {
       "which_fact": "Which information did you mean?",
       "which_fact_value": "Which information is “{{raw}}” for?",
       "which_value": "Which amount did you mean by “{{raw}}” ({{label}})?",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "which_content": "I found {{count}} items. Which one did you mean?"
     },
     "msg": {
       "fact_value": "{{label}}: {{display}}",
@@ -47,7 +57,21 @@
       "forbidden": "Your role cannot do this.",
       "value_unreadable": "I could not read “{{raw}}” as a value ({{label}}). Try something like “7,000 TL”.",
       "brand_voice_missing": "There is no brand voice yet. Add it under Business information.",
-      "failed": "The command could not be completed."
+      "failed": "The command could not be completed.",
+      "draft_created": "Draft “{{title}}” created ({{typeLabel}}). The text is being prepared; open it when it is ready and pick a time.",
+      "content_cancelled": "“{{title}}” was cancelled{{whenPart}}. It will not be published.",
+      "content_changed_meanwhile": "The item changed while you were confirming, or can no longer be cancelled, so it was not cancelled. Check its current status.",
+      "content_not_cancellable": "“{{title}}” cannot be cancelled (status: {{statusLabel}}).",
+      "content_status": "“{{title}}” ({{typeLabel}}): {{statusLabel}}{{whenPart}}",
+      "content_failure": "“{{title}}”: {{what}} {{next}}",
+      "no_failure": "No item has failed or been put on hold.",
+      "no_failure_for_item": "“{{title}}” is not in trouble (status: {{statusLabel}}).",
+      "reference_not_found": "I could not find the item you mean. Give its date or title, or pick it in Content.",
+      "draft_unreadable": "I could not tell what the draft should be about. For example, say “Prepare a story for the trial class”.",
+      "failureRetryAt": "It will be tried again at {{time}}.",
+      "failureRetryable": "It is retried automatically.",
+      "failureFinal": "It will not be retried automatically.",
+      "content_failure_title": "Why “{{title}}” is not out"
     },
     "period": {
       "today": "Today",
@@ -79,7 +103,8 @@
       "inbox": "Go to the inbox",
       "integrations": "Open settings",
       "automation": "Open settings",
-      "members": "Open settings"
+      "members": "Open settings",
+      "content_item": "Open the content"
     },
     "status": {
       "cancelled": "Cancelled. Nothing changed.",
@@ -147,7 +172,12 @@
       "unknown": "New notification",
       "conversation_needs_human": "A conversation needs your own reply",
       "reply_failed": "A reply could not be sent",
-      "account_needs_reauth": "Reconnect your Instagram account"
+      "account_needs_reauth": "Reconnect your Instagram account",
+      "content_on_hold": "“{{title}}” was put on hold.",
+      "content_on_hold_FACT_CHANGED": "“{{title}}” was put on hold: business information it uses changed.",
+      "content_on_hold_ACCOUNT_UNAVAILABLE": "“{{title}}” was put on hold: the Instagram account is unavailable.",
+      "content_published": "“{{title}}” was published.",
+      "content_failed": "“{{title}}” could not be published: {{what}}"
     },
     "open": "Open"
   },

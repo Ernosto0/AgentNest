@@ -3,10 +3,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
-import type { DevJob, DevScript, FailureRule } from "@/api/types";
+import type { DevJob, DevScript, FailureRule, SimPublishedMedia } from "@/api/types";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 const OPERATIONS = [
@@ -32,7 +33,7 @@ const MODES = [
 function useDev(ws: string) {
   const queryClient = useQueryClient();
   const refresh = () => {
-    for (const name of ["conversations", "conversation", "approvals", "dev-jobs", "dev-rules"]) {
+    for (const name of ["conversations", "conversation", "approvals", "dev-jobs", "dev-rules", "dev-published"]) {
       void queryClient.invalidateQueries({ queryKey: [name] });
     }
   };
@@ -54,6 +55,18 @@ function useDev(ws: string) {
   const jobs = useQuery<DevJob[], AppError>({
     queryKey: ["dev-jobs", ws],
     queryFn: async () => (await unwrap(api.GET("/api/v1/dev/jobs", { params: { query: {} } }))).items,
+    refetchInterval: 5000,
+  });
+  const published = useQuery<SimPublishedMedia[], AppError>({
+    queryKey: ["dev-published", ws],
+    queryFn: async () =>
+      (
+        await unwrap(
+          api.GET("/api/v1/dev/workspaces/{workspace_id}/simulator/published", {
+            params: { path: { workspace_id: ws } },
+          }),
+        )
+      ).items,
     refetchInterval: 5000,
   });
   const simulate = useMutation<unknown, AppError, string>({
@@ -89,7 +102,7 @@ function useDev(ws: string) {
       ),
     onSettled: refresh,
   });
-  return { scripts, rules, jobs, simulate, runDue, addRule, removeRule };
+  return { scripts, rules, jobs, published, simulate, runDue, addRule, removeRule };
 }
 
 /** Developer tools (only when the server has DEMO_TOOLS_ENABLED): simulate customers and failures. */
@@ -172,6 +185,47 @@ export function DevPanel() {
               <Button variant="ghost" onClick={() => dev.removeRule.mutate(rule.id)}>
                 {t("devPanel.removeRule")}
               </Button>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <Card className="flex flex-col gap-3" data-testid="sim-published">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">{t("devPanel.published")}</h2>
+          <Button
+            variant="ghost"
+            disabled={dev.published.isFetching}
+            onClick={() => void dev.published.refetch()}
+          >
+            {t("devPanel.refresh")}
+          </Button>
+        </div>
+        <p className="text-sm text-slate-600">{t("devPanel.publishedHint")}</p>
+        {dev.published.error ? <ErrorMessage error={dev.published.error} /> : null}
+        {dev.published.data && dev.published.data.length === 0 ? (
+          <p className="text-sm">{t("devPanel.publishedNone")}</p>
+        ) : null}
+        <ul className="flex flex-col gap-2 text-sm">
+          {(dev.published.data ?? []).map((media) => (
+            <li key={media.media_id} data-testid="sim-published-item" className="flex flex-col gap-0.5">
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">
+                  {t("devPanel.publishedRow", {
+                    type: media.media_type,
+                    time: new Date(media.published_at).toLocaleString(i18n.language, {
+                      dateStyle: "short",
+                      timeStyle: "medium",
+                      timeZone: workspace.timezone,
+                    }),
+                  })}
+                </span>
+                {media.is_simulated ? <SimulatedBadge /> : null}
+              </span>
+              <span className="break-words text-slate-700">{media.caption ?? t("devPanel.noCaption")}</span>
+              <span className="break-all text-xs text-slate-600">
+                {media.media_id} · {media.permalink}
+              </span>
             </li>
           ))}
         </ul>

@@ -40,6 +40,9 @@ function useRefreshAfterDecision(workspaceId: string) {
         ["fact-candidates", workspaceId],
         ["fact-versions", workspaceId],
         ["readiness", workspaceId],
+        // A decision can schedule, publish-queue or cancel content.
+        ["content-items", workspaceId],
+        ["content-item", workspaceId],
         approvalsKey(workspaceId),
         notificationsKey(workspaceId),
         ["command", workspaceId],

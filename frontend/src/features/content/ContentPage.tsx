@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import type { ContentTab } from "@/api/types";
+import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { ContentCard } from "./ContentCard";
+import { GenerateSheet, type NewContentMode } from "./GenerateSheet";
 import { useContentItems } from "./hooks";
 import { CONTENT_TABS, isContentTab, tabOf } from "./status";
 
@@ -19,12 +22,21 @@ export function ContentPage() {
   const items = useContentItems(workspace.id, tab);
   // The server already filters by tab; a defensive filter keeps a cancelled or foreign-tab item out.
   const visible = items.data?.filter((item) => tabOf(item.status) === tab);
+  // Two ways in: ask the assistant for a draft, or start with a blank one and write it yourself.
+  const [starting, setStarting] = useState<NewContentMode | null>(null);
 
   return (
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-2xl font-semibold">{t("content.title")}</h1>
         <p className="mt-1 text-slate-600">{t("content.intro")}</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => setStarting("ai")}>{t("content.actions.newDraft")}</Button>
+        <Button variant="secondary" onClick={() => setStarting("blank")}>
+          {t("content.actions.blankDraft")}
+        </Button>
       </div>
 
       <div role="tablist" aria-label={t("content.tabsLabel")} className="flex flex-wrap gap-2">
@@ -60,6 +72,7 @@ export function ContentPage() {
           </ul>
         </Card>
       ) : null}
+      {starting ? <GenerateSheet initialMode={starting} onClose={() => setStarting(null)} /> : null}
     </div>
   );
 }

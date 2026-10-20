@@ -210,6 +210,12 @@
     "addRule": "Add for the next call",
     "removeRule": "Remove",
     "jobs": "Jobs",
-    "runDue": "Run due jobs now"
+    "runDue": "Run due jobs now",
+    "published": "Published in the simulator",
+    "publishedHint": "Posts that were really published to the fake Instagram. Each content item must appear exactly once.",
+    "publishedNone": "Nothing has been published in the simulator yet.",
+    "publishedRow": "{{type}} · {{time}}",
+    "refresh": "Refresh",
+    "noCaption": "(no caption)"
   }
 }

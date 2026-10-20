@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { Command } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { CancelContentSummary } from "@/features/approvals/CancelContentSummary";
 import { ChangeSummary, ImpactSummary } from "@/features/approvals/ChangeSummary";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useCancelCommand, useDecideApproval } from "./hooks";
@@ -18,6 +19,8 @@ export function ConfirmationCard({ command }: { command: Command }) {
   const withdraw = useCancelCommand(workspace.id);
   const approval = command.approval;
   if (!approval) return null;
+  // The card is generic over the action: a content cancel names an item, not a fact.
+  const cancelContent = approval.action === "command.cancel_content";
 
   const expires = new Date(approval.expires_at).toLocaleTimeString(i18n.language, {
     hour: "2-digit",
@@ -29,19 +32,27 @@ export function ConfirmationCard({ command }: { command: Command }) {
 
   return (
     <section
-      aria-label={t("command.confirm.title")}
+      aria-label={cancelContent ? t("command.confirm.cancelContent.title") : t("command.confirm.title")}
       className="flex flex-col gap-3"
       data-testid="confirmation-card"
       data-payload-hash={approval.payload_hash}
     >
-      <h3 className="font-medium">{t("command.confirm.title")}</h3>
-      <ChangeSummary summary={approval.summary} fromKey="command.confirm.from" toKey="command.confirm.to" />
-      <ImpactSummary
-        summary={approval.summary}
-        titleKey="command.confirm.impactTitle"
-        noneKey="command.confirm.impactNone"
-      />
-      {role === "staff" ? (
+      <h3 className="font-medium">
+        {cancelContent ? t("command.confirm.cancelContent.title") : t("command.confirm.title")}
+      </h3>
+      {cancelContent ? (
+        <CancelContentSummary summary={approval.summary} />
+      ) : (
+        <>
+          <ChangeSummary summary={approval.summary} fromKey="command.confirm.from" toKey="command.confirm.to" />
+          <ImpactSummary
+            summary={approval.summary}
+            titleKey="command.confirm.impactTitle"
+            noneKey="command.confirm.impactNone"
+          />
+        </>
+      )}
+      {role === "staff" && !cancelContent ? (
         <p className="rounded-lg bg-slate-100 p-3 text-sm text-slate-800">{t("command.confirm.staffNote")}</p>
       ) : null}
       <p className="text-sm text-slate-600">{t("command.confirm.expires", { time: expires })}</p>
@@ -51,7 +62,11 @@ export function ConfirmationCard({ command }: { command: Command }) {
           disabled={busy || !approval.can_decide}
           onClick={() => decide.mutate({ approval, decision: "approve" })}
         >
-          {decide.isPending ? t("command.confirm.deciding") : t("command.confirm.approve")}
+          {decide.isPending
+            ? t("command.confirm.deciding")
+            : cancelContent
+              ? t("command.confirm.cancelContent.approve")
+              : t("command.confirm.approve")}
         </Button>
         <Button variant="secondary" disabled={busy} onClick={() => withdraw.mutate(command.id)}>
           {t("command.confirm.withdraw")}

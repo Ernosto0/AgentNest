@@ -30,6 +30,24 @@ export function describeNotification(
             old: String(params.old_display ?? ""),
             new: String(params.new_display ?? ""),
           });
+    case "content.on_hold": {
+      // Params carry the internal title and a reason code, never the caption (observability §4.3).
+      const title = String(params.title ?? "");
+      const reason = String(params.reason ?? "");
+      return reason === "FACT_CHANGED" || reason === "ACCOUNT_UNAVAILABLE"
+        ? t(`notifications.type.content_on_hold_${reason}`, { title })
+        : t("notifications.type.content_on_hold", { title });
+    }
+    case "content.published":
+      return t("notifications.type.content_published", { title: String(params.title ?? "") });
+    case "content.failed": {
+      const code = String(params.reason ?? "");
+      const known = code !== "" ? t(`errors.${code}.what`, { defaultValue: "" }) : "";
+      return t("notifications.type.content_failed", {
+        title: String(params.title ?? ""),
+        what: known !== "" ? known : t("content.failure.unknown.what"),
+      });
+    }
     case "conversation.needs_human":
       return t("notifications.type.conversation_needs_human");
     case "reply.failed":

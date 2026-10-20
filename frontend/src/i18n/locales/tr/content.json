@@ -21,7 +21,8 @@
       "story_image": "Story"
     },
     "status": {
-      "soon": "kısa süre sonra"
+      "soon": "kısa süre sonra",
+      "retrying": "Tekrar denenecek"
     },
     "card": {
       "scheduledFor": "Zamanlanan: {{time}}",
@@ -81,7 +82,12 @@
         "ACCOUNT_NOT_CONNECTED": "Bağlı bir Instagram hesabı yok.",
         "CAPABILITY_MISSING": "Bağlı hesap bu içerik türünü yayınlayamıyor.",
         "STORY_ASPECT_NOT_9_16": "Görsel 9:16 değil ({{width}}×{{height}}). Story'de kırpılabilir ya da kenarlarda boşluk kalabilir.",
-        "OVERLAY_TOO_LONG": "Bu öneri uzun: en fazla 3 satır ve satır başına 40 karakter okunaklı olur."
+        "OVERLAY_TOO_LONG": "Bu öneri uzun: en fazla 3 satır ve satır başına 40 karakter okunaklı olur.",
+        "SCHEDULE_IN_PAST": "Seçtiğiniz zaman geçmişte. İleri bir zaman seçin.",
+        "SCHEDULE_TOO_FAR": "En fazla 60 gün sonrasına zamanlanabilir.",
+        "SCHEDULE_TIME_NONEXISTENT": "{{timezoneLabel}} için {{local_date}} günü saat {{local_time}} diye bir saat yok (saatler o saati atlıyor). Başka bir saat seçin.",
+        "SCHEDULE_TOO_SOON_FOR_APPROVAL": "Yayından önce birinin onaylaması gerekir. Şu andan en az {{minutes}} dakika sonrasını seçin.",
+        "PUBLISH_QUOTA_FORECAST_EXCEEDED": "Bu saatin çevresinde zaten çok fazla gönderi zamanlanmış. Başka bir saat seçin."
       }
     },
     "media": {
@@ -103,6 +109,155 @@
         "CORRUPT_IMAGE": "Görsel dosyası bozuk görünüyor. Başka bir görsel seçin.",
         "TOO_MANY_PIXELS": "Görsel çok yüksek çözünürlüklü. Daha küçük bir görsel seçin."
       }
+    },
+    "actions": {
+      "newDraft": "Taslak iste",
+      "blankDraft": "Boş taslak",
+      "schedule": "Zamanla",
+      "cancel": "İptal et",
+      "cancelAsk": "Bu içerik iptal edilsin mi? Zamanlanmış yayını da iptal olur.",
+      "cancelConfirm": "Evet, iptal et",
+      "cancelKeep": "Vazgeç",
+      "cancelling": "İptal ediliyor…",
+      "saveFirst": "Önce değişiklikleri kaydedin.",
+      "waitGeneration": "Metin hazırlanırken zamanlanamaz.",
+      "editResend": "Düzenle ve yeniden gönder",
+      "edit": "Düzenle"
+    },
+    "generate": {
+      "title": "Yeni içerik",
+      "modeLabel": "Nasıl başlayalım?",
+      "modeAi": "Taslak iste",
+      "modeBlank": "Boş taslak",
+      "typeLabel": "Tür",
+      "objectiveLabel": "Ne paylaşmak istiyorsunuz?",
+      "objectiveHint": "Örn. “Deneme dersi için bir story”. Fiyat ve saat gibi bilgiler yalnızca doğrulanmış bilgilerinizden alınır.",
+      "notesLabel": "Ek not (isteğe bağlı)",
+      "accountLabel": "Yayın hesabı",
+      "accountHint": "İçerik, zamanlarken bu hesapta yayınlanacak şekilde ayarlanır.",
+      "accountNone": "Bağlı Instagram hesabı yok. Taslağı hazırlayabilirsiniz; zamanlamadan önce hesabı bağlamanız gerekir.",
+      "submit": "Taslağı hazırla",
+      "submitting": "Gönderiliyor…",
+      "running": "Hazırlanıyor…",
+      "runningHint": "Birkaç saniye sürebilir. Beklemek istemezseniz taslağı hemen açıp metni kendiniz de yazabilirsiniz.",
+      "slow": "Beklenenden uzun sürüyor. Taslağı açıp metni kendiniz yazabilirsiniz.",
+      "ready": "Taslak hazır.",
+      "failedTitle": "Taslak otomatik hazırlanamadı.",
+      "failedHint": "Boş bir taslak oluşturuldu. Metni kendiniz yazabilirsiniz.",
+      "open": "Taslağı aç",
+      "titleLabel": "Başlık",
+      "titleHint": "Yalnızca sizin göreceğiniz bir ad. Metni ve görseli taslakta eklersiniz.",
+      "blankSubmit": "Boş taslak oluştur"
+    },
+    "schedule": {
+      "title": "Zamanla",
+      "reapproveTitle": "Yeniden onayla ve zamanla",
+      "whenLabel": "Ne zaman yayınlansın?",
+      "optLater": "Belirli bir zamanda",
+      "optNow": "Hemen yayınla",
+      "dateLabel": "Tarih",
+      "timeLabel": "Saat",
+      "timezoneLabel": "{{city}} saati",
+      "city": {
+        "Istanbul": "İstanbul"
+      },
+      "timezoneHint": "Girdiğiniz saat {{zone}} içindir.",
+      "summaryTitle": "Yayınlanacak olan",
+      "summaryType": "Tür",
+      "summaryAccount": "Hesap",
+      "summaryWhen": "Zaman",
+      "summaryMedia": "Görsel",
+      "summaryCaption": "Açıklama",
+      "summaryOverlay": "Görsel üzerindeki metin",
+      "overlayNote": "Bu metin story ile ayrıca yayınlanmaz; görselin üzerinde olmalıdır.",
+      "noMedia": "Görsel yok",
+      "noCaption": "Açıklama yok",
+      "noAccount": "Bağlı Instagram hesabı yok",
+      "whenAt": "{{when}} ({{zone}})",
+      "whenNow": "Hemen: onaylanır onaylanmaz yayın sırasına alınır",
+      "staffNote": "Bu içerik bir sahip ya da yöneticinin onayından sonra yayınlanır. Seçtiğiniz zamana kadar onaylanmazsa süresi dolar ve taslağa döner.",
+      "approverNote": "Onayladığınızda içerik zamanlanır. Instagram'da yayınlandığı doğrulanana kadar durumu “Zamanlandı” görünür.",
+      "nowNote": "İçerik hemen yayın sırasına alınır. Yayınlandığı doğrulanmadan “Yayınlandı” yazmaz.",
+      "reapproveNote": "Metin değişmeden yeniden onaylanır. Bilgiler yeniden kontrol edilir: metinde hâlâ eski bir fiyat gibi doğrulanmamış bir değer varsa önce metni düzenlemeniz gerekir.",
+      "submitApprove": "Onayla ve zamanla",
+      "submitNow": "Onayla ve hemen yayınla",
+      "submitStaff": "Onaya gönder",
+      "submitReapprove": "Yeniden onayla ve zamanla",
+      "submitReapproveNow": "Yeniden onayla ve hemen yayınla",
+      "submitting": "Gönderiliyor…",
+      "problemsTitle": "Önce şunları düzeltin",
+      "warningsTitle": "Dikkat edin",
+      "claimIssue": "“{{text}}” doğrulanmış bir bilgi değil.",
+      "editText": "Metni düzenle"
+    },
+    "approval": {
+      "heading": "Bu onayla yayınlanacak içerik",
+      "type": "Tür",
+      "when": "Zaman",
+      "caption": "Açıklama",
+      "overlay": "Görsel üzerindeki metin",
+      "overlayNote": "Story ile ayrıca yayınlanmaz; görselin üzerinde olmalıdır.",
+      "media": "Görsel",
+      "noCaption": "Açıklama yok",
+      "noMedia": "Görsel yok",
+      "version": "Sürüm {{version}}",
+      "stale": "Bu içerik onay istendikten sonra değişti (şimdi sürüm {{current}}, onaydaki sürüm {{approved}}). Bu onay artık geçerli değil; içerik yeniden onaya gönderilmelidir.",
+      "loadFailed": "İçerik yüklenemedi.",
+      "open": "İçeriği aç"
+    },
+    "detail": {
+      "scheduledFor": "Yayın zamanı: {{when}} ({{zone}})",
+      "publishedAt": "Yayınlandığı zaman: {{when}} ({{zone}})",
+      "permalink": "Gönderi bağlantısı",
+      "permalinkOpen": "Gönderiyi aç",
+      "pending": "Onay bekliyor: bir sahip ya da yönetici onaylayınca zamanlanır. {{time}} saatine kadar onaylanmazsa süresi dolar ve taslağa döner.",
+      "rejected": "Bu içerik reddedildi.",
+      "rejectedBy": "{{name}} reddetti.",
+      "rejectedNote": "Not: {{note}}",
+      "rejectedNext": "Düzenleyip yeniden gönderebilirsiniz.",
+      "expiredNote": "Onay süresi doldu.",
+      "draftHold": {
+        "FACT_CHANGED": "Kullandığı işletme bilgisi değiştiği için onaya gönderilmiş içerik taslağa döndürüldü. Metni gözden geçirip yeniden gönderin.",
+        "APPROVAL_EXPIRED": "Onay süresi dolduğu için taslağa döndü. Yeni bir zaman seçip yeniden gönderin."
+      },
+      "cancelled": "Bu içerik iptal edildi ve yayınlanmayacak.",
+      "publishing": "Yayınlanıyor. Instagram'da yayınlandığı doğrulanınca durumu güncellenir."
+    },
+    "failure": {
+      "title": "Ne oldu?",
+      "retryAt": "Tekrar denenecek: {{time}} ({{attempts}}. deneme yapıldı)",
+      "retryAuto": "Otomatik olarak tekrar denenir; bir şey yapmanız gerekmez.",
+      "noRetry": "Otomatik olarak tekrar denenmeyecek.",
+      "unknown": {
+        "what": "Yayınlanırken bir şeyler ters gitti.",
+        "next": "Ayrıntılar için gönderiyi açın, sonra düzenleyin veya yeniden zamanlayın."
+      },
+      "exhausted": "Birkaç denemeye rağmen yayınlanamadı."
+    },
+    "hold": {
+      "title": "Beklemede",
+      "FACT_CHANGED": {
+        "what": "Kullandığı işletme bilgisi değiştiği için beklemeye alındı.",
+        "next": "Metni gözden geçirin; doğruysa olduğu gibi yeniden onaylayın, değilse düzenleyin."
+      },
+      "ACCOUNT_UNAVAILABLE": {
+        "what": "Instagram hesabı kullanılamadığı için beklemeye alındı.",
+        "next": "Hesabı yeniden bağlayın, sonra yeniden onaylayın."
+      },
+      "unknown": {
+        "what": "Bu içerik beklemeye alındı.",
+        "next": "Metni gözden geçirip yeniden onaylayın ya da düzenleyin."
+      },
+      "reapprove": "Olduğu gibi yeniden onayla",
+      "staffNote": "Yeniden onay için bir sahip ya da yönetici gerekir. Metni düzenleyip yeniden onaya gönderebilirsiniz.",
+      "openKnowledge": "İşletme bilgilerini aç",
+      "openConnection": "Bağlantıyı kontrol et"
+    },
+    "capability": {
+      "title": "İzinler",
+      "messaging": "Mesajlaşma",
+      "publish_feed_image": "Gönderi yayınlama",
+      "publish_story_image": "Story yayınlama"
     }
   }
 }

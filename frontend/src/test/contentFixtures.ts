@@ -1,4 +1,4 @@
-import type { ContentIssue, ContentItem, MediaAsset } from "@/api/types";
+import type { ContentIssue, ContentItem, MediaAsset, SocialAccount } from "@/api/types";
 
 export const CONTENT_ID = "c5000000-0000-4000-8000-000000000001";
 export const MEDIA_ID = "e5000000-0000-4000-8000-000000000001";
@@ -60,6 +60,23 @@ export function mediaAsset(overrides: Partial<MediaAsset> = {}): MediaAsset {
     original_filename: "foto.jpg",
     rejection_code: null,
     created_at: "2026-10-15T12:06:00Z",
+    ...overrides,
+  };
+}
+
+export const ACCOUNT_ID = "a7000000-0000-4000-8000-000000000001";
+
+export function socialAccount(overrides: Partial<SocialAccount> = {}): SocialAccount {
+  return {
+    id: ACCOUNT_ID,
+    platform: "instagram",
+    provider_kind: "mock",
+    username: "golkent.fitness",
+    status: "connected",
+    capabilities: { messaging: true, publish_feed_image: true, publish_story_image: true },
+    connection_expires_at: null,
+    last_error_code: null,
+    is_simulated: true,
     ...overrides,
   };
 }

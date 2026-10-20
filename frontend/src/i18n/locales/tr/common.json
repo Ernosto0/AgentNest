@@ -213,6 +213,62 @@
     "MEDIA_TOO_LARGE": {
       "what": "Bu görsel dosyası çok büyük.",
       "next": "Daha küçük bir görsel seçin (varsayılan sınır 8 MB)."
+    },
+    "CONTENT_VALIDATION_FAILED": {
+      "what": "Bu içerik henüz gönderilemez.",
+      "next": "Listelenen maddeleri düzeltip yeniden gönderin."
+    },
+    "MEDIA_REJECTED": {
+      "what": "Instagram görseli işleyemedi.",
+      "next": "Başka bir görsel seçip gönderiyi yeniden zamanlayın."
+    },
+    "PUBLISH_DEADLINE_PASSED": {
+      "what": "Gönderi zamanında yayınlanamadı.",
+      "next": "Yeni bir zaman seçip yeniden zamanlayın."
+    },
+    "PUBLISH_QUOTA_EXHAUSTED": {
+      "what": "Günlük yayın sınırına ulaşıldı.",
+      "next": "Daha sonra otomatik olarak yeniden denenecek."
+    },
+    "PROVIDER_UNAVAILABLE": {
+      "what": "Instagram'a şu anda ulaşılamıyor.",
+      "next": "Otomatik olarak yeniden denenecek."
+    },
+    "PROVIDER_RATE_LIMITED": {
+      "what": "Instagram yavaşlamamızı istedi.",
+      "next": "Otomatik olarak yeniden denenecek."
+    },
+    "PROVIDER_REJECTED": {
+      "what": "Instagram isteği reddetti.",
+      "next": "Gönderiyi gözden geçirip yeniden zamanlayın."
+    },
+    "CAPABILITY_MISSING": {
+      "what": "Bu işlem için izin verilmemiş.",
+      "next": "Hesabı yeniden bağlayıp izni verin."
+    },
+    "ACCOUNT_NEEDS_REAUTH": {
+      "what": "Instagram bağlantısının yenilenmesi gerekiyor.",
+      "next": "Ayarlar'da Yeniden bağla'ya basın."
+    },
+    "OUTCOME_UNKNOWN": {
+      "what": "Yayınlanıp yayınlanmadığını hâlâ kontrol ediyoruz.",
+      "next": "Biraz bekleyin. Henüz elle yeniden paylaşmayın."
+    },
+    "OUTCOME_UNCONFIRMED": {
+      "what": "Yayınlanıp yayınlanmadığını doğrulayamadık.",
+      "next": "Yeniden paylaşmadan önce Instagram'ı kontrol edin."
+    },
+    "REFERENCE_NOT_FOUND": {
+      "what": "Söylediğiniz gönderiyi bulamadım.",
+      "next": "Tarihi veya başlığıyla söyleyin, ya da İçerik bölümünden seçin."
+    },
+    "PLACEHOLDER_INVALID": {
+      "what": "Metindeki bir bilgi yer tutucusu doldurulamadı.",
+      "next": "Metni kendiniz yazın ya da bilgiyi İşletme bilgileri bölümünde doğrulayın."
+    },
+    "CONTENT_CHANGED": {
+      "what": "Taslak hazırlanırken siz değiştirdiniz, bu yüzden otomatik metin eklenmedi.",
+      "next": "Kendi metniniz korundu."
     }
   }
 }

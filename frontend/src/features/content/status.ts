@@ -74,3 +74,28 @@ export function isEditable(status: ContentStatus): boolean {
 export function editVoidsApproval(status: ContentStatus): boolean {
   return status === "pending_approval" || status === "scheduled";
 }
+
+/** Statuses an approver can cancel from (`publishing` is mid-flight and `409`; finished items are final). */
+const CANCELLABLE: readonly ContentStatus[] = ["draft", "pending_approval", "scheduled", "retry_scheduled", "on_hold"];
+
+export function canCancel(status: ContentStatus): boolean {
+  return CANCELLABLE.includes(status);
+}
+
+const ALL_STATUSES: readonly ContentStatus[] = [
+  "draft",
+  "pending_approval",
+  "scheduled",
+  "publishing",
+  "retry_scheduled",
+  "on_hold",
+  "published",
+  "rejected",
+  "failed",
+  "cancelled",
+];
+
+/** A status string from a summary or a command result (untyped JSON) is only used when it is a known one. */
+export function isContentStatus(value: unknown): value is ContentStatus {
+  return typeof value === "string" && (ALL_STATUSES as readonly string[]).includes(value);
+}

@@ -1,3 +1,5 @@
+import type { Approval, ContentItem } from "@/api/types";
+
 /** Plain helpers for approvals (kept out of component files). */
 
 export interface ImpactItem {
@@ -22,3 +24,8 @@ export function readImpact(summary: Record<string, unknown>): { total: number; i
 
 /** `command.update_fact` -> the catalog key suffix `command_update_fact`. */
 export const actionKey = (action: string) => action.replace(/\./g, "_");
+
+/** True when the item is no longer the version the approval is bound to (INV-16). */
+export function isStaleFor(approval: Pick<Approval, "subject">, item: Pick<ContentItem, "version">): boolean {
+  return item.version !== approval.subject.version;
+}

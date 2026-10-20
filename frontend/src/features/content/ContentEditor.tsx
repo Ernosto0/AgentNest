@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ContentIssue, ContentItem, ContentValidation } from "@/api/types";
 import { AlertIcon } from "@/components/icons";
@@ -167,7 +167,14 @@ function ReadOnlyText({ item }: { item: ContentItem }) {
  * If someone else saved first the server answers 409 and the latest item is loaded, with the
  * user's typing left in place.
  */
-export function ContentEditor({ item }: { item: ContentItem }) {
+export function ContentEditor({
+  item,
+  onDirtyChange,
+}: {
+  item: ContentItem;
+  /** Told whenever there are unsaved changes (the page holds back "schedule" until they are saved). */
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const ids = { caption: useId(), counter: useId(), notes: useId() };
@@ -191,6 +198,9 @@ export function ContentEditor({ item }: { item: ContentItem }) {
     notes: edits.notes !== undefined && edits.notes !== (item.visual_notes ?? ""),
   };
   const anyDirty = dirty.title || dirty.caption || dirty.overlay || dirty.notes;
+  useEffect(() => {
+    onDirtyChange?.(anyDirty);
+  }, [anyDirty, onDirtyChange]);
 
   if (!isEditable(item.status)) {
     return <ReadOnlyText item={item} />;

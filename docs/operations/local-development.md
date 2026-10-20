@@ -118,7 +118,7 @@ Open http://localhost:5173 in a phone-sized window (DevTools device mode, 390×8
 
 **E. Daily review:** Command "Bugün kaç DM geldi?" → answer. More → Raporlar → today's report. Tap a number to see the matching list. More → Etkinlik (activity) shows the same events.
 
-**F. Failure handling:** Dev panel → failure rule *publish: transient ×2* → schedule a post for now → see *Tekrar denenecek* → eventually *Yayınlandı* once. Set *publish: timeout_after_success* → see *Kontrol ediliyor…* → *Yayınlandı*, with exactly one post in Dev panel → Simulator state.
+**F. Failure handling:** Dev panel → failure rule *publish: transient ×2* → schedule a post for now → see *Tekrar denenecek* → eventually *Yayınlandı* once. Set *publish: timeout_after_success* → see *Kontrol ediliyor…* → *Yayınlandı*, with exactly one post in Dev panel → "Simülatörde yayınlananlar" (published media).
 
 **G. Integration failure:** Dev panel → *auth_revoked* → approve a reply → Home banner "Instagram bağlantınız yenilenmeli" → Settings → Bağlantılar → *Yeniden bağlan (simülasyon)* → the queued reply is sent.
 
@@ -126,7 +126,7 @@ Finish with Dev panel → **Reset demo**.
 
 ### The developer simulator (Phase 4)
 
-With `DEMO_TOOLS_ENABLED=true` (never in production) More → Geliştirici araçları (Dev panel) sends scripted customer messages through the **real** signed-webhook path, adds failure rules for the simulated Instagram (`send`, `lookup`, `echo`, … with `transient`, `rate_limited`, `auth_revoked`, `permission_missing`, `window_closed`, `invalid_media`, `timeout_after_success`) and runs due jobs. The same from a terminal, with the API running:
+With `DEMO_TOOLS_ENABLED=true` (never in production) More → Geliştirici araçları (Dev panel) sends scripted customer messages through the **real** signed-webhook path, adds failure rules for the simulated Instagram (`send`, `lookup`, `echo`, `create_container`, `container_status`, `publish`, … with `transient`, `rate_limited`, `auth_revoked`, `permission_missing`, `window_closed`, `invalid_media`, `timeout_after_success`) and runs due jobs. The same from a terminal, with the API running:
 
 ```bash
 cd backend
@@ -144,7 +144,7 @@ A drafted reply appears about `REPLY_DEBOUNCE_SECONDS` (default 8) after the las
 |---|---|
 | Jobs (queued, running, dead) | Dev panel → Jobs; or `GET /api/v1/dev/jobs` |
 | Trace of a draft, content item or command | Dev panel → Trace (joins audit, jobs, operations and agent runs by `correlation_id`) |
-| Simulator state (sent messages, containers, published media, failure rules) | Dev panel → Simulator |
+| Simulator state: published media (the "exactly one post" evidence) and failure rules | Dev panel → "Simülatörde yayınlananlar" and "Hata kuralları" (sent messages and containers have no view yet) |
 | Activity log | More → Etkinlik |
 | System health | More → Ayarlar → Sistem durumu |
 | Logs | API and worker terminals (console format). Set `LOG_LEVEL=DEBUG` for more. |

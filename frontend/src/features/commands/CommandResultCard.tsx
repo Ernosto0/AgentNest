@@ -1,12 +1,67 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { AppError, localizeError } from "@/api/errors";
 import type { Command } from "@/api/types";
+import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { describeResult, linkPath, type ResultLink } from "./messages";
 
 const LINK =
   "inline-flex min-h-11 items-center text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600";
+
+/** Why a post is on hold or failing, when the status question has an answer beyond its state. */
+function ContentStatusExtra({ params }: { params: Record<string, unknown> }) {
+  const { t } = useTranslation();
+  const hold = params.hold_reason;
+  const code = params.error_code;
+  if (params.status === "on_hold" && (hold === "FACT_CHANGED" || hold === "ACCOUNT_UNAVAILABLE")) {
+    return <p className="text-sm">{t(`content.hold.${hold}.what`)}</p>;
+  }
+  if ((params.status === "failed" || params.status === "retry_scheduled") && typeof code === "string") {
+    const what = t(`errors.${code}.what`, { defaultValue: "" });
+    return what ? <p className="text-sm">{what}</p> : null;
+  }
+  return null;
+}
+
+/**
+ * `query.explain_failure`: the server already wrote what happened and what to do in the user's
+ * language, from the error catalog. A retry says when; a failure says nothing more is tried.
+ */
+function ContentFailureResult({
+  params,
+  linkList,
+}: {
+  params: Record<string, unknown>;
+  linkList: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const status = params.status;
+  const retryAt = typeof params.retry_at === "string" && params.retry_at !== "" ? params.retry_at : null;
+  return (
+    <div className="flex flex-col gap-1" data-testid="command-result" data-status="completed" data-kind="content-failure">
+      <p className="font-medium">
+        {t("command.msg.content_failure_title", { title: String(params.title ?? "") })}
+        {params.is_simulated === true ? (
+          <>
+            {" "}
+            <SimulatedBadge />
+          </>
+        ) : null}
+      </p>
+      <p>{String(params.what ?? "")}</p>
+      <p>{String(params.next ?? "")}</p>
+      {status === "retry_scheduled" ? (
+        <p className="text-sm font-medium">
+          {retryAt ? t("command.msg.failureRetryAt", { time: retryAt }) : t("command.msg.failureRetryable")}
+        </p>
+      ) : null}
+      {status === "failed" ? <p className="text-sm font-medium">{t("command.msg.failureFinal")}</p> : null}
+      {linkList}
+    </div>
+  );
+}
 
 /** The outcome of a command: an answer, a refusal with a pointer into the app, or a failure. */
 export function CommandResultCard({ command }: { command: Command }) {
@@ -18,9 +73,11 @@ export function CommandResultCard({ command }: { command: Command }) {
   const linkList = links.length ? (
     <ul className="flex flex-wrap gap-x-4">
       {links.map((link) => (
-        <li key={`${link.target}:${link.key ?? ""}`}>
+        <li key={`${link.target}:${link.key ?? ""}:${link.id ?? ""}`}>
           <Link to={linkPath(workspace.id, link)} className={LINK}>
-            {t(`command.link.${link.target}`, { defaultValue: t("command.link.knowledge") })}
+            {link.target === "content" && link.id
+              ? t("command.link.content_item")
+              : t(`command.link.${link.target}`, { defaultValue: t("command.link.knowledge") })}
           </Link>
         </li>
       ))}
@@ -68,12 +125,27 @@ export function CommandResultCard({ command }: { command: Command }) {
     );
   }
 
+  if (result && result.message_key === "command.content_failure") {
+    return <ContentFailureResult params={result.params} linkList={linkList} />;
+  }
+
   if (result) {
     const note = result.message_key === "command.activity_basic" ? t("command.msg.activity_basic_note") : null;
+    // Content answers describe one item; a simulated one says so (INV-09).
+    const simulated = result.params.is_simulated === true;
     return (
       <div className="flex flex-col gap-2" data-testid="command-result" data-status={command.status}>
-        <p className="font-medium">{describeResult(t, result.message_key, result.params)}</p>
+        <p className="font-medium">
+          {describeResult(t, result.message_key, result.params)}
+          {simulated ? (
+            <>
+              {" "}
+              <SimulatedBadge />
+            </>
+          ) : null}
+        </p>
         {note ? <p className="text-sm text-slate-600">{note}</p> : null}
+        {result.message_key === "command.content_status" ? <ContentStatusExtra params={result.params} /> : null}
         {linkList}
       </div>
     );

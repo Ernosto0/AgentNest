@@ -29,6 +29,9 @@ const NOTIFICATION_TYPES = [
   "approval_expired",
   "knowledge_fact_changed",
   "knowledge_fact_archived",
+  "content_on_hold",
+  "content_published",
+  "content_failed",
   "unknown",
 ];
 const API_ERROR_CODES = [
@@ -68,6 +71,7 @@ describe.each([
     for (const reason of UNSUPPORTED_REASONS) expect(has(`command.unsupported.reason.${reason}`), reason).toBe(true);
     for (const key of SUGGESTION_KEYS) expect(has(`command.suggest.${key}`), key).toBe(true);
     for (const target of LINK_TARGETS) expect(has(`command.link.${target}`), target).toBe(true);
+    expect(has("command.link.content_item")).toBe(true);
     for (const period of PERIODS) expect(has(`command.period.${period}`), period).toBe(true);
     for (const question of CLARIFY_QUESTIONS) expect(has(`command.clarify.${question}`), question).toBe(true);
   });
@@ -102,6 +106,7 @@ describe("result helpers", () => {
     expect(linkPath("w1", link("knowledge"))).toBe("/w/w1/more/knowledge");
     expect(linkPath("w1", link("approvals"))).toBe("/w/w1/approvals");
     expect(linkPath("w1", link("content"))).toBe("/w/w1/content");
+    expect(linkPath("w1", link("content", { id: "c1" }))).toBe("/w/w1/content/c1");
     expect(linkPath("w1", link("inbox"))).toBe("/w/w1/inbox");
     expect(linkPath("w1", link("integrations"))).toBe("/w/w1/more");
   });

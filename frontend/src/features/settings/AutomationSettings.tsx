@@ -13,6 +13,7 @@ import {
   useSaveAutomation,
   useSocialAccounts,
 } from "@/features/inbox/hooks";
+import { capabilityLabel } from "@/features/content/messages";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 type Mode = PolicyItem["mode"];
@@ -46,6 +47,13 @@ export function AutomationSettings() {
               <span className="font-medium">@{account.username ?? account.id}</span> ·{" "}
               {t(`automation.accountStatus.${account.status}`)}{" "}
               {account.is_simulated ? <SimulatedBadge /> : null}
+            </p>
+            <p className="text-sm text-slate-700" data-testid="account-capabilities">
+              {t("content.capability.title")}:{" "}
+              {Object.entries(account.capabilities)
+                .filter(([, granted]) => granted === true)
+                .map(([name]) => capabilityLabel(name, t))
+                .join(", ") || "–"}
             </p>
             {account.status === "needs_reauth" && account.provider_kind === "mock" ? (
               owner ? (

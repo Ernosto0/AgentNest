@@ -213,6 +213,62 @@
     "MEDIA_TOO_LARGE": {
       "what": "This image file is too large.",
       "next": "Choose a smaller image (the default limit is 8 MB)."
+    },
+    "CONTENT_VALIDATION_FAILED": {
+      "what": "This content cannot be submitted yet.",
+      "next": "Fix the listed items, then submit again."
+    },
+    "MEDIA_REJECTED": {
+      "what": "Instagram could not process the image.",
+      "next": "Replace it with another image and schedule the post again."
+    },
+    "PUBLISH_DEADLINE_PASSED": {
+      "what": "The post could not be published in time.",
+      "next": "Choose a new time and schedule it again."
+    },
+    "PUBLISH_QUOTA_EXHAUSTED": {
+      "what": "The daily publishing limit has been reached.",
+      "next": "It will be tried again automatically later."
+    },
+    "PROVIDER_UNAVAILABLE": {
+      "what": "Instagram is not reachable right now.",
+      "next": "We will try again automatically."
+    },
+    "PROVIDER_RATE_LIMITED": {
+      "what": "Instagram asked us to slow down.",
+      "next": "We will try again automatically."
+    },
+    "PROVIDER_REJECTED": {
+      "what": "Instagram rejected the request.",
+      "next": "Review the post and schedule it again."
+    },
+    "CAPABILITY_MISSING": {
+      "what": "Permission for this action was not granted.",
+      "next": "Reconnect the account and allow it."
+    },
+    "ACCOUNT_NEEDS_REAUTH": {
+      "what": "The Instagram connection must be renewed.",
+      "next": "Press Reconnect in Settings."
+    },
+    "OUTCOME_UNKNOWN": {
+      "what": "We are still checking whether it was published.",
+      "next": "Wait a moment. Do not post it again by hand yet."
+    },
+    "OUTCOME_UNCONFIRMED": {
+      "what": "We could not confirm whether it was published.",
+      "next": "Check Instagram before posting it again."
+    },
+    "REFERENCE_NOT_FOUND": {
+      "what": "I could not find the post you mean.",
+      "next": "Give its date or title, or pick it in Content."
+    },
+    "PLACEHOLDER_INVALID": {
+      "what": "A fact placeholder in the text could not be filled in.",
+      "next": "Write the text yourself, or verify the fact in Business information."
+    },
+    "CONTENT_CHANGED": {
+      "what": "You changed the draft while it was being prepared, so no automatic text was added.",
+      "next": "Your own text was kept."
     }
   }
 }

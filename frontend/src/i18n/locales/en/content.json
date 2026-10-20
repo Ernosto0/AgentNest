@@ -21,7 +21,8 @@
       "story_image": "Story"
     },
     "status": {
-      "soon": "shortly"
+      "soon": "shortly",
+      "retrying": "Will be retried"
     },
     "card": {
       "scheduledFor": "Scheduled: {{time}}",
@@ -81,7 +82,12 @@
         "ACCOUNT_NOT_CONNECTED": "There is no connected Instagram account.",
         "CAPABILITY_MISSING": "The connected account cannot publish this kind of content.",
         "STORY_ASPECT_NOT_9_16": "The image is not 9:16 ({{width}}×{{height}}). It may be cropped or leave gaps at the edges on a story.",
-        "OVERLAY_TOO_LONG": "This suggestion is long: up to 3 lines of 40 characters stay readable."
+        "OVERLAY_TOO_LONG": "This suggestion is long: up to 3 lines of 40 characters stay readable.",
+        "SCHEDULE_IN_PAST": "The chosen time has already passed. Pick a later time.",
+        "SCHEDULE_TOO_FAR": "A post can be scheduled at most 60 days ahead.",
+        "SCHEDULE_TIME_NONEXISTENT": "There is no {{local_time}} on {{local_date}} in {{timezoneLabel}} (the clocks skip that hour). Choose another time.",
+        "SCHEDULE_TOO_SOON_FOR_APPROVAL": "Someone has to approve this before it is published. Choose a time at least {{minutes}} minutes from now.",
+        "PUBLISH_QUOTA_FORECAST_EXCEEDED": "Too many posts are already scheduled around this time. Choose another time."
       }
     },
     "media": {
@@ -103,6 +109,155 @@
         "CORRUPT_IMAGE": "The image file looks damaged. Choose another image.",
         "TOO_MANY_PIXELS": "The image resolution is too high. Choose a smaller image."
       }
+    },
+    "actions": {
+      "newDraft": "Ask for a draft",
+      "blankDraft": "Blank draft",
+      "schedule": "Schedule",
+      "cancel": "Cancel",
+      "cancelAsk": "Cancel this item? Its scheduled publication is cancelled too.",
+      "cancelConfirm": "Yes, cancel it",
+      "cancelKeep": "Keep it",
+      "cancelling": "Cancelling…",
+      "saveFirst": "Save your changes first.",
+      "waitGeneration": "It cannot be scheduled while the text is being prepared.",
+      "editResend": "Edit and send again",
+      "edit": "Edit"
+    },
+    "generate": {
+      "title": "New content",
+      "modeLabel": "How shall we start?",
+      "modeAi": "Ask for a draft",
+      "modeBlank": "Blank draft",
+      "typeLabel": "Type",
+      "objectiveLabel": "What do you want to share?",
+      "objectiveHint": "E.g. “A story for the trial class”. Prices, hours and similar details come only from your verified information.",
+      "notesLabel": "Extra note (optional)",
+      "accountLabel": "Publishing account",
+      "accountHint": "When you schedule, the content is set up to be published on this account.",
+      "accountNone": "No Instagram account is connected. You can prepare the draft; connect the account before scheduling.",
+      "submit": "Prepare the draft",
+      "submitting": "Sending…",
+      "running": "Preparing…",
+      "runningHint": "This can take a few seconds. If you would rather not wait, open the draft now and write the text yourself.",
+      "slow": "It is taking longer than expected. Open the draft and write the text yourself.",
+      "ready": "The draft is ready.",
+      "failedTitle": "The draft could not be prepared automatically.",
+      "failedHint": "A blank draft was created. You can write the text yourself.",
+      "open": "Open the draft",
+      "titleLabel": "Title",
+      "titleHint": "A name only you will see. You add the text and the image in the draft.",
+      "blankSubmit": "Create blank draft"
+    },
+    "schedule": {
+      "title": "Schedule",
+      "reapproveTitle": "Approve again and schedule",
+      "whenLabel": "When should it be published?",
+      "optLater": "At a set time",
+      "optNow": "Publish now",
+      "dateLabel": "Date",
+      "timeLabel": "Time",
+      "timezoneLabel": "{{city}} time",
+      "city": {
+        "Istanbul": "Istanbul"
+      },
+      "timezoneHint": "The time you enter is in {{zone}}.",
+      "summaryTitle": "What will be published",
+      "summaryType": "Type",
+      "summaryAccount": "Account",
+      "summaryWhen": "When",
+      "summaryMedia": "Image",
+      "summaryCaption": "Caption",
+      "summaryOverlay": "Text on the image",
+      "overlayNote": "This text is not published separately with the story; it has to be on the image.",
+      "noMedia": "No image",
+      "noCaption": "No caption",
+      "noAccount": "No Instagram account connected",
+      "whenAt": "{{when}} ({{zone}})",
+      "whenNow": "Now: queued for publishing as soon as it is approved",
+      "staffNote": "This is published after an owner or manager approves it. If it is not approved by the chosen time it expires and goes back to a draft.",
+      "approverNote": "When you approve, the item is scheduled. It reads “Scheduled” until Instagram confirms it was published.",
+      "nowNote": "The item is queued for publishing right away. It does not read “Published” until that is confirmed.",
+      "reapproveNote": "It is approved again with the text unchanged. Everything is checked again: if the text still has a value that is not verified, such as an old price, edit it first.",
+      "submitApprove": "Approve and schedule",
+      "submitNow": "Approve and publish now",
+      "submitStaff": "Send for approval",
+      "submitReapprove": "Approve again and schedule",
+      "submitReapproveNow": "Approve again and publish now",
+      "submitting": "Sending…",
+      "problemsTitle": "Fix these first",
+      "warningsTitle": "Worth a look",
+      "claimIssue": "“{{text}}” is not a verified fact.",
+      "editText": "Edit the text"
+    },
+    "approval": {
+      "heading": "What this approval will publish",
+      "type": "Type",
+      "when": "When",
+      "caption": "Caption",
+      "overlay": "Text on the image",
+      "overlayNote": "Not published separately with a story; it has to be on the image.",
+      "media": "Image",
+      "noCaption": "No caption",
+      "noMedia": "No image",
+      "version": "Version {{version}}",
+      "stale": "This content changed after approval was requested (now version {{current}}, approval covers version {{approved}}). This approval no longer applies; the content has to be sent for approval again.",
+      "loadFailed": "The content could not be loaded.",
+      "open": "Open the content"
+    },
+    "detail": {
+      "scheduledFor": "Publishing time: {{when}} ({{zone}})",
+      "publishedAt": "Published at: {{when}} ({{zone}})",
+      "permalink": "Post link",
+      "permalinkOpen": "Open the post",
+      "pending": "Waiting for approval: it is scheduled once an owner or manager approves. If it is not approved by {{time}} it expires and goes back to a draft.",
+      "rejected": "This item was rejected.",
+      "rejectedBy": "{{name}} rejected it.",
+      "rejectedNote": "Note: {{note}}",
+      "rejectedNext": "You can edit it and send it again.",
+      "expiredNote": "The approval expired.",
+      "draftHold": {
+        "FACT_CHANGED": "Business information it uses changed, so the item sent for approval was returned to a draft. Review the text and send it again.",
+        "APPROVAL_EXPIRED": "The approval expired, so it went back to a draft. Pick a new time and send it again."
+      },
+      "cancelled": "This item was cancelled and will not be published.",
+      "publishing": "Publishing. The status updates when Instagram confirms it."
+    },
+    "failure": {
+      "title": "What happened?",
+      "retryAt": "Will be tried again at {{time}} ({{attempts}} attempts so far)",
+      "retryAuto": "It is retried automatically; you do not need to do anything.",
+      "noRetry": "It will not be retried automatically.",
+      "unknown": {
+        "what": "Something went wrong while publishing.",
+        "next": "Open the post to see the details, then edit or schedule it again."
+      },
+      "exhausted": "It could not be published after several attempts."
+    },
+    "hold": {
+      "title": "On hold",
+      "FACT_CHANGED": {
+        "what": "It was put on hold because business information it uses has changed.",
+        "next": "Review the text; if it is still right, approve it again as it is, otherwise edit it."
+      },
+      "ACCOUNT_UNAVAILABLE": {
+        "what": "It was put on hold because the Instagram account was not available.",
+        "next": "Reconnect the account, then approve it again."
+      },
+      "unknown": {
+        "what": "This item was put on hold.",
+        "next": "Review the text, then approve it again or edit it."
+      },
+      "reapprove": "Approve again as it is",
+      "staffNote": "An owner or manager has to approve it again. You can edit the text and send it for approval again.",
+      "openKnowledge": "Open business information",
+      "openConnection": "Check the connection"
+    },
+    "capability": {
+      "title": "Permissions",
+      "messaging": "Messaging",
+      "publish_feed_image": "Publishing feed posts",
+      "publish_story_image": "Publishing stories"
     }
   }
 }

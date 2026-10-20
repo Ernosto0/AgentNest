@@ -210,6 +210,12 @@
     "addRule": "Sonraki çağrı için ekle",
     "removeRule": "Kaldır",
     "jobs": "İşler",
-    "runDue": "Zamanı gelen işleri şimdi çalıştır"
+    "runDue": "Zamanı gelen işleri şimdi çalıştır",
+    "published": "Simülatörde yayınlananlar",
+    "publishedHint": "Sahte Instagram'a gerçekten yayınlanan gönderiler. Bir içerik tam bir kez yayınlanmalıdır.",
+    "publishedNone": "Simülatörde henüz yayınlanmış gönderi yok.",
+    "publishedRow": "{{type}} · {{time}}",
+    "refresh": "Yenile",
+    "noCaption": "(açıklamasız)"
   }
 }

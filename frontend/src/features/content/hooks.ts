@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
@@ -7,9 +7,11 @@ import type {
   ContentItem,
   ContentPatchBody,
   ContentTab,
+  ContentType,
   ContentValidation,
   MediaAsset,
 } from "@/api/types";
+import { newRequestId } from "@/features/commands/hooks";
 
 export const contentListKey = (ws: string, tab: ContentTab) => ["content-items", ws, tab] as const;
 export const contentKey = (ws: string, id: string) => ["content-item", ws, id] as const;
@@ -47,9 +49,10 @@ export function useContentItems(ws: string, tab: ContentTab) {
 }
 
 /** One item. Polls while generation has not finished (until `succeeded` or `failed`) or while it moves by itself. */
-export function useContentItem(ws: string, id: string) {
+export function useContentItem(ws: string, id: string, enabled = true) {
   return useQuery<ContentItem, AppError>({
     queryKey: contentKey(ws, id),
+    enabled,
     queryFn: () =>
       unwrap(
         api.GET("/api/v1/workspaces/{workspace_id}/content-items/{content_id}", {
@@ -88,6 +91,39 @@ export function useCreateContent(ws: string) {
   });
 }
 
+export interface GenerateInput {
+  content_type: ContentType;
+  objective: string;
+  notes?: string | null;
+}
+
+/**
+ * Ask for an AI draft. The `client_request_id` makes a retry return the first draft instead of
+ * paying for a second generation, so it stays the same while the inputs do; a changed brief is a
+ * different request and gets a new id.
+ */
+export function useGenerateContent(ws: string) {
+  const queryClient = useQueryClient();
+  const refresh = useRefreshContent(ws);
+  const request = useRef<{ key: string; id: string } | null>(null);
+  return useMutation<ContentItem, AppError, GenerateInput>({
+    mutationFn: (input) => {
+      const key = JSON.stringify([input.content_type, input.objective, input.notes ?? null]);
+      if (request.current?.key !== key) request.current = { key, id: newRequestId() };
+      return unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/content-items/generate", {
+          params: { path: { workspace_id: ws } },
+          body: { ...input, notes: input.notes ?? null, client_request_id: request.current.id },
+        }),
+      );
+    },
+    onSuccess: (item) => {
+      queryClient.setQueryData(contentKey(ws, item.id), item);
+      return refresh();
+    },
+  });
+}
+
 export type ContentChanges = Omit<ContentPatchBody, "expected_version">;
 
 /**
@@ -117,6 +153,78 @@ export function usePatchContent(ws: string, id: string) {
   });
 }
 
+/** The schedule as the API takes it: the owner's wall-clock time (the server converts), or "now". */
+export type ScheduleInput = { local_date: string; local_time: string } | "now";
+
+/** Errors after which the item on screen is out of date. */
+const STALE_ITEM_CODES = new Set(["VERSION_CONFLICT", "CONFLICT_STATE"]);
+
+function useItemAction<Input>(
+  ws: string,
+  id: string,
+  run: (input: Input) => Promise<ContentItem>,
+) {
+  const queryClient = useQueryClient();
+  const refresh = useRefreshContent(ws);
+  return useMutation<ContentItem, AppError, Input>({
+    mutationFn: run,
+    onSuccess: (item) => {
+      queryClient.setQueryData(contentKey(ws, id), item);
+      return Promise.all([refresh(), queryClient.invalidateQueries({ queryKey: ["approvals", ws] })]);
+    },
+    onError: (error) => {
+      if (STALE_ITEM_CODES.has(error.code)) {
+        return queryClient.invalidateQueries({ queryKey: contentKey(ws, id) });
+      }
+    },
+  });
+}
+
+/**
+ * Submit a draft. `selfApprove` is true only for someone who may approve (`content.approve`):
+ * it schedules the post at once; otherwise the post waits for an approver. `expectedVersion` is
+ * the version the owner was looking at.
+ */
+export function useSubmitContent(ws: string, id: string) {
+  return useItemAction<{ schedule: ScheduleInput; selfApprove: boolean; expectedVersion: number }>(
+    ws,
+    id,
+    ({ schedule, selfApprove, expectedVersion }) =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/content-items/{content_id}/submit", {
+          params: { path: { workspace_id: ws, content_id: id } },
+          body: { schedule, self_approve: selfApprove, expected_version: expectedVersion },
+        }),
+      ),
+  );
+}
+
+/** Approve a held item again (`on_hold` only). The server binds the approval to version + 1. */
+export function useReapproveContent(ws: string, id: string) {
+  return useItemAction<{ schedule: ScheduleInput; expectedVersion: number }>(
+    ws,
+    id,
+    ({ schedule, expectedVersion }) =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/content-items/{content_id}/reapprove", {
+          params: { path: { workspace_id: ws, content_id: id } },
+          body: { schedule, expected_version: expectedVersion },
+        }),
+      ),
+  );
+}
+
+/** Cancel an item that has not gone out (`content.approve`). */
+export function useCancelContent(ws: string, id: string) {
+  return useItemAction<void>(ws, id, () =>
+    unwrap(
+      api.POST("/api/v1/workspaces/{workspace_id}/content-items/{content_id}/cancel", {
+        params: { path: { workspace_id: ws, content_id: id } },
+      }),
+    ),
+  );
+}
+
 /** A dry run of everything a submit checks (changes nothing). */
 export function useValidateContent(ws: string, id: string) {
   return useMutation<ContentValidation, AppError, void>({
@@ -124,6 +232,8 @@ export function useValidateContent(ws: string, id: string) {
       unwrap(
         api.POST("/api/v1/workspaces/{workspace_id}/content-items/{content_id}/validate", {
           params: { path: { workspace_id: ws, content_id: id } },
+          // api-design §2.7 calls the body optional, but the generated type requires `self_approve`
+          // (it has a default of false): send it, and no `schedule` (the editor's check skips the schedule rules).
           body: { self_approve: false },
         }),
       ),

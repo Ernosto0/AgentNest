@@ -18,12 +18,13 @@ export function ClarificationChips({ command }: { command: Command }) {
   const clarification = command.clarification;
   if (!clarification) return null;
 
-  const params = clarification.params as { raw?: string | null; label?: string };
+  const params = clarification.params as { raw?: string | null; label?: string; count?: number };
   const question = messageSuffix(clarification.question_key); // "command.clarify.which_fact"
   const key = question.replace(/^clarify\./, "");
   const asked = t(`command.clarify.${key === "which_fact" && params.raw ? "which_fact_value" : key}`, {
     raw: params.raw ?? "",
     label: params.label ?? "",
+    count: params.count ?? 0,
   });
   const busy = answer.isPending || cancel.isPending;
 
