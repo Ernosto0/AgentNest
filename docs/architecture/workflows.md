@@ -350,7 +350,7 @@ Any success resets `consecutive_failures` to 0.
 
 | Aspect | Contract |
 |---|---|
-| Persistence | `social_accounts` status and counters, `operations`, subject tables, `notifications`, `audit_logs` (`account.status_changed`, `operation.failed`). |
+| Persistence | `social_accounts` status and counters, `operations`, subject tables, `notifications`, `audit_logs` (`social_account.needs_reauth` / `social_account.degraded`, `operation.failed`). |
 | External side effects | Refresh calls and health checks (read-only). |
 | Idempotency | Refresh operation key per day. Notifications deduped per account and status (`account:{id}:{status}`). |
 | Acceptance tests | AC-G1…G5, AC-F2, AC-F6. |

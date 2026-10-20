@@ -141,8 +141,10 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 | Approvals | `approval.requested`, `approval.approved`, `approval.rejected`, `approval.expired`, `approval.cancelled` |
 | Inbox | `message.received`, `message.native_reply_detected`, `reply_draft.created`, `reply_draft.edited`, `reply_draft.superseded`, `reply.sent`, `reply.failed`, `reply.outcome_unknown`, `conversation.takeover`, `conversation.released` |
 | Content | `content.created`, `content.generated`, `content.updated`, `content.submitted`, `content.scheduled`, `content.on_hold`, `content.cancelled`, `content.rejected`, `content.publishing`, `content.retry_scheduled`, `content.published`, `content.failed`, `media.uploaded`, `media.rejected` |
-| Operations & accounts | `operation.started`, `operation.succeeded`, `operation.failed`, `operation.outcome_unknown`, `operation.reconciled`, `account.connected`, `account.reconnected`, `account.disconnected`, `account.status_changed`, `account.token_refreshed` |
+| Operations & accounts | `operation.started`, `operation.succeeded`, `operation.failed`, `operation.outcome_unknown`, `operation.reconciled`, `social_account.connected`, `social_account.degraded`, `social_account.needs_reauth`, `social_account.disconnected`, `account.reconnected`, `social_account.token_refreshed` (Phase 7) |
 | System | `webhook.signature_invalid`, `report.generated`, `retention.cleanup_ran`, `demo.reset`, `demo.failure_rule_set` |
+
+**Account audit names.** Every status change of a social account is audited as `social_account.<new status>` (entity type `social_account`; the previous status is in the metadata), which is what the code does (`operations/accounts.transition_account`). The one exception is the reconnect of a simulated account, which has a name of its own, `account.reconnected` (Phase 5, passed as `audit_action`). Earlier drafts of these docs called the status changes `account.connected`, `account.disconnected` and `account.status_changed`; those names are not used.
 
 The **Activity** view renders entries with i18n templates (`activity.<action>`), with actor labels ("Sistem", "Yapay zekâ taslağı", user display name) and a simulated badge.
 

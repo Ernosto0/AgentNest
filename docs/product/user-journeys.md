@@ -12,7 +12,7 @@ UI copy examples are in Turkish (the primary market) with English in brackets. F
 |---|---|
 | **Ana sayfa (Home)** | Status strip (account connection, **SİMÜLASYON** badge if applicable, AI mode), attention cards (approvals waiting, conversations needing a human, failures, on-hold content), upcoming posts (next 3), today's numbers (from the report service), **command bar** |
 | **Gelen kutusu (Inbox)** | Conversation list with filters: *Yanıt bekliyor* (needs reply), *Onay bekliyor* (needs approval), *Size devredildi* (needs human), *Tümü* (all). Conversation detail. |
-| **İçerik (Content)** | Tabs: Drafts, Scheduled, Published, Problems (failed, on hold, rejected). Content editor. "Ask for a draft" sheet. |
+| **İçerik (Content)** | Tabs (G15): Drafts (`draft`, `pending_approval`), Scheduled (`scheduled`, `publishing`, `retry_scheduled`), Published, Problems (`on_hold`, `failed`, `rejected`). `cancelled` items are in no tab. Content editor. "Ask for a draft" sheet. |
 | **Onaylar (Approvals)** | Pending approvals list (badge count). Approval detail sheet. Recent decisions. |
 | **Daha fazla (More)** | Business knowledge, Suggestions (fact candidates), Approved answers, Reports, Activity, Notifications, Settings (business, members, automation, connections, language), Dev panel (demo only) |
 

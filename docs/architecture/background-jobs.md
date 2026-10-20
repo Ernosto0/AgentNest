@@ -62,7 +62,7 @@ RETURNING *;
 - `RescheduleJob(run_at)` → `status='queued'`, `run_at`, `attempts − 1` (see the implementation notes).
 - `RetryableError` (or a typed retryable provider or LLM error) and `attempts < max_attempts` → `status='queued'`, `run_at = now + backoff(attempts)` (exponential with ±20 % jitter: 10 s, 60 s, 5 min, 15 min, 1 h by default; overridable per handler or by `retry_after`).
 - Other exceptions or exhausted attempts → `status='dead'`, `last_error_code`/`detail`; the handler's `on_dead` hook updates domain state (e.g., draft `failed`, command `failed`) and notifies when user-relevant.
-- **Lease** default 120 s (`JOB_LEASE_SECONDS`). Long handlers (publish polling) extend their lease by calling `heartbeat()`. A handler must **never** keep a DB transaction open across an external call.
+- **Lease** default 120 s (`JOB_LEASE_SECONDS`). Long handlers (publish polling) extend their lease by calling `heartbeat()`. The publish poll (G9, workflows.md §E step 6) measures elapsed time with the injected `Clock` and waits through an injected sleeper (`execute_publish(..., sleep=time.sleep)`), so tests under a `FrozenClock` pass a sleeper that advances the clock instead of waiting; it polls every 10 s for up to 5 minutes with no transaction open. A handler must **never** keep a DB transaction open across an external call.
 
 Implementation notes (Phase 1):
 - **Fencing.** Every outcome update (`succeeded`, retry, `dead`) and every heartbeat is conditional: `UPDATE jobs … WHERE id = :id AND status = 'running' AND locked_by = :worker AND attempts = :n`. An execution that lost its lease (another worker reclaimed the job after expiry) updates nothing, logs `job_lease_lost` and leaves the outcome to the new owner. `heartbeat()` raises `JobLeaseLost` in that case, which aborts the handler without finalising.
@@ -151,7 +151,7 @@ Key event flows:
 | `approval.approved` (command.*) | command execution, fact update, impact handling, notifications | `draft_reply` for superseded drafts |
 | `fact.updated` | impact handling (drafts, content, answers) | redrafts |
 | `operation.outcome_unknown` | subject → outcome_unknown / publishing | `reconcile_send` / `reconcile_publish` |
-| `account.status_changed` (→ needs_reauth / degraded) | hold due content; notification | `account_health_check` (degraded) |
+| `social_account.needs_reauth` / `social_account.degraded` (the audited status change) | hold due content; notification | `account_health_check` (degraded) |
 | `account.reconnected` | audit (Phase 5: the mock reconnect action) | `resume_account` |
 
 ## 8. Testing hooks

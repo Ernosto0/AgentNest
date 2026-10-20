@@ -78,6 +78,7 @@
 | P4-12 | `draft_reply` evals | P4-05 | M |
 | P4-13 | Phase 4 tests and E2E | all P4 | M |
 | **Phase 5: Content** | | | |
+| P5-00 | Phase 4 follow-ups (one draft job per conversation, strictest-class reason, review button, staff approval state, reconnect and resume) | Phase 4 | M |
 | P5-01 | Media storage and upload | Phase 4 | M |
 | P5-02 | Content model and transitions | P5-01 | M |
 | P5-03 | Generation and content commands | P5-02 | L |

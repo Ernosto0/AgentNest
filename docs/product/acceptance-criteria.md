@@ -47,7 +47,7 @@ Format: *Given* (state) / *When* (action) / *Then* (observable result). "Demo gy
 | ID | Criterion | Proven by |
 |---|---|---|
 | AC-D1 | The command "Deneme dersi için bir story hazırla" creates a `story_image` content item in `draft` with overlay text suggestions, `used_fact_refs`, and no caption. | `tests/integration/content/test_generate.py` |
-| AC-D2 | Uploading a PNG produces a `ready` JPEG media asset with EXIF stripped. A non-image file is rejected with `MEDIA_INVALID`. | `tests/integration/content/test_media.py` |
+| AC-D2 | Uploading a PNG produces a `ready` JPEG media asset with EXIF stripped. A non-image file is rejected with `MEDIA_INVALID`. | `tests/integration/content/test_media_upload.py` |
 | AC-D3 | Submitting a story without media fails validation with `CONTENT_MEDIA_REQUIRED`. | `tests/unit/content/test_validation.py` |
 | AC-D4 | When an owner presses "Approve & schedule" for 19:00 workspace time, then the item is `scheduled` with `scheduled_at` = 16:00 UTC (Europe/Istanbul), an approved approval bound to version and payload hash exists, and a `publish_content` job with `run_at = scheduled_at` exists. | `tests/integration/content/test_schedule.py` |
 | AC-D5 | With a frozen clock advanced past `scheduled_at`, running due jobs moves the item to `published` with a simulated `external_media_id`. The operation is `succeeded`. Exactly one simulated publication exists. | `tests/integration/content/test_publish.py` |

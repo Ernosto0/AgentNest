@@ -44,7 +44,9 @@ Table `approvals`, with `kind` ∈:
 | Command confirmation | created + 30 min |
 | Reply draft approval | min(messaging window end − 5 min, created + 24 h) |
 | Content publication approval | scheduled_at (if pending past the scheduled time → expired, content back to `draft` with reason `APPROVAL_EXPIRED`) |
-| Content execution deadline (`execute_before`) | scheduled_at + `PUBLISH_MAX_DELAY` (default 6 h) |
+| Content execution deadline (`execute_before`) | scheduled_at + `publish_max_delay_minutes` (default 360 = 6 h) |
+
+**Note (Phase 5, G16).** There is no `PUBLISH_MAX_DELAY` environment variable. The deadline is the existing **workspace setting** `publish_max_delay_minutes` (`WorkspaceSettings`, default 360, [data-model.md §3.1](../data-model.md)), read when the item is scheduled and stored on the approval as `execute_before`, which `assert_executable` enforces. Changing the setting later does not move the deadline of an approval that already exists. A re-approval (G2) computes it again. With the 6 h default, a publishing quota that is exhausted for longer than that ends the item as `failed (PUBLISH_DEADLINE_PASSED)` rather than waiting for the window to open; raise the setting if that is not wanted.
 
 ## Alternatives considered
 - Separate tables for confirmations and approvals: duplicated logic for the same safety properties.
