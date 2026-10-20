@@ -67,7 +67,7 @@ class OutboundMessageInfo:
     sent_at: datetime
 
 
-# Content publishing arrives in Phase 5; these are the shapes of integrations.md §3.1.
+# Content publishing shapes (integrations.md §3.1).
 @dataclass(frozen=True)
 class ContainerSpec:
     media_type: Literal["IMAGE", "STORIES"]

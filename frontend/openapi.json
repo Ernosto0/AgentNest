@@ -3155,6 +3155,33 @@
         "title": "Page[MembershipOut]",
         "type": "object"
       },
+      "Page_PublishedMediaOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublishedMediaOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[PublishedMediaOut]",
+        "type": "object"
+      },
       "Page_SocialAccountOut_": {
         "properties": {
           "items": {
@@ -3298,6 +3325,57 @@
           "mode"
         ],
         "title": "PolicyItem",
+        "type": "object"
+      },
+      "PublishedMediaOut": {
+        "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "container_id": {
+            "title": "Container Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "default": true,
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "media_id": {
+            "title": "Media Id",
+            "type": "string"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "permalink": {
+            "title": "Permalink",
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "media_id",
+          "container_id",
+          "media_type",
+          "caption",
+          "permalink",
+          "published_at"
+        ],
+        "title": "PublishedMediaOut",
         "type": "object"
       },
       "ReadinessLinkOut": {
@@ -5136,6 +5214,50 @@
           }
         },
         "summary": "Simulate Native Reply",
+        "tags": [
+          "dev"
+        ]
+      }
+    },
+    "/api/v1/dev/workspaces/{workspace_id}/simulator/published": {
+      "get": {
+        "description": "Read-only: what the mock Instagram published, as evidence of exactly one post.",
+        "operationId": "list_published_api_v1_dev_workspaces__workspace_id__simulator_published_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PublishedMediaOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Published",
         "tags": [
           "dev"
         ]

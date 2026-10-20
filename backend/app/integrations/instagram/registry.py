@@ -9,6 +9,8 @@ from app.core.config import Settings
 from app.integrations.instagram.base import InstagramProvider
 from app.integrations.instagram.mock import MockInstagramProvider
 from app.integrations.instagram.webhook_format import WebhookCodec
+from app.integrations.storage.base import MediaStorage, MediaStorageUnavailable
+from app.integrations.storage.registry import get_media_storage
 
 
 class ProviderNotEnabled(Exception):
@@ -30,6 +32,15 @@ def get_webhook_codec(kind: str, settings: Settings) -> WebhookCodec:
     raise ProviderNotEnabled(kind)
 
 
+def _mock_storage(settings: Settings, clock: Clock) -> MediaStorage | None:
+    """The storage the mock reads publishing images from (plan G3). A backend that is not built
+    yet (``s3``) leaves it out, so messaging keeps working; only publishing then fails."""
+    try:
+        return get_media_storage(settings, clock)
+    except MediaStorageUnavailable:
+        return None
+
+
 def get_provider(
     kind: str,
     *,
@@ -41,5 +52,12 @@ def get_provider(
         raise ProviderNotEnabled(kind)
     if kind == "mock":
         secret = settings.mock_instagram_app_secret.get_secret_value()
-        return MockInstagramProvider(session_factory, clock, secret)
+        return MockInstagramProvider(
+            session_factory,
+            clock,
+            secret,
+            storage=_mock_storage(settings, clock),
+            container_delay_s=settings.sim_container_delay_seconds,
+            daily_publish_limit=settings.publish_daily_limit,
+        )
     raise ProviderNotEnabled(f"{kind} (the Meta adapter arrives in Phase 7)")

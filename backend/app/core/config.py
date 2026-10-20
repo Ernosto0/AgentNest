@@ -112,6 +112,10 @@ class Settings(BaseSettings):
     media_max_image_bytes: int = Field(default=8_388_608, ge=1)
     media_public_url_ttl_seconds: int = Field(default=3600, ge=1)
 
+    # --- Mock publishing (Phase 5, integrations.md §3.3) ---
+    sim_container_delay_seconds: int = Field(default=2, ge=0)
+    publish_daily_limit: int = Field(default=50, ge=1)
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _upper_log_level(cls, value: Any) -> Any:

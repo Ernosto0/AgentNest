@@ -155,7 +155,8 @@ Commands are private to the member who typed them (another member's id → 404).
 |---|---|
 | `POST /api/v1/dev/workspaces/{ws}/simulate/customer-message` | `{customer_alias, text}` or `{script_id}` |
 | `POST /api/v1/dev/workspaces/{ws}/simulate/owner-native-reply` | `{conversation_id, text}` |
-| `GET/POST/DELETE /api/v1/dev/workspaces/{ws}/failure-rules` | manage `sim_failure_rules` |
+| `GET/POST/DELETE /api/v1/dev/workspaces/{ws}/failure-rules` | manage `sim_failure_rules`; `operation` also accepts `create_container`, `container_status` and `publish` |
+| `GET /api/v1/dev/workspaces/{ws}/simulator/published` | read-only list of `sim_published_media`, newest first (`media_id`, `container_id`, `media_type`, `caption`, `permalink`, `published_at`, `is_simulated`): the evidence of "exactly one post". `integrations.manage` |
 | `POST /api/v1/dev/jobs/run-due` | run due jobs now (uses the system clock) |
 | `GET /api/v1/dev/jobs?status=` | inspect jobs |
 | `POST /api/v1/dev/workspaces/{ws}/reset` | reset a demo workspace (`is_demo` only) |

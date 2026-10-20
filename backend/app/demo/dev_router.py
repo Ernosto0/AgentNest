@@ -5,6 +5,7 @@ workspace-scoped routes need the owner's permission to manage the integration.
 """
 
 import uuid
+from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Response
@@ -74,6 +75,16 @@ class FailureRuleOut(BaseModel):
     mode: str
     remaining: int | None
     retry_after_s: int | None
+
+
+class PublishedMediaOut(BaseModel):
+    media_id: str
+    container_id: str
+    media_type: str
+    caption: str | None
+    permalink: str
+    published_at: datetime
+    is_simulated: bool = True
 
 
 class JobOut(BaseModel):
@@ -209,6 +220,29 @@ def delete_failure_rule(
 ) -> Response:
     simulator.delete_failure_rule(db, ctx.workspace_id, rule_id)
     return Response(status_code=204)
+
+
+@router.get(
+    "/workspaces/{workspace_id}/simulator/published", response_model=Page[PublishedMediaOut]
+)
+def list_published(
+    ctx: WorkspaceContext = Depends(require_membership("integrations.manage")),
+    db: Session = Depends(get_db),
+) -> Page[PublishedMediaOut]:
+    """Read-only: what the mock Instagram published, as evidence of exactly one post."""
+    return Page(
+        items=[
+            PublishedMediaOut(
+                media_id=media.media_id,
+                container_id=media.container_id,
+                media_type=container.media_type,
+                caption=container.caption,
+                permalink=media.permalink,
+                published_at=media.published_at,
+            )
+            for media, container in simulator.list_published(db, ctx.workspace_id)
+        ]
+    )
 
 
 @router.post("/jobs/run-due", response_model=RunDueOut)

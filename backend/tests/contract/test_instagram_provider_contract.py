@@ -1,21 +1,26 @@
-"""Contract tests for the Instagram provider, messaging subset (integrations.md §3.5).
+"""Contract tests for the Instagram provider (integrations.md §3.5).
 
 Run against the mock today; the Meta adapter (Phase 7) must satisfy the same expectations
 with recorded fixtures. Covers: signatures, webhook parsing, sending in and out of the
-window, the byte limit, and the error mapping of every injectable failure mode.
+window, the byte limit, the publishing lifecycle (container, publish, expiry, quota) and the
+error mapping of every injectable failure mode.
 """
 
 import hashlib
 import hmac
-from collections.abc import Callable
+import io
+import uuid
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
+from PIL import Image
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.clock import FrozenClock
 from app.integrations.instagram import webhook_format as wf
-from app.integrations.instagram.base import AccountRef
+from app.integrations.instagram.base import AccountRef, ContainerSpec
 from app.integrations.instagram.errors import (
     ProviderAuthError,
     ProviderInvalidRequest,
@@ -26,20 +31,38 @@ from app.integrations.instagram.errors import (
     ProviderWindowClosed,
 )
 from app.integrations.instagram.mock import MockInstagramProvider
-from app.integrations.instagram.models import SimFailureRule, SimSentMessage, SocialAccount
+from app.integrations.instagram.models import (
+    SimContainer,
+    SimFailureRule,
+    SimPublishedMedia,
+    SimSentMessage,
+    SocialAccount,
+)
+from app.integrations.storage.base import build_key
+from app.integrations.storage.local import LocalMediaStorage
 from tests.factories import create_workspace
+from tests.helpers.images import png_bytes
 
 SECRET = "contract-test-secret"
 CUSTOMER = "customer-1"
+CONTAINER_DELAY_S = 2
+DAILY_LIMIT = 3
 
 
 class Harness:
     def __init__(
-        self, session: Session, factory: sessionmaker[Session], clock: FrozenClock
+        self,
+        session: Session,
+        factory: sessionmaker[Session],
+        clock: FrozenClock,
+        media_root: Path,
     ) -> None:
         self.session = session
         self.clock = clock
+        self.factory = factory
+        self.storage = LocalMediaStorage(media_root, clock)
         workspace = create_workspace(session, name="Contract")
+        self.workspace_id = workspace.id
         self.account_row = SocialAccount(
             workspace_id=workspace.id,
             provider_kind="mock",
@@ -49,7 +72,14 @@ class Harness:
         )
         session.add(self.account_row)
         session.commit()
-        self.provider = MockInstagramProvider(factory, clock, SECRET)
+        self.provider = MockInstagramProvider(
+            factory,
+            clock,
+            SECRET,
+            storage=self.storage,
+            container_delay_s=CONTAINER_DELAY_S,
+            daily_publish_limit=DAILY_LIMIT,
+        )
         self.account = AccountRef(self.account_row.id, workspace.id, "biz-1")
 
     def customer_writes(self, *, at: datetime | None = None, customer: str = CUSTOMER) -> None:
@@ -84,14 +114,46 @@ class Harness:
         self.session.expire_all()
         return list(self.session.query(SimSentMessage).all())
 
+    # --- publishing helpers ---
+
+    def image_url(self, data: bytes | None = None, *, ttl_s: int = 3600) -> str:
+        """Store an image and return the ``localmedia:`` reference the mock is given."""
+        key = build_key(self.workspace_id, uuid.uuid4(), self.clock.now())
+        self.storage.put(key, io.BytesIO(data or jpeg_bytes()), "image/jpeg")
+        return self.storage.public_fetch_url(key, ttl_s)
+
+    def container(self, media_type: str = "IMAGE", caption: str | None = "Merhaba") -> str:
+        spec = ContainerSpec(media_type, self.image_url(), caption)  # type: ignore[arg-type]
+        return self.provider.create_media_container(self.account, spec)
+
+    def finished_container(self, media_type: str = "IMAGE") -> str:
+        container_id = self.container(media_type, None if media_type == "STORIES" else "Merhaba")
+        self.clock.advance(seconds=CONTAINER_DELAY_S)
+        return container_id
+
+    def published(self) -> list[SimPublishedMedia]:
+        self.session.expire_all()
+        return list(self.session.query(SimPublishedMedia).all())
+
+    def containers(self) -> list[SimContainer]:
+        self.session.expire_all()
+        return list(self.session.query(SimContainer).all())
+
+
+def jpeg_bytes() -> bytes:
+    out = io.BytesIO()
+    Image.new("RGB", (1080, 1350), "navy").save(out, "JPEG")
+    return out.getvalue()
+
 
 @pytest.fixture
 def h(
     db_session: Session,
     shared_session_factory: sessionmaker[Session],
     clock: FrozenClock,
+    tmp_path: Path,
 ) -> Harness:
-    return Harness(db_session, shared_session_factory, clock)
+    return Harness(db_session, shared_session_factory, clock, tmp_path / "media")
 
 
 # --- signatures -----------------------------------------------------------------------------
@@ -358,19 +420,325 @@ def test_the_lookup_can_be_made_unavailable(h: Harness) -> None:
         h.provider.find_recent_outbound(h.account, CUSTOMER, h.clock.now())
 
 
+def test_refreshing_a_token_is_not_available_on_the_mock(h: Harness) -> None:
+    with pytest.raises(NotImplementedError):
+        h.provider.refresh_token(h.account)
+
+
+# --- publishing: container lifecycle ----------------------------------------------------------
+
+
+def test_a_container_goes_from_in_progress_to_finished_to_published(h: Harness) -> None:
+    container_id = h.container()
+    assert h.provider.get_container_status(h.account, container_id).status_code == "IN_PROGRESS"
+    h.clock.advance(seconds=CONTAINER_DELAY_S - 1)
+    assert h.provider.get_container_status(h.account, container_id).status_code == "IN_PROGRESS"
+    h.clock.advance(seconds=1)
+    assert h.provider.get_container_status(h.account, container_id).status_code == "FINISHED"
+
+    media_id = h.provider.publish_container(h.account, container_id)
+
+    assert h.provider.get_container_status(h.account, container_id).status_code == "PUBLISHED"
+    (row,) = h.published()
+    assert (row.media_id, row.container_id) == (media_id, container_id)
+    assert row.published_at == h.clock.now()
+
+
+def test_a_new_container_records_its_deadlines_and_what_it_was_given(h: Harness) -> None:
+    start = h.clock.now()
+    container_id = h.container(caption="Yeni sezon")
+    (row,) = h.containers()
+    assert row.container_id == container_id
+    assert (row.media_type, row.caption, row.status) == ("IMAGE", "Yeni sezon", "IN_PROGRESS")
+    assert row.ready_at == start + timedelta(seconds=CONTAINER_DELAY_S)
+    assert row.expires_at == start + timedelta(hours=24)
+    assert row.media_url.startswith("localmedia:")
+    assert (row.workspace_id, row.social_account_id) == (h.workspace_id, h.account_row.id)
+
+
+def test_publishing_before_the_container_is_finished_is_rejected(h: Harness) -> None:
+    container_id = h.container()
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.publish_container(h.account, container_id)
+    assert excinfo.value.request_code == "CONTAINER_NOT_READY"
+    assert h.published() == []
+    h.clock.advance(seconds=CONTAINER_DELAY_S)  # and works once it is ready
+    h.provider.publish_container(h.account, container_id)
+    assert len(h.published()) == 1
+
+
+def test_publishing_a_container_twice_is_rejected_and_creates_one_post(h: Harness) -> None:
+    container_id = h.finished_container()
+    first = h.provider.publish_container(h.account, container_id)
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.publish_container(h.account, container_id)
+    assert excinfo.value.request_code == "CONTAINER_PUBLISHED"
+    assert [m.media_id for m in h.published()] == [first]
+
+
+def test_the_database_refuses_a_second_post_for_one_container(h: Harness) -> None:
+    """The backstop under the status check: ``unique(container_id)`` (a race cannot double-post)."""
+    container_id = h.finished_container()
+    h.provider.publish_container(h.account, container_id)
+    h.session.add(
+        SimPublishedMedia(
+            workspace_id=h.workspace_id,
+            social_account_id=h.account_row.id,
+            media_id="mock-media-other",
+            container_id=container_id,
+            permalink="https://instagram.example/sim/mock-media-other",
+            published_at=h.clock.now(),
+        )
+    )
+    with pytest.raises(IntegrityError):
+        h.session.flush()
+    h.session.rollback()
+
+
+def test_an_unpublished_container_expires_after_24_hours(h: Harness) -> None:
+    container_id = h.container()
+    h.clock.advance(hours=23, minutes=59)
+    assert h.provider.get_container_status(h.account, container_id).status_code == "FINISHED"
+    h.clock.advance(minutes=1)
+    assert h.provider.get_container_status(h.account, container_id).status_code == "EXPIRED"
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.publish_container(h.account, container_id)
+    assert excinfo.value.request_code == "CONTAINER_EXPIRED"
+    assert h.published() == []
+
+
+def test_a_published_container_stays_published_after_24_hours(h: Harness) -> None:
+    container_id = h.finished_container()
+    h.provider.publish_container(h.account, container_id)
+    h.clock.advance(hours=48)
+    assert h.provider.get_container_status(h.account, container_id).status_code == "PUBLISHED"
+
+
+def test_a_story_container_is_created_without_a_caption(h: Harness) -> None:
+    container_id = h.finished_container("STORIES")
+    h.provider.publish_container(h.account, container_id)
+    (row,) = h.containers()
+    assert (row.media_type, row.caption) == ("STORIES", None)
+
+
+def test_a_story_with_a_caption_is_rejected(h: Harness) -> None:
+    spec = ContainerSpec("STORIES", h.image_url(), "text on a story")
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.create_media_container(h.account, spec)
+    assert excinfo.value.request_code == "CAPTION_NOT_ALLOWED"
+    assert h.containers() == []
+
+
 @pytest.mark.parametrize(
-    "call",
+    "image_url",
+    ["https://example.com/a.jpg", "localmedia:not-a-key?exp=9999999999", "localmedia:no-expiry"],
+)
+def test_an_image_url_that_is_not_a_fetch_reference_is_rejected(h: Harness, image_url: str) -> None:
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.create_media_container(h.account, ContainerSpec("IMAGE", image_url, "x"))
+    assert excinfo.value.request_code == "MEDIA_REJECTED"
+    assert h.containers() == []
+
+
+def test_an_image_that_is_not_a_jpeg_is_rejected(h: Harness) -> None:
+    spec = ContainerSpec("IMAGE", h.image_url(png_bytes()), "x")
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.create_media_container(h.account, spec)
+    assert excinfo.value.request_code == "MEDIA_REJECTED"
+    assert h.containers() == []
+
+
+def test_an_image_that_is_not_in_the_storage_is_rejected(h: Harness) -> None:
+    key = build_key(h.workspace_id, uuid.uuid4(), h.clock.now())
+    spec = ContainerSpec("IMAGE", h.storage.public_fetch_url(key, 3600), "x")
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.create_media_container(h.account, spec)
+    assert excinfo.value.request_code == "MEDIA_REJECTED"
+
+
+def test_an_expired_fetch_reference_is_rejected(h: Harness) -> None:
+    url = h.image_url(ttl_s=60)
+    h.clock.advance(seconds=61)
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.create_media_container(h.account, ContainerSpec("IMAGE", url, "x"))
+    assert excinfo.value.request_code == "MEDIA_REJECTED"
+
+
+def test_an_unknown_container_or_media_is_an_invalid_request(h: Harness) -> None:
+    for call in (
+        lambda: h.provider.get_container_status(h.account, "nope"),
+        lambda: h.provider.publish_container(h.account, "nope"),
+        lambda: h.provider.get_media(h.account, "nope"),
+    ):
+        with pytest.raises(ProviderInvalidRequest):
+            call()
+
+
+def test_another_account_cannot_see_or_publish_a_container(h: Harness) -> None:
+    other_workspace = create_workspace(h.session, name="Other")
+    other_row = SocialAccount(
+        workspace_id=other_workspace.id,
+        provider_kind="mock",
+        external_account_id="biz-2",
+        status="connected",
+    )
+    h.session.add(other_row)
+    h.session.commit()
+    other = AccountRef(other_row.id, other_workspace.id, "biz-2")
+    container_id = h.finished_container()
+    media_id = h.provider.publish_container(h.account, container_id)
+
+    with pytest.raises(ProviderInvalidRequest):
+        h.provider.get_container_status(other, container_id)
+    with pytest.raises(ProviderInvalidRequest):
+        h.provider.publish_container(other, container_id)
+    with pytest.raises(ProviderInvalidRequest):
+        h.provider.get_media(other, media_id)
+    assert h.provider.get_publishing_quota(other).used == 0
+
+
+# --- publishing: media and quota --------------------------------------------------------------
+
+
+def test_the_published_media_has_a_clearly_fake_permalink(h: Harness) -> None:
+    container_id = h.finished_container()
+    media_id = h.provider.publish_container(h.account, container_id)
+    info = h.provider.get_media(h.account, media_id)
+    assert info.media_id == media_id
+    assert info.permalink == f"https://instagram.example/sim/{media_id}"
+    assert info.timestamp == h.clock.now()
+
+
+def test_the_quota_counts_the_posts_of_the_last_24_hours(h: Harness) -> None:
+    quota = h.provider.get_publishing_quota(h.account)
+    assert (quota.used, quota.limit, quota.window_hours) == (0, DAILY_LIMIT, 24)
+    h.provider.publish_container(h.account, h.finished_container())
+    h.clock.advance(hours=1)
+    h.provider.publish_container(h.account, h.finished_container())
+    assert h.provider.get_publishing_quota(h.account).used == 2
+    h.clock.advance(hours=23)  # the first post is now 24 h old and leaves the window
+    assert h.provider.get_publishing_quota(h.account).used == 1
+    h.clock.advance(hours=1)
+    assert h.provider.get_publishing_quota(h.account).used == 0
+
+
+def test_the_default_limit_is_fifty(
+    shared_session_factory: sessionmaker[Session], clock: FrozenClock
+) -> None:
+    provider = MockInstagramProvider(shared_session_factory, clock, SECRET)
+    quota = provider.get_publishing_quota(AccountRef(uuid.uuid4(), uuid.uuid4(), "x"))
+    assert (quota.used, quota.limit) == (0, 50)
+
+
+def test_publishing_beyond_the_limit_is_rate_limited_until_the_oldest_post_leaves(
+    h: Harness,
+) -> None:
+    for _ in range(DAILY_LIMIT):
+        h.provider.publish_container(h.account, h.finished_container())
+        h.clock.advance(minutes=10)
+    container_id = h.finished_container()
+    with pytest.raises(ProviderRateLimited) as excinfo:
+        h.provider.publish_container(h.account, container_id)
+    # the oldest post is DAILY_LIMIT * (10 min + 2 s) old
+    assert excinfo.value.retry_after_s == 24 * 3600 - DAILY_LIMIT * (600 + CONTAINER_DELAY_S)
+    assert len(h.published()) == DAILY_LIMIT
+    h.clock.advance(seconds=excinfo.value.retry_after_s or 0)
+    h.provider.publish_container(h.account, container_id)
+    assert len(h.published()) == DAILY_LIMIT + 1
+
+
+# --- publishing: failure injection ------------------------------------------------------------
+
+CONTAINER_OPERATIONS = ["create_container", "container_status", "publish"]
+
+
+def call_operation(h: Harness, operation: str, container_id: str | None = None) -> object:
+    """Invoke one of the three publishing operations (on a finished container if it needs one)."""
+    if operation == "create_container":
+        return h.provider.create_media_container(
+            h.account, ContainerSpec("IMAGE", h.image_url(), "x")
+        )
+    container_id = container_id or h.finished_container()
+    if operation == "container_status":
+        return h.provider.get_container_status(h.account, container_id)
+    return h.provider.publish_container(h.account, container_id)
+
+
+@pytest.mark.parametrize("operation", CONTAINER_OPERATIONS)
+@pytest.mark.parametrize(
+    ("mode", "error"),
     [
-        lambda p, a: p.get_container_status(a, "c1"),
-        lambda p, a: p.get_media(a, "m1"),
-        lambda p, a: p.get_publishing_quota(a),
-        lambda p, a: p.create_media_container(a, None),
-        lambda p, a: p.publish_container(a, "c1"),
-        lambda p, a: p.refresh_token(a),
+        ("transient", ProviderTransientError),
+        ("rate_limited", ProviderRateLimited),
+        ("auth_revoked", ProviderAuthError),
     ],
 )
-def test_content_methods_are_not_available_yet(
-    h: Harness, call: Callable[[MockInstagramProvider, AccountRef], object]
+def test_transient_rate_limited_and_auth_revoked_apply_to_all_three_operations(
+    h: Harness, operation: str, mode: str, error: type[Exception]
 ) -> None:
-    with pytest.raises(NotImplementedError):
-        call(h.provider, h.account)
+    container_id = h.finished_container() if operation != "create_container" else None
+    containers_before = len(h.containers())
+    h.fail(operation, mode)
+    with pytest.raises(error):
+        call_operation(h, operation, container_id)
+    assert h.published() == []  # nothing went out
+    assert len(h.containers()) == containers_before  # and no container appeared
+    call_operation(h, operation, container_id)  # the rule is spent: the next call works
+
+
+@pytest.mark.parametrize("operation", CONTAINER_OPERATIONS)
+def test_rate_limited_carries_retry_after_on_the_publishing_operations(
+    h: Harness, operation: str
+) -> None:
+    h.fail(operation, "rate_limited", retry_after=77)
+    with pytest.raises(ProviderRateLimited) as excinfo:
+        call_operation(h, operation)
+    assert excinfo.value.retry_after_s == 77
+
+
+def test_invalid_media_on_create_container_is_media_rejected(h: Harness) -> None:
+    h.fail("create_container", "invalid_media")
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.create_media_container(h.account, ContainerSpec("IMAGE", h.image_url(), "x"))
+    assert excinfo.value.request_code == "MEDIA_REJECTED"
+    assert h.containers() == []
+
+
+def test_invalid_media_on_container_status_is_an_error_status_that_sticks(h: Harness) -> None:
+    container_id = h.container()
+    h.fail("container_status", "invalid_media")
+    status = h.provider.get_container_status(h.account, container_id)
+    assert status.status_code == "ERROR" and status.error_detail
+    h.clock.advance(seconds=CONTAINER_DELAY_S)  # the rule is spent, the container stays failed
+    assert h.provider.get_container_status(h.account, container_id).status_code == "ERROR"
+    with pytest.raises(ProviderInvalidRequest) as excinfo:
+        h.provider.publish_container(h.account, container_id)
+    assert excinfo.value.request_code == "CONTAINER_ERROR"
+    assert h.published() == []
+
+
+def test_timeout_after_success_on_publish_posts_once_and_then_raises(h: Harness) -> None:
+    container_id = h.finished_container()
+    h.fail("publish", "timeout_after_success")
+    with pytest.raises(ProviderOutcomeUnknown):
+        h.provider.publish_container(h.account, container_id)
+    (post,) = h.published()  # the post really went out
+    assert post.container_id == container_id
+    # Reconciliation sees it and must not publish again (INV-06).
+    assert h.provider.get_container_status(h.account, container_id).status_code == "PUBLISHED"
+    with pytest.raises(ProviderInvalidRequest):
+        h.provider.publish_container(h.account, container_id)
+    assert len(h.published()) == 1
+
+
+def test_an_any_rule_reaches_the_publishing_operations(h: Harness) -> None:
+    h.fail("any", "transient", remaining=None)
+    for operation in CONTAINER_OPERATIONS:
+        with pytest.raises(ProviderTransientError):
+            call_operation(h, operation, "mock-container-x")
+
+
+def test_a_rule_for_another_operation_does_not_touch_publishing(h: Harness) -> None:
+    h.fail("send", "transient", remaining=None)
+    h.provider.publish_container(h.account, h.finished_container())
+    assert len(h.published()) == 1

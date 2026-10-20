@@ -28,7 +28,12 @@ from app.inbox.models import Conversation
 from app.integrations.instagram import queries, webhook_format
 from app.integrations.instagram.base import AccountRef
 from app.integrations.instagram.mock import MockInstagramProvider
-from app.integrations.instagram.models import SimFailureRule, SocialAccount
+from app.integrations.instagram.models import (
+    SimContainer,
+    SimFailureRule,
+    SimPublishedMedia,
+    SocialAccount,
+)
 
 SCRIPTS_FILE = Path(__file__).parent / "scripts" / "customer_messages.yaml"
 
@@ -244,3 +249,23 @@ def delete_failure_rule(session: Session, workspace_id: uuid.UUID, rule_id: uuid
         raise AppError("NOT_FOUND")
     session.delete(rule)
     session.commit()
+
+
+# --- what the simulator published -------------------------------------------------------------
+
+
+def list_published(
+    session: Session, workspace_id: uuid.UUID, *, limit: int = 100
+) -> list[tuple[SimPublishedMedia, SimContainer]]:
+    """The simulator's evidence of what went out, newest first (the "exactly one post" demo)."""
+    rows = session.execute(
+        select(SimPublishedMedia, SimContainer)
+        .join(SimContainer, SimContainer.container_id == SimPublishedMedia.container_id)
+        .where(
+            SimPublishedMedia.workspace_id == workspace_id,
+            SimContainer.workspace_id == workspace_id,
+        )
+        .order_by(SimPublishedMedia.published_at.desc(), SimPublishedMedia.id)
+        .limit(limit)
+    )
+    return [(media, container) for media, container in rows]

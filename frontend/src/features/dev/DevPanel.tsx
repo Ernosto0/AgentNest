@@ -9,7 +9,16 @@ import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
-const OPERATIONS = ["send", "lookup", "echo", "profile", "any"] as const;
+const OPERATIONS = [
+  "send",
+  "lookup",
+  "echo",
+  "profile",
+  "create_container",
+  "container_status",
+  "publish",
+  "any",
+] as const;
 const MODES = [
   "transient",
   "rate_limited",

@@ -69,8 +69,8 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `MEDIA_PUBLIC_URL_TTL_SECONDS` | `3600` | `3600` | Presigned URL lifetime for Meta fetch; for `local`, the expiry in the `localmedia:` reference |
 | `S3_ENDPOINT_URL`, `S3_REGION`, `S3_BUCKET` | empty | required if s3 | |
 | `S3_ACCESS_KEY_ID` 🔒, `S3_SECRET_ACCESS_KEY` 🔒 | empty | required if s3 | |
-| `SIM_CONTAINER_DELAY_SECONDS` | `2` | `2` | Mock container processing time |
-| `PUBLISH_DAILY_LIMIT` | `50` | `50` | Conservative (OQ-18) |
+| `SIM_CONTAINER_DELAY_SECONDS` | `2` | `2` | Mock container processing time: a container is `IN_PROGRESS` for this long after creation, then `FINISHED`. `0` finishes at once |
+| `PUBLISH_DAILY_LIMIT` | `50` | `50` | Conservative (OQ-18). Posts per rolling 24 h: the mock reports it as the quota `limit` and refuses to publish beyond it (`ProviderRateLimited`) |
 
 ## Retention (Phase 6; final values Phase 8)
 

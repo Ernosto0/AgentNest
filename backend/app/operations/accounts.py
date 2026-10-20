@@ -22,7 +22,11 @@ from app.integrations.instagram.transitions import apply_account_transition
 from app.jobs.queue import enqueue
 from app.operations.payloads import ResumeAccountPayload
 
-MOCK_CAPABILITIES = {"messaging": True, "content_publish": True}
+MOCK_CAPABILITIES = {
+    "messaging": True,
+    "publish_feed_image": True,
+    "publish_story_image": True,
+}
 
 
 def mock_connect_allowed(settings: Settings, ctx: WorkspaceContext) -> bool:

@@ -13,6 +13,7 @@ from sqlalchemy import (
     ARRAY,
     CheckConstraint,
     DateTime,
+    ForeignKey,
     ForeignKeyConstraint,
     Index,
     Integer,
@@ -41,6 +42,8 @@ FAILURE_OPERATIONS = (
     "profile",
     "any",
 )
+CONTAINER_MEDIA_TYPES = ("IMAGE", "STORIES")
+CONTAINER_STATUSES = ("IN_PROGRESS", "FINISHED", "ERROR", "EXPIRED", "PUBLISHED")
 FAILURE_MODES = (
     "transient",
     "rate_limited",
@@ -177,3 +180,59 @@ class SimFailureRule(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, 
     mode: Mapped[str] = mapped_column(Text, nullable=False)
     remaining: Mapped[int | None] = mapped_column(Integer)  # NULL = every matching call
     retry_after_s: Mapped[int | None] = mapped_column(Integer)
+
+
+class SimContainer(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
+    """A media container the mock created. ``status`` stores only what the provider decided
+    (``IN_PROGRESS``, then ``ERROR`` or ``PUBLISHED``); ``FINISHED`` and ``EXPIRED`` are derived
+    from ``ready_at`` / ``expires_at`` and the injected clock when it is read."""
+
+    __tablename__ = "sim_containers"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id"],
+            ["social_accounts.workspace_id", "social_accounts.id"],
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint("container_id"),
+        CheckConstraint(_in("media_type", CONTAINER_MEDIA_TYPES), name="media_type"),
+        CheckConstraint(_in("status", CONTAINER_STATUSES), name="status"),
+        Index("ix_sim_containers_account", "social_account_id", "created_at"),
+    )
+
+    social_account_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    container_id: Mapped[str] = mapped_column(Text, nullable=False)
+    media_type: Mapped[str] = mapped_column(Text, nullable=False)
+    media_url: Mapped[str] = mapped_column(Text, nullable=False)
+    caption: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="IN_PROGRESS")
+    ready_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    published_media_id: Mapped[str | None] = mapped_column(Text)
+
+
+class SimPublishedMedia(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """What the mock "published": the evidence that exactly one post went out. ``container_id``
+    is unique, so a container can never publish twice (a duplicate is a database error)."""
+
+    __tablename__ = "sim_published_media"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id"],
+            ["social_accounts.workspace_id", "social_accounts.id"],
+            ondelete="CASCADE",
+        ),
+        UniqueConstraint("container_id"),
+        UniqueConstraint("media_id"),
+        Index("ix_sim_published_account", "social_account_id", "published_at"),
+    )
+
+    social_account_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    media_id: Mapped[str] = mapped_column(Text, nullable=False)
+    container_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("sim_containers.container_id", ondelete="CASCADE"), nullable=False
+    )
+    permalink: Mapped[str] = mapped_column(Text, nullable=False)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

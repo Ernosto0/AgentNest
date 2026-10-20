@@ -461,8 +461,8 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 |---|---|---|
 | `sim_inbound_messages` | Customer messages the simulator delivered (`sender_id`, `mid`, `received_at`); the mock derives the 24 h messaging window from these, independently of the application's `messages` | `unique (social_account_id, mid)` |
 | `sim_sent_messages` | Messages the simulator "delivered" (`message_id`, `recipient_id`, `text`, `sent_at`) | `unique (message_id)` |
-| `sim_containers` | Media containers (`container_id`, `media_type`, `media_url`, `caption`, `status`, `ready_at`, `expires_at`, `published_media_id`) | `unique (container_id)` |
-| `sim_published_media` | Published posts and stories (`media_id`, `container_id`, `permalink`, `published_at`) | `unique (container_id)`, so a container can never publish twice |
+| `sim_containers` | Media containers (`container_id`, `media_type` IMAGE or STORIES, `media_url` (the `localmedia:` reference), `caption`, `status`, `ready_at`, `expires_at`, `published_media_id`). `status` stores `IN_PROGRESS`, `ERROR` or `PUBLISHED`; `FINISHED` and `EXPIRED` are derived from `ready_at`/`expires_at` and the clock | `unique (container_id)` |
+| `sim_published_media` | Published posts and stories (`media_id`, `container_id` referencing `sim_containers.container_id`, `permalink`, `published_at`) | `unique (container_id)`, so a container can never publish twice; `unique (media_id)` |
 | `sim_failure_rules` | Injected failures (`operation`, `mode`, `remaining` null = always, `retry_after_s`) | — |
 
 ## 4. Data lifecycle summary
