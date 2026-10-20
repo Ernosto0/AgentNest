@@ -129,10 +129,14 @@ overlay_text_suggestions: list[str]   # story_image only; placeholders allowed
 visual_notes: str                # concept for the owner/photographer
 hashtags: list[str]              # ≤ 10, appended to caption by code if the owner keeps them
 used_fact_keys: list[str]
-commercial_claims: list[str]     # model-declared claims (e.g., "free trial"); each must map to a fact key or is flagged
+commercial_claims: list[{claim: str, fact_key: str?}]   # model-declared claims (e.g., "free trial") and the fact that backs each, or null
 ```
 
-Post-validation: as for replies, plus every `commercial_claims` item must cite a used fact. Unbacked claims become validation issues shown to the owner (not a hard stop, since a human reviews before submission). Submission requires a passing claim validation ([workflows.md §E](workflows.md)).
+`overlay_text_suggestions` are alternatives, each shown to the owner as a suggestion for the picture (G5: the approval payload's `overlay_text` is that list); a story publishes no text. A claim is a structured item rather than a bare string (P5-03a deviation), because a string cannot say which fact backs it.
+
+**Facts shown to the model:** as for replies (§4): the usable facts except the internal categories and `policy.price_disclosure`; without `pricing.*` unless the policy is `share` (unknown counts as `do_not_share`; the renderer refuses them too). `language` is the workspace default locale. Brand voice and the objective are separate labelled sections; the objective and the notes are owner data in `<owner_objective>` / `<owner_notes>`, neutralised like any data section. No tools. The run keeps the brief on the queued `agent_runs` row (`input_snapshot.notes`, `objective_chars`), set when the draft is requested.
+
+Post-validation (structure; a failure is the one repair call): a feed post has a `caption_template` ≤ 2200 characters and no suggestions, a story has `caption_template = null` and 1–5 suggestions of ≤ 200 characters (the 3 lines × 40 characters rule is a submit **warning** on the rendered text, `OVERLAY_TOO_LONG`), ≤ 10 hashtags, `title` ≤ 80 characters, every `used_fact_keys` entry is an offered fact, and a claim that names a `fact_key` names a used one. The model cannot loosen anything: a claim without a fact is **not** a hard stop but, with every claim whose fact the rendered text does not really use (code decides, not the model's list), becomes a blocking `CLAIM_UNBACKED` validation issue shown to the owner (a human reviews before submission). After the call, code renders the templates against the facts as they are then, appends the hashtags (letters only; a tag with a digit is dropped, because a number in a caption is a claim), and runs the claim validator ([workflows.md §E](workflows.md) step 1). Submission requires no blocking claim issue.
 
 ## 6. Task: `extract_fact_candidates`
 
@@ -181,7 +185,7 @@ Input snapshots stored in `agent_runs` follow the same rule and are deleted afte
 - Deterministic implementations per task, in Turkish and English:
   - `draft_reply`: keyword/regex intent classification (e.g., `fiyat|ücret|ne kadar|price|how much` → pricing; `şikayet|rezalet|iade|refund|kaba` → complaint/refund), template replies using placeholders for the intent's facts, flags for complaint, refund and discount keywords, `can_answer=false` if required facts are missing from the context.
   - `interpret_command`: regex grammar for the demo commands (fact updates with money, activity questions, content drafts, cancel tomorrow's post).
-  - `draft_content`: templated captions and overlay suggestions per objective keyword.
+  - `draft_content`: templated captions and overlay suggestions per objective keyword, tr and en: *deneme / trial / kampanya* → `{{fact:promotion.*}}` (a backed claim; with no promotion fact the post makes no promise); *fiyat / üyelik / price / membership* → the matching `pricing.*` placeholder (the policy text when prices are withheld, nothing when there is none); *saat / hours* → `{{fact:hours.weekly}}`; *indirim / discount / %N* → what a careless model would do: the discount typed as the owner asked and declared as a claim with no fact, so that the validator and the claim check are what stop it.
   - `extract_fact_candidates`: regex extraction of money, phone, hours and address lines, with excerpts.
 - **Scriptable** for tests: `FakeLLMProvider.queue(task, output_or_exception)` overrides the next call, so tests can simulate adversarial model output (e.g., a complaint labelled as pricing with `needs_human=false`) and prove that deterministic layers still hold.
 - UI indicator: "Çevrimdışı demo yapay zekâsı" (Offline demo AI) in the status strip.

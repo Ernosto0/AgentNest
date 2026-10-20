@@ -17,6 +17,7 @@ from app.content.payload import approval_payload, approval_payload_hash, publish
 from app.core.clock import FrozenClock
 from app.core.errors import AppError
 from app.jobs.models import Job
+from app.knowledge.models import FactReference
 from tests.factories import create_fact, money
 from tests.helpers.content import (
     connect_account,
@@ -246,33 +247,107 @@ def test_a_story_with_a_caption_is_refused(env: Env) -> None:
     assert error_codes(submit(env, item, self_approve=True)) == ["CAPTION_NOT_ALLOWED"]
 
 
-@pytest.mark.invariant("INV-02")
-def test_a_typed_price_blocks_submission_and_names_the_verified_fact(env: Env) -> None:
-    create_fact(env.session, env.workspace, "pricing.membership_monthly", money("6000"))
-    connect_account(env)
+def verified_display(env: Env, key: str = "pricing.membership_monthly") -> str:
     from app.knowledge import service as knowledge_service
 
     (fact,) = [
         f
         for f in knowledge_service.usable_facts(env.session, env.clock, env.ctx(env.owner))
-        if f.key == "pricing.membership_monthly"
+        if f.key == key
     ]
-    item = submittable_item(env, caption=f"Üyelik bu ay {fact.display}")
+    return fact.display
+
+
+@pytest.mark.invariant("INV-02")
+def test_a_typed_price_equal_to_the_verified_one_is_grounded_and_submits(env: Env) -> None:
+    fact = create_fact(env.session, env.workspace, "pricing.membership_monthly", money("6000"))
+    connect_account(env)
+    item = submittable_item(env, caption=f"Üyelik bu ay {verified_display(env)}")
+
+    # The dry run first: the value is reported, grounded, and not an error.
+    check = env.call(env.owner, "POST", f"{ITEMS}/{item.id}/validate").json()
+    assert check["passed"] is True and check["errors"] == []
+    (issue,) = check["issues"]
+    assert issue["matches_verified"] is True and issue["fact_key"] == "pricing.membership_monthly"
+
+    response = submit(env, item, self_approve=True)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "scheduled"
+    # The value is a reference of the item as submitted, so a price change will hold it (P5-07).
+    refs = env.session.scalars(
+        select(FactReference).where(FactReference.referrer_id == item.id)
+    ).all()
+    assert [r.fact_id for r in refs] == [fact.id]
+
+
+@pytest.mark.invariant("INV-02")
+def test_a_value_grounded_only_by_submit_time_is_still_a_reference(env: Env) -> None:
+    """The caption was written before the price was verified: no reference yet. Submitting
+    checks against today's facts and records it, so a later change reaches the scheduled post."""
+    connect_account(env)
+    item = submittable_item(env, caption="Üyelik bu ay 6.000 ₺ / ay")
+    assert submit(env, item, self_approve=True).status_code == 422  # nothing verified yet
+
+    fact = create_fact(env.session, env.workspace, "pricing.membership_monthly", money("6000"))
+    assert submit(env, item, self_approve=True).status_code == 200
+    refs = env.session.scalars(
+        select(FactReference).where(FactReference.referrer_id == item.id)
+    ).all()
+    assert [r.fact_id for r in refs] == [fact.id]
+
+
+@pytest.mark.invariant("INV-02")
+def test_an_invented_price_blocks_submission(env: Env) -> None:
+    create_fact(env.session, env.workspace, "pricing.membership_monthly", money("6000"))
+    connect_account(env)
+    item = submittable_item(env, caption="Üyelik bu ay sadece 5.000 ₺ / ay!")
 
     response = submit(env, item, self_approve=True)
 
     assert error_codes(response) == ["CLAIM_VALIDATION_FAILED"]
     (issue,) = response.json()["errors"][0]["params"]["issues"]
-    assert issue["matches_verified"] is True
-    assert issue["fact_key"] == "pricing.membership_monthly"
+    assert issue["matches_verified"] is False and issue["fact_key"] is None
     assert issue["field"] == "caption"
-    # The dry run shows the same, in the claim report.
     check = env.call(env.owner, "POST", f"{ITEMS}/{item.id}/validate").json()
-    assert (
-        check["passed"] is False and check["issues"][0]["fact_key"] == "pricing.membership_monthly"
-    )
+    assert check["passed"] is False
     env.session.refresh(item)
     assert item.status == "draft"
+
+
+@pytest.mark.invariant("INV-02")
+def test_a_part_of_a_verified_price_is_not_the_price(env: Env) -> None:
+    """``500 ₺`` is inside ``6.500 ₺``, but it is not that price."""
+    create_fact(env.session, env.workspace, "pricing.membership_monthly", money("6500"))
+    connect_account(env)
+    item = submittable_item(env, caption="Üyelik bu ay 500 ₺ / ay")
+    assert error_codes(submit(env, item, self_approve=True)) == ["CLAIM_VALIDATION_FAILED"]
+
+
+@pytest.mark.invariant("INV-02")
+def test_the_old_price_blocks_submission_after_the_fact_changed(env: Env) -> None:
+    from app.knowledge import service as knowledge_service
+
+    fact = create_fact(env.session, env.workspace, "pricing.membership_monthly", money("6000"))
+    connect_account(env)
+    item = submittable_item(env, caption=f"Üyelik bu ay {verified_display(env)}")
+    assert env.call(env.owner, "POST", f"{ITEMS}/{item.id}/validate").json()["passed"] is True
+
+    knowledge_service.update_fact(
+        env.session,
+        env.clock,
+        env.ctx(env.owner),
+        fact.id,
+        expected_version=1,
+        value={"amount": "7000.00", "currency": "TRY", "unit": "month"},
+    )
+    env.session.expire_all()
+
+    response = submit(env, item, self_approve=True)
+
+    assert error_codes(response) == ["CLAIM_VALIDATION_FAILED"]
+    (issue,) = response.json()["errors"][0]["params"]["issues"]
+    assert issue["matches_verified"] is False and issue["text"].startswith("6.000")
 
 
 @pytest.mark.invariant("INV-02")

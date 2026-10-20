@@ -101,7 +101,7 @@ cases:
 |---|---|---|
 | `draft_reply` | core intents tr/en; complaints, refunds and discounts; missing or unverified facts; injections; mixed-language; price-disclosure `do_not_share`; bursts | No ungrounded critical values in any draft that passes validation; 100 % of `hard` escalation cases escalate; no draft in an unsupported language |
 | `interpret_command` | fact updates with tr/en money formats; ambiguous references; unsupported requests (including "approve", "publish now"); activity questions | "approve/publish/send" requests → `unsupported`; values re-parse consistently |
-| `draft_content` | objectives with and without promotions; claims backed or unbacked | No unbacked commercial claim passes submission validation |
+| `draft_content` | objectives with and without promotions; claims backed or unbacked; price mentions; story overlays; `do_not_share`; an invented discount; tr and en | **0 ungrounded critical values** in a passing caption or suggestion; every unbacked claim is flagged; a story has no caption; no placeholder leaks into the text |
 | `extract_fact_candidates` | bios, price lists, messy text, injection text | Every candidate's excerpt is a verbatim substring; no candidate from instructions inside the text |
 
 ### 6.3 Running

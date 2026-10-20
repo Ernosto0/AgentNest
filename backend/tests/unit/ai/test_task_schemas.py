@@ -11,6 +11,7 @@ from openai.lib._pydantic import to_strict_json_schema
 from pydantic import BaseModel
 
 from app.ai.schemas import (
+    ContentProposal,
     ExtractFactsOutput,
     InterpretCommandOutput,
     NormalizedMoney,
@@ -24,6 +25,7 @@ OUTPUT_MODELS: list[type[BaseModel]] = [
     InterpretCommandOutput,
     ExtractFactsOutput,
     ReplyProposal,
+    ContentProposal,
 ]
 
 # Keywords strict mode rejects or that this codebase deliberately keeps out of provider schemas

@@ -12,9 +12,10 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_app_settings, get_clock, require_membership
-from app.content import media, service
+from app.content import generation, media, service
 from app.content.schemas import (
     ContentCreate,
+    ContentGenerate,
     ContentItemOut,
     ContentPatch,
     ContentStatus,
@@ -133,6 +134,30 @@ def create_content_item(
     )
     if not created:
         response.status_code = 200  # the same request again: the item it made
+    return item_out(db, ctx, item)
+
+
+@router.post("/content-items/generate", response_model=ContentItemOut, status_code=202)
+def generate_content_item(
+    body: ContentGenerate,
+    response: Response,
+    ctx: WorkspaceContext = Depends(require_membership("content.edit")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> ContentItemOut:
+    """Ask the AI for a draft: the draft exists at once (202) and fills in when the job has
+    run. The same ``client_request_id`` again returns the first draft (200)."""
+    item, created = generation.request(
+        db,
+        clock,
+        ctx,
+        content_type=body.content_type,
+        objective=body.objective,
+        notes=body.notes,
+        client_request_id=body.client_request_id,
+    )
+    if not created:
+        response.status_code = 200
     return item_out(db, ctx, item)
 
 

@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.ai.models import AgentRun
 from app.approvals import repository as approvals_repo
 from app.content import hooks, validation
 from app.content.models import ContentItem
@@ -16,6 +17,7 @@ from app.content.schemas import (
     ContentItemOut,
     ContentOperationOut,
     ContentValidationOut,
+    GenerationOut,
     ScheduleLocalOut,
 )
 from app.content.service import Checked
@@ -111,6 +113,31 @@ def approval_state(
     )
 
 
+def generation_out(
+    session: Session, ctx: WorkspaceContext, item: ContentItem
+) -> GenerationOut | None:
+    """The status of the item's AI draft (``null`` for a manual draft). The runner marks a run
+    succeeded when the model's output is valid; the text is saved on the draft a moment later,
+    and until then the generation is still running for the user. A run whose snapshot has been
+    purged is old and finished."""
+    if item.agent_run_id is None:
+        return None
+    run = session.scalar(
+        select(AgentRun).where(
+            AgentRun.workspace_id == ctx.workspace_id, AgentRun.id == item.agent_run_id
+        )
+    )
+    if run is None:
+        return None
+    status = run.status
+    snapshot = run.input_snapshot
+    if status == "succeeded" and snapshot is not None and "stored_at" not in snapshot:
+        status = "running"
+    return GenerationOut(
+        status=cast(Any, status), error_code=run.error_code if status == "failed" else None
+    )
+
+
 def item_out(session: Session, ctx: WorkspaceContext, item: ContentItem) -> ContentItemOut:
     summary = hooks.get().operation_summary(session, ctx, item)
     return ContentItemOut(
@@ -142,6 +169,7 @@ def item_out(session: Session, ctx: WorkspaceContext, item: ContentItem) -> Cont
         hold_reason=item.hold_reason,
         rejection_note=item.rejection_note,
         validation=validation_out(item.validation or {}, ctx.locale),
+        generation=generation_out(session, ctx, item),
         published_at=item.published_at,
         external_media_id=item.external_media_id,
         external_permalink=item.external_permalink,

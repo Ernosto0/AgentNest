@@ -61,6 +61,20 @@ class ContentCreate(BaseModel):
     client_request_id: Annotated[str, StringConstraints(min_length=1, max_length=100)] | None = None
 
 
+class ContentGenerate(BaseModel):
+    """Ask for an AI draft (plan.md G7). ``client_request_id`` is required: it makes a retry
+    return the first draft instead of paying for a second generation."""
+
+    content_type: ContentType
+    objective: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)
+    ]
+    notes: Annotated[str, StringConstraints(strip_whitespace=True, max_length=NOTES_MAX)] | None = (
+        None
+    )
+    client_request_id: Annotated[str, StringConstraints(min_length=1, max_length=100)]
+
+
 class ContentPatch(BaseModel):
     """A field that is absent is left alone; a field sent as ``null`` is cleared (caption,
     media). ``title`` cannot be cleared."""
@@ -80,7 +94,8 @@ class ContentIssueOut(BaseModel):
     # The span is an index into that text.
     span: list[int] | None
     text: str
-    # Does the value equal a verified fact (so the owner can see it is right but not grounded)?
+    # The value is the current display of a verified fact: it is grounded, recorded as a
+    # reference of the item, and does not block a submission. Every other issue does.
     matches_verified: bool = False
     # The key of the verified fact whose display the value equals (``null`` if none). For a
     # ``PLACEHOLDER_UNRENDERED`` issue, the key the placeholder names.
@@ -101,7 +116,8 @@ class ContentCheckItemOut(BaseModel):
 
 
 class ContentValidationOut(BaseModel):
-    # No claim issue: the caption and the overlay suggestions hold no ungrounded value.
+    # No ungrounded claim: every value in the caption and the overlay suggestions is a verified
+    # fact's current value (those stay in ``issues`` with ``matches_verified``).
     passed: bool
     issues: list[ContentIssueOut]
     # A fact changed since the last check; the report may be out of date (P5-07).
@@ -140,6 +156,17 @@ class ScheduleLocalOut(BaseModel):
     timezone: str
 
 
+class GenerationOut(BaseModel):
+    """Where the AI draft of an item stands: the status of its ``agent_runs`` row (G7). A run
+    that has succeeded counts as ``running`` until its text has been saved on the draft."""
+
+    status: Literal["queued", "running", "succeeded", "failed"]
+    # Why it failed (``LLM_UNAVAILABLE``, ``LLM_OUTPUT_INVALID``, ``LLM_REFUSED``,
+    # ``LLM_BUDGET_EXCEEDED``, ``FACT_NOT_USABLE``, ``PLACEHOLDER_INVALID``, ``CONTENT_CHANGED``);
+    # the draft is then an ordinary manual draft.
+    error_code: str | None = None
+
+
 class ContentItemOut(BaseModel):
     id: uuid.UUID
     content_type: ContentType
@@ -160,6 +187,8 @@ class ContentItemOut(BaseModel):
     hold_reason: str | None
     rejection_note: str | None
     validation: ContentValidationOut
+    # ``null`` for a draft nobody asked the AI for.
+    generation: GenerationOut | None = None
     published_at: datetime | None
     external_media_id: str | None
     external_permalink: str | None

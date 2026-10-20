@@ -114,7 +114,7 @@ Item codes are not error codes: they are the entries of `errors` (blocking) and 
 | `STORY_ASPECT_NOT_9_16` | warning | `media_asset_id` | `width`, `height` | A story image far from 9:16 may be cropped |
 | `OVERLAY_TOO_LONG` | warning | `overlay_text_suggestions.{i}` | | More than 3 lines or a line over 40 characters |
 
-A claim issue's own `code` is the validator's (`MONEY`, `PERCENT`, `TIME`, ...) plus `PLACEHOLDER_UNRENDERED` (a `{{fact:key}}` left in the stored text, which would be published literally). `fact_key` is the verified fact whose display contains the value, or the key a placeholder names.
+A claim issue's own `code` is the validator's (`MONEY`, `PERCENT`, `TIME`, ...) plus `PLACEHOLDER_UNRENDERED` (a `{{fact:key}}` left in the stored text, which would be published literally) and `CLAIM_UNBACKED` (a commercial claim the model declared that no rendered fact backs). `fact_key` is the verified fact whose current display the value whole-token matches (such an issue has `matches_verified` and does not block), or the key a placeholder names.
 
 ### 4.3 Content notification kinds (G14)
 Defined in `app/content/notifications.py`; recipients are every member who holds `content.approve` **including the person who caused the event**, plus the item's author. Params carry ids, the internal title, the version and a reason code, never the caption. One notification per recipient and event (`dedup_key = {kind}:{content_id}:v{version}`) until it is read; `is_simulated` follows the item.

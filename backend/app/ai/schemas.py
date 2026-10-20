@@ -272,3 +272,45 @@ class ReplyProposal(BaseModel):
     reply_template: str | None
     used_fact_keys: list[str]
     language: str
+
+
+# --- draft_content (agent-runtime.md §5) ------------------------------------------------------
+
+ContentKind = Literal["feed_image", "story_image"]
+MAX_HASHTAGS = 10
+MAX_CAPTION_TEMPLATE_CHARS = 2200  # Instagram's caption limit, before rendering
+MAX_OVERLAY_SUGGESTIONS = 5
+MAX_OVERLAY_TEMPLATE_CHARS = 200  # a guard; the 3 x 40 rule is checked on the rendered text
+MAX_TITLE_CHARS = 80
+MAX_VISUAL_NOTES_CHARS = 1000
+MAX_OBJECTIVE_CHARS = 1000
+MAX_NOTES_CHARS = 2000
+
+
+class DraftContentInput(BaseModel):
+    content_type: ContentKind
+    objective: str  # the owner's own words: trusted, but still data
+    notes: str | None
+    language: str  # the workspace default locale; the model may not switch
+    facts: list[DraftFact]  # usable facts only, each quotable through its placeholder only
+    brand_voice: str | None
+
+
+class CommercialClaim(BaseModel):
+    """A claim the model makes that a customer could hold the business to ("free trial").
+
+    ``fact_key`` names the fact that backs it; ``null`` means the model has no fact for it. Code
+    decides whether that fact was really rendered: a claim without one is an issue."""
+
+    claim: str
+    fact_key: str | None
+
+
+class ContentProposal(BaseModel):
+    title: str  # internal label
+    caption_template: str | None  # feed_image only; critical values only as placeholders
+    overlay_text_suggestions: list[str]  # story_image only; placeholders allowed
+    visual_notes: str  # concept for the owner or photographer
+    hashtags: list[str]  # at most 10; code appends them to the caption
+    used_fact_keys: list[str]
+    commercial_claims: list[CommercialClaim]

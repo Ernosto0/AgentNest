@@ -99,7 +99,8 @@ class SubmitFacts:
     caption: str | None
     overlay_text_suggestions: Sequence[str]
     media: MediaFacts | None  # ``None``: no media attached (or not of this workspace)
-    claim_issues: Sequence[Mapping[str, Any]]  # ``grounding`` issues over caption and overlays
+    # The blocking ``grounding`` issues over caption and overlays (not the verified values).
+    claim_issues: Sequence[Mapping[str, Any]]
     # The ``SCHEDULE_*`` error of the requested schedule (``None`` when it is acceptable, or
     # when no schedule was given, as in a dry run).
     schedule_error: Issue | None

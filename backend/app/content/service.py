@@ -117,7 +117,7 @@ def _clean_overlay(values: Sequence[str] | None) -> list[str]:
     return [v.strip() for v in (values or []) if v and v.strip()]
 
 
-def _existing_for_request(
+def existing_for_request(
     session: Session, ctx: WorkspaceContext, user_id: uuid.UUID, client_request_id: str
 ) -> ContentItem | None:
     return session.scalars(
@@ -129,7 +129,7 @@ def _existing_for_request(
     ).one_or_none()
 
 
-def _user_id(ctx: WorkspaceContext) -> uuid.UUID:
+def author_id(ctx: WorkspaceContext) -> uuid.UUID:
     if ctx.actor.type != "user" or ctx.actor.id is None:
         raise ValueError("content items are created by a user")
     return uuid.UUID(ctx.actor.id)
@@ -149,9 +149,9 @@ def create_draft(
 ) -> tuple[ContentItem, bool]:
     """A new ``draft``. Returns ``(item, created)``; with a ``client_request_id`` that this
     author already used, the earlier item and ``False``. Commits."""
-    user_id = _user_id(ctx)
+    user_id = author_id(ctx)
     if client_request_id is not None:
-        existing = _existing_for_request(session, ctx, user_id, client_request_id)
+        existing = existing_for_request(session, ctx, user_id, client_request_id)
         if existing is not None:
             return existing, False
     if media_asset_id is not None:
@@ -182,7 +182,7 @@ def create_draft(
             session.add(item)
     except IntegrityError:  # the same request arrived twice at once
         winner = (
-            _existing_for_request(session, ctx, user_id, client_request_id)
+            existing_for_request(session, ctx, user_id, client_request_id)
             if client_request_id is not None
             else None
         )
@@ -423,7 +423,7 @@ def _check(
                 if asset is not None
                 else None
             ),
-            claim_issues=claims.report["issues"],
+            claim_issues=claims.blocking,
             schedule_error=schedule_error,
             account=(
                 validation.AccountFacts(connected, account.capabilities)
@@ -588,6 +588,9 @@ def submit(
     else:
         approval = approvals.request(session, clock, ctx, kind="authorization", **arguments)
         transitions.apply(session, clock, ctx, item, "submit", approval_id=approval.id, **changes)
+    # The facts the text states *now*: a value typed before its fact was verified is grounded
+    # only at this check, and a later change of that fact must reach the scheduled item.
+    impact.replace_references(session, ctx, SUBJECT_TYPE, item.id, ready.claims.references)
     session.commit()
     return item
 
@@ -637,6 +640,7 @@ def reapprove(
         approval_id=approval.id,
         **_schedule_changes(ready),
     )
+    impact.replace_references(session, ctx, SUBJECT_TYPE, item.id, ready.claims.references)
     enqueue_publish(session, clock, item)
     session.commit()
     return item

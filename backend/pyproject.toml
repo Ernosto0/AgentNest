@@ -214,6 +214,8 @@ source_modules = [
     "app.content.scheduling",
     "app.content.subject",
     "app.content.notifications",
+    "app.content.generation",
+    "app.content.jobs",
 ]
 forbidden_modules = ["app.api", "app.main"]
 

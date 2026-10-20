@@ -490,6 +490,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/content-items/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Content Item
+         * @description Ask the AI for a draft: the draft exists at once (202) and fills in when the job has
+         *     run. The same ``client_request_id`` again returns the first draft (200).
+         */
+        post: operations["generate_content_item_api_v1_workspaces__workspace_id__content_items_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/content-items/{content_id}": {
         parameters: {
             query?: never;
@@ -1522,6 +1543,24 @@ export interface components {
             /** Title */
             title: string;
         };
+        /**
+         * ContentGenerate
+         * @description Ask for an AI draft (plan.md G7). ``client_request_id`` is required: it makes a retry
+         *     return the first draft instead of paying for a second generation.
+         */
+        ContentGenerate: {
+            /** Client Request Id */
+            client_request_id: string;
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "feed_image" | "story_image";
+            /** Notes */
+            notes?: string | null;
+            /** Objective */
+            objective: string;
+        };
         /** ContentIssueOut */
         ContentIssueOut: {
             /** Code */
@@ -1566,6 +1605,7 @@ export interface components {
             external_media_id: string | null;
             /** External Permalink */
             external_permalink: string | null;
+            generation?: components["schemas"]["GenerationOut"] | null;
             /** Hold Reason */
             hold_reason: string | null;
             /**
@@ -1922,6 +1962,20 @@ export interface components {
             remaining: number | null;
             /** Retry After S */
             retry_after_s: number | null;
+        };
+        /**
+         * GenerationOut
+         * @description Where the AI draft of an item stands: the status of its ``agent_runs`` row (G7). A run
+         *     that has succeeded counts as ``running`` until its text has been saved on the draft.
+         */
+        GenerationOut: {
+            /** Error Code */
+            error_code?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed";
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -3887,6 +3941,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_content_item_api_v1_workspaces__workspace_id__content_items_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentGenerate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };

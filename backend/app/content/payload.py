@@ -74,3 +74,17 @@ def approval_summary(item: ContentItem, scheduled_at: datetime) -> dict[str, Any
         "title": item.title,
         "scheduled_at": scheduled_at.isoformat(),
     }
+
+
+class GenerateContentPayload(BaseModel):
+    """Payload of the ``generate_content`` job: which draft, at which version it was asked for
+    (the brief lives on the queued ``agent_runs`` row, not in the job)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    content_id: uuid.UUID
+    version: int
+
+
+def generate_job_key(content_id: uuid.UUID) -> str:
+    return f"generate_content:{content_id}"

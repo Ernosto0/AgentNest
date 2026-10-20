@@ -339,7 +339,7 @@ def test_a_problem_item_returns_to_draft_when_it_is_edited(env: Env, status: str
 # --- claim validation and fact references (G6) -----------------------------------------------
 
 
-def test_a_price_typed_into_a_caption_is_an_issue_and_a_fact_reference(env: Env) -> None:
+def test_a_price_typed_into_a_caption_is_grounded_and_a_fact_reference(env: Env) -> None:
     fact = create_fact(env.session, env.workspace, "pricing.membership_monthly", money("6000"))
     shown = price_display(env)
     item = create(env, caption="Merhaba!").json()
@@ -347,9 +347,11 @@ def test_a_price_typed_into_a_caption_is_an_issue_and_a_fact_reference(env: Env)
 
     body = patch(env, item["id"], 1, caption=f"Aylık üyelik {shown}").json()
 
-    assert body["validation"]["passed"] is False
+    # The value is the verified price: reported, grounded (it does not fail the report) and
+    # recorded as a reference so a later price change reaches this item.
+    assert body["validation"]["passed"] is True
     (issue,) = [i for i in body["validation"]["issues"] if i["field"] == "caption"]
-    assert issue["matches_verified"] is True
+    assert issue["matches_verified"] is True and issue["fact_key"] == "pricing.membership_monthly"
     assert issue["text"] in shown
     assert references(env, item["id"]) == {fact.id}
     row = env.session.scalars(

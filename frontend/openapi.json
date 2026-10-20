@@ -1024,6 +1024,50 @@
         "title": "ContentCreate",
         "type": "object"
       },
+      "ContentGenerate": {
+        "description": "Ask for an AI draft (plan.md G7). ``client_request_id`` is required: it makes a retry\nreturn the first draft instead of paying for a second generation.",
+        "properties": {
+          "client_request_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "content_type": {
+            "enum": [
+              "feed_image",
+              "story_image"
+            ],
+            "title": "Content Type",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "objective": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Objective",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content_type",
+          "objective",
+          "client_request_id"
+        ],
+        "title": "ContentGenerate",
+        "type": "object"
+      },
       "ContentIssueOut": {
         "properties": {
           "code": {
@@ -1152,6 +1196,16 @@
               }
             ],
             "title": "External Permalink"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GenerationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "hold_reason": {
             "anyOf": [
@@ -2322,6 +2376,37 @@
           "retry_after_s"
         ],
         "title": "FailureRuleOut",
+        "type": "object"
+      },
+      "GenerationOut": {
+        "description": "Where the AI draft of an item stands: the status of its ``agent_runs`` row (G7). A run\nthat has succeeded counts as ``running`` until its text has been saved on the draft.",
+        "properties": {
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "GenerationOut",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -6626,6 +6711,60 @@
           }
         },
         "summary": "Create Content Item",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/content-items/generate": {
+      "post": {
+        "description": "Ask the AI for a draft: the draft exists at once (202) and fills in when the job has\nrun. The same ``client_request_id`` again returns the first draft (200).",
+        "operationId": "generate_content_item_api_v1_workspaces__workspace_id__content_items_generate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentGenerate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Content Item",
         "tags": [
           "content"
         ]

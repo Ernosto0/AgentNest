@@ -407,11 +407,11 @@ Constraint: `unique (conversation_id) where status in ('pending_approval','needs
 | approval_id | uuid null | current approval |
 | hold_reason | text null | `FACT_CHANGED`, `ACCOUNT_UNAVAILABLE`, `APPROVAL_EXPIRED` |
 | rejection_note | text null | |
-| validation | jsonb not null default '{}' | last validation report: `{passed, issues: [{code, field, span, text, matches_verified, fact_key}], stale, warnings?: [{code, field, params}]}`. `field` is `caption` or `overlay_text_suggestions.{index}`; `warnings` are the non-blocking submit warnings of the last successful submission (P5-04); `stale` is set when a referenced fact changed after the check (P5-07) |
+| validation | jsonb not null default '{}' | last validation report: `{passed, issues: [{code, field, span, text, matches_verified, fact_key}], stale, warnings?: [{code, field, params}]}`. `passed` is true when every issue is a verified value (`matches_verified`). `field` is `caption` or `overlay_text_suggestions.{index}`; `warnings` are the non-blocking submit warnings of the last successful submission (P5-04); `stale` is set when a referenced fact changed after the check (P5-07) |
 | published_at | timestamptz null | |
 | external_media_id / external_permalink | text null | |
 | last_error_code | text null | |
-| agent_run_id | uuid null | composite FK; the `draft_content` run of a generated draft (P5-03) |
+| agent_run_id | uuid null | composite FK; the `draft_content` run of a generated draft. Created `queued` together with the draft (G7), so the generate response can report its status; the run keeps the redacted brief (`input_snapshot.notes`) until `stored_at` is set when the text is saved or discarded |
 | created_by_user_id | uuid not null | FK `users` |
 | client_request_id | text null | idempotent creation (plan G7): a second create or generate with the same id by the same author returns the first item |
 | created_at / updated_at | timestamptz | |
@@ -419,7 +419,7 @@ Constraint: `unique (conversation_id) where status in ('pending_approval','needs
 
 Constraints: `unique (workspace_id, id)`; composite FKs `(workspace_id, social_account_id)`, `(workspace_id, media_asset_id)`, `(workspace_id, approval_id)` and `(workspace_id, agent_run_id)` to the parent's `(workspace_id, id)`, so an item can never point at another workspace's row (INV-01); `unique (workspace_id, created_by_user_id, client_request_id)`; `version >= 1`. `approval_id` is the current or latest approval and is kept after the item returns to `draft`, so the author can still see how it ended. Index: `(workspace_id, status, scheduled_at)`. Migration 0009.
 
-The facts a text states are recorded in `fact_references` (`referrer_type = 'content_item'`): the usable facts whose display value occurs in a flagged claim of the caption or the suggestions (the same matcher as an owner's own reply), replaced on every payload change.
+The facts a text states are recorded in `fact_references` (`referrer_type = 'content_item'`): the usable facts whose **current display** whole-token matches a critical value found in the caption or the suggestions (the matcher of an owner's own reply, made strict: `500 ₺` is not in `6.500 ₺`; a discount word counts only with the whole display of a `promotion.*` fact), plus every fact a generation rendered. They are replaced on every payload change, at generation, at submit and at re-approval. A value that matches is grounded (`matches_verified` in `validation.issues`) and does not block submission; any other claim issue does.
 
 ### 3.7 Operations (Phase 4)
 
