@@ -450,6 +450,15 @@ def test_a_price_question_the_model_labels_hours_still_follows_the_pricing_polic
     )
     draft = inbox.ask(PRICE_Q)
     assert (draft.decision, draft.status) == ("approval_required", "pending_approval")
+    # the reply quotes a price, so the chip explains why the pricing policy applies
+    assert draft.decision_reasons == ["POLICY_REQUIRES_APPROVAL", "CONTAINS_PRICING"]
+
+
+def test_the_contains_reason_is_absent_when_the_intents_own_class_decides(
+    inbox: InboxEnv, gym
+) -> None:
+    draft = inbox.ask(PRICE_Q)  # a pricing question under the pricing policy
+    assert draft.decision_reasons == ["POLICY_REQUIRES_APPROVAL"]
 
 
 def test_automation_off_hands_the_class_to_a_person(inbox: InboxEnv, gym) -> None:

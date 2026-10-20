@@ -422,15 +422,29 @@ def test_facts_map_to_action_classes_by_what_they_say() -> None:
 def test_a_price_question_labelled_faq_still_needs_the_pricing_policy() -> None:
     """The intent is the model's label; the facts the reply quotes are what it says."""
     modes = {"reply.general_faq": "auto", "reply.pricing": "approval"}
-    assert effective_mode(modes, "faq", []) == "auto"
-    assert effective_mode(modes, "faq", ["pricing.membership_monthly"]) == "approval"
-    assert effective_mode({**modes, "reply.pricing": "off"}, "faq", ["pricing.x"]) == "off"
-    assert effective_mode(modes, "pricing", []) == "approval"
+    assert effective_mode(modes, "faq", []) == ("auto", "reply.general_faq")
+    assert effective_mode(modes, "faq", ["pricing.membership_monthly"]) == (
+        "approval",
+        "reply.pricing",
+    )
+    assert effective_mode({**modes, "reply.pricing": "off"}, "faq", ["pricing.x"]) == (
+        "off",
+        "reply.pricing",
+    )
+    assert effective_mode(modes, "pricing", []) == ("approval", "reply.pricing")
+
+
+def test_the_intents_own_class_wins_a_tie() -> None:
+    modes = {"reply.hours": "approval", "reply.pricing": "approval"}
+    assert effective_mode(modes, "hours", ["pricing.x"]).action_class == "reply.hours"
+    assert effective_mode(modes, "faq", ["pricing.x", "hours.weekly"]).action_class == (
+        "reply.general_faq"
+    )
 
 
 def test_the_effective_mode_defaults_to_approval() -> None:
-    assert effective_mode({}, "pricing", []) == DEFAULT_MODE
-    assert effective_mode({}, None, []) == DEFAULT_MODE
+    assert effective_mode({}, "pricing", []).mode == DEFAULT_MODE
+    assert effective_mode({}, None, []) == (DEFAULT_MODE, None)
 
 
 @pytest.mark.parametrize(
@@ -497,3 +511,30 @@ def test_an_unusable_fact_of_the_asked_kind_is_the_reason_when_the_model_cannot_
         )
         is expected
     )
+
+
+@pytest.mark.parametrize(
+    ("mode", "outcome", "primary"),
+    [
+        ("approval", "approval_required", "POLICY_REQUIRES_APPROVAL"),
+        ("off", "human_required", "AUTOMATION_OFF"),
+    ],
+)
+def test_a_stricter_fact_class_adds_a_contains_reason(
+    mode: str, outcome: str, primary: str
+) -> None:
+    decision = decide(intent="faq", automation_mode=mode, automation_mode_class="reply.pricing")
+    assert decision == Decision(outcome, (primary, "CONTAINS_PRICING"))
+
+
+@pytest.mark.parametrize("source", [None, "reply.general_faq"])
+def test_no_contains_reason_when_the_intents_own_class_decides(source: str | None) -> None:
+    decision = decide(intent="faq", automation_mode="approval", automation_mode_class=source)
+    assert decision == Decision("approval_required", ("POLICY_REQUIRES_APPROVAL",))
+
+
+def test_contains_reason_names_the_class_without_its_prefix() -> None:
+    decision = decide(
+        intent="faq", automation_mode="approval", automation_mode_class="reply.location_contact"
+    )
+    assert "CONTAINS_LOCATION_CONTACT" in decision.reasons

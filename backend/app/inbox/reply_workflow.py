@@ -48,6 +48,7 @@ def policy_input(
 ) -> ReplyPolicyInput:
     rendered_keys = [r["key"] for r in plan.validation.get("rendered", [])]
     responded = plan.intent is not None
+    mode = effective_mode(modes, plan.intent, rendered_keys)
     return ReplyPolicyInput(
         now=now,
         account_status=context.account_status,
@@ -75,7 +76,8 @@ def policy_input(
         ),
         render_failed=plan.render_failed,
         grounding_failed=plan.grounding_failed,
-        automation_mode=effective_mode(modes, plan.intent, rendered_keys),
+        automation_mode=mode.mode,
+        automation_mode_class=mode.action_class,
         readiness_level=context.readiness_level,
         auto_replies_last_hour=context.auto_replies_last_hour,
     )

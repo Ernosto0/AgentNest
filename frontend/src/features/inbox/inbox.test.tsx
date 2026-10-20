@@ -193,6 +193,19 @@ describe("inbox", () => {
     expect(screen.getByLabelText("Yanıtınız")).toHaveValue("Özür dileriz, sizi arayacağız.");
   });
 
+  it("explains a stricter class borrowed from a quoted value as a reason chip", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(detail(draft({ decision_reasons: ["POLICY_REQUIRES_APPROVAL", "CONTAINS_PRICING"] }))),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const card = await screen.findByTestId("draft-card");
+    expect(within(card).getByText("Otomatik gönderim kapalı")).toBeInTheDocument();
+    expect(within(card).getByText("Fiyat içeriyor, fiyat ayarı geçerli")).toBeInTheDocument();
+  });
+
   it("shows a send that is being checked, never as sent", async () => {
     mockApi(
       routes({

@@ -1,6 +1,7 @@
 """Action classes and the facts each reply intent needs (ADR-014, agent-runtime.md §4)."""
 
 from collections.abc import Collection
+from typing import NamedTuple
 
 REPLY_ACTION_CLASSES = (
     "reply.hours",
@@ -115,14 +116,30 @@ def fact_action_class(key: str) -> str | None:
     return None
 
 
+class EffectiveMode(NamedTuple):
+    mode: str
+    # The class whose mode won: the intent's own class on a tie, else the strictest fact class.
+    action_class: str | None
+
+
 def effective_mode(
     modes: dict[str, str], intent: str | None, used_fact_keys: Collection[str]
-) -> str:
+) -> EffectiveMode:
     """The strictest mode among the intent's class and the classes of the facts the reply
-    actually quotes. The intent is the model's label; the facts are what the reply says, so a
-    price question labelled "faq" still needs the pricing policy (INV-04)."""
-    classes = {intent_action_class(intent), *(fact_action_class(k) for k in used_fact_keys)}
-    classes.discard(None)
-    if not classes:
-        return DEFAULT_MODE
-    return max((modes.get(c, DEFAULT_MODE) for c in classes if c), key=_STRICTNESS.__getitem__)
+    actually quotes, with the class that decided it. The intent is the model's label; the facts
+    are what the reply says, so a price question labelled "faq" still needs the pricing policy
+    (INV-04). On a tie the intent's own class wins, so the class differs from the intent's only
+    when a quoted fact made the reply stricter."""
+    intent_class = intent_action_class(intent)
+    fact_classes = sorted({c for k in used_fact_keys if (c := fact_action_class(k)) is not None})
+    candidates = [c for c in dict.fromkeys([intent_class, *fact_classes]) if c is not None]
+    if not candidates:
+        return EffectiveMode(DEFAULT_MODE, None)
+    winner = candidates[0]
+    for candidate in candidates[1:]:
+        if (
+            _STRICTNESS[modes.get(candidate, DEFAULT_MODE)]
+            > _STRICTNESS[modes.get(winner, DEFAULT_MODE)]
+        ):
+            winner = candidate
+    return EffectiveMode(modes.get(winner, DEFAULT_MODE), winner)

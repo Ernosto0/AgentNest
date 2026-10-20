@@ -74,6 +74,8 @@ class ReplyPolicyInput:
     grounding_failed: bool = False
     # the workspace
     automation_mode: str = "approval"
+    # Set only when a quoted fact's class decided the mode instead of the intent's own class.
+    automation_mode_class: str | None = None
     readiness_level: str = "not_ready"
     auto_replies_last_hour: int = 0
 
@@ -159,21 +161,31 @@ def _has_class(i: ReplyPolicyInput) -> bool:
     return intent_action_class(i.intent) is not None
 
 
+def _policy_findings(i: ReplyPolicyInput, outcome: str, reason: str) -> list[Finding]:
+    """A policy finding, plus ``CONTAINS_<CLASS>`` when the mode came from a quoted fact's class
+    rather than the intent's own (the strictest-class rule, explained)."""
+    findings = [Finding(outcome, reason)]
+    source = i.automation_mode_class
+    if source is not None and source != intent_action_class(i.intent):
+        findings.append(Finding(outcome, f"CONTAINS_{source.removeprefix('reply.').upper()}"))
+    return findings
+
+
 def r13_automation_off(i: ReplyPolicyInput) -> list[Finding]:
-    return _one(
-        Finding(HUMAN, "AUTOMATION_OFF") if _has_class(i) and i.automation_mode == "off" else None
-    )
+    if _has_class(i) and i.automation_mode == "off":
+        return _policy_findings(i, HUMAN, "AUTOMATION_OFF")
+    return []
 
 
 def r14_policy_approval(i: ReplyPolicyInput) -> list[Finding]:
     if _has_class(i) and i.automation_mode == "approval":
-        return [Finding(APPROVAL, "POLICY_REQUIRES_APPROVAL")]
+        return _policy_findings(i, APPROVAL, "POLICY_REQUIRES_APPROVAL")
     return []
 
 
 def r15_readiness(i: ReplyPolicyInput) -> list[Finding]:
     if _has_class(i) and i.automation_mode == "auto" and i.readiness_level != "ready":
-        return [Finding(APPROVAL, "READINESS_NOT_READY")]
+        return _policy_findings(i, APPROVAL, "READINESS_NOT_READY")
     return []
 
 
@@ -183,7 +195,7 @@ def r16_rate_guard(i: ReplyPolicyInput) -> list[Finding]:
         and i.automation_mode == "auto"
         and i.auto_replies_last_hour >= AUTO_RATE_LIMIT
     ):
-        return [Finding(APPROVAL, "AUTO_RATE_GUARD")]
+        return _policy_findings(i, APPROVAL, "AUTO_RATE_GUARD")
     return []
 
 
