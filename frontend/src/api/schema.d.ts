@@ -765,6 +765,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Media */
+        post: operations["upload_media_api_v1_workspaces__workspace_id__media_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/media/{media_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Media Content
+         * @description The stored JPEG, for authenticated members only. Never a bucket URL (ADR-015).
+         */
+        get: operations["media_content_api_v1_workspaces__workspace_id__media__media_id__content_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/members": {
         parameters: {
             query?: never;
@@ -1159,6 +1196,11 @@ export interface components {
             status?: ("active" | "archived") | null;
             /** Title */
             title?: string | null;
+        };
+        /** Body_upload_media_api_v1_workspaces__workspace_id__media_post */
+        Body_upload_media_api_v1_workspaces__workspace_id__media_post: {
+            /** File */
+            file: string;
         };
         /** CandidateOut */
         CandidateOut: {
@@ -1615,6 +1657,33 @@ export interface components {
             display_name?: string | null;
             /** Ui Locale */
             ui_locale?: ("tr" | "en") | null;
+        };
+        /** MediaAssetOut */
+        MediaAssetOut: {
+            /** Byte Size */
+            byte_size: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Height */
+            height: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Original Filename */
+            original_filename: string | null;
+            /** Rejection Code */
+            rejection_code: string | null;
+            /** Status */
+            status: string;
+            /** Width */
+            width: number;
         };
         /** MemberOut */
         MemberOut: {
@@ -3942,6 +4011,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtractionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_media_api_v1_workspaces__workspace_id__media_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_media_api_v1_workspaces__workspace_id__media_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAssetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    media_content_api_v1_workspaces__workspace_id__media__media_id__content_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                media_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

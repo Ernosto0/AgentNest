@@ -44,8 +44,14 @@ class MediaStorage(Protocol):
 - Presigned URL TTL must outlast Meta's fetch. Container polling happens within minutes, so a 1 h TTL leaves ample margin (to verify).
 - Re-encoding changes the owner's file slightly (quality 90).
 
+## Implementation notes (Phase 5)
+- **Local fetch URL (G3).** The mock Instagram provider must read the JPEG, but `app.integrations.instagram` may import only `app.core`. The local backend therefore returns an opaque reference, `localmedia:{key}?exp=<unix seconds>`, from `public_fetch_url` (expiry = injected `Clock` + `MEDIA_PUBLIC_URL_TTL_SECONDS`). The registry hands a `MediaStorage` to `MockInstagramProvider`, which resolves the reference through it and checks the JPEG magic bytes. It is not a network URL and Meta cannot use it: the Meta adapter (Phase 7) still refuses the local backend, and the production configuration check refuses `MEDIA_STORAGE_BACKEND=local` when `meta` is enabled. `app.integrations.storage` imports only `app.core`; `app.integrations.instagram.mock` may also import it.
+- **Upload order (G12).** Read at most `limit + 1` bytes (more: 413 `MEDIA_TOO_LARGE`) → `Image.open` (only JPEG and PNG are sniffed) + `verify` → reopen → pixel cap of 36 000 000 (a Pillow decompression-bomb warning is treated as an error) → `exif_transpose` → convert to sRGB (transparency is flattened onto white) → **always** re-encode a baseline JPEG, quality 90, with no EXIF, ICC or other metadata (the simplest guaranteed removal of GPS data) → `sha256` over the **output**. A rejected upload stores no row and no object: 422 `MEDIA_INVALID` (reason in `params.reason`: `EMPTY_FILE`, `NOT_AN_IMAGE`, `CORRUPT_IMAGE`, `TOO_MANY_PIXELS`) plus a `media.rejected` audit entry (a too-large upload is audited the same way with reason `TOO_LARGE`). The object is written before the row, so a committed asset always has its bytes.
+- **Keys** are built by `build_key(workspace_id, media_id, now)` and every backend checks them against one strict regex before touching storage.
+- **Limitation.** The orphan `media_cleanup` job is deferred (`mvp-scope.md`): assets that no content item references are kept.
+
 ## Consequences
-- `app/integrations/storage/{base.py, local.py, s3.py}`, `app/content/media.py` (validation).
+- `app/integrations/storage/{base.py, local.py, registry.py}` (`s3.py` in Phase 7), `app/content/media.py` (validation).
 - Pillow is a backend dependency from Phase 5. `boto3` is added only when the `s3` backend is implemented (Phase 7).
 
 ## Revisit when

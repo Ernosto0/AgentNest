@@ -104,8 +104,8 @@ Commands are private to the member who typed them (another member's id → 404).
 ### 2.7 Content and media (Phase 5)
 | Method & path | Request → Response |
 |---|---|
-| `POST /…/media` | multipart `file` → `MediaAsset {id, status, width, height, mime_type, rejection_code}` |
-| `GET /…/media/{id}/content` | authenticated binary stream (never a bucket URL) |
+| `POST /…/media` | multipart `file` → 201 `MediaAsset {id, status, width, height, mime_type, byte_size, original_filename, rejection_code, created_at}` (`content.edit`). The upload is validated and always re-encoded as a baseline sRGB JPEG without EXIF ([ADR-015](decisions/ADR-015-media-storage.md)); `status` is `ready`. 413 `MEDIA_TOO_LARGE` (`params.limit_bytes`); 422 `MEDIA_INVALID` (`params.reason`: `EMPTY_FILE`, `NOT_AN_IMAGE`, `CORRUPT_IMAGE`, `TOO_MANY_PIXELS`); a missing `file` part is 422 `VALIDATION_FAILED`. A rejected upload stores nothing |
+| `GET /…/media/{id}/content` | authenticated binary stream of the stored JPEG (any member; never a bucket URL). Headers: `Content-Type: image/jpeg`, `X-Content-Type-Options: nosniff`, `Cache-Control: private, max-age=3600`, `Content-Disposition: inline`, `ETag` (the sha256). A foreign, deleted or unknown id is 404 |
 | `GET /…/content-items?status=&cursor=` | list |
 | `POST /…/content-items` | `{content_type, title, caption?, overlay_text_suggestions?, media_asset_id?}` → draft |
 | `POST /…/content-items/generate` | `{content_type, objective, notes?, client_request_id}` → 202 draft (status `draft`, `generation: running`) |

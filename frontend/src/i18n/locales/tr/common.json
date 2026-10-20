@@ -205,6 +205,14 @@
     "ACCOUNT_NOT_CONNECTED": {
       "what": "Instagram hesabı şu anda bağlı değil.",
       "next": "Hesabı Otomasyon bölümünden yeniden bağlayın, sonra tekrar deneyin."
+    },
+    "MEDIA_INVALID": {
+      "what": "Bu dosya desteklenen bir görsel değil.",
+      "next": "JPEG veya PNG biçiminde bir görsel yükleyin."
+    },
+    "MEDIA_TOO_LARGE": {
+      "what": "Bu görsel dosyası çok büyük.",
+      "next": "Daha küçük bir görsel seçin (varsayılan sınır 8 MB)."
     }
   }
 }

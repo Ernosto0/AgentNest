@@ -63,10 +63,10 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 
 | Variable | dev | prod | Description |
 |---|---|---|---|
-| `MEDIA_STORAGE_BACKEND` | `local` | `s3` (required if meta) | |
-| `MEDIA_LOCAL_ROOT` | `./var/media` | — | Relative to `backend/` |
-| `MEDIA_MAX_IMAGE_BYTES` | `8388608` | same | 8 MB |
-| `MEDIA_PUBLIC_URL_TTL_SECONDS` | `3600` | `3600` | Presigned URL lifetime for Meta fetch |
+| `MEDIA_STORAGE_BACKEND` | `local` | `s3` (required if meta) | `local` or `s3`. Production refuses `local` while `meta` is enabled. `s3` itself arrives in Phase 7 (selecting it earlier fails when the storage is first used) |
+| `MEDIA_LOCAL_ROOT` | `./var/media` | — | Relative to `backend/` (git-ignored under `backend/var/`); an absolute path is used as is |
+| `MEDIA_MAX_IMAGE_BYTES` | `8388608` | same | 8 MB. Larger uploads are refused with 413 `MEDIA_TOO_LARGE` |
+| `MEDIA_PUBLIC_URL_TTL_SECONDS` | `3600` | `3600` | Presigned URL lifetime for Meta fetch; for `local`, the expiry in the `localmedia:` reference |
 | `S3_ENDPOINT_URL`, `S3_REGION`, `S3_BUCKET` | empty | required if s3 | |
 | `S3_ACCESS_KEY_ID` 🔒, `S3_SECRET_ACCESS_KEY` 🔒 | empty | required if s3 | |
 | `SIM_CONTAINER_DELAY_SECONDS` | `2` | `2` | Mock container processing time |

@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.ai.models import AgentRun
 from app.approvals import service as approvals_service
 from app.commands.models import OwnerCommand
+from app.content.models import MediaAsset
 from app.core.clock import FrozenClock
 from app.identity.models import User, Workspace
 from app.inbox.models import Conversation, Message, ReplyDraft
@@ -152,6 +153,20 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         language="tr",
     )
     db_session.add(b_answer)
+    # Phase 5: an uploaded image in B.
+    b_media = MediaAsset(
+        workspace_id=b.id,
+        storage_backend="local",
+        storage_key=f"{b.id}/2026/01/{uuid.uuid4()}.jpg",
+        mime_type="image/jpeg",
+        byte_size=1,
+        width=10,
+        height=10,
+        sha256="0" * 64,
+        status="ready",
+        created_by_user_id=b_users["owner"].id,
+    )
+    db_session.add(b_media)
     db_session.commit()
     return TwoWorkspaces(
         app=app,
@@ -174,5 +189,6 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "message_id": str(b_message.id),
             "draft_id": str(b_draft.id),
             "answer_id": str(b_answer.id),
+            "media_id": str(b_media.id),
         },
     )

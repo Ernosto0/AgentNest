@@ -105,6 +105,13 @@ class Settings(BaseSettings):
     reply_debounce_seconds: int = Field(default=8, ge=0)
     send_reconcile_window_minutes: int = Field(default=10, ge=1)
 
+    # --- Media (Phase 5, ADR-015). The local backend keeps the demo credential-free. ---
+    media_storage_backend: Literal["local", "s3"] = "local"
+    # Relative paths resolve against ``backend/`` (see ``media_root``).
+    media_local_root: str = "./var/media"
+    media_max_image_bytes: int = Field(default=8_388_608, ge=1)
+    media_public_url_ttl_seconds: int = Field(default=3600, ge=1)
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _upper_log_level(cls, value: Any) -> Any:
@@ -156,7 +163,16 @@ class Settings(BaseSettings):
         if self.llm_provider == "openai" and not self.llm_model_default.strip():
             problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
         problems.extend(self._instagram_problems())
+        if "meta" in self.instagram_providers and self.media_storage_backend == "local":
+            # Meta fetches the image from a public URL, which the local backend cannot serve.
+            problems.append("MEDIA_STORAGE_BACKEND must not be 'local' when 'meta' is enabled.")
         return problems
+
+    @property
+    def media_root(self) -> Path:
+        """``MEDIA_LOCAL_ROOT`` as an absolute path (relative values are under ``backend/``)."""
+        root = Path(self.media_local_root)
+        return root if root.is_absolute() else (REPO_ROOT / "backend" / root).resolve()
 
     @property
     def instagram_providers(self) -> frozenset[str]:

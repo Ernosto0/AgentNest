@@ -19,6 +19,8 @@ dependencies = [
     "pyyaml>=6.0",
     "tzdata>=2024.1",  # zoneinfo database on Windows
     "openai>=3.31.0",
+    "pillow>=13.0.0",
+    "python-multipart>=0.0.32",
 ]
 
 [dependency-groups]
@@ -197,6 +199,9 @@ source_modules = [
     "app.commands.transitions",
     "app.commands.jobs",
     "app.commands.executors",
+    "app.content.models",
+    "app.content.media",
+    "app.content.schemas",
 ]
 forbidden_modules = ["app.api", "app.main"]
 
@@ -255,6 +260,7 @@ source_modules = [
     "app.operations",
     "app.integrations",
     "app.policy",
+    "app.content",
 ]
 forbidden_modules = ["app.commands"]
 
@@ -322,4 +328,33 @@ forbidden_modules = [
     "app.inbox",
     "app.core.db",
     "sqlalchemy",
+]
+
+[[tool.importlinter.contracts]]
+name = "content does not depend on operations or commands (plan.md section 1)"
+type = "forbidden"
+source_modules = ["app.content"]
+forbidden_modules = ["app.operations", "app.commands"]
+
+[[tool.importlinter.contracts]]
+name = "media storage imports only core (ADR-015)"
+type = "forbidden"
+source_modules = ["app.integrations.storage"]
+forbidden_modules = [
+    "app.identity",
+    "app.knowledge",
+    "app.audit",
+    "app.jobs",
+    "app.ai",
+    "app.approvals",
+    "app.notifications",
+    "app.commands",
+    "app.inbox",
+    "app.policy",
+    "app.operations",
+    "app.content",
+    "app.integrations.instagram",
+    "app.integrations.llm",
+    "app.demo",
+    "app.api",
 ]

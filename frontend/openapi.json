@@ -444,6 +444,20 @@
         "title": "ApprovedAnswerPatch",
         "type": "object"
       },
+      "Body_upload_media_api_v1_workspaces__workspace_id__media_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_media_api_v1_workspaces__workspace_id__media_post",
+        "type": "object"
+      },
       "CandidateOut": {
         "properties": {
           "created_at": {
@@ -1828,6 +1842,75 @@
           }
         },
         "title": "MeUpdate",
+        "type": "object"
+      },
+      "MediaAssetOut": {
+        "properties": {
+          "byte_size": {
+            "title": "Byte Size",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mime_type": {
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "original_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Filename"
+          },
+          "rejection_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Code"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "width",
+          "height",
+          "mime_type",
+          "byte_size",
+          "original_filename",
+          "rejection_code",
+          "created_at"
+        ],
+        "title": "MediaAssetOut",
         "type": "object"
       },
       "MemberOut": {
@@ -6543,6 +6626,111 @@
         "summary": "Get Extraction",
         "tags": [
           "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/media": {
+      "post": {
+        "operationId": "upload_media_api_v1_workspaces__workspace_id__media_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_media_api_v1_workspaces__workspace_id__media_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAssetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Media",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/media/{media_id}/content": {
+      "get": {
+        "description": "The stored JPEG, for authenticated members only. Never a bucket URL (ADR-015).",
+        "operationId": "media_content_api_v1_workspaces__workspace_id__media__media_id__content_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "media_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Media Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Media Content",
+        "tags": [
+          "content"
         ]
       }
     },

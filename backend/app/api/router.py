@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.api.deps import enforce_csrf, get_app_settings
 from app.approvals.router import router as approvals_router
 from app.commands.router import router as commands_router
+from app.content.router import router as content_router
 from app.core.config import Settings
 from app.core.db import check_readiness
 from app.core.i18n import SUPPORTED_LOCALES
@@ -66,3 +67,4 @@ api_router.include_router(notifications_router)
 api_router.include_router(social_accounts_router)
 api_router.include_router(policy_router)
 api_router.include_router(inbox_router)
+api_router.include_router(content_router)

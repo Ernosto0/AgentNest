@@ -205,6 +205,14 @@
     "ACCOUNT_NOT_CONNECTED": {
       "what": "The Instagram account is not connected right now.",
       "next": "Connect the account again under Automation, then try once more."
+    },
+    "MEDIA_INVALID": {
+      "what": "This file is not a supported image.",
+      "next": "Upload a JPEG or PNG image."
+    },
+    "MEDIA_TOO_LARGE": {
+      "what": "This image file is too large.",
+      "next": "Choose a smaller image (the default limit is 8 MB)."
     }
   }
 }

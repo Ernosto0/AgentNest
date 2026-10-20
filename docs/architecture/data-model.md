@@ -380,10 +380,13 @@ Constraint: `unique (conversation_id) where status in ('pending_approval','needs
 | mime_type | text not null | after conversion (`image/jpeg`) |
 | byte_size / width / height | int | |
 | sha256 | char(64) not null | |
-| status | text not null | `uploaded`, `ready`, `rejected`, `deleted` |
-| rejection_code | text null | |
-| created_by_user_id | uuid | |
+| status | text not null | `uploaded`, `ready`, `rejected`, `deleted`. Phase 5 writes only `ready`: validation and conversion are synchronous, and a rejected upload stores **no row** (it is audited as `media.rejected`), so `uploaded` and `rejected` are reserved |
+| rejection_code | text null | reserved (see `status`) |
+| created_by_user_id | uuid null | FK `users`, `ON DELETE SET NULL` |
+| created_at / updated_at | timestamptz | |
 | deleted_at | timestamptz null | |
+
+`sha256` is the hash of the stored (re-encoded) JPEG, not of the upload; `width`, `height` and `byte_size` describe it too. Constraints: `unique (workspace_id, id)` (target of the composite FK from `content_items`) and `unique (storage_backend, storage_key)`. Migration 0008.
 
 **`content_items`**
 | Column | Type | Notes |

@@ -27,6 +27,8 @@ def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "MOCK_INSTAGRAM_APP_SECRET",
         "META_WEBHOOK_VERIFY_TOKEN",
         "META_APP_SECRET",
+        "MEDIA_STORAGE_BACKEND",
+        "MEDIA_LOCAL_ROOT",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -40,6 +42,7 @@ def prod(**overrides: object) -> Settings:
         "openai_api_key": "sk-test-key",
         "meta_app_secret": "meta-secret",
         "meta_webhook_verify_token": "verify-token",
+        "media_storage_backend": "s3",  # Meta needs a public URL; local is refused with it
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)  # type: ignore[arg-type]
@@ -177,3 +180,18 @@ def test_instagram_secrets_are_not_in_the_public_settings() -> None:
     public = prod().public_dict()
     for name in ("mock_instagram_app_secret", "meta_webhook_verify_token", "meta_app_secret"):
         assert name not in public
+
+
+def test_local_media_storage_is_refused_when_meta_is_enabled() -> None:
+    with pytest.raises(ConfigError, match="MEDIA_STORAGE_BACKEND"):
+        prod(media_storage_backend="local")
+
+
+def test_local_media_storage_is_fine_for_a_mock_only_production_demo() -> None:
+    settings = prod(
+        instagram_enabled_providers="mock",
+        allow_simulated_workspaces=True,
+        mock_instagram_app_secret="mock-secret",
+        media_storage_backend="local",
+    )
+    assert settings.media_storage_backend == "local"

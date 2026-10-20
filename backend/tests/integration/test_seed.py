@@ -198,6 +198,7 @@ def test_seed_refuses_to_run_in_production(
         openai_api_key="sk-test-key",
         meta_app_secret="meta-secret",
         meta_webhook_verify_token="verify-token",
+        media_storage_backend="s3",
     )
     with pytest.raises(SeedError, match="production"):
         seed(session_factory, clock, production)
