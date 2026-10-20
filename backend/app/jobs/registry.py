@@ -9,6 +9,7 @@ import uuid
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel
@@ -57,6 +58,19 @@ class RegisteredHandler:
 
 class JobLeaseLost(Exception):
     """The job's lease expired and another worker claimed it; stop without finalising."""
+
+
+class RescheduleJob(Exception):  # noqa: N818  (a control-flow signal, not an error)
+    """Raised by a handler that has nothing wrong but must run again at ``run_at``.
+
+    The worker re-queues the same row at ``run_at`` and gives the attempt back (the retry
+    budget is for failures, not for a deliberate "not yet"). Anything the handler committed
+    stays committed.
+    """
+
+    def __init__(self, run_at: datetime) -> None:
+        super().__init__(f"reschedule at {run_at.isoformat()}")
+        self.run_at = run_at
 
 
 _REGISTRY: dict[str, RegisteredHandler] = {}

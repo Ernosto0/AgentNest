@@ -24,7 +24,7 @@ from app.inbox.approval_payload import approval_payload, approval_summary
 from app.inbox.context import MESSAGING_WINDOW
 from app.inbox.language import choose_reply_language
 from app.inbox.models import Conversation, Message, ReplyDraft
-from app.inbox.payloads import DraftReplyPayload, SendReplyPayload
+from app.inbox.payloads import DraftReplyPayload, SendReplyPayload, draft_reply_key
 from app.inbox.reply_workflow import SEND_MARGIN, deadlines
 from app.inbox.schemas import ValidationIssueOut
 from app.inbox.views import issue_out
@@ -433,10 +433,10 @@ def release(
             enqueue(
                 session,
                 "draft_reply",
-                DraftReplyPayload(conversation_id=conversation.id, message_id=newest),
+                DraftReplyPayload(conversation_id=conversation.id),
                 workspace_id=conversation.workspace_id,
                 correlation_id=None,
-                dedup_key=f"draft_reply:{conversation.id}:{newest}:release",
+                dedup_key=draft_reply_key(conversation.id),
                 clock=clock,
             )
         attention.refresh(session, conversation)
@@ -466,10 +466,10 @@ def suggest_reply(
     enqueue(
         session,
         "draft_reply",
-        DraftReplyPayload(conversation_id=conversation.id, message_id=None, requested=True),
+        DraftReplyPayload(conversation_id=conversation.id, requested=True),
         workspace_id=conversation.workspace_id,
         correlation_id=None,
-        dedup_key=f"draft_reply:{conversation.id}:{newest}:requested",
+        dedup_key=draft_reply_key(conversation.id, requested=True),
         clock=clock,
     )
     attention.refresh(session, conversation)

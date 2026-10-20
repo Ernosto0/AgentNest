@@ -15,7 +15,7 @@ from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.inbox import attention, drafts
 from app.inbox.models import Conversation, ReplyDraft
-from app.inbox.payloads import DraftReplyPayload
+from app.inbox.payloads import DraftReplyPayload, draft_reply_key
 from app.jobs.queue import enqueue
 from app.knowledge import impact
 from app.knowledge.models import BusinessFact, FactReference
@@ -94,12 +94,10 @@ class ReplyDraftReferrers:
             enqueue(
                 session,
                 "draft_reply",
-                DraftReplyPayload(
-                    conversation_id=conversation.id, message_id=draft.covers_through_message_id
-                ),
+                DraftReplyPayload(conversation_id=conversation.id),
                 workspace_id=draft.workspace_id,
                 correlation_id=None,
-                dedup_key=f"draft_reply:{conversation.id}:{draft.covers_through_message_id}:fact",
+                dedup_key=draft_reply_key(conversation.id),
                 clock=clock,
             )
             outcome["redrafted"] += 1

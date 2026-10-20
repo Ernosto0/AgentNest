@@ -527,6 +527,101 @@ def test_a_reply_in_flight_makes_the_draft_job_retry_later(inbox: InboxEnv, gym)
     assert raised.value.code == "REPLY_IN_FLIGHT"
 
 
+def test_rapid_messages_leave_one_job_and_the_newest_message_is_drafted(
+    inbox: InboxEnv, gym
+) -> None:
+    for number, text in enumerate(("Merhaba", "fiyat?", PRICE_Q), start=1):
+        inbox.deliver_and_process(text, mid=f"m-{number}")
+        inbox.clock.advance(timedelta(seconds=2))
+    (job,) = jobs(inbox, "draft_reply")
+    inbox.draft_now()
+    inbox.session.expire_all()
+    assert inbox.jobs("draft_reply")[0].id == job.id and job.dedup_key is not None
+    (draft,) = inbox.session.scalars(select(ReplyDraft)).all()
+    assert draft.covers_through_message_id == inbox.messages()[-1].id
+    assert "6.000" in (draft.text or "")
+
+
+def test_a_message_that_arrives_while_the_job_runs_reschedules_it_without_using_an_attempt(
+    inbox: InboxEnv, gym, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import app.inbox.jobs as inbox_jobs
+
+    inbox.deliver_and_process("Merhaba", mid="m-1")
+    (job,) = jobs(inbox, "draft_reply")
+    real_make_plan = inbox_jobs.make_plan
+    arrived = []
+
+    def make_plan_while_the_customer_writes(*args, **kwargs):  # type: ignore[no-untyped-def]
+        plan = real_make_plan(*args, **kwargs)
+        if not arrived:  # the second message lands while the model "runs"
+            arrived.append(True)
+            inbox.deliver_and_process(PRICE_Q, mid="m-2")
+        return plan
+
+    monkeypatch.setattr(inbox_jobs, "make_plan", make_plan_while_the_customer_writes)
+
+    inbox.draft_now()  # first run: the result is out of date and is thrown away
+    inbox.session.expire_all()
+    assert count(inbox, ReplyDraft) == 0
+    (same,) = jobs(inbox, "draft_reply")  # the same row: nothing was swallowed, nothing doubled
+    assert same.id == job.id and same.status == "queued"
+    assert same.attempts == 0  # the attempt was given back
+    assert same.last_error_code is None
+    assert same.run_at == inbox.clock.now() + timedelta(
+        seconds=inbox.settings.reply_debounce_seconds
+    )
+
+    inbox.draft_now()  # second run drafts for the newest message
+    (draft,) = inbox.session.scalars(select(ReplyDraft)).all()
+    assert draft.covers_through_message_id == inbox.messages()[-1].id
+    assert draft.intent == "pricing" and "6.000" in (draft.text or "")
+    inbox.session.expire_all()
+    (done,) = jobs(inbox, "draft_reply")
+    assert (done.id, done.status, done.attempts) == (job.id, "succeeded", 1)
+
+
+def test_a_message_that_arrives_while_the_job_runs_is_not_swallowed_by_its_dedup_key(
+    inbox: InboxEnv, gym, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The running job still owns the dedup key, so the new message's own enqueue is a no-op;
+    only the reschedule makes sure the message is drafted."""
+    import app.inbox.jobs as inbox_jobs
+
+    inbox.deliver_and_process("Merhaba", mid="m-1")
+    real_make_plan = inbox_jobs.make_plan
+    seen: list[int] = []
+
+    def make_plan_while_the_customer_writes(*args, **kwargs):  # type: ignore[no-untyped-def]
+        plan = real_make_plan(*args, **kwargs)
+        if not seen:
+            inbox.deliver_and_process("fiyat?", mid="m-2")
+            seen.append(len(jobs(inbox, "draft_reply")))  # still one row while it runs
+        return plan
+
+    monkeypatch.setattr(inbox_jobs, "make_plan", make_plan_while_the_customer_writes)
+    inbox.draft_now()
+    assert seen == [1]
+    inbox.draft_now()
+    assert count(inbox, ReplyDraft) == 1
+
+
+def test_a_suggest_request_keeps_its_own_job_so_the_flag_is_not_lost(inbox: InboxEnv, gym) -> None:
+    from app.inbox import service
+    from app.inbox.payloads import draft_reply_key
+
+    inbox.deliver_and_process(PRICE_Q, mid="m-1")  # queues the conversation's ordinary job
+    conversation = inbox.conversation()
+    service.suggest_reply(
+        inbox.session, inbox.clock, inbox.env.ctx(inbox.env.owner), conversation.id
+    )
+    keys = {j.dedup_key for j in jobs(inbox, "draft_reply")}
+    assert keys == {
+        draft_reply_key(conversation.id),
+        draft_reply_key(conversation.id, requested=True),
+    }
+
+
 def test_a_model_that_stays_unavailable_leaves_a_draft_for_a_person(
     inbox: InboxEnv, gym, provider: FakeLLMProvider
 ) -> None:

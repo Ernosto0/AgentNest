@@ -6,13 +6,13 @@ from datetime import timedelta
 
 import pytest
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.core.clock import FrozenClock
 from app.core.errors import AppError, RetryableError
-from app.jobs import enqueue, run_due_jobs
+from app.jobs import enqueue, queue, run_due_jobs
 from app.jobs.models import Job
-from app.jobs.registry import JobContext, job_handler
+from app.jobs.registry import JobContext, RescheduleJob, job_handler
 from tests.integration.jobs.conftest import (
     EchoPayload,
     SessionFactory,
@@ -244,6 +244,89 @@ def test_retryable_error_requeues_with_backoff_then_succeeds(
     job = load_job(session_factory, job_id)
     assert (job.status, job.attempts) == ("succeeded", 2)
     assert [c.attempt for c in calls] == [1, 2]
+
+
+def test_reschedule_requeues_the_same_row_and_gives_the_attempt_back(
+    session_factory: SessionFactory,
+    clock: FrozenClock,
+    register_echo: Callable[..., None],
+    calls: list[JobContext],
+) -> None:
+    def later(ctx: JobContext) -> None:
+        if len(calls) == 1:
+            raise RescheduleJob(clock.now() + timedelta(seconds=8))
+
+    register_echo(later)
+    job_id = enqueue_committed(session_factory, clock, dedup_key="draft:abc")
+
+    assert run(session_factory, clock) == 1
+    job = load_job(session_factory, job_id)
+    assert (job.status, job.attempts) == ("queued", 0)  # not consumed
+    assert job.run_at == clock.now() + timedelta(seconds=8)
+    assert job.last_error_code is None  # not a failure
+    assert (job.locked_by, job.lease_expires_at) == (None, None)
+    # still the one row for its key: a new trigger does not create a second job
+    assert enqueue_committed(session_factory, clock, dedup_key="draft:abc") == job_id
+
+    assert run(session_factory, clock) == 0  # not yet due
+    clock.advance(seconds=9)
+    assert run(session_factory, clock) == 1
+    job = load_job(session_factory, job_id)
+    assert (job.id, job.status, job.attempts) == (job_id, "succeeded", 1)
+    assert [c.attempt for c in calls] == [1, 1]
+
+
+def test_rescheduling_never_exhausts_the_retry_budget(
+    session_factory: SessionFactory, clock: FrozenClock, register_echo: Callable[..., None]
+) -> None:
+    def always_later(ctx: JobContext) -> None:
+        raise RescheduleJob(clock.now() + timedelta(seconds=1))
+
+    register_echo(always_later, max_attempts=2)
+    job_id = enqueue_committed(session_factory, clock)
+    for _ in range(5):
+        assert run(session_factory, clock) == 1
+        clock.advance(seconds=2)
+    job = load_job(session_factory, job_id)
+    assert (job.status, job.attempts) == ("queued", 0)
+
+
+def test_expedite_makes_a_queued_job_due_now(
+    session_factory: SessionFactory, clock: FrozenClock, register_echo: Callable[..., None]
+) -> None:
+    register_echo()
+    job_id = enqueue_committed(
+        session_factory, clock, dedup_key="send:1", run_at=clock.now() + timedelta(minutes=5)
+    )
+    assert run(session_factory, clock) == 0
+    with session_factory() as session:
+        assert queue.expedite(session, "send:1", clock) is True
+        session.commit()
+    assert load_job(session_factory, job_id).run_at == clock.now()
+    assert run(session_factory, clock) == 1
+
+
+def test_expedite_leaves_running_finished_due_and_unknown_jobs_alone(
+    session_factory: SessionFactory, clock: FrozenClock, register_echo: Callable[..., None]
+) -> None:
+    register_echo()
+    due = enqueue_committed(session_factory, clock, dedup_key="due")
+    running = enqueue_committed(
+        session_factory, clock, dedup_key="running", run_at=clock.now() + timedelta(minutes=5)
+    )
+    queued_run_at = load_job(session_factory, running).run_at
+    with session_factory() as session:
+        session.execute(update(Job).where(Job.id == running).values(status="running"))
+        session.commit()
+        assert queue.expedite(session, "running", clock) is False  # already being done
+        assert queue.expedite(session, "due", clock) is False  # already due
+        assert queue.expedite(session, "nope", clock) is False
+        session.commit()
+    assert load_job(session_factory, running).run_at == queued_run_at
+    run(session_factory, clock)  # "due" runs and finishes
+    assert load_job(session_factory, due).status == "succeeded"
+    with session_factory() as session:
+        assert queue.expedite(session, "due", clock) is False  # finished: no queued row
 
 
 def test_retry_after_overrides_the_backoff_schedule(

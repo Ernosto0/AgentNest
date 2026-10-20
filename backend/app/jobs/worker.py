@@ -24,10 +24,16 @@ from app.core.errors import AppError, RetryableError
 from app.core.logging import bind_context, get_logger, unbind_context
 from app.jobs import queue
 from app.jobs.queue import ClaimedJob
-from app.jobs.registry import JobContext, JobLeaseLost, RegisteredHandler, get_handler
+from app.jobs.registry import (
+    JobContext,
+    JobLeaseLost,
+    RegisteredHandler,
+    RescheduleJob,
+    get_handler,
+)
 from app.jobs.scheduler import scheduler_tick
 
-Outcome = Literal["succeeded", "retry", "dead", "lease_lost"]
+Outcome = Literal["succeeded", "retry", "rescheduled", "dead", "lease_lost"]
 
 SHUTDOWN_GRACE_SECONDS = 30.0
 DETAIL_MAX_CHARS = 500
@@ -157,6 +163,11 @@ def _execute(
     except JobLeaseLost:
         _log.warning("job_lease_lost", outcome="handler_aborted")
         return "lease_lost"
+    except RescheduleJob as exc:
+        if not queue.mark_rescheduled(session_factory, job, exc.run_at):
+            return "lease_lost"
+        _log.info("job_rescheduled", run_at=exc.run_at.isoformat())
+        return "rescheduled"
     except RetryableError as exc:
         if job.attempts >= job.max_attempts:
             return _dead(session_factory, clock, job, handler, ctx, exc.code, exc.detail)

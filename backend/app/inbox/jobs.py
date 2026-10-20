@@ -1,5 +1,7 @@
 """Inbox jobs (background-jobs.md). Imported by ``app.handlers.load_handlers``."""
 
+from datetime import timedelta
+
 from sqlalchemy.orm import Session
 
 from app.ai.runtime import runner_deps
@@ -16,7 +18,7 @@ from app.inbox.payloads import (
     ProcessInboundEventPayload,
 )
 from app.jobs.queue import enqueue
-from app.jobs.registry import JobContext, job_handler
+from app.jobs.registry import JobContext, RescheduleJob, job_handler
 from app.jobs.scheduler import register_periodic
 
 # Two model calls (the call and one regeneration), each with its own repair call, at 30 s.
@@ -112,10 +114,19 @@ def draft_reply(job: JobContext) -> None:
         runner_deps(job.session_factory, job.clock), prepared, job.correlation_id, job.job_id
     )
     with job.session_factory() as session:  # [T3]
-        reply_workflow.persist_plan(
+        draft = reply_workflow.persist_plan(
             session, job.clock, prepared, plan, correlation_id=job.correlation_id
         )
+        # Checked while T3 still holds the conversation lock: a customer message cannot be
+        # stored between this answer and the commit.
+        newer = draft is None and reply_workflow.newer_inbound_arrived(session, prepared)
         session.commit()
+    if newer:
+        # The customer wrote again while the model ran. This job's dedup key kept that
+        # message's own enqueue from creating a second job, so this job must run again.
+        raise RescheduleJob(
+            job.clock.now() + timedelta(seconds=get_settings().reply_debounce_seconds)
+        )
 
 
 @job_handler("expire_reply_drafts", ExpireReplyDraftsPayload, max_attempts=1)

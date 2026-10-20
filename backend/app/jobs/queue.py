@@ -236,6 +236,35 @@ def mark_retry(
     )
 
 
+def mark_rescheduled(
+    session_factory: sessionmaker[Session], job: ClaimedJob, run_at: datetime
+) -> bool:
+    """Re-queue the same row at ``run_at`` and give the claimed attempt back."""
+    return _finalise(
+        session_factory,
+        job,
+        status="queued",
+        run_at=run_at,
+        attempts=max(job.attempts - 1, 0),
+    )
+
+
+def expedite(session: Session, dedup_key: str, clock: Clock) -> bool:
+    """Make a *queued* job with this dedup key due now. True if one was moved.
+
+    A running job is left alone (it is already being done), and so is a job that is already
+    due. Runs in the caller's transaction and never commits.
+    """
+    now = clock.now()
+    result = session.execute(
+        update(Job)
+        .where(Job.dedup_key == dedup_key, Job.status == "queued", Job.run_at > now)
+        .values(run_at=now)
+        .execution_options(synchronize_session=False)
+    )
+    return result.rowcount == 1  # type: ignore[attr-defined, no-any-return]
+
+
 def mark_dead(
     session_factory: sessionmaker[Session],
     job: ClaimedJob,

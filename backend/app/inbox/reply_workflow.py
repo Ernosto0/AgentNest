@@ -92,17 +92,30 @@ def decide(
     return decision
 
 
-def _newest_inbound_id(session: Session, conversation: Conversation) -> uuid.UUID | None:
+def _newest_inbound_id(
+    session: Session, workspace_id: uuid.UUID, conversation_id: uuid.UUID
+) -> uuid.UUID | None:
     return session.scalar(
         select(Message.id)
         .where(
-            Message.workspace_id == conversation.workspace_id,
-            Message.conversation_id == conversation.id,
+            Message.workspace_id == workspace_id,
+            Message.conversation_id == conversation_id,
             Message.direction == "inbound",
         )
         .order_by(Message.provider_timestamp.desc(), Message.created_at.desc(), Message.id)
         .limit(1)
     )
+
+
+def newer_inbound_arrived(session: Session, context: DraftContext) -> bool:
+    """True if a customer message newer than the one the plan covers is stored.
+
+    Call it right after ``persist_plan`` in the same transaction: the conversation row is still
+    locked, and inbound processing locks it before storing a message, so the answer cannot
+    change before the commit.
+    """
+    newest = _newest_inbound_id(session, context.workspace_id, context.conversation_id)
+    return newest is not None and newest != context.covers_through_message_id
 
 
 def persist_plan(
@@ -128,7 +141,10 @@ def persist_plan(
     ).one_or_none()
     if conversation is None:
         return None
-    if _newest_inbound_id(session, conversation) != context.covers_through_message_id:
+    if (
+        _newest_inbound_id(session, conversation.workspace_id, conversation.id)
+        != context.covers_through_message_id
+    ):
         log.info("draft_discarded", reason="newer_message", conversation_id=str(conversation.id))
         return None
     if drafts.get_open_draft(session, context.workspace_id, conversation.id) is not None:

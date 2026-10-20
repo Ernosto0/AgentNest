@@ -132,31 +132,42 @@ def test_out_of_order_delivery_cannot_move_the_conversation_backwards(inbox: Inb
 # --- debounced draft jobs -----------------------------------------------------------------------
 
 
-def test_each_message_schedules_a_draft_job_after_the_debounce(inbox: InboxEnv) -> None:
+def test_a_message_schedules_the_conversations_draft_job_after_the_debounce(
+    inbox: InboxEnv,
+) -> None:
     inbox.deliver(mid="m-1")
     inbox.process()  # processes the event; the draft job is not due yet
     (job,) = inbox.jobs("draft_reply")
     conversation = inbox.conversation()
-    message = inbox.messages()[0]
     assert job.run_at == inbox.clock.now() + timedelta(
         seconds=inbox.settings.reply_debounce_seconds
     )
     assert job.payload == {
         "conversation_id": str(conversation.id),
-        "message_id": str(message.id),
+        "message_id": None,  # the job drafts for whichever message is newest when it runs
         "requested": False,
     }
-    assert job.dedup_key == f"draft_reply:{conversation.id}:{message.id}"
+    assert job.dedup_key == f"draft_reply:{conversation.id}"
     assert job.workspace_id == inbox.env.workspace.id
 
 
-def test_a_burst_schedules_one_job_per_message_and_redelivery_adds_none(inbox: InboxEnv) -> None:
-    for number in (1, 2, 3):
+def test_a_burst_leaves_one_job_per_conversation_and_keeps_its_run_at(inbox: InboxEnv) -> None:
+    inbox.deliver_and_process("mesaj 1", mid="m-1")
+    (first,) = inbox.jobs("draft_reply")
+    for number in (2, 3):
+        inbox.clock.advance(timedelta(seconds=2))
         inbox.deliver_and_process(f"mesaj {number}", mid=f"m-{number}")
     inbox.deliver_and_process("mesaj 3", mid="m-3")  # redelivered
+    (job,) = inbox.jobs("draft_reply")
+    assert job.id == first.id
+    assert job.run_at == first.run_at  # not extended: a stream of messages cannot postpone it
+
+
+def test_another_conversation_gets_its_own_job(inbox: InboxEnv) -> None:
+    inbox.deliver_and_process("bir", customer="cust-1", mid="m-1")
+    inbox.deliver_and_process("iki", customer="cust-2", mid="m-2")
     jobs = inbox.jobs("draft_reply")
-    assert len(jobs) == 3
-    assert len({j.dedup_key for j in jobs}) == 3
+    assert len(jobs) == 2 and len({j.dedup_key for j in jobs}) == 2
 
 
 # --- human mode ----------------------------------------------------------------------------------

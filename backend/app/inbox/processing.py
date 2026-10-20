@@ -20,7 +20,7 @@ from app.core.ids import new_id
 from app.inbox import attention, drafts
 from app.inbox.echoes import Echo, claimed_by_a_send
 from app.inbox.models import Conversation, InboundEvent, Message
-from app.inbox.payloads import DraftReplyPayload
+from app.inbox.payloads import DraftReplyPayload, draft_reply_key
 from app.inbox.system import system_context
 from app.integrations.instagram import queries
 from app.integrations.instagram.base import NormalizedInboundEvent
@@ -185,11 +185,11 @@ def _on_customer_message(
         enqueue(
             session,
             "draft_reply",
-            DraftReplyPayload(conversation_id=conversation.id, message_id=message_id),
+            DraftReplyPayload(conversation_id=conversation.id),
             workspace_id=account.workspace_id,
             correlation_id=event.correlation_id,
             run_at=clock.now() + timedelta(seconds=debounce_seconds),
-            dedup_key=f"draft_reply:{conversation.id}:{message_id}",
+            dedup_key=draft_reply_key(conversation.id),
             clock=clock,
         )
     else:

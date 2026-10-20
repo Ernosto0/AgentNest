@@ -328,7 +328,7 @@ def test_a_queued_draft_is_cancelled_and_drafted_again(inbox: InboxEnv, gym) -> 
     assert change_price(inbox, gym).status_code == 200
     refreshed = inbox.refreshed(draft)
     assert (refreshed.status, refreshed.failure_code) == ("cancelled", "FACT_CHANGED")
-    inbox.process()
+    inbox.draft_now()  # one draft job per conversation: it runs when the debounce is over
     new = inbox.draft()
     assert new is not None and new.id != draft.id and "7.000" in (new.text or "")
 
