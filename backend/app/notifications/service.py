@@ -19,6 +19,7 @@ from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity import repository as identity_repo
 from app.identity.permissions import has_permission
+from app.notifications.catalog import spec_for
 from app.notifications.models import Notification
 
 DEFAULT_LIMIT = 50
@@ -32,14 +33,22 @@ def notify(
     *,
     recipient_user_id: uuid.UUID,
     type: str,
-    severity: str = "info",
+    severity: str | None = None,
     params: dict[str, Any] | None = None,
     subject_type: str | None = None,
     subject_id: uuid.UUID | None = None,
     dedup_key: str | None = None,
     is_simulated: bool = False,
 ) -> Notification | None:
-    """Create one notification, or return ``None`` when an unread duplicate exists."""
+    """Create one notification, or return ``None`` when an unread duplicate exists.
+
+    The type must be in the catalog (``ValueError`` otherwise); the severity is the catalog's
+    (a caller that passes another one is a programming error).
+    """
+    spec = spec_for(type)
+    if severity is not None and severity != spec.severity:
+        raise ValueError(f"{type} has severity {spec.severity}, not {severity}")
+    severity = spec.severity
     values: dict[str, Any] = {
         "id": uuid.uuid4(),
         "workspace_id": ctx.workspace_id,
@@ -73,7 +82,7 @@ def notify_permission_holders(
     *,
     permission: str,
     type: str,
-    severity: str = "info",
+    severity: str | None = None,
     params: dict[str, Any] | None = None,
     subject_type: str | None = None,
     subject_id: uuid.UUID | None = None,
@@ -83,6 +92,7 @@ def notify_permission_holders(
 ) -> list[Notification]:
     """Notify every active member whose role holds ``permission`` (deduped per recipient),
     except ``exclude_user_id`` (usually the person who caused the event)."""
+    spec_for(type)  # an unknown type fails even when nobody would be notified
     created: list[Notification] = []
     for member, user in identity_repo.list_members(session, ctx):
         if not user.is_active or not has_permission(member.role, permission):

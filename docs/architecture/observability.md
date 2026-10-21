@@ -129,6 +129,25 @@ Defined in `app/content/notifications.py`; recipients are every member who holds
 
 The kinds exist from P5-04. The publish executor (P5-06) produces `content.published`, `content.failed` and `content.on_hold` (`ACCOUNT_UNAVAILABLE`: an account that is not usable at the due time, or an auth error during the attempt); the impact handlers (P5-07) produce `content.on_hold` with reason `FACT_CHANGED` for each `scheduled` / `retry_scheduled` item a fact change holds, to every `content.approve` holder including the person who changed the fact (the fact notification `knowledge.fact_changed` skips them). Items that go back from `pending_approval` to `draft` are not announced; they are counted in the `knowledge.fact_changed` impact (`by_referrer.content_item`: `on_hold`, `returned_to_draft`, `marked_stale`). Audit entries come from the content transitions (`content.publishing`, `content.published`, `content.failed`, `content.on_hold`, `content.retry_scheduled`) plus `operation.outcome_unknown` and `operation.reconciled`. An approval that expires is announced by the approvals service (`approval.expired`) to the requester.
 
+### 4.4 Notification catalog (H8)
+`app/notifications/catalog.py` is the single source: `notify` and `notify_permission_holders` raise `ValueError` for a type that is not listed, and for a severity that differs from the one listed. `uv run python -m app.notifications.catalog` writes `frontend/src/features/notifications/catalog.json`; a backend test fails when that file is out of date and a Vitest test fails when `describe.ts` has no text for a listed type. `params` carry ids and codes, never message or caption text. An unread notification with the same `dedup_key` for the same recipient is never created twice. `is_simulated` follows the subject. The notification centre (`more/notifications`) shows every type with a severity icon **and** the severity word, and a link to the subject.
+
+| Type | Severity | Recipients | `dedup_key` | Producer |
+|---|---|---|---|---|
+| `approval.requested` | attention | holders of the approval's required permission (authorization approvals only) | `approval:{approval_id}` | `approvals.service.request` |
+| `approval.expired` | info | the user who requested it | `approval-expired:{approval_id}` | `approvals.service.expire_one` |
+| `content.on_hold` | attention | `content.approve` + the item's author (see 4.3) | `content.on_hold:{content_id}:v{version}` | publish executor, content impact handler |
+| `content.published` | info | `content.approve` + author | `content.published:{content_id}:v{version}` | publish executor |
+| `content.failed` | attention | `content.approve` + author | `content.failed:{content_id}:v{version}` | publish executor |
+| `conversation.needs_human` | attention | `reply.approve` | `needs-human:{conversation_id}` | inbound processing (takeover), reply workflow (escalation) |
+| `reply.failed` | attention | `reply.approve` | `reply-failed:{draft_id}` | `operations.resolution.notify_reply_failed` |
+| `knowledge.fact_changed` | info | `knowledge.verify`, not the person who changed it | `fact:{fact_id}:v{version}` | `knowledge.impact` |
+| `account.needs_reauth` | critical | `integrations.manage` | `account:{account_id}:needs_reauth` | `operations.health.handle_auth_error` |
+| `account.permission_missing` | attention | `integrations.manage` | `account:{account_id}:permission_missing:{capability}` | `operations.health.handle_permission_error` (send and publish) |
+| `report.daily_ready` | info | `reports.view` | `report:{local_date}` | `reporting.service.generate_daily_report` (the scheduled run only) |
+
+Types that later Phase 6 sessions add to the catalog together with their producer: `account.degraded` (attention, `integrations.manage`, `account:{id}:degraded`) and `account.recovered` (info, `account:{id}:connected`) in the circuit work; `member.joined` (info, owners) with member invites; `knowledge.promotion_expired` (attention, `knowledge.verify`) with retention. The account dedup key follows the form `account:{id}:{status}`; the earlier `account-reauth:{id}` was renamed (unread notifications under the old key are not migrated; the next failure creates a new one).
+
 ## 5. Audit action catalog
 
 Written in the same transaction as the change ([INV-12](../invariants.md)). `metadata` holds IDs, codes and, for facts, formatted old and new values (`old_display`, `new_display`; also `old_window`/`new_window` for validity changes, `key`, `version`, `source_type`, and `source_ref` — the command or candidate ID that caused the change); **never** message text or tokens. `audit.record` rejects metadata keys such as `text`, `message` and `body`. Every fact change writes exactly one `fact.*` entry and one `fact_versions` row; accepting a candidate additionally writes `fact_candidate.accepted`. `policy.reviewed` is written once, when the owner confirms the review (`POST /automation-policies/review`); saving the policies writes only `policy.updated`.

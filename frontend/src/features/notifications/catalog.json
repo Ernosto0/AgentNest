@@ -1,0 +1,48 @@
+{
+  "types": [
+    {
+      "type": "approval.requested",
+      "severity": "attention"
+    },
+    {
+      "type": "approval.expired",
+      "severity": "info"
+    },
+    {
+      "type": "content.on_hold",
+      "severity": "attention"
+    },
+    {
+      "type": "content.published",
+      "severity": "info"
+    },
+    {
+      "type": "content.failed",
+      "severity": "attention"
+    },
+    {
+      "type": "conversation.needs_human",
+      "severity": "attention"
+    },
+    {
+      "type": "reply.failed",
+      "severity": "attention"
+    },
+    {
+      "type": "knowledge.fact_changed",
+      "severity": "info"
+    },
+    {
+      "type": "account.needs_reauth",
+      "severity": "critical"
+    },
+    {
+      "type": "account.permission_missing",
+      "severity": "attention"
+    },
+    {
+      "type": "report.daily_ready",
+      "severity": "info"
+    }
+  ]
+}

@@ -41,13 +41,36 @@ def handle_auth_error(
         params={"social_account_id": str(account.id), "username": account.username},
         subject_type="social_account",
         subject_id=account.id,
-        dedup_key=f"account-reauth:{account.id}",
+        dedup_key=f"account:{account.id}:needs_reauth",
         is_simulated=account.is_simulated,
     )
 
 
-def handle_permission_error(account: SocialAccount, capability: str = "messaging") -> None:
+def handle_permission_error(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    account: SocialAccount,
+    capability: str = "messaging",
+) -> None:
     """A required permission is missing: ``capability`` (messaging, or the publishing capability
-    of a content type) is unavailable until it is granted."""
+    of a content type) is unavailable until it is granted. Tells the connection managers."""
     account.capabilities = {**account.capabilities, capability: False}
     account.last_error_code = "CAPABILITY_MISSING"
+    notifications.notify_permission_holders(
+        session,
+        clock,
+        ctx,
+        permission="integrations.manage",
+        type="account.permission_missing",
+        severity="attention",
+        params={
+            "social_account_id": str(account.id),
+            "username": account.username,
+            "capability": capability,
+        },
+        subject_type="social_account",
+        subject_id=account.id,
+        dedup_key=f"account:{account.id}:permission_missing:{capability}",
+        is_simulated=account.is_simulated,
+    )

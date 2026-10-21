@@ -49,6 +49,9 @@ def test_a_missing_permission_fails_the_item_and_clears_the_capability(pub: Publ
     assert account.capabilities["publish_story_image"] is False
     assert account.capabilities["publish_feed_image"] is True and account.status == "connected"
     assert pub.reload(item).last_error_code == "CAPABILITY_MISSING" and pub.posts() == []
+    note = pub.owner_note("account.permission_missing")  # the connection managers are told
+    assert (note.severity, note.params["capability"]) == ("attention", "publish_story_image")
+    assert note.dedup_key == f"account:{account.id}:permission_missing:publish_story_image"
 
 
 def test_an_image_the_provider_cannot_fetch_is_a_permanent_failure(pub: Publishing) -> None:

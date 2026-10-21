@@ -76,7 +76,7 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         expires_at=clock.now() + timedelta(minutes=30),
     )
     b_notification = notifications_service.notify(
-        db_session, clock, b_ctx, recipient_user_id=b_users["owner"].id, type="test.note"
+        db_session, clock, b_ctx, recipient_user_id=b_users["owner"].id, type="report.daily_ready"
     )
     assert b_notification is not None
     b_command = OwnerCommand(

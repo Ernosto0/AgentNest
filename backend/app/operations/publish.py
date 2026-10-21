@@ -919,7 +919,9 @@ def _map_error(
         return _fail(session, clock, ctx, item, op, code, error.request_code)
 
     if isinstance(error, ProviderPermissionError):
-        health.handle_permission_error(account, capability_for(item.content_type))
+        health.handle_permission_error(
+            session, clock, ctx, account, capability_for(item.content_type)
+        )
         return _fail(session, clock, ctx, item, op, "CAPABILITY_MISSING")
 
     if isinstance(error, ProviderAuthError):

@@ -223,7 +223,7 @@ def test_an_unread_notification_is_not_duplicated_but_a_read_one_may_repeat(
     from app.notifications import service as notifications
 
     ctx = env.ctx(env.owner)
-    kwargs = {"recipient_user_id": env.owner.user.id, "type": "x", "dedup_key": "k"}
+    kwargs = {"recipient_user_id": env.owner.user.id, "type": "approval.expired", "dedup_key": "k"}
     assert notifications.notify(env.session, env.clock, ctx, **kwargs) is not None  # type: ignore[arg-type]
     assert notifications.notify(env.session, env.clock, ctx, **kwargs) is None  # type: ignore[arg-type]
     first = notifications.list_notifications(env.session, ctx, env.owner.user.id)[0]

@@ -329,7 +329,7 @@ def _record(
         return _fail(session, clock, ctx, operation, draft, "PROVIDER_REJECTED", error.request_code)
 
     if isinstance(error, ProviderPermissionError):
-        health.handle_permission_error(account)
+        health.handle_permission_error(session, clock, ctx, account)
         return _fail(session, clock, ctx, operation, draft, "CAPABILITY_MISSING")
 
     if isinstance(error, ProviderAuthError):
