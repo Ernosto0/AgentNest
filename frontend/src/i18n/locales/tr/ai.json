@@ -181,9 +181,29 @@
       "content_on_hold_FACT_CHANGED": "“{{title}}” beklemeye alındı: kullandığı işletme bilgisi değişti.",
       "content_on_hold_ACCOUNT_UNAVAILABLE": "“{{title}}” beklemeye alındı: Instagram hesabı kullanılamıyor.",
       "content_published": "“{{title}}” yayınlandı.",
-      "content_failed": "“{{title}}” yayınlanamadı: {{what}}"
+      "content_failed": "“{{title}}” yayınlanamadı: {{what}}",
+      "report_daily_ready": "{{date}} günlük raporu hazır",
+      "account_permission_missing": "Instagram izni eksik: {{what}}"
     },
-    "open": "Aç"
+    "open": "Aç",
+    "intro": "Sizin için önemli olan gelişmeler burada toplanır.",
+    "filterLabel": "Bildirimleri süz",
+    "filterUnread": "Okunmamış",
+    "filterAll": "Tümü",
+    "emptyAll": "Henüz bildirim yok",
+    "emptyHint": "Onay, gönderi ve bağlantı gelişmeleri burada görünür.",
+    "unreadBadge": "Yeni",
+    "severity": {
+      "info": "Bilgi",
+      "attention": "Dikkat",
+      "critical": "Acil"
+    },
+    "capability": {
+      "messaging": "mesajlaşma",
+      "publish_feed_image": "gönderi yayınlama",
+      "publish_story_image": "hikâye yayınlama",
+      "unknown": "bir özellik"
+    }
   },
   "extract": {
     "open": "Metinden öneri al",

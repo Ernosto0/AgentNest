@@ -77,7 +77,43 @@
     "workspace": "Çalışma alanı",
     "yourRole": "Rolünüz",
     "timezone": "Saat dilimi",
-    "currency": "Para birimi"
+    "currency": "Para birimi",
+    "statusLabel": "Durum",
+    "connection": "Instagram",
+    "noAccount": "Bağlı hesap yok",
+    "simulation": "Simülasyon",
+    "aiOnline": "Yapay zekâ açık",
+    "banner": {
+      "needs_reauth": "Instagram bağlantınız yenilenmeli. Yenilenene kadar yanıt gönderilemez ve gönderiler yayınlanamaz.",
+      "degraded": "Instagram'a şu an ulaşılamıyor, otomatik olarak tekrar denenecek.",
+      "reconnect": "Bağlantıyı yenile"
+    },
+    "attention": {
+      "title": "Sizi bekleyenler",
+      "none": "Şu an sizi bekleyen bir şey yok.",
+      "approvals": "Onay bekleyen",
+      "needsHuman": "Sizi bekleyen konuşma",
+      "failures": "Bugün yayınlanamayan gönderi",
+      "onHold": "Beklemede olan gönderi",
+      "open": "Aç"
+    },
+    "upcoming": {
+      "title": "Sıradaki gönderiler",
+      "empty": "Planlanmış gönderi yok.",
+      "emptyHint": "Bir taslak hazırlayıp zamanladığınızda burada görünür.",
+      "all": "Tüm içerik"
+    },
+    "failures": {
+      "title": "Son sorunlar",
+      "empty": "Başarısız olan bir gönderi yok."
+    },
+    "numbers": {
+      "title": "Bugün",
+      "empty": "Bugün henüz bir şey olmadı.",
+      "asOf": "{{time}} itibarıyla",
+      "openReport": "Günlük raporu aç"
+    },
+    "loadFailed": "Bu bölüm şu an yüklenemedi."
   },
   "inbox": {
     "title": "Gelen kutusu"
@@ -96,7 +132,8 @@
     "automation": "Otomasyon ve Instagram",
     "devPanel": "Geliştirici araçları",
     "reports": "Günlük rapor",
-    "activity": "Etkinlik"
+    "activity": "Etkinlik",
+    "notifications": "Bildirimler"
   },
   "settings": {
     "title": "Ayarlar",

@@ -124,3 +124,15 @@ export const SendIcon = (p: IconProps) => (
     <path d="m4 12 16-8-6 16-3-7Z" />
   </Svg>
 );
+export const InfoIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5M12 7.5v.01" />
+  </Svg>
+);
+export const CriticalIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 3h8l5 5v8l-5 5H8l-5-5V8Z" />
+    <path d="M12 8v5M12 16.5v.01" />
+  </Svg>
+);

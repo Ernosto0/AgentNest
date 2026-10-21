@@ -214,11 +214,11 @@ describe("notifications for content (G14)", () => {
       }),
     );
     renderApp(`/w/${WS_GOLKENT}`);
-    await userEvent.setup().click(await screen.findByRole("button", { name: /Bildirimler/ }));
-    const sheet = await screen.findByRole("dialog", { name: "Bildirimler" });
-    expect(within(sheet).getByText("“Yaz kampanyası” yayınlandı.")).toBeInTheDocument();
-    expect(within(sheet).getByTestId("simulated-badge")).toBeInTheDocument();
-    expect(within(sheet).getByRole("link", { name: "Aç" })).toHaveAttribute(
+    await userEvent.setup().click(await screen.findByRole("link", { name: /Bildirimler/ }));
+    const list = await screen.findByRole("list", { name: "Bildirimler" });
+    expect(within(list).getByText("“Yaz kampanyası” yayınlandı.")).toBeInTheDocument();
+    expect(within(list).getByTestId("simulated-badge")).toBeInTheDocument();
+    expect(within(list).getByRole("link", { name: "Aç" })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/content/${CONTENT_ID}`,
     );

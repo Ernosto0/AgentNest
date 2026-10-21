@@ -181,9 +181,29 @@
       "content_on_hold_FACT_CHANGED": "“{{title}}” was put on hold: business information it uses changed.",
       "content_on_hold_ACCOUNT_UNAVAILABLE": "“{{title}}” was put on hold: the Instagram account is unavailable.",
       "content_published": "“{{title}}” was published.",
-      "content_failed": "“{{title}}” could not be published: {{what}}"
+      "content_failed": "“{{title}}” could not be published: {{what}}",
+      "report_daily_ready": "The daily report for {{date}} is ready",
+      "account_permission_missing": "Instagram permission missing: {{what}}"
     },
-    "open": "Open"
+    "open": "Open",
+    "intro": "The developments that matter to you are collected here.",
+    "filterLabel": "Filter notifications",
+    "filterUnread": "Unread",
+    "filterAll": "All",
+    "emptyAll": "No notifications yet",
+    "emptyHint": "Approvals, posts and connection news show up here.",
+    "unreadBadge": "New",
+    "severity": {
+      "info": "Info",
+      "attention": "Attention",
+      "critical": "Urgent"
+    },
+    "capability": {
+      "messaging": "messaging",
+      "publish_feed_image": "publishing posts",
+      "publish_story_image": "publishing stories",
+      "unknown": "a feature"
+    }
   },
   "extract": {
     "open": "Suggest from pasted text",

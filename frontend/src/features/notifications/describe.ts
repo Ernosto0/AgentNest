@@ -54,6 +54,15 @@ export function describeNotification(
       return t("notifications.type.reply_failed");
     case "account.needs_reauth":
       return t("notifications.type.account_needs_reauth");
+    case "account.permission_missing": {
+      const capability = String(params.capability ?? "");
+      const known = ["messaging", "publish_feed_image", "publish_story_image"].includes(capability);
+      return t("notifications.type.account_permission_missing", {
+        what: t(`notifications.capability.${known ? capability : "unknown"}`),
+      });
+    }
+    case "report.daily_ready":
+      return t("notifications.type.report_daily_ready", { date: String(params.local_date ?? "") });
     default:
       return t("notifications.type.unknown");
   }

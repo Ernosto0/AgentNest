@@ -4,13 +4,17 @@ import { AppError } from "@/api/errors";
 import type { NotificationList } from "@/api/types";
 import { notificationsKey } from "@/features/commands/hooks";
 
-export function useNotifications(workspaceId: string) {
+/** The caller's own notifications, newest first; `unreadOnly` asks the server for the unread ones. */
+export function useNotifications(workspaceId: string, unreadOnly = false) {
   return useQuery<NotificationList, AppError>({
-    queryKey: notificationsKey(workspaceId),
+    queryKey: [...notificationsKey(workspaceId), unreadOnly ? "unread" : "all"],
     queryFn: () =>
       unwrap(
         api.GET("/api/v1/workspaces/{workspace_id}/notifications", {
-          params: { path: { workspace_id: workspaceId }, query: { limit: 30 } },
+          params: {
+            path: { workspace_id: workspaceId },
+            query: unreadOnly ? { limit: 30, unread: true } : { limit: 30 },
+          },
         }),
       ),
     refetchInterval: 30_000,

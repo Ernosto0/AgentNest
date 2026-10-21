@@ -1,4 +1,5 @@
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router-dom";
+import { NotificationCenter } from "@/features/notifications/NotificationCenter";
 import { ActivityFeed } from "@/features/activity/ActivityFeed";
 import { ApprovalsList } from "@/features/approvals/ApprovalsList";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -49,6 +50,7 @@ export const appRoutes: RouteObject[] = [
           { path: "more/reports", element: <DailyReport /> },
           { path: "more/reports/:date/:key", element: <MetricItems /> },
           { path: "more/activity", element: <ActivityFeed /> },
+          { path: "more/notifications", element: <NotificationCenter /> },
           { path: "more/dev", element: <DevPanel /> },
           { path: "more/knowledge/:category", element: <CategoryPage /> },
           { path: "*", element: <NotFoundPage /> },

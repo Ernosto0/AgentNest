@@ -77,7 +77,43 @@
     "workspace": "Workspace",
     "yourRole": "Your role",
     "timezone": "Time zone",
-    "currency": "Currency"
+    "currency": "Currency",
+    "statusLabel": "Status",
+    "connection": "Instagram",
+    "noAccount": "No connected account",
+    "simulation": "Simulation",
+    "aiOnline": "AI on",
+    "banner": {
+      "needs_reauth": "Your Instagram connection must be renewed. Until then replies cannot be sent and posts cannot be published.",
+      "degraded": "Instagram cannot be reached right now; we will try again automatically.",
+      "reconnect": "Renew the connection"
+    },
+    "attention": {
+      "title": "Waiting for you",
+      "none": "Nothing is waiting for you right now.",
+      "approvals": "Waiting for approval",
+      "needsHuman": "Conversations waiting for you",
+      "failures": "Posts that failed today",
+      "onHold": "Posts on hold",
+      "open": "Open"
+    },
+    "upcoming": {
+      "title": "Next posts",
+      "empty": "No scheduled posts.",
+      "emptyHint": "A draft you prepare and schedule shows up here.",
+      "all": "All content"
+    },
+    "failures": {
+      "title": "Recent problems",
+      "empty": "No post has failed."
+    },
+    "numbers": {
+      "title": "Today",
+      "empty": "Nothing has happened today yet.",
+      "asOf": "As of {{time}}",
+      "openReport": "Open the daily report"
+    },
+    "loadFailed": "This section could not be loaded right now."
   },
   "inbox": {
     "title": "Inbox"
@@ -96,7 +132,8 @@
     "automation": "Automation and Instagram",
     "devPanel": "Developer tools",
     "reports": "Daily report",
-    "activity": "Activity"
+    "activity": "Activity",
+    "notifications": "Notifications"
   },
   "settings": {
     "title": "Settings",

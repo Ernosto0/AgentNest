@@ -24,6 +24,12 @@ export function MorePage() {
             <ChevronRightIcon className="text-xl text-slate-400" />
           </Link>
         </li>
+        <li>
+          <Link to={`/w/${workspace.id}/more/notifications`} className={ROW}>
+            {t("more.notifications")}
+            <ChevronRightIcon className="text-xl text-slate-400" />
+          </Link>
+        </li>
         {role === "owner" || role === "manager" ? (
           <li>
             <Link to={`/w/${workspace.id}/more/activity`} className={ROW}>
