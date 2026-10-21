@@ -1,5 +1,7 @@
 """AC-X6: production refuses unsafe configuration (INV-20)."""
 
+from pathlib import Path
+
 import pytest
 
 from app.core.config import EXAMPLE_SECRET_KEY, ConfigError, Settings
@@ -195,3 +197,61 @@ def test_local_media_storage_is_fine_for_a_mock_only_production_demo() -> None:
         media_storage_backend="local",
     )
     assert settings.media_storage_backend == "local"
+
+
+# --- Phase 6 settings (retention) ------------------------------------------------------------
+
+RETENTION_DEFAULTS = {
+    "retention_webhook_payload_days": 30,
+    "retention_inbound_event_row_days": 90,
+    "retention_agent_input_days": 30,
+    "retention_message_text_days": 365,
+    "retention_notifications_read_days": 90,
+    "retention_jobs_succeeded_days": 7,
+    "retention_jobs_dead_days": 90,
+    "retention_media_orphan_days": 7,
+    "retention_published_media_days": 90,
+}
+
+
+def test_the_retention_defaults_are_the_documented_ones_in_every_environment() -> None:
+    development = Settings(_env_file=None)
+    assert {name: getattr(development, name) for name in RETENTION_DEFAULTS} == RETENTION_DEFAULTS
+    # Production needs nothing extra for them: the safe defaults apply.
+    production = prod()
+    assert {name: getattr(production, name) for name in RETENTION_DEFAULTS} == RETENTION_DEFAULTS
+
+
+def test_there_is_no_audit_retention_setting() -> None:
+    """Audit rows are never purged in Phase 6 (plan H17): no variable may suggest otherwise."""
+    assert not [name for name in Settings.model_fields if "audit" in name]
+
+
+@pytest.mark.parametrize("name", sorted(RETENTION_DEFAULTS))
+def test_a_retention_period_below_one_day_is_refused(name: str) -> None:
+    for bad in (0, -5):
+        with pytest.raises(ValueError):
+            Settings(_env_file=None, **{name: bad})  # type: ignore[arg-type]
+
+
+def test_retention_periods_are_read_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RETENTION_MESSAGE_TEXT_DAYS", "400")
+    monkeypatch.setenv("RETENTION_MEDIA_ORPHAN_DAYS", "3")
+    settings = Settings(_env_file=None)
+    assert settings.retention_message_text_days == 400
+    assert settings.retention_media_orphan_days == 3
+
+
+def test_retention_settings_are_public_numbers_not_secrets() -> None:
+    dumped = prod().public_dict()
+    assert {name: dumped[name] for name in RETENTION_DEFAULTS} == RETENTION_DEFAULTS
+
+
+def test_every_retention_variable_is_in_the_example_env_and_the_docs() -> None:
+    root = Path(__file__).resolve().parents[4]
+    example = (root / ".env.example").read_text(encoding="utf-8")
+    docs = (root / "docs" / "operations" / "environment-variables.md").read_text(encoding="utf-8")
+    for name in RETENTION_DEFAULTS:
+        variable = name.upper()
+        assert f"{variable}=" in example, f"{variable} is missing from .env.example"
+        assert f"`{variable}`" in docs, f"{variable} is missing from environment-variables.md"

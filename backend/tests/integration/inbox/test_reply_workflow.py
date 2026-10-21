@@ -60,6 +60,20 @@ def test_ac_b1_one_message_gives_one_event_one_message_and_one_draft(inbox: Inbo
     assert count(inbox, ReplyDraft) == 1
 
 
+def test_ac_b2_the_same_webhook_three_times_gives_one_message_and_one_draft(
+    inbox: InboxEnv, gym
+) -> None:
+    payload = inbox.message_payload(PRICE_Q, mid="same-mid")
+    for _ in range(3):
+        assert inbox.post(payload).status_code == 200
+    inbox.process()
+    inbox.draft_now()
+    inbox.process()  # and whatever the draft left behind runs once as well
+    assert count(inbox, InboundEvent) == 1
+    assert count(inbox, Message) == 1
+    assert count(inbox, ReplyDraft) == 1
+
+
 def test_a_price_question_becomes_a_grounded_draft_waiting_for_approval(
     inbox: InboxEnv, gym
 ) -> None:
