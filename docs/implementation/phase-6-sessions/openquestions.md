@@ -22,3 +22,12 @@ Running ledger kept by the operator. One entry per item, newest sessions last. P
 - **i18n files** `tr.json`/`en.json` rewritten by script, LF; diff is additions only.
 - **OPEN (non-blocking):** `screen_link` for `content_on_hold_now` is `/content?status=on_hold`, but `ContentPage` only reads `?tab=`, so the shortcut opens the default tab. Should probably map to the `problems` tab.
 - **For session 7:** must add `member.invite_revoked` etc. to observability §5, `groups.py` and the activity texts (coverage test fails otherwise).
+
+## Session 4 (P6-04a, P6-04b, P6-04c)
+- **Ledger item closed:** `ContentPage` now reads `?status=` and maps it to the tab; `/content?status=on_hold` opens `problems`.
+- **Dev servers / E2E:** the owner's `npm run dev` and `uvicorn --reload` were running; Vite served a broken module graph (`NotificationBell` export), so E2E ran on `E2E_API_PORT=8100 E2E_WEB_PORT=5273`. **Restart the dev Vite server.** E2E global setup re-seeded the dev database `agentnest` (demo data there was wiped, as it always does).
+- **Only scenario A E2E run** (15/15 on 3 projects); the full suite is session 10/11.
+- **Interpretation:** the "failures" attention card uses `content_failed` (failed today); the needs-human card uses `attention_now`, which also counts `needs_approval`/`failed` conversations.
+- **Existing tests rewritten:** bell now links to a page (not a sheet); placeholder assertion in `app.test.tsx`; unknown notification types in tests replaced by catalog types; `mockApi` background routes extended.
+- **Dedup key rename:** unread notifications under the old `account-reauth:{id}` key are not migrated; one extra notification may appear (noted in observability §4.4).
+- **For later sessions:** each new notification type (5: `account.degraded`/`account.recovered`; 7: `member.joined`; 9: `knowledge.promotion_expired`) must extend `catalog.py`, regenerate `catalog.json` (`uv run python -m app.notifications.catalog`) and add a `describe.ts` sentence.
