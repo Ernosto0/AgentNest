@@ -178,10 +178,10 @@ The **Activity** view renders entries with i18n templates (`activity.<action>` i
 ## 6. System health panel (owner/manager, Phase 6)
 
 Computed from tables (no metrics backend):
-- Accounts: status, last error, token expiry.
+- Accounts: status, last error, token expiry, and `degraded_until` for a `degraded` account.
 - Operations last 24 h: counts by type and status; latest failures with codes.
 - Jobs: queued count, oldest queued age, dead jobs last 24 h.
-- Webhooks: events received 24 h, ignored, failed, signature failures 24 h.
+- Webhooks: events received 24 h, ignored, failed (the workspace's own events), and signature failures 24 h. Signature failures are system-level audit rows with no workspace (a forged request cannot be attributed), so that one number is **system-wide** and is labelled so in the API and the screen.
 - AI: agent runs 24 h by task and status, failure rate, tokens and estimated cost (configured price table), budget usage.
 
 ## 7. Development metrics vs production commitments

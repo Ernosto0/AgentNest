@@ -18,6 +18,7 @@ class SocialAccountOut(BaseModel):
     capabilities: dict[str, Any]
     connection_expires_at: datetime | None
     last_error_code: str | None
+    degraded_until: datetime | None = None
     is_simulated: bool
 
 

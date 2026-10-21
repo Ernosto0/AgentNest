@@ -164,6 +164,7 @@ def test_the_response_has_no_credential_fields(env: Env) -> None:
         "capabilities",
         "connection_expires_at",
         "last_error_code",
+        "degraded_until",
         "is_simulated",
     }
 

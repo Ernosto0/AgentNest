@@ -1253,6 +1253,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/system-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get System Health */
+        get: operations["get_system_health_api_v1_workspaces__workspace_id__system_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1314,6 +1331,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountHealth */
+        AccountHealth: {
+            /** Connection Expires At */
+            connection_expires_at: string | null;
+            /** Degraded Until */
+            degraded_until: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /** Status */
+            status: string;
+            /** Username */
+            username: string | null;
+        };
         /** ActivityActorOut */
         ActivityActorOut: {
             /** Label */
@@ -1360,6 +1397,36 @@ export interface components {
             link: string | null;
             /** Type */
             type: string;
+        };
+        /** AiHealth */
+        AiHealth: {
+            /** Budget Limit */
+            budget_limit: number;
+            /** Budget Used */
+            budget_used: number;
+            /** Estimated Cost Usd */
+            estimated_cost_usd: number | null;
+            /** Failed */
+            failed: number;
+            /** Failure Rate */
+            failure_rate: number;
+            /** Input Units */
+            input_units: number;
+            /** Output Units */
+            output_units: number;
+            /** Runs */
+            runs: components["schemas"]["AiRunCount"][];
+            /** Total */
+            total: number;
+        };
+        /** AiRunCount */
+        AiRunCount: {
+            /** Count */
+            count: number;
+            /** Status */
+            status: string;
+            /** Task */
+            task: string;
         };
         /** AnswerFromMessageIn */
         AnswerFromMessageIn: {
@@ -2213,6 +2280,15 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** JobsHealth */
+        JobsHealth: {
+            /** Dead 24H */
+            dead_24h: number;
+            /** Oldest Queued Age Seconds */
+            oldest_queued_age_seconds: number | null;
+            /** Queued */
+            queued: number;
+        };
         /** LabelIn */
         LabelIn: {
             /** En */
@@ -2472,6 +2548,36 @@ export interface components {
             /** Type */
             type: string;
         };
+        /** OperationCount */
+        OperationCount: {
+            /** Count */
+            count: number;
+            /** Status */
+            status: string;
+            /** Type */
+            type: string;
+        };
+        /** OperationFailure */
+        OperationFailure: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Status */
+            status: string;
+            /** Type */
+            type: string;
+        };
         /**
          * OperationOut
          * @description An allow-list for failure explanations: never the provider reference, the result payload
@@ -2511,6 +2617,13 @@ export interface components {
             type: string;
             /** What */
             what: string | null;
+        };
+        /** OperationsHealth */
+        OperationsHealth: {
+            /** Counts */
+            counts: components["schemas"]["OperationCount"][];
+            /** Latest Failures */
+            latest_failures: components["schemas"]["OperationFailure"][];
         };
         /** Page[ActivityEntryOut] */
         Page_ActivityEntryOut_: {
@@ -2855,6 +2968,8 @@ export interface components {
             };
             /** Connection Expires At */
             connection_expires_at: string | null;
+            /** Degraded Until */
+            degraded_until?: string | null;
             /**
              * Id
              * Format: uuid
@@ -2930,6 +3045,22 @@ export interface components {
             section: string;
             /** Title */
             title: string;
+        };
+        /** SystemHealthOut */
+        SystemHealthOut: {
+            /** Accounts */
+            accounts: components["schemas"]["AccountHealth"][];
+            ai: components["schemas"]["AiHealth"];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            jobs: components["schemas"]["JobsHealth"];
+            operations: components["schemas"]["OperationsHealth"];
+            webhooks: components["schemas"]["WebhooksHealth"];
+            /** Window Hours */
+            window_hours: number;
         };
         /** TemplateItemOut */
         TemplateItemOut: {
@@ -3072,6 +3203,17 @@ export interface components {
             };
             /** Version */
             version: number;
+        };
+        /** WebhooksHealth */
+        WebhooksHealth: {
+            /** Failed 24H */
+            failed_24h: number;
+            /** Ignored 24H */
+            ignored_24h: number;
+            /** Received 24H */
+            received_24h: number;
+            /** Signature Failures 24H System Wide */
+            signature_failures_24h_system_wide: number;
         };
         /** WorkspaceCreate */
         WorkspaceCreate: {
@@ -5818,6 +5960,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SocialAccountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_system_health_api_v1_workspaces__workspace_id__system_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemHealthOut"];
                 };
             };
             /** @description Validation Error */

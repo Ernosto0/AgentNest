@@ -29,6 +29,7 @@ def account_out(account: SocialAccount) -> SocialAccountOut:
         capabilities=account.capabilities,
         connection_expires_at=account.token_expires_at,
         last_error_code=account.last_error_code,
+        degraded_until=account.degraded_until,
         is_simulated=account.is_simulated,
     )
 

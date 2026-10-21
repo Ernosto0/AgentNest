@@ -1,6 +1,80 @@
 {
   "components": {
     "schemas": {
+      "AccountHealth": {
+        "properties": {
+          "connection_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connection Expires At"
+          },
+          "degraded_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degraded Until"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Code"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "status",
+          "last_error_code",
+          "connection_expires_at",
+          "degraded_until",
+          "is_simulated"
+        ],
+        "title": "AccountHealth",
+        "type": "object"
+      },
       "ActivityActorOut": {
         "properties": {
           "label": {
@@ -114,6 +188,92 @@
           "link"
         ],
         "title": "ActivityResourceOut",
+        "type": "object"
+      },
+      "AiHealth": {
+        "properties": {
+          "budget_limit": {
+            "title": "Budget Limit",
+            "type": "integer"
+          },
+          "budget_used": {
+            "title": "Budget Used",
+            "type": "integer"
+          },
+          "estimated_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Cost Usd"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "failure_rate": {
+            "title": "Failure Rate",
+            "type": "number"
+          },
+          "input_units": {
+            "title": "Input Units",
+            "type": "integer"
+          },
+          "output_units": {
+            "title": "Output Units",
+            "type": "integer"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/AiRunCount"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "runs",
+          "total",
+          "failed",
+          "failure_rate",
+          "input_units",
+          "output_units",
+          "estimated_cost_usd",
+          "budget_used",
+          "budget_limit"
+        ],
+        "title": "AiHealth",
+        "type": "object"
+      },
+      "AiRunCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "status",
+          "count"
+        ],
+        "title": "AiRunCount",
         "type": "object"
       },
       "AnswerFromMessageIn": {
@@ -2685,6 +2845,36 @@
         "title": "JobOut",
         "type": "object"
       },
+      "JobsHealth": {
+        "properties": {
+          "dead_24h": {
+            "title": "Dead 24H",
+            "type": "integer"
+          },
+          "oldest_queued_age_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Queued Age Seconds"
+          },
+          "queued": {
+            "title": "Queued",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queued",
+          "oldest_queued_age_seconds",
+          "dead_24h"
+        ],
+        "title": "JobsHealth",
+        "type": "object"
+      },
       "LabelIn": {
         "additionalProperties": false,
         "properties": {
@@ -3428,6 +3618,76 @@
         "title": "NotificationOut",
         "type": "object"
       },
+      "OperationCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "status",
+          "count"
+        ],
+        "title": "OperationCount",
+        "type": "object"
+      },
+      "OperationFailure": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Code"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "status",
+          "last_error_code",
+          "occurred_at",
+          "is_simulated"
+        ],
+        "title": "OperationFailure",
+        "type": "object"
+      },
       "OperationOut": {
         "description": "An allow-list for failure explanations: never the provider reference, the result payload\nor the error detail (they may hold provider text and identifiers).",
         "properties": {
@@ -3527,6 +3787,30 @@
           "is_simulated"
         ],
         "title": "OperationOut",
+        "type": "object"
+      },
+      "OperationsHealth": {
+        "properties": {
+          "counts": {
+            "items": {
+              "$ref": "#/components/schemas/OperationCount"
+            },
+            "title": "Counts",
+            "type": "array"
+          },
+          "latest_failures": {
+            "items": {
+              "$ref": "#/components/schemas/OperationFailure"
+            },
+            "title": "Latest Failures",
+            "type": "array"
+          }
+        },
+        "required": [
+          "counts",
+          "latest_failures"
+        ],
+        "title": "OperationsHealth",
         "type": "object"
       },
       "Page_ActivityEntryOut_": {
@@ -4624,6 +4908,18 @@
             ],
             "title": "Connection Expires At"
           },
+          "degraded_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degraded Until"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -4824,6 +5120,49 @@
           "lines"
         ],
         "title": "SummarySectionOut",
+        "type": "object"
+      },
+      "SystemHealthOut": {
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/AccountHealth"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "ai": {
+            "$ref": "#/components/schemas/AiHealth"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "jobs": {
+            "$ref": "#/components/schemas/JobsHealth"
+          },
+          "operations": {
+            "$ref": "#/components/schemas/OperationsHealth"
+          },
+          "webhooks": {
+            "$ref": "#/components/schemas/WebhooksHealth"
+          },
+          "window_hours": {
+            "title": "Window Hours",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "generated_at",
+          "window_hours",
+          "accounts",
+          "operations",
+          "jobs",
+          "webhooks",
+          "ai"
+        ],
+        "title": "SystemHealthOut",
         "type": "object"
       },
       "TemplateItemOut": {
@@ -5253,6 +5592,34 @@
           "created_at"
         ],
         "title": "VersionOut",
+        "type": "object"
+      },
+      "WebhooksHealth": {
+        "properties": {
+          "failed_24h": {
+            "title": "Failed 24H",
+            "type": "integer"
+          },
+          "ignored_24h": {
+            "title": "Ignored 24H",
+            "type": "integer"
+          },
+          "received_24h": {
+            "title": "Received 24H",
+            "type": "integer"
+          },
+          "signature_failures_24h_system_wide": {
+            "title": "Signature Failures 24H System Wide",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "received_24h",
+          "ignored_24h",
+          "failed_24h",
+          "signature_failures_24h_system_wide"
+        ],
+        "title": "WebhooksHealth",
         "type": "object"
       },
       "WorkspaceCreate": {
@@ -10000,6 +10367,49 @@
         "summary": "Reconnect Account",
         "tags": [
           "integrations"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/system-health": {
+      "get": {
+        "operationId": "get_system_health_api_v1_workspaces__workspace_id__system_health_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get System Health",
+        "tags": [
+          "operations"
         ]
       }
     },
