@@ -1942,6 +1942,8 @@ export interface components {
             last_error_code: string | null;
             /** Media Asset Id */
             media_asset_id: string | null;
+            /** Media Deleted */
+            media_deleted: boolean;
             /** Objective */
             objective: string | null;
             operation: components["schemas"]["ContentOperationOut"] | null;

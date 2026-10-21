@@ -9,7 +9,9 @@ export function notificationTarget(workspaceId: string, notification: AppNotific
     const id = params.content_id;
     return typeof id === "string" ? `${base}/content/${id}` : `${base}/content`;
   }
-  if (notification.type === "knowledge.fact_changed") return `${base}/more/knowledge`;
+  if (notification.type === "knowledge.fact_changed" || notification.type === "knowledge.promotion_expired") {
+    return `${base}/more/knowledge`;
+  }
   if (notification.type === "conversation.needs_human" || notification.type === "reply.failed") {
     const id = params.conversation_id;
     return typeof id === "string" ? `${base}/inbox/${id}` : `${base}/inbox`;

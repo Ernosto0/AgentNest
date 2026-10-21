@@ -82,7 +82,7 @@ Rules:
 1. Any change to value or status creates a `fact_versions` row (full snapshot). The fact row stores the current value and `current_version`.
 2. Updates use optimistic concurrency: `expected_version` must equal `current_version` (409 `FACT_VERSION_CONFLICT`).
 3. Archiving a fact makes it unusable immediately (impact analysis runs as for a value change).
-4. Promotions with `valid_until` in the past are unusable automatically. The daily scheduler emits `knowledge.promotion_expired` notifications. There is no data change; validity is evaluated at read time.
+4. Promotions with `valid_until` in the past are unusable automatically. The daily job `promotion_expiry_notices` (per workspace, 09:00 local time, `knowledge/promotion_notices.py`) emits `knowledge.promotion_expired` (attention) to every `knowledge.verify` holder for each **verified** `promotion.*` fact whose `valid_until` was the previous local day (the last valid day is inclusive, so the fact became unusable at 00:00 local, inside the 24 hours before the run); each expiry is therefore announced exactly once. An unverified or archived promotion is not announced. There is no data change; validity is evaluated at read time.
 
 ## 5. Sources, priority and conflict handling
 

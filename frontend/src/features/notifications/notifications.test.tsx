@@ -8,6 +8,7 @@ import { json, mockApi, noContent, type RecordedRequest } from "@/test/mockApi";
 import { renderApp } from "@/test/renderApp";
 import catalog from "./catalog.json";
 import { describeNotification } from "./describe";
+import { notificationTarget } from "./target";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -163,6 +164,22 @@ describe("the notification catalog", () => {
       expect(text, type).not.toBe("");
       expect(["info", "attention", "critical"]).toContain(severity);
     }
+  });
+
+  it("describes an ended promotion with its label and leads to the knowledge screen", () => {
+    const t = i18n.getFixedT("tr");
+    const ended = notification({
+      type: "knowledge.promotion_expired",
+      severity: "attention",
+      params: { fact_key: "promotion.trial_session", label: { tr: "Deneme dersi", en: "Trial class" } },
+    });
+    expect(describeNotification(t, ended, "tr")).toBe(
+      "Kampanya sona erdi: Deneme dersi. Artık yanıtlarda ve paylaşımlarda kullanılmıyor.",
+    );
+    expect(describeNotification(i18n.getFixedT("en"), ended, "en")).toBe(
+      "Promotion ended: Trial class. It is no longer used in replies or posts.",
+    );
+    expect(notificationTarget("w1", ended)).toBe("/w/w1/more/knowledge");
   });
 
   it("describes the types the report and the connection work add", () => {

@@ -12,8 +12,8 @@ The upload is untrusted input (INV-03). The order is fixed and every step is det
 6. the sha256 is taken over the **output**, which is what is published.
 
 A rejected upload stores no row: 422 ``MEDIA_INVALID`` plus a ``media.rejected`` audit entry.
-The storage key is built from IDs only. Orphaned assets are not cleaned up yet (the
-``media_cleanup`` job is deferred, mvp-scope.md).
+The storage key is built from IDs only. Unused assets are removed later by the ``media_cleanup``
+job (``content/media_cleanup.py``).
 """
 
 import hashlib

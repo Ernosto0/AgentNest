@@ -381,11 +381,11 @@ Constraint: `unique (conversation_id) where status in ('pending_approval','needs
 | mime_type | text not null | after conversion (`image/jpeg`) |
 | byte_size / width / height | int | |
 | sha256 | char(64) not null | |
-| status | text not null | `uploaded`, `ready`, `rejected`, `deleted`. Phase 5 writes only `ready`: validation and conversion are synchronous, and a rejected upload stores **no row** (it is audited as `media.rejected`), so `uploaded` and `rejected` are reserved |
+| status | text not null | `uploaded`, `ready`, `rejected`, `deleted`. Upload writes only `ready`: validation and conversion are synchronous, and a rejected upload stores **no row** (it is audited as `media.rejected`), so `uploaded` and `rejected` are reserved. The `media_cleanup` job (Phase 6) sets `deleted` after removing the file |
 | rejection_code | text null | reserved (see `status`) |
 | created_by_user_id | uuid null | FK `users`, `ON DELETE SET NULL` |
 | created_at / updated_at | timestamptz | |
-| deleted_at | timestamptz null | |
+| deleted_at | timestamptz null | set by `media_cleanup` |
 
 `sha256` is the hash of the stored (re-encoded) JPEG, not of the upload; `width`, `height` and `byte_size` describe it too. Constraints: `unique (workspace_id, id)` (target of the composite FK from `content_items`) and `unique (storage_backend, storage_key)`. Migration 0008.
 
@@ -477,5 +477,5 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 | Audit logs | All services | Never | 2 years in the policy; **no purge in Phase 6** (needs an ADR with the Phase 8 DB privileges) |
 | Notifications | Services | `read_at` only | Deleted 90 days after they were read; an unread one is never deleted (implemented, Phase 6) |
 | Jobs | Queue | Status | Succeeded/cancelled deleted after 7 days; dead after 90 (implemented, Phase 6) |
-| Media | Uploads | Status | Orphans after 7 days; with content otherwise |
+| Media | Uploads | Status (`ready` to `deleted`, by `media_cleanup`) | Orphans after 7 days; with content otherwise; published items' media 90 days after publication (implemented, Phase 6) |
 | Tokens | OAuth | Rotated | Deleted immediately on disconnect |

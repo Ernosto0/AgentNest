@@ -63,6 +63,12 @@ _SPECS = (
         "fact:{fact_id}:v{version}",
     ),
     NotificationSpec(
+        "knowledge.promotion_expired",
+        ATTENTION,
+        "knowledge.verify",
+        "promotion-expired:{fact_id}:{valid_until}",
+    ),
+    NotificationSpec(
         "account.needs_reauth", CRITICAL, "integrations.manage", "account:{account_id}:needs_reauth"
     ),
     NotificationSpec(

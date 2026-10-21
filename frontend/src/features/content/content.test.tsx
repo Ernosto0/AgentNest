@@ -596,4 +596,32 @@ describe("media upload", () => {
     renderApp(`/w/${WS_GOLKENT}/content/${CONTENT_ID}`);
     expect(await screen.findByText("Görsel gösterilemedi.")).toBeInTheDocument();
   });
+
+  it("says so in the editor too when the image of an editable item was deleted", async () => {
+    const requests = mockApi(
+      routes({
+        [`GET ${ITEM_URL}`]: () => json(contentItem({ media_asset_id: MEDIA_ID, media_deleted: true })),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/content/${CONTENT_ID}`);
+    expect(await screen.findByTestId("media-deleted")).toHaveTextContent("Görsel saklama süresi dolduğu için silindi.");
+    expect(requests.some((r) => r.path === `${BASE}/media/${MEDIA_ID}/content`)).toBe(false);
+  });
+
+  it("says the image was deleted when its retention ended, and does not ask for the file", async () => {
+    const requests = mockApi(
+      routes({
+        [`GET ${ITEM_URL}`]: () =>
+          json(contentItem({ status: "published", media_asset_id: MEDIA_ID, media_deleted: true })),
+        [`GET ${BASE}/media/${MEDIA_ID}/content`]: () => problem(404, "NOT_FOUND"),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/content/${CONTENT_ID}`);
+    expect(await screen.findByTestId("media-deleted")).toHaveTextContent(
+      "Görsel saklama süresi dolduğu için silindi.",
+    );
+    expect(screen.queryByAltText("Seçilen görselin önizlemesi")).not.toBeInTheDocument();
+    expect(screen.queryByText("Görsel gösterilemedi.")).not.toBeInTheDocument();
+    expect(requests.some((r) => r.path === `${BASE}/media/${MEDIA_ID}/content`)).toBe(false);
+  });
 });

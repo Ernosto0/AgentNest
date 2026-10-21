@@ -27,6 +27,7 @@ export function contentItem(overrides: Partial<ContentItem> = {}): ContentItem {
     visual_notes: null,
     social_account_id: null,
     media_asset_id: null,
+    media_deleted: false,
     scheduled_at: null,
     schedule_local: null,
     approval_id: null,

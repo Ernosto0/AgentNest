@@ -85,6 +85,7 @@ export function ContentApprovalBody({
           caption={item.caption}
           overlay={item.overlay_text_suggestions}
           mediaId={item.media_asset_id}
+          mediaDeleted={item.media_deleted}
           labels={LABELS}
         />
       )}

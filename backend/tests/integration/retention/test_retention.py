@@ -240,7 +240,8 @@ def test_the_report_for_a_day_is_unchanged_when_its_message_text_is_nulled(
     for key in before.metrics:
         if key != "integration_errors":
             assert after.value(key) == before.value(key), key
-    assert before.value("inbound_messages") == after.value("inbound_messages") > 0
+    assert before.value("inbound_messages") == after.value("inbound_messages")
+    assert (before.value("inbound_messages") or 0) > 0
     assert (before.value("integration_errors"), after.value("integration_errors")) == (18, 11)
 
 

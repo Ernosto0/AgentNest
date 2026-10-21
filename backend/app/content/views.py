@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.ai.models import AgentRun
 from app.approvals import repository as approvals_repo
 from app.content import hooks, service, validation
-from app.content.models import ContentItem
+from app.content.models import ContentItem, MediaAsset
 from app.content.schemas import (
     ContentApprovalStateOut,
     ContentCheckItemOut,
@@ -139,6 +139,18 @@ def generation_out(
     )
 
 
+def media_deleted(session: Session, ctx: WorkspaceContext, item: ContentItem) -> bool:
+    """Whether the item's image was removed by the media cleanup (H18): the file is gone."""
+    if item.media_asset_id is None:
+        return False
+    status = session.scalar(
+        select(MediaAsset.status).where(
+            MediaAsset.workspace_id == ctx.workspace_id, MediaAsset.id == item.media_asset_id
+        )
+    )
+    return status == "deleted"
+
+
 def item_out(session: Session, ctx: WorkspaceContext, item: ContentItem) -> ContentItemOut:
     summary = hooks.get().operation_summary(session, ctx, item)
     return ContentItemOut(
@@ -153,6 +165,7 @@ def item_out(session: Session, ctx: WorkspaceContext, item: ContentItem) -> Cont
         visual_notes=item.visual_notes,
         social_account_id=item.social_account_id,
         media_asset_id=item.media_asset_id,
+        media_deleted=media_deleted(session, ctx, item),
         scheduled_at=item.scheduled_at,
         schedule_local=schedule_local(item, ctx.timezone),
         approval_id=item.approval_id,

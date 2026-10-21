@@ -142,12 +142,13 @@ The kinds exist from P5-04. The publish executor (P5-06) produces `content.publi
 | `conversation.needs_human` | attention | `reply.approve` | `needs-human:{conversation_id}` | inbound processing (takeover), reply workflow (escalation) |
 | `reply.failed` | attention | `reply.approve` | `reply-failed:{draft_id}` | `operations.resolution.notify_reply_failed` |
 | `knowledge.fact_changed` | info | `knowledge.verify`, not the person who changed it | `fact:{fact_id}:v{version}` | `knowledge.impact` |
+| `knowledge.promotion_expired` | attention | `knowledge.verify` | `promotion-expired:{fact_id}:{valid_until}` | `knowledge.promotion_notices` (daily job, 09:00 workspace-local) |
 | `account.needs_reauth` | critical | `integrations.manage` | `account:{account_id}:needs_reauth` | `operations.health.handle_auth_error` |
 | `account.permission_missing` | attention | `integrations.manage` | `account:{account_id}:permission_missing:{capability}` | `operations.health.handle_permission_error` (send and publish) |
 | `report.daily_ready` | info | `reports.view` | `report:{local_date}` | `reporting.service.generate_daily_report` (the scheduled run only) |
 | `member.joined` | info | owners | `member.joined:{user_id}` | `identity.invites.accept_invite` |
 
-Types that later Phase 6 sessions add to the catalog together with their producer: `knowledge.promotion_expired` (attention, `knowledge.verify`) with retention. The account dedup key follows the form `account:{id}:{status}`; the earlier `account-reauth:{id}` was renamed (unread notifications under the old key are not migrated; the next failure creates a new one).
+The account dedup key follows the form `account:{id}:{status}`; the earlier `account-reauth:{id}` was renamed (unread notifications under the old key are not migrated; the next failure creates a new one).
 
 ## 5. Audit action catalog
 

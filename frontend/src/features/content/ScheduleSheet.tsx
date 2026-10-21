@@ -319,6 +319,7 @@ export function ScheduleSheet({ item, mode, onClose, onEditText }: ScheduleSheet
             caption={item.caption}
             overlay={item.overlay_text_suggestions}
             mediaId={item.media_asset_id}
+            mediaDeleted={item.media_deleted}
             labels={SUMMARY_LABELS}
           />
         </section>

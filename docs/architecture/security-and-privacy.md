@@ -137,7 +137,7 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 | Jobs | succeeded/cancelled: 7 days; dead: 90 days |
 | Audit logs | 2 years (**not enforced in Phase 6**: audit rows are never deleted, see below) |
 | Daily reports | lifetime of workspace (aggregates only) |
-| Media assets | orphaned 7 days; otherwise with their content item; published items' media 90 days after publication |
+| Media assets | orphaned 7 days; otherwise with their content item; published items' media 90 days after publication (`media_cleanup`, Phase 6) |
 
 **Implemented in Phase 6 (`app/retention/`, plan H17).** The job `retention_cleanup` runs once a day (from 02:00 UTC, dedup `retention:{date}`). The defaults above are global settings (`RETENTION_*`, [environment-variables.md](../operations/environment-variables.md)); per-workspace values are deferred. Every rule works in batches of 1 000 rows, one statement and one transaction per batch, and the run is idempotent:
 
@@ -147,6 +147,9 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 - Notifications are deleted 90 days after they were read; an unread notification is never deleted.
 - Jobs: `succeeded` and `cancelled` after 7 days, `dead` after 90 days (age: `finished_at`). `queued` and `running` jobs are never touched.
 - The run writes one system-level audit entry, `retention.cleanup_ran`, whose metadata holds only the row counts of each rule.
+
+- **Media (`media_cleanup`, daily from 02:30 UTC, dedup `media_cleanup:{date}`; plan H18).** An asset that no content item references and that is older than 7 days, or that is used only by items published more than 90 days ago, is removed: the file is deleted through `MediaStorage` (between transactions), then the row is set to `status = deleted` with `deleted_at` (the row stays for its foreign keys). An asset used by any item that is not an old publication (draft, scheduled, retrying, on hold, failed, cancelled, or published more recently) is kept, so the media of a scheduled item is never removed. The content detail then reads "Görsel saklama süresi dolduğu için silindi." (`ContentItem.media_deleted`) instead of a broken image. The run is idempotent; a file that is already gone is not an error. The run is logged with a count and writes **no audit entry**: the audit catalog has no media-deletion action and none was invented.
+- **Promotion expiry (`promotion_expiry_notices`; plan H18).** Not a retention rule, but part of the same daily housekeeping: see [business-knowledge.md §4](business-knowledge.md).
 
 **Audit rows are not deleted in Phase 6 (open decision, plan H17).** INV-12 allows no delete path in the application, and the two-year purge needs an ADR together with the Phase 8 database privileges (the production role then has no `DELETE` on `audit_logs` at all, so the purge would be a separate, privileged job). Until that ADR exists `audit_logs` only grows. Audit metadata holds IDs and codes, never message text, so what stays is minimal.
 

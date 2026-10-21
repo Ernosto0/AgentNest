@@ -99,6 +99,7 @@
       "uploading": "Yükleniyor…",
       "loadingPreview": "Görsel yükleniyor…",
       "previewFailed": "Görsel gösterilemedi.",
+      "deleted": "Görsel saklama süresi dolduğu için silindi.",
       "previewAlt": "Seçilen görselin önizlemesi",
       "size": "{{width}} × {{height}} piksel",
       "attached": "Görsel eklendi.",

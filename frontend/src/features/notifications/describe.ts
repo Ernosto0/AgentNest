@@ -30,6 +30,8 @@ export function describeNotification(
             old: String(params.old_display ?? ""),
             new: String(params.new_display ?? ""),
           });
+    case "knowledge.promotion_expired":
+      return t("notifications.type.knowledge_promotion_expired", { label });
     case "content.on_hold": {
       // Params carry the internal title and a reason code, never the caption (observability §4.3).
       const title = String(params.title ?? "");

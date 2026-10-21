@@ -37,6 +37,8 @@ interface MediaUploadProps {
   contentType: ContentType;
   /** The image attached to the item now, if any. */
   mediaId: string | null;
+  /** The image was deleted when its retention ended: say so instead of fetching a missing file. */
+  deleted?: boolean;
   /** Called with the stored asset once the upload succeeded; the parent attaches it to the item. */
   onUploaded: (asset: MediaAsset) => void;
   /** Warnings about the image (for instance a story that is not 9:16). */
@@ -49,6 +51,7 @@ export function MediaUpload({
   workspaceId,
   contentType,
   mediaId,
+  deleted = false,
   onUploaded,
   warnings = [],
   disabled = false,
@@ -56,7 +59,7 @@ export function MediaUpload({
   const { t } = useTranslation();
   const inputId = useId();
   const upload = useUploadMedia(workspaceId);
-  const preview = useMediaPreview(workspaceId, mediaId);
+  const preview = useMediaPreview(workspaceId, deleted ? null : mediaId);
   const [asset, setAsset] = useState<MediaAsset | null>(null);
   const shown = asset !== null && asset.id === mediaId ? asset : null;
 
@@ -77,7 +80,11 @@ export function MediaUpload({
         {contentType === "story_image" ? t("content.media.storyHint") : t("content.media.feedHint")}
       </p>
 
-      {mediaId ? (
+      {mediaId && deleted ? (
+        <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700 ring-1 ring-slate-200" data-testid="media-deleted">
+          {t("content.media.deleted")}
+        </p>
+      ) : mediaId ? (
         <div className="overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
           {preview.url ? (
             <img

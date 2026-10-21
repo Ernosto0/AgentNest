@@ -1529,6 +1529,10 @@
             ],
             "title": "Media Asset Id"
           },
+          "media_deleted": {
+            "title": "Media Deleted",
+            "type": "boolean"
+          },
           "objective": {
             "anyOf": [
               {
@@ -1670,6 +1674,7 @@
           "visual_notes",
           "social_account_id",
           "media_asset_id",
+          "media_deleted",
           "scheduled_at",
           "schedule_local",
           "approval_id",

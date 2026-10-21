@@ -179,6 +179,9 @@ class ContentItemOut(BaseModel):
     visual_notes: str | None
     social_account_id: uuid.UUID | None
     media_asset_id: uuid.UUID | None
+    # The image was deleted when its retention ran out (media cleanup); the UI says so instead of
+    # showing a broken image.
+    media_deleted: bool
     scheduled_at: datetime | None
     schedule_local: ScheduleLocalOut | None
     approval_id: uuid.UUID | None

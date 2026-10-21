@@ -173,6 +173,7 @@
       "approval_expired": "Expired without approval: {{label}}",
       "knowledge_fact_changed": "{{label}} changed: {{old}} → {{new}}",
       "knowledge_fact_archived": "{{label}} was archived",
+      "knowledge_promotion_expired": "Promotion ended: {{label}}. It is no longer used in replies or posts.",
       "unknown": "New notification",
       "conversation_needs_human": "A conversation needs your own reply",
       "reply_failed": "A reply could not be sent",

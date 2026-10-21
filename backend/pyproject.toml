@@ -232,6 +232,8 @@ source_modules = [
     "app.activity.feed",
     "app.activity.labels",
     "app.activity.schemas",
+    "app.knowledge.promotion_notices",
+    "app.content.media_cleanup",
     "app.retention.cleanup",
     "app.retention.jobs",
 ]

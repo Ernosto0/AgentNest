@@ -33,6 +33,10 @@
       "severity": "info"
     },
     {
+      "type": "knowledge.promotion_expired",
+      "severity": "attention"
+    },
+    {
       "type": "account.needs_reauth",
       "severity": "critical"
     },

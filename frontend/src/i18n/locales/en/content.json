@@ -99,6 +99,7 @@
       "uploading": "Uploading…",
       "loadingPreview": "Loading the image…",
       "previewFailed": "The image could not be shown.",
+      "deleted": "The image was deleted because its retention period ended.",
       "previewAlt": "Preview of the chosen image",
       "size": "{{width}} × {{height}} pixels",
       "attached": "Image added.",

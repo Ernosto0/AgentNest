@@ -145,6 +145,11 @@ function ReadOnlyText({ item }: { item: ContentItem }) {
   return (
     <div className="flex flex-col gap-3" data-testid="content-readonly">
       <p className="text-sm text-slate-600">{t("content.editor.readOnly")}</p>
+      {item.media_asset_id && item.media_deleted ? (
+        <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700 ring-1 ring-slate-200" data-testid="media-deleted">
+          {t("content.media.deleted")}
+        </p>
+      ) : null}
       {item.content_type === "feed_image" && item.caption ? (
         <p className="break-words whitespace-pre-wrap">{item.caption}</p>
       ) : null}
@@ -289,6 +294,7 @@ export function ContentEditor({
         workspaceId={workspace.id}
         contentType={item.content_type}
         mediaId={item.media_asset_id}
+        deleted={item.media_deleted}
         onUploaded={(asset) => attachMedia(asset.id)}
         warnings={mediaWarnings}
         disabled={busy}
