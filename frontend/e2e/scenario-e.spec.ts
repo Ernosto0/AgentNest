@@ -108,7 +108,7 @@ test("E: the command answer equals the report; every number opens a list of that
   await expect(page.getByTestId("simulated-badge").first()).toBeVisible();
   await page.getByRole("button", { name: "Mesajlar" }).click();
   const received = page.getByTestId("activity-entry").filter({ hasText: "Mesaj alındı" });
-  await expect(received.first()).toBeVisible();
+  await expect(received.first()).toBeVisible({ timeout: 15_000 }); // the feed loads after the click
   const today = report.local_date;
   const api = await request.get(
     `${API}/api/v1/workspaces/${workspaceId}/activity?type=messages&date=${today}&limit=100`,

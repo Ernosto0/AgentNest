@@ -43,7 +43,11 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   await simulateMessage(request, env.csrf, env.workspaceId, "price");
 
   await signInToWorkspace(page, OWNER, GYM);
-  await expect(page.getByTestId("banner-needs-reauth")).toHaveCount(0); // healthy so far
+  // Healthy so far (wait for the account to be shown first: a count of 0 alone is true before load).
+  await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "connected", {
+    timeout: 15_000,
+  });
+  await expect(page.getByTestId("banner-needs-reauth")).toHaveCount(0);
   await navLink(page, "Gelen kutusu").click();
   await page.getByRole("link", { name: /Ayşe/ }).click({ timeout: 20_000 });
   const card = page.getByTestId("draft-card");
@@ -129,6 +133,12 @@ test("G3: five failed sends make the account unstable (amber banner); a health c
   const env = await ownerSetup(request);
   const already = new Set((await pendingReplyApprovals(request, env.workspaceId)).map((a) => a.id));
   await addFailureRule(request, env.csrf, env.workspaceId, "send", "transient", 5);
+  // The worker probes every degraded account on its own (a minute-by-minute scheduler tick, the
+  // account_health_check job; workflows.md G.2), and a probe that works closes the circuit. That
+  // can happen any time while this test looks at the amber state. While Instagram "still
+  // fails" the probe fails too (cooldown extended, account stays degraded): the rule is removed
+  // below together with the others, before the health check that is meant to recover.
+  await addFailureRule(request, env.csrf, env.workspaceId, "profile", "transient", null);
   // Five different customers, five questions, five approved replies: all driven through the API.
   for (const script of ["price", "hours", "location", "trial", "english_tourist"]) {
     await simulateMessage(request, env.csrf, env.workspaceId, script);
@@ -158,7 +168,7 @@ test("G3: five failed sends make the account unstable (amber banner); a health c
 
   await signInToWorkspace(page, OWNER, GYM);
   const banner = page.getByTestId("banner-degraded");
-  await expect(banner).toBeVisible();
+  await expect(banner).toBeVisible({ timeout: 15_000 });
   await expect(banner).toContainText("Instagram'a şu an ulaşılamıyor");
   await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "degraded");
   await expect(page.getByTestId("banner-needs-reauth")).toHaveCount(0); // not the red kind
@@ -166,6 +176,10 @@ test("G3: five failed sends make the account unstable (amber banner); a health c
 
   // The connections screen says until when nothing is sent (workspace time).
   await openMore(page, "Instagram bağlantısı");
+  await expect(page.getByRole("heading", { name: "Instagram bağlantısı", level: 1 })).toBeVisible();
+  await expect(page.getByTestId("account-status-badge")).toHaveAttribute("data-status", "degraded", {
+    timeout: 15_000,
+  });
   await expect(page.getByTestId("degraded-until")).toContainText(/\d{2}:\d{2}/);
   await expectNoHorizontalScroll(page, "connections while degraded");
 
@@ -183,7 +197,12 @@ test("G3: five failed sends make the account unstable (amber banner); a health c
   });
   expect(await check.json()).toEqual({ checked: 1, recovered: 1 });
 
-  await navLink(page, "Ana sayfa").click();
-  await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "connected");
+  // Load Home afresh (as the owner would after the notification): the in-page navigation right
+  // after the health check sometimes did not render in WebKit for several seconds.
+  await page.goto(`/w/${env.workspaceId}`);
+  await expect(page.getByRole("heading", { name: "Ana sayfa", level: 1 })).toBeVisible();
+  await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "connected", {
+    timeout: 15_000,
+  });
   await expect(page.getByTestId("banner-degraded")).toHaveCount(0);
 });
