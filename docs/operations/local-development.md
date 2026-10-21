@@ -28,7 +28,7 @@ cd backend
 uv python install 3.12
 uv sync                                   # creates .venv from uv.lock
 uv run alembic upgrade head
-uv run python -m app.cli seed --reset     # demo users, workspaces, facts (later phases add more)
+uv run python -m app.cli seed --reset     # demo users, workspaces, facts, simulated accounts, yesterday's history
 cd ../frontend
 npm ci
 ```
@@ -92,11 +92,13 @@ cd ../frontend && npm run gen:api          # writes src/api/schema.d.ts
 
 | Workspace | Locale / currency / timezone | Contents (by phase) |
 |---|---|---|
-| `golkent-fitness` "Gölkent Fitness & Pilates" (fictional) | tr / TRY / Europe/Istanbul | P2: 16 facts and one pending suggestion ([business-knowledge.md §10](../architecture/business-knowledge.md), `backend/app/demo/data/facts_golkent_fitness.yaml`); P4: simulated Instagram account `@golkent.fitness.demo`; P6: one day of history |
-| `harbor-pilates` "Harbor Pilates Studio" (fictional) | en / EUR / Europe/Lisbon | Same structure in English (`facts_harbor_pilates.yaml`) |
+| `golkent-fitness` "Gölkent Fitness & Pilates" (fictional) | tr / TRY / Europe/Istanbul | P2: 16 facts and one pending suggestion ([business-knowledge.md §10](../architecture/business-knowledge.md), `backend/app/demo/data/facts_golkent_fitness.yaml`); P4: simulated Instagram account `@golkent.fitness.demo`; P6: one day of history (below) |
+| `harbor-pilates` "Harbor Pilates Studio" (fictional) | en / EUR / Europe/Lisbon | Same structure in English (`facts_harbor_pilates.yaml`), including the P6 history |
 | `other-workspace` | en / EUR / Europe/Berlin | No facts (isolation demo) |
 
 All demo workspaces have `is_demo = true` and show the **SİMÜLASYON / SIMULATED** banner.
+
+**Yesterday's history (Phase 6, `backend/app/demo/history_seed.py`).** `seed` gives each studio (`golkent-fitness`, `harbor-pilates`) one day of history, so Home, Activity and Reports are not empty on the first run: **6 inbound customer messages, 4 replies sent (each approved by the owner and sent through the operations ledger), 1 conversation handed to a person (a complaint), 1 draft still waiting for approval, 1 published feed post and 1 failed feed post** (`invalid_media`). It runs through the real paths (simulator webhook, jobs, approvals, mock send, publish executor) with a frozen clock at 17:00-21:00 local time **yesterday** in the workspace timezone, and then stores yesterday's daily report. Every row is simulated, and no job is left queued (periodic jobs are the worker's). `seed` adds the history only to a studio that has no conversations yet, so running `seed` again changes nothing; `other-workspace` has none. The draft left waiting is valid for 24 hours from yesterday evening, so it may show as expired when you open the demo late the next day. A conversation's `created_at` is set by the database, so the seed back-dates it to the first message (otherwise "new conversations" would read 0 for yesterday). The draft-stage audit entries `content.created` and `media.uploaded` are not marked simulated (Phase 5 behaviour: a draft has no account yet).
 
 **Sample images (Phase 5).** `backend/app/demo/media/story-sample.png` (1080×1920) and `feed-sample.jpg` (1080×1350) are committed for the content demo and the E2E specs. They are plain gradients with a caption, generated once with Pillow, and are valid uploads: every upload is validated and re-encoded as a baseline JPEG, and the stored files live under `MEDIA_LOCAL_ROOT` (default `backend/var/media`, git-ignored; delete the folder to start clean). From Phase 5 on, upload one from the Content screen (the file input in the draft), or call `POST /api/v1/workspaces/{id}/media` with a multipart `file` field.
 

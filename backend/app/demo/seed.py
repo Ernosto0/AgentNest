@@ -19,6 +19,7 @@ from app.core.config import Settings
 from app.core.context import ActorRef
 from app.demo.connections_seed import seed_connections
 from app.demo.facts_seed import seed_facts
+from app.demo.history_seed import seed_history
 from app.identity import repository as repo
 from app.identity import service
 from app.identity.models import User, Workspace, WorkspaceMember
@@ -187,4 +188,5 @@ def seed(
     # (for example from Phase 1) still receives the facts it is missing.
     report.seeded_facts = seed_facts(session_factory, clock)
     report.connected_accounts = seed_connections(session_factory, clock)
+    seed_history(session_factory, clock, settings)
     return report
