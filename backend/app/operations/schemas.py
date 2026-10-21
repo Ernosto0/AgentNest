@@ -1,4 +1,4 @@
-"""API models of the operations module (account connection)."""
+"""API models of the operations module (account connection, operation detail)."""
 
 import uuid
 from datetime import datetime
@@ -18,6 +18,26 @@ class SocialAccountOut(BaseModel):
     capabilities: dict[str, Any]
     connection_expires_at: datetime | None
     last_error_code: str | None
+    is_simulated: bool
+
+
+class OperationOut(BaseModel):
+    """An allow-list for failure explanations: never the provider reference, the result payload
+    or the error detail (they may hold provider text and identifiers)."""
+
+    id: uuid.UUID
+    type: str
+    status: str
+    attempts: int
+    last_error_code: str | None
+    # Plain-language explanation from the error catalog, in the reader's language; ``null`` for an
+    # operation that is not in trouble.
+    what: str | None
+    next: str | None
+    subject_type: str
+    subject_id: uuid.UUID
+    created_at: datetime
+    completed_at: datetime | None
     is_simulated: bool
 
 

@@ -1018,6 +1018,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/operations/{operation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Operation */
+        get: operations["get_operation_api_v1_workspaces__workspace_id__operations__operation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/readiness": {
         parameters: {
             query?: never;
@@ -2362,6 +2379,46 @@ export interface components {
             subject_type: string | null;
             /** Type */
             type: string;
+        };
+        /**
+         * OperationOut
+         * @description An allow-list for failure explanations: never the provider reference, the result payload
+         *     or the error detail (they may hold provider text and identifiers).
+         */
+        OperationOut: {
+            /** Attempts */
+            attempts: number;
+            /** Completed At */
+            completed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /** Next */
+            next: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Subject Id
+             * Format: uuid
+             */
+            subject_id: string;
+            /** Subject Type */
+            subject_type: string;
+            /** Type */
+            type: string;
+            /** What */
+            what: string | null;
         };
         /** Page[ApprovalOut] */
         Page_ApprovalOut_: {
@@ -5198,6 +5255,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_operation_api_v1_workspaces__workspace_id__operations__operation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                operation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationOut"];
                 };
             };
             /** @description Validation Error */

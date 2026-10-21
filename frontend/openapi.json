@@ -3295,6 +3295,107 @@
         "title": "NotificationOut",
         "type": "object"
       },
+      "OperationOut": {
+        "description": "An allow-list for failure explanations: never the provider reference, the result payload\nor the error detail (they may hold provider text and identifiers).",
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Code"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "subject_id": {
+            "format": "uuid",
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "what": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "status",
+          "attempts",
+          "last_error_code",
+          "what",
+          "next",
+          "subject_type",
+          "subject_id",
+          "created_at",
+          "completed_at",
+          "is_simulated"
+        ],
+        "title": "OperationOut",
+        "type": "object"
+      },
       "Page_ApprovalOut_": {
         "properties": {
           "items": {
@@ -8902,6 +9003,59 @@
         "summary": "Read One",
         "tags": [
           "notifications"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/operations/{operation_id}": {
+      "get": {
+        "operationId": "get_operation_api_v1_workspaces__workspace_id__operations__operation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Operation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Operation",
+        "tags": [
+          "operations"
         ]
       }
     },

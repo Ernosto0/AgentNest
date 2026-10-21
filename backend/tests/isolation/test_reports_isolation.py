@@ -104,3 +104,17 @@ def test_a_stored_report_of_b_is_not_readable_through_a(
     assert {r.workspace_id for r in stored_rows} == {two_workspaces.a.id, two_workspaces.b.id}
     # A's read stored A's own report: one row per workspace, none shared.
     assert len(stored_rows) == 2
+
+
+@pytest.mark.invariant("INV-01")
+def test_b_operation_is_not_found_through_any_workspace_url(
+    two_workspaces: TwoWorkspaces,
+) -> None:
+    operation_id = two_workspaces.foreign_ids["operation_id"]
+    client, headers = two_workspaces.a_client, two_workspaces.a_headers
+    for workspace in (two_workspaces.a, two_workspaces.b):
+        url = f"/api/v1/workspaces/{workspace.id}/operations/{operation_id}"
+        response = client.get(url, headers=headers)
+        assert response.status_code == 404, url
+        assert response.json()["code"] == "NOT_FOUND"
+        assert "OUTCOME_UNCONFIRMED" not in response.text

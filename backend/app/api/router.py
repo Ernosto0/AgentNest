@@ -16,6 +16,7 @@ from app.inbox.router import router as inbox_router
 from app.knowledge.router import router as knowledge_router
 from app.notifications.router import router as notifications_router
 from app.operations.accounts_router import router as social_accounts_router
+from app.operations.router import router as operations_router
 from app.policy.router import router as policy_router
 from app.reporting.router import router as reports_router
 
@@ -66,6 +67,7 @@ api_router.include_router(approvals_router)
 api_router.include_router(commands_router)
 api_router.include_router(notifications_router)
 api_router.include_router(social_accounts_router)
+api_router.include_router(operations_router)
 api_router.include_router(policy_router)
 api_router.include_router(inbox_router)
 api_router.include_router(content_router)

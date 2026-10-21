@@ -26,6 +26,7 @@ from app.inbox.models import Conversation, Message, ReplyDraft
 from app.integrations.instagram.models import SimContainer, SimPublishedMedia, SocialAccount
 from app.knowledge.models import ApprovedAnswer
 from app.notifications import service as notifications_service
+from app.operations.models import Operation
 from tests.factories import (
     create_candidate,
     create_fact,
@@ -197,6 +198,23 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         required_permission="content.approve",
         expires_at=clock.now() + timedelta(hours=1),
     )
+    # Phase 6: a reply that failed in B, for the operation detail route.
+    b_operation = Operation(
+        workspace_id=b.id,
+        operation_type="send_reply",
+        idempotency_key=f"send_reply:{b_draft.id}",
+        subject_type="reply_draft",
+        subject_id=b_draft.id,
+        social_account_id=b_account.id,
+        provider_kind="mock",
+        status="failed",
+        attempts=1,
+        last_error_code="OUTCOME_UNCONFIRMED",
+        completed_at=clock.now(),
+        is_simulated=True,
+    )
+    db_session.add(b_operation)
+    db_session.flush()
     db_session.add(
         SimContainer(
             workspace_id=b.id,
@@ -248,5 +266,6 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "content_id": str(b_content.id),
             "content_approval_id": str(b_content_approval.id),
             "sim_media_id": "mock-media-isolation-b",
+            "operation_id": str(b_operation.id),
         },
     )

@@ -582,6 +582,7 @@ def test_explain_the_latest_failure_from_the_error_catalog(cmd: CommandEnv) -> N
         "retryable": False,
         "is_simulated": True,
         "retry_at": None,
+        "when": "15 Oca 15:00",  # the item's last change, in the workspace time zone
     }
     assert command["result"]["links"] == [{"target": "content", "id": str(failed.id)}]
 

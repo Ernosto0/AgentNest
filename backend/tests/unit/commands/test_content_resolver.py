@@ -227,6 +227,68 @@ def test_latest_failure_with_no_failure_is_an_answer_not_an_error() -> None:
     assert outcome.result.message_key == "command.no_failure" and not outcome.result.error_code
 
 
+def reply_failure(
+    when: datetime, code: str | None = "OUTCOME_UNCONFIRMED"
+) -> resolver.ReplyFailureSnapshot:
+    return resolver.ReplyFailureSnapshot(id=uuid.uuid4(), completed_at=when, error_code=code)
+
+
+def with_replies(
+    *items: ContentSnapshot,
+    replies: tuple[resolver.ReplyFailureSnapshot, ...] = (),
+    cutoff: datetime | None = None,
+) -> ContentContext:
+    return ContentContext(items, {}, TZ, reply_failures=replies, failure_cutoff=cutoff)
+
+
+def test_latest_failure_takes_a_reply_that_failed_after_the_post() -> None:
+    post = item("Post", status="failed", updated=NOW - timedelta(hours=3), code="MEDIA_REJECTED")
+    older = reply_failure(NOW - timedelta(hours=5))
+    newer = reply_failure(NOW - timedelta(hours=1))
+    outcome = explain("latest_failure", with_replies(post, replies=(older, newer)))
+    assert isinstance(outcome, resolver.Execute)
+    assert outcome.resolution == {"operation_id": str(newer.id)}
+
+
+def test_latest_failure_takes_a_post_that_failed_after_the_reply() -> None:
+    post = item("Post", status="failed", updated=NOW - timedelta(minutes=5), code="MEDIA_REJECTED")
+    reply = reply_failure(NOW - timedelta(hours=1))
+    outcome = explain("latest_failure", with_replies(post, replies=(reply,)))
+    assert isinstance(outcome, resolver.Execute)
+    assert outcome.resolution == {"content_id": str(post.id)}
+
+
+def test_a_reply_alone_is_enough_for_latest_failure() -> None:
+    reply = reply_failure(NOW)
+    outcome = explain("latest_failure", with_replies(replies=(reply,)))
+    assert isinstance(outcome, resolver.Execute)
+    assert outcome.resolution == {"operation_id": str(reply.id)}
+
+
+def test_latest_failure_ignores_everything_before_the_cutoff() -> None:
+    cutoff = NOW - timedelta(days=7)
+    stale_post = item("Eski", status="failed", updated=cutoff - timedelta(minutes=1))
+    stale_reply = reply_failure(cutoff - timedelta(minutes=1))
+    outcome = explain(
+        "latest_failure", with_replies(stale_post, replies=(stale_reply,), cutoff=cutoff)
+    )
+    assert isinstance(outcome, resolver.Completed)
+    assert outcome.result.message_key == "command.no_failure"
+
+    edge = reply_failure(cutoff)  # exactly at the cutoff still counts
+    outcome = explain("latest_failure", with_replies(stale_post, replies=(edge,), cutoff=cutoff))
+    assert isinstance(outcome, resolver.Execute)
+    assert outcome.resolution == {"operation_id": str(edge.id)}
+
+
+def test_a_named_post_never_resolves_to_a_reply() -> None:
+    failed = item("Bozuk", status="failed", at=TOMORROW_EVENING, code="PUBLISH_DEADLINE_PASSED")
+    reply = reply_failure(NOW)
+    outcome = explain(ref(local_date="2026-01-16"), with_replies(failed, replies=(reply,)))
+    assert isinstance(outcome, resolver.Execute)
+    assert outcome.resolution == {"content_id": str(failed.id)}
+
+
 def test_explain_by_reference_only_considers_posts_in_trouble() -> None:
     failed = item("Bozuk", status="failed", at=TOMORROW_EVENING, code="PUBLISH_DEADLINE_PASSED")
     fine = item("İyi", status="scheduled", at=TOMORROW_EVENING)

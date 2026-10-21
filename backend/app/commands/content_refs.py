@@ -15,20 +15,28 @@ shown, even if new content arrives meanwhile. Everything is scoped by ``workspac
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from app.ai.schemas import MAX_CATALOG_CONTENT, ContentCatalogEntry
-from app.commands.resolver import FAILURE_STATUSES, ContentContext, ContentSnapshot
+from app.commands.resolver import (
+    FAILURE_STATUSES,
+    ContentContext,
+    ContentSnapshot,
+    ReplyFailureSnapshot,
+)
 from app.content.models import ContentItem
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
+from app.operations.models import Operation
 
 UPCOMING_DAYS = 14
 FAILURE_DAYS = 14
+LATEST_FAILURE_DAYS = 7  # how far back "the last error" looks (H6)
+REPLY_FAILURE_LIMIT = 5
 LOOKAHEAD_DAYS = 60  # the farthest a post can be scheduled (workflows.md §E step 4.1)
 POOL_LIMIT = 300
 UPCOMING_STATUSES = ("pending_approval", "scheduled", "publishing", "retry_scheduled", "on_hold")
@@ -114,7 +122,39 @@ def load(
         for n, s in enumerate(shown, start=1)
     ]
     built = {f"C{n}": s.id for n, s in enumerate(shown, start=1)}
+    cutoff = now - timedelta(days=LATEST_FAILURE_DAYS)
     context = ContentContext(
-        items=pool, aliases=aliases if aliases is not None else built, timezone=timezone
+        items=pool,
+        aliases=aliases if aliases is not None else built,
+        timezone=timezone,
+        reply_failures=_reply_failures(session, ctx, cutoff),
+        failure_cutoff=cutoff,
     )
     return ContentView(context, catalog)
+
+
+def _reply_failures(
+    session: Session, ctx: WorkspaceContext, since: datetime
+) -> list[ReplyFailureSnapshot]:
+    """The newest replies that ended ``failed`` (an unconfirmed send is one), workspace-scoped."""
+    rows = session.scalars(
+        select(Operation)
+        .where(
+            Operation.workspace_id == ctx.workspace_id,
+            Operation.operation_type == "send_reply",
+            Operation.status == "failed",
+            Operation.completed_at >= since,
+        )
+        .order_by(Operation.completed_at.desc(), Operation.id)
+        .limit(REPLY_FAILURE_LIMIT)
+    ).all()
+    return [
+        ReplyFailureSnapshot(
+            id=op.id,
+            completed_at=op.completed_at,
+            error_code=op.last_error_code,
+            is_simulated=op.is_simulated,
+        )
+        for op in rows
+        if op.completed_at is not None
+    ]

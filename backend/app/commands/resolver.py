@@ -457,13 +457,28 @@ class ContentSnapshot:
 
 
 @dataclass(frozen=True)
+class ReplyFailureSnapshot:
+    """A reply (``send_reply`` operation) that ended ``failed``, for ``latest_failure``."""
+
+    id: uuid.UUID
+    completed_at: datetime
+    error_code: str | None = None
+    is_simulated: bool = False
+
+
+@dataclass(frozen=True)
 class ContentContext:
     """What a content reference is resolved against: the candidates, the aliases the model
-    was shown (alias -> item id) and the workspace timezone (INV-19)."""
+    was shown (alias -> item id) and the workspace timezone (INV-19).
+
+    ``latest_failure`` looks at the content items in trouble and at ``reply_failures`` and takes
+    the newest of them; with a ``failure_cutoff`` only those since then (H6: the last 7 days)."""
 
     items: Sequence[ContentSnapshot]
     aliases: Mapping[str, uuid.UUID]
     timezone: str
+    reply_failures: Sequence[ReplyFailureSnapshot] = ()
+    failure_cutoff: datetime | None = None
 
 
 def _sort_key(item: ContentSnapshot) -> tuple[bool, datetime, str]:
@@ -610,11 +625,22 @@ def resolve_content_ref(
     (several candidates) or ``REFERENCE_NOT_FOUND`` (none). Never guesses (agent-runtime.md §3)."""
     context = content or ContentContext((), {}, "UTC")
     if not isinstance(ref, ContentRef):  # "latest_failure"
-        failures = [i for i in context.items if i.status in FAILURE_STATUSES]
-        if not failures:
-            return Completed(CommandResult("command.no_failure", {}, [{"target": "content"}]))
-        latest = max(failures, key=lambda i: (i.updated_at, str(i.id)))
-        return Execute(intent, {"content_id": str(latest.id)})
+        cutoff = context.failure_cutoff
+        failures = [
+            i
+            for i in context.items
+            if i.status in FAILURE_STATUSES and (cutoff is None or i.updated_at >= cutoff)
+        ]
+        replies = [r for r in context.reply_failures if cutoff is None or r.completed_at >= cutoff]
+        latest = max(failures, key=lambda i: (i.updated_at, str(i.id)), default=None)
+        latest_reply = max(replies, key=lambda r: (r.completed_at, str(r.id)), default=None)
+        if latest is not None and (
+            latest_reply is None or latest.updated_at >= latest_reply.completed_at
+        ):
+            return Execute(intent, {"content_id": str(latest.id)})
+        if latest_reply is not None:
+            return Execute(intent, {"operation_id": str(latest_reply.id)})
+        return Completed(CommandResult("command.no_failure", {}, [{"target": "content"}]))
     if intent == "content.cancel_scheduled":
         statuses: Sequence[str] = CANCEL_FILTER_STATUSES
     elif intent == "query.explain_failure":
