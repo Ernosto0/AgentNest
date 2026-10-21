@@ -199,7 +199,7 @@ stateDiagram-v2
 
 Notes:
 - `publishing` includes waiting for container processing and reconciliation of `outcome_unknown` operations. The operation status distinguishes them, and the UI shows "Checking…" when the operation is `outcome_unknown`.
-- **Due-time checks** before `scheduled → publishing`: workspace active; approval `approved` and executable; `version == approval.subject_version`; account `connected` with the needed capability. If the account is `needs_reauth`/`degraded`/`disconnected` → `on_hold (ACCOUNT_UNAVAILABLE)`; it does not fail silently.
+- **Due-time checks** before `scheduled → publishing`: workspace active; approval `approved` and executable; `version == approval.subject_version`; account `connected` with the needed capability. If the account is `needs_reauth`/`disconnected` → `on_hold (ACCOUNT_UNAVAILABLE)`; it does not fail silently. A `degraded` account does not hold the item (Phase 6, H11): while `degraded_until > now` the item is rescheduled (`retry_scheduled`) for that instant; after it the publish is the half-open probe.
 - `cancel` during `publishing` is **not allowed** (`409 CONFLICT_STATE`): the outcome must be determined first.
 - Publish now = submit with `scheduled_at = now`.
 - `published` items are immutable ([INV-17](../invariants.md)): no event leaves `published`, and an edit is `409 CONFLICT_STATE`.
@@ -248,7 +248,7 @@ stateDiagram-v2
   [*] --> connected: connect (OAuth success / mock connect)
   connected --> needs_reauth: auth error / refresh failed / token expired
   connected --> degraded: circuit opens (N transient failures in window)
-  degraded --> connected: health check succeeds
+  degraded --> connected: health check succeeds / a send or publish after the cooldown succeeds (half-open)
   degraded --> needs_reauth: auth error
   needs_reauth --> connected: reconnect (OAuth) for the same external account
   connected --> disconnected: user disconnects / deauthorize callback
@@ -258,6 +258,7 @@ stateDiagram-v2
 ```
 
 - Entering `needs_reauth`, `degraded` or `disconnected` emits notifications. Scheduled content due while unavailable goes `on_hold (ACCOUNT_UNAVAILABLE)`. Queued replies wait if they are still within the window, otherwise they expire.
+- **Circuit (Phase 6, H10 to H12):** `connected → degraded` when `CIRCUIT_FAILURE_THRESHOLD` transient failures fall inside `CIRCUIT_WINDOW_MINUTES` (`degraded_until = now + CIRCUIT_COOLDOWN_MINUTES`). While `degraded_until` is in the future no provider call is made for sending or publishing (open). After it the account is **half-open**: the next send or publish, or the `account_health_check` job, is the probe; a success returns the account to `connected` (counter and window reset), a transient failure sets a new `degraded_until`, an auth error leads to `needs_reauth`. There is no stored half-open state: it is `status = degraded` with `degraded_until <= now`.
 - Reconnecting with a **different** external account than the disconnected one creates a new row; historical rows remain.
 
 ---

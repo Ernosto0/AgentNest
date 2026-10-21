@@ -148,6 +148,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dev/workspaces/{workspace_id}/health-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Health Check Now
+         * @description Run the health check of this workspace's degraded accounts now (demo and E2E), instead of
+         *     waiting for the periodic check. Recovery enqueues ``resume_account`` like the job does.
+         */
+        post: operations["run_health_check_now_api_v1_dev_workspaces__workspace_id__health_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dev/workspaces/{workspace_id}/simulate/customer-message": {
         parameters: {
             query?: never;
@@ -2167,6 +2188,13 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HealthCheckOut */
+        HealthCheckOut: {
+            /** Checked */
+            checked: number;
+            /** Recovered */
+            recovered: number;
+        };
         /** JobOut */
         JobOut: {
             /** Attempts */
@@ -3436,6 +3464,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_health_check_now_api_v1_dev_workspaces__workspace_id__health_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthCheckOut"];
+                };
             };
             /** @description Validation Error */
             422: {

@@ -17,6 +17,7 @@ from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity import repository as identity_repo
 from app.integrations.instagram import queries
+from app.integrations.instagram.mock import MockInstagramProvider
 from app.integrations.instagram.models import SocialAccount
 from app.integrations.instagram.transitions import apply_account_transition
 from app.jobs.queue import enqueue
@@ -164,6 +165,7 @@ def reconnect_mock(
     transition_account(
         session, clock, ctx, account, "connected", audit_action="account.reconnected"
     )
+    MockInstagramProvider.reauthorize(session, account)
     enqueue(
         session,
         "resume_account",

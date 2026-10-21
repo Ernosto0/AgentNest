@@ -89,7 +89,7 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 | `expire_approvals` | every minute | `expire_approvals:{yyyy-mm-ddThh:mm}` |
 | `generate_daily_report` | every tick, per active workspace whose local time is at or past its `daily_report_hour` (workspace setting, default 20) and which has had **no job at all** for that local day (queued, running, succeeded or dead: the dedup index covers only queued and running jobs, so the tick looks at every status, otherwise a finished day would be enqueued again each minute). Implemented in `reporting/jobs.py` (Phase 6) | `daily_report:{ws}:{local_date}` |
 | `refresh_tokens` | daily 03:00 UTC (meta accounts) | `refresh_tokens:{date}` |
-| `account_health_check` | every 5 min for `degraded` accounts | `health:{account}:{bucket5m}` |
+| `account_health_check` | every 5 min for `degraded` accounts (`operations/jobs.py`, payload `{social_account_id}`, 1 attempt: the next tick is the retry). Calls `get_account_profile()` with no transaction open; success → `connected` + `account.recovered` + `resume_account`, transient failure → cooldown extended, auth error → `needs_reauth` | `health:{account}:{bucket5m}` |
 | `promotion_expiry_notices` | daily per workspace at 09:00 local | `promo_expiry:{ws}:{date}` |
 | `retention_cleanup` | daily 02:00 UTC | `retention:{date}` |
 | `media_cleanup` | daily 02:30 UTC | `media_cleanup:{date}` |
@@ -125,7 +125,7 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 | `refresh_tokens` | `{}` (fans out `refresh_token` per account) | scheduler | 1 | |
 | `refresh_token` | `{social_account_id}` | `refresh_tokens` | 3 | operation `refresh_token:{account}:{date}` |
 | `account_health_check` | `{social_account_id}` | scheduler | 1 | |
-| `resume_account` | `{social_account_id}` | reconnect (`accounts.reconnect_mock`, Phase 5); health restored (Phase 6) | 3 | dedup `resume_account:{account}`. Does nothing unless the account is `connected` with `messaging`. For every `queued` reply draft of the account whose messaging window is still open (> 60 s left): `enqueue(send_reply, dedup send_reply:{draft}, run_at = now)` then `queue.expedite(...)`, so a sleeping job is made due, a running job is left alone and a dead or missing job is replaced. The send itself is the ordinary `send_reply` (ledger, reconcile, one operation per draft). It does **not** resume `on_hold` content (workflows.md §G.2) |
+| `resume_account` | `{social_account_id}` | reconnect (`accounts.reconnect_mock`, Phase 5); health restored (`health.recover`, Phase 6) | 3 | dedup `resume_account:{account}`. Does nothing unless the account is `connected` with `messaging`. For every `queued` reply draft of the account whose messaging window is still open (> 60 s left): `enqueue(send_reply, dedup send_reply:{draft}, run_at = now)` then `queue.expedite(...)`, so a sleeping job is made due, a running job is left alone and a dead or missing job is replaced. The send itself is the ordinary `send_reply` (ledger, reconcile, one operation per draft). It does **not** resume `on_hold` content (workflows.md §G.2) |
 | `promotion_expiry_notices` | `{workspace_id, local_date}` | scheduler | 1 | |
 | `retention_cleanup` | `{}` | scheduler | 1 | [security-and-privacy.md §8](security-and-privacy.md) |
 | `media_cleanup` | `{}` | scheduler | 1 | |

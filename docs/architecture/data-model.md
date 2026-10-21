@@ -291,7 +291,8 @@ Constraint: `unique (workspace_id, subject_type, subject_id) where status = 'pen
 | token_key_id | text null | |
 | token_expires_at / token_refreshed_at | timestamptz null | |
 | consecutive_failures | int not null default 0 | circuit breaker |
-| degraded_until | timestamptz null | |
+| degraded_until | timestamptz null | the circuit is open until then (Phase 6) |
+| failure_window_started_at | timestamptz null | start of the window `consecutive_failures` counts in (`CIRCUIT_WINDOW_MINUTES`, migration `0013`); reset by any success |
 | last_error_code | text null | |
 | connected_at / disconnected_at | timestamptz | |
 

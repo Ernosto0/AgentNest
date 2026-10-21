@@ -26,6 +26,7 @@ from app.identity.service import AuthenticatedSession
 from app.integrations.instagram.models import FAILURE_MODES, FAILURE_OPERATIONS
 from app.jobs.models import Job
 from app.jobs.testing import run_due_jobs
+from app.operations import health_check
 
 router = APIRouter(prefix="/api/v1/dev", tags=["dev"], dependencies=[Depends(enforce_csrf)])
 
@@ -98,6 +99,11 @@ class JobOut(BaseModel):
 
 class RunDueOut(BaseModel):
     ran: int
+
+
+class HealthCheckOut(BaseModel):
+    checked: int
+    recovered: int
 
 
 def _factory(db: Session) -> sessionmaker[Session]:
@@ -253,6 +259,26 @@ def run_due(
 ) -> RunDueOut:
     """Run what is due now, in this process (when no worker is running)."""
     return RunDueOut(ran=run_due_jobs(clock, session_factory=_factory(db)))
+
+
+@router.post("/workspaces/{workspace_id}/health-check", response_model=HealthCheckOut)
+def run_health_check_now(
+    ctx: WorkspaceContext = Depends(require_membership("integrations.manage")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> HealthCheckOut:
+    """Run the health check of this workspace's degraded accounts now (demo and E2E), instead of
+    waiting for the periodic check. Recovery enqueues ``resume_account`` like the job does."""
+    factory = _factory(db)
+    ids = [a for w, a in health_check.degraded_account_ids(db) if w == ctx.workspace_id]
+    recovered = 0
+    for account_id in ids:
+        result = health_check.run_health_check(
+            factory, clock, settings, ctx.workspace_id, account_id
+        )
+        recovered += result == "recovered"
+    return HealthCheckOut(checked=len(ids), recovered=recovered)
 
 
 @router.get("/jobs", response_model=Page[JobOut])

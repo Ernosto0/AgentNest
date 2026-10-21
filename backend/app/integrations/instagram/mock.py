@@ -15,7 +15,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -141,6 +141,20 @@ class MockInstagramProvider:
             session.commit()
             session.expunge(rule)
             return rule
+
+    @staticmethod
+    def reauthorize(session: Session, account: SocialAccount) -> int:
+        """Simulator support: the owner connected the account again with a fresh token, so the
+        scripted "token revoked" failures of this account end. Runs in the caller's transaction
+        and does not commit; returns how many rules were removed."""
+        removed = session.execute(
+            delete(SimFailureRule).where(
+                SimFailureRule.workspace_id == account.workspace_id,
+                SimFailureRule.social_account_id == account.id,
+                SimFailureRule.mode == "auth_revoked",
+            )
+        )
+        return int(removed.rowcount or 0)  # type: ignore[attr-defined]
 
     @staticmethod
     def _raise_for(rule: SimFailureRule) -> None:

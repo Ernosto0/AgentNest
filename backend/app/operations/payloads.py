@@ -35,3 +35,9 @@ class ResumeAccountPayload(_Payload):
     """An account is connected again: send what waited for it."""
 
     social_account_id: uuid.UUID
+
+
+class AccountHealthCheckPayload(_Payload):
+    """A ``degraded`` account: read its profile to find out whether it works again."""
+
+    social_account_id: uuid.UUID

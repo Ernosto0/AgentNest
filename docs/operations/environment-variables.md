@@ -57,7 +57,7 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `TOKEN_REFRESH_DAYS_BEFORE_EXPIRY` | `20` | `20` | |
 | `REPLY_DEBOUNCE_SECONDS` | `8` | `8` | |
 | `SEND_RECONCILE_WINDOW_MINUTES` | `10` | `10` | |
-| `CIRCUIT_FAILURE_THRESHOLD` / `CIRCUIT_WINDOW_MINUTES` / `CIRCUIT_COOLDOWN_MINUTES` | `5` / `10` / `10` | same | Phase 6 |
+| `CIRCUIT_FAILURE_THRESHOLD` / `CIRCUIT_WINDOW_MINUTES` / `CIRCUIT_COOLDOWN_MINUTES` | `5` / `10` / `10` | same | Circuit breaker (workflows.md §G.2): failures within the window open it; the cooldown is how long the account is left alone before it is probed |
 
 ## Content and media (Phase 5; S3 in Phase 7)
 

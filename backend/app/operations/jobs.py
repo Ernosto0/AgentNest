@@ -26,9 +26,10 @@ from app.integrations.instagram.models import SimSentMessage
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, RescheduleJob, job_handler
 from app.jobs.scheduler import register_periodic
-from app.operations import publish, reconcile, resume, send
+from app.operations import health_check, publish, reconcile, resume, send
 from app.operations.models import Operation
 from app.operations.payloads import (
+    AccountHealthCheckPayload,
     EmitEchoPayload,
     ReconcilePublishPayload,
     ReconcileSendPayload,
@@ -174,6 +175,40 @@ def resume_account(job: JobContext) -> None:
             correlation_id=job.correlation_id,
         )
         session.commit()
+
+
+@job_handler("account_health_check", AccountHealthCheckPayload, max_attempts=1, timeout=60)
+def account_health_check(job: JobContext) -> None:
+    """Probe a ``degraded`` account (workflows.md G.2). The next probe is the next periodic
+    tick, so a failed check is a result (the cooldown starts again), not a job failure."""
+    payload = job.payload
+    if not isinstance(payload, AccountHealthCheckPayload) or job.workspace_id is None:
+        return
+    health_check.run_health_check(
+        job.session_factory,
+        job.clock,
+        get_settings(),
+        job.workspace_id,
+        payload.social_account_id,
+    )
+
+
+@register_periodic
+def enqueue_health_checks(session: Session, clock: Clock) -> int:
+    now = clock.now()
+    count = 0
+    for workspace_id, account_id in health_check.degraded_account_ids(session):
+        enqueue(
+            session,
+            "account_health_check",
+            AccountHealthCheckPayload(social_account_id=account_id),
+            workspace_id=workspace_id,
+            correlation_id=None,
+            dedup_key=f"health:{account_id}:{now:%Y-%m-%dT%H}:{now.minute // 5}",
+            clock=clock,
+        )
+        count += 1
+    return count
 
 
 @job_handler("reconcile_send", ReconcileSendPayload, max_attempts=3, timeout=60)

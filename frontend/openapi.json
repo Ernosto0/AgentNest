@@ -2621,6 +2621,24 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HealthCheckOut": {
+        "properties": {
+          "checked": {
+            "title": "Checked",
+            "type": "integer"
+          },
+          "recovered": {
+            "title": "Recovered",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "checked",
+          "recovered"
+        ],
+        "title": "HealthCheckOut",
+        "type": "object"
+      },
       "JobOut": {
         "properties": {
           "attempts": {
@@ -5959,6 +5977,50 @@
           }
         },
         "summary": "Delete Failure Rule",
+        "tags": [
+          "dev"
+        ]
+      }
+    },
+    "/api/v1/dev/workspaces/{workspace_id}/health-check": {
+      "post": {
+        "description": "Run the health check of this workspace's degraded accounts now (demo and E2E), instead of\nwaiting for the periodic check. Recovery enqueues ``resume_account`` like the job does.",
+        "operationId": "run_health_check_now_api_v1_dev_workspaces__workspace_id__health_check_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Health Check Now",
         "tags": [
           "dev"
         ]
