@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
@@ -194,4 +196,171 @@ export async function openScheduleSheet(page: Page) {
   const sheet = page.getByRole("dialog", { name: "Zamanla" });
   await expect(sheet).toBeVisible();
   return sheet;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Phase 6 (reports, activity, failure UX): the report API, the simulator and layout checks.
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Fail when the page is wider than the viewport (AC-X4). Called on every main screen at 390x844
+ * (the iPhone 13 and, within a few pixels, the Pixel 7 projects). `scrollWidth` of the document
+ * is what a person can scroll sideways, so it must not exceed the window width.
+ */
+export async function expectNoHorizontalScroll(page: Page, where = "") {
+  const sizes = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    inner: window.innerWidth,
+  }));
+  expect(sizes.scroll, `horizontal scroll on ${where || page.url()}`).toBeLessThanOrEqual(sizes.inner);
+}
+
+export interface ReportMetric {
+  key: string;
+  value: number | null;
+  link: { api: string | null; route: string | null };
+}
+
+/** The daily report through the API (today, or a local date YYYY-MM-DD). */
+export async function dailyReport(
+  request: APIRequestContext,
+  workspaceId: string,
+  date?: string,
+): Promise<{ metrics: ReportMetric[]; has_simulated_data: boolean; local_date: string }> {
+  const query = date ? `?date=${date}` : "";
+  const response = await request.get(`${API}/api/v1/workspaces/${workspaceId}/reports/daily${query}`);
+  expect(response.ok()).toBe(true);
+  return response.json();
+}
+
+export function metricValue(report: { metrics: ReportMetric[] }, key: string): number {
+  const metric = report.metrics.find((m) => m.key === key);
+  expect(metric, `metric ${key}`).toBeDefined();
+  return metric!.value ?? 0;
+}
+
+/** A scripted customer message through the signed-webhook path (dev API); see the Dev panel. */
+export async function simulateMessage(
+  request: APIRequestContext,
+  csrf: string,
+  workspaceId: string,
+  scriptId: string,
+) {
+  const response = await request.post(
+    `${API}/api/v1/dev/workspaces/${workspaceId}/simulate/customer-message`,
+    { data: { script_id: scriptId }, headers: { "X-CSRF-Token": csrf } },
+  );
+  expect(response.ok()).toBe(true);
+}
+
+/** Sign in as the owner through the API and return what the Phase 6 scenarios need. */
+export async function ownerSetup(
+  request: APIRequestContext,
+  workspaceName = "Gölkent Fitness & Pilates",
+  email = "owner@demo.local",
+): Promise<{ csrf: string; workspaceId: string }> {
+  const { csrf, memberships } = await apiLogin(request, email);
+  const workspace = memberships.find((m) => m.workspace_name === workspaceName);
+  expect(workspace).toBeDefined();
+  return { csrf, workspaceId: workspace!.workspace_id };
+}
+
+/** Open an entry of the More menu by its (Turkish) name. */
+export async function openMore(page: Page, linkName: string | RegExp) {
+  await navLink(page, "Daha fazla").click();
+  // Exact: the notification bell is also a link named "Bildirimler, N okunmamış bildirim".
+  await page.getByRole("link", { name: linkName, exact: typeof linkName === "string" }).click();
+}
+
+/**
+ * A feed post with its picture, approved by the owner. It publishes right now (the dev "run due
+ * jobs" API then moves it along) or at a wall-clock time of the workspace. Returns the item id.
+ */
+export async function submitFeedPost(
+  request: APIRequestContext,
+  { csrf, workspaceId }: { csrf: string; workspaceId: string },
+  schedule: "now" | { local_date: string; local_time: string } = "now",
+  title = "Hafta sonu gönderisi",
+): Promise<string> {
+  const base = `${API}/api/v1/workspaces/${workspaceId}`;
+  const headers = { "X-CSRF-Token": csrf };
+  const upload = await request.post(`${base}/media`, {
+    headers,
+    multipart: {
+      file: { name: "feed-sample.jpg", mimeType: "image/jpeg", buffer: readFileSync(SAMPLE_FEED) },
+    },
+  });
+  expect(upload.status()).toBe(201);
+  const created = await request.post(`${base}/content-items`, {
+    headers,
+    data: {
+      content_type: "feed_image",
+      title,
+      caption: "Hafta sonu görüşürüz!",
+      media_asset_id: (await upload.json()).id,
+      client_request_id: randomUUID(),
+    },
+  });
+  expect(created.status()).toBe(201);
+  const item = await created.json();
+  const submitted = await request.post(`${base}/content-items/${item.id}/submit`, {
+    headers,
+    data: { schedule, self_approve: true, expected_version: item.version },
+  });
+  expect(submitted.ok(), await submitted.text()).toBe(true);
+  return item.id as string;
+}
+
+/** Pending reply approvals of a workspace (ids and the hash the owner would have seen). */
+export async function pendingReplyApprovals(
+  request: APIRequestContext,
+  workspaceId: string,
+): Promise<{ id: string; payload_hash: string }[]> {
+  const response = await request.get(
+    `${API}/api/v1/workspaces/${workspaceId}/approvals?status=pending&action=reply.send`,
+  );
+  expect(response.ok()).toBe(true);
+  return (await response.json()).items;
+}
+
+/** Approve one approval the way the Approve button does (explicit id and hash). */
+export async function approve(
+  request: APIRequestContext,
+  csrf: string,
+  workspaceId: string,
+  approval: { id: string; payload_hash: string },
+) {
+  const response = await request.post(
+    `${API}/api/v1/workspaces/${workspaceId}/approvals/${approval.id}/decision`,
+    {
+      data: { decision: "approve", payload_hash: approval.payload_hash },
+      headers: { "X-CSRF-Token": csrf },
+    },
+  );
+  expect(response.ok()).toBe(true);
+}
+
+/** The simulated Instagram account of a workspace, as the API shows it. */
+export async function accountStatus(
+  request: APIRequestContext,
+  workspaceId: string,
+): Promise<string> {
+  const response = await request.get(`${API}/api/v1/workspaces/${workspaceId}/social-accounts`);
+  expect(response.ok()).toBe(true);
+  const body = await response.json();
+  const items = Array.isArray(body) ? body : body.items;
+  return items[0].status as string;
+}
+
+/**
+ * Pick a language button on the Settings screen and wait until the choice is saved on the
+ * account. The screen changes at once; the save is a request that follows, and a reload before
+ * it lands would read the old language back.
+ */
+export async function chooseLanguage(page: Page, name: "English" | "Türkçe") {
+  const saved = page.waitForResponse(
+    (response) => response.url().includes("/api/v1/auth/me") && response.request().method() === "PATCH",
+  );
+  await page.getByRole("button", { name }).click();
+  expect((await saved).ok()).toBe(true);
 }
