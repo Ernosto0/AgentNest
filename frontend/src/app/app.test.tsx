@@ -96,7 +96,7 @@ describe("workspace shell", () => {
         expect(within(nav).getByRole("link", { name: label })).toBeInTheDocument();
       }
     }
-    expect(screen.getByText("Bu bölüm bir sonraki aşamada gelecek")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Sizi bekleyenler" })).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("tr");
   });
 

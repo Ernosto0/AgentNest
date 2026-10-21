@@ -40,6 +40,25 @@ const BACKGROUND: [RegExp, () => Response][] = [
     /^GET \/api\/v1\/workspaces\/[^/]+\/notifications$/,
     () => json({ items: [], unread_count: 0, next_cursor: null }),
   ],
+  // Home reads these three; a test that cares about them overrides the route.
+  [/^GET \/api\/v1\/workspaces\/[^/]+\/social-accounts$/, () => json({ items: [], next_cursor: null })],
+  [/^GET \/api\/v1\/workspaces\/[^/]+\/content-items$/, () => json({ items: [], next_cursor: null })],
+  [
+    /^GET \/api\/v1\/workspaces\/[^/]+\/reports\/daily$/,
+    () =>
+      json({
+        local_date: "2026-10-15",
+        timezone: "Europe/Istanbul",
+        period_start: "2026-10-14T21:00:00Z",
+        period_end: "2026-10-15T09:00:00Z",
+        generated_at: "2026-10-15T09:00:00Z",
+        is_partial: true,
+        definitions_version: "1",
+        has_simulated_data: false,
+        metrics: [],
+        summary: { empty: true, text: "", sections: [] },
+      }),
+  ],
 ];
 
 /**

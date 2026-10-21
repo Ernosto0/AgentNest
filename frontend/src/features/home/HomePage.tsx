@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Card } from "@/components/Card";
-import { EmptyState } from "@/components/EmptyState";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useMe } from "@/features/auth/hooks";
 import { CommandBar } from "@/features/commands/CommandBar";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { Dashboard } from "./Dashboard";
 import { ReadinessCard } from "./ReadinessCard";
 
 export function HomePage() {
@@ -17,6 +17,8 @@ export function HomePage() {
       <h1 className="text-2xl font-semibold">{t("home.title")}</h1>
 
       <CommandBar />
+
+      <Dashboard />
 
       <Card className="flex flex-col gap-3">
         <p className="text-lg font-medium">
@@ -37,11 +39,6 @@ export function HomePage() {
       </Card>
 
       <ReadinessCard />
-
-      <EmptyState
-        title={t("empty.comingLater")}
-        description={t("empty.comingLaterHint")}
-      />
     </div>
   );
 }

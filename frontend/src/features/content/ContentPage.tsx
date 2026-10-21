@@ -10,7 +10,7 @@ import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { ContentCard } from "./ContentCard";
 import { GenerateSheet, type NewContentMode } from "./GenerateSheet";
 import { useContentItems } from "./hooks";
-import { CONTENT_TABS, isContentTab, tabOf } from "./status";
+import { CONTENT_TABS, isContentTab, tabOf, tabOfStatusParam } from "./status";
 
 /** Content by what needs doing: drafts, what is scheduled, what is out, and what went wrong. */
 export function ContentPage() {
@@ -18,7 +18,9 @@ export function ContentPage() {
   const { workspace } = useCurrentWorkspace();
   const [params, setParams] = useSearchParams();
   const requested = params.get("tab");
-  const tab: ContentTab = isContentTab(requested) ? requested : "drafts";
+  // `?status=on_hold` is the shortcut the daily report links to: it opens the tab that lists that status.
+  const byStatus = tabOfStatusParam(params.get("status"));
+  const tab: ContentTab = isContentTab(requested) ? requested : (byStatus ?? "drafts");
   const items = useContentItems(workspace.id, tab);
   // The server already filters by tab; a defensive filter keeps a cancelled or foreign-tab item out.
   const visible = items.data?.filter((item) => tabOf(item.status) === tab);

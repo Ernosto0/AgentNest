@@ -16,6 +16,12 @@ export function isContentTab(value: string | null): value is ContentTab {
   return value !== null && (CONTENT_TABS as readonly string[]).includes(value);
 }
 
+/** The tab that lists a status given in the URL (`?status=on_hold`), or null for anything else. */
+export function tabOfStatusParam(value: string | null): ContentTab | null {
+  const status = (Object.values(TAB_STATUSES).flat() as string[]).find((s) => s === value);
+  return status ? tabOf(status as ContentStatus) : null;
+}
+
 /** The tab an item is listed in, or null (cancelled items are only found by status). */
 export function tabOf(status: ContentStatus): ContentTab | null {
   return CONTENT_TABS.find((tab) => TAB_STATUSES[tab].includes(status)) ?? null;
