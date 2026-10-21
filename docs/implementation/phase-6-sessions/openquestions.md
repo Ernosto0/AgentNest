@@ -31,3 +31,11 @@ Running ledger kept by the operator. One entry per item, newest sessions last. P
 - **Existing tests rewritten:** bell now links to a page (not a sheet); placeholder assertion in `app.test.tsx`; unknown notification types in tests replaced by catalog types; `mockApi` background routes extended.
 - **Dedup key rename:** unread notifications under the old `account-reauth:{id}` key are not migrated; one extra notification may appear (noted in observability §4.4).
 - **For later sessions:** each new notification type (5: `account.degraded`/`account.recovered`; 7: `member.joined`; 9: `knowledge.promotion_expired`) must extend `catalog.py`, regenerate `catalog.json` (`uv run python -m app.notifications.catalog`) and add a `describe.ts` sentence.
+
+## Session 5 (P6-05a, P6-05b)
+- **Full backend suite not re-run on the final two commits.** It passed (2427) on the tree before the split; after the split only ruff, mypy, lint-imports and selected folders were re-run. Session 6 was asked to run the full suite first. E2E not run.
+- **Existing test changed:** `test_publish_retry.py::test_ac_f2…` asserted `consecutive_failures == 5`; with H10 the attempts (1, 6, 21, 51 min apart) do not share one 10-minute window, so it now asserts the account stays `connected` with counter 1.
+- **Commits split by file, not hunk** (`health.py` and the send reschedule are in 5a).
+- **Dedup:** `account.degraded` key is `account:{id}:degraded`; an unread one from an earlier cycle suppresses a new one (existing dedup behaviour).
+- **Half-open:** a degraded account is probed only by the health check or the half-open send/publish. The publish quota read is skipped for non-`connected` accounts, including half-open; the provider enforces the limit at publish time.
+- **Policy rule R1** (`workflows.md` ~line 170) still requires `connected` exactly; unchanged (not in the brief). A draft can still be created while degraded but is held at send time.
