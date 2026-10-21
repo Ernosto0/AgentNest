@@ -57,3 +57,11 @@ export type ContentGeneration = Schemas["GenerationOut"];
 export type ContentCreateBody = Schemas["ContentCreate"];
 export type ContentPatchBody = Schemas["ContentPatch"];
 export type MediaAsset = Schemas["MediaAssetOut"];
+
+// Phase 6: activity feed and the daily report.
+export type ActivityEntry = Schemas["ActivityEntryOut"];
+export type ActivityPage = Schemas["Page_ActivityEntryOut_"];
+export type DailyReport = Schemas["DailyReportOut"];
+export type ReportMetric = Schemas["MetricOut"];
+export type MetricItems = Schemas["MetricItemsOut"];
+export type MetricItem = Schemas["MetricItemOut"];

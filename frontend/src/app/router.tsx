@@ -1,4 +1,5 @@
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router-dom";
+import { ActivityFeed } from "@/features/activity/ActivityFeed";
 import { ApprovalsList } from "@/features/approvals/ApprovalsList";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
@@ -43,6 +44,7 @@ export const appRoutes: RouteObject[] = [
           { path: "more/knowledge/suggestions", element: <SuggestionsPage /> },
           { path: "more/knowledge/answers", element: <ApprovedAnswers /> },
           { path: "more/automation", element: <AutomationSettings /> },
+          { path: "more/activity", element: <ActivityFeed /> },
           { path: "more/dev", element: <DevPanel /> },
           { path: "more/knowledge/:category", element: <CategoryPage /> },
           { path: "*", element: <NotFoundPage /> },

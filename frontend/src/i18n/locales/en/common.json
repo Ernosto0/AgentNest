@@ -94,7 +94,8 @@
     "newWorkspace": "Create a workspace",
     "answers": "Approved answers",
     "automation": "Automation and Instagram",
-    "devPanel": "Developer tools"
+    "devPanel": "Developer tools",
+    "activity": "Activity"
   },
   "settings": {
     "title": "Settings",

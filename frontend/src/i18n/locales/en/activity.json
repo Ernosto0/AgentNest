@@ -1,0 +1,23 @@
+{
+  "activity": {
+    "title": "Activity",
+    "intro": "A record of everything important that happens in your workspace, newest first.",
+    "filterLabel": "Activity type",
+    "empty": "No activity yet",
+    "emptyHint": "When something happens it shows up here.",
+    "loadMore": "Load more",
+    "byAt": "{{actor}} · {{time}}",
+    "groups": {
+      "all": "All",
+      "messages": "Messages",
+      "replies": "Replies",
+      "approvals": "Approvals",
+      "content": "Content",
+      "knowledge": "Information",
+      "commands": "Commands",
+      "accounts": "Accounts",
+      "members": "Members",
+      "system": "System"
+    }
+  }
+}

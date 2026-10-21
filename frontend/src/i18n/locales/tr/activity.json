@@ -1,0 +1,23 @@
+{
+  "activity": {
+    "title": "Etkinlik",
+    "intro": "Çalışma alanınızda olan her önemli şeyin kaydı, en yeniden eskiye.",
+    "filterLabel": "Etkinlik türü",
+    "empty": "Henüz etkinlik yok",
+    "emptyHint": "Bir şey olduğunda burada görünür.",
+    "loadMore": "Daha fazla yükle",
+    "byAt": "{{actor}} · {{time}}",
+    "groups": {
+      "all": "Tümü",
+      "messages": "Mesajlar",
+      "replies": "Yanıtlar",
+      "approvals": "Onaylar",
+      "content": "İçerik",
+      "knowledge": "Bilgiler",
+      "commands": "Komutlar",
+      "accounts": "Hesaplar",
+      "members": "Üyeler",
+      "system": "Sistem"
+    }
+  }
+}

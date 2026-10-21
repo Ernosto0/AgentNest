@@ -10,7 +10,7 @@ const ROW =
 export function MorePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { workspace } = useCurrentWorkspace();
+  const { workspace, role } = useCurrentWorkspace();
   const logout = useLogout();
   const meta = useMeta();
 
@@ -18,6 +18,14 @@ export function MorePage() {
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl font-semibold">{t("more.title")}</h1>
       <ul className="flex flex-col gap-3">
+        {role === "owner" || role === "manager" ? (
+          <li>
+            <Link to={`/w/${workspace.id}/more/activity`} className={ROW}>
+              {t("more.activity")}
+              <ChevronRightIcon className="text-xl text-slate-400" />
+            </Link>
+          </li>
+        ) : null}
         <li>
           <Link to={`/w/${workspace.id}/more/knowledge`} className={ROW}>
             {t("more.knowledge")}
