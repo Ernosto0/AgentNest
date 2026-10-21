@@ -54,6 +54,10 @@ export function describeNotification(
       return t("notifications.type.reply_failed");
     case "account.needs_reauth":
       return t("notifications.type.account_needs_reauth");
+    case "account.degraded":
+      return t("notifications.type.account_degraded");
+    case "account.recovered":
+      return t("notifications.type.account_recovered");
     case "account.permission_missing": {
       const capability = String(params.capability ?? "");
       const known = ["messaging", "publish_feed_image", "publish_story_image"].includes(capability);

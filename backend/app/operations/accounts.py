@@ -48,6 +48,7 @@ def transition_account(
     *,
     error_code: str | None = None,
     audit_action: str | None = None,
+    recovered: bool = False,
 ) -> SocialAccount:
     """Move ``account`` to ``target`` (row locked by the caller) and audit it. No commit.
 
@@ -63,6 +64,7 @@ def transition_account(
         account.degraded_until = None
         account.last_error_code = None
         account.consecutive_failures = 0
+        account.failure_window_started_at = None
     elif target == "disconnected":
         account.disconnected_at = now
     if error_code is not None:
@@ -74,7 +76,12 @@ def transition_account(
         audit_action or f"social_account.{target}",
         "social_account",
         account.id,
-        {"from": previous, "provider_kind": account.provider_kind, "error_code": error_code},
+        {
+            "from": previous,
+            "provider_kind": account.provider_kind,
+            "error_code": error_code,
+            **({"recovered": True} if recovered else {}),
+        },
         is_simulated=account.is_simulated,
         clock=clock,
     )
@@ -139,7 +146,9 @@ def reconnect_mock(
     ``needs_reauth`` becomes ``connected`` for the **same** external account. The replies that
     waited for the connection are resumed by the ``resume_account`` job enqueued here, in the same
     transaction (a transactional outbox). A real (Meta) account is reconnected through OAuth in
-    Phase 7, never here.
+    Phase 7, never here. The simulator is told too (``reauthorize``): the revoked-token rules
+    that made the account need re-authorisation are removed, as the owner's new token would
+    end them.
     """
     if not mock_connect_allowed(settings, ctx):
         raise AppError("FORBIDDEN", permission="integrations.mock")

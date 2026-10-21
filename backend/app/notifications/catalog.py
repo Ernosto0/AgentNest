@@ -66,6 +66,12 @@ _SPECS = (
         "account.needs_reauth", CRITICAL, "integrations.manage", "account:{account_id}:needs_reauth"
     ),
     NotificationSpec(
+        "account.degraded", ATTENTION, "integrations.manage", "account:{account_id}:degraded"
+    ),
+    NotificationSpec(
+        "account.recovered", INFO, "integrations.manage", "account:{account_id}:connected"
+    ),
+    NotificationSpec(
         "account.permission_missing",
         ATTENTION,
         "integrations.manage",

@@ -104,6 +104,8 @@ class SocialAccount(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, B
         Integer, nullable=False, server_default=text("0")
     )
     degraded_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Start of the window the circuit breaker counts transient failures in (plan H10).
+    failure_window_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_error_code: Mapped[str | None] = mapped_column(Text)
     connected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     disconnected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

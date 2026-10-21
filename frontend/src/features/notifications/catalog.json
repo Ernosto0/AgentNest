@@ -37,6 +37,14 @@
       "severity": "critical"
     },
     {
+      "type": "account.degraded",
+      "severity": "attention"
+    },
+    {
+      "type": "account.recovered",
+      "severity": "info"
+    },
+    {
       "type": "account.permission_missing",
       "severity": "attention"
     },

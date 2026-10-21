@@ -67,6 +67,8 @@ def send_reply(job: JobContext) -> None:
             outcome.error_code or "PROVIDER_UNAVAILABLE",
             retry_after_seconds=outcome.retry_after_seconds,
         )
+    if outcome.kind == "rescheduled" and outcome.run_at is not None:  # the circuit is open
+        raise RescheduleJob(outcome.run_at)
     if outcome.kind == "waiting":  # the account is not usable right now; the window may outlast it
         raise RetryableError(
             outcome.error_code or "ACCOUNT_NOT_CONNECTED", retry_after_seconds=WAIT_BACKOFF_SECONDS

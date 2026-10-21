@@ -183,7 +183,9 @@
       "content_published": "“{{title}}” yayınlandı.",
       "content_failed": "“{{title}}” yayınlanamadı: {{what}}",
       "report_daily_ready": "{{date}} günlük raporu hazır",
-      "account_permission_missing": "Instagram izni eksik: {{what}}"
+      "account_permission_missing": "Instagram izni eksik: {{what}}",
+      "account_degraded": "Instagram bağlantısı kararsız. Gönderim ve paylaşım birkaç dakika duraklatıldı, otomatik devam edecek.",
+      "account_recovered": "Instagram bağlantısı yeniden çalışıyor. Bekleyen yanıtlar gönderiliyor."
     },
     "open": "Aç",
     "intro": "Sizin için önemli olan gelişmeler burada toplanır.",

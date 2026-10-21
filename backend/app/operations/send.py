@@ -70,7 +70,7 @@ FIRST_RECONCILE_DELAY = timedelta(minutes=2)
 ECHO_DELAY = timedelta(seconds=1)
 UNKNOWN_ECHO_DELAY = timedelta(seconds=5)
 
-Kind = Literal["sent", "skipped", "retry", "waiting", "failed", "unknown", "expired"]
+Kind = Literal["sent", "skipped", "retry", "waiting", "rescheduled", "failed", "unknown", "expired"]
 
 
 @dataclass(frozen=True)
@@ -79,6 +79,7 @@ class SendOutcome:
     detail: str | None = None
     retry_after_seconds: float | None = None
     error_code: str | None = None
+    run_at: datetime | None = None  # ``rescheduled``: when the circuit may be probed again
 
 
 @dataclass(frozen=True)
@@ -179,9 +180,24 @@ def _prepare(
     if payload_hash(approval_payload(draft, conversation)) != approval.payload_hash:
         return _cancel_queued(session, clock, ctx, draft, conversation, "APPROVAL_STALE")
 
-    if account.status != "connected" or account.capabilities.get("messaging") is not True:
+    if account.status not in ("connected", "degraded") or (
+        account.capabilities.get("messaging") is not True
+    ):
         # Stay queued: the window may outlast the problem (the expiry sweep ends it otherwise).
         return SendOutcome("waiting", error_code="ACCOUNT_NOT_CONNECTED")
+    if (
+        account.status == "degraded"
+        and account.degraded_until is not None
+        and now < account.degraded_until
+    ):
+        # The circuit is open (plan H11): no provider call and no attempt spent. The job comes
+        # back when the cooldown ends, but never later than the end of the window or of the
+        # approval, where the checks above end the send. (After the cooldown the send is the
+        # half-open probe; its success closes the circuit.)
+        run_at = min(account.degraded_until, window_end - SEND_MARGIN)
+        if approval.execute_before is not None:
+            run_at = min(run_at, approval.execute_before)
+        return SendOutcome("rescheduled", error_code="ACCOUNT_DEGRADED", run_at=max(run_at, now))
 
     operation = _get_or_create_operation(session, clock, draft, account, window_end, correlation_id)
     if operation.status in ("in_progress", "outcome_unknown"):
@@ -311,7 +327,7 @@ def _record(
     if error is None and message_id is not None:
         set_operation(clock, operation, "succeed")
         operation.result = {"message_id": message_id}
-        health.record_success(account)
+        health.record_success(session, clock, ctx, account, correlation_id=operation.correlation_id)
         record_delivered(
             session, clock, ctx, operation, draft, account,
             message_id=message_id, sent_at=now, via="send",
@@ -343,7 +359,7 @@ def _record(
     if isinstance(error, ProviderRateLimited | ProviderTransientError):
         code = error.code
         if isinstance(error, ProviderTransientError):
-            health.record_transient_failure(account, code)
+            health.record_transient_failure(session, clock, ctx, account, code)
         out_of_time = operation.deadline_at is not None and now >= operation.deadline_at
         if operation.attempts >= operation.max_attempts or out_of_time:
             return _fail(session, clock, ctx, operation, draft, code)

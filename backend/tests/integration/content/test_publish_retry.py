@@ -86,7 +86,10 @@ def test_ac_f2_transient_always_ends_failed_after_the_attempts_and_notifies(
     assert pub.owner_note("content.failed").params["reason"] == "PROVIDER_UNAVAILABLE"
     assert pub.posts() == []
     assert [j.status for j in pub.jobs("publish_content")] == ["succeeded"]
-    assert pub.account_now().consecutive_failures == 5
+    # Plan H10: the counter is windowed. The attempts are 1, 6, 21 and 51 minutes apart, so
+    # only the last one is inside its own 10-minute window: the circuit never opens.
+    account = pub.account_now()
+    assert (account.status, account.consecutive_failures) == ("connected", 1)
 
 
 def test_a_retry_after_beyond_the_deadline_fails_at_once(pub: Publishing) -> None:

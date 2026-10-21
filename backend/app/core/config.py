@@ -104,6 +104,11 @@ class Settings(BaseSettings):
     meta_app_secret: SecretStr = SecretStr("")
     reply_debounce_seconds: int = Field(default=8, ge=0)
     send_reconcile_window_minutes: int = Field(default=10, ge=1)
+    # Circuit breaker (Phase 6, workflows.md G.2): N transient failures within the window
+    # open it (``degraded``); the cooldown is how long the account is left alone before a probe.
+    circuit_failure_threshold: int = Field(default=5, ge=1)
+    circuit_window_minutes: int = Field(default=10, ge=1)
+    circuit_cooldown_minutes: int = Field(default=10, ge=1)
 
     # --- Media (Phase 5, ADR-015). The local backend keeps the demo credential-free. ---
     media_storage_backend: Literal["local", "s3"] = "local"

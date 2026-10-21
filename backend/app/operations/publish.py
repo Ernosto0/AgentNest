@@ -457,10 +457,22 @@ def _begin(
     capability = capability_for(item.content_type)
     if (
         account is None
-        or account.status != "connected"
+        or account.status not in ("connected", "degraded")
         or account.capabilities.get(capability) is not True
     ):
         return _hold(session, clock, ctx, item, op)
+    if account.status == "degraded" and (
+        account.degraded_until is not None and now < account.degraded_until
+    ):
+        # The circuit is open (plan H11): not held, and no provider call. The same job comes back
+        # when the cooldown ends (no attempt spent) unless the approval's deadline comes first.
+        retry_at = account.degraded_until
+        if deadline is not None and retry_at >= deadline:
+            return _refuse(session, clock, ctx, item, op, "PUBLISH_DEADLINE_PASSED")
+        return _reschedule(
+            session, clock, ctx, item, op, account, deadline, retry_at, "ACCOUNT_DEGRADED"
+        )
+    # else half-open (or connected): the publish itself is the probe
     asset = session.scalars(
         select(MediaAsset).where(
             MediaAsset.workspace_id == workspace_id, MediaAsset.id == item.media_asset_id
@@ -473,13 +485,9 @@ def _begin(
         retry_at = _quota_retry_at(session, item, account, quota, now)
         if deadline is not None and retry_at >= deadline:
             return _refuse(session, clock, ctx, item, op, "PUBLISH_DEADLINE_PASSED")
-        op = op or _create_operation(session, clock, item, account, deadline)
-        set_operation(clock, op, "start")  # pending / retry_wait -> in_progress -> retry_wait
-        set_operation(clock, op, "retry", code="PUBLISH_QUOTA_EXHAUSTED")
-        op.next_attempt_at = retry_at  # nothing was tried: the attempt counter is untouched
-        transitions.apply(session, clock, ctx, item, "start")
-        transitions.apply(session, clock, ctx, item, "retry", reason="PUBLISH_QUOTA_EXHAUSTED")
-        return PublishOutcome("rescheduled", error_code="PUBLISH_QUOTA_EXHAUSTED", run_at=retry_at)
+        return _reschedule(
+            session, clock, ctx, item, op, account, deadline, retry_at, "PUBLISH_QUOTA_EXHAUSTED"
+        )
 
     op = op or _create_operation(session, clock, item, account, deadline)
     approvals.assert_executable(
@@ -491,6 +499,28 @@ def _begin(
     op.next_attempt_at = None
     transitions.apply(session, clock, ctx, item, "start")
     return _prepared(item, op, account, asset)
+
+
+def _reschedule(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    item: ContentItem,
+    op: Operation | None,
+    account: SocialAccount,
+    deadline: datetime | None,
+    retry_at: datetime,
+    code: str,
+) -> PublishOutcome:
+    """Nothing is tried now (no quota, an open circuit): the item waits for ``retry_at`` as
+    ``retry_scheduled`` and the attempt counter is untouched."""
+    op = op or _create_operation(session, clock, item, account, deadline)
+    set_operation(clock, op, "start")  # pending / retry_wait -> in_progress -> retry_wait
+    set_operation(clock, op, "retry", code=code)
+    op.next_attempt_at = retry_at
+    transitions.apply(session, clock, ctx, item, "start")
+    transitions.apply(session, clock, ctx, item, "retry", reason=code)
+    return PublishOutcome("rescheduled", error_code=code, run_at=retry_at)
 
 
 def _text(value: object) -> str | None:
@@ -782,7 +812,7 @@ def _record_published(
         session, clock, ctx, item, "succeed",
         published_at=published_at, external_media_id=media_id, external_permalink=permalink,
     )  # fmt: skip
-    health.record_success(account)
+    health.record_success(session, clock, ctx, account, correlation_id=op.correlation_id)
     content_notifications.notify(session, clock, ctx, item, content_notifications.PUBLISHED)
     if via == "reconcile":
         audit.record(
@@ -947,7 +977,7 @@ def _map_error(
                 "publish_unexpected_error", error=type(error).__name__, operation_id=str(op.id)
             )
         code = error.code if isinstance(error, ProviderTransientError) else "PROVIDER_UNAVAILABLE"
-        health.record_transient_failure(account, code)
+        health.record_transient_failure(session, clock, ctx, account, code)
     backoff = PUBLISH_BACKOFF[min(max(op.attempts, 1), len(PUBLISH_BACKOFF)) - 1]
     delay = max(float(backoff), retry_after)
     out_of_time = op.deadline_at is not None and now + timedelta(seconds=delay) >= op.deadline_at
