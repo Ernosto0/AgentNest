@@ -28,7 +28,7 @@ async function audit(page: Page, name: string) {
     (v) =>
       `${v.impact} ${v.id}: ${v.help} -> ${v.nodes
         .slice(0, 3)
-        .map((n) => n.target.join(" "))
+        .map((n) => `${n.target.join(" ")} ${n.html.slice(0, 200)}`)
         .join(" | ")} (${v.nodes.length} node(s))`,
   );
   expect(lines, `axe on ${name}`).toEqual([]);
