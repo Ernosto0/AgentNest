@@ -471,10 +471,11 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 | Data | Created by | Mutable? | Retention default ([security-and-privacy.md §8](security-and-privacy.md)) |
 |---|---|---|---|
 | Facts / versions | Users, commands, seed | Fact row yes; versions never | Lifetime of workspace |
-| Messages text | Inbound processing, sends | No (except `is_deleted` flag) | 365 days (configurable) |
-| Inbound event payloads | Webhooks | Status only | Payload nulled after 30 days; rows deleted after 90 |
-| Agent run input snapshots | AI runner | No | Nulled after 30 days |
-| Audit logs | All services | Never | 2 years |
-| Jobs | Queue | Status | Succeeded/cancelled deleted after 7 days; dead after 90 |
+| Messages text | Inbound processing, sends | No (except `is_deleted` flag, and the retention job nulling `text` after 365 days) | 365 days (`RETENTION_MESSAGE_TEXT_DAYS`) |
+| Inbound event payloads | Webhooks | Status only (the retention job nulls `payload`) | Payload nulled after 30 days; rows deleted after 90 (implemented, Phase 6) |
+| Agent run input snapshots | AI runner | No | Nulled after 30 days (implemented, Phase 6; a `queued` or `running` run keeps it) |
+| Audit logs | All services | Never | 2 years in the policy; **no purge in Phase 6** (needs an ADR with the Phase 8 DB privileges) |
+| Notifications | Services | `read_at` only | Deleted 90 days after they were read; an unread one is never deleted (implemented, Phase 6) |
+| Jobs | Queue | Status | Succeeded/cancelled deleted after 7 days; dead after 90 (implemented, Phase 6) |
 | Media | Uploads | Status | Orphans after 7 days; with content otherwise |
 | Tokens | OAuth | Rotated | Deleted immediately on disconnect |

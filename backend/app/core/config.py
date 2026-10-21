@@ -121,6 +121,18 @@ class Settings(BaseSettings):
     sim_container_delay_seconds: int = Field(default=2, ge=0)
     publish_daily_limit: int = Field(default=50, ge=1)
 
+    # --- Retention (Phase 6, security-and-privacy.md section 8). Global values; per-workspace
+    # values are deferred. There is no audit setting: audit rows are never purged (plan H17). ---
+    retention_webhook_payload_days: int = Field(default=30, ge=1)
+    retention_inbound_event_row_days: int = Field(default=90, ge=1)
+    retention_agent_input_days: int = Field(default=30, ge=1)
+    retention_message_text_days: int = Field(default=365, ge=1)
+    retention_notifications_read_days: int = Field(default=90, ge=1)
+    retention_jobs_succeeded_days: int = Field(default=7, ge=1)
+    retention_jobs_dead_days: int = Field(default=90, ge=1)
+    retention_media_orphan_days: int = Field(default=7, ge=1)
+    retention_published_media_days: int = Field(default=90, ge=1)
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _upper_log_level(cls, value: Any) -> Any:

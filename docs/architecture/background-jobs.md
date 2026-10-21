@@ -91,7 +91,7 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 | `refresh_tokens` | daily 03:00 UTC (meta accounts) | `refresh_tokens:{date}` |
 | `account_health_check` | every 5 min for `degraded` accounts (`operations/jobs.py`, payload `{social_account_id}`, 1 attempt: the next tick is the retry). Calls `get_account_profile()` with no transaction open; success → `connected` + `account.recovered` + `resume_account`, transient failure → cooldown extended, auth error → `needs_reauth` | `health:{account}:{bucket5m}` |
 | `promotion_expiry_notices` | daily per workspace at 09:00 local | `promo_expiry:{ws}:{date}` |
-| `retention_cleanup` | daily 02:00 UTC | `retention:{date}` |
+| `retention_cleanup` | every tick from 02:00 UTC, once per UTC day: like the daily report, it looks for a job with the day's key in **any** status, so a finished day is not enqueued again. Implemented in `retention/jobs.py` (Phase 6) | `retention:{date}` |
 | `media_cleanup` | daily 02:30 UTC | `media_cleanup:{date}` |
 | `sweep_abandoned_agent_runs` | every 10 min | `sweep_runs:{bucket10m}` |
 | `reconcile_stuck_operations` | every 5 min (operations `in_progress` for > 15 min without a running job) | `reconcile_scan:{bucket5m}` |
@@ -127,7 +127,7 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 | `account_health_check` | `{social_account_id}` | scheduler | 1 | |
 | `resume_account` | `{social_account_id}` | reconnect (`accounts.reconnect_mock`, Phase 5); health restored (`health.recover`, Phase 6) | 3 | dedup `resume_account:{account}`. Does nothing unless the account is `connected` with `messaging`. For every `queued` reply draft of the account whose messaging window is still open (> 60 s left): `enqueue(send_reply, dedup send_reply:{draft}, run_at = now)` then `queue.expedite(...)`, so a sleeping job is made due, a running job is left alone and a dead or missing job is replaced. The send itself is the ordinary `send_reply` (ledger, reconcile, one operation per draft). It does **not** resume `on_hold` content (workflows.md §G.2) |
 | `promotion_expiry_notices` | `{workspace_id, local_date}` | scheduler | 1 | |
-| `retention_cleanup` | `{}` | scheduler | 1 | [security-and-privacy.md §8](security-and-privacy.md) |
+| `retention_cleanup` | `{}` | scheduler (`retention/jobs.py`) | 1 | `retention.cleanup.run_retention`: every rule in batches of 1 000 rows, each batch its own transaction, then one system-level audit entry `retention.cleanup_ran` with the counts. Audit rows are never touched. A rule that was cut short (crash) is simply continued by the next day's run. [security-and-privacy.md §8](security-and-privacy.md) |
 | `media_cleanup` | `{}` | scheduler | 1 | |
 | `sweep_abandoned_agent_runs` | `{}` | scheduler | 1 | |
 | `reconcile_stuck_operations` | `{}` | scheduler | 1 | **G11**: an operation `in_progress` for more than 15 minutes (`started_at`, reset at every attempt) becomes `outcome_unknown` and is handed to its reconciler: `send_reply` → `reconcile_send`, `publish_content` → `reconcile_publish`. A publishing worker that crashed therefore ends as `published` (the container is `PUBLISHED`) or as one more publish of the **stored** container (`FINISHED`), never as a blind second publish. A re-run of the publish job itself finds the item `publishing` and does nothing |

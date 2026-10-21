@@ -232,6 +232,8 @@ source_modules = [
     "app.activity.feed",
     "app.activity.labels",
     "app.activity.schemas",
+    "app.retention.cleanup",
+    "app.retention.jobs",
 ]
 forbidden_modules = ["app.api", "app.main"]
 

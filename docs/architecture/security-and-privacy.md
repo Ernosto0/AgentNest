@@ -135,9 +135,20 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 | Message text (`messages.text`, `reply_drafts.text/template/suggestion_text`) | 365 days, then text nulled (metadata kept for reports) |
 | Notifications | 90 days after read |
 | Jobs | succeeded/cancelled: 7 days; dead: 90 days |
-| Audit logs | 2 years |
+| Audit logs | 2 years (**not enforced in Phase 6**: audit rows are never deleted, see below) |
 | Daily reports | lifetime of workspace (aggregates only) |
 | Media assets | orphaned 7 days; otherwise with their content item; published items' media 90 days after publication |
+
+**Implemented in Phase 6 (`app/retention/`, plan H17).** The job `retention_cleanup` runs once a day (from 02:00 UTC, dedup `retention:{date}`). The defaults above are global settings (`RETENTION_*`, [environment-variables.md](../operations/environment-variables.md)); per-workspace values are deferred. Every rule works in batches of 1 000 rows, one statement and one transaction per batch, and the run is idempotent:
+
+- `inbound_events.payload` is nulled after 30 days (from `received_at`), the row is deleted after 90 days.
+- `agent_runs.input_snapshot` is nulled after 30 days; a run that is still `queued` or `running` keeps it.
+- `messages.text` (age: `provider_timestamp`, the clock every report uses) and `reply_drafts.text`, `template`, `suggestion_text` (age: `created_at`) are nulled after 365 days. This is the **only** sanctioned write to those columns after creation (INV-17): the row, its direction, time, flags and links stay, so no report count changes. A report is a stored row of its own and is not touched; regenerating a day after the cleanup counts the same messages, except `integration_errors`, which reads failed `inbound_events` rows and so loses them after 90 days.
+- Notifications are deleted 90 days after they were read; an unread notification is never deleted.
+- Jobs: `succeeded` and `cancelled` after 7 days, `dead` after 90 days (age: `finished_at`). `queued` and `running` jobs are never touched.
+- The run writes one system-level audit entry, `retention.cleanup_ran`, whose metadata holds only the row counts of each rule.
+
+**Audit rows are not deleted in Phase 6 (open decision, plan H17).** INV-12 allows no delete path in the application, and the two-year purge needs an ADR together with the Phase 8 database privileges (the production role then has no `DELETE` on `audit_logs` at all, so the purge would be a separate, privileged job). Until that ADR exists `audit_logs` only grows. Audit metadata holds IDs and codes, never message text, so what stays is minimal.
 
 **Account disconnection** [P]: tokens deleted immediately; inbound events for the account ignored; queued sends cancelled; scheduled content `on_hold`; conversation data retained per retention unless the owner chooses "disconnect and delete conversation data" (deletes conversations, messages and drafts within 24 h via a job).
 
@@ -159,7 +170,7 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 | Session auth + CSRF | ✓ | ✓ + Secure cookies, throttling |
 | Webhook signatures | ✓ (mock secret) | ✓ (Meta secret, HTTPS) |
 | Token encryption | n/a (no tokens) | ✓ |
-| Retention jobs | implemented with defaults | ✓ + legal-reviewed periods |
+| Retention jobs | implemented with defaults (Phase 6; no audit purge) | ✓ + legal-reviewed periods |
 | Backups / restore drill | — | ✓ |
 | Privacy notice / DPA / sub-processor register | — | ✓ |
 | Security headers / CSP | — | ✓ |

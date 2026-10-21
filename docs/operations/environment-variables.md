@@ -74,13 +74,21 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 
 ## Retention (Phase 6; final values Phase 8)
 
-| Variable | Default |
-|---|---|
-| `RETENTION_WEBHOOK_PAYLOAD_DAYS` | `30` |
-| `RETENTION_AGENT_INPUT_DAYS` | `30` |
-| `RETENTION_MESSAGE_TEXT_DAYS` | `365` |
-| `RETENTION_AUDIT_DAYS` | `730` |
-| `RETENTION_JOBS_SUCCEEDED_DAYS` / `RETENTION_JOBS_DEAD_DAYS` | `7` / `90` |
+Global values, in whole days (at least 1); per-workspace values are deferred. The daily jobs `retention_cleanup` and `media_cleanup` apply them, with the injected clock ([security-and-privacy.md §8](../architecture/security-and-privacy.md)).
+
+| Variable | Default | Rule |
+|---|---|---|
+| `RETENTION_WEBHOOK_PAYLOAD_DAYS` | `30` | `inbound_events.payload` is nulled after this age (measured from `received_at`) |
+| `RETENTION_INBOUND_EVENT_ROW_DAYS` | `90` | the `inbound_events` row is deleted after this age |
+| `RETENTION_AGENT_INPUT_DAYS` | `30` | `agent_runs.input_snapshot` is nulled (runs that are still `queued` or `running` keep it) |
+| `RETENTION_MESSAGE_TEXT_DAYS` | `365` | `messages.text` (age = `provider_timestamp`) and `reply_drafts.text/template/suggestion_text` (age = `created_at`) are nulled; the rows and their metadata stay |
+| `RETENTION_NOTIFICATIONS_READ_DAYS` | `90` | a notification is deleted this long after it was read; an unread one is never deleted |
+| `RETENTION_JOBS_SUCCEEDED_DAYS` | `7` | `succeeded` and `cancelled` jobs are deleted (age = `finished_at`) |
+| `RETENTION_JOBS_DEAD_DAYS` | `90` | `dead` jobs are deleted |
+| `RETENTION_MEDIA_ORPHAN_DAYS` | `7` | a media asset that no content item references is deleted after this age |
+| `RETENTION_PUBLISHED_MEDIA_DAYS` | `90` | a media asset used only by items published longer ago than this is deleted |
+
+There is **no audit setting**: audit rows are never deleted in Phase 6 (plan H17; the two-year purge needs an ADR with the Phase 8 database privileges). The earlier draft variable `RETENTION_AUDIT_DAYS` was therefore not introduced.
 
 ## Owner channels and ops (Phases 8–9)
 
