@@ -113,7 +113,7 @@ function Banners({ accounts, canReconnect }: { accounts: SocialAccount[]; canRec
             {t("home.banner.needs_reauth")}
           </p>
           {canReconnect ? (
-            <Link to={`/w/${workspace.id}/more/automation`} className={LINK}>
+            <Link to={`/w/${workspace.id}/more/settings/connections`} className={LINK}>
               {t("home.banner.reconnect")}
             </Link>
           ) : (

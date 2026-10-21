@@ -40,40 +40,15 @@ function routes(ws: string, accounts: () => SocialAccount[], extra: Record<strin
   };
 }
 
-describe("reconnecting the simulated account", () => {
-  it("offers the button when the connection is lost, posts the reconnect and refreshes the status", async () => {
-    let current = account();
-    const requests = mockApi(
-      routes(WS_GOLKENT, () => [current], {
-        [`POST /api/v1/workspaces/${WS_GOLKENT}/social-accounts/${ACCOUNT_ID}/reconnect`]: () => {
-          current = account({ status: "connected", last_error_code: null });
-          return json(current);
-        },
-      }),
+describe("the connection card", () => {
+  it("shows the status and links to the connection screen, without a reconnect button", async () => {
+    mockApi(routes(WS_GOLKENT, () => [account()]));
+    renderApp(`/w/${WS_GOLKENT}/more/automation`);
+    expect(await screen.findByTestId("account-status")).toHaveTextContent("yeniden bağlanmalı");
+    expect(screen.getByRole("link", { name: "Bağlantıyı yönet" })).toHaveAttribute(
+      "href",
+      `/w/${WS_GOLKENT}/more/settings/connections`,
     );
-    renderApp(`/w/${WS_GOLKENT}/more/automation`);
-    const user = userEvent.setup();
-
-    expect(await screen.findByTestId("account-status")).toHaveTextContent("yeniden bağlanmalı");
-    await user.click(await screen.findByRole("button", { name: "Yeniden bağlan (simülasyon)" }));
-
-    await waitFor(() => expect(screen.getByTestId("account-status")).toHaveTextContent("bağlı"));
-    expect(screen.getByTestId("account-status")).not.toHaveTextContent("yeniden bağlanmalı");
-    expect(requests.filter((r) => r.path.endsWith("/reconnect"))).toHaveLength(1);
-    expect(screen.queryByRole("button", { name: "Yeniden bağlan (simülasyon)" })).not.toBeInTheDocument();
-  });
-
-  it("shows no button while the account is connected", async () => {
-    mockApi(routes(WS_GOLKENT, () => [account({ status: "connected" })]));
-    renderApp(`/w/${WS_GOLKENT}/more/automation`);
-    expect(await screen.findByTestId("account-status")).toHaveTextContent("bağlı");
-    expect(screen.queryByRole("button", { name: "Yeniden bağlan (simülasyon)" })).not.toBeInTheDocument();
-  });
-
-  it("leaves the button to the owner", async () => {
-    mockApi(routes(WS_HARBOR, () => [account()]));
-    renderApp(`/w/${WS_HARBOR}/more/automation`); // the user is a manager here
-    expect(await screen.findByTestId("account-status")).toHaveTextContent("yeniden bağlanmalı");
     expect(screen.queryByRole("button", { name: "Yeniden bağlan (simülasyon)" })).not.toBeInTheDocument();
   });
 });

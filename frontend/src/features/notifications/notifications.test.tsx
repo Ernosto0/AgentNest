@@ -77,7 +77,7 @@ describe("notification centre", () => {
     expect(within(row).getByTestId("simulated-badge")).toBeInTheDocument();
     expect(within(row).getByRole("link", { name: "Aç" })).toHaveAttribute(
       "href",
-      `/w/${WS_GOLKENT}/more/automation`,
+      `/w/${WS_GOLKENT}/more/settings/connections`,
     );
   });
 

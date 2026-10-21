@@ -56,6 +56,20 @@ export function MorePage() {
             <ChevronRightIcon className="text-xl text-slate-400" />
           </Link>
         </li>
+        <li>
+          <Link to={`/w/${workspace.id}/more/settings/connections`} className={ROW}>
+            {t("more.connections")}
+            <ChevronRightIcon className="text-xl text-slate-400" />
+          </Link>
+        </li>
+        {role === "owner" || role === "manager" ? (
+          <li>
+            <Link to={`/w/${workspace.id}/more/settings/system-health`} className={ROW}>
+              {t("more.systemHealth")}
+              <ChevronRightIcon className="text-xl text-slate-400" />
+            </Link>
+          </li>
+        ) : null}
         {meta.data?.demo_tools_enabled ? (
           <li>
             <Link to={`/w/${workspace.id}/more/dev`} className={ROW}>

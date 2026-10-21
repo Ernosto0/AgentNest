@@ -18,8 +18,10 @@ import { DailyReport } from "@/features/reports/DailyReport";
 import { MetricItems } from "@/features/reports/MetricItems";
 import { CreateWorkspaceWizard } from "@/features/workspaces/CreateWorkspaceWizard";
 import { AutomationSettings } from "@/features/settings/AutomationSettings";
+import { Connections } from "@/features/settings/Connections";
 import { MorePage } from "@/features/settings/MorePage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
+import { SystemHealth } from "@/features/settings/SystemHealth";
 import { WorkspaceGate } from "@/features/workspaces/WorkspaceGate";
 import { WorkspacePickerPage } from "@/features/workspaces/WorkspacePickerPage";
 import { NotFoundPage } from "./NotFoundPage";
@@ -43,6 +45,8 @@ export const appRoutes: RouteObject[] = [
           { path: "approvals", element: <ApprovalsList /> },
           { path: "more", element: <MorePage /> },
           { path: "more/settings", element: <SettingsPage /> },
+          { path: "more/settings/connections", element: <Connections /> },
+          { path: "more/settings/system-health", element: <SystemHealth /> },
           { path: "more/knowledge", element: <KnowledgePage /> },
           { path: "more/knowledge/suggestions", element: <SuggestionsPage /> },
           { path: "more/knowledge/answers", element: <ApprovedAnswers /> },

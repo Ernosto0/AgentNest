@@ -133,7 +133,9 @@
     "devPanel": "Geliştirici araçları",
     "reports": "Günlük rapor",
     "activity": "Etkinlik",
-    "notifications": "Bildirimler"
+    "notifications": "Bildirimler",
+    "connections": "Instagram bağlantısı",
+    "systemHealth": "Sistem durumu"
   },
   "settings": {
     "title": "Ayarlar",
@@ -144,7 +146,10 @@
       "en": "English"
     },
     "account": "Hesap",
-    "signedInAs": "Giriş yapan"
+    "signedInAs": "Giriş yapan",
+    "workspaceSection": "Bağlantı ve durum",
+    "openConnections": "Instagram bağlantısını yönet",
+    "openSystemHealth": "Sistem durumunu gör"
   },
   "notFound": {
     "title": "Bulunamadı",
@@ -308,6 +313,105 @@
     "CONTENT_CHANGED": {
       "what": "Taslak hazırlanırken siz değiştirdiniz, bu yüzden otomatik metin eklenmedi.",
       "next": "Kendi metniniz korundu."
+    }
+  },
+  "connections": {
+    "title": "Instagram bağlantısı",
+    "intro": "Hesabınızın bağlantı durumu ve neler yapabildiği. Bağlantı koparsa yanıtlar ve gönderiler bekler, siz yeniden bağlanınca devam eder.",
+    "none": "Bağlı bir Instagram hesabı yok.",
+    "connectMock": "Simüle edilmiş hesap bağla",
+    "status": "Durum",
+    "capabilities": "Yapabildikleri",
+    "lastError": "Son hata",
+    "lastErrorUnknown": "Instagram ile bir sorun yaşandı.",
+    "noError": "Hata yok",
+    "degradedUntil": "Kararsız: {{time}} saatine kadar yeni çağrı yapılmaz. Ardından kendiliğinden denenir.",
+    "reconnect": "Yeniden bağlan (simülasyon)",
+    "reconnectHint": "Bağlantı koptu. Yeniden bağlandığınızda onaylanmış ve bekleyen yanıtlar gönderilir.",
+    "reconnectReal": "Gerçek hesaplar Instagram girişi ile yeniden bağlanır.",
+    "disconnect": "Bağlantıyı kes",
+    "disconnectTitle": "Bağlantıyı kesmek istiyor musunuz?",
+    "disconnectBody": "Bağlantı kesilince yanıt gönderilemez ve gönderi yayınlanamaz. İstediğiniz zaman yeniden bağlanabilirsiniz.",
+    "disconnectConfirm": "Evet, bağlantıyı kes",
+    "disconnectCancel": "Vazgeç",
+    "ownerOnly": "Bunu yalnızca sahip değiştirebilir."
+  },
+  "systemHealth": {
+    "title": "Sistem durumu",
+    "intro": "Son 24 saatte arka planda neler oldu. Yalnızca sayılar ve hata kodları gösterilir; mesaj metni yoktur.",
+    "refresh": "Yenile",
+    "refreshing": "Yenileniyor…",
+    "generatedAt": "Güncellendi: {{time}}",
+    "unknownError": "Bilinmeyen bir sorun oluştu.",
+    "accounts": {
+      "title": "Instagram hesapları",
+      "none": "Bağlı hesap yok.",
+      "expires": "Bağlantı geçerliliği: {{time}}",
+      "degradedUntil": "Kararsız, şu saate kadar bekleniyor: {{time}}",
+      "manage": "Bağlantıyı yönet"
+    },
+    "operations": {
+      "title": "Gönderme ve yayınlama (24 saat)",
+      "none": "Son 24 saatte işlem yok.",
+      "failures": "Son sorunlar",
+      "noFailures": "Son 24 saatte sorun yok.",
+      "row": "{{type}} · {{status}}",
+      "type": {
+        "send_reply": "Yanıt gönderme",
+        "publish_content": "Gönderi yayınlama",
+        "refresh_token": "Bağlantı yenileme"
+      },
+      "status": {
+        "queued": "sırada",
+        "running": "çalışıyor",
+        "succeeded": "başarılı",
+        "failed": "başarısız",
+        "outcome_unknown": "kontrol ediliyor",
+        "cancelled": "iptal edildi"
+      }
+    },
+    "jobs": {
+      "title": "Arka plan işleri",
+      "queued": "Sırada bekleyen",
+      "oldest": "En eski bekleyen",
+      "oldestNone": "Bekleyen yok",
+      "dead": "Vazgeçilen (24 saat)",
+      "minutes": "{{count}} dk",
+      "seconds": "{{count}} sn",
+      "hours": "{{count}} sa"
+    },
+    "webhooks": {
+      "title": "Gelen bildirimler (24 saat)",
+      "received": "Alınan",
+      "ignored": "Yok sayılan",
+      "failed": "İşlenemeyen",
+      "signature": "Geçersiz imzalı bildirim (tüm sistem)",
+      "signatureHint": "Bu sayı yalnızca sizin çalışma alanınızı değil, tüm sistemi kapsar; geçersiz imzalı bir istek hiçbir çalışma alanına bağlanamaz."
+    },
+    "ai": {
+      "title": "Yapay zeka (24 saat)",
+      "total": "Çalışma sayısı",
+      "failed": "Başarısız",
+      "failureRate": "Hata oranı",
+      "input": "Girdi birimi",
+      "output": "Çıktı birimi",
+      "cost": "Tahmini maliyet",
+      "costNone": "Fiyat tablosu yok",
+      "budget": "Günlük çağrı sınırı",
+      "budgetValue": "{{used}} / {{limit}}",
+      "none": "Son 24 saatte yapay zeka çalışması yok.",
+      "task": {
+        "interpret_command": "Komut anlama",
+        "draft_reply": "Yanıt taslağı",
+        "draft_content": "Gönderi taslağı",
+        "extract_fact_candidates": "Bilgi önerisi çıkarma"
+      },
+      "status": {
+        "queued": "sırada",
+        "running": "çalışıyor",
+        "succeeded": "başarılı",
+        "failed": "başarısız"
+      }
     }
   }
 }

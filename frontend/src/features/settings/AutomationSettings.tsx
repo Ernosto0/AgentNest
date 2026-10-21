@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import type { PolicyItem } from "@/api/types";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
@@ -8,7 +9,6 @@ import { SimulatedBadge } from "@/components/SimulatedBadge";
 import {
   useAutomation,
   useConnectMock,
-  useReconnectMock,
   useReviewAutomation,
   useSaveAutomation,
   useSocialAccounts,
@@ -26,7 +26,6 @@ export function AutomationSettings() {
   const owner = role === "owner";
   const accounts = useSocialAccounts(workspace.id);
   const connect = useConnectMock(workspace.id);
-  const reconnect = useReconnectMock(workspace.id);
   const automation = useAutomation(workspace.id);
   const save = useSaveAutomation(workspace.id);
   const review = useReviewAutomation(workspace.id);
@@ -55,21 +54,12 @@ export function AutomationSettings() {
                 .map(([name]) => capabilityLabel(name, t))
                 .join(", ") || "–"}
             </p>
-            {account.status === "needs_reauth" && account.provider_kind === "mock" ? (
-              owner ? (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-slate-600">{t("automation.reconnectHint")}</p>
-                  <div>
-                    <Button disabled={reconnect.isPending} onClick={() => reconnect.mutate(account.id)}>
-                      {t("automation.reconnectMock")}
-                    </Button>
-                  </div>
-                  {reconnect.error ? <ErrorMessage error={reconnect.error} /> : null}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-600">{t("automation.ownerOnly")}</p>
-              )
-            ) : null}
+            <Link
+              to={`/w/${workspace.id}/more/settings/connections`}
+              className="font-semibold text-indigo-700 underline underline-offset-2"
+            >
+              {t("automation.manageConnection")}
+            </Link>
           </>
         ) : (
           <>

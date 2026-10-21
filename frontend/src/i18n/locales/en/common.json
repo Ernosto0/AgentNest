@@ -133,7 +133,9 @@
     "devPanel": "Developer tools",
     "reports": "Daily report",
     "activity": "Activity",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "connections": "Instagram connection",
+    "systemHealth": "System health"
   },
   "settings": {
     "title": "Settings",
@@ -144,7 +146,10 @@
       "en": "English"
     },
     "account": "Account",
-    "signedInAs": "Signed in as"
+    "signedInAs": "Signed in as",
+    "workspaceSection": "Connection and health",
+    "openConnections": "Manage the Instagram connection",
+    "openSystemHealth": "View system health"
   },
   "notFound": {
     "title": "Not found",
@@ -308,6 +313,105 @@
     "CONTENT_CHANGED": {
       "what": "You changed the draft while it was being prepared, so no automatic text was added.",
       "next": "Your own text was kept."
+    }
+  },
+  "connections": {
+    "title": "Instagram connection",
+    "intro": "Your account's connection status and what it can do. If the connection drops, replies and posts wait and continue when you reconnect.",
+    "none": "No Instagram account is connected.",
+    "connectMock": "Connect a simulated account",
+    "status": "Status",
+    "capabilities": "What it can do",
+    "lastError": "Last error",
+    "lastErrorUnknown": "Something went wrong with Instagram.",
+    "noError": "No error",
+    "degradedUntil": "Unstable: no new calls until {{time}}. It is then tried again automatically.",
+    "reconnect": "Reconnect (simulation)",
+    "reconnectHint": "The connection was lost. When you reconnect, approved and waiting replies are sent.",
+    "reconnectReal": "Real accounts reconnect through Instagram sign-in.",
+    "disconnect": "Disconnect",
+    "disconnectTitle": "Disconnect the account?",
+    "disconnectBody": "While disconnected, replies cannot be sent and posts cannot be published. You can reconnect at any time.",
+    "disconnectConfirm": "Yes, disconnect",
+    "disconnectCancel": "Cancel",
+    "ownerOnly": "Only the owner can change this."
+  },
+  "systemHealth": {
+    "title": "System health",
+    "intro": "What happened in the background over the last 24 hours. Only numbers and error codes are shown, never message text.",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "generatedAt": "Updated: {{time}}",
+    "unknownError": "An unknown problem occurred.",
+    "accounts": {
+      "title": "Instagram accounts",
+      "none": "No account connected.",
+      "expires": "Connection valid until: {{time}}",
+      "degradedUntil": "Unstable, waiting until: {{time}}",
+      "manage": "Manage the connection"
+    },
+    "operations": {
+      "title": "Sending and publishing (24 hours)",
+      "none": "No operations in the last 24 hours.",
+      "failures": "Latest problems",
+      "noFailures": "No problems in the last 24 hours.",
+      "row": "{{type}} · {{status}}",
+      "type": {
+        "send_reply": "Sending replies",
+        "publish_content": "Publishing posts",
+        "refresh_token": "Renewing the connection"
+      },
+      "status": {
+        "queued": "queued",
+        "running": "running",
+        "succeeded": "succeeded",
+        "failed": "failed",
+        "outcome_unknown": "checking",
+        "cancelled": "cancelled"
+      }
+    },
+    "jobs": {
+      "title": "Background jobs",
+      "queued": "Waiting in the queue",
+      "oldest": "Oldest waiting",
+      "oldestNone": "Nothing waiting",
+      "dead": "Given up on (24 hours)",
+      "minutes": "{{count}} min",
+      "seconds": "{{count}} s",
+      "hours": "{{count}} h"
+    },
+    "webhooks": {
+      "title": "Incoming notifications (24 hours)",
+      "received": "Received",
+      "ignored": "Ignored",
+      "failed": "Could not be processed",
+      "signature": "Notifications with an invalid signature (whole system)",
+      "signatureHint": "This number covers the whole system, not only your workspace: a request with an invalid signature cannot be attributed to any workspace."
+    },
+    "ai": {
+      "title": "AI (24 hours)",
+      "total": "Runs",
+      "failed": "Failed",
+      "failureRate": "Failure rate",
+      "input": "Input units",
+      "output": "Output units",
+      "cost": "Estimated cost",
+      "costNone": "No price table",
+      "budget": "Daily call limit",
+      "budgetValue": "{{used}} / {{limit}}",
+      "none": "No AI runs in the last 24 hours.",
+      "task": {
+        "interpret_command": "Understanding commands",
+        "draft_reply": "Reply drafts",
+        "draft_content": "Post drafts",
+        "extract_fact_candidates": "Extracting fact suggestions"
+      },
+      "status": {
+        "queued": "queued",
+        "running": "running",
+        "succeeded": "succeeded",
+        "failed": "failed"
+      }
     }
   }
 }

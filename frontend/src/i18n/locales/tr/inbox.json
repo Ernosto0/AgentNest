@@ -135,8 +135,6 @@
     "connection": "Instagram bağlantısı",
     "notConnected": "Bağlı bir Instagram hesabı yok.",
     "connectMock": "Simüle edilmiş hesap bağla",
-    "reconnectMock": "Yeniden bağlan (simülasyon)",
-    "reconnectHint": "Bağlantı koptu. Yeniden bağlandığınızda onaylanmış ve bekleyen yanıtlar gönderilir.",
     "ownerOnly": "Bunu yalnızca sahip değiştirebilir.",
     "accountStatus": {
       "connected": "bağlı",
@@ -166,7 +164,8 @@
       "reply_promotions": "Kampanyalar",
       "reply_general_faq": "Genel sorular",
       "content_publish": "Gönderi yayınlama"
-    }
+    },
+    "manageConnection": "Bağlantıyı yönet"
   },
   "answers": {
     "title": "Onaylı yanıtlar",
@@ -216,6 +215,9 @@
     "publishedNone": "Simülatörde henüz yayınlanmış gönderi yok.",
     "publishedRow": "{{type}} · {{time}}",
     "refresh": "Yenile",
-    "noCaption": "(açıklamasız)"
+    "noCaption": "(açıklamasız)",
+    "healthCheck": "Sağlık kontrolünü şimdi çalıştır",
+    "healthCheckHint": "Kararsız hesapları şimdi dener; Instagram yeniden yanıt veriyorsa hesap bağlı olur ve bekleyen yanıtlar gönderilir.",
+    "healthCheckResult": "Kontrol edilen: {{checked}}, düzelen: {{recovered}}"
   }
 }

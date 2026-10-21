@@ -135,8 +135,6 @@
     "connection": "Instagram connection",
     "notConnected": "No Instagram account is connected.",
     "connectMock": "Connect a simulated account",
-    "reconnectMock": "Reconnect (simulated)",
-    "reconnectHint": "The connection was lost. When you reconnect, replies that were approved and waiting are sent.",
     "ownerOnly": "Only the owner can change this.",
     "accountStatus": {
       "connected": "connected",
@@ -166,7 +164,8 @@
       "reply_promotions": "Offers",
       "reply_general_faq": "General questions",
       "content_publish": "Publishing posts"
-    }
+    },
+    "manageConnection": "Manage the connection"
   },
   "answers": {
     "title": "Approved answers",
@@ -216,6 +215,9 @@
     "publishedNone": "Nothing has been published in the simulator yet.",
     "publishedRow": "{{type}} · {{time}}",
     "refresh": "Refresh",
-    "noCaption": "(no caption)"
+    "noCaption": "(no caption)",
+    "healthCheck": "Run the health check now",
+    "healthCheckHint": "Tries the unstable accounts now; if Instagram answers again the account becomes connected and waiting replies are sent.",
+    "healthCheckResult": "Checked: {{checked}}, recovered: {{recovered}}"
   }
 }

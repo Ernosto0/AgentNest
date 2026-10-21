@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
-import type { DevJob, DevScript, FailureRule, SimPublishedMedia } from "@/api/types";
+import type { DevJob, DevScript, FailureRule, HealthCheckResult, SimPublishedMedia } from "@/api/types";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
@@ -33,7 +33,16 @@ const MODES = [
 function useDev(ws: string) {
   const queryClient = useQueryClient();
   const refresh = () => {
-    for (const name of ["conversations", "conversation", "approvals", "dev-jobs", "dev-rules", "dev-published"]) {
+    for (const name of [
+      "conversations",
+      "conversation",
+      "approvals",
+      "dev-jobs",
+      "dev-rules",
+      "dev-published",
+      "social-accounts",
+      "system-health",
+    ]) {
       void queryClient.invalidateQueries({ queryKey: [name] });
     }
   };
@@ -83,6 +92,15 @@ function useDev(ws: string) {
     mutationFn: () => unwrap(api.POST("/api/v1/dev/jobs/run-due")),
     onSettled: refresh,
   });
+  const healthCheck = useMutation<HealthCheckResult, AppError>({
+    mutationFn: () =>
+      unwrap(
+        api.POST("/api/v1/dev/workspaces/{workspace_id}/health-check", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ),
+    onSettled: refresh,
+  });
   const addRule = useMutation<unknown, AppError, { operation: string; mode: string; remaining: number | null }>({
     mutationFn: ({ operation, mode, remaining }) =>
       unwrap(
@@ -102,7 +120,7 @@ function useDev(ws: string) {
       ),
     onSettled: refresh,
   });
-  return { scripts, rules, jobs, published, simulate, runDue, addRule, removeRule };
+  return { scripts, rules, jobs, published, simulate, runDue, healthCheck, addRule, removeRule };
 }
 
 /** Developer tools (only when the server has DEMO_TOOLS_ENABLED): simulate customers and failures. */
@@ -237,6 +255,23 @@ export function DevPanel() {
           <Button variant="secondary" disabled={dev.runDue.isPending} onClick={() => dev.runDue.mutate()}>
             {t("devPanel.runDue")}
           </Button>
+        </div>
+        <div className="flex flex-col gap-2 border-t border-slate-200 pt-3">
+          <p className="text-sm text-slate-600">{t("devPanel.healthCheckHint")}</p>
+          <div>
+            <Button variant="secondary" disabled={dev.healthCheck.isPending} onClick={() => dev.healthCheck.mutate()}>
+              {t("devPanel.healthCheck")}
+            </Button>
+          </div>
+          {dev.healthCheck.data ? (
+            <p role="status" data-testid="health-check-result" className="text-sm">
+              {t("devPanel.healthCheckResult", {
+                checked: dev.healthCheck.data.checked,
+                recovered: dev.healthCheck.data.recovered,
+              })}
+            </p>
+          ) : null}
+          {dev.healthCheck.error ? <ErrorMessage error={dev.healthCheck.error} /> : null}
         </div>
         <ul className="text-sm">
           {(dev.jobs.data ?? []).slice(0, 12).map((job) => (

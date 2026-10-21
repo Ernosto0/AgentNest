@@ -14,7 +14,7 @@ export function notificationTarget(workspaceId: string, notification: AppNotific
     const id = params.conversation_id;
     return typeof id === "string" ? `${base}/inbox/${id}` : `${base}/inbox`;
   }
-  if (notification.type.startsWith("account.")) return `${base}/more/automation`;
+  if (notification.type.startsWith("account.")) return `${base}/more/settings/connections`;
   if (notification.type === "report.daily_ready") {
     const day = params.local_date;
     return typeof day === "string" ? `${base}/more/reports?date=${day}` : `${base}/more/reports`;

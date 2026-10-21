@@ -46,7 +46,7 @@ export function OnHoldActions({ item, onEdit }: { item: ContentItem; onEdit: () 
         </Link>
       ) : null}
       {reason === "ACCOUNT_UNAVAILABLE" ? (
-        <Link to={`${base}/more/automation`} className={linkClass}>
+        <Link to={`${base}/more/settings/connections`} className={linkClass}>
           {t("content.hold.openConnection")}
         </Link>
       ) : null}

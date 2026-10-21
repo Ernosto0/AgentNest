@@ -65,3 +65,8 @@ export type DailyReport = Schemas["DailyReportOut"];
 export type ReportMetric = Schemas["MetricOut"];
 export type MetricItems = Schemas["MetricItemsOut"];
 export type MetricItem = Schemas["MetricItemOut"];
+
+// Phase 6: system health and the connection.
+export type SystemHealth = Schemas["SystemHealthOut"];
+export type AccountHealth = Schemas["AccountHealth"];
+export type HealthCheckResult = Schemas["HealthCheckOut"];

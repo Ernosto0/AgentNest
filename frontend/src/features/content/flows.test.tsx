@@ -490,7 +490,7 @@ describe("on hold", () => {
     expect(panel).toHaveTextContent("Instagram hesabı kullanılamadığı için beklemeye alındı.");
     expect(within(panel).getByRole("link", { name: "Bağlantıyı kontrol et" })).toHaveAttribute(
       "href",
-      `/w/${WS_GOLKENT}/more/automation`,
+      `/w/${WS_GOLKENT}/more/settings/connections`,
     );
     expect(within(panel).queryByRole("link", { name: "İşletme bilgilerini aç" })).toBeNull();
     expect(within(panel).getByRole("button", { name: "Olduğu gibi yeniden onayla" })).toBeInTheDocument();

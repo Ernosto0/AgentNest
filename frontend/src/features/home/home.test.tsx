@@ -127,7 +127,7 @@ describe("Home: banners and status strip", () => {
     );
     expect(within(banner).getByRole("link", { name: "Bağlantıyı yenile" })).toHaveAttribute(
       "href",
-      `/w/${WS_GOLKENT}/more/automation`,
+      `/w/${WS_GOLKENT}/more/settings/connections`,
     );
     expect(screen.queryByTestId("banner-degraded")).toBeNull();
     expect(screen.getByTestId("home-connection")).toHaveTextContent("yeniden bağlanmalı");

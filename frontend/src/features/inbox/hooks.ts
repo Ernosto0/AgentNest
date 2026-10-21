@@ -251,7 +251,7 @@ export function useReconnectMock(ws: string) {
       ),
     onSuccess: () =>
       Promise.all(
-        ["social-accounts", "readiness", "automation", "conversations"].map((name) =>
+        ["social-accounts", "readiness", "automation", "conversations", "system-health"].map((name) =>
           queryClient.invalidateQueries({ queryKey: [name, ws] }),
         ),
       ),
