@@ -107,6 +107,7 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
     ),
     "members": (
         "member.invited",
+        "member.invite_revoked",
         "member.joined",
         "member.role_changed",
         "member.removed",

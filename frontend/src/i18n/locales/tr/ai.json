@@ -185,7 +185,8 @@
       "report_daily_ready": "{{date}} günlük raporu hazır",
       "account_permission_missing": "Instagram izni eksik: {{what}}",
       "account_degraded": "Instagram bağlantısı kararsız. Gönderim ve paylaşım birkaç dakika duraklatıldı, otomatik devam edecek.",
-      "account_recovered": "Instagram bağlantısı yeniden çalışıyor. Bekleyen yanıtlar gönderiliyor."
+      "account_recovered": "Instagram bağlantısı yeniden çalışıyor. Bekleyen yanıtlar gönderiliyor.",
+      "member_joined": "{{name}} çalışma alanına katıldı"
     },
     "open": "Aç",
     "intro": "Sizin için önemli olan gelişmeler burada toplanır.",

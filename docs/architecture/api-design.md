@@ -41,10 +41,13 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `GET /api/v1/workspaces` | memberships list |
 | `POST /api/v1/workspaces` | `{name, business_category, market, default_locale, timezone, currency}` → workspace |
 | `GET/PATCH /api/v1/workspaces/{ws}` | settings (`workspace.manage` for PATCH). `settings.automation_reviewed_at` is read-only: the server stamps it, once, when the owner confirms the review (`POST /automation-policies/review`); saving the policies does not |
-| `GET /api/v1/workspaces/{ws}/members` | |
-| `PATCH/DELETE /api/v1/workspaces/{ws}/members/{user_id}` | role change, removal (`members.manage`). The last owner cannot be removed. |
-| `POST /api/v1/workspaces/{ws}/invites` | `{role}` → `{invite_url, expires_at}` (Phase 6) |
-| `POST /api/v1/invites/accept` | `{token, display_name, password}` or the authenticated user → membership |
+| `GET /api/v1/workspaces/{ws}/members` | `{items: [{user_id, email, display_name, role, joined_at}]}` |
+| `PATCH /api/v1/workspaces/{ws}/members/{user_id}` | `{role}` → member (`members.manage`). Demoting or removing the **last owner** → 409 `LAST_OWNER_REQUIRED` (owner transfer = promote the other person, then demote yourself). |
+| `DELETE /api/v1/workspaces/{ws}/members/{user_id}` | → 204 (`members.manage`); last-owner rule as above. |
+| `POST /api/v1/workspaces/{ws}/invites` | `{role}` → 201 `{id, role, expires_at, invite_path: "/invite/<token>", invite_url, created_at}` (`members.manage`). The raw token appears once, here; only its sha256 is stored. |
+| `GET /api/v1/workspaces/{ws}/invites` | pending invites `{items: [{id, role, expires_at, created_at}]}` (`members.manage`); accepted, revoked and expired invites are not listed. |
+| `POST /api/v1/workspaces/{ws}/invites/{invite_id}/revoke` | → 204 (`members.manage`); revoking an accepted invite → 409 `CONFLICT_STATE`, revoking twice is a no-op. |
+| `POST /api/v1/invites/accept` | signed in: `{token}` → `{workspace_id, workspace_name, role}` (the user becomes a member). Signed out: `{token, email, display_name, password}` creates the user, signs them in (session cookie) and returns the same body. Unknown, expired, used or revoked token → 400 `INVITE_INVALID`; an existing email (signed out) or an existing member → 409 `CONFLICT_STATE`. |
 
 ### 2.3 Knowledge (Phase 2; extraction Phase 3; approved answers Phase 4)
 | Method & path | Request → Response |

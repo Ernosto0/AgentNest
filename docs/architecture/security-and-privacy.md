@@ -81,6 +81,7 @@ Notes:
 - The matrix is implemented as a static mapping in `backend/app/identity/permissions.py` and pinned by a table test. "Staff: inbox metrics only" is modelled as the separate permission `reports.view_inbox_metrics`; `activity.view` and `system_health.view` are two permissions with the same holders. Unknown permission names raise instead of denying silently.
 - Staff manual replies are sent without separate approval, because a human wrote them. Owners can restrict this later (deferred).
 - Role changes and membership removal take effect immediately: sessions remain, but the membership checks fail.
+- **Invites (Phase 6):** an invite token is a random `secrets.token_urlsafe(32)` value shown once at creation; only its SHA-256 is stored (`invites.token_hash`), and it expires after 7 days and is single-use and revocable. Accepting an invite works signed in or signed out (a new user is created and signed in), so `POST /api/v1/invites/accept` is exempt from the CSRF header exactly like login (it is in `CSRF_EXEMPT_PATHS`).
 
 ## 4. Prompt injection and untrusted content
 See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**:

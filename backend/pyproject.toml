@@ -122,6 +122,7 @@ source_modules = [
     "app.identity.models",
     "app.identity.schemas",
     "app.identity.permissions",
+    "app.identity.invites",
     "app.knowledge.service",
     "app.knowledge.repository",
     "app.knowledge.models",

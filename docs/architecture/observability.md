@@ -145,8 +145,9 @@ The kinds exist from P5-04. The publish executor (P5-06) produces `content.publi
 | `account.needs_reauth` | critical | `integrations.manage` | `account:{account_id}:needs_reauth` | `operations.health.handle_auth_error` |
 | `account.permission_missing` | attention | `integrations.manage` | `account:{account_id}:permission_missing:{capability}` | `operations.health.handle_permission_error` (send and publish) |
 | `report.daily_ready` | info | `reports.view` | `report:{local_date}` | `reporting.service.generate_daily_report` (the scheduled run only) |
+| `member.joined` | info | owners | `member.joined:{user_id}` | `identity.invites.accept_invite` |
 
-Types that later Phase 6 sessions add to the catalog together with their producer: `account.degraded` (attention, `integrations.manage`, `account:{id}:degraded`) and `account.recovered` (info, `account:{id}:connected`) in the circuit work; `member.joined` (info, owners) with member invites; `knowledge.promotion_expired` (attention, `knowledge.verify`) with retention. The account dedup key follows the form `account:{id}:{status}`; the earlier `account-reauth:{id}` was renamed (unread notifications under the old key are not migrated; the next failure creates a new one).
+Types that later Phase 6 sessions add to the catalog together with their producer: `knowledge.promotion_expired` (attention, `knowledge.verify`) with retention. The account dedup key follows the form `account:{id}:{status}`; the earlier `account-reauth:{id}` was renamed (unread notifications under the old key are not migrated; the next failure creates a new one).
 
 ## 5. Audit action catalog
 
@@ -154,7 +155,7 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 
 | Area | Actions |
 |---|---|
-| Auth & members | `auth.login`, `auth.logout`, `auth.login_failed` (system-level, no workspace), `workspace.created`, `workspace.updated`, `member.invited`, `member.joined`, `member.role_changed`, `member.removed` |
+| Auth & members | `auth.login`, `auth.logout`, `auth.login_failed` (system-level, no workspace), `workspace.created`, `workspace.updated`, `member.invited`, `member.invite_revoked`, `member.joined`, `member.role_changed`, `member.removed` |
 | Knowledge | `fact.created`, `fact.updated`, `fact.verified`, `fact.archived`, `fact.restored`, `fact_candidate.created`, `fact_candidate.accepted`, `fact_candidate.rejected`, `knowledge.extraction_requested` (character count and an injection flag, never the text), `approved_answer.created/updated/archived`, `policy.updated`, `policy.reviewed` |
 | Commands | `command.received`, `command.interpreted`, `command.executed`, `command.failed`, `command.cancelled`, `command.expired` |
 | Approvals | `approval.requested`, `approval.approved`, `approval.granted` (a decision by someone other than the requester that is not a self-approval), `approval.rejected`, `approval.expired`, `approval.cancelled` |

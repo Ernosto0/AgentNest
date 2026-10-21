@@ -51,8 +51,9 @@ def test_every_unsafe_api_route_rejects_requests_without_the_csrf_token(
     assert not failures, "unsafe routes that accept requests without CSRF:\n" + "\n".join(failures)
 
 
-def test_the_csrf_exemption_list_is_only_login() -> None:
-    assert {"/api/v1/auth/login"} == set(CSRF_EXEMPT_PATHS)
+def test_the_csrf_exemption_list_is_only_login_and_invite_accept() -> None:
+    # Invite accept works signed out (a new user is created), so it is exempt exactly like login.
+    assert {"/api/v1/auth/login", "/api/v1/invites/accept"} == set(CSRF_EXEMPT_PATHS)
 
 
 def _walk(schema: Any, definitions: dict[str, Any], seen: set[str], out: set[str]) -> None:

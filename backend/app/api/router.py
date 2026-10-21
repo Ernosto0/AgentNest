@@ -12,7 +12,7 @@ from app.content.router import router as content_router
 from app.core.config import Settings
 from app.core.db import check_readiness
 from app.core.i18n import SUPPORTED_LOCALES
-from app.identity.router import auth_router, workspaces_router
+from app.identity.router import auth_router, invites_router, workspaces_router
 from app.inbox.router import router as inbox_router
 from app.knowledge.router import router as knowledge_router
 from app.notifications.router import router as notifications_router
@@ -64,6 +64,7 @@ def meta(settings: Settings = Depends(get_app_settings)) -> MetaResponse:
 
 api_router.include_router(auth_router)
 api_router.include_router(workspaces_router)
+api_router.include_router(invites_router)
 api_router.include_router(knowledge_router)
 api_router.include_router(approvals_router)
 api_router.include_router(commands_router)

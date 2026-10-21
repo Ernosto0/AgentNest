@@ -21,8 +21,9 @@ SESSION_COOKIE = "agentnest_session"
 CSRF_HEADER = "X-CSRF-Token"
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 # Unsafe /api/v1 routes that need no session (CSRF applies to everything else, by default).
-# Webhooks live outside /api/v1 and are authenticated by signature instead.
-CSRF_EXEMPT_PATHS = frozenset({"/api/v1/auth/login"})
+# Webhooks live outside /api/v1 and are authenticated by signature instead. Accepting an invite
+# works both signed in and signed out (a new user is created), so it is exempt exactly like login.
+CSRF_EXEMPT_PATHS = frozenset({"/api/v1/auth/login", "/api/v1/invites/accept"})
 
 
 def get_app_settings(request: Request) -> Settings:
@@ -87,6 +88,26 @@ def current_auth(
 ) -> AuthenticatedSession:
     """The authenticated user and session, or 401 ``AUTH_REQUIRED``."""
     return _authenticate(request, response, db, settings, clock)
+
+
+def optional_auth(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+    clock: Clock = Depends(get_clock),
+) -> AuthenticatedSession | None:
+    """The authenticated user and session when there is one, else ``None`` (no 401).
+
+    For routes that behave differently signed out (the invite accept page).
+    """
+    token = request.cookies.get(SESSION_COOKIE)
+    if not token:
+        return None
+    try:
+        return _authenticate(request, response, db, settings, clock)
+    except AppError:
+        return None
 
 
 def enforce_csrf(

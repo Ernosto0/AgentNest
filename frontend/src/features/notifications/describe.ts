@@ -67,6 +67,8 @@ export function describeNotification(
     }
     case "report.daily_ready":
       return t("notifications.type.report_daily_ready", { date: String(params.local_date ?? "") });
+    case "member.joined":
+      return t("notifications.type.member_joined", { name: String(params.display_name ?? "") });
     default:
       return t("notifications.type.unknown");
   }

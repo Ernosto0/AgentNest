@@ -51,6 +51,10 @@
     {
       "type": "report.daily_ready",
       "severity": "info"
+    },
+    {
+      "type": "member.joined",
+      "severity": "info"
     }
   ]
 }

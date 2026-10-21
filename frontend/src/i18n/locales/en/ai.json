@@ -185,7 +185,8 @@
       "report_daily_ready": "The daily report for {{date}} is ready",
       "account_permission_missing": "Instagram permission missing: {{what}}",
       "account_degraded": "Instagram connection is unstable. Sending and publishing pause for a few minutes and resume automatically.",
-      "account_recovered": "Instagram connection is working again. Waiting replies are being sent."
+      "account_recovered": "Instagram connection is working again. Waiting replies are being sent.",
+      "member_joined": "{{name}} joined the workspace"
     },
     "open": "Open",
     "intro": "The developments that matter to you are collected here.",

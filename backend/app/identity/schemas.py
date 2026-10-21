@@ -128,3 +128,43 @@ class MemberOut(BaseModel):
     display_name: str
     role: Role
     joined_at: datetime
+
+
+# --- members and invites (Phase 6) -----------------------------------------------------
+
+
+class MemberRolePatch(StrictModel):
+    role: Role
+
+
+class InviteCreate(StrictModel):
+    role: Role
+
+
+class InviteOut(BaseModel):
+    id: uuid.UUID
+    role: Role
+    expires_at: datetime
+    invite_path: str
+    invite_url: str
+    created_at: datetime
+
+
+class PendingInviteOut(BaseModel):
+    id: uuid.UUID
+    role: Role
+    expires_at: datetime
+    created_at: datetime
+
+
+class InviteAccept(StrictModel):
+    token: str = Field(min_length=1, max_length=200)
+    email: str | None = Field(default=None, min_length=1, max_length=320)
+    display_name: Name | None = None
+    password: str | None = Field(default=None, min_length=1, max_length=1000)
+
+
+class InviteAcceptOut(BaseModel):
+    workspace_id: uuid.UUID
+    workspace_name: str
+    role: Role

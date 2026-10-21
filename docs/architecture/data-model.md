@@ -93,7 +93,7 @@ Phase = the phase whose migration creates the table ([roadmap.md](../implementat
 
 **`workspace_members`**: PK `(workspace_id, user_id)`; `role` `CHECK in ('owner','manager','staff')`; `invited_by_user_id` null. Service rule: a workspace always has ≥ 1 owner.
 
-**`invites`** (Phase 6): `id`, `workspace_id`, `role`, `token_hash` unique, `created_by_user_id`, `expires_at` (default 7 days), `accepted_by_user_id`, `accepted_at`, `revoked_at`.
+**`invites`** (Phase 6): tenant table (`workspace_id`, `unique (workspace_id, id)`). `id`, `workspace_id`, `role` `CHECK in ('owner','manager','staff')`, `token_hash bytea not null unique` (SHA-256 of the raw token; the token itself is never stored), `created_by_user_id` (FK users, null), `expires_at` (7 days from creation), `accepted_by_user_id` (FK users, null), `accepted_at`, `revoked_at`, `created_at`.
 
 ### 3.2 Audit and jobs (Phase 1)
 

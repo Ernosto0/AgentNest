@@ -21,7 +21,8 @@ from app.approvals import service as approvals_service
 from app.commands.models import OwnerCommand
 from app.content.models import ContentItem, MediaAsset
 from app.core.clock import FrozenClock
-from app.identity.models import User, Workspace
+from app.core.security import hash_token
+from app.identity.models import Invite, User, Workspace
 from app.inbox.models import Conversation, Message, ReplyDraft
 from app.integrations.instagram.models import SimContainer, SimPublishedMedia, SocialAccount
 from app.knowledge.models import ApprovedAnswer
@@ -240,6 +241,16 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             published_at=clock.now(),
         )
     )
+    # Phase 6: a pending invite in B, so the invite routes are probed with a real foreign id.
+    b_invite = Invite(
+        workspace_id=b.id,
+        role="manager",
+        token_hash=hash_token("isolation-invite-b"),
+        created_by_user_id=b_users["owner"].id,
+        expires_at=clock.now() + timedelta(days=7),
+    )
+    db_session.add(b_invite)
+    db_session.flush()
     db_session.commit()
     return TwoWorkspaces(
         app=app,
@@ -251,6 +262,7 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         a_headers=headers,
         foreign_ids={
             "workspace_id": str(b.id),
+            "user_id": str(b_users["owner"].id),
             "fact_id": str(b_fact.id),
             "candidate_id": str(b_candidate.id),
             "approval_id": str(b_approval.id),
@@ -267,5 +279,6 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "content_approval_id": str(b_content_approval.id),
             "sim_media_id": "mock-media-isolation-b",
             "operation_id": str(b_operation.id),
+            "invite_id": str(b_invite.id),
         },
     )

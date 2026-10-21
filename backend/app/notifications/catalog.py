@@ -78,6 +78,7 @@ _SPECS = (
         "account:{account_id}:permission_missing:{capability}",
     ),
     NotificationSpec("report.daily_ready", INFO, "reports.view", "report:{local_date}"),
+    NotificationSpec("member.joined", INFO, "owners", "member.joined:{user_id}"),
 )
 
 CATALOG: dict[str, NotificationSpec] = {spec.type: spec for spec in _SPECS}
