@@ -18,6 +18,12 @@ export function MorePage() {
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl font-semibold">{t("more.title")}</h1>
       <ul className="flex flex-col gap-3">
+        <li>
+          <Link to={`/w/${workspace.id}/more/reports`} className={ROW}>
+            {t("more.reports")}
+            <ChevronRightIcon className="text-xl text-slate-400" />
+          </Link>
+        </li>
         {role === "owner" || role === "manager" ? (
           <li>
             <Link to={`/w/${workspace.id}/more/activity`} className={ROW}>

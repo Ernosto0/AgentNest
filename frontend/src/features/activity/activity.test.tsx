@@ -128,12 +128,16 @@ describe("activity feed", () => {
       "href",
       `/w/${WS_GOLKENT}/more/activity`,
     );
+    expect(screen.getByRole("link", { name: /Günlük rapor/ })).toHaveAttribute(
+      "href",
+      `/w/${WS_GOLKENT}/more/reports`,
+    );
     owner.unmount();
 
     vi.unstubAllGlobals();
     mockApi(routes({}, STAFF_ME));
     renderApp(`/w/${WS_GOLKENT}/more`);
-    expect(await screen.findByRole("link", { name: /Bilgileri|İşletme bilgileri/ })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /Günlük rapor/ })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Etkinlik/ })).toBeNull();
   });
 });

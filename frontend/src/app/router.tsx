@@ -13,6 +13,8 @@ import { ApprovedAnswers } from "@/features/knowledge/ApprovedAnswers";
 import { CategoryPage } from "@/features/knowledge/CategoryPage";
 import { KnowledgePage } from "@/features/knowledge/KnowledgePage";
 import { SuggestionsPage } from "@/features/knowledge/SuggestionsPage";
+import { DailyReport } from "@/features/reports/DailyReport";
+import { MetricItems } from "@/features/reports/MetricItems";
 import { CreateWorkspaceWizard } from "@/features/workspaces/CreateWorkspaceWizard";
 import { AutomationSettings } from "@/features/settings/AutomationSettings";
 import { MorePage } from "@/features/settings/MorePage";
@@ -44,6 +46,8 @@ export const appRoutes: RouteObject[] = [
           { path: "more/knowledge/suggestions", element: <SuggestionsPage /> },
           { path: "more/knowledge/answers", element: <ApprovedAnswers /> },
           { path: "more/automation", element: <AutomationSettings /> },
+          { path: "more/reports", element: <DailyReport /> },
+          { path: "more/reports/:date/:key", element: <MetricItems /> },
           { path: "more/activity", element: <ActivityFeed /> },
           { path: "more/dev", element: <DevPanel /> },
           { path: "more/knowledge/:category", element: <CategoryPage /> },

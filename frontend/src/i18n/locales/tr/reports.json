@@ -1,0 +1,43 @@
+{
+  "reports": {
+    "title": "Günlük rapor",
+    "intro": "Bir günde ne olduğunun özeti. Her sayıya dokunursanız arkasındaki kayıtları görürsünüz.",
+    "dateLabel": "Rapor günü",
+    "previousDay": "Önceki gün",
+    "nextDay": "Sonraki gün",
+    "today": "Bugün",
+    "backToToday": "Bugüne dön",
+    "asOf": "{{time}} itibarıyla",
+    "emptyHint": "Mesaj, onay ya da gönderi olduğunda rapor burada özetlenir.",
+    "regenerate": "Yeniden oluştur",
+    "openScreen": "Ekranda aç",
+    "backToReport": "Rapora dön",
+    "total": "Toplam: {{total}}",
+    "medianOf": "Ortanca süre: {{value}} dk",
+    "minutes": "{{value}} dk",
+    "noItems": "Bu sayının arkasında kayıt yok",
+    "loadMore": "Daha fazla göster",
+    "metrics": {
+      "inbound_messages": "Gelen mesaj",
+      "conversations_with_inbound": "Yeni mesaj gelen konuşma",
+      "new_conversations": "Yeni konuşma",
+      "replies_sent": "Gönderilen yanıt",
+      "replies_sent_auto": "Otomatik gönderilen yanıt",
+      "replies_sent_approved": "Onayla gönderilen yanıt",
+      "replies_sent_by_owner": "Sizin yazdığınız yanıt",
+      "native_replies": "Instagram uygulamasında verilen yanıt",
+      "escalations": "Size yönlendirilen konuşma",
+      "missed_conversations": "Yanıtsız kalan konuşma",
+      "median_first_response_minutes": "Ortanca ilk yanıt süresi",
+      "attention_now": "İlgi bekleyen konuşma (şu an)",
+      "unanswered_open_now": "Yanıt bekleyen açık konuşma (şu an)",
+      "pending_approvals_now": "Onay bekleyen (şu an)",
+      "content_published": "Yayımlanan gönderi",
+      "content_failed": "Yayımlanamayan gönderi",
+      "content_scheduled_next_24h": "Önümüzdeki 24 saatte zamanlanan gönderi",
+      "content_on_hold_now": "Beklemedeki gönderi (şu an)",
+      "fact_changes": "Bilgi değişikliği",
+      "integration_errors": "Bağlantı hatası"
+    }
+  }
+}

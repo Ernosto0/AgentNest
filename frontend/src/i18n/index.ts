@@ -6,12 +6,14 @@ import en from "./locales/en/common.json";
 import enContent from "./locales/en/content.json";
 import enInbox from "./locales/en/inbox.json";
 import enKnowledge from "./locales/en/knowledge.json";
+import enReports from "./locales/en/reports.json";
 import trActivity from "./locales/tr/activity.json";
 import trAi from "./locales/tr/ai.json";
 import tr from "./locales/tr/common.json";
 import trContent from "./locales/tr/content.json";
 import trInbox from "./locales/tr/inbox.json";
 import trKnowledge from "./locales/tr/knowledge.json";
+import trReports from "./locales/tr/reports.json";
 
 export const SUPPORTED_LANGUAGES = ["tr", "en"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
@@ -52,8 +54,8 @@ i18n.on("languageChanged", (language) => {
 void i18n.use(initReactI18next).init({
   // One namespace; the knowledge catalog is a separate file merged into it (top-level keys differ).
   resources: {
-    tr: { common: { ...tr, ...trKnowledge, ...trAi, ...trInbox, ...trContent, ...trActivity } },
-    en: { common: { ...en, ...enKnowledge, ...enAi, ...enInbox, ...enContent, ...enActivity } },
+    tr: { common: { ...tr, ...trKnowledge, ...trAi, ...trInbox, ...trContent, ...trActivity, ...trReports } },
+    en: { common: { ...en, ...enKnowledge, ...enAi, ...enInbox, ...enContent, ...enActivity, ...enReports } },
   },
   lng: detectLanguage(),
   fallbackLng: DEFAULT_LANGUAGE,

@@ -1,0 +1,43 @@
+{
+  "reports": {
+    "title": "Daily report",
+    "intro": "A summary of what happened on one day. Tap any number to see the records behind it.",
+    "dateLabel": "Report day",
+    "previousDay": "Previous day",
+    "nextDay": "Next day",
+    "today": "Today",
+    "backToToday": "Back to today",
+    "asOf": "As of {{time}}",
+    "emptyHint": "When there are messages, approvals or posts, the report summarises them here.",
+    "regenerate": "Generate again",
+    "openScreen": "Open the screen",
+    "backToReport": "Back to the report",
+    "total": "Total: {{total}}",
+    "medianOf": "Median time: {{value}} min",
+    "minutes": "{{value}} min",
+    "noItems": "There are no records behind this number",
+    "loadMore": "Show more",
+    "metrics": {
+      "inbound_messages": "Messages received",
+      "conversations_with_inbound": "Conversations with a new message",
+      "new_conversations": "New conversations",
+      "replies_sent": "Replies sent",
+      "replies_sent_auto": "Replies sent automatically",
+      "replies_sent_approved": "Replies sent after approval",
+      "replies_sent_by_owner": "Replies you wrote",
+      "native_replies": "Replies given in the Instagram app",
+      "escalations": "Conversations handed to you",
+      "missed_conversations": "Conversations left unanswered",
+      "median_first_response_minutes": "Median first response time",
+      "attention_now": "Conversations needing attention (now)",
+      "unanswered_open_now": "Open conversations waiting for a reply (now)",
+      "pending_approvals_now": "Waiting for approval (now)",
+      "content_published": "Posts published",
+      "content_failed": "Posts that failed",
+      "content_scheduled_next_24h": "Posts scheduled for the next 24 hours",
+      "content_on_hold_now": "Posts on hold (now)",
+      "fact_changes": "Information changes",
+      "integration_errors": "Integration errors"
+    }
+  }
+}
