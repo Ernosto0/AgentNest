@@ -157,6 +157,18 @@ export async function addFailureRule(
   expect(response.status()).toBe(201);
 }
 
+/**
+ * What the seeded history (yesterday, H16) already put in each studio: one published feed post
+ * (title below, so a test can tell it from its own posts) and one failed one.
+ */
+export const SEEDED_PUBLISHED_POSTS = 1;
+export const SEEDED_POST_TITLE = "Haftalık paylaşım";
+
+/** The content cards a test created itself: the seeded history posts are left out. */
+export function ownContentCards(page: Page) {
+  return page.getByTestId("content-card").filter({ hasNotText: SEEDED_POST_TITLE });
+}
+
 /** What the simulated Instagram has published (read-only; the evidence of "exactly one post"). */
 export async function simulatorPublished(
   request: APIRequestContext,

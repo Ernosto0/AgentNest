@@ -4,9 +4,11 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 import {
   API,
   SAMPLE_FEED,
+  SEEDED_PUBLISHED_POSTS,
   addFailureRule,
   apiLogin,
   localFields,
+  ownContentCards,
   reseedDemo,
   runDueJobs,
   signInToWorkspace,
@@ -97,12 +99,12 @@ test("F6: invalid media fails at once, says why, and offers to edit and send aga
   await expect(page.getByLabel("Başlık")).toBeFocused();
 
   // Nothing reached the simulated Instagram.
-  expect(await simulatorPublished(request, env.workspaceId)).toHaveLength(0);
+  expect(await simulatorPublished(request, env.workspaceId)).toHaveLength(SEEDED_PUBLISHED_POSTS);
 
-  // The failed post is listed under Sorunlar, with its badge.
+  // The failed post is listed under Sorunlar, with its badge (the seeded failed post is left out).
   await page.getByRole("link", { name: "← İçerik" }).click();
   await page.getByRole("tab", { name: "Sorunlar" }).click();
-  await expect(page.getByTestId("content-card").locator("[data-status]")).toHaveAttribute(
+  await expect(ownContentCards(page).locator("[data-status]")).toHaveAttribute(
     "data-status",
     "failed",
   );
@@ -143,5 +145,5 @@ test("F7: a transient error shows when it will be tried again (Tekrar denenecek 
   const card = page.getByTestId("content-card");
   await expect(card).toHaveCount(1);
   await expect(card).toContainText(`Tekrar denenecek ${match![1]}:${match![2]}`);
-  expect(await simulatorPublished(request, env.workspaceId)).toHaveLength(0);
+  expect(await simulatorPublished(request, env.workspaceId)).toHaveLength(SEEDED_PUBLISHED_POSTS);
 });

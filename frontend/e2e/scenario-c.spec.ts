@@ -6,6 +6,7 @@ import {
   localFields,
   navLink,
   openScheduleSheet,
+  ownContentCards,
   reseedDemo,
   say,
   signInToWorkspace,
@@ -209,7 +210,7 @@ test("fact change holds the scheduled post (AC-C4)", async ({
   await page.getByRole("tab", { name: "Zamanlanan" }).click();
   await expect(page.getByText("Zamanlanmış içerik yok")).toBeVisible();
   await page.getByRole("tab", { name: "Sorunlar" }).click();
-  const held = page.getByTestId("content-card");
+  const held = ownContentCards(page);
   await expect(held).toHaveCount(1);
   await expect(held.locator("[data-status]")).toHaveAttribute("data-status", "on_hold");
   await held.click();

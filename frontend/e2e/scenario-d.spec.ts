@@ -2,12 +2,14 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   IST,
   SAMPLE_STORY,
+  SEEDED_PUBLISHED_POSTS,
   WEB,
   apiLogin,
   attachImage,
   localFields,
   navLink,
   openScheduleSheet,
+  ownContentCards,
   reseedDemo,
   runDueJobs,
   say,
@@ -117,13 +119,13 @@ test("D5/INV-06/INV-18: Hemen yayınla publishes once and reads Yayınlandı wit
   // Exactly one post in the simulated Instagram (INV-06), and the item cannot be edited any more.
   const ids = await workspaceIds(request, OWNER);
   const published = await simulatorPublished(request, ids[GYM_NAME]!);
-  expect(published).toHaveLength(1);
-  expect(published[0]!.media_type).toBe("STORIES");
+  expect(published).toHaveLength(SEEDED_PUBLISHED_POSTS + 1);
+  expect(published.filter((post) => post.media_type === "STORIES")).toHaveLength(1);
   await expect(page.getByTestId("content-readonly")).toBeVisible();
 
   await navLink(page, "İçerik").click();
   await page.getByRole("tab", { name: "Yayınlanan" }).click();
-  const card = page.getByTestId("content-card");
+  const card = ownContentCards(page);
   await expect(card).toHaveCount(1);
   await expect(card).toContainText("Yayınlandı");
   await expect(card.getByTestId("simulated-badge")).toBeVisible();
@@ -158,7 +160,7 @@ test("D6: editing a scheduled story voids the approval and returns it to Taslak"
   const { csrf } = await apiLogin(request, OWNER);
   await runDueJobs(request, csrf);
   const ids = await workspaceIds(request, OWNER);
-  expect(await simulatorPublished(request, ids[GYM_NAME]!)).toHaveLength(0);
+  expect(await simulatorPublished(request, ids[GYM_NAME]!)).toHaveLength(SEEDED_PUBLISHED_POSTS);
 });
 
 test("D8: staff cannot publish now; their submission reads Onay bekliyor", async ({ page }) => {
