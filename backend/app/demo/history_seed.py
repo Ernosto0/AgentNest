@@ -14,12 +14,13 @@ again without duplicating history. Afterwards no non-periodic job is left queued
 from __future__ import annotations
 
 import uuid
-from collections.abc import Collection
+from collections.abc import Collection, Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select, update
+from sqlalchemy import Engine, func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.approvals import service as approvals_service
@@ -249,7 +250,46 @@ def _backdate_conversations(session: Session, workspace_id: uuid.UUID) -> None:
     session.commit()
 
 
+@contextmanager
+def _one_transaction(factory: sessionmaker[Session]) -> Iterator[sessionmaker[Session]]:
+    """Sessions that share one outer transaction, committed only when the history is complete.
+
+    The history runs jobs with a frozen clock in the past. Committed, those jobs (and their
+    leases, which a real clock sees as expired) would be visible to a running worker, which
+    would claim them with the real clock and corrupt the history. Inside one transaction the
+    worker sees nothing until the whole day exists and no job is left queued. If the factory is
+    already bound to a connection (a test), the caller owns the transaction.
+    """
+    bind = factory.kw.get("bind")
+    if not isinstance(bind, Engine):
+        yield factory
+        return
+    with bind.connect() as connection:
+        outer = connection.begin()
+        try:
+            yield sessionmaker(
+                bind=connection,
+                expire_on_commit=False,
+                autoflush=False,
+                join_transaction_mode="create_savepoint",
+            )
+        except BaseException:
+            outer.rollback()
+            raise
+        outer.commit()
+
+
 def _seed_workspace_history(
+    factory: sessionmaker[Session],
+    settings: Settings,
+    workspace: Workspace,
+    now: datetime,
+) -> None:
+    with _one_transaction(factory) as shared:
+        _build_history(shared, settings, workspace, now)
+
+
+def _build_history(
     factory: sessionmaker[Session],
     settings: Settings,
     workspace: Workspace,
@@ -298,6 +338,11 @@ def seed_history(
 ) -> None:
     """Seed yesterday's history for every demo studio that has no conversations yet (only
     among ``slugs`` when given)."""
+    # The CLI process (``seed``) has not loaded the job handlers the API and the worker load at
+    # startup; the history enqueues and runs jobs, and ``enqueue`` refuses unknown job types.
+    from app.handlers import load_handlers
+
+    load_handlers()
     now = clock.now()
     with session_factory() as session:
         workspaces = [

@@ -1,5 +1,7 @@
 """P6-07 (H16): yesterday's seeded history."""
 
+from typing import Any
+
 import pytest
 from sqlalchemy import func, select, text
 
@@ -10,6 +12,7 @@ from app.core.db import Base
 from app.demo.seed import seed
 from app.identity.models import Workspace
 from app.jobs.models import Job
+from app.jobs.testing import run_due_jobs
 from app.reporting.models import DailyReport
 from tests.helpers.demo import (
     STUDIOS,
@@ -118,3 +121,36 @@ def test_seed_twice_adds_the_history_once(
     assert counts() == before
     assert before["conversations"] == 12
     assert before["daily_reports"] == 2
+
+
+def test_nothing_of_the_history_is_visible_to_a_worker_until_it_is_complete(
+    session_factory: SessionFactory,
+    clock: FrozenClock,
+    seed_settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A running worker uses the real clock: it must never see the history's jobs or their
+    (to a real clock, expired) leases. Everything is committed at once, when the day is done."""
+    seen: list[int] = []
+    real_run_due_jobs = run_due_jobs
+
+    def observing_run_due_jobs(*args: Any, **kwargs: Any) -> int:
+        with session_factory() as other:  # another connection, like a worker's
+            seen.append(other.scalar(select(func.count()).select_from(Job)) or 0)
+        return real_run_due_jobs(*args, **kwargs)
+
+    monkeypatch.setattr("app.demo.history_seed.run_due_jobs", observing_run_due_jobs)
+    seed(session_factory, clock, seed_settings)
+
+    zeros = [n for n in seen if n == 0]
+    visible = {n for n in seen if n > 0}
+    # The first studio is built without a single job being visible; the second one is built
+    # while only the first one's (finished) jobs are, and none of its own.
+    assert len(zeros) >= 10
+    assert seen[: len(zeros)] == zeros
+    assert len(visible) == 1
+    with session_factory() as session:
+        unfinished = session.scalar(
+            select(func.count()).select_from(Job).where(Job.status != "succeeded")
+        )
+    assert unfinished == 0
