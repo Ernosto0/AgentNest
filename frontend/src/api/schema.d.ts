@@ -258,6 +258,23 @@ export interface paths {
         patch: operations["patch_workspace_api_v1_workspaces__workspace_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Activity */
+        get: operations["list_activity_api_v1_workspaces__workspace_id__activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/approvals": {
         parameters: {
             query?: never;
@@ -1276,6 +1293,53 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActivityActorOut */
+        ActivityActorOut: {
+            /** Label */
+            label: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "user" | "system" | "agent" | "provider";
+        };
+        /** ActivityEntryOut */
+        ActivityEntryOut: {
+            /** Action */
+            action: string;
+            actor: components["schemas"]["ActivityActorOut"];
+            /** Group */
+            group: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            resource: components["schemas"]["ActivityResourceOut"] | null;
+            /** Text */
+            text: string;
+        };
+        /** ActivityResourceOut */
+        ActivityResourceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Link */
+            link: string | null;
+            /** Type */
+            type: string;
+        };
         /** AnswerFromMessageIn */
         AnswerFromMessageIn: {
             /** Answer Template */
@@ -2419,6 +2483,13 @@ export interface components {
             type: string;
             /** What */
             what: string | null;
+        };
+        /** Page[ActivityEntryOut] */
+        Page_ActivityEntryOut_: {
+            /** Items */
+            items: components["schemas"]["ActivityEntryOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
         };
         /** Page[ApprovalOut] */
         Page_ApprovalOut_: {
@@ -3604,6 +3675,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_activity_api_v1_workspaces__workspace_id__activity_get: {
+        parameters: {
+            query?: {
+                type?: ("messages" | "replies" | "approvals" | "content" | "knowledge" | "commands" | "accounts" | "members" | "system") | null;
+                date?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ActivityEntryOut_"];
                 };
             };
             /** @description Validation Error */

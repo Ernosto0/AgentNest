@@ -227,6 +227,10 @@ source_modules = [
     "app.reporting.drilldown",
     "app.reporting.schemas",
     "app.reporting.jobs",
+    "app.activity.groups",
+    "app.activity.feed",
+    "app.activity.labels",
+    "app.activity.schemas",
 ]
 forbidden_modules = ["app.api", "app.main"]
 

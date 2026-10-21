@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from app.activity.router import router as activity_router
 from app.api.deps import enforce_csrf, get_app_settings
 from app.approvals.router import router as approvals_router
 from app.commands.router import router as commands_router
@@ -72,3 +73,4 @@ api_router.include_router(policy_router)
 api_router.include_router(inbox_router)
 api_router.include_router(content_router)
 api_router.include_router(reports_router)
+api_router.include_router(activity_router)
