@@ -1,9 +1,5 @@
-import { readFileSync } from "node:fs";
-import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import {
-  API,
-  SAMPLE_FEED,
   SEEDED_PUBLISHED_POSTS,
   addFailureRule,
   apiLogin,
@@ -14,6 +10,7 @@ import {
   signInToWorkspace,
   simulatorPublished,
   statusBadge,
+  submitFeedPost,
 } from "./helpers";
 
 // Scenario F: publishing goes wrong in the simulated Instagram (docs/product/acceptance-criteria.md
@@ -41,44 +38,13 @@ async function setup(request: APIRequestContext): Promise<Setup> {
   return { csrf, workspaceId: gym!.workspace_id };
 }
 
-/** A feed post with its picture, approved by the owner to publish right now. Returns its id. */
-async function publishNow(request: APIRequestContext, { csrf, workspaceId }: Setup): Promise<string> {
-  const base = `${API}/api/v1/workspaces/${workspaceId}`;
-  const headers = { "X-CSRF-Token": csrf };
-  const upload = await request.post(`${base}/media`, {
-    headers,
-    multipart: {
-      file: { name: "feed-sample.jpg", mimeType: "image/jpeg", buffer: readFileSync(SAMPLE_FEED) },
-    },
-  });
-  expect(upload.status()).toBe(201);
-  const created = await request.post(`${base}/content-items`, {
-    headers,
-    data: {
-      content_type: "feed_image",
-      title: "Hafta sonu gönderisi",
-      caption: "Hafta sonu görüşürüz!",
-      media_asset_id: (await upload.json()).id,
-      client_request_id: randomUUID(),
-    },
-  });
-  expect(created.status()).toBe(201);
-  const item = await created.json();
-  const submitted = await request.post(`${base}/content-items/${item.id}/submit`, {
-    headers,
-    data: { schedule: "now", self_approve: true, expected_version: item.version },
-  });
-  expect(submitted.ok()).toBe(true);
-  return item.id as string;
-}
-
 test("F6: invalid media fails at once, says why, and offers to edit and send again", async ({
   page,
   request,
 }) => {
   const env = await setup(request);
   await addFailureRule(request, env.csrf, env.workspaceId, "publish", "invalid_media", 1);
-  const contentId = await publishNow(request, env);
+  const contentId = await submitFeedPost(request, env);
 
   await signInToWorkspace(page, OWNER, GYM);
   await page.goto(`/w/${env.workspaceId}/content/${contentId}`);
@@ -116,7 +82,7 @@ test("F7: a transient error shows when it will be tried again (Tekrar denenecek 
 }) => {
   const env = await setup(request);
   await addFailureRule(request, env.csrf, env.workspaceId, "publish", "transient", 1);
-  const contentId = await publishNow(request, env);
+  const contentId = await submitFeedPost(request, env);
 
   await signInToWorkspace(page, OWNER, GYM);
   await page.goto(`/w/${env.workspaceId}/content/${contentId}`);
