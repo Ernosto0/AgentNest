@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  chooseLanguage,
   hasHorizontalScroll,
   loginViaUi,
   navLink,
@@ -41,7 +42,7 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   await navLink(page, "Daha fazla").click();
   await page.getByRole("link", { name: "Ayarlar" }).click();
   await expect(page.getByRole("heading", { name: "Dil" })).toBeVisible();
-  await page.getByRole("button", { name: "English" }).click();
+  await chooseLanguage(page, "English");
   await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
   await expect(banner).toContainText("Demo workspace — simulation");
   await expect(navLink(page, "Inbox")).toBeVisible();

@@ -144,7 +144,7 @@ function Attention({
   pending: boolean;
   error: Error | null;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const base = `/w/${workspace.id}`;
   // The report decides what a person may see (staff: inbox numbers only), so a missing metric is no card.
@@ -173,7 +173,6 @@ function Attention({
             <li key={card.key} data-testid={`attention-${card.key}`}>
               <Link
                 to={card.to}
-                aria-label={`${card.label}: ${formatValue(card.count, i18n.language)}`}
                 className={`flex min-h-14 items-center justify-between gap-3 rounded-lg px-4 py-2 ring-1 focus-visible:outline-2 focus-visible:outline-indigo-600 ${
                   card.count > 0
                     ? "bg-amber-50 text-amber-950 ring-amber-400"
