@@ -58,7 +58,8 @@ def test_owner_creates_an_invite_with_a_one_time_link(
     assert invite["role"] == "staff"
     assert invite["invite_path"].startswith("/invite/")
     assert invite["invite_url"] == "http://localhost:8000" + invite["invite_path"]
-    assert invite["expires_at"] == (clock.now() + timedelta(days=7)).isoformat().replace("+00:00", "Z")
+    expected_expiry = (clock.now() + timedelta(days=7)).isoformat().replace("+00:00", "Z")
+    assert invite["expires_at"] == expected_expiry
 
     token = _token(invite)
     row = db_session.scalars(select(Invite).where(Invite.id == uuid.UUID(invite["id"]))).one()
