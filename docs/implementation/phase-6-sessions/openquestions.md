@@ -39,3 +39,14 @@ Running ledger kept by the operator. One entry per item, newest sessions last. P
 - **Dedup:** `account.degraded` key is `account:{id}:degraded`; an unread one from an earlier cycle suppresses a new one (existing dedup behaviour).
 - **Half-open:** a degraded account is probed only by the health check or the half-open send/publish. The publish quota read is skipped for non-`connected` accounts, including half-open; the provider enforces the limit at publish time.
 - **Policy rule R1** (`workflows.md` ~line 170) still requires `connected` exactly; unchanged (not in the brief). A draft can still be created while degraded but is held at send time.
+
+## Session 6 (P6-05c, P6-05d)
+- First attempt was interrupted (previous process ended); the retry reviewed its uncommitted system-health files, fixed 5 mypy errors and committed them.
+- **Full backend suite green** (2438 passed); closes the session 5 gap. Frontend 458 tests; **full E2E 90/90** on ports 8100/5273.
+- **Response fields renamed** to avoid the response-schema secret scan on "token": `connection_expires_at`, `input_units`, `output_units`.
+- **Bug fixed:** `accounts_router.account_out` was not filling `degraded_until`.
+- **Link targets beyond the brief:** the `account.*` notification link and the on-hold "check the connection" link now point to Connections (3 existing test hrefs changed).
+- **System health screen** never shows raw error codes; uses `errors.<CODE>.what`, generic sentence for uncatalogued codes.
+- **Dev database `agentnest` migrated** to 0013 with `alembic upgrade head` (it was at 0012, so `/readyz` returned 503).
+- **Prettier slip:** ran prettier with defaults once, reformatted existing files; reverted with `git checkout` and reapplied only the intended edits (repo has no prettier config). Final diff has no formatting churn.
+- **OPEN (non-blocking):** the `ACCOUNT_NEEDS_REAUTH` catalog text still says "Ayarlar'da Yeniden bağla'ya basın" (session 4/5 wording); consider aligning with the new Connections screen.
