@@ -134,6 +134,7 @@
     "reports": "Günlük rapor",
     "activity": "Etkinlik",
     "notifications": "Bildirimler",
+    "members": "Üyeler",
     "connections": "Instagram bağlantısı",
     "systemHealth": "Sistem durumu"
   },
@@ -313,6 +314,14 @@
     "CONTENT_CHANGED": {
       "what": "Taslak hazırlanırken siz değiştirdiniz, bu yüzden otomatik metin eklenmedi.",
       "next": "Kendi metniniz korundu."
+    },
+    "INVITE_INVALID": {
+      "what": "Bu davet bağlantısı geçersiz ya da süresi dolmuş.",
+      "next": "Çalışma alanı sahibinden yeni bir davet isteyin."
+    },
+    "LAST_OWNER_REQUIRED": {
+      "what": "Çalışma alanında en az bir sahip kalmalı.",
+      "next": "Önce başka birini sahip yapın, sonra bu işlemi tekrarlayın."
     }
   },
   "connections": {

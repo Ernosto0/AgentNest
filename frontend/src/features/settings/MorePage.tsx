@@ -57,6 +57,12 @@ export function MorePage() {
           </Link>
         </li>
         <li>
+          <Link to={`/w/${workspace.id}/more/settings/members`} className={ROW}>
+            {t("more.members")}
+            <ChevronRightIcon className="text-xl text-slate-400" />
+          </Link>
+        </li>
+        <li>
           <Link to={`/w/${workspace.id}/more/settings/connections`} className={ROW}>
             {t("more.connections")}
             <ChevronRightIcon className="text-xl text-slate-400" />

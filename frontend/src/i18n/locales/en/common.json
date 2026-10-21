@@ -134,6 +134,7 @@
     "reports": "Daily report",
     "activity": "Activity",
     "notifications": "Notifications",
+    "members": "Members",
     "connections": "Instagram connection",
     "systemHealth": "System health"
   },
@@ -313,6 +314,14 @@
     "CONTENT_CHANGED": {
       "what": "You changed the draft while it was being prepared, so no automatic text was added.",
       "next": "Your own text was kept."
+    },
+    "INVITE_INVALID": {
+      "what": "This invite link is invalid or has expired.",
+      "next": "Ask the workspace owner for a new invite."
+    },
+    "LAST_OWNER_REQUIRED": {
+      "what": "A workspace must keep at least one owner.",
+      "next": "Make someone else an owner first, then try again."
     }
   },
   "connections": {

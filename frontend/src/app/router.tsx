@@ -8,6 +8,7 @@ import { ContentDetailPage } from "@/features/content/ContentDetailPage";
 import { ContentPage } from "@/features/content/ContentPage";
 import { HomePage } from "@/features/home/HomePage";
 import { DevPanel } from "@/features/dev/DevPanel";
+import { AcceptInvite } from "@/features/invites/AcceptInvite";
 import { ConversationPage } from "@/features/inbox/ConversationPage";
 import { InboxPage } from "@/features/inbox/InboxPage";
 import { ApprovedAnswers } from "@/features/knowledge/ApprovedAnswers";
@@ -19,6 +20,7 @@ import { MetricItems } from "@/features/reports/MetricItems";
 import { CreateWorkspaceWizard } from "@/features/workspaces/CreateWorkspaceWizard";
 import { AutomationSettings } from "@/features/settings/AutomationSettings";
 import { Connections } from "@/features/settings/Connections";
+import { Members } from "@/features/settings/Members";
 import { MorePage } from "@/features/settings/MorePage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { SystemHealth } from "@/features/settings/SystemHealth";
@@ -28,6 +30,7 @@ import { NotFoundPage } from "./NotFoundPage";
 
 export const appRoutes: RouteObject[] = [
   { path: "/login", element: <LoginPage /> },
+  { path: "/invite/:token", element: <AcceptInvite /> },
   {
     element: <RequireAuth />,
     children: [
@@ -46,6 +49,7 @@ export const appRoutes: RouteObject[] = [
           { path: "more", element: <MorePage /> },
           { path: "more/settings", element: <SettingsPage /> },
           { path: "more/settings/connections", element: <Connections /> },
+          { path: "more/settings/members", element: <Members /> },
           { path: "more/settings/system-health", element: <SystemHealth /> },
           { path: "more/knowledge", element: <KnowledgePage /> },
           { path: "more/knowledge/suggestions", element: <SuggestionsPage /> },

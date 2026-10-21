@@ -1,0 +1,37 @@
+{
+  "members": {
+    "title": "Members",
+    "intro": "The people in the workspace and their roles. Only the owner can invite, change roles and remove members.",
+    "you": "You",
+    "invite": "Invite a member",
+    "inviteTitle": "Invite a member",
+    "roleLabel": "Role",
+    "create": "Create invite",
+    "link": "Invite link",
+    "linkHint": "The link is valid for 7 days and can be used only once.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "expires": "Valid until: {{time}}",
+    "pending": "Pending invites",
+    "pendingNone": "No pending invites.",
+    "revoke": "Revoke",
+    "changeRole": "Change role",
+    "remove": "Remove member",
+    "removeTitle": "Remove this member?",
+    "removeBody": "This person will no longer have access to the workspace.",
+    "removeConfirm": "Yes, remove"
+  },
+  "invite": {
+    "title": "Invite",
+    "join": "Join",
+    "joining": "Joining…",
+    "joinHint": "You will be taken to the workspace after joining.",
+    "newAccount": "Create a new account",
+    "displayName": "Your name",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Create account and join",
+    "emailTaken": "This email already has an account. Sign in first, then open the link again.",
+    "signIn": "Sign in"
+  }
+}

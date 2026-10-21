@@ -1,0 +1,37 @@
+{
+  "members": {
+    "title": "Üyeler",
+    "intro": "Çalışma alanındaki kişiler ve rolleri. Yalnızca sahip davet edebilir, rol değiştirebilir ve üye çıkarabilir.",
+    "you": "Siz",
+    "invite": "Üye davet et",
+    "inviteTitle": "Üye davet et",
+    "roleLabel": "Rol",
+    "create": "Davet oluştur",
+    "link": "Davet bağlantısı",
+    "linkHint": "Bağlantı 7 gün geçerli ve yalnızca bir kez kullanılabilir.",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "expires": "Geçerlilik: {{time}}",
+    "pending": "Bekleyen davetler",
+    "pendingNone": "Bekleyen davet yok.",
+    "revoke": "Geri al",
+    "changeRole": "Rolü değiştir",
+    "remove": "Üyeyi çıkar",
+    "removeTitle": "Üyeyi çıkarmak istiyor musunuz?",
+    "removeBody": "Bu kişi artık çalışma alanına erişemez.",
+    "removeConfirm": "Evet, çıkar"
+  },
+  "invite": {
+    "title": "Davet",
+    "join": "Katıl",
+    "joining": "Katılıyor…",
+    "joinHint": "Katıldığınızda çalışma alanına yönlendirilirsiniz.",
+    "newAccount": "Yeni hesap oluştur",
+    "displayName": "Adınız",
+    "email": "E-posta",
+    "password": "Parola",
+    "submit": "Hesap oluştur ve katıl",
+    "emailTaken": "Bu e-postanın zaten bir hesabı var. Önce giriş yapın, sonra bağlantıyı yeniden açın.",
+    "signIn": "Giriş yap"
+  }
+}
