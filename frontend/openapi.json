@@ -5006,6 +5006,20 @@
         "title": "RequirementOut",
         "type": "object"
       },
+      "ResetOut": {
+        "properties": {
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id"
+        ],
+        "title": "ResetOut",
+        "type": "object"
+      },
       "RunDueOut": {
         "properties": {
           "ran": {
@@ -6619,6 +6633,50 @@
           }
         },
         "summary": "Run Health Check Now",
+        "tags": [
+          "dev"
+        ]
+      }
+    },
+    "/api/v1/dev/workspaces/{workspace_id}/reset": {
+      "post": {
+        "description": "Reset a demo workspace (H15): a new id, the same slug/members/settings and yesterday's\nhistory. ``workspace.manage``; only ``is_demo`` workspaces (else 403), a demo workspace\noutside the seed data is 409.",
+        "operationId": "reset_workspace_route_api_v1_dev_workspaces__workspace_id__reset_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Workspace Route",
         "tags": [
           "dev"
         ]

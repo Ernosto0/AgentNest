@@ -124,7 +124,7 @@ Open http://localhost:5173 in a phone-sized window (DevTools device mode, 390×8
 
 **G. Integration failure:** Dev panel → failure rule *send → auth_revoked* → send a customer price question and approve the reply → the reply stays *Birazdan gönderilecek*, the account becomes *yeniden bağlanmalı* and the bell shows a critical "Instagram hesabınızı yeniden bağlayın" → the red Home banner (**Bağlantıyı yenile**) or More → Instagram bağlantısı (*Connections*, `more/settings/connections`) → **Yeniden bağlan (simülasyon)** (owner) → the queued reply is sent (*Gönderildi · SİMÜLASYON*) without approving it again. Reconnecting does not resume held posts (re-approve them from Content) and does not remove failure rules. The same screen shows the account status, the last error in plain language, the capabilities and, for a *kararsız* account, the time until which no calls are made (workspace time); **Bağlantıyı kes** asks for confirmation first. For the circuit breaker: add five *transient* failure rules, trigger five sends, then remove the rules and press **Sağlık kontrolünü şimdi çalıştır** in the Dev panel (runs the health check of the workspace's degraded accounts now; it shows how many were checked and recovered).
 
-Finish with Dev panel → **Reset demo**.
+Finish with Dev panel → **Demo'yu sıfırla** (confirm). The workspace is re-created with a new id, yesterday's history is back, and the app opens the new workspace.
 
 ### The developer simulator (Phase 4)
 
@@ -155,8 +155,8 @@ A drafted reply appears about `REPLY_DEBOUNCE_SECONDS` (default 8) after the las
 
 ## 8. Resetting
 
-- One demo workspace: Dev panel → Reset demo (or `POST /api/v1/dev/workspaces/{id}/reset`).
-- Everything: `uv run python -m app.cli seed --reset` (drops and re-creates demo data; refuses in production).
+- One demo workspace: Dev panel → **Demo'yu sıfırla** (or `POST /api/v1/dev/workspaces/{id}/reset`, owner only, `is_demo` workspaces only). The workspace is **deleted and re-created with a new id** (same slug, members and settings from the seed data), because audit rows are insert-only and keyed by the workspace id; the old audit rows stay, orphaned. Its simulator rows (`sim_*`), content, invites and local media files go with it; facts, the simulated account, the automation review and yesterday's history are seeded again, and `demo.reset` is audited on the new workspace. Other workspaces are not touched. Known limitation: the history is built by running jobs in the API process with a frozen clock, so a worker that is running at that moment can, rarely, claim one of those jobs first and process it with the real clock (the numbers of yesterday's report would then differ); reset again if the Dev panel shows odd history.
+- Everything: `uv run python -m app.cli seed --reset` (drops and re-creates the demo users and workspaces, removes their local media files, seeds the history again; refuses in production).
 - Nuclear option: `docker compose down -v && docker compose up -d postgres`, then migrate and seed.
 
 ## 9. Optional: real LLM (Phase 3+)

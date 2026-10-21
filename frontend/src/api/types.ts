@@ -74,3 +74,4 @@ export type MetricItem = Schemas["MetricItemOut"];
 export type SystemHealth = Schemas["SystemHealthOut"];
 export type AccountHealth = Schemas["AccountHealth"];
 export type HealthCheckResult = Schemas["HealthCheckOut"];
+export type ResetResult = Schemas["ResetOut"];

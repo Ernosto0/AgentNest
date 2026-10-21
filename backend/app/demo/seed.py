@@ -4,6 +4,7 @@ Later phases extend the seed (history, content). The seed is idempotent: existin
 workspaces and facts are left alone; ``reset=True`` removes the seeded ones first.
 """
 
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -14,6 +15,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.audit import service as audit
+from app.content.models import MediaAsset
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import ActorRef
@@ -24,6 +26,7 @@ from app.identity import repository as repo
 from app.identity import service
 from app.identity.models import User, Workspace, WorkspaceMember
 from app.identity.schemas import BusinessCategory, Locale, Market, Role, WorkspaceCreate
+from app.integrations.storage.registry import get_media_storage
 
 DATA_FILE = Path(__file__).parent / "data" / "identity.yaml"
 SEED_ACTOR = ActorRef.system("seed")
@@ -101,6 +104,75 @@ def reset_identity_data(session: Session, data: SeedData) -> tuple[int, int]:
     return workspaces.rowcount, users.rowcount  # type: ignore[attr-defined]
 
 
+def workspace_media_keys(session: Session, settings: Settings, slugs: Collection[str]) -> list[str]:
+    """Storage keys of the media files of the workspaces with these slugs (current backend)."""
+    return list(
+        session.scalars(
+            select(MediaAsset.storage_key)
+            .join(Workspace, Workspace.id == MediaAsset.workspace_id)
+            .where(
+                Workspace.slug.in_(slugs),
+                MediaAsset.storage_backend == settings.media_storage_backend,
+            )
+        )
+    )
+
+
+def remove_media_files(keys: Iterable[str], clock: Clock, settings: Settings) -> None:
+    """Delete media files from storage. Called after the database commit: never inside a
+    transaction."""
+    storage = get_media_storage(settings, clock)
+    for key in keys:
+        storage.delete(key)
+
+
+def workspace_entry_by_slug(data: SeedData, slug: str) -> SeedWorkspace | None:
+    """The seed entry for ``slug`` (the reset route refuses a demo workspace outside the seed)."""
+    return next((w for w in data.workspaces if w.slug == slug), None)
+
+
+def create_seed_workspace(
+    session: Session, clock: Clock, ws_entry: SeedWorkspace, users: dict[str, User]
+) -> Workspace:
+    """Create one seed workspace and its memberships (the owner through ``create_workspace``,
+    the rest here). Does not commit. The audit entries are attributed to the seed actor."""
+    owner_email = next(e for e, role in ws_entry.members.items() if role == "owner")
+    workspace = service.create_workspace(
+        session,
+        clock,
+        users[owner_email],
+        WorkspaceCreate(
+            name=ws_entry.name,
+            business_category=ws_entry.business_category,
+            market=ws_entry.market,
+            default_locale=ws_entry.default_locale,
+            timezone=ws_entry.timezone,
+            currency=ws_entry.currency,
+        ),
+        slug=ws_entry.slug,
+        is_demo=ws_entry.is_demo,
+        actor=SEED_ACTOR,
+    )
+    ctx = service.workspace_context(workspace, SEED_ACTOR, None)
+    for email, role in ws_entry.members.items():
+        if email == owner_email:
+            continue  # already the owner through create_workspace
+        repo.add_member(
+            session,
+            WorkspaceMember(workspace_id=workspace.id, user_id=users[email].id, role=role),
+        )
+        audit.record(
+            session,
+            ctx,
+            "member.joined",
+            "user",
+            users[email].id,
+            {"role": role, "source": "seed"},
+            clock=clock,
+        )
+    return workspace
+
+
 def seed(
     session_factory: sessionmaker[Session],
     clock: Clock,
@@ -117,7 +189,9 @@ def seed(
 
     with session_factory() as session:
         if reset:
+            media_keys = workspace_media_keys(session, settings, [w.slug for w in data.workspaces])
             report.removed_workspaces, report.removed_users = reset_identity_data(session, data)
+            remove_media_files(media_keys, clock, settings)  # after the commit
 
         users: dict[str, User] = {}
         for user_entry in data.users:
@@ -148,40 +222,7 @@ def seed(
             if existing_ws is not None:
                 report.existing_workspaces.append(ws_entry.slug)
                 continue
-            owner_email = next(e for e, role in ws_entry.members.items() if role == "owner")
-            workspace = service.create_workspace(
-                session,
-                clock,
-                users[owner_email],
-                WorkspaceCreate(
-                    name=ws_entry.name,
-                    business_category=ws_entry.business_category,
-                    market=ws_entry.market,
-                    default_locale=ws_entry.default_locale,
-                    timezone=ws_entry.timezone,
-                    currency=ws_entry.currency,
-                ),
-                slug=ws_entry.slug,
-                is_demo=ws_entry.is_demo,
-                actor=SEED_ACTOR,
-            )
-            ctx = service.workspace_context(workspace, SEED_ACTOR, None)
-            for email, role in ws_entry.members.items():
-                if email == owner_email:
-                    continue  # already the owner through create_workspace
-                repo.add_member(
-                    session,
-                    WorkspaceMember(workspace_id=workspace.id, user_id=users[email].id, role=role),
-                )
-                audit.record(
-                    session,
-                    ctx,
-                    "member.joined",
-                    "user",
-                    users[email].id,
-                    {"role": role, "source": "seed"},
-                    clock=clock,
-                )
+            create_seed_workspace(session, clock, ws_entry, users)
             session.commit()
             report.created_workspaces.append(ws_entry.slug)
     # Facts are seeded separately from workspace creation: a workspace that already exists

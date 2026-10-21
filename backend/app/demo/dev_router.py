@@ -20,6 +20,7 @@ from app.core.context import WorkspaceContext
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.pagination import Page
+from app.demo import reset as demo_reset
 from app.demo import simulator
 from app.identity import repository as identity_repo
 from app.identity.service import AuthenticatedSession
@@ -104,6 +105,10 @@ class RunDueOut(BaseModel):
 class HealthCheckOut(BaseModel):
     checked: int
     recovered: int
+
+
+class ResetOut(BaseModel):
+    workspace_id: uuid.UUID
 
 
 def _factory(db: Session) -> sessionmaker[Session]:
@@ -308,3 +313,19 @@ def list_jobs(
             for j in rows
         ]
     )
+
+
+@router.post("/workspaces/{workspace_id}/reset", response_model=ResetOut)
+def reset_workspace_route(
+    ctx: WorkspaceContext = Depends(require_membership("workspace.manage")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> ResetOut:
+    """Reset a demo workspace (H15): a new id, the same slug/members/settings and yesterday's
+    history. ``workspace.manage``; only ``is_demo`` workspaces (else 403), a demo workspace
+    outside the seed data is 409."""
+    new_id = demo_reset.reset_workspace(
+        _factory(db), clock, settings, workspace_id=ctx.workspace_id, actor=ctx.actor
+    )
+    return ResetOut(workspace_id=new_id)

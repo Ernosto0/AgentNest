@@ -218,6 +218,14 @@
     "noCaption": "(açıklamasız)",
     "healthCheck": "Sağlık kontrolünü şimdi çalıştır",
     "healthCheckHint": "Kararsız hesapları şimdi dener; Instagram yeniden yanıt veriyorsa hesap bağlı olur ve bekleyen yanıtlar gönderilir.",
-    "healthCheckResult": "Kontrol edilen: {{checked}}, düzelen: {{recovered}}"
+    "healthCheckResult": "Kontrol edilen: {{checked}}, düzelen: {{recovered}}",
+    "reset": {
+      "title": "Demo'yu sıfırla",
+      "hint": "Bu demo çalışma alanını siler ve tohum verisinden, dünün geçmişiyle birlikte yeniden oluşturur. Çalışma alanı yeni bir kimlik alır.",
+      "button": "Demo'yu sıfırla",
+      "confirmTitle": "Demo sıfırlansın mı?",
+      "confirmBody": "Bu çalışma alanındaki her şey silinir ve tohum verisinden yeniden oluşturulur: konuşmalar, içerikler, taslaklar ve değiştirdiğiniz ayarlar. Diğer çalışma alanlarına dokunulmaz.",
+      "confirm": "Evet, sıfırla"
+    }
   }
 }

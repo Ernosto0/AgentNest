@@ -176,7 +176,7 @@ Commands are private to the member who typed them (another member's id → 404).
 | `POST /api/v1/dev/workspaces/{ws}/health-check` | run the health check of the workspace's `degraded` accounts now (same code as the `account_health_check` job); `integrations.manage`; returns `{checked, recovered}`. Foreign workspace → 404 |
 | `POST /api/v1/dev/jobs/run-due` | run due jobs now (uses the system clock) |
 | `GET /api/v1/dev/jobs?status=` | inspect jobs |
-| `POST /api/v1/dev/workspaces/{ws}/reset` | reset a demo workspace (`is_demo` only) |
+| `POST /api/v1/dev/workspaces/{ws}/reset` | reset a demo workspace: it is **re-created with a new id** (same slug, members and settings from the seed data; its cascade data, `sim_*` rows and local media files are deleted; facts, account, review and yesterday's history are seeded again; the old audit rows stay; `demo.reset` is audited on the new workspace with `previous_workspace_id`). `workspace.manage` (owner); `is_demo` only (else 403); a demo workspace that is not in the seed data → 409 `CONFLICT_STATE`; foreign workspace → 404. Returns `{workspace_id}` (the new id) |
 | `GET /api/v1/dev/scripts` | scripted customer messages |
 
 ## 3. OpenAPI and client generation

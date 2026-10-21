@@ -1,9 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
-import type { DevJob, DevScript, FailureRule, HealthCheckResult, SimPublishedMedia } from "@/api/types";
+import type {
+  DevJob,
+  DevScript,
+  FailureRule,
+  HealthCheckResult,
+  ResetResult,
+  SimPublishedMedia,
+} from "@/api/types";
+import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
@@ -101,6 +110,21 @@ function useDev(ws: string) {
       ),
     onSettled: refresh,
   });
+  const navigate = useNavigate();
+  // The reset re-creates the workspace with a new id (H15): everything cached belongs to the old
+  // one, so reload it all and move to the new workspace.
+  const reset = useMutation<ResetResult, AppError>({
+    mutationFn: () =>
+      unwrap(
+        api.POST("/api/v1/dev/workspaces/{workspace_id}/reset", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries();
+      void navigate(`/w/${result.workspace_id}`);
+    },
+  });
   const addRule = useMutation<unknown, AppError, { operation: string; mode: string; remaining: number | null }>({
     mutationFn: ({ operation, mode, remaining }) =>
       unwrap(
@@ -120,7 +144,7 @@ function useDev(ws: string) {
       ),
     onSettled: refresh,
   });
-  return { scripts, rules, jobs, published, simulate, runDue, healthCheck, addRule, removeRule };
+  return { scripts, rules, jobs, published, simulate, runDue, healthCheck, reset, addRule, removeRule };
 }
 
 /** Developer tools (only when the server has DEMO_TOOLS_ENABLED): simulate customers and failures. */
@@ -130,6 +154,7 @@ export function DevPanel() {
   const dev = useDev(workspace.id);
   const [operation, setOperation] = useState<(typeof OPERATIONS)[number]>("send");
   const [mode, setMode] = useState<(typeof MODES)[number]>("transient");
+  const [confirmReset, setConfirmReset] = useState(false);
 
   return (
     <div className="flex flex-col gap-5" data-testid="dev-panel">
@@ -282,6 +307,41 @@ export function DevPanel() {
           ))}
         </ul>
       </Card>
+
+      <Card className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">{t("devPanel.reset.title")}</h2>
+        <p className="text-sm text-slate-600">{t("devPanel.reset.hint")}</p>
+        <div>
+          <Button variant="danger" data-testid="dev-reset" onClick={() => setConfirmReset(true)}>
+            {t("devPanel.reset.button")}
+          </Button>
+        </div>
+      </Card>
+
+      {confirmReset ? (
+        <BottomSheet
+          title={t("devPanel.reset.confirmTitle")}
+          onClose={() => setConfirmReset(false)}
+          footer={
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="danger"
+                data-testid="dev-reset-confirm"
+                disabled={dev.reset.isPending}
+                onClick={() => dev.reset.mutate(undefined, { onSuccess: () => setConfirmReset(false) })}
+              >
+                {t("devPanel.reset.confirm")}
+              </Button>
+              <Button variant="secondary" onClick={() => setConfirmReset(false)}>
+                {t("common.cancel")}
+              </Button>
+            </div>
+          }
+        >
+          <p>{t("devPanel.reset.confirmBody")}</p>
+          {dev.reset.error ? <ErrorMessage error={dev.reset.error} /> : null}
+        </BottomSheet>
+      ) : null}
     </div>
   );
 }

@@ -5,6 +5,7 @@ Idempotent and independent of workspace creation: a workspace that already exist
 earlier phase) still receives what it is missing. Everything created here is simulated.
 """
 
+from collections.abc import Collection
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -36,11 +37,15 @@ CONNECTIONS = {
 }
 
 
-def seed_connections(session_factory: sessionmaker[Session], clock: Clock) -> list[str]:
-    """Return the slugs that received a new account."""
+def seed_connections(
+    session_factory: sessionmaker[Session], clock: Clock, slugs: Collection[str] | None = None
+) -> list[str]:
+    """Return the slugs that received a new account (only among ``slugs`` when given)."""
     connected: list[str] = []
     with session_factory() as session:
         for slug, connection in CONNECTIONS.items():
+            if slugs is not None and slug not in slugs:
+                continue
             workspace = session.scalars(select(Workspace).where(Workspace.slug == slug)).first()
             if workspace is None:
                 continue

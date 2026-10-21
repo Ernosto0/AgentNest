@@ -80,3 +80,40 @@ describe("dev panel: simulator", () => {
     expect(options).toEqual(expect.arrayContaining(["create_container", "container_status", "publish"]));
   });
 });
+
+describe("dev panel: demo reset", () => {
+  const NEW_WS = "0b6f5f6e-3d4c-4f0f-9a47-6f3a3c1e8a11";
+
+  it("asks for confirmation, resets, and opens the workspace with the new id", async () => {
+    const requests = mockApi(
+      routes([], {
+        [`POST ${DEV}/reset`]: () => json({ workspace_id: NEW_WS }),
+        [`GET /api/v1/workspaces/${NEW_WS}`]: () => json(workspace(NEW_WS)),
+      }),
+    );
+    const { router } = renderApp(`/w/${WS_GOLKENT}/more/dev`);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByTestId("dev-reset"));
+    const dialog = await screen.findByRole("dialog", { name: "Demo sıfırlansın mı?" });
+    expect(requests.some((r) => r.path.endsWith("/reset"))).toBe(false); // nothing before the confirmation
+
+    await user.click(within(dialog).getByTestId("dev-reset-confirm"));
+
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe(`/w/${NEW_WS}`));
+    expect(requests.filter((r) => r.method === "POST" && r.path === `${DEV}/reset`)).toHaveLength(1);
+  });
+
+  it("does nothing when the confirmation is cancelled", async () => {
+    const requests = mockApi(routes([]));
+    renderApp(`/w/${WS_GOLKENT}/more/dev`);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByTestId("dev-reset"));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Vazgeç" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(requests.some((r) => r.path.endsWith("/reset"))).toBe(false);
+  });
+});

@@ -7,6 +7,7 @@ this module re-creates the facts.
 """
 
 import calendar
+from collections.abc import Collection
 from datetime import date
 from pathlib import Path
 from typing import Any, Literal
@@ -141,11 +142,16 @@ def _seed_workspace_facts(
     return added
 
 
-def seed_facts(session_factory: sessionmaker[Session], clock: Clock) -> dict[str, int]:
-    """Seed facts for every demo workspace that has a facts file. Returns slug -> items added."""
+def seed_facts(
+    session_factory: sessionmaker[Session], clock: Clock, slugs: Collection[str] | None = None
+) -> dict[str, int]:
+    """Seed facts for every demo workspace that has a facts file (only ``slugs`` when given).
+    Returns slug -> items added."""
     report: dict[str, int] = {}
     with session_factory() as session:
         for slug in FACT_FILES:
+            if slugs is not None and slug not in slugs:
+                continue
             workspace = identity_repo.get_workspace_by_slug(session, slug)
             if workspace is None:
                 continue

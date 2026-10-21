@@ -218,6 +218,14 @@
     "noCaption": "(no caption)",
     "healthCheck": "Run the health check now",
     "healthCheckHint": "Tries the unstable accounts now; if Instagram answers again the account becomes connected and waiting replies are sent.",
-    "healthCheckResult": "Checked: {{checked}}, recovered: {{recovered}}"
+    "healthCheckResult": "Checked: {{checked}}, recovered: {{recovered}}",
+    "reset": {
+      "title": "Reset the demo",
+      "hint": "Deletes this demo workspace and creates it again from the seed data, with yesterday's history. The workspace gets a new id.",
+      "button": "Reset the demo",
+      "confirmTitle": "Reset the demo?",
+      "confirmBody": "Everything in this workspace is deleted and recreated from the seed data: conversations, content, drafts and settings you changed. Other workspaces are not touched.",
+      "confirm": "Yes, reset"
+    }
   }
 }
