@@ -97,7 +97,9 @@ jobs:
   e2e:
     needs: [backend, frontend]
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Session 10's full 171-test run took 42.9 minutes on Windows. Allow the
+    # expanded three-project suite to finish; this does not change test timeouts/retries.
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:16

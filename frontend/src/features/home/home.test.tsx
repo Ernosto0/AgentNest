@@ -117,6 +117,27 @@ describe("Home: attention cards", () => {
 });
 
 describe("Home: banners and status strip", () => {
+  it("updates failure banners and recovery while Home stays open", async () => {
+    let account = socialAccount();
+    mockApi(routes({ ...reportWith([]), [`GET ${BASE}/social-accounts`]: () => json({ items: [account] }) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    expect(await screen.findByTestId("home-connection")).toHaveAttribute("data-status", "connected");
+
+    account = socialAccount({ status: "needs_reauth" });
+    expect(await screen.findByTestId("banner-needs-reauth", {}, { timeout: 6000 })).toBeInTheDocument();
+    expect(screen.getByTestId("home-connection")).toHaveAttribute("data-status", "needs_reauth");
+
+    account = socialAccount({ status: "degraded" });
+    expect(await screen.findByTestId("banner-degraded", {}, { timeout: 6000 })).toBeInTheDocument();
+    expect(screen.queryByTestId("banner-needs-reauth")).toBeNull();
+
+    account = socialAccount();
+    await waitFor(() => expect(screen.getByTestId("home-connection")).toHaveAttribute("data-status", "connected"), {
+      timeout: 6000,
+    });
+    expect(screen.queryByTestId("banner-degraded")).toBeNull();
+  }, 20_000);
+
   it("shows the red reauth banner with the renew link, driven by the account status", async () => {
     mockApi(routes({ ...reportWith([]), ...accounts(socialAccount({ status: "needs_reauth" })) }));
     renderApp(`/w/${WS_GOLKENT}`);

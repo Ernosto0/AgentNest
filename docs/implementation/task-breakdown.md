@@ -22,6 +22,8 @@
 
 ## 2. Index
 
+Phase 6 status (2026-10-22): P6-01–P6-09 implemented; P6-10's local verification and docs are recorded in the [Phase 6 summary](phase-summaries/phase-06-summary.md), **waiting for review**. Local MVP acceptance/Gate 1 is pending the listed acceptance/invariant decisions and owner Windows/phone/CI evidence. Phase 7 is not started.
+
 | ID | Title | Depends on | Size |
 |---|---|---|---|
 | **Phase 1: Foundation** | | | |

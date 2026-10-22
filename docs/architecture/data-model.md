@@ -468,6 +468,8 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 
 ## 4. Data lifecycle summary
 
+**Phase 6 migrations (in order).** `0012` (`20261021_0012_phase_6_daily_reports.py`, after `0011`) creates `daily_reports` (§3.8), its workspace FK, `unique (workspace_id, id)`, `unique (workspace_id, local_date)` and workspace index. `0013` (`20261021_0013_phase_6_circuit_window.py`, after `0012`) adds nullable `social_accounts.failure_window_started_at` (§3.5); no counter backfill. `0014` (`20261021_0014_phase_6_invites.py`, after `0013`, current head) creates `invites` (§3.1), with workspace cascade, unique token hash, role check, workspace/id uniqueness and workspace index. Apply all with `uv run alembic upgrade head`.
+
 | Data | Created by | Mutable? | Retention default ([security-and-privacy.md §8](security-and-privacy.md)) |
 |---|---|---|---|
 | Facts / versions | Users, commands, seed | Fact row yes; versions never | Lifetime of workspace |

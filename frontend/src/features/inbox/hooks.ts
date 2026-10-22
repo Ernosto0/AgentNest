@@ -218,6 +218,8 @@ export function useSocialAccounts(ws: string) {
           }),
         )
       ).items,
+    // Account health changes in the worker, including while Home is already open.
+    refetchInterval: POLL_MS,
   });
 }
 

@@ -49,6 +49,8 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `POST /api/v1/workspaces/{ws}/invites/{invite_id}/revoke` | → 204 (`members.manage`); revoking an accepted invite → 409 `CONFLICT_STATE`, revoking twice is a no-op. |
 | `POST /api/v1/invites/accept` | signed in: `{token}` → `{workspace_id, workspace_name, role}` (the user becomes a member). Signed out: `{token, email, display_name, password}` creates the user, signs them in (session cookie) and returns the same body. Unknown, expired, used or revoked token → 400 `INVITE_INVALID`; an existing email (signed out) or an existing member → 409 `CONFLICT_STATE`. |
 
+Invite acceptance is exempt from `X-CSRF-Token` in both signed-in and signed-out flows, just like login (`CSRF_EXEMPT_PATHS`); invite creation, revocation and member changes require it. Tokens are single-use and only their SHA-256 is stored. The SPA constructs the shareable link and QR from `window.location.origin + invite_path`, so a LAN browser uses the LAN origin rather than the API's `APP_BASE_URL`.
+
 ### 2.3 Knowledge (Phase 2; extraction Phase 3; approved answers Phase 4)
 | Method & path | Request → Response |
 |---|---|

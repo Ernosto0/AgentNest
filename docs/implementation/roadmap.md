@@ -40,6 +40,8 @@ flowchart LR
 
 ## 3. Gates
 
+**Phase 6 review (2026-10-22):** P6-01–P6-09 are implemented; session 11 records the local checks, documentation close-out and remaining decisions in [phase-06-summary.md](phase-summaries/phase-06-summary.md). **Gate 1 remains open**: GitHub CI has not run (nothing pushed), unassisted Windows and real-phone acceptance remain owner checks, and the summary lists unresolved acceptance/invariant issues. Phase 7 has not started.
+
 | Gate | Condition | Evidence |
 |---|---|---|
 | **Gate 1: Local MVP** | All AC-A…G and AC-X pass in CI. Manual walkthrough on Windows and on a phone. | CI run link; phase 6 summary |

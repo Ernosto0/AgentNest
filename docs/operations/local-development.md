@@ -2,9 +2,9 @@
 
 **Purpose:** Set up, run, seed, simulate, inspect and reset the application locally, without any external credentials. It also contains the scripted demo walkthrough.
 
-> **Status:** this describes the **target** developer experience. Commands become valid as the phases deliver them (noted per section). The setup, run, test, seed and reset commands up to and including **Phase 1** were verified on Windows 11 (Windows PowerShell 5.1 and Git Bash) in task P1-14; later sections are verified by the phase that delivers them.
+> **Status:** Phases 1–6 are implemented locally. The Phase 6 verification results and outstanding human/phone/CI checks are in the [phase summary](../implementation/phase-summaries/phase-06-summary.md). Real Meta integration remains Phase 7.
 >
-> **Shell syntax:** commands are written for Git Bash / PowerShell 7. In **Windows PowerShell 5.1** `&&` is not a valid separator: use `;` (or separate lines), e.g. `cd backend; uv run alembic upgrade head`. Do not redirect program output with `>` in Windows PowerShell 5.1 (it writes UTF-16): use the tools' own `-o/--output` options where they exist.
+> **Shell syntax:** required commands below use **Windows PowerShell 5.1**, one command per line. Run the next command only if the previous one succeeded (`$LASTEXITCODE` is 0). Do not redirect program output with `>` in Windows PowerShell 5.1 (it writes UTF-16): use the tools' own `-o/--output` options where they exist. Commands assume the repository root unless a working directory is specified.
 
 ## 1. Prerequisites
 
@@ -17,11 +17,12 @@
 
 No paid accounts or API keys are needed. Defaults: `LLM_PROVIDER=fake`, `INSTAGRAM_ENABLED_PROVIDERS=mock`, `MEDIA_STORAGE_BACKEND=local` ([INV-14](../invariants.md)).
 
-## 2. First-time setup (Phase 1+)
+## 2. First-time setup
 
-```bash
-git clone <repo> agentnest && cd agentnest
-cp .env.example .env                      # PowerShell: Copy-Item .env.example .env
+For a new checkout, replace `<repo>` with this repository's clone URL, then run `git clone <repo> agentnest` and `Set-Location agentnest` on separate lines. For an existing checkout, open PowerShell at its root. Copy the defaults only when `.env` does not exist; keep your existing local configuration otherwise.
+
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 docker compose up -d postgres             # Postgres 16 on localhost:5433
 
 cd backend
@@ -31,6 +32,7 @@ uv run alembic upgrade head
 uv run python -m app.cli seed --reset     # demo users, workspaces, facts, simulated accounts, yesterday's history
 cd ../frontend
 npm ci
+npx playwright install chromium webkit    # needed for the E2E checks, not for the walkthrough
 ```
 
 `docker compose up -d postgres` also creates the `agentnest_test` database used by the tests (`docker/postgres/init/`). That script only runs when the data volume is first created; if you started Postgres before it existed, create the database once: `docker compose exec postgres psql -U agentnest -c "CREATE DATABASE agentnest_test OWNER agentnest;"`.
@@ -42,11 +44,11 @@ Other CLI commands (from `backend/`): `uv run python -m app.cli create-user --em
 | Terminal | Command (from repo root) |
 |---|---|
 | Database | `docker compose up -d postgres` (once) |
-| API | `cd backend && uv run uvicorn app.main:create_app --factory --reload --port 8000` |
-| Worker | `cd backend && uv run python -m app.worker` |
-| Frontend | `cd frontend && npm run dev` → http://localhost:5173 |
+| API | `cd backend; uv run uvicorn app.main:create_app --factory --reload --port 8000` |
+| Worker | `cd backend; uv run python -m app.worker` |
+| Frontend | `cd frontend; npm run dev` → http://localhost:5173 |
 
-The worker is required for anything asynchronous: commands, drafts, sends, publishing and reports. If a status stays at *Anlıyorum…* or *Hazırlanıyor…*, check that the worker is running. (Phase 1 has no asynchronous features yet, so the worker only polls the queue and runs the scheduler tick; stop it with Ctrl+C, it finishes the running job first.)
+The worker is required for anything asynchronous: commands, drafts, sends, publishing and reports. If a status stays at *Anlıyorum…* or *Hazırlanıyor…*, check that the worker is running. Stop it with Ctrl+C; it finishes the running job first. Use a separate terminal for each command and leave all three running. If a port is occupied, use the existing server only if it belongs to this checkout; otherwise stop that server in its own terminal before starting this one.
 
 From Windows PowerShell 5.1 the same commands read, for example: `cd backend; uv run uvicorn app.main:create_app --factory --reload --port 8000`.
 
@@ -54,31 +56,39 @@ Logs go to **stderr** (console format in development, JSON in production), so st
 
 ## 4. Tests
 
-```bash
+```powershell
 cd backend
 uv run pytest                              # all backend tests (needs Postgres running)
 uv run pytest tests/unit                   # fast, no DB
 uv run pytest -m commits -k jobs           # queue/concurrency/restart tests (real commits)
-uv run ruff check . ; uv run ruff format --check . ; uv run mypy app ; uv run lint-imports
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy app evals
+uv run lint-imports
 uv run python -m evals run --all --provider fake --strict   # Phase 3+: CI runs this; exit 1 on any failure
 uv run python -m evals run --all --provider openai --max-cost-usd 2   # by hand, with OPENAI_API_KEY; reports go to backend/evals/reports/
 cd ../frontend
 npm test                                   # Vitest
-npm run lint ; npm run typecheck ; npm run i18n:check
+npm run lint
+npm run typecheck
+npm run i18n:check
 npx playwright install chromium webkit     # first time (add --with-deps on Linux)
 npm run e2e                                # Playwright, 3 projects (see below)
 ```
 
 - Backend tests always run against `TEST_DATABASE_URL` (the `agentnest_test` database): the test session refuses any database whose name does not end in `_test`. The schema is dropped and rebuilt with `alembic upgrade head` at the start of every test session, so never point `TEST_DATABASE_URL` at data you care about.
-- `npm run e2e` needs Postgres running with migrations applied (`uv run alembic upgrade head`). It **re-seeds** the demo data (`seed --reset`), starts the API (`:8000`) and the Vite dev server (`:5173`) itself, and reuses them if they are already running. In CI (`CI=true`) it serves the production build with `vite preview` instead. Projects: `mobile-webkit` (iPhone 13 settings, 390x844 viewport), `mobile-chromium` (Pixel 7 settings, 390x844 viewport), `desktop-chromium`. Run one with `npm run e2e -- --project=desktop-chromium`. Specs: `phase1` (shell, language, isolation), `scenario-a` to `scenario-g` (the walkthrough of section 6, one spec per scenario; `scenario-g` advances its future post deadline through the existing frozen-clock job hook, without waiting minutes), `i18n` (tr, en, tr on the main screens) and `a11y` (axe via `@axe-core/playwright`: no serious or critical violation; every screen must also fit the phone width). Run times per project are recorded in the [session 10 report](../implementation/phase-6-sessions/s10-report.md). A stale server on the E2E ports is reused, so check that they are free first. The Phase 3 and 4 scenarios (commands, extraction, inbox) need the worker: Playwright starts `python -m app.worker` itself (`WORKER_POLL_INTERVAL_SECONDS=0.2`, `REPLY_DEBOUNCE_SECONDS=1`) and waits for its startup log line. To run a second stack next to another checkout, move the ports: `E2E_API_PORT=8001 E2E_WEB_PORT=5174 npm run e2e` (the Vite proxy follows `E2E_API_PORT`) and point `DATABASE_URL` / `TEST_DATABASE_URL` at databases of your own.
+- `npm run e2e` needs Postgres running with migrations applied (`uv run alembic upgrade head`). It **re-seeds** the demo data (`seed --reset`), starts the API (`:8000`) and the Vite dev server (`:5173`) itself, and reuses them if they are already running. In CI (`CI=true`) it serves the production build with `vite preview` instead. Projects: `mobile-webkit` (iPhone 13 settings, 390x844 viewport), `mobile-chromium` (Pixel 7 settings, 390x844 viewport), `desktop-chromium`. Run one with `npm run e2e -- --project=desktop-chromium`. Specs: `phase1` (shell, language, isolation), `scenario-a` to `scenario-g` (the walkthrough of section 6, one spec per scenario; `scenario-g` advances its future post deadline through the existing frozen-clock job hook, without waiting minutes), `i18n` (tr, en, tr on the main screens) and `a11y` (axe via `@axe-core/playwright`: no serious or critical violation; every screen must also fit the phone width). Run times per project are recorded in the [session 10 report](../implementation/phase-6-sessions/s10-report.md). A stale server on the E2E ports is reused, so check that they are free first. The Phase 3 and 4 scenarios (commands, extraction, inbox) need the worker: Playwright starts `python -m app.worker` itself (`WORKER_POLL_INTERVAL_SECONDS=0.2`, `REPLY_DEBOUNCE_SECONDS=1`) and waits for its startup log line. To run a second stack next to another checkout, move the ports: `$env:E2E_API_PORT="8001"; $env:E2E_WEB_PORT="5174"; npm run e2e` (PowerShell; clear the overrides afterwards with `Remove-Item Env:E2E_API_PORT, Env:E2E_WEB_PORT`) (the Vite proxy follows `E2E_API_PORT`) and point `DATABASE_URL` / `TEST_DATABASE_URL` at databases of your own.
 
 ### Regenerating the API client
 
 The OpenAPI document and the generated TypeScript types are committed; CI fails if they drift. After changing any endpoint or response model:
 
-```bash
-cd backend && uv run python -m app.cli export-openapi -o ../frontend/openapi.json
-cd ../frontend && npm run gen:api          # writes src/api/schema.d.ts
+```powershell
+cd backend
+uv run python -m app.cli export-openapi -o ../frontend/openapi.json
+cd ../frontend
+npm run gen:api                           # writes src/api/schema.d.ts
+git diff --exit-code -- openapi.json src/api/schema.d.ts
 ```
 
 ## 5. Demo data (seeded)
@@ -104,27 +114,33 @@ All demo workspaces have `is_demo = true` and show the **SİMÜLASYON / SIMULATE
 
 **Phase 4:** both studios also get a simulated Instagram account (`@golkent.fitness.demo`, `@harbor.pilates.demo`), `reply_languages` (Gölkent answers in Turkish and English, Harbor in English) and a recorded automation review, so their readiness is *Hazır* / *Ready*. Everything produced through the simulated account is labelled **SİMÜLASYON**.
 
-**Phase 2 (business knowledge)** is demonstrable now: both studios seed to readiness *Taslaklar için hazır* / *Ready for drafts* (the full *Hazır* level also needs the simulated account and the automation review, which arrive in Phase 4). Each has one **unverified** fact (the student price) and one pending **discrepancy** suggestion ("bio says 5.500 ₺"). Walkthrough: log in as `owner@demo.local` → More → İşletme bilgileri → Fiyatlar → verify the student price → Geçmiş (history) → İşletme bilgileri → Öneriler → *Mevcut değeri koru* (reject) → Ana sayfa shows what is left. Then log in as `staff@demo.local`, change the monthly price (*Değişiklik öner*): it appears as a suggestion for the owner and the fact shows *İtiraz var* (contested) until the owner accepts or rejects. More → Çalışma alanı oluştur starts the new-workspace wizard. `seed` is idempotent and also adds the facts to workspaces created before Phase 2; `seed --reset` re-creates everything.
+**Business knowledge walkthrough:** both studios now seed to readiness *Hazır* / *Ready*, with a simulated account and a recorded automation review. Each has one **unverified** fact (the student price) and one pending **discrepancy** suggestion ("bio says 5.500 ₺"). Log in as `owner@demo.local` → More → İşletme bilgileri → Fiyatlar → verify the student price → Geçmiş (history) → İşletme bilgileri → Öneriler → *Mevcut değeri koru* (reject). Then log in as `staff@demo.local`, change the monthly price (*Değişiklik öner*): it appears as a suggestion for the owner and the fact shows *İtiraz var* (contested) until the owner accepts or rejects. More → Çalışma alanı oluştur starts the new-workspace wizard. `seed` is idempotent and also adds the facts to workspaces created before Phase 2; `seed --reset` re-creates everything.
 
-## 6. Demo walkthrough (complete from Phase 6; about 15 minutes)
+## 6. Demo walkthrough (A–G and reset)
 
-Open http://localhost:5173 in a phone-sized window (DevTools device mode, 390×844) or on a real phone (§10). Log in as `owner@demo.local`, workspace `golkent-fitness`.
+Allow about **15 minutes for the core demo**, or **25–35 minutes for every branch below**, including the real 1- and 5-minute retry waits and the five-send circuit exercise. The automated suite uses frozen-clock job hooks for future deadlines; the UI's **Zamanı gelen işleri şimdi çalıştır** runs only jobs due **now** and does not advance time.
 
-**A. Business setup:** More → İşletme bilgileri. Show verified facts with sources, the unverified student price, and the pending suggestion "bio says 5.500 ₺". Reject it. Home shows readiness *Taslaklar için hazır* (*Hazır* once Phase 4 adds the simulated account and the automation review).
+Start from §2's `seed --reset`, with the API, worker and `npm run dev` running (§3). Do not run E2E at the same time: it resets the same demo database. Open http://localhost:5173 in a phone-sized window (DevTools device mode, 390×844), or use the LAN URL in §10. Log in as `owner@demo.local` with `DEMO_PASSWORD` from `.env` (default `demo-password` in `.env.example`), then select **Gölkent Fitness & Pilates**. The navigation labels below are Turkish: **Daha fazla** means More, **Gelen kutusu** means Inbox.
 
-**B. Customer price question:** More → Dev panel → scripted message "Ayşe: Merhaba, aylık üyelik ne kadar?" → Inbox → *Onay bekliyor*. Open the conversation and show the draft with "6.000 ₺" chip (source and version) and the reason "Onay gerekli (ayar)" → **Onayla ve gönder** → *Gönderildi · SİMÜLASYON*. Dev panel → scripted complaint → *Size devredildi* with reasons; no sendable draft. Dev panel → injection script → flagged and requiring approval; no discount in the text.
+**A. Business setup:** Daha fazla → **İşletme bilgileri**. Open **Fiyatlar** to show verified values and their sources and the unverified student price. Return to İşletme bilgileri → **Öneriler**, open the pending discrepancy about the monthly price (5.500 ₺), then **Mevcut değeri koru** to reject it. Home already reads **Hazır**: the seed includes the simulated account and the recorded automation review. Show the connection, **SİMÜLASYON** and offline AI status strip, and the attention cards from yesterday's history.
 
-**C. Change a fact:** Home command bar: "Aylık üyelik artık 7.000 TL" → confirmation (6.000 ₺ → 7.000 ₺, impact: 1 scheduled post on hold if step D was done first) → Onayla. Dev panel → a new price question → the draft shows 7.000 ₺.
+**B. Customer price question:** Daha fazla → **Geliştirici araçları** → scripted price question from **Ayşe** → Gelen kutusu → Ayşe. Wait about 8 seconds for the debounce and draft. Show **Onay bekliyor**, the **6.000 ₺ / ay** fact chip (tap it for source/version), and **Otomatik gönderim kapalı** → **Onayla ve gönder** → **Gönderildi · SİMÜLASYON**. Repeat with the complaint script (**Burak**): **Size gerek var**, a complaint reason and no approve/send button. Repeat with the injection script (**Kerem**): the reply needs a person, shows **İndirim istiyor**, offers no approve/send button and contains no 100% discount.
 
-**D. Story:** Command "Deneme dersi için bir story hazırla" → the result links "İçeriği aç" → the draft shows overlay suggestions and the note that the text belongs on the picture (a story has no caption) → **Görsel seç** and pick `backend/app/demo/media/story-sample.png` → **Zamanla** → set the time to 2 minutes from now (the sheet says "İstanbul saati") → **Onayla ve zamanla** → *Zamanlandı*. At the scheduled minute the badge reads *Yayınlanıyor* for about ten seconds (the executor checks the container every 10 s; the mock container is ready after `SIM_CONTAINER_DELAY_SECONDS`) and then *Yayınlandı · SİMÜLASYON* with a simulated permalink. Do not want to wait? Choose **Hemen yayınla** instead of a time (owners and managers only; staff can only ask for approval, at least 15 minutes ahead). If the worker is not running, Dev panel → *Zamanı gelen işleri şimdi çalıştır* runs what is due. Editing a scheduled post sends it back to *Taslak* and voids its approval.
+**C. Change a fact:** Home command bar: **Aylık üyelik artık 7.000 TL** → confirmation (6.000 ₺ → 7.000 ₺) → **Onayla**. Simulate another price question from Ayşe; the new draft shows **7.000 ₺**. Optional fact-impact branch: before this change, create and schedule a **feed post about the monthly price**, whose caption uses that fact. The confirmation then includes one content item, and İçerik → Sorunlar shows it **Beklemede**. The trial Story in D uses a promotion fact and does not by itself demonstrate a monthly-price hold.
 
-**E. Daily review:** Command "Bugün kaç DM geldi?" → answer. More → Raporlar → today's report. Tap a number to see the matching list. More → Etkinlik (activity) shows the same events.
+**D. Story:** Home command **Deneme dersi için bir story hazırla** → **İçeriği aç**. Wait for the overlay suggestions and the note that they belong on the picture (a Story has no caption). **Görsel seç** → `backend/app/demo/media/story-sample.png` → **Zamanla** → set the **date and time in Europe/Istanbul** to 2 minutes ahead → **Onayla ve zamanla** → **Zamanlandı**. Keep the worker running and wait until that minute: **Yayınlanıyor**, then about ten seconds later **Yayınlandı · SİMÜLASYON** and a simulated permalink. For the shorter core demo choose **Hemen yayınla** instead. Staff cannot use that option and need at least 15 minutes' lead for approval. Editing a scheduled post returns it to **Taslak** and invalidates the old approval.
 
-**F. Failure handling:** Dev panel → failure rule: operation *publish*, error *transient*, press **Sonraki çağrı için ekle** **twice** (each rule covers the next call only, so two clicks are "×2") → publish a post with **Hemen yayınla** → *Tekrar denenecek 22:24*, then *Tekrar denenecek 22:29* (the retries come 1 and 5 minutes later) → *Yayınlandı* after about 6 minutes, once. Dev panel → "Simülatörde yayınlananlar" has one row for that post (one row per published post). A permanent error, *publish: invalid_media*, ends at once as *Başarısız* with the cause ("Instagram görseli işleyemedi.") and **Düzenle ve yeniden gönder**. Set *publish: timeout_after_success* → *Kontrol ediliyor…* and, at the first check a minute later, *Yayınlandı*, with exactly one post in the same list.
+**E. Daily review:** Home command **Bugün kaç DM geldi?** → answer. Daha fazla → **Günlük rapor**, today's report: compare **Gelen mesaj** with the answer while no new messages arrive. Open a nonzero number and count the rows, using **Daha fazla göster** if present; the response-time median opens answered bursts with their durations rather than that many rows. Return to the report and select yesterday to show the seeded six inbound messages and four sent replies. Daha fazla → **Etkinlik** shows the corresponding events; try its group and date filters. Reports and records show **SİMÜLASYON**. A historical snapshot's drill-down currently shows current records, so it can differ from the saved count after state changes; this is an open AC-E3 issue in the phase summary.
 
-**G. Integration failure:** Dev panel → failure rule *send → auth_revoked* → send a customer price question and approve the reply → the reply stays *Birazdan gönderilecek*, the account becomes *yeniden bağlanmalı* and the bell shows a critical "Instagram hesabınızı yeniden bağlayın" → the red Home banner (**Bağlantıyı yenile**) or More → Instagram bağlantısı (*Connections*, `more/settings/connections`) → **Yeniden bağlan (simülasyon)** (owner) → the queued reply is sent (*Gönderildi · SİMÜLASYON*) without approving it again. Reconnecting does not resume held posts (re-approve them from Content). It clears the account's `auth_revoked` failure rules; other rules remain. The same screen shows the account status, the last error in plain language, the capabilities and, for a *kararsız* account, the time until which no calls are made (workspace time); **Bağlantıyı kes** asks for confirmation first. For the circuit breaker: add five *transient* failure rules, trigger five sends, then remove the rules and press **Sağlık kontrolünü şimdi çalıştır** in the Dev panel (runs the health check of the workspace's degraded accounts now; it shows how many were checked and recovered).
+**F. Failure handling:** In Geliştirici araçları, choose **İşlem: publish**, **Hata: transient**, and press **Sonraki çağrı için ekle** **twice** (one call per rule). Create a feed post from İçerik → **Taslak iste**, using **Aylık üyelik fiyatı hakkında bir gönderi**; open it, wait for generation, attach `backend/app/demo/media/feed-sample.jpg`, then Zamanla → **Hemen yayınla** → **Onayla ve hemen yayınla**. Watch **Tekrar denenecek HH:mm**; retries occur 1 and then 5 minutes later. After roughly 6 minutes it is **Yayınlandı**. Geliştirici araçları → **Simülatörde yayınlananlar** → refresh: exactly one new row for this post (the seeded publication and D's Story are separate rows). For the short demo, show the first retry and continue with E while it waits.
 
-Finish with Dev panel → **Demo'yu sıfırla** (confirm). The workspace is re-created with a new id, yesterday's history is back, and the app opens the new workspace.
+For the permanent-error branch, add one **publish / invalid_media** rule and create another feed post the same way: it becomes **Başarısız**, with “Instagram görseli işleyemedi.” and **Düzenle ve yeniden gönder**. For the ambiguous-outcome branch, add one **publish / timeout_after_success** rule and publish another: **Kontrol ediliyor…**, then **Yayınlandı** at reconciliation about one minute later, with one new simulator row. Wait for each branch's rule to be consumed before adding another. Consumed rules remain in the list with `(0)`; they no longer affect calls.
+
+**G. Integration failure:** Add one **send / auth_revoked** rule, simulate a price question and approve its new draft. It stays **Birazdan gönderilecek**; Home shows the red **Instagram bağlantınız yenilenmeli.** banner. Open the bell to see the critical **Instagram hesabınızı yeniden bağlayın** notification (severity **Acil** and simulation badge). Home → **Bağlantıyı yenile**, or Daha fazla → **Instagram bağlantısı** → **Yeniden bağlan (simülasyon)**. The account becomes connected, the banner clears and the queued reply becomes **Gönderildi · SİMÜLASYON** without approving again. Reconnect clears that account's `auth_revoked` rules only. For the due-post branch, schedule a post **before** revoking the connection, let it fall due while reauth is needed, and verify **Beklemede**; reconnect leaves it held until the owner re-approves it.
+
+For the circuit branch, add **five send / transient** rules (five clicks) and five **profile / transient** rules (five clicks) to keep the periodic health probe from recovering before you inspect the banner. Simulate **Fiyat sorusu** (Ayşe), **Çalışma saatleri** (Mehmet), **Adres ve telefon** (Zeynep), **Deneme seansı** (Can) and **İngilizce turist** (Sarah), using each row's **Gönder** button. Wait until all five new drafts exist, then approve those five replies promptly (within ten minutes), so an earlier retry does not consume another rule before the remaining drafts are ready. All five sends fail and Home shows the amber **Instagram'a şu an ulaşılamıyor…** banner. Instagram bağlantısı shows **kararsız** and the cooldown time in the workspace timezone. In Geliştirici araçları remove **all remaining failure rules**, then press **Sağlık kontrolünü şimdi çalıştır**. It reports one checked and one recovered; Home returns to connected and the amber banner clears. Daha fazla → **Sistem durumu** shows the account and the last 24 hours' counts. Keep a failed profile rule only while demonstrating the degraded state; retries or a successful probe otherwise change it.
+
+Finish with Geliştirici araçları → **Demo'yu sıfırla** → confirm. The URL gets a **new workspace id**, yesterday's history returns, the monthly price is **6.000 ₺** again, the account is connected, and the app opens the new workspace. Other workspaces are unchanged.
 
 ### The developer simulator (Phase 4)
 
@@ -165,7 +181,7 @@ Set `LLM_PROVIDER=openai` and `OPENAI_API_KEY=…` in `.env` (optionally `LLM_MO
 
 ## 10. Testing on a real phone
 
-`npm run dev -- --host` and open `http://<your-LAN-IP>:5173` on the phone (same Wi-Fi). Keep `COOKIE_SECURE=false` in development. On Windows, allow Node.js through the firewall for private networks.
+From `frontend/`, run `npm run dev -- --host 0.0.0.0`. In another PowerShell run `ipconfig` and take the Wi-Fi adapter's IPv4 address; open `http://<your-LAN-IP>:5173` on the phone on the same Wi-Fi. Keep the API and worker running (§3), and `COOKIE_SECURE=false` in development; Vite proxies `/api` to the local API, so the phone needs port 5173 only. Allow Node.js through Windows Firewall for **private networks** if prompted. Follow §6 A–G and reset, checking that forms, sheets, banners and badges fit without horizontal scrolling. Browser emulation does not complete this real-phone check; record the phone, OS/browser, date and any failures in the phase summary.
 
 ## 11. Features that need external credentials, and their mock alternatives
 

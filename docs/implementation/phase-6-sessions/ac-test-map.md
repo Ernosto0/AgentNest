@@ -4,11 +4,13 @@ Built in session 9 (P6-10a) for the Phase 6 summary and the Local MVP DoD run of
 
 How to read the last column: **(manual)** is a check no automated test can do (a person, a phone, the owner's CI). A UI-level part is proven by the Playwright specs in the third column (all closed in session 10); the backend part of the same criterion is proven by the tests in the second column. Where `acceptance-criteria.md` names a different file than the one below, the file below is the real one (noted in the last column).
 
-**Result.** No backend-closable GAP is left open. One gap was closed in session 9: AC-B2 had a test for the event and the job, but none that ran the draft job after three deliveries (`test_ac_b2_the_same_webhook_three_times_gives_one_message_and_one_draft`). Session 10 closed the browser-level items with the Playwright specs `scenario-e.spec.ts`, `scenario-g.spec.ts`, `i18n.spec.ts` and `a11y.spec.ts` (AC-E3, AC-E5, AC-G1, AC-G3 banner, AC-X2 badges, AC-X3, AC-X4). What remains is for the owner:
+**Result.** Session 9 closed the then-known backend coverage gaps, including AC-B2's three-delivery draft execution (`test_ac_b2_the_same_webhook_three_times_gives_one_message_and_one_draft`). Session 10 added the browser checks in `scenario-e.spec.ts`, `scenario-g.spec.ts`, `i18n.spec.ts` and `a11y.spec.ts`. **Session 11 found a remaining AC-E3 contract gap:** unchanged fixtures pass equality, but saved snapshot counts can differ from drill-down rows after state changes. The [phase summary](../phase-summaries/phase-06-summary.md) records the reproduction and required decision; the test inventory below is coverage, not a claim that the full DoD passes. Remaining items:
 
 | Open item | Why it is not an automated test | Where |
 |---|---|---|
+| AC-E3 historical snapshot equality | Reproduced through the API; H1's equality and H3's stored snapshots need a consistent contract after state changes/retention. A median's value is a duration, not a row count | **review decision**, session 11 summary |
 | AC-X8 the full CI pipeline | Nothing is pushed, so CI has never run | **(manual)**, owner (plan section 6) |
+| AC-X4 full-run WebKit navigation | Session 11 full run: 170 passed, 1 report-return failure; unchanged isolated rerun passed. Cause unresolved; summary preserves both results | **investigation**, session 11 summary |
 | DoD items 2, 3 and 4 | A person on Windows, a real phone, the invariant review | **(manual)**, session 11 and the owner |
 
 ## Scenario A: business setup

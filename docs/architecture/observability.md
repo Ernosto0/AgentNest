@@ -48,6 +48,8 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `VALIDATION_FAILED` | 422 | — | Some fields are invalid / fix the highlighted fields |
 | `VERSION_CONFLICT` / `FACT_VERSION_CONFLICT` | 409 | — | Someone changed this meanwhile / reload and retry |
 | `CONFLICT_STATE` | 409 | — | This action is not possible in the current state |
+| `INVITE_INVALID` | 400 | — | Invite is unknown, expired, revoked or already used / ask the owner for a new link |
+| `LAST_OWNER_REQUIRED` | 409 | — | The workspace needs an owner / promote another member before demoting or removing the last owner |
 | `APPROVAL_ALREADY_DECIDED` | 409 | — | Already approved or rejected |
 | `APPROVAL_EXPIRED` | 409 | — | The approval expired / request a new draft or schedule |
 | `APPROVAL_STALE` | 409 | — | Content changed after you opened it / review the new version |
@@ -144,6 +146,8 @@ The kinds exist from P5-04. The publish executor (P5-06) produces `content.publi
 | `knowledge.fact_changed` | info | `knowledge.verify`, not the person who changed it | `fact:{fact_id}:v{version}` | `knowledge.impact` |
 | `knowledge.promotion_expired` | attention | `knowledge.verify` | `promotion-expired:{fact_id}:{valid_until}` | `knowledge.promotion_notices` (daily job, 09:00 workspace-local) |
 | `account.needs_reauth` | critical | `integrations.manage` | `account:{account_id}:needs_reauth` | `operations.health.handle_auth_error` |
+| `account.degraded` | attention | `integrations.manage` | `account:{account_id}:degraded` | `operations.health.record_transient_failure` (circuit opens) |
+| `account.recovered` | info | `integrations.manage` | `account:{account_id}:connected` | `operations.health.recover` (health check or successful half-open operation) |
 | `account.permission_missing` | attention | `integrations.manage` | `account:{account_id}:permission_missing:{capability}` | `operations.health.handle_permission_error` (send and publish) |
 | `report.daily_ready` | info | `reports.view` | `report:{local_date}` | `reporting.service.generate_daily_report` (the scheduled run only) |
 | `member.joined` | info | owners | `member.joined:{user_id}` | `identity.invites.accept_invite` |
@@ -172,6 +176,8 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 `report.generated` is written with the workspace id (resource type `daily_report`; metadata `local_date`, `scheduled`, `definitions_version`, `is_partial`), by the scheduled run and by every on-demand regeneration, so it appears in the workspace's Activity feed (group *system*).
 
 The **Activity** view renders entries with i18n templates (`activity.<action>` in `core/i18n/{tr,en}.json`, no parameters, so no text can leak into them), with actor labels and a simulated badge. It reads the workspace's `audit_logs` only (system-level rows have no workspace and never show).
+
+The endpoint accepts group `type` and workspace-local `date` filters, and pages newest first with an opaque cursor over `(occurred_at, id)` (`limit` 1–100, default 30); equal timestamps remain stable across pages. See [api-design.md §2.8](api-design.md).
 
 - **Groups** (the `type` filter; the fixed map is `app/activity/groups.py`): `messages` (`message.*`, `conversation.*`), `replies` (`reply_draft.*`, `reply.*`), `approvals`, `content` (`content.*`, `media.*`), `knowledge` (`fact.*`, `fact_candidate.*`, `approved_answer.*`, `knowledge.*`, `policy.*`), `commands`, `accounts` (`social_account.*`, `account.reconnected`), `members` (`member.*`) and `system` (`auth.*`, `workspace.*`, `operation.*`, `webhook.*`, `report.*`, `retention.*`, `demo.*`, and any action the map does not know yet).
 - **Actor labels:** a user is shown by display name, or "Eski üye" / "Former member" when they are no longer a member of the workspace; `system` is "Sistem", `agent` is "Yapay zekâ", `provider` is "Instagram".
