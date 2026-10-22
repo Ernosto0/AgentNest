@@ -6,6 +6,7 @@ import {
   WEB,
   apiLogin,
   attachImage,
+  expectNoHorizontalScroll,
   localFields,
   navLink,
   openScheduleSheet,
@@ -32,6 +33,10 @@ const GYM_NAME = "Gölkent Fitness & Pilates";
 
 test.beforeEach(() => {
   reseedDemo(); // every test starts from the same data (and no earlier post in the simulator)
+});
+
+test.afterEach(async ({ page }) => {
+  await expectNoHorizontalScroll(page);
 });
 
 /** "Deneme dersi için bir story hazırla" -> the draft opens with its overlay suggestions generated. */
@@ -93,6 +98,7 @@ test("D5/INV-06/INV-18: Hemen yayınla publishes once and reads Yayınlandı wit
   page,
   request,
 }) => {
+  test.setTimeout(90_000); // Includes setup, container polling and the 60 s publish assertion.
   await signInToWorkspace(page, OWNER, GYM);
   await storyDraftWithImage(page);
 

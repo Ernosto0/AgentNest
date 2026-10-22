@@ -156,5 +156,5 @@ test("X3: tr to en to tr on every main screen, with no raw keys on screen", asyn
   await chooseLanguage(page, "Türkçe");
   await expect(page.getByRole("heading", { name: "Dil" })).toBeVisible();
   await expect(navLink(page, "Gelen kutusu")).toBeVisible();
-  await expectScreen(page, SCREENS[0]!, "tr", base);
+  for (const screen of SCREENS) await expectScreen(page, screen, "tr", base);
 });

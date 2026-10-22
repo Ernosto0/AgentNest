@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   SAMPLE_FEED,
   attachImage,
+  expectNoHorizontalScroll,
   hasHorizontalScroll,
   localFields,
   navLink,
@@ -22,6 +23,10 @@ const GYM = /Gölkent Fitness & Pilates/;
 
 test.beforeEach(() => {
   reseedDemo(); // the commands below change facts; every test starts from the same data
+});
+
+test.afterEach(async ({ page }) => {
+  await expectNoHorizontalScroll(page);
 });
 
 async function openPricing(page: Page) {

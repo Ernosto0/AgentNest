@@ -143,6 +143,24 @@ export async function runDueJobs(request: APIRequestContext, csrf: string): Prom
   return (await response.json()).ran as number;
 }
 
+/**
+ * Exercise a future deadline without sleeping. The dev run-due API only uses wall-clock time,
+ * so use the existing jobs.testing hook with an injected FrozenClock (testing-strategy.md §3).
+ * Only this subprocess sees the future time; the API and worker keep their real clocks.
+ */
+export function runJobsAt(instant: string): void {
+  const backendDir = fileURLToPath(new URL("../../backend", import.meta.url));
+  execFileSync("uv", ["run", "python", "-c", [
+    "import sys",
+    "from datetime import datetime",
+    "from app.core.clock import FrozenClock",
+    "from app.handlers import load_handlers",
+    "from app.jobs.testing import run_due_jobs",
+    "load_handlers()",
+    "run_due_jobs(FrozenClock(datetime.fromisoformat(sys.argv[1])))",
+  ].join("\n"), instant], { cwd: backendDir, stdio: "pipe" });
+}
+
 /** Script the next call(s) of the simulated Instagram to fail (dev API). */
 export async function addFailureRule(
   request: APIRequestContext,
@@ -204,7 +222,7 @@ export async function openScheduleSheet(page: Page) {
 
 /**
  * Fail when the page is wider than the viewport (AC-X4). Called on every main screen at 390x844
- * (the iPhone 13 and, within a few pixels, the Pixel 7 projects). `scrollWidth` of the document
+ * (both mobile browser projects). `scrollWidth` of the document
  * is what a person can scroll sideways, so it must not exceed the window width.
  */
 export async function expectNoHorizontalScroll(page: Page, where = "") {

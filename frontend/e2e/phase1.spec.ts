@@ -128,6 +128,8 @@ test("navigation adapts to the viewport: bottom tabs on phones, sidebar on deskt
   expect(main).not.toBeNull();
   expect(viewport).not.toBeNull();
   if (testInfo.project.name.startsWith("mobile")) {
+    // Device presets distinguish the physical screen from the browser viewport (AC-X4).
+    expect(viewport).toEqual({ width: 390, height: 844 });
     expect(box!.y + box!.height).toBeGreaterThanOrEqual(viewport!.height - 2); // pinned to the bottom
     expect(box!.width).toBeGreaterThanOrEqual(viewport!.width - 2);
     for (const link of await nav.getByRole("link").all()) {

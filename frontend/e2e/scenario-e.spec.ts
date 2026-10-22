@@ -10,6 +10,7 @@ import {
   say,
   signInToWorkspace,
   simulateMessage,
+  type ReportMetric,
 } from "./helpers";
 
 // Scenario E: review the day (docs/product/acceptance-criteria.md AC-E3, AC-E4, AC-E5, AC-X2).
@@ -19,6 +20,8 @@ import {
 
 const OWNER = "owner@demo.local";
 const GYM = /Gölkent Fitness & Pilates/;
+
+test.setTimeout(180_000); // Includes seeding and tapping every nonzero metric in mobile WebKit.
 
 test.beforeEach(() => {
   reseedDemo();
@@ -41,10 +44,35 @@ const LABEL: Record<string, string> = {
 async function drillDownRows(page: Page): Promise<number> {
   const more = page.getByRole("button", { name: "Daha fazla göster" });
   while (await more.isVisible().catch(() => false)) {
+    const before = await page.getByTestId("metric-item").count();
     await more.click();
-    await page.waitForTimeout(200); // the button re-renders while the next page loads
+    await expect.poll(() => page.getByTestId("metric-item").count()).toBeGreaterThan(before);
   }
   return page.getByTestId("metric-item").count();
+}
+
+/** Every nonzero metric must have a link and expose the records behind its value (AC-E3). */
+async function checkDrillDowns(page: Page, metrics: ReportMetric[]): Promise<number> {
+  const nonzero = metrics.filter((metric) => (metric.value ?? 0) !== 0);
+  for (const metric of nonzero) {
+    expect(metric.link.route, `${metric.key} has a drill-down`).toBeTruthy();
+    const link = page.locator(`main a[href="${metric.link.route}"]`);
+    await expect(link, metric.key).toHaveCount(1);
+    await link.click();
+    await expect(page.getByTestId("metric-count"), metric.key).toBeVisible();
+    const rows = await drillDownRows(page);
+    if (metric.key === "median_first_response_minutes") {
+      // A median is a duration, not a count: its list has one row per answered burst.
+      expect(rows, metric.key).toBeGreaterThan(0);
+    } else {
+      expect(rows, `${metric.key} = ${metric.value}`).toBe(metric.value);
+      await expect(page.getByTestId("metric-count")).toHaveText(`Toplam: ${metric.value}`);
+    }
+    await expectNoHorizontalScroll(page, `drill-down ${metric.key}`);
+    await page.getByRole("link", { name: "Rapora dön", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Günlük rapor", level: 1 })).toBeVisible();
+  }
+  return nonzero.length;
 }
 
 test("E: the command answer equals the report; every number opens a list of that size", async ({
@@ -80,27 +108,9 @@ test("E: the command answer equals the report; every number opens a list of that
   await expectNoHorizontalScroll(page, "report");
 
   // AC-E3: every nonzero number is a link; its list has exactly that many rows.
-  const reportUrl = page.url();
-  const nonzero = report.metrics.filter((m) => (m.value ?? 0) !== 0 && m.link.route);
-  expect(nonzero.length).toBeGreaterThanOrEqual(5);
-  for (const metric of nonzero) {
-    const link = page.locator(`main a[href="${metric.link.route}"]`);
-    await expect(link, metric.key).toHaveCount(1);
-    await link.click();
-    await expect(page.getByTestId("metric-count"), metric.key).toBeVisible();
-    const rows = await drillDownRows(page);
-    if (metric.key === "median_first_response_minutes") {
-      // A median is a duration, not a count: its list has one row per answered burst.
-      expect(rows, metric.key).toBeGreaterThan(0);
-    } else {
-      expect(rows, `${metric.key} = ${metric.value}`).toBe(metric.value);
-      await expect(page.getByTestId("metric-count")).toHaveText(`Toplam: ${metric.value}`);
-    }
-    await expectNoHorizontalScroll(page, `drill-down ${metric.key}`);
-    await page.goto(reportUrl);
-    await expect(page.getByRole("heading", { name: "Günlük rapor", level: 1 })).toBeVisible();
-  }
-  testInfo.annotations.push({ type: "drill-downs checked", description: String(nonzero.length) });
+  const checked = await checkDrillDowns(page, report.metrics);
+  expect(checked).toBeGreaterThanOrEqual(5);
+  testInfo.annotations.push({ type: "drill-downs checked", description: String(checked) });
 
   // The activity feed shows the same two events (the messages group).
   await openMore(page, "Etkinlik");
@@ -154,12 +164,5 @@ test("E: yesterday's seeded report has the H16 numbers, each opening its list", 
   }
   await expect(page.getByRole("main").getByTestId("simulated-badge").first()).toBeVisible();
 
-  const reportUrl = page.url();
-  for (const [key, value] of Object.entries(expected)) {
-    await page.getByRole("link", { name: `${LABEL[key]}: ${value}`, exact: true }).click();
-    await expect(page.getByTestId("metric-count")).toHaveText(`Toplam: ${value}`);
-    expect(await drillDownRows(page), key).toBe(value);
-    await page.goto(reportUrl);
-    await expect(page.getByRole("heading", { name: "Günlük rapor", level: 1 })).toBeVisible();
-  }
+  await checkDrillDowns(page, report.metrics);
 });

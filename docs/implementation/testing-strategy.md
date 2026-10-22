@@ -115,7 +115,8 @@ cases:
 
 - Playwright runs against a stack started in CI with the same commands documented in [local-development.md](../operations/local-development.md): Postgres service → `alembic upgrade head` → `python -m app.cli seed --reset` → API + worker (`DEMO_TOOLS_ENABLED=true`, `LLM_PROVIDER=fake`, `WORKER_POLL_INTERVAL_SECONDS=0.2`) → Vite preview build.
 - Each scenario spec (`scenario-a.spec.ts` … `scenario-g.spec.ts`) uses dev endpoints to simulate customers, failures and due-job runs. It asserts visible states and badges, not internal tables.
-- Projects: `mobile-webkit` (iPhone 13-like 390×844), `mobile-chromium` (Pixel-like 393×851), `desktop-chromium`.
+- Projects: `mobile-webkit` (iPhone 13-like 390×844), `mobile-chromium` (Pixel 7 device settings with an explicit 390×844 viewport), `desktop-chromium`. Both mobile browsers use the exact AC-X4 viewport.
+- Future deadlines in scenario G use the existing `jobs.testing.run_due_jobs` hook with an injected `FrozenClock` in a subprocess. The dev run-due API handles work due at real time; the subprocess advances only its own clock, without changing the API/worker clock or waiting minutes.
 - Accessibility: `@axe-core/playwright` on main screens; no serious or critical violations.
 
 ## 8. CI pipeline (GitHub Actions)

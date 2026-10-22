@@ -50,3 +50,10 @@ Running ledger kept by the operator. One entry per item, newest sessions last. P
 - **Dev database `agentnest` migrated** to 0013 with `alembic upgrade head` (it was at 0012, so `/readyz` returned 503).
 - **Prettier slip:** ran prettier with defaults once, reformatted existing files; reverted with `git checkout` and reapplied only the intended edits (repo has no prettier config). Final diff has no formatting churn.
 - **OPEN (non-blocking):** the `ACCOUNT_NEEDS_REAUTH` catalog text still says "Ayarlar'da Yeniden bağla'ya basın" (session 4/5 wording); consider aligning with the new Connections screen.
+
+## Session 10 (P6-09, resumed after `9ed79b6`)
+- The [session report](s10-report.md) records verification, per-project run times and the accessibility fixes. Session 11 has not started.
+- Both mobile browsers now use the exact 390×844 viewport. The Turkish return pass covers all eleven main screens; the seeded report opens every nonzero metric, including its snapshot metrics.
+- **Test-harness deviation:** the dev run-due API cannot advance time. G1 uses the existing `jobs.testing.run_due_jobs` hook with a `FrozenClock` in a subprocess for the future post deadline; API and worker clocks remain unchanged. The degraded path runs through the simulator and dev health-check API, with no component-only fallback.
+- **Resource limits:** scenario budgets include seeding and complete publish assertions; Vitest is capped at four workers after a concurrent unrestricted run hit rendering timeouts on Windows. No assertion or axe rule was disabled, and the final E2E run uses no retries.
+- No new blocking architecture question. Separate landing-page changes are preserved and excluded from this session's commits.

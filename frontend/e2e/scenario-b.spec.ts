@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { hasHorizontalScroll, navLink, reseedDemo, signInToWorkspace } from "./helpers";
+import { expectNoHorizontalScroll, hasHorizontalScroll, navLink, reseedDemo, signInToWorkspace } from "./helpers";
 
 // Scenario B: a simulated customer writes, the assistant drafts a grounded reply, the owner
 // approves it, and it is "sent" through the simulated Instagram
@@ -11,6 +11,10 @@ const GYM = /Gölkent Fitness & Pilates/;
 
 test.beforeEach(() => {
   reseedDemo(); // the scenarios change conversations; every test starts from the same data
+});
+
+test.afterEach(async ({ page }) => {
+  await expectNoHorizontalScroll(page);
 });
 
 async function simulate(page: Page, script: string) {

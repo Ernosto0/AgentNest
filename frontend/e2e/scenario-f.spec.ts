@@ -3,6 +3,7 @@ import {
   SEEDED_PUBLISHED_POSTS,
   addFailureRule,
   apiLogin,
+  expectNoHorizontalScroll,
   localFields,
   ownContentCards,
   reseedDemo,
@@ -22,8 +23,14 @@ const OWNER = "owner@demo.local";
 const GYM = /Gölkent Fitness & Pilates/;
 const GYM_NAME = "Gölkent Fitness & Pilates";
 
+test.setTimeout(90_000); // Includes setup, container polling and the 60 s outcome assertion.
+
 test.beforeEach(() => {
   reseedDemo();
+});
+
+test.afterEach(async ({ page }) => {
+  await expectNoHorizontalScroll(page);
 });
 
 interface Setup {

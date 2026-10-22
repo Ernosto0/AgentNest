@@ -12,6 +12,7 @@ import {
   pendingReplyApprovals,
   reseedDemo,
   runDueJobs,
+  runJobsAt,
   signInToWorkspace,
   simulateMessage,
   statusBadge,
@@ -33,13 +34,17 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   page,
   request,
 }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(120_000);
   const env = await ownerSetup(request);
   await addFailureRule(request, env.csrf, env.workspaceId, "send", "auth_revoked", null);
   // A post that falls due one to two minutes from now: by then the account will need the owner
   // (a post cannot be scheduled once it does, so it has to exist before).
   const due = localFields(2);
   const contentId = await submitFeedPost(request, env, { local_date: due.date, local_time: due.time });
+  const scheduled = await request.get(`${API}/api/v1/workspaces/${env.workspaceId}/content-items/${contentId}`);
+  expect(scheduled.ok()).toBe(true);
+  const { scheduled_at: scheduledAt } = await scheduled.json();
+  expect(scheduledAt).toBeTruthy();
   await simulateMessage(request, env.csrf, env.workspaceId, "price");
 
   await signInToWorkspace(page, OWNER, GYM);
@@ -52,6 +57,13 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   await page.getByRole("link", { name: /Ayşe/ }).click({ timeout: 20_000 });
   const card = page.getByTestId("draft-card");
   await expect(card).toHaveAttribute("data-draft-status", "pending_approval", { timeout: 25_000 });
+  const conversationId = new URL(page.url()).pathname.split("/").at(-1)!;
+  const conversationUrl = `${API}/api/v1/workspaces/${env.workspaceId}/conversations/${conversationId}`;
+  const before = await request.get(conversationUrl);
+  expect(before.ok()).toBe(true);
+  const existingOutbound = (await before.json()).messages.filter(
+    (message: { direction: string }) => message.direction === "outbound",
+  ).length; // Ayşe already has a reply in yesterday's seeded history.
   await card.getByRole("button", { name: "Onayla ve gönder" }).click();
 
   // The send fails with a revoked token: the reply is kept (not "sent"), the account needs the owner.
@@ -89,8 +101,9 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   await expectNoHorizontalScroll(page, "system health");
 
   // The post fell due while the account could not be used: held, in plain words, not published.
+  runJobsAt(scheduledAt);
   await page.goto(`/w/${env.workspaceId}/content/${contentId}`);
-  await expect(statusBadge(page)).toHaveAttribute("data-status", "on_hold", { timeout: 150_000 });
+  await expect(statusBadge(page)).toHaveAttribute("data-status", "on_hold", { timeout: 15_000 });
   await expect(statusBadge(page)).toContainText("Beklemede");
   await expect(page.getByText("Yayınlandı")).toHaveCount(0);
 
@@ -116,6 +129,11 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   });
   await expect(page.getByTestId("draft-card")).toContainText("Gönderildi");
   // Exactly one message went out, and the revoked-token rule ended with the old token.
+  const conversation = await request.get(conversationUrl);
+  expect(conversation.ok()).toBe(true);
+  expect((await conversation.json()).messages.filter(
+    (message: { direction: string }) => message.direction === "outbound",
+  )).toHaveLength(existingOutbound + 1);
   const rules = await request.get(`${API}/api/v1/dev/workspaces/${env.workspaceId}/failure-rules`);
   const modes = (await rules.json()).items.map((rule: { mode: string }) => rule.mode);
   expect(modes).not.toContain("auth_revoked");

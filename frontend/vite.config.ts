@@ -19,6 +19,8 @@ export default defineConfig({
   preview: { port: 5173, proxy },
   test: {
     environment: "jsdom",
+    // Each worker owns a jsdom app. Bound memory/CPU use on the Windows demo machine.
+    maxWorkers: 4,
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],

@@ -11,7 +11,7 @@ import {
 } from "./helpers";
 
 // Accessibility (testing-strategy.md): axe on the main screens, no serious or critical
-// violations. The projects cover a 390x844 phone (iPhone 13), a 412 px phone (Pixel 7) and the
+// violations. The projects cover a 390x844 phone in both WebKit and Chromium and the
 // desktop; every screen also has to fit the phone width (AC-X4). Fix the code, not the rules:
 // there are no disabled rules and no excluded elements in this file.
 

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { hasHorizontalScroll, navLink, reseedDemo, signInToWorkspace } from "./helpers";
+import { expectNoHorizontalScroll, hasHorizontalScroll, navLink, reseedDemo, signInToWorkspace } from "./helpers";
 
 // Scenario A: business onboarding and knowledge (docs/product/acceptance-criteria.md AC-A1…A5).
 // All strings are the Turkish ones: the demo users' account language is Turkish.
@@ -10,6 +10,10 @@ const GYM = /Gölkent Fitness & Pilates/;
 
 test.beforeEach(() => {
   reseedDemo(); // the tests below change facts; every run starts from the same data
+});
+
+test.afterEach(async ({ page }) => {
+  await expectNoHorizontalScroll(page);
 });
 
 async function openKnowledge(page: Page) {

@@ -20,6 +20,8 @@ export default defineConfig({
   // One worker: the specs share the seeded demo accounts (ui_locale is saved per account).
   workers: 1,
   fullyParallel: false,
+  // A scenario includes rebuilding both studios' history as well as browser setup and actions.
+  timeout: 60_000,
   forbidOnly: CI,
   retries: CI ? 1 : 0,
   reporter: CI ? [["list"], ["html", { open: "never" }]] : "list",
@@ -31,8 +33,14 @@ export default defineConfig({
     timezoneId: "Europe/Istanbul",
   },
   projects: [
-    { name: "mobile-webkit", use: { ...devices["iPhone 13"] } },
-    { name: "mobile-chromium", use: { ...devices["Pixel 7"] } },
+    {
+      name: "mobile-webkit",
+      use: { ...devices["iPhone 13"], viewport: { width: 390, height: 844 } },
+    },
+    {
+      name: "mobile-chromium",
+      use: { ...devices["Pixel 7"], viewport: { width: 390, height: 844 } },
+    },
     { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: [
