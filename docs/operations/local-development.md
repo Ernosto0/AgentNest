@@ -180,3 +180,16 @@ Set `LLM_PROVIDER=openai` and `OPENAI_API_KEY=…` in `.env` (optionally `LLM_MO
 ## 12. Real Instagram development (Phase 7, optional)
 
 Requires a Meta app (Instagram Login), a professional test account and a tunnel for webhooks (e.g., `cloudflared tunnel --url http://localhost:8000`). Set the `META_*` variables, `MEDIA_STORAGE_BACKEND=s3` and the `S3_*` variables. Detailed steps are added in task P7-10.
+
+## 13. Landing page (outside the phase roadmap)
+
+`landing/` is the pilot-waitlist page: a separate static React + Vite + Tailwind site that shares no code with `frontend/` and needs no backend. It describes the finished product, so its copy must be checked against what is actually built before it is published.
+
+```bash
+cd landing
+npm install
+npm run dev          # http://localhost:5174
+npm run build        # static files in landing/dist/
+```
+
+Without `VITE_WAITLIST_ENDPOINT` the form runs in preview mode (see [environment-variables.md](environment-variables.md)). Details: [landing/README.md](../../landing/README.md).

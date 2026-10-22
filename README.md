@@ -30,3 +30,5 @@ cd frontend && npm run dev                # http://localhost:5173
 ```
 
 Log in as `owner@demo.local` with the value of `DEMO_PASSWORD`. Full instructions: [docs/operations/local-development.md](docs/operations/local-development.md).
+
+The public pilot-waitlist page is a separate static site in [landing/](landing/README.md).

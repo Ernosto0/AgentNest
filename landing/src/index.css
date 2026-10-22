@@ -1,0 +1,152 @@
+@import 'tailwindcss';
+
+/* Schibsted Grotesk draws ₺ (U+20BA) almost like £. Take only that glyph from IBM Plex Mono. */
+@font-face {
+  font-family: 'Lira';
+  src: url('../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-ext-400-normal.woff2') format('woff2');
+  unicode-range: U+20BA;
+  font-display: swap;
+}
+
+/* Layout: one left-aligned column; the three promises set very large, everything after them
+   quiet. The only colour is kaşe ink (the rubber-stamp blue-violet on Turkish invoices), used
+   for verified facts, the approval stamp and the main button. */
+:root {
+  --paper: #fbfbfd;
+  --surface: #f0f0f6;
+  --ink: #15151c;
+  --muted: #5c5d6e;
+  --rule: #dcdce6;
+  --kase: #3a3fb0;
+  --kase-soft: #e4e5f8;
+  --on-kase: #ffffff;
+
+  /* WhatsApp's own palette, only for the chat illustration. */
+  --wa-wall: #efeae2;
+  --wa-doodle: rgb(17 27 33 / 0.07);
+  --wa-header: #f0f2f5;
+  --wa-in: #ffffff;
+  --wa-out: #d9fdd3;
+  --wa-text: #111b21;
+  --wa-meta: #667781;
+  --wa-link: #027eb5;
+  --wa-tick: #53bdeb;
+  --wa-green: #1daa61;
+  --wa-quote: rgb(11 20 26 / 0.05);
+}
+
+
+:root[data-theme='dark'] {
+  --paper: #121219;
+  --surface: #1b1b25;
+  --ink: #ececf3;
+  --muted: #a0a1b4;
+  --rule: #2c2c3a;
+  --kase: #a3a8ff;
+  --kase-soft: #262a55;
+  --on-kase: #121219;
+  --wa-wall: #0b141a;
+  --wa-doodle: rgb(233 237 239 / 0.05);
+  --wa-header: #202c33;
+  --wa-in: #202c33;
+  --wa-out: #005c4b;
+  --wa-text: #e9edef;
+  --wa-meta: #8696a0;
+  --wa-link: #53bdeb;
+  --wa-tick: #53bdeb;
+  --wa-green: #00a884;
+  --wa-quote: rgb(255 255 255 / 0.07);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-kase: var(--kase);
+  --color-kase-soft: var(--kase-soft);
+  --color-on-kase: var(--on-kase);
+
+  --color-wa-wall: var(--wa-wall);
+  --color-wa-doodle: var(--wa-doodle);
+  --color-wa-header: var(--wa-header);
+  --color-wa-in: var(--wa-in);
+  --color-wa-out: var(--wa-out);
+  --color-wa-text: var(--wa-text);
+  --color-wa-meta: var(--wa-meta);
+  --color-wa-link: var(--wa-link);
+  --color-wa-tick: var(--wa-tick);
+  --color-wa-green: var(--wa-green);
+  --color-wa-quote: var(--wa-quote);
+
+  --font-display: 'Lira', 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Menlo, monospace;
+  --font-system: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Unlayered on purpose: a host page's own body reset must not win over the page colours. */
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--kase);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: var(--kase-soft);
+    color: var(--ink);
+  }
+}
+
+@utility gutter {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  @media (width >= 48rem) {
+    padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+/* The stamp lands once, slightly overshooting, then rests at an angle. */
+@keyframes stamp-land {
+  0% {
+    opacity: 0;
+    transform: rotate(-16deg) scale(1.9);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(-7deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(1);
+  }
+}
+
+.stamp {
+  transform: rotate(-8deg);
+  animation: stamp-land 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  filter: url(#ink-edge);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp {
+    animation: none;
+  }
+}

@@ -106,3 +106,9 @@ There is **no audit setting**: audit rows are never deleted in Phase 6 (plan H17
 | Variable | dev | prod | Description |
 |---|---|---|---|
 | `VITE_API_BASE_URL` | empty (uses the Vite proxy) | empty (same origin) | Never put secrets in `VITE_*` variables |
+
+## Landing page (`landing/`, build time)
+
+| Variable | dev | prod | Description |
+|---|---|---|---|
+| `VITE_WAITLIST_ENDPOINT` | empty (preview mode) | required to collect signups | URL that accepts a JSON `POST` of `{ business, instagram, contact, city, lang }`. When empty, the form says nothing was sent. The destination is not chosen yet. |
