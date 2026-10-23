@@ -3,6 +3,8 @@
 **Purpose:** How we know what the system did and why: structured logs, correlation IDs, the error code catalog, the audit action catalog, user-visible status, system health and development metrics. Decision record: [ADR-018](decisions/ADR-018-observability-and-evaluation.md).
 
 ## 1. Identifiers
+**Phase 7 Session 4 UI/probes:** callback banners use the safe catalog codes `ACCOUNT_MISMATCH`, `OAUTH_STATE_INVALID`, `ACCOUNT_NEEDS_REAUTH`, `PROVIDER_UNAVAILABLE`, `FORBIDDEN`, `CONFLICT_STATE` or `CAPABILITY_MISSING`; unknown query codes render generic translated copy. Raw provider text/query codes are never displayed. The public provider policy endpoint contains no credentials/URLs. Manual adapter probes do not print responses, request URLs, exceptions or fixtures; failed probes expose only a generic message without traceback or exception context. They are not recordings or application audit/ledger evidence, and ordinary pytest explicitly blanks both required live credentials. No new audit event was invented for a frontend redirect/banner.
+
 
 | ID | Created | Propagated to |
 |---|---|---|

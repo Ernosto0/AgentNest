@@ -105,6 +105,9 @@ There is **no audit setting**: audit rows are never deleted in Phase 6 (plan H17
 | `TELEGRAM_BOT_TOKEN` 🔒 | empty | required if Telegram | Phase 9 |
 | `TELEGRAM_WEBHOOK_SECRET` 🔒 | empty | required if Telegram webhook | Phase 9 |
 
+## Manual Meta diagnostics (private process environment)
+
+Manual Phase 7 probes read process environment variables directly, not application configuration: `META_LIVE_ACCESS_TOKEN` (secret) and `META_LIVE_IG_USER_ID` are both required. `META_LIVE_RECIPIENT_ID` separately opts into a real DM; `META_LIVE_IMAGE_URL` (potentially a secret presigned URL) separately opts into a real feed post. All are empty by default in `.env.example`. Ordinary pytest/CI must explicitly blank the two required variables. These diagnostics do not enable any product workflow or replace OAuth/ledger acceptance. For a future local HTTPS tunnel, Vite's process-only `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` must contain the exact assigned frontend tunnel hostname; see [local-development.md §12](local-development.md#12-real-instagram-development-phase-7-optional).
 ## Frontend (build time)
 
 | Variable | dev | prod | Description |
