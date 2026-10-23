@@ -22,7 +22,7 @@ class MediaStorage(Protocol):
     def public_fetch_url(self, key: str, ttl_s: int) -> str: ...   # URL reachable by Meta
 ```
 
-- `local` backend (development, demo, mock provider): files under `MEDIA_LOCAL_ROOT`. `public_fetch_url` returns an app URL that only the mock provider uses. The real Meta adapter **refuses** to run with the local backend unless `MEDIA_PUBLIC_BASE_URL` points to a public tunnel (development of Phase 7 only).
+- `local` backend (development, demo, mock provider): files under `MEDIA_LOCAL_ROOT`. `public_fetch_url` returns an opaque reference that only the mock provider uses. A development tunnel exception was planned, but local public-media serving has no security contract or route yet. Phase 7 Session 1 therefore requires S3 whenever Meta is enabled, in every environment. `MEDIA_PUBLIC_BASE_URL` is reserved and does not bypass that check; tunnel serving remains pending.
 - `s3` backend: private bucket, **presigned GET URLs** with short TTL (default 1 h) for Meta fetches (TTL tolerance to verify, V-09). Owners view media through the authenticated API (`GET /media/{id}/content`), never through bucket URLs.
 - Storage keys: `{workspace_id}/{yyyy}/{mm}/{media_id}.{ext}`. Never derived from user file names.
 
@@ -53,6 +53,7 @@ class MediaStorage(Protocol):
 ## Consequences
 - `app/integrations/storage/{base.py, local.py, registry.py}` (`s3.py` in Phase 7), `app/content/media.py` (validation).
 - Pillow is a backend dependency from Phase 5. `boto3` is added only when the `s3` backend is implemented (Phase 7).
+- **Phase 7 Session 1:** `S3MediaStorage` uses explicit credentials and SigV4, with SDK retries disabled. Every method validates its key before an SDK call. `open` reads into a seekable binary stream and closes the SDK response body; `NoSuchKey`/404 maps to `StorageObjectNotFound` (a `FileNotFoundError`). Presigned GET URLs carry the requested TTL (1–604800 seconds); the default remains one hour. `S3_ENDPOINT_URL` is optional for AWS, while compatible services provide their endpoint. `S3_REGION` defaults to `auto` (R2); AWS deployments set the actual region. The live Meta fetch behavior remains unverified (V-09).
 
 ## Revisit when
 - Video/Reels support is added: introduce ffprobe validation and possibly a transcoding worker queue.

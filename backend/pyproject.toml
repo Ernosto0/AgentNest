@@ -143,6 +143,7 @@ source_modules = [
     "app.knowledge.claims",
     "app.knowledge.impact",
     "app.integrations",
+    "app.integrations.storage.s3",
     "app.operations.accounts",
     "app.operations.schemas",
     "app.inbox.models",
@@ -389,6 +390,14 @@ forbidden_modules = [
     "app.core.db",
     "sqlalchemy",
 ]
+
+[[tool.importlinter.contracts]]
+name = "only S3 storage imports boto3 (ADR-015)"
+type = "forbidden"
+source_modules = ["app"]
+forbidden_modules = ["boto3"]
+allow_indirect_imports = true
+ignore_imports = ["app.integrations.storage.s3 -> boto3"]
 
 [[tool.importlinter.contracts]]
 name = "media storage imports only core (ADR-015)"

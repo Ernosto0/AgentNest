@@ -16,7 +16,7 @@ from app.integrations.instagram.base import AccountRef, ContainerSpec
 from app.integrations.instagram.errors import ProviderInvalidRequest, ProviderRateLimited
 from app.integrations.instagram.models import SocialAccount
 from app.integrations.instagram.registry import get_provider
-from app.integrations.storage.base import build_key
+from app.integrations.storage.base import MediaStorageUnavailable, build_key
 from app.integrations.storage.local import LocalMediaStorage
 from app.operations.accounts import MOCK_CAPABILITIES
 from tests.contract.test_instagram_provider_contract import jpeg_bytes
@@ -74,15 +74,16 @@ def test_the_registry_wires_storage_and_the_publishing_settings_into_the_mock(
 
 
 def test_without_a_buildable_storage_messaging_still_works_and_publishing_fails(
-    shared_session_factory: sessionmaker[Session], clock: FrozenClock
+    shared_session_factory: sessionmaker[Session],
+    clock: FrozenClock,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    settings = Settings(
-        _env_file=None,
-        media_storage_backend="s3",
-        s3_bucket="test-bucket",
-        s3_access_key_id="synthetic-access-id",
-        s3_secret_access_key="synthetic-secret-key",
-    )  # type: ignore[call-arg]
+    # S3 is now implemented. Exercise this compatibility fallback explicitly, without S3 I/O.
+    def unavailable(*args: object) -> None:
+        raise MediaStorageUnavailable("test-only unavailable storage")
+
+    monkeypatch.setattr("app.integrations.instagram.registry.get_media_storage", unavailable)
+    settings = Settings(_env_file=None)
     provider = get_provider(
         "mock", settings=settings, session_factory=shared_session_factory, clock=clock
     )
