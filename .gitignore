@@ -37,3 +37,9 @@ frontend/playwright/.cache/
 !.vscode/extensions.json
 .DS_Store
 Thumbs.db
+
+# Understand Anything local scratch (keep config and generated graphs shareable)
+.ua/intermediate/
+.ua/tmp/
+.ua/.trash-*/
+.ua/diff-overlay.json

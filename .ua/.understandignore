@@ -1,0 +1,27 @@
+# Paths are relative to the AgentNest repository root.
+# Keep application code, tests, migrations, evals, and engineering docs in scope.
+
+# Secrets, dependencies, runtime data, and generated output
+.env
+.env.*
+**/node_modules/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/dist/
+**/build/
+backend/var/
+backend/evals/reports/
+frontend/.vite/
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/
+frontend/src/api/schema.d.ts
+frontend/openapi.json
+
+# Never analyze the analysis artifacts themselves.
+.ua/
+.understand-anything/

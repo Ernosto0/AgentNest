@@ -145,6 +145,12 @@ body {
   filter: url(#ink-edge);
 }
 
+/* Subtle dot-ledger backdrop for framing phone mockups and verification cards. */
+.ledger-grid {
+  background-image: radial-gradient(var(--rule) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stamp {
     animation: none;

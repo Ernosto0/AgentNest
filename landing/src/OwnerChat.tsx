@@ -2,36 +2,54 @@ import type { CSSProperties, ReactNode } from 'react'
 import { PRODUCT_NAME } from './brand'
 import type { ChatMessage, Copy } from './copy'
 
-type Props = { t: Copy['whatsapp'] }
+type Props = {
+  t: Copy['whatsapp']
+  selectedCommand?: { ask: string; answer: string; action?: string } | null
+}
 
 // The owner's side: the assistant's chat as it looks in WhatsApp, in WhatsApp's light or dark theme.
 // A static illustration, labelled as an example.
-export function OwnerChat({ t }: Props) {
+export function OwnerChat({ t, selectedCommand }: Props) {
+  const messages: ChatMessage[] = selectedCommand
+    ? [
+        ...t.chat,
+        { from: 'owner', text: selectedCommand.ask, time: '09:15' },
+        {
+          from: 'assistant',
+          text: selectedCommand.answer,
+          time: '09:15',
+          actions: selectedCommand.action ? [selectedCommand.action] : undefined,
+        },
+      ]
+    : t.chat
+
   return (
-    <figure className="w-full max-w-[23rem] justify-self-center">
+    <figure className="w-full max-w-[25rem] justify-self-center">
       <figcaption className="mb-3 flex items-center gap-2 font-mono text-xs text-muted">
         <span aria-hidden className="size-1.5 rounded-full bg-kase" />
         {t.example}
       </figcaption>
 
-      <div className="rounded-[2.9rem] bg-[#0c0c0f] p-[0.55rem] shadow-[0_1px_0_1px_rgb(255_255_255/0.06)_inset,0_24px_60px_-28px_rgb(0_0_0/0.45)]">
-        <div className="flex flex-col overflow-hidden rounded-[2.4rem] bg-wa-wall font-system text-wa-text">
-          <StatusBar clock={t.clock} />
-          <Header online={t.online} />
+      <div className="ledger-grid rounded-3xl border border-rule/80 p-3 sm:p-5">
+        <div className="rounded-[2.9rem] bg-[#0c0c0f] p-[0.55rem] shadow-[0_1px_0_1px_rgb(255_255_255/0.06)_inset,0_24px_60px_-28px_rgb(0_0_0/0.45)]">
+          <div className="flex flex-col overflow-hidden rounded-[2.4rem] bg-wa-wall font-system text-wa-text">
+            <StatusBar clock={t.clock} />
+            <Header online={t.online} />
 
-          <div className="relative flex flex-col gap-1 px-3 pt-3 pb-2">
-            <span aria-hidden className="absolute inset-0 bg-wa-doodle" style={doodle} />
-            <span className="relative mb-1.5 self-center rounded-lg bg-wa-in px-2.5 py-1 text-[0.6875rem] text-wa-meta uppercase shadow-sm">
-              {t.today}
-            </span>
-            <ol className="relative flex flex-col gap-1">
-              {t.chat.map((message, i) => (
-                <Message key={i} message={message} groupStart={i === 0 || t.chat[i - 1].from !== message.from} />
-              ))}
-            </ol>
+            <div className="relative flex flex-col gap-1 px-3 pt-3 pb-2">
+              <span aria-hidden className="absolute inset-0 bg-wa-doodle" style={doodle} />
+              <span className="relative mb-1.5 self-center rounded-lg bg-wa-in px-2.5 py-1 text-[0.6875rem] text-wa-meta uppercase shadow-sm">
+                {t.today}
+              </span>
+              <ol aria-live="polite" className="relative flex flex-col gap-1">
+                {messages.map((message, i) => (
+                  <Message key={`${i}-${message.text}`} message={message} groupStart={i === 0 || messages[i - 1].from !== message.from} />
+                ))}
+              </ol>
+            </div>
+
+            <InputBar placeholder={t.placeholder} />
           </div>
-
-          <InputBar placeholder={t.placeholder} />
         </div>
       </div>
     </figure>

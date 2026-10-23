@@ -2,6 +2,7 @@ import type { Lang } from './copy'
 
 export type WaitlistEntry = {
   business: string
+  category: string
   instagram: string
   contact: string
   city: string
@@ -13,6 +14,17 @@ export type WaitlistEntry = {
 export type SubmitResult = 'sent' | 'preview'
 
 const endpoint = import.meta.env.VITE_WAITLIST_ENDPOINT?.trim()
+const whatsappRaw = import.meta.env.VITE_WAITLIST_WHATSAPP?.trim()
+
+export function getWhatsAppContactUrl(text: string): string | undefined {
+  if (!whatsappRaw) return undefined
+  if (whatsappRaw.startsWith('http://') || whatsappRaw.startsWith('https://')) {
+    return whatsappRaw
+  }
+  const digits = whatsappRaw.replace(/\D/g, '')
+  if (!digits) return undefined
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`
+}
 
 export async function submitWaitlist(entry: WaitlistEntry): Promise<SubmitResult> {
   if (!endpoint) return 'preview'
