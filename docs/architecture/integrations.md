@@ -111,7 +111,7 @@ The policy engine (R1) and the content submit validation check capabilities. Mis
 - Container lifecycle → `FINISHED` → publish → `PUBLISHED`; publishing twice is rejected; expiry → `EXPIRED`.
 - Error mapping for each injected failure mode.
 
-CI runs them against `mock`. The `meta` run is manual (`-m meta_live`, requires a test account and environment variables) and records fixtures.
+Adapter-neutral cases run against both `mock` and `meta` with deterministic `httpx.MockTransport` and explicitly synthetic JSON fixtures. Existing mock persistence/failure-rule assertions remain separately identified and unchanged. Authentic recordings and the manual `-m meta_live` suite require the later authorized live-account verification; offline tests do not satisfy that acceptance.
 
 ### 3.6 Content-type constraints (from verified docs)
 | Type | MVP | Constraints enforced |

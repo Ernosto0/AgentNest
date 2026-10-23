@@ -1,7 +1,8 @@
 """Contract tests for the Instagram provider (integrations.md §3.5).
 
-Run against the mock today; the Meta adapter (Phase 7) must satisfy the same expectations
-with recorded fixtures. Covers: signatures, webhook parsing, sending in and out of the
+Shared adapter-neutral cases run against mock and synthetic offline Meta.
+Simulator-specific persistence and failure-rule assertions remain intact. Covers:
+signatures, webhook parsing, sending in and out of the
 window, the byte limit, the publishing lifecycle (container, publish, expiry, quota) and the
 error mapping of every injectable failure mode.
 """
@@ -9,10 +10,12 @@ error mapping of every injectable failure mode.
 import hashlib
 import hmac
 import io
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import httpx
 import pytest
 from PIL import Image
 from sqlalchemy.exc import IntegrityError
@@ -30,6 +33,7 @@ from app.integrations.instagram.errors import (
     ProviderTransientError,
     ProviderWindowClosed,
 )
+from app.integrations.instagram.meta import MetaInstagramProvider
 from app.integrations.instagram.mock import MockInstagramProvider
 from app.integrations.instagram.models import (
     SimContainer,
@@ -745,3 +749,270 @@ def test_a_rule_for_another_operation_does_not_touch_publishing(h: Harness) -> N
     h.fail("send", "transient", remaining=None)
     h.provider.publish_container(h.account, h.finished_container())
     assert len(h.published()) == 1
+
+
+# --- shared adapter-neutral contract (mock + synthetic offline Meta) ---------------------------
+
+META_FIXTURES = Path(__file__).parent / "fixtures" / "meta"
+
+
+def meta_fixture(name):
+    return json.loads((META_FIXTURES / f"{name}.json").read_text())
+
+
+class OfflineMetaHarness:
+    """Deterministic remote state served by labelled JSON fixture shapes, no live calls."""
+
+    def __init__(self, clock):
+        self.clock = clock
+        self.account = AccountRef(
+            uuid.uuid4(), uuid.uuid4(), "biz-1", lambda: "synthetic-contract-token"
+        )
+        self.provider = MetaInstagramProvider(
+            clock, SECRET, "v25.0", transport=httpx.MockTransport(self.handle)
+        )
+        self.inbound = {}
+        self.sent_messages = []
+        self.container_times = {}
+        self.published_ids = {}
+        self.failure = None
+        self.next_id = 0
+
+    def customer_writes(self, *, at=None, customer=CUSTOMER):
+        self.inbound[customer] = at or self.clock.now()
+
+    def fail(self, operation, mode, **kwargs):
+        self.failure = mode, kwargs.get("retry_after", 45)
+
+    def image_url(self):
+        return "https://example.test/synthetic.jpg"
+
+    def container(self):
+        return self.provider.create_media_container(
+            self.account, ContainerSpec("IMAGE", self.image_url(), "Merhaba")
+        )
+
+    def handle(self, request):
+        path = request.url.path.split("/")[-1]
+        body = json.loads(request.content) if request.content else {}
+        failure, self.failure = self.failure, None
+        timeout = failure and failure[0] == "timeout_after_success"
+        if failure and not timeout:
+            mode, retry = failure
+            if mode == "transient":
+                raise httpx.ConnectError("synthetic connection refused", request=request)
+            mapping = {
+                "auth_revoked": "auth_expired_190",
+                "permission_missing": "permission_10",
+                "window_closed": "window_closed_2534022",
+                "invalid_media": "invalid_media_36000",
+                "rate_limited": "rate_limit_4",
+            }
+            return httpx.Response(
+                400,
+                json=meta_fixture("error_" + mapping[mode]),
+                headers={"Retry-After": str(retry)},
+            )
+        self.next_id += 1
+        if path == "messages" and request.method == "POST":
+            recipient = body["recipient"]["id"]
+            if recipient not in self.inbound or self.clock.now() >= self.inbound[
+                recipient
+            ] + timedelta(hours=24):
+                return httpx.Response(400, json=meta_fixture("error_window_closed_2534022"))
+            data = meta_fixture("send_ok")
+            data["message_id"] = f"meta-mid-{self.next_id}"
+            self.sent_messages.append(
+                {
+                    "id": data["message_id"],
+                    "from": {"id": "biz-1"},
+                    "to": {"data": [{"id": recipient}]},
+                    "message": body["message"]["text"],
+                    "created_time": self.clock.now().isoformat(),
+                }
+            )
+        elif path == "conversations":
+            data = meta_fixture("conversations_messages_ok")
+            data["data"][0]["messages"]["data"] = self.sent_messages
+        elif path == "media":
+            data = meta_fixture("container_create_ok")
+            data["id"] = f"container-{self.next_id}"
+            self.container_times[data["id"]] = self.clock.now()
+        elif path == "media_publish":
+            cid = body["creation_id"]
+            if (
+                cid in self.published_ids
+                or cid not in self.container_times
+                or self.clock.now()
+                < self.container_times[cid] + timedelta(seconds=CONTAINER_DELAY_S)
+                or self.clock.now() >= self.container_times[cid] + timedelta(hours=24)
+            ):
+                return httpx.Response(400, json=meta_fixture("error_invalid_request_100"))
+            data = meta_fixture("publish_ok")
+            data["id"] = f"media-{self.next_id}"
+            self.published_ids[cid] = data["id"]
+        elif path in self.container_times:
+            status = (
+                "published"
+                if path in self.published_ids
+                else "expired"
+                if self.clock.now() >= self.container_times[path] + timedelta(hours=24)
+                else "finished"
+                if self.clock.now()
+                >= self.container_times[path] + timedelta(seconds=CONTAINER_DELAY_S)
+                else "in_progress"
+            )
+            data = meta_fixture("container_status_" + status)
+        elif path in self.published_ids.values():
+            data = meta_fixture("media_ok")
+            data["id"] = path
+        elif path == "content_publishing_limit":
+            data = meta_fixture("publishing_limit_ok")
+            data["data"][0]["quota_usage"] = len(self.published_ids)
+        else:
+            data = meta_fixture("profile_ok")
+        if timeout:
+            raise httpx.ReadTimeout("synthetic accepted; response lost", request=request)
+        return httpx.Response(200, json=data)
+
+
+@pytest.fixture(params=["mock", "meta"])
+def shared(request, h, clock):
+    return h if request.param == "mock" else OfflineMetaHarness(clock)
+
+
+def test_shared_signature_validation(shared):
+    body = wf.serialize(
+        wf.build_message_payload("biz-1", CUSTOMER, "incoming", "Merhaba", shared.clock.now())
+    )
+    assert shared.provider.verify_signature(body, wf.sign(body, SECRET))
+    assert not shared.provider.verify_signature(body, wf.sign(body, "wrong-secret"))
+    assert not shared.provider.verify_signature(body, None)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "text_message",
+        "attachments",
+        "story_reply",
+        "story_mention",
+        "echo_app",
+        "echo_native",
+        "reaction",
+        "message_deleted",
+        "unsupported",
+    ],
+)
+def test_shared_parse_all_synthetic_webhook_fixtures(shared, name):
+    (event,) = shared.provider.parse_webhook(meta_fixture("webhook_" + name))
+    assert event.account_id == "biz-1" and event.customer_id == CUSTOMER
+    if name == "message_deleted":
+        assert event.event_type == "delete"
+    elif name.startswith("echo_"):
+        assert event.event_type == "echo" and event.app_id
+    elif name == "reaction":
+        assert event.event_type == "reaction"
+    else:
+        assert event.event_type == "message"
+    if name in ("story_reply", "story_mention", "unsupported"):
+        assert event.attachments[0]["type"] == name
+    if name == "story_reply":
+        assert event.attachments[0]["note"] == "story-1"
+    if name == "unsupported":
+        assert event.attachments[0]["note"] == "unsupported"
+
+
+def test_shared_profile_and_send_and_lookup(shared):
+    assert shared.provider.get_account_profile(shared.account).external_account_id == "biz-1"
+    shared.customer_writes()
+    since = shared.clock.now()
+    first = shared.provider.send_text_message(shared.account, CUSTOMER, "first")
+    shared.clock.advance(minutes=5)
+    shared.provider.send_text_message(shared.account, CUSTOMER, "second")
+    found = shared.provider.find_recent_outbound(shared.account, CUSTOMER, since)
+    assert [v.text for v in found] == ["first", "second"]
+    assert found[0].message_id == first.message_id
+    assert [
+        v.text
+        for v in shared.provider.find_recent_outbound(
+            shared.account, CUSTOMER, since + timedelta(minutes=1)
+        )
+    ] == ["second"]
+    assert shared.provider.find_recent_outbound(shared.account, "other", since) == []
+
+
+def test_shared_window_and_utf8_prevalidation(shared):
+    with pytest.raises(ProviderWindowClosed):
+        shared.provider.send_text_message(shared.account, CUSTOMER, "hello")
+    shared.customer_writes()
+    with pytest.raises(ProviderInvalidRequest):
+        shared.provider.send_text_message(shared.account, CUSTOMER, "\u00e9" * 501)
+    with pytest.raises(ProviderInvalidRequest):
+        shared.provider.send_text_message(shared.account, CUSTOMER, "  ")
+    shared.provider.send_text_message(shared.account, CUSTOMER, "\u00e9" * 500)
+    shared.clock.advance(hours=24)
+    with pytest.raises(ProviderWindowClosed):
+        shared.provider.send_text_message(shared.account, CUSTOMER, "hello")
+
+
+@pytest.mark.parametrize(("mode", "error"), MAPPING)
+def test_shared_error_taxonomy(shared, mode, error):
+    shared.customer_writes()
+    shared.fail("send", mode)
+    with pytest.raises(error):
+        shared.provider.send_text_message(shared.account, CUSTOMER, "Merhaba")
+    assert shared.provider.find_recent_outbound(shared.account, CUSTOMER, shared.clock.now()) == []
+
+
+def test_shared_rate_after_and_ambiguous_send_reconciliation(shared):
+    shared.customer_writes()
+    shared.fail("send", "rate_limited", retry_after=77)
+    with pytest.raises(ProviderRateLimited) as error:
+        shared.provider.send_text_message(shared.account, CUSTOMER, "Merhaba")
+    assert error.value.retry_after_s == 77
+    shared.fail("send", "timeout_after_success")
+    with pytest.raises(ProviderOutcomeUnknown):
+        shared.provider.send_text_message(shared.account, CUSTOMER, "accepted")
+    assert [
+        v.text
+        for v in shared.provider.find_recent_outbound(shared.account, CUSTOMER, shared.clock.now())
+    ] == ["accepted"]
+
+
+def test_shared_container_lifecycle_rejects_duplicate_publish(shared):
+    cid = shared.container()
+    assert shared.provider.get_container_status(shared.account, cid).status_code == "IN_PROGRESS"
+    with pytest.raises(ProviderInvalidRequest):
+        shared.provider.publish_container(shared.account, cid)
+    shared.clock.advance(seconds=CONTAINER_DELAY_S)
+    assert shared.provider.get_container_status(shared.account, cid).status_code == "FINISHED"
+    mid = shared.provider.publish_container(shared.account, cid)
+    assert shared.provider.get_container_status(shared.account, cid).status_code == "PUBLISHED"
+    assert shared.provider.get_media(shared.account, mid).media_id == mid
+    assert shared.provider.get_media(shared.account, mid).permalink
+    with pytest.raises(ProviderInvalidRequest):
+        shared.provider.publish_container(shared.account, cid)
+    assert shared.provider.get_publishing_quota(shared.account).used == 1
+
+
+def test_shared_container_expiry_and_caption_rejection(shared):
+    cid = shared.container()
+    shared.clock.advance(hours=24)
+    assert shared.provider.get_container_status(shared.account, cid).status_code == "EXPIRED"
+    with pytest.raises(ProviderInvalidRequest):
+        shared.provider.publish_container(shared.account, cid)
+    with pytest.raises(ProviderInvalidRequest):
+        shared.provider.create_media_container(
+            shared.account, ContainerSpec("STORIES", shared.image_url(), "caption")
+        )
+
+
+def test_shared_unknown_publish_reconciles_without_second_publish(shared):
+    cid = shared.container()
+    shared.clock.advance(seconds=CONTAINER_DELAY_S)
+    shared.fail("publish", "timeout_after_success")
+    with pytest.raises(ProviderOutcomeUnknown):
+        shared.provider.publish_container(shared.account, cid)
+    assert shared.provider.get_container_status(shared.account, cid).status_code == "PUBLISHED"
+    assert shared.provider.get_publishing_quota(shared.account).used == 1

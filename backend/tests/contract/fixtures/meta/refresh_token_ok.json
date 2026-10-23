@@ -1,0 +1,6 @@
+{
+  "access_token": "synthetic-refreshed-token",
+  "token_type": "bearer",
+  "expires_in": 5184000,
+  "_fixture_source": "synthetic offline contract; not a recorded Meta response"
+}

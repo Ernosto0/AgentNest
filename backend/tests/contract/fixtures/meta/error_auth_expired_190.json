@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "synthetic fixture error",
+    "type": "OAuthException",
+    "code": 190,
+    "fbtrace_id": "synthetic-trace",
+    "error_subcode": 463
+  },
+  "_fixture_source": "synthetic offline contract; not a recorded Meta response"
+}
