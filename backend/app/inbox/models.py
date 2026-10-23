@@ -30,7 +30,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
 
-EVENT_TYPES = ("message", "echo", "reaction", "read", "postback", "other")
+EVENT_TYPES = ("message", "echo", "delete", "reaction", "read", "postback", "other")
 EVENT_STATUSES = ("received", "processed", "ignored", "failed")
 # Why an event was stored but not processed (observability.md §4.1).
 IGNORE_REASONS = ("UNKNOWN_ACCOUNT", "ACCOUNT_DISCONNECTED", "UNSUPPORTED_EVENT")

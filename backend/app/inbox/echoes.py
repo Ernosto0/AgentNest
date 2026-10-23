@@ -15,6 +15,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.core.clock import Clock
+from app.core.config import get_settings
 from app.core.context import WorkspaceContext
 
 
@@ -25,6 +26,8 @@ class Echo:
     mid: str | None
     text: str | None
     provider_timestamp: datetime
+    app_id: str | None = None
+    provider_kind: str = "mock"
 
 
 # Returns True when the echo belongs to one of our own sends and has been handled.
@@ -39,6 +42,9 @@ def register_matcher(matcher: EchoMatcher) -> None:
 
 
 def claimed_by_a_send(session: Session, clock: Clock, ctx: WorkspaceContext, echo: Echo) -> bool:
+    app_id = get_settings().meta_app_id
+    if echo.provider_kind == "meta" and app_id and echo.app_id and echo.app_id != app_id:
+        return False
     return any(matcher(session, clock, ctx, echo) for matcher in _MATCHERS)
 
 

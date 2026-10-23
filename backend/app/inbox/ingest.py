@@ -51,6 +51,8 @@ def dedup_key(event: NormalizedInboundEvent) -> str:
     account = event.account_id or "unknown"
     if event.mid and event.event_type in ("message", "echo"):
         return f"ig:{account}:mid:{event.mid}"
+    if event.mid and event.event_type == "delete":
+        return f"ig:{account}:delete:{event.mid}"
     digest = hashlib.sha256(
         json.dumps(event.raw_item, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()

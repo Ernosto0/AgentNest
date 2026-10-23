@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Any, Literal, Protocol
 
 ProviderKind = Literal["mock", "meta"]
-EventType = Literal["message", "echo", "reaction", "read", "postback", "other"]
+EventType = Literal["message", "echo", "delete", "reaction", "read", "postback", "other"]
 
 
 @dataclass(frozen=True)

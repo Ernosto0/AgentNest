@@ -55,6 +55,18 @@ def process_inbound_event(
         return
 
     normalized = _normalized(event, account)
+    if normalized is not None and normalized.event_type == "delete" and normalized.mid:
+        message = session.scalars(
+            select(Message)
+            .where(
+                Message.workspace_id == workspace_id,
+                Message.social_account_id == account.id,
+                Message.external_message_id == normalized.mid,
+            )
+            .with_for_update()
+        ).one_or_none()
+        if message is not None:
+            message.is_deleted = True
     if normalized is not None and normalized.customer_id:
         if normalized.event_type == "message":
             _on_customer_message(session, clock, ctx, account, event, normalized, debounce_seconds)
@@ -219,7 +231,15 @@ def _on_echo(
 ) -> None:
     customer_id = normalized.customer_id or ""
     moment = _timestamp(normalized, clock)
-    echo = Echo(account.id, customer_id, normalized.mid, normalized.text, moment)
+    echo = Echo(
+        account.id,
+        customer_id,
+        normalized.mid,
+        normalized.text,
+        moment,
+        normalized.app_id,
+        account.provider_kind,
+    )
     if claimed_by_a_send(session, clock, ctx, echo):
         return  # the echo of a message this application sent: the send machinery owns it
     conversation = _lock_conversation(session, account, customer_id)

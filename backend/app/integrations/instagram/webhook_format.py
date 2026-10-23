@@ -189,6 +189,18 @@ def _id(node: Any) -> str | None:
 
 def _attachments(message: dict[str, Any]) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
+    reply = message.get("reply_to")
+    story = reply.get("story") if isinstance(reply, dict) else None
+    if isinstance(story, dict):
+        result.append(
+            {
+                "type": "story_reply",
+                "url": story.get("url") if isinstance(story.get("url"), str) else None,
+                "note": str(story["id"]) if isinstance(story.get("id"), str | int) else None,
+            }
+        )
+    if message.get("is_unsupported") is True:
+        result.append({"type": "unsupported", "url": None, "note": "unsupported"})
     raw = message.get("attachments")
     if not isinstance(raw, list):
         return result
@@ -216,6 +228,15 @@ def _normalize(item: dict[str, Any], entry_id: str | None) -> NormalizedInboundE
     if isinstance(message, dict):
         mid = message.get("mid") if isinstance(message.get("mid"), str) else None
         text = message.get("text") if isinstance(message.get("text"), str) else None
+        if message.get("is_deleted") is True:
+            return NormalizedInboundEvent(
+                event_type="delete",
+                account_id=entry_id or recipient,
+                customer_id=sender if sender != entry_id else recipient,
+                provider_timestamp=when,
+                mid=mid,
+                raw_item=item,
+            )
         if message.get("is_echo") is True:
             app_id = message.get("app_id")
             return NormalizedInboundEvent(

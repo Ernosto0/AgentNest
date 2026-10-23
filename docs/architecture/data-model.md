@@ -305,9 +305,9 @@ Constraints: `unique (workspace_id) where status <> 'disconnected'` (one active 
 |---|---|---|
 | id | uuid PK | |
 | provider_kind | text not null | |
-| dedup_key | text not null unique | `ig:{account_ext_id}:mid:{mid}` for messages and echoes; `ig:{account}:{field}:sha256(entry)` otherwise |
+| dedup_key | text not null unique | `ig:{account_ext_id}:mid:{mid}` for messages and echoes; `ig:{account}:delete:{mid}` for unsends (separate from the original); `ig:{account}:{field}:sha256(entry)` otherwise |
 | workspace_id / social_account_id | uuid null | resolved at ingest from the receiving account |
-| event_type | text not null | `message`, `echo`, `reaction`, `read`, `postback`, `other` |
+| event_type | text not null | `message`, `echo`, `delete`, `reaction`, `read`, `postback`, `other` |
 | payload | jsonb null | the single webhook item (raw form kept for 30 days, then nulled, so the column is nullable) |
 | status | text not null | `received`, `processed`, `ignored`, `failed` |
 | ignore_reason / error_code | text null | |
@@ -474,7 +474,9 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 
 ## 4. Data lifecycle summary
 
-**Phase 6 migrations (in order).** `0012` creates daily reports; `0013` adds the circuit window; `0014` creates invites. `0015` (`20261022_0015_phase_6_report_snapshots.py`, after `0014`, current head) replaces the report day unique key with `(workspace_id, local_date, revision)`, adds revision/evidence completeness, and creates `report_items` and `report_source_gaps`. Existing reports keep their IDs and aggregates as revision 1 with `evidence_complete=false`: mutable sources cannot reconstruct their original membership. If pre-upgrade system-wide cleanup audits show deleted webhook rows, migration conservatively marks history up to the last such cleanup as incomplete for then-existing workspaces; those old audits cannot identify the actual affected tenant/day. Downgrade refuses when multiple generations exist rather than discarding history. Apply with `uv run alembic upgrade head`.
+**Phase 6 migrations (in order).** `0012` creates daily reports; `0013` adds the circuit window; `0014` creates invites. `0015` (`20261022_0015_phase_6_report_snapshots.py`, after `0014`) replaces the report day unique key with `(workspace_id, local_date, revision)`, adds revision/evidence completeness, and creates `report_items` and `report_source_gaps`. Existing reports keep their IDs and aggregates as revision 1 with `evidence_complete=false`: mutable sources cannot reconstruct their original membership. If pre-upgrade system-wide cleanup audits show deleted webhook rows, migration conservatively marks history up to the last such cleanup as incomplete for then-existing workspaces; those old audits cannot identify the actual affected tenant/day. Downgrade refuses when multiple generations exist rather than discarding history. Apply with `uv run alembic upgrade head`.
+
+**Phase 7 Session 2 migration.** `0016` (`20261023_0016_phase_7_webhook_deletions.py`, after `0015`) extends only the inbound-event type check to admit `delete`. Existing rows are preserved. Downgrade refuses while deletion events exist rather than discarding evidence; after their removal under an authorized retention/deletion policy it can restore the old check. The planned OAuth migration moves to `0017` in Session 3. No historical migration is edited.
 
 | Data | Created by | Mutable? | Retention default ([security-and-privacy.md §8](security-and-privacy.md)) |
 |---|---|---|---|
