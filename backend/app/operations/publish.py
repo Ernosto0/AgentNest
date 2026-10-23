@@ -64,7 +64,7 @@ from app.integrations.instagram.errors import (
     ProviderTransientError,
 )
 from app.integrations.instagram.models import SocialAccount
-from app.integrations.instagram.registry import get_provider
+from app.integrations.instagram.registry import account_ref, get_provider
 from app.integrations.storage.base import MediaStorageUnavailable
 from app.integrations.storage.registry import get_media_storage
 from app.jobs.queue import enqueue
@@ -221,7 +221,7 @@ def reconcile_publish(
         account = queries.get_account_in_workspace(session, workspace_id, op.social_account_id)
         if account is None:
             return _skip("account_missing")
-        ref = AccountRef(account.id, workspace_id, account.external_account_id)
+        ref = account_ref(account, env.settings)
         kind = account.provider_kind
         container_id = op.provider_ref.get("container_id")
 
@@ -362,7 +362,7 @@ def _read_quota(
         account = queries.get_account_in_workspace(session, workspace_id, item.social_account_id)
         if account is None or account.status != "connected":
             return None  # T1 holds the item
-        ref = AccountRef(account.id, workspace_id, account.external_account_id)
+        ref = account_ref(account, env.settings)
         kind = account.provider_kind
     try:  # the session is closed: no transaction is open during the provider call
         reading: PublishingQuota = env.provider_for(kind).get_publishing_quota(ref)
@@ -498,7 +498,7 @@ def _begin(
     op.started_at = now  # each attempt: the "stuck" sweep measures from the latest start
     op.next_attempt_at = None
     transitions.apply(session, clock, ctx, item, "start")
-    return _prepared(item, op, account, asset)
+    return _prepared(item, op, account, asset, env.settings)
 
 
 def _reschedule(
@@ -528,14 +528,14 @@ def _text(value: object) -> str | None:
 
 
 def _prepared(
-    item: ContentItem, op: Operation, account: SocialAccount, asset: MediaAsset
+    item: ContentItem, op: Operation, account: SocialAccount, asset: MediaAsset, settings: Settings
 ) -> _Prepared:
     container_id = op.provider_ref.get("container_id")
     return _Prepared(
         workspace_id=item.workspace_id,
         content_id=item.id,
         operation_id=op.id,
-        account=AccountRef(account.id, item.workspace_id, account.external_account_id),
+        account=account_ref(account, settings),
         provider_kind=account.provider_kind,
         content_type=item.content_type,
         caption=item.caption,
@@ -1100,4 +1100,4 @@ def _conclude(
         is_simulated=op.is_simulated,
         clock=clock,
     )
-    return _prepared(item, op, account, asset)
+    return _prepared(item, op, account, asset, env.settings)

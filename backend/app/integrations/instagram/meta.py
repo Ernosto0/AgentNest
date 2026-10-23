@@ -10,6 +10,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Literal, TypeVar, cast
+from urllib.parse import urlsplit
 
 import httpx
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationError
@@ -329,23 +330,81 @@ class MetaInstagramProvider:
 
     @_logged("create_media_container")
     def create_media_container(self, account: AccountRef, spec: ContainerSpec) -> str:
-        raise NotImplementedError("Meta publishing is implemented in P7-04")
+        if spec.media_type == "STORIES" and spec.caption is not None:
+            raise ProviderInvalidRequest("CAPTION_NOT_ALLOWED")
+        try:
+            url = urlsplit(spec.image_url)
+        except ValueError:
+            raise ProviderInvalidRequest("MEDIA_URL_NOT_PUBLIC") from None
+        if url.scheme != "https" or not url.hostname or url.username or url.password:
+            raise ProviderInvalidRequest("MEDIA_URL_NOT_PUBLIC")
+        body = {"image_url": spec.image_url}
+        if spec.media_type == "STORIES":
+            body["media_type"] = "STORIES"
+        elif spec.caption is not None:
+            body["caption"] = spec.caption
+        return self._shape(
+            ID,
+            self._request(
+                account,
+                f"{_identifier(account.external_account_id)}/media",
+                method="POST",
+                body=body,
+            ),
+        ).id
 
     @_logged("get_container_status")
     def get_container_status(self, account: AccountRef, container_id: str) -> ContainerStatus:
-        raise NotImplementedError("Meta publishing is implemented in P7-04")
+        value = self._shape(
+            Status,
+            self._request(
+                account, _identifier(container_id), params={"fields": "id,status_code,status"}
+            ),
+        )
+        # Graph does not document the published media ID on this read; never invent one.
+        return ContainerStatus(
+            value.status_code, "MEDIA_PROCESSING_ERROR" if value.status_code == "ERROR" else None
+        )
 
     @_logged("publish_container")
     def publish_container(self, account: AccountRef, container_id: str) -> str:
-        raise NotImplementedError("Meta publishing is implemented in P7-04")
+        return self._shape(
+            ID,
+            self._request(
+                account,
+                f"{_identifier(account.external_account_id)}/media_publish",
+                method="POST",
+                body={"creation_id": container_id},
+                ambiguous=True,
+            ),
+            ambiguous=True,
+        ).id
 
     @_logged("get_media")
     def get_media(self, account: AccountRef, media_id: str) -> MediaInfo:
-        raise NotImplementedError("Meta publishing is implemented in P7-04")
+        value = self._shape(
+            Media,
+            self._request(
+                account, _identifier(media_id), params={"fields": "id,permalink,timestamp"}
+            ),
+        )
+        return MediaInfo(value.id, value.permalink, value.timestamp)
 
     @_logged("get_publishing_quota")
     def get_publishing_quota(self, account: AccountRef) -> PublishingQuota:
-        raise NotImplementedError("Meta publishing is implemented in P7-04")
+        value = self._shape(
+            Quotas,
+            self._request(
+                account,
+                f"{_identifier(account.external_account_id)}/content_publishing_limit",
+                params={"fields": "config,quota_usage"},
+            ),
+        ).data[0]
+        if value.config.quota_duration % 3600:
+            raise malformed_response(ambiguous=False)
+        return PublishingQuota(
+            value.quota_usage, value.config.quota_total, value.config.quota_duration // 3600
+        )
 
     @_logged("refresh_token")
     def refresh_token(self, account: AccountRef) -> TokenInfo:
