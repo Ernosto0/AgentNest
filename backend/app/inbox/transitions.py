@@ -13,6 +13,7 @@ _TRANSITIONS: dict[tuple[str, str], str] = {
     ("pending_approval", "expire"): "expired",
     ("pending_approval", "supersede"): "superseded",
     ("pending_approval", "edit"): "pending_approval",
+    ("pending_approval", "cancel"): "cancelled",  # account disconnected
     ("needs_human", "supersede"): "superseded",
     ("needs_human", "expire"): "expired",
     ("queued", "start_send"): "sending",

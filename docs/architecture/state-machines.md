@@ -113,6 +113,7 @@ stateDiagram-v2
   pending_approval --> rejected: approval rejected
   pending_approval --> expired: approval expired
   pending_approval --> superseded: new inbound / owner replied / regenerated
+  pending_approval --> cancelled: account disconnected
   pending_approval --> pending_approval: edited (version+1, new approval)
   needs_human --> superseded: owner sends own reply / new inbound
   needs_human --> expired: window closed
@@ -277,4 +278,4 @@ stateDiagram-v2
 
 Job states are **internal** (*no audit*). Users see domain states. Dead jobs appear in the dev jobs page and system health.
 
-Phase 7 Session 3 permits `disconnected -> connected` only through an explicitly reauthorized Meta connect (or refresh of authorization while already connected); ordinary state changes keep disconnected terminal. The account transition helper requires `reauthorized=True` for these OAuth-only paths and writes the normal connection/reconnection audit.
+Phase 7 Session 3 permits `disconnected -> connected` only through an explicitly reauthorized Meta connect (or refresh of authorization while already connected); ordinary state changes keep disconnected terminal. The account transition helper requires `reauthorized=True` for these OAuth-only paths and writes the normal connection/reconnection audit. Pending-approval reply cancellation on disconnect is a documented `cancel` event, not a direct status assignment.

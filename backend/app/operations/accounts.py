@@ -11,19 +11,30 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.approvals import service as approvals
 from app.audit import service as audit
+from app.content import hooks
+from app.content import notifications as content_notifications
+from app.content import transitions as content_transitions
+from app.content.models import ContentItem
+from app.content.payload import publish_job_key
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity import repository as identity_repo
 from app.identity.models import Workspace
+from app.inbox import attention, drafts
+from app.inbox.models import Conversation, InboundEvent, ReplyDraft
 from app.integrations.instagram import queries
 from app.integrations.instagram.mock import MockInstagramProvider
 from app.integrations.instagram.models import OAuthState, SocialAccount
 from app.integrations.instagram.transitions import apply_account_transition
-from app.jobs.queue import enqueue
+from app.jobs.queue import cancel_queued, enqueue
+from app.operations import conversation_deletion
+from app.operations.models import Operation
 from app.operations.payloads import ResumeAccountPayload
+from app.operations.resolution import set_operation
 
 MOCK_CAPABILITIES = {
     "messaging": True,
@@ -193,9 +204,46 @@ def reconnect_mock(
 
 
 def disconnect(
-    session: Session, clock: Clock, ctx: WorkspaceContext, account_id: uuid.UUID
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    account_id: uuid.UUID,
+    *,
+    delete_conversation_data: bool = False,
 ) -> SocialAccount:
     lock_workspace(session, ctx.workspace_id)
+    # Match executor lock order: drafts/conversations and content before the account/ledger.
+    conversation_ids = select(Conversation.id).where(
+        Conversation.workspace_id == ctx.workspace_id, Conversation.social_account_id == account_id
+    )
+    account_drafts = session.scalars(
+        select(ReplyDraft)
+        .where(
+            ReplyDraft.workspace_id == ctx.workspace_id,
+            ReplyDraft.conversation_id.in_(conversation_ids),
+        )
+        .order_by(ReplyDraft.id)
+        .with_for_update()
+    ).all()
+    conversations = session.scalars(
+        select(Conversation)
+        .where(
+            Conversation.workspace_id == ctx.workspace_id,
+            Conversation.social_account_id == account_id,
+        )
+        .order_by(Conversation.id)
+        .with_for_update()
+    ).all()
+    items = session.scalars(
+        select(ContentItem)
+        .where(
+            ContentItem.workspace_id == ctx.workspace_id,
+            ContentItem.social_account_id == account_id,
+            ContentItem.status.in_(("scheduled", "retry_scheduled")),
+        )
+        .order_by(ContentItem.id)
+        .with_for_update()
+    ).all()
     account = queries.get_account(session, ctx, account_id, lock=True)
     if account is None:
         raise AppError("NOT_FOUND")
@@ -203,11 +251,80 @@ def disconnect(
     account.token_key_id = None
     account.token_expires_at = None
     account.token_refreshed_at = None
-    transition_account(session, clock, ctx, account, "disconnected")
+    if account.status != "disconnected":
+        transition_account(
+            session,
+            clock,
+            ctx,
+            account,
+            "disconnected",
+            metadata={"delete_conversation_data": delete_conversation_data},
+        )
+    elif not delete_conversation_data:
+        # Preserve the existing terminal-state API contract; do not emit another audit.
+        raise AppError("CONFLICT_STATE")
+    elif (
+        conversations
+        or session.scalar(
+            select(InboundEvent.id)
+            .where(
+                InboundEvent.workspace_id == ctx.workspace_id,
+                InboundEvent.social_account_id == account_id,
+                InboundEvent.payload.is_not(None),
+            )
+            .limit(1)
+        )
+        is not None
+    ) and not conversation_deletion.pending(session, ctx.workspace_id, account_id=account_id):
+        audit.record(
+            session,
+            ctx,
+            "social_account.disconnected",
+            "social_account",
+            account_id,
+            {"delete_conversation_data": True, "from": "disconnected"},
+            is_simulated=account.is_simulated,
+            clock=clock,
+        )
     session.execute(
         update(OAuthState)
         .where(OAuthState.workspace_id == ctx.workspace_id, OAuthState.invalidated_at.is_(None))
         .values(invalidated_at=clock.now())
     )
+    for draft in account_drafts:
+        if draft.status not in ("queued", "pending_approval"):
+            continue
+        approvals.cancel_for_subject(
+            session, clock, ctx, "reply_draft", draft.id, "ACCOUNT_DISCONNECTED"
+        )
+        drafts.transition(session, clock, ctx, draft, "cancel", reason="ACCOUNT_DISCONNECTED")
+        cancel_queued(session, f"send_reply:{draft.id}", clock)
+    for conversation in conversations:
+        cancel_queued(session, f"draft_reply:{conversation.id}", clock)
+        cancel_queued(session, f"draft_reply:{conversation.id}:requested", clock)
+        attention.refresh(session, conversation)
+    for item in items:
+        cancel_queued(session, publish_job_key(item.id, item.version), clock)
+        hooks.get().cancel_operation(session, clock, ctx, item, "ACCOUNT_DISCONNECTED")
+        approvals.cancel_for_subject(
+            session, clock, ctx, "content_item", item.id, "ACCOUNT_DISCONNECTED"
+        )
+        content_transitions.apply(session, clock, ctx, item, "hold", reason="ACCOUNT_UNAVAILABLE")
+        content_notifications.notify(
+            session, clock, ctx, item, content_notifications.ON_HOLD, reason="ACCOUNT_UNAVAILABLE"
+        )
+    # Only waiting effects are cancelled; in-flight/unknown effects retain their reconcilers.
+    for op in session.scalars(
+        select(Operation)
+        .where(
+            Operation.workspace_id == ctx.workspace_id,
+            Operation.social_account_id == account_id,
+            Operation.status.in_(("pending", "retry_wait")),
+        )
+        .with_for_update()
+    ):
+        set_operation(clock, op, "cancel", code="ACCOUNT_DISCONNECTED")
+    if delete_conversation_data:
+        conversation_deletion.request(session, clock, ctx.workspace_id, account_id)
     session.commit()
     return account

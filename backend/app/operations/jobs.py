@@ -27,10 +27,19 @@ from app.jobs.models import Job
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, RescheduleJob, job_handler
 from app.jobs.scheduler import register_periodic
-from app.operations import health_check, publish, reconcile, refresh, resume, send
+from app.operations import (
+    conversation_deletion,
+    health_check,
+    publish,
+    reconcile,
+    refresh,
+    resume,
+    send,
+)
 from app.operations.models import Operation
 from app.operations.payloads import (
     AccountHealthCheckPayload,
+    DeleteAccountConversationsPayload,
     EmitEchoPayload,
     ReconcilePublishPayload,
     ReconcileSendPayload,
@@ -45,6 +54,24 @@ STUCK_AFTER = timedelta(minutes=15)
 # 1 / 5 / 15 / 30 minutes (state-machines.md §6); a larger Retry-After overrides.
 SEND_BACKOFF = (60, 300, 900, 1800, 1800)
 WAIT_BACKOFF_SECONDS = 300
+
+
+@job_handler("delete_account_conversations", DeleteAccountConversationsPayload, max_attempts=3)
+def delete_account_conversations(job: JobContext) -> None:
+    if not isinstance(job.payload, DeleteAccountConversationsPayload) or job.workspace_id is None:
+        return
+    with job.session_factory() as session:
+        account = queries.get_account_in_workspace(
+            session, job.workspace_id, job.payload.social_account_id, lock=True
+        )
+        if account is None:
+            return
+        if account.status != "disconnected" or conversation_deletion.unresolved(
+            session, job.workspace_id, account.id
+        ):
+            raise RescheduleJob(job.clock.now() + timedelta(minutes=5))
+        conversation_deletion.wipe(session, job.clock, job.workspace_id, account.id)
+        session.commit()
 
 
 @register_periodic

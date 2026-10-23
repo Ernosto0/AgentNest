@@ -49,3 +49,7 @@ class RefreshTokensPayload(_Payload):
 
 class RefreshTokenPayload(_Payload):
     social_account_id: uuid.UUID
+
+
+class DeleteAccountConversationsPayload(_Payload):
+    social_account_id: uuid.UUID

@@ -56,3 +56,8 @@ class InstagramConnectRequest(BaseModel):
 
 class InstagramConnectOut(BaseModel):
     authorize_url: str
+
+
+class DisconnectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    delete_conversation_data: bool = False

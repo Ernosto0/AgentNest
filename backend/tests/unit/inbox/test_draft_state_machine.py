@@ -15,6 +15,7 @@ ALLOWED = [
     ("pending_approval", "expire", "expired"),
     ("pending_approval", "supersede", "superseded"),
     ("pending_approval", "edit", "pending_approval"),
+    ("pending_approval", "cancel", "cancelled"),
     ("needs_human", "supersede", "superseded"),
     ("needs_human", "expire", "expired"),
     ("queued", "start_send", "sending"),

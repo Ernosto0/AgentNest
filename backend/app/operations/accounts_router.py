@@ -15,6 +15,7 @@ from app.integrations.instagram import queries
 from app.integrations.instagram.models import SocialAccount
 from app.operations import accounts, oauth_service
 from app.operations.schemas import (
+    DisconnectRequest,
     InstagramConnectOut,
     InstagramConnectRequest,
     MockAccountCreate,
@@ -89,8 +90,17 @@ def reconnect_account(
 @router.post("/{account_id}/disconnect", response_model=SocialAccountOut)
 def disconnect_account(
     account_id: uuid.UUID,
+    body: DisconnectRequest | None = None,
     ctx: WorkspaceContext = Depends(require_membership("integrations.manage")),
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
 ) -> SocialAccountOut:
-    return account_out(accounts.disconnect(db, clock, ctx, account_id))
+    return account_out(
+        accounts.disconnect(
+            db,
+            clock,
+            ctx,
+            account_id,
+            delete_conversation_data=body.delete_conversation_data if body else False,
+        )
+    )
