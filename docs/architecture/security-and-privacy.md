@@ -179,3 +179,5 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 | Security headers / CSP | — | ✓ |
 | Dependency audit | optional | ✓ |
 | Data deletion callback | — | ✓ |
+
+**OAuth T18 controls:** hashed 32-byte random state, ten-minute expiry, same authenticated user and atomic single-use consumption committed before denial/exchange/errors. Wrong-user requests do not consume legitimate state. Active membership and `integrations.manage` are checked before and after network work. Reconnect requires the same external identity and unchanged captured credentials; disconnect invalidation and active-account unique indexes fence stale/concurrent callbacks. No callback error/query text is propagated to redirects or logs. Request-auth transactions end before any OAuth HTTP, and sensitive httpx/httpcore request logs are suppressed before the first code exchange. Tokens never enter API schemas, jobs, ledger results or audit metadata. Live Meta research remains pending.

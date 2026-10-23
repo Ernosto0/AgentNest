@@ -14,7 +14,11 @@ _ALLOWED: dict[str | None, frozenset[str]] = {
 }
 
 
-def apply_account_transition(current: str | None, target: str) -> str:
+def apply_account_transition(
+    current: str | None, target: str, *, reauthorized: bool = False
+) -> str:
+    if reauthorized and target == "connected" and current in ("connected", "disconnected"):
+        return target
     if target in _ALLOWED.get(current, frozenset()):
         return target
     raise AppError("CONFLICT_STATE", entity="social_account", status=current, target=target)

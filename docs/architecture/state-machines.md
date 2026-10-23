@@ -276,3 +276,5 @@ stateDiagram-v2
 | `queued` | cancelled by domain (e.g., content cancelled) | `cancelled` ■ |
 
 Job states are **internal** (*no audit*). Users see domain states. Dead jobs appear in the dev jobs page and system health.
+
+Phase 7 Session 3 permits `disconnected -> connected` only through an explicitly reauthorized Meta connect (or refresh of authorization while already connected); ordinary state changes keep disconnected terminal. The account transition helper requires `reauthorized=True` for these OAuth-only paths and writes the normal connection/reconnection audit.

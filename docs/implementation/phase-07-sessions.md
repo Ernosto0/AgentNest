@@ -10,6 +10,8 @@ Phase 7 is split into **4 sequential sessions**. Run strictly in order (`Session
 
 **Session 2 offline adaptations:** Meta fixtures are explicitly synthetic, not recorded; V-05 and the research re-plan stay pending. `TokenInfo` adds an optional repr-hidden `access_token` for the Session 3 refresh consumer; `registry.account_ref(account, settings)` captures encrypted snapshots and decrypts lazily without ORM access during requests. Migration `0016` admits `delete` webhook events and refuses a lossy downgrade; OAuth therefore uses `0017`. Malformed successful send/publish responses are ambiguous. Media URLs require valid HTTPS, and empty story captions are rejected. Meta container status does not invent a published media ID.
 
+**Session 3 offline adaptations:** Migration `0017` adds `invalidated_at` to OAuth states to fence disconnect-during-exchange callbacks; requested scopes never imply grants, and absent short-exchange `permissions` gives no capabilities. Flat/one-item-wrapped short exchanges are synthetic assumptions; live research remains pending. Disconnected-row reuse requires new OAuth authorization.
+
 ---
 
 ## 1. Module Layout & Import Contracts

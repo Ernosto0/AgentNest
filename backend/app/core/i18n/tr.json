@@ -268,5 +268,9 @@
   "errors.REPORT_EVIDENCE_UNAVAILABLE.what": "Bu eski raporun ayrıntı kayıtları saklanmamış.",
   "errors.REPORT_EVIDENCE_UNAVAILABLE.next": "Kaynak kayıtlar hâlâ mevcutsa raporu yeniden oluşturun. Mevcut rapor korunur.",
   "errors.REPORT_SOURCES_RETAINED_OUT.what": "Saklama süresi dolan kaynaklar silindiği için bu rapor eksiksiz yeniden oluşturulamıyor.",
-  "errors.REPORT_SOURCES_RETAINED_OUT.next": "Daha önce kaydedilmiş raporu kullanın veya başka bir gün seçin."
+  "errors.REPORT_SOURCES_RETAINED_OUT.next": "Daha önce kaydedilmiş raporu kullanın veya başka bir gün seçin.",
+  "errors.OAUTH_STATE_INVALID.what": "Bağlantı isteği geçersiz veya süresi dolmuş.",
+  "errors.OAUTH_STATE_INVALID.next": "Bağlantıyı yeniden başlatın.",
+  "errors.ACCOUNT_MISMATCH.what": "Farklı bir Instagram hesabına izin verildi.",
+  "errors.ACCOUNT_MISMATCH.next": "Önceki hesaba izin verin."
 }

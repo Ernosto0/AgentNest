@@ -86,7 +86,7 @@ The policy engine (R1) and the content submit validation check capabilities. Mis
 
 ### 3.4 Meta adapter (`MetaInstagramProvider`): Phase 7
 
-**Offline Session 2 implementation:** profile, send, outbound lookup, containers/status/publish/media/quota and refresh are implemented with fixture transports. All current Meta fixtures are explicitly synthetic offline contracts, not recordings. Gate 2/V-05 and all live acceptance remain pending; the error mapping must be checked against authentic sanitized responses before live use. OAuth and refresh scheduling are Session 3 work.
+**Offline Session 2 implementation:** profile, send, outbound lookup, containers/status/publish/media/quota and refresh are implemented with fixture transports. All current Meta fixtures are explicitly synthetic offline contracts, not recordings. Gate 2/V-05 and all live acceptance remain pending; the error mapping must be checked against authentic sanitized responses before live use. OAuth and refresh scheduling are implemented offline in Session 3; live response verification remains pending.
 
 - Host `graph.instagram.com`, API version from `META_GRAPH_API_VERSION` (pinned; upgrade deliberately).
 - Requests use a 15-second timeout and bearer headers; only the unversioned `/refresh_access_token` endpoint uses a query token. Lookup filters sender, recipient and lower timestamp bound, follows cursor pagination on fixed Graph paths only, and refuses incomplete/repeated pagination rather than returning a partial reconciliation result (100-page bound per collection).
@@ -103,6 +103,8 @@ The policy engine (R1) and the content submit validation check capabilities. Mis
 - **Error mapping:** built from recorded responses in V-05 and stored as fixtures in `tests/contract/fixtures/meta/`. Unknown errors map to `ProviderTransientError` if 5xx (or `OutcomeUnknown` for side-effecting calls) and to `ProviderInvalidRequest` if 4xx.
 - **Disconnect:** delete the token ciphertext immediately, status `disconnected`, cancel queued sends, hold scheduled content, audit. Data deletion follows [security-and-privacy.md §8](security-and-privacy.md).
 - **Meta callbacks (Phase 8, V-06):** deauthorize and data-deletion endpoints verify the `signed_request` (HMAC-SHA256 with the app secret) and respond with `{url, confirmation_code}` for data deletion.
+
+OAuth exchange accepts a flat short-token object or exactly one object in a `data` array; mixed flat/wrapped identity or credentials are rejected. Both shapes are synthetic provisional contracts, not Meta recordings. Integer/string `user_id`, nonempty token and positive bounded long-token expiry are validated. Actual short-exchange `permissions` determine capabilities; an absent permissions list grants no capabilities. Requested scopes are never treated as granted. The configured story flag gates the story capability; V-03 remains pending. Both exchanges and the profile call occur outside all service and request-auth transactions. HTTP request/debug logging is suppressed before the first exchange, and typed errors retain no provider body or secret traceback chain.
 
 ### 3.5 Contract tests
 `tests/contract/test_instagram_provider_contract.py` defines behaviour that every adapter must satisfy (parameterised by adapter):

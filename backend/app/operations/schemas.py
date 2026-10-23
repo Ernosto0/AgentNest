@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -46,3 +46,13 @@ class MockAccountCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     username: str | None = Field(default=None, min_length=1, max_length=64)
+
+
+class InstagramConnectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    purpose: Literal["connect", "reconnect"] = "connect"
+    social_account_id: uuid.UUID | None = None
+
+
+class InstagramConnectOut(BaseModel):
+    authorize_url: str

@@ -7,6 +7,7 @@ change is audited. It does not commit (the caller owns the transaction); ``conne
 
 import uuid
 
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -16,9 +17,10 @@ from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity import repository as identity_repo
+from app.identity.models import Workspace
 from app.integrations.instagram import queries
 from app.integrations.instagram.mock import MockInstagramProvider
-from app.integrations.instagram.models import SocialAccount
+from app.integrations.instagram.models import OAuthState, SocialAccount
 from app.integrations.instagram.transitions import apply_account_transition
 from app.jobs.queue import enqueue
 from app.operations.payloads import ResumeAccountPayload
@@ -40,6 +42,14 @@ def mock_connect_allowed(settings: Settings, ctx: WorkspaceContext) -> bool:
     return ctx.is_demo and settings.allow_simulated_workspaces
 
 
+def lock_workspace(session: Session, workspace_id: uuid.UUID) -> None:
+    """Serialize account changes while allowing tenant inserts' FK KEY SHARE locks."""
+    # PostgreSQL: key_share=True without read=True renders FOR NO KEY UPDATE.
+    session.scalar(
+        select(Workspace).where(Workspace.id == workspace_id).with_for_update(key_share=True)
+    )
+
+
 def transition_account(
     session: Session,
     clock: Clock,
@@ -50,6 +60,8 @@ def transition_account(
     error_code: str | None = None,
     audit_action: str | None = None,
     recovered: bool = False,
+    reauthorized: bool = False,
+    metadata: dict[str, object] | None = None,
 ) -> SocialAccount:
     """Move ``account`` to ``target`` (row locked by the caller) and audit it. No commit.
 
@@ -57,7 +69,7 @@ def transition_account(
     its own in the audit catalog (``account.reconnected``) passes it instead.
     """
     previous = account.status
-    account.status = apply_account_transition(previous, target)
+    account.status = apply_account_transition(previous, target, reauthorized=reauthorized)
     now = clock.now()
     if target == "connected":
         account.connected_at = account.connected_at or now
@@ -82,6 +94,7 @@ def transition_account(
             "provider_kind": account.provider_kind,
             "error_code": error_code,
             **({"recovered": True} if recovered else {}),
+            **(metadata or {}),
         },
         is_simulated=account.is_simulated,
         clock=clock,
@@ -182,9 +195,19 @@ def reconnect_mock(
 def disconnect(
     session: Session, clock: Clock, ctx: WorkspaceContext, account_id: uuid.UUID
 ) -> SocialAccount:
+    lock_workspace(session, ctx.workspace_id)
     account = queries.get_account(session, ctx, account_id, lock=True)
     if account is None:
         raise AppError("NOT_FOUND")
+    account.token_ciphertext = None
+    account.token_key_id = None
+    account.token_expires_at = None
+    account.token_refreshed_at = None
     transition_account(session, clock, ctx, account, "disconnected")
+    session.execute(
+        update(OAuthState)
+        .where(OAuthState.workspace_id == ctx.workspace_id, OAuthState.invalidated_at.is_(None))
+        .values(invalidated_at=clock.now())
+    )
     session.commit()
     return account

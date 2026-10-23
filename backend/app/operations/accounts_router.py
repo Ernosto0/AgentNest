@@ -13,10 +13,31 @@ from app.core.db import get_db
 from app.core.pagination import Page
 from app.integrations.instagram import queries
 from app.integrations.instagram.models import SocialAccount
-from app.operations import accounts
-from app.operations.schemas import MockAccountCreate, SocialAccountOut
+from app.operations import accounts, oauth_service
+from app.operations.schemas import (
+    InstagramConnectOut,
+    InstagramConnectRequest,
+    MockAccountCreate,
+    SocialAccountOut,
+)
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/social-accounts", tags=["integrations"])
+
+
+@router.post("/instagram/connect", response_model=InstagramConnectOut)
+def connect_instagram(
+    body: InstagramConnectRequest | None = None,
+    ctx: WorkspaceContext = Depends(require_membership("integrations.manage")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> InstagramConnectOut:
+    body = body or InstagramConnectRequest()
+    return InstagramConnectOut(
+        authorize_url=oauth_service.start_connect(
+            db, clock, ctx, settings, purpose=body.purpose, social_account_id=body.social_account_id
+        )
+    )
 
 
 def account_out(account: SocialAccount) -> SocialAccountOut:

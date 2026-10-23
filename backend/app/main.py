@@ -13,6 +13,7 @@ from app.demo.dev_router import router as dev_router
 from app.handlers import load_handlers
 from app.inbox.webhooks_router import create_webhooks_router
 from app.knowledge.templates import validate_templates
+from app.operations.oauth_router import router as oauth_router
 
 
 def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
@@ -48,6 +49,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     register_error_handlers(app)
     app.include_router(health_router)
     app.include_router(api_router)
+    app.include_router(oauth_router)
     app.include_router(create_webhooks_router(settings))  # signature-authenticated, no /api/v1
     if settings.demo_tools_enabled and not in_production:  # INV-20
         app.include_router(dev_router)

@@ -31,6 +31,8 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "MESSAGING_WINDOW_CLOSED": ErrorSpec(409),
     "ACCOUNT_NOT_CONNECTED": ErrorSpec(409),
     "INVITE_INVALID": ErrorSpec(400),
+    "OAUTH_STATE_INVALID": ErrorSpec(400),
+    "ACCOUNT_MISMATCH": ErrorSpec(409),
     "LAST_OWNER_REQUIRED": ErrorSpec(409),
     "REPORT_EVIDENCE_UNAVAILABLE": ErrorSpec(409),
     "REPORT_SOURCES_RETAINED_OUT": ErrorSpec(409),

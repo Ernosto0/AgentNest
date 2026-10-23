@@ -268,5 +268,9 @@
   "errors.REPORT_EVIDENCE_UNAVAILABLE.what": "The detail records for this older report were not saved.",
   "errors.REPORT_EVIDENCE_UNAVAILABLE.next": "Regenerate it if the source records are still available. The existing report is preserved.",
   "errors.REPORT_SOURCES_RETAINED_OUT.what": "This report cannot be fully regenerated because retained-out source records were deleted.",
-  "errors.REPORT_SOURCES_RETAINED_OUT.next": "Use an existing saved report or choose another day."
+  "errors.REPORT_SOURCES_RETAINED_OUT.next": "Use an existing saved report or choose another day.",
+  "errors.OAUTH_STATE_INVALID.what": "The authorization request is invalid or expired.",
+  "errors.OAUTH_STATE_INVALID.next": "Start the connection again.",
+  "errors.ACCOUNT_MISMATCH.what": "A different Instagram account was authorized.",
+  "errors.ACCOUNT_MISMATCH.next": "Authorize the original account."
 }

@@ -116,6 +116,35 @@ class SocialAccount(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, B
         return self.provider_kind == "mock"
 
 
+class OAuthState(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
+    """Hashed, user-bound single-use authorization, invalidated by disconnect."""
+
+    __tablename__ = "oauth_states"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint("state_hash"),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id"],
+            ["social_accounts.workspace_id", "social_accounts.id"],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint("purpose IN ('connect', 'reconnect')", name="purpose"),
+        CheckConstraint(
+            "(purpose = 'connect' AND social_account_id IS NULL) OR "
+            "(purpose = 'reconnect' AND social_account_id IS NOT NULL)",
+            name="purpose_account",
+        ),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    state_hash: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    purpose: Mapped[str] = mapped_column(Text, nullable=False)
+    social_account_id: Mapped[uuid.UUID | None] = mapped_column()
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class SimInboundMessage(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     """A customer message the simulator delivered. The mock derives the 24 h messaging window
     from these rows, independently of the application's own ``messages`` table."""

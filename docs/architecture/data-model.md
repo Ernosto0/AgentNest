@@ -278,6 +278,8 @@ Constraint: `unique (workspace_id, subject_type, subject_id) where status = 'pen
 
 ### 3.5 Instagram, inbox (Phase 4)
 
+**`oauth_states`** (migration `0017`, Phase 7 Session 3): tenant-owned UUID and `(workspace_id, id)` unique key; `user_id` references `users`, `state_hash bytea` is globally unique, `purpose` is `connect` or `reconnect`, optional `social_account_id` has a composite tenant FK, and `expires_at`, `used_at`, `invalidated_at`, `created_at`, `updated_at` are timezone-aware timestamps. Purpose/account consistency is checked. Only SHA-256 of 32 random bytes is stored; expiry is ten minutes. `invalidated_at` is an offline contract addition: disconnect invalidates even a state already consumed by an exchange that is still in flight, preventing stale callback resurrection. Membership and integration permission are checked again at completion. Reconnect also compares the captured encrypted credential snapshot before writing. Account changes serialize on a workspace `FOR NO KEY UPDATE` mutex, which excludes another account-change mutex while allowing tenant inserts to acquire FK `KEY SHARE`; full workspace `FOR UPDATE` would deadlock against workers already holding account/draft rows. Disconnected rows can be deliberately reused through a newly authorized connect; selection is deterministic when multiple historical rows match.
+
 **`social_accounts`**
 | Column | Type | Notes |
 |---|---|---|
