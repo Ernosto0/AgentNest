@@ -41,3 +41,11 @@ class AccountHealthCheckPayload(_Payload):
     """A ``degraded`` account: read its profile to find out whether it works again."""
 
     social_account_id: uuid.UUID
+
+
+class RefreshTokensPayload(_Payload):
+    pass
+
+
+class RefreshTokenPayload(_Payload):
+    social_account_id: uuid.UUID

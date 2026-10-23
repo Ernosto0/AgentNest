@@ -133,6 +133,12 @@ Every 60 s, one scheduler tick (guarded by `pg_try_advisory_xact_lock(<constant>
 | `reconcile_stuck_operations` | `{}` | scheduler | 1 | **G11**: an operation `in_progress` for more than 15 minutes (`started_at`, reset at every attempt) becomes `outcome_unknown` and is handed to its reconciler: `send_reply` → `reconcile_send`, `publish_content` → `reconcile_publish`. A publishing worker that crashed therefore ends as `published` (the container is `PUBLISHED`) or as one more publish of the **stored** container (`FINISHED`), never as a blind second publish. A re-run of the publish job itself finds the item `publishing` and does nothing |
 | `demo_emit_echo` | `{operation_id}` | mock send (simulated echo) | 1 | demo only |
 
+### Phase 7 refresh implementation
+
+`enqueue_token_refreshes` schedules once per UTC day at/after 03:00 with an any-status `refresh_tokens:{date}` lookup. Its scan selects active-workspace Meta accounts in `connected`/`degraded`; expired tokens enter `needs_reauth`, and nonexpired tokens last refreshed at least 24 hours ago (or never), expiring within the configured inclusive horizon, fan out once per account/day across all job statuses. Disabled Meta is skipped.
+
+`refresh_token` has three attempts and a committed `refresh_token:{account}:{UTC date}` ledger row before HTTP. Definite transient/rate errors leave `retry_wait` for worker backoff/Retry-After; auth errors fail and notify. Rate limits do not affect health counters. A two-minute attempt lease plus attempt fencing permits recovery of a crashed refresh on the same row; refresh has no visible customer effect. Job ID in the content-free provider reference preserves that row across midnight. Credential fingerprints and completion snapshots reject stale results/errors after disconnect/reconnect. Dead or ineligible recovered jobs close stale rows with `operation.failed` audits. Only expiry is stored in the result; returned tokens are encrypted immediately.
+
 ## 7. Domain events
 
 There is no separate event bus in the MVP. A "domain event" is represented by:

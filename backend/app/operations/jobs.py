@@ -5,7 +5,7 @@ never retried but handed to ``reconcile_send`` (INV-05).
 """
 
 import uuid
-from datetime import timedelta
+from datetime import UTC, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -23,10 +23,11 @@ from app.integrations.instagram import queries, webhook_format
 from app.integrations.instagram.base import AccountRef
 from app.integrations.instagram.mock import MockInstagramProvider
 from app.integrations.instagram.models import SimSentMessage
+from app.jobs.models import Job
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, RescheduleJob, job_handler
 from app.jobs.scheduler import register_periodic
-from app.operations import health_check, publish, reconcile, resume, send
+from app.operations import health_check, publish, reconcile, refresh, resume, send
 from app.operations.models import Operation
 from app.operations.payloads import (
     AccountHealthCheckPayload,
@@ -34,6 +35,8 @@ from app.operations.payloads import (
     ReconcilePublishPayload,
     ReconcileSendPayload,
     ReconcileStuckPayload,
+    RefreshTokenPayload,
+    RefreshTokensPayload,
     ResumeAccountPayload,
 )
 from app.operations.resolution import set_operation, text_sha256
@@ -42,6 +45,62 @@ STUCK_AFTER = timedelta(minutes=15)
 # 1 / 5 / 15 / 30 minutes (state-machines.md §6); a larger Retry-After overrides.
 SEND_BACKOFF = (60, 300, 900, 1800, 1800)
 WAIT_BACKOFF_SECONDS = 300
+
+
+@register_periodic
+def enqueue_token_refreshes(session: Session, clock: Clock) -> int:
+    now = clock.now().astimezone(UTC)
+    key = f"refresh_tokens:{now:%Y-%m-%d}"
+    if (
+        now.hour < 3
+        or session.scalar(select(Job.id).where(Job.dedup_key == key).limit(1)) is not None
+    ):
+        return 0
+    enqueue(
+        session,
+        "refresh_tokens",
+        RefreshTokensPayload(),
+        workspace_id=None,
+        correlation_id=None,
+        dedup_key=key,
+        clock=clock,
+    )
+    return 1
+
+
+@job_handler("refresh_tokens", RefreshTokensPayload, max_attempts=1)
+def refresh_tokens(job: JobContext) -> None:
+    with job.session_factory() as session:
+        refresh.scan(session, job.clock, get_settings())
+
+
+def _refresh_dead(job: JobContext, code: str) -> None:
+    if job.workspace_id is not None:
+        with job.session_factory() as session:
+            refresh.abandon(session, job.clock, job.workspace_id, job.job_id, code)
+
+
+@job_handler(
+    "refresh_token", RefreshTokenPayload, max_attempts=3, timeout=120, on_dead=_refresh_dead
+)
+def refresh_token(job: JobContext) -> None:
+    if not isinstance(job.payload, RefreshTokenPayload) or job.workspace_id is None:
+        return
+    outcome = refresh.execute_refresh(
+        job.session_factory,
+        job.clock,
+        get_settings(),
+        job.workspace_id,
+        job.payload.social_account_id,
+        job_id=job.job_id,
+    )
+    if outcome.kind == "waiting" and outcome.run_at is not None:
+        raise RescheduleJob(outcome.run_at)
+    if outcome.kind == "retry":
+        raise RetryableError(
+            outcome.error_code or "PROVIDER_UNAVAILABLE",
+            retry_after_seconds=outcome.retry_after_seconds,
+        )
 
 
 @job_handler(

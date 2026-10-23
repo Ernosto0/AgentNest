@@ -208,3 +208,5 @@ Computed from tables (no metrics backend):
 Eval reports (`backend/evals/reports/<date>-<task>-<provider>-<model>-<prompt_version>.{json,md}`) record dataset version, metrics per label, hard-assertion failures, tokens and cost. Process in [testing-strategy.md §6](../implementation/testing-strategy.md).
 
 Phase 7 Session 3 adds safe errors `OAUTH_STATE_INVALID` (400, restart authorization) and `ACCOUNT_MISMATCH` (409, authorize the original account), with tr/en texts. Raw OAuth denial/query/provider text is never an error code or redirect value.
+
+Refresh writes `operation.started`, `operation.succeeded`/`operation.failed` and `social_account.token_refreshed` atomically with its ledger/account changes. Returned tokens are encrypted immediately and never enter ledger results or audit metadata.

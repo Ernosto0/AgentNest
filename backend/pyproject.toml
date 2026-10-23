@@ -150,6 +150,7 @@ source_modules = [
     "app.operations.accounts",
     "app.operations.oauth_service",
     "app.operations.conversation_deletion",
+    "app.operations.refresh",
     "app.operations.schemas",
     "app.inbox.models",
     "app.inbox.ingest",
