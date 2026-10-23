@@ -30,9 +30,9 @@ from app.operations.models import Operation
 from app.reporting import links
 from app.reporting.definitions import BY_KEY
 from app.reporting.metrics import compute_metric
-from app.reporting.models import DailyReport
+from app.reporting.models import ReportItem
 from app.reporting.periods import day_bounds
-from app.reporting.service import check_not_future
+from app.reporting.service import check_not_future, check_sources, get_report
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
@@ -57,6 +57,7 @@ class Drilldown:
     value: int | float | None
     items: list[Item]
     next_cursor: str | None
+    snapshot_id: uuid.UUID | None = None
 
 
 def _bad_cursor() -> AppError:
@@ -65,37 +66,49 @@ def _bad_cursor() -> AppError:
     )
 
 
-def _encode(sort_at: datetime, row_id: uuid.UUID) -> str:
-    raw = json.dumps({"t": sort_at.isoformat(), "i": str(row_id)}).encode()
+def _encode(
+    sort_at: datetime,
+    row_id: uuid.UUID,
+    kind: str,
+    ctx: WorkspaceContext,
+    local_date: date,
+    key: str,
+    snapshot_id: uuid.UUID | None,
+) -> str:
+    raw = json.dumps(
+        {
+            "t": sort_at.isoformat(),
+            "i": str(row_id),
+            "k": kind,
+            "w": str(ctx.workspace_id),
+            "d": local_date.isoformat(),
+            "m": key,
+            "s": str(snapshot_id) if snapshot_id else None,
+        }
+    ).encode()
     return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 
-def _decode(cursor: str) -> tuple[datetime, uuid.UUID]:
+def _decode(
+    cursor: str,
+    ctx: WorkspaceContext,
+    local_date: date,
+    key: str,
+) -> tuple[datetime, uuid.UUID, str, uuid.UUID | None]:
     try:
         data = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
         at = datetime.fromisoformat(data["t"])
-        if at.tzinfo is None:
+        if (
+            at.tzinfo is None
+            or data["w"] != str(ctx.workspace_id)
+            or data["d"] != local_date.isoformat()
+            or data["m"] != key
+            or not isinstance(data["k"], str)
+        ):
             raise ValueError("naive")
-        return at, uuid.UUID(data["i"])
+        return at, uuid.UUID(data["i"]), data["k"], uuid.UUID(data["s"]) if data["s"] else None
     except (ValueError, KeyError, TypeError) as exc:
         raise _bad_cursor() from exc
-
-
-def _period(
-    session: Session, ctx: WorkspaceContext, local_date: date, now: datetime
-) -> tuple[datetime, datetime]:
-    """The period of the number being explained: live up to ``now`` for today, the stored
-    report's own period for a past day that has one, else the whole day."""
-    today = check_not_future(ctx, local_date, now)
-    start, day_end = day_bounds(local_date, ctx.timezone)
-    if local_date == today:
-        return start, min(now, day_end)
-    row = session.scalar(
-        select(DailyReport).where(
-            DailyReport.workspace_id == ctx.workspace_id, DailyReport.local_date == local_date
-        )
-    )
-    return (row.period_start, row.period_end) if row is not None else (start, day_end)
 
 
 def _pairs(session: Session, statement: Any) -> dict[Any, Any]:
@@ -185,7 +198,7 @@ def _describe(session: Session, ctx: WorkspaceContext, rows: list[Any], locale: 
             label = titles.get(row.link_id) or t("report.item.content", locale)
             link = links.content_link(ws, row.link_id)
         elif kind == "approval":
-            action = approval_actions.get(row.link_id, "")
+            action = approval_actions.get(row.link_id) or row.group_key or ""
             label = _text(f"report.item.approval.{action}", locale, "report.item.approval.other")
             link = links.approval_link(ws, row.link_id)
         elif kind == "operation":
@@ -217,7 +230,7 @@ def _describe(session: Session, ctx: WorkspaceContext, rows: list[Any], locale: 
                 label=label,
                 occurred_at=row.occurred_at,
                 is_simulated=bool(row.is_simulated),
-                measure=None if row.measure is None else round(float(row.measure), 1),
+                measure=None if row.measure is None else float(row.measure),
                 link=link,
             )
         )
@@ -234,34 +247,82 @@ def metric_items(
     locale: str | None,
     cursor: str | None = None,
     limit: int = DEFAULT_LIMIT,
+    snapshot_id: uuid.UUID | None = None,
 ) -> Drilldown:
     """One page of the rows behind ``key`` for ``local_date``, with the metric's value.
 
-    For a past day the snapshot metrics (``*_now``) list the records as they are now; the stored
-    value is as of the generation (workflows.md section F).
+    Historical membership and the cursor are pinned to an immutable generation.
     """
     definition = BY_KEY.get(key)
     if definition is None:
         raise AppError("NOT_FOUND")
     now = clock.now()
-    start, end = _period(session, ctx, local_date, now)
+    today = check_not_future(ctx, local_date, now)
+    position = _decode(cursor, ctx, local_date, key) if cursor is not None else None
+    if position is not None:
+        cursor_snapshot = position[3]
+        if snapshot_id is not None and snapshot_id != cursor_snapshot:
+            raise _bad_cursor()
+        if cursor_snapshot is None and local_date != today:
+            raise _bad_cursor()
+        snapshot_id = cursor_snapshot
     language = normalize_locale(locale)
-    value = compute_metric(session, ctx, definition, start, end, now).value
-
-    rows = definition.rows(session, ctx, start, end, now).subquery("rows")
+    if local_date < today or snapshot_id is not None:
+        report = get_report(session, clock, ctx, local_date, snapshot_id=snapshot_id)
+        if not report.evidence_complete:
+            raise AppError("REPORT_EVIDENCE_UNAVAILABLE")
+        snapshot_id = report.snapshot_id
+        value = report.value(key)
+        rows = (
+            select(
+                ReportItem.subject_type,
+                ReportItem.subject_id,
+                ReportItem.occurred_at,
+                ReportItem.is_simulated,
+                ReportItem.link_id,
+                ReportItem.measure,
+                ReportItem.group_key,
+            )
+            .where(
+                ReportItem.workspace_id == ctx.workspace_id,
+                ReportItem.report_id == snapshot_id,
+                ReportItem.metric_key == key,
+            )
+            .subquery("rows")
+        )
+    else:
+        start, day_end = day_bounds(local_date, ctx.timezone)
+        end = min(now, day_end)
+        check_sources(session, ctx, start, end)
+        value = compute_metric(session, ctx, definition, start, end, now).value
+        rows = definition.rows(session, ctx, start, end, now).subquery("rows")
     sort_at = func.coalesce(rows.c.occurred_at, _EPOCH).label("sort_at")
     statement = select(rows, sort_at)
-    if cursor is not None:
-        at, row_id = _decode(cursor)
-        statement = statement.where(tuple_(sort_at, rows.c.subject_id) < tuple_(at, row_id))
+    if position is not None:
+        at, row_id, kind, _ = position
+        statement = statement.where(
+            tuple_(sort_at, rows.c.subject_id, rows.c.subject_type) < tuple_(at, row_id, kind)
+        )
     page_size = min(max(limit, 1), MAX_LIMIT)
     fetched = list(
         session.execute(
-            statement.order_by(sort_at.desc(), rows.c.subject_id.desc()).limit(page_size + 1)
+            statement.order_by(
+                sort_at.desc(), rows.c.subject_id.desc(), rows.c.subject_type.desc()
+            ).limit(page_size + 1)
         ).all()
     )
     page = fetched[:page_size]
     next_cursor = (
-        _encode(page[-1].sort_at, page[-1].subject_id) if len(fetched) > page_size else None
+        _encode(
+            page[-1].sort_at,
+            page[-1].subject_id,
+            page[-1].subject_type,
+            ctx,
+            local_date,
+            key,
+            snapshot_id,
+        )
+        if len(fetched) > page_size
+        else None
     )
-    return Drilldown(key, value, _describe(session, ctx, page, language), next_cursor)
+    return Drilldown(key, value, _describe(session, ctx, page, language), next_cursor, snapshot_id)

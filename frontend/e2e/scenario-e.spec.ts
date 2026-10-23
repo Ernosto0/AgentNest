@@ -166,3 +166,47 @@ test("E: yesterday's seeded report has the H16 numbers, each opening its list", 
 
   await checkDrillDowns(page, report.metrics);
 });
+
+test("E: historical links stay on their snapshot after state changes and regeneration", async ({ page, request }) => {
+  const { csrf, workspaceId } = await ownerSetup(request);
+  await signInToWorkspace(page, OWNER, GYM);
+  await openMore(page, "Günlük rapor");
+  await page.getByRole("button", { name: "Önceki gün" }).click();
+  await expect(page.getByRole("button", { name: "Bugüne dön" })).toBeVisible();
+  const date = new URL(page.url()).searchParams.get("date")!;
+  const saved = await dailyReport(request, workspaceId, date);
+  const attention = saved.metrics.find((m) => m.key === "attention_now")!;
+  expect(attention.value).toBeGreaterThan(0);
+  const originalSnapshot = new URL(attention.link.api!, API).searchParams.get("snapshot_id");
+  expect(originalSnapshot).toBeTruthy();
+
+  // Yesterday's pending approval may already have expired, so measure today's baseline.
+  const before = metricValue(await dailyReport(request, workspaceId), "attention_now");
+  for (const alias of ["Snapshot customer one", "Snapshot customer two"]) {
+    const simulated = await request.post(`${API}/api/v1/dev/workspaces/${workspaceId}/simulate/customer-message`, {
+      data: { customer_alias: alias, text: "Bu bir rezalet, çok memnuniyetsizim." },
+      headers: { "X-CSRF-Token": csrf },
+    });
+    expect(simulated.ok()).toBe(true);
+  }
+  await expect.poll(async () => metricValue(await dailyReport(request, workspaceId), "attention_now"), {
+    timeout: 30_000,
+  }).toBe(before + 2);
+  expect(before + 2).toBeGreaterThan(attention.value!);
+  const generated = await request.post(`${API}/api/v1/workspaces/${workspaceId}/reports/daily/generate`, {
+    data: { date }, headers: { "X-CSRF-Token": csrf },
+  });
+  expect(generated.ok()).toBe(true);
+  const latest = await generated.json();
+  expect(latest.snapshot_id).not.toBe(originalSnapshot);
+  expect(metricValue(latest, "attention_now")).toBeGreaterThan(attention.value!);
+
+  await page.locator(`main a[href="${attention.link.route}"]`).click();
+  await expect(page.getByTestId("metric-count")).toHaveText(`Toplam: ${attention.value}`);
+  expect(await drillDownRows(page)).toBe(attention.value);
+  const back = page.getByRole("link", { name: "Rapora dön", exact: true });
+  await expect(back).toHaveAttribute("href", `/w/${workspaceId}/more/reports?date=${date}&snapshot_id=${originalSnapshot}`);
+  await back.click();
+  await expect(page.getByRole("heading", { name: "Günlük rapor", level: 1 })).toBeVisible();
+  await expect(page.locator(`main a[href="${attention.link.route}"]`)).toHaveText(String(attention.value));
+});

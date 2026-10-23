@@ -2,29 +2,29 @@
 
 ``get_report`` serves a day: **today is always computed live** (``period_end = now``) and never
 stored by a read; a past day is the stored row, computed and stored on first read (H3).
-``generate_daily_report`` stores whatever it computes (the scheduler and "regenerate").
+``generate_daily_report`` appends an immutable generation and its contributing membership.
 
 INV-08: every number is a SQL aggregation (``compute_metrics``); no language model is involved.
 INV-19: the day is the workspace's local day. Neither function commits; the caller does.
 """
 
 import uuid
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy import func, insert, literal, select, union_all
 from sqlalchemy.orm import Session
 
 from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
+from app.identity.models import Workspace
 from app.notifications import service as notifications
-from app.reporting.definitions import BY_KEY, DEFINITIONS_VERSION
-from app.reporting.metrics import Metrics, compute_metrics
-from app.reporting.models import DailyReport
+from app.reporting.definitions import BY_KEY, DEFINITIONS, DEFINITIONS_VERSION
+from app.reporting.metrics import Metrics, compute_metrics, compute_stored_metrics
+from app.reporting.models import DailyReport, ReportItem, ReportSourceGap
 from app.reporting.periods import day_bounds, local_date_of
 
 DAILY_READY = "report.daily_ready"
@@ -44,6 +44,8 @@ class Report:
     # key -> {"value": ..., "breakdown": {...}?}; the stored shape of ``daily_reports.metrics``.
     metrics: dict[str, dict[str, Any]]
     stored: bool
+    snapshot_id: uuid.UUID | None = None
+    evidence_complete: bool = True
 
     def value(self, key: str) -> int | float | None:
         entry = self.metrics.get(key)
@@ -80,6 +82,8 @@ def _from_row(row: DailyReport) -> Report:
         has_simulated_data=row.has_simulated_data,
         metrics=dict(row.metrics),
         stored=True,
+        snapshot_id=row.id,
+        evidence_complete=row.evidence_complete,
     )
 
 
@@ -109,44 +113,91 @@ def _compute(session: Session, ctx: WorkspaceContext, local_date: date, now: dat
     )
 
 
-def _store(session: Session, ctx: WorkspaceContext, report: Report) -> uuid.UUID:
-    """Upsert by ``(workspace_id, local_date)``: regeneration overwrites (INV-08: the records
-    are the source, the previous value is not needed)."""
-    values: dict[str, Any] = {
-        "workspace_id": ctx.workspace_id,
-        "local_date": report.local_date,
-        "timezone": report.timezone,
-        "period_start": report.period_start,
-        "period_end": report.period_end,
-        "metrics": report.metrics,
-        "definitions_version": report.definitions_version,
-        "has_simulated_data": report.has_simulated_data,
-        "generated_at": report.generated_at,
-    }
-    update = {k: v for k, v in values.items() if k not in ("workspace_id", "local_date")}
-    statement = (
-        pg_insert(DailyReport)
-        .values(**values)
-        .on_conflict_do_update(index_elements=["workspace_id", "local_date"], set_=update)
-        .returning(DailyReport.id)
+def stored_report(
+    session: Session, ctx: WorkspaceContext, local_date: date, snapshot_id: uuid.UUID | None = None
+) -> DailyReport | None:
+    statement = select(DailyReport).where(
+        DailyReport.workspace_id == ctx.workspace_id, DailyReport.local_date == local_date
     )
-    return session.execute(statement).scalar_one()
+    if snapshot_id is not None:
+        statement = statement.where(DailyReport.id == snapshot_id)
+    return session.scalar(statement.order_by(DailyReport.revision.desc()).limit(1))
 
 
-def get_report(session: Session, clock: Clock, ctx: WorkspaceContext, local_date: date) -> Report:
+def check_sources(session: Session, ctx: WorkspaceContext, start: datetime, end: datetime) -> None:
+    missing = sorted(
+        set(
+            session.scalars(
+                select(ReportSourceGap.metric_key).where(
+                    ReportSourceGap.workspace_id == ctx.workspace_id,
+                    ReportSourceGap.start_at < end,
+                    ReportSourceGap.end_at >= start,
+                )
+            )
+        )
+    )
+    if missing:
+        raise AppError("REPORT_SOURCES_RETAINED_OUT", metrics=missing)
+
+
+def _capture(session: Session, ctx: WorkspaceContext, row: DailyReport, now: datetime) -> None:
+    """One INSERT/SELECT sees all registry sources at one PostgreSQL statement snapshot."""
+    sources = []
+    for definition in DEFINITIONS:
+        rows = definition.rows(session, ctx, row.period_start, row.period_end, now).subquery()
+        sources.append(
+            select(
+                func.gen_random_uuid(),
+                literal(ctx.workspace_id),
+                literal(row.id),
+                literal(definition.key),
+                *rows.c,
+            )
+        )
+    session.execute(
+        insert(ReportItem).from_select(
+            [
+                "id",
+                "workspace_id",
+                "report_id",
+                "metric_key",
+                "subject_type",
+                "subject_id",
+                "occurred_at",
+                "is_simulated",
+                "link_id",
+                "measure",
+                "group_key",
+            ],
+            union_all(*sources),
+        )
+    )
+
+
+def get_report(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    local_date: date,
+    *,
+    snapshot_id: uuid.UUID | None = None,
+) -> Report:
     """Today live; a past day stored (and stored now if it was never generated)."""
     now = clock.now()
     today = check_not_future(ctx, local_date, now)
+    if snapshot_id is not None:
+        snapshot = stored_report(session, ctx, local_date, snapshot_id)
+        if snapshot is None:
+            raise AppError("NOT_FOUND")
+        return _from_row(snapshot)
     if local_date == today:
+        start, end = day_bounds(local_date, ctx.timezone)
+        check_sources(session, ctx, start, min(now, end))
         return _compute(session, ctx, local_date, now)
-    row = session.scalar(
-        select(DailyReport).where(
-            DailyReport.workspace_id == ctx.workspace_id, DailyReport.local_date == local_date
-        )
-    )
+    row = stored_report(session, ctx, local_date)
     if row is not None:
         return _from_row(row)
-    return generate_daily_report(session, clock, ctx, local_date, scheduled=False)
+    return generate_daily_report(session, clock, ctx, local_date, scheduled=False, if_missing=True)
 
 
 def generate_daily_report(
@@ -156,16 +207,49 @@ def generate_daily_report(
     local_date: date,
     *,
     scheduled: bool,
+    if_missing: bool = False,
 ) -> Report:
-    """Compute and store the report of ``local_date`` (overwriting a stored one).
+    """Capture a new immutable generation; retained-out sources refuse regeneration.
 
     Audits ``report.generated`` in the same transaction. Only a **scheduled** run announces the
     report (``report.daily_ready`` to every ``reports.view`` holder, one per day until read).
     """
     now = clock.now()
     check_not_future(ctx, local_date, now)
-    report = _compute(session, ctx, local_date, now)
-    report_id = _store(session, ctx, report)
+    # Serialize generation numbers, including first-read races, within one tenant.
+    workspace = session.scalar(
+        select(Workspace.id).where(Workspace.id == ctx.workspace_id).with_for_update()
+    )
+    if workspace is None:
+        raise AppError("NOT_FOUND")
+    previous = stored_report(session, ctx, local_date)
+    if if_missing and previous is not None:
+        return _from_row(previous)
+    start, day_end = day_bounds(local_date, ctx.timezone)
+    end = min(now, day_end)
+    check_sources(session, ctx, start, end)
+    row = DailyReport(
+        workspace_id=ctx.workspace_id,
+        local_date=local_date,
+        revision=1 if previous is None else previous.revision + 1,
+        timezone=ctx.timezone,
+        period_start=start,
+        period_end=end,
+        definitions_version=DEFINITIONS_VERSION,
+        generated_at=now,
+        evidence_complete=True,
+    )
+    session.add(row)
+    session.flush()
+    _capture(session, ctx, row, now)
+    # A concurrent retention commit must not yield an apparently complete generation.
+    check_sources(session, ctx, start, end)
+    computed = compute_stored_metrics(session, ctx, row.id)
+    row.metrics = _stored_metrics(computed)
+    row.has_simulated_data = computed.has_simulated_data
+    session.flush()
+    report = _from_row(row)
+    report_id = row.id
     audit.record(
         session,
         ctx,
@@ -195,7 +279,7 @@ def generate_daily_report(
             dedup_key=f"report:{local_date.isoformat()}",
             is_simulated=report.has_simulated_data,
         )
-    return replace(report, stored=True)
+    return report
 
 
 def known_keys(report: Report) -> list[str]:

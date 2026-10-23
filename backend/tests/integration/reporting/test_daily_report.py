@@ -77,7 +77,7 @@ def test_messaging_window_matches_the_inbox() -> None:
     assert definitions.MESSAGING_WINDOW == INBOX_MESSAGING_WINDOW
 
 
-def test_the_model_has_the_documented_unique_key(db_session: Session) -> None:
+def test_the_model_allows_generations_but_not_duplicate_revisions(db_session: Session) -> None:
     workspace = create_workspace(db_session)
     start, end = day_bounds(date(2026, 3, 10), workspace.timezone)
     values = {
@@ -90,10 +90,11 @@ def test_the_model_has_the_documented_unique_key(db_session: Session) -> None:
         "definitions_version": "1",
         "generated_at": end,
     }
-    db_session.add(DailyReport(**values))
+    db_session.add(DailyReport(**values, revision=1))
+    db_session.add(DailyReport(**values, revision=2))
     db_session.flush()
-    db_session.add(DailyReport(**values))
-    with pytest.raises(Exception, match="uq_daily_reports_workspace_id_local_date"):
+    db_session.add(DailyReport(**values, revision=2))
+    with pytest.raises(Exception, match="uq_daily_reports_workspace_id_local_date_revision"):
         db_session.flush()
     db_session.rollback()
 

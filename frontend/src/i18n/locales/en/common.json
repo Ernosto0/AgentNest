@@ -293,7 +293,7 @@
     },
     "ACCOUNT_NEEDS_REAUTH": {
       "what": "The Instagram connection must be renewed.",
-      "next": "Press Reconnect in Settings."
+      "next": "Open Instagram connection and reconnect the account."
     },
     "OUTCOME_UNKNOWN": {
       "what": "We are still checking whether it was published.",
@@ -322,6 +322,14 @@
     "LAST_OWNER_REQUIRED": {
       "what": "A workspace must keep at least one owner.",
       "next": "Make someone else an owner first, then try again."
+    },
+    "REPORT_EVIDENCE_UNAVAILABLE": {
+      "what": "The detail records for this older report were not saved.",
+      "next": "Regenerate it if the source records are still available. The existing report is preserved."
+    },
+    "REPORT_SOURCES_RETAINED_OUT": {
+      "what": "This report cannot be fully regenerated because retained-out source records were deleted.",
+      "next": "Use an existing saved report or choose another day."
     }
   },
   "connections": {

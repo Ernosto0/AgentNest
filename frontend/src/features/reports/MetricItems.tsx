@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import type { MetricItem } from "@/api/types";
 import { NotFoundPage } from "@/app/NotFoundPage";
 import { Button } from "@/components/Button";
@@ -22,9 +22,12 @@ export function MetricItems() {
 function MetricItemsScreen({ date, metricKey }: { date: string; metricKey: string }) {
   const { t, i18n } = useTranslation();
   const { workspace } = useCurrentWorkspace();
-  const items = useMetricItems(workspace.id, date, metricKey);
+  const [params] = useSearchParams();
+  const snapshot = params.get("snapshot_id");
+  const items = useMetricItems(workspace.id, date, metricKey, snapshot);
   // The report carries the shortcut to an existing screen, where there is an exact one.
-  const report = useDailyReport(workspace.id, date);
+  const pinned = items.data?.pages[0]?.snapshot_id ?? snapshot;
+  const report = useDailyReport(workspace.id, date, pinned);
   const screen = report.data?.metrics.find((metric) => metric.key === metricKey)?.screen_link?.route;
   const rows = items.data?.pages.flatMap((page) => page.items) ?? [];
   const value = items.data?.pages[0]?.value ?? null;
@@ -41,7 +44,7 @@ function MetricItemsScreen({ date, metricKey }: { date: string; metricKey: strin
   return (
     <div className="flex flex-col gap-5">
       <Link
-        to={`/w/${workspace.id}/more/reports${date ? `?date=${date}` : ""}`}
+        to={`/w/${workspace.id}/more/reports?date=${date}${pinned ? `&snapshot_id=${pinned}` : ""}`}
         className="text-sm font-medium text-indigo-700 underline underline-offset-2"
       >
         {t("reports.backToReport")}

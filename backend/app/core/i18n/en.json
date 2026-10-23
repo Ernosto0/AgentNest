@@ -92,7 +92,7 @@
   "errors.CAPABILITY_MISSING.what": "Permission for this action was not granted.",
   "errors.CAPABILITY_MISSING.next": "Reconnect the account and allow it.",
   "errors.ACCOUNT_NEEDS_REAUTH.what": "The Instagram connection must be renewed.",
-  "errors.ACCOUNT_NEEDS_REAUTH.next": "Press Reconnect in Settings.",
+  "errors.ACCOUNT_NEEDS_REAUTH.next": "Open Instagram connection and reconnect the account.",
   "errors.OUTCOME_UNKNOWN.what": "We are still checking whether it was published.",
   "errors.OUTCOME_UNKNOWN.next": "Wait a moment. Do not post it again by hand yet.",
   "errors.OUTCOME_UNCONFIRMED.what": "We could not confirm whether it was published.",
@@ -264,5 +264,9 @@
   "activity.resource.operation": "Operation",
   "activity.resource.operation.send_reply": "Reply sending",
   "activity.resource.operation.publish_content": "Post publishing",
-  "activity.resource.operation.refresh_token": "Connection refresh"
+  "activity.resource.operation.refresh_token": "Connection refresh",
+  "errors.REPORT_EVIDENCE_UNAVAILABLE.what": "The detail records for this older report were not saved.",
+  "errors.REPORT_EVIDENCE_UNAVAILABLE.next": "Regenerate it if the source records are still available. The existing report is preserved.",
+  "errors.REPORT_SOURCES_RETAINED_OUT.what": "This report cannot be fully regenerated because retained-out source records were deleted.",
+  "errors.REPORT_SOURCES_RETAINED_OUT.next": "Use an existing saved report or choose another day."
 }

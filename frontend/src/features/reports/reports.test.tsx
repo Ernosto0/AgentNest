@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DailyReport as Report } from "@/api/types";
 import { ME, READINESS, WS_GOLKENT, workspace } from "@/test/fixtures";
-import { json, mockApi } from "@/test/mockApi";
+import { json, mockApi, problem } from "@/test/mockApi";
 import { REPORT_BASE, item, metric, metricItems, report } from "@/test/reportFixtures";
 import { renderApp } from "@/test/renderApp";
 import { shiftDay, todayIn } from "./dates";
@@ -38,6 +38,27 @@ function routes(extra: Record<string, (r: never) => Response> = {}, me = ME) {
 }
 
 describe("daily report", () => {
+  it("keeps the saved numbers and explains missing legacy evidence", async () => {
+    mockApi(routes({ [`GET ${REPORT_BASE}`]: () => json(report(YESTERDAY, { evidence_complete: false })) }));
+    renderApp(`${REPORT_URL}?date=${YESTERDAY}`);
+    expect(await screen.findByText(/Bu eski raporun ayrıntı kayıtları saklanmamış/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Gelen mesaj: 15" })).toBeInTheDocument();
+  });
+
+  it("preserves a saved report and explains why retention prevents regeneration", async () => {
+    mockApi(routes({
+      [`GET ${REPORT_BASE}`]: () => json(report(YESTERDAY)),
+      [`POST ${REPORT_BASE}/generate`]: () => problem(409, "REPORT_SOURCES_RETAINED_OUT"),
+    }));
+    renderApp(`${REPORT_URL}?date=${YESTERDAY}`);
+    await screen.findByRole("link", { name: "Gelen mesaj: 15" });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Yeniden oluştur" }));
+    const error = await screen.findByRole("alert");
+    expect(error).toHaveTextContent("bu rapor eksiksiz yeniden oluşturulamıyor");
+    expect(error).toHaveTextContent("Daha önce kaydedilmiş raporu kullanın veya başka bir gün seçin.");
+    expect(screen.getByRole("link", { name: "Gelen mesaj: 15" })).toBeInTheDocument();
+  });
+
   it("renders every number as a link to its drill-down and hides what is zero", async () => {
     mockApi(routes({ [`GET ${REPORT_BASE}`]: () => json(report(TODAY)) }));
     renderApp(REPORT_URL);
@@ -203,6 +224,41 @@ describe("daily report", () => {
 describe("the records behind a number", () => {
   const DRILL = `${REPORT_BASE}/${YESTERDAY}/metrics/inbound_messages`;
   const ROUTE = `${REPORT_URL}/${YESTERDAY}/inbound_messages`;
+
+  it("pins requests, pagination and return navigation to the linked report generation", async () => {
+    const snapshot = "b0000000-0000-4000-8000-000000000001";
+    const requests = mockApi(routes({
+      [`GET ${DRILL}`]: () => {
+        const search = requests.at(-1)!.search;
+        return json({
+          ...metricItems("inbound_messages", 2, search.includes("cursor=next") ? [item(2)] : [item(1)], search.includes("cursor=next") ? null : "next"),
+          snapshot_id: snapshot,
+        });
+      },
+      [`GET ${REPORT_BASE}`]: () => json(report(YESTERDAY, { snapshot_id: snapshot })),
+    }));
+    renderApp(`${ROUTE}?snapshot_id=${snapshot}`);
+    await screen.findByTestId("metric-item");
+    await userEvent.setup().click(screen.getByRole("button", { name: "Daha fazla göster" }));
+    await waitFor(() => expect(screen.getAllByTestId("metric-item")).toHaveLength(2));
+    expect(requests.filter((r) => r.path === DRILL).every((r) => r.search.includes(`snapshot_id=${snapshot}`))).toBe(true);
+    expect(requests.some((r) => r.path === DRILL && r.search.includes("cursor=next"))).toBe(true);
+    const back = screen.getByRole("link", { name: "Rapora dön" });
+    expect(back).toHaveAttribute("href", `${REPORT_URL}?date=${YESTERDAY}&snapshot_id=${snapshot}`);
+    await userEvent.setup().click(back);
+    await screen.findByRole("heading", { name: "Günlük rapor" });
+    expect(requests.filter((r) => r.path === REPORT_BASE).every((r) => r.search.includes(`snapshot_id=${snapshot}`))).toBe(true);
+  });
+
+  it("explains unavailable legacy detail instead of showing current records", async () => {
+    mockApi(routes({
+      [`GET ${DRILL}`]: () => problem(409, "REPORT_EVIDENCE_UNAVAILABLE"),
+      [`GET ${REPORT_BASE}`]: () => json(report(YESTERDAY, { evidence_complete: false })),
+    }));
+    renderApp(ROUTE);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Bu eski raporun ayrıntı kayıtları saklanmamış.");
+    expect(screen.queryByTestId("metric-item")).toBeNull();
+  });
 
   it("lists as many records as the number says, each linking to its screen", async () => {
     const rows = [item(1), item(2, { is_simulated: true }), item(3)];

@@ -55,6 +55,7 @@ describe("the connections screen", () => {
     // The error code never reaches the reader: the catalog text does.
     const error = screen.getByTestId("account-last-error");
     expect(error).toHaveTextContent("Instagram bağlantısının yenilenmesi gerekiyor.");
+    expect(error).toHaveTextContent("Instagram bağlantısı ekranını açıp yeniden bağlanın.");
     expect(error).not.toHaveTextContent("ACCOUNT_NEEDS_REAUTH");
     const capabilities = screen.getByTestId("account-capabilities");
     expect(capabilities).toHaveTextContent("Mesajlaşma, Gönderi yayınlama");

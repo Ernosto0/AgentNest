@@ -1248,7 +1248,7 @@ export interface paths {
         put?: never;
         /**
          * Generate Daily Report
-         * @description Compute the day again and store it, overwriting the stored report.
+         * @description Capture a new generation without overwriting historical evidence.
          */
         post: operations["generate_daily_report_api_v1_workspaces__workspace_id__reports_daily_generate_post"];
         delete?: never;
@@ -2074,6 +2074,8 @@ export interface components {
         DailyReportOut: {
             /** Definitions Version */
             definitions_version: string;
+            /** Evidence Complete */
+            evidence_complete: boolean;
             /**
              * Generated At
              * Format: date-time
@@ -2100,6 +2102,8 @@ export interface components {
              * Format: date-time
              */
             period_start: string;
+            /** Snapshot Id */
+            snapshot_id: string | null;
             summary: components["schemas"]["SummaryOut"];
             /** Timezone */
             timezone: string;
@@ -2638,6 +2642,8 @@ export interface components {
             key: string;
             /** Next Cursor */
             next_cursor: string | null;
+            /** Snapshot Id */
+            snapshot_id: string | null;
             /** Value */
             value: number | null;
         };
@@ -6170,6 +6176,7 @@ export interface operations {
         parameters: {
             query?: {
                 date?: string | null;
+                snapshot_id?: string | null;
             };
             header?: never;
             path: {
@@ -6238,6 +6245,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                snapshot_id?: string | null;
                 limit?: number;
             };
             header?: never;

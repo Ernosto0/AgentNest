@@ -2041,6 +2041,10 @@
             "title": "Definitions Version",
             "type": "string"
           },
+          "evidence_complete": {
+            "title": "Evidence Complete",
+            "type": "boolean"
+          },
           "generated_at": {
             "format": "date-time",
             "title": "Generated At",
@@ -2076,6 +2080,18 @@
             "title": "Period Start",
             "type": "string"
           },
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Id"
+          },
           "summary": {
             "$ref": "#/components/schemas/SummaryOut"
           },
@@ -2085,6 +2101,8 @@
           }
         },
         "required": [
+          "snapshot_id",
+          "evidence_complete",
           "local_date",
           "timezone",
           "period_start",
@@ -3546,6 +3564,18 @@
             ],
             "title": "Next Cursor"
           },
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Id"
+          },
           "value": {
             "anyOf": [
               {
@@ -3562,6 +3592,7 @@
           }
         },
         "required": [
+          "snapshot_id",
           "key",
           "value",
           "items",
@@ -10568,6 +10599,23 @@
               ],
               "title": "Date"
             }
+          },
+          {
+            "in": "query",
+            "name": "snapshot_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Snapshot Id"
+            }
           }
         ],
         "responses": {
@@ -10600,7 +10648,7 @@
     },
     "/api/v1/workspaces/{workspace_id}/reports/daily/generate": {
       "post": {
-        "description": "Compute the day again and store it, overwriting the stored report.",
+        "description": "Capture a new generation without overwriting historical evidence.",
         "operationId": "generate_daily_report_api_v1_workspaces__workspace_id__reports_daily_generate_post",
         "parameters": [
           {
@@ -10700,6 +10748,23 @@
                 }
               ],
               "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "snapshot_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Snapshot Id"
             }
           },
           {

@@ -6,6 +6,7 @@ drill-down is 403. Generating needs the full ``reports.view``. The summary is re
 reader's UI language. A foreign workspace id is a 404 (INV-01).
 """
 
+import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
@@ -64,12 +65,18 @@ def _present(report: service.Report, ctx: WorkspaceContext, locale: str | None) 
                 kind=definition.kind,
                 section=definition.section,
                 breakdown=None if breakdown is None else {k: int(v) for k, v in breakdown.items()},
-                link=ReportLinkOut(**links.metric_link(ctx.workspace_id, report.local_date, key)),
+                link=ReportLinkOut(
+                    **links.metric_link(
+                        ctx.workspace_id, report.local_date, key, report.snapshot_id
+                    )
+                ),
                 screen_link=_link(links.screen_link(ctx.workspace_id, key)),
             )
         )
     summary = build_summary(report.metrics, keys, locale)
     return DailyReportOut(
+        snapshot_id=report.snapshot_id,
+        evidence_complete=report.evidence_complete,
         local_date=report.local_date,
         timezone=report.timezone,
         period_start=report.period_start,
@@ -95,6 +102,7 @@ def _present(report: service.Report, ctx: WorkspaceContext, locale: str | None) 
 @router.get("", response_model=DailyReportOut)
 def get_daily_report(
     local_date: date | None = Query(default=None, alias="date"),
+    snapshot_id: uuid.UUID | None = None,
     ctx: WorkspaceContext = Depends(require_membership(VIEW_INBOX)),
     auth: AuthenticatedSession = Depends(current_auth),
     db: Session = Depends(get_db),
@@ -102,7 +110,7 @@ def get_daily_report(
 ) -> DailyReportOut:
     """Today live, a past day as stored (stored now if it never was)."""
     day = local_date or local_date_of(clock.now(), ctx.timezone)
-    report = service.get_report(db, clock, ctx, day)
+    report = service.get_report(db, clock, ctx, day, snapshot_id=snapshot_id)
     db.commit()  # a past day that was not stored yet has just been
     return _present(report, ctx, auth.user.ui_locale)
 
@@ -115,7 +123,7 @@ def generate_daily_report(
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
 ) -> DailyReportOut:
-    """Compute the day again and store it, overwriting the stored report."""
+    """Capture a new generation without overwriting historical evidence."""
     report = service.generate_daily_report(db, clock, ctx, body.date, scheduled=False)
     db.commit()
     return _present(report, ctx, auth.user.ui_locale)
@@ -126,6 +134,7 @@ def get_metric_items(
     local_date: date,
     key: str,
     cursor: str | None = None,
+    snapshot_id: uuid.UUID | None = None,
     limit: int = Query(default=drilldown.DEFAULT_LIMIT, ge=1, le=drilldown.MAX_LIMIT),
     ctx: WorkspaceContext = Depends(require_membership(VIEW_INBOX)),
     auth: AuthenticatedSession = Depends(current_auth),
@@ -138,9 +147,19 @@ def get_metric_items(
     if key not in INBOX_KEYS and not has_permission(ctx.role, VIEW):
         raise AppError("FORBIDDEN", permission=VIEW)
     result = drilldown.metric_items(
-        db, clock, ctx, local_date, key, locale=auth.user.ui_locale, cursor=cursor, limit=limit
+        db,
+        clock,
+        ctx,
+        local_date,
+        key,
+        locale=auth.user.ui_locale,
+        cursor=cursor,
+        limit=limit,
+        snapshot_id=snapshot_id,
     )
+    db.commit()  # the first direct drill-down of an unstored past day captures its report
     return MetricItemsOut(
+        snapshot_id=result.snapshot_id,
         key=result.key,
         value=result.value,
         items=[

@@ -50,6 +50,8 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `CONFLICT_STATE` | 409 | — | This action is not possible in the current state |
 | `INVITE_INVALID` | 400 | — | Invite is unknown, expired, revoked or already used / ask the owner for a new link |
 | `LAST_OWNER_REQUIRED` | 409 | — | The workspace needs an owner / promote another member before demoting or removing the last owner |
+| `REPORT_EVIDENCE_UNAVAILABLE` | 409 | no | Legacy saved report has no captured membership / regenerate only if sources remain; existing values are preserved |
+| `REPORT_SOURCES_RETAINED_OUT` | 409 | no | Deleted source records prevent complete regeneration (`params.metrics`) / use an existing snapshot or another date |
 | `APPROVAL_ALREADY_DECIDED` | 409 | — | Already approved or rejected |
 | `APPROVAL_EXPIRED` | 409 | — | The approval expired / request a new draft or schedule |
 | `APPROVAL_STALE` | 409 | — | Content changed after you opened it / review the new version |
@@ -61,7 +63,7 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `MEDIA_TOO_LARGE` | 413 | — | The file exceeds 8 MB |
 | `MESSAGING_WINDOW_CLOSED` | — | no | Instagram allows replies only within 24 h / reply in the Instagram app |
 | `ACCOUNT_NOT_CONNECTED` | — | no | No Instagram account connected / connect in Settings |
-| `ACCOUNT_NEEDS_REAUTH` | — | no | Instagram connection must be renewed / press Reconnect |
+| `ACCOUNT_NEEDS_REAUTH` | — | no | Instagram connection must be renewed / open Instagram connection and reconnect |
 | `ACCOUNT_MISMATCH` | 400 | — | A different Instagram account was authorised / sign in with the original account |
 | `CAPABILITY_MISSING` | — | no | Permission for this action was not granted / reconnect and allow it |
 | `PROVIDER_UNAVAILABLE` | — | yes | Instagram is not reachable / we will retry automatically |

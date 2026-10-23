@@ -4,17 +4,21 @@ import type { AppError } from "@/api/errors";
 import type { DailyReport, MetricItems } from "@/api/types";
 
 /** `date` is a local day (`YYYY-MM-DD`); null asks for today, computed live by the server. */
-export const reportKey = (ws: string, date: string | null) => ["report", ws, date ?? "today"] as const;
-export const metricItemsKey = (ws: string, date: string, key: string) =>
-  ["report-items", ws, date, key] as const;
+export const reportKey = (ws: string, date: string | null, snapshot: string | null = null) =>
+  ["report", ws, date ?? "today", snapshot] as const;
+export const metricItemsKey = (ws: string, date: string, key: string, snapshot: string | null = null) =>
+  ["report-items", ws, date, key, snapshot] as const;
 
-export function useDailyReport(ws: string, date: string | null) {
+export function useDailyReport(ws: string, date: string | null, snapshot: string | null = null) {
   return useQuery<DailyReport, AppError>({
-    queryKey: reportKey(ws, date),
+    queryKey: reportKey(ws, date, snapshot),
     queryFn: () =>
       unwrap(
         api.GET("/api/v1/workspaces/{workspace_id}/reports/daily", {
-          params: { path: { workspace_id: ws }, query: date ? { date } : {} },
+          params: {
+            path: { workspace_id: ws },
+            query: { ...(date ? { date } : {}), ...(snapshot ? { snapshot_id: snapshot } : {}) },
+          },
         }),
       ),
   });
@@ -40,16 +44,19 @@ export function useGenerateReport(ws: string) {
 }
 
 /** The records behind one number, newest first, one page at a time. */
-export function useMetricItems(ws: string, date: string, key: string) {
+export function useMetricItems(ws: string, date: string, key: string, snapshot: string | null = null) {
   return useInfiniteQuery<MetricItems, AppError, { pages: MetricItems[] }, readonly unknown[], string | null>({
-    queryKey: metricItemsKey(ws, date, key),
+    queryKey: metricItemsKey(ws, date, key, snapshot),
     initialPageParam: null,
     queryFn: ({ pageParam }) =>
       unwrap(
         api.GET("/api/v1/workspaces/{workspace_id}/reports/daily/{local_date}/metrics/{key}", {
           params: {
             path: { workspace_id: ws, local_date: date, key },
-            query: pageParam ? { cursor: pageParam } : {},
+            query: {
+              ...(pageParam ? { cursor: pageParam } : {}),
+              ...(snapshot ? { snapshot_id: snapshot } : {}),
+            },
           },
         }),
       ),

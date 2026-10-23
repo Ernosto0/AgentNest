@@ -43,6 +43,8 @@ erDiagram
   workspaces ||--o{ notifications : sends
   workspaces ||--o{ audit_logs : records
   workspaces ||--o{ daily_reports : has
+  daily_reports ||--o{ report_items : preserves
+  workspaces ||--o{ report_source_gaps : tracks
   workspaces ||--o{ automation_policies : configures
 ```
 
@@ -452,7 +454,11 @@ The facts a text states are recorded in `fact_references` (`referrer_type = 'con
 
 **`channel_links`** (Phase 9, user-level, not tenant): `id`, `user_id`, `channel`, `external_user_id`, `external_chat_id`, `default_workspace_id`, `status` (`active`, `revoked`), `linked_at`, `revoked_at`. `unique (channel, external_user_id) where status='active'`.
 
-**`daily_reports`**: `id`, `workspace_id`, `local_date` (date), `timezone`, `period_start`, `period_end` (UTC), `metrics` jsonb (`{key: {"value": number | null, "breakdown"?: {action: count}}}` for the keys of the registry in `definitions_version`), `definitions_version` text, `has_simulated_data` boolean, `generated_at`. `unique (workspace_id, local_date)` (regeneration overwrites; the previous value is not needed because records are the source).
+**`daily_reports`**: `id` (API `snapshot_id`), `workspace_id`, `local_date`, `revision`, `evidence_complete`, `timezone`, `period_start`, `period_end`, `metrics` jsonb (`{key: {value, breakdown?}}`), `definitions_version`, `has_simulated_data`, `generated_at`. Each generation is immutable after creation. Unique `(workspace_id, local_date, revision)` orders generations independently of clock/UUID ties; `(workspace_id, id)` supports tenant FKs. Generation takes a workspace row lock to allocate the next revision; ordinary historical reads select the latest revision. Regeneration inserts a new row and preserves all prior evidence.
+
+**`report_items`**: `id`, `workspace_id`, `report_id`, `metric_key`, plus the registry's seven columns: `subject_type`, `subject_id`, `occurred_at`, `is_simulated`, `link_id`, `measure` numeric, `group_key`. Unique `(workspace_id, report_id, metric_key, subject_type, subject_id)`; composite FK `(workspace_id, report_id)` -> `daily_reports`, cascade on workspace/report deletion. Source IDs have no source FKs, so retention cannot cascade away evidence. No message/draft text, titles, handles, raw payloads or provider credentials are copied. All metrics are captured by one INSERT/SELECT and aggregated from these rows in SQL.
+
+**`report_source_gaps`**: `id`, `workspace_id`, `metric_key`, `start_at`, `end_at` (inclusive UTC range), unique `(workspace_id, metric_key, start_at, end_at)`. Failed inbound-event deletion writes point gaps at `coalesce(processed_at, received_at)` in the same batch transaction; these mark days that cannot be completely regenerated. Gaps contain no content or source IDs. Workspace deletion cascades both evidence and gap rows.
 
 ### 3.9 Simulator tables (Phase 4–5; written only by `MockInstagramProvider`)
 
@@ -468,7 +474,7 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 
 ## 4. Data lifecycle summary
 
-**Phase 6 migrations (in order).** `0012` (`20261021_0012_phase_6_daily_reports.py`, after `0011`) creates `daily_reports` (§3.8), its workspace FK, `unique (workspace_id, id)`, `unique (workspace_id, local_date)` and workspace index. `0013` (`20261021_0013_phase_6_circuit_window.py`, after `0012`) adds nullable `social_accounts.failure_window_started_at` (§3.5); no counter backfill. `0014` (`20261021_0014_phase_6_invites.py`, after `0013`, current head) creates `invites` (§3.1), with workspace cascade, unique token hash, role check, workspace/id uniqueness and workspace index. Apply all with `uv run alembic upgrade head`.
+**Phase 6 migrations (in order).** `0012` creates daily reports; `0013` adds the circuit window; `0014` creates invites. `0015` (`20261022_0015_phase_6_report_snapshots.py`, after `0014`, current head) replaces the report day unique key with `(workspace_id, local_date, revision)`, adds revision/evidence completeness, and creates `report_items` and `report_source_gaps`. Existing reports keep their IDs and aggregates as revision 1 with `evidence_complete=false`: mutable sources cannot reconstruct their original membership. If pre-upgrade system-wide cleanup audits show deleted webhook rows, migration conservatively marks history up to the last such cleanup as incomplete for then-existing workspaces; those old audits cannot identify the actual affected tenant/day. Downgrade refuses when multiple generations exist rather than discarding history. Apply with `uv run alembic upgrade head`.
 
 | Data | Created by | Mutable? | Retention default ([security-and-privacy.md §8](security-and-privacy.md)) |
 |---|---|---|---|
@@ -479,5 +485,7 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 | Audit logs | All services | Never | 2 years in the policy; **no purge in Phase 6** (needs an ADR with the Phase 8 DB privileges) |
 | Notifications | Services | `read_at` only | Deleted 90 days after they were read; an unread one is never deleted (implemented, Phase 6) |
 | Jobs | Queue | Status | Succeeded/cancelled deleted after 7 days; dead after 90 (implemented, Phase 6) |
+| Report generations / contributing evidence | Reporting | Immutable after creation; regeneration inserts a new generation | Lifetime of workspace; no copied source text or payloads |
+| Report source gaps | Retention; migration for legacy uncertainty | Insert-only completeness markers | Lifetime of workspace |
 | Media | Uploads | Status (`ready` to `deleted`, by `media_cleanup`) | Orphans after 7 days; with content otherwise; published items' media 90 days after publication (implemented, Phase 6) |
 | Tokens | OAuth | Rotated | Deleted immediately on disconnect |

@@ -63,10 +63,10 @@ def test_a_past_day_is_computed_and_stored_once_then_re_read(report_env: ReportE
     assert _rows(env) == 1 and _audits(env) == 1
 
 
-def test_generate_overwrites_the_stored_report(report_env: ReportEnv) -> None:
+def test_generate_preserves_the_previous_generation(report_env: ReportEnv) -> None:
     env = report_env
     ctx = env.scenario.ctx
-    service.generate_daily_report(env.env.session, env.clock, ctx, DAY, scheduled=False)
+    first = service.generate_daily_report(env.env.session, env.clock, ctx, DAY, scheduled=False)
     _inbound(env)
     env.clock.advance(minutes=5)
 
@@ -77,8 +77,12 @@ def test_generate_overwrites_the_stored_report(report_env: ReportEnv) -> None:
 
     assert regenerated.value("inbound_messages") == EXPECTED["inbound_messages"] + 1
     assert regenerated.generated_at == env.clock.now()
-    assert _rows(env) == 1  # one row per workspace and day
-    stored = env.env.session.scalars(select(DailyReport)).one()
+    assert _rows(env) == 2
+    assert regenerated.snapshot_id != first.snapshot_id
+    original = env.env.session.get(DailyReport, first.snapshot_id)
+    assert original is not None and original.metrics == first.metrics
+    stored = service.stored_report(env.env.session, ctx, DAY)
+    assert stored is not None and stored.revision == 2
     assert stored.metrics["inbound_messages"]["value"] == EXPECTED["inbound_messages"] + 1
     assert _audits(env) == 2
     # The stored copy is what a later read returns.

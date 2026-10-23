@@ -61,7 +61,7 @@ Format: *Given* (state) / *When* (action) / *Then* (observable result). "Demo gy
 |---|---|---|
 | AC-E1 | Given a seeded set of records with known counts (fixture), the daily report metrics equal the expected values exactly, using the workspace-local day boundaries. | `tests/integration/reporting/test_daily_report.py` |
 | AC-E2 | Records just before local midnight and just after are attributed to the correct days (non-UTC timezone). | same |
-| AC-E3 | Every metric links to a list whose item count equals the metric. | `e2e/scenario-e.spec.ts` |
+| AC-E3 | Every count metric links to its contributing items, whose count equals its value. The median metric links to the original durations whose median, rounded to one decimal, equals its value. Saved report membership survives state changes, regeneration and source retention; pagination stays on one generation. | `e2e/scenario-e.spec.ts`; `tests/integration/reporting/test_snapshot_lifecycle.py` |
 | AC-E4 | The command "Bugün kaç DM geldi?" returns the same number as the report's inbound message metric. | `tests/integration/commands/test_activity_query.py` |
 | AC-E5 | A report over simulated data shows the SİMÜLASYON label. | `e2e/scenario-e.spec.ts` |
 

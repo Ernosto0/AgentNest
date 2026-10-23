@@ -38,6 +38,8 @@ class SummaryOut(BaseModel):
 
 
 class DailyReportOut(BaseModel):
+    snapshot_id: uuid.UUID | None
+    evidence_complete: bool
     local_date: date
     timezone: str
     period_start: datetime
@@ -62,12 +64,13 @@ class MetricItemOut(BaseModel):
     label: str
     occurred_at: datetime | None
     is_simulated: bool
-    # The response time in minutes of an answered burst (``median_first_response_minutes`` only).
+    # Original response duration in minutes; round the aggregated median, not each measure.
     measure: float | None
     link: ReportLinkOut | None
 
 
 class MetricItemsOut(BaseModel):
+    snapshot_id: uuid.UUID | None
     key: str
     value: int | float | None
     items: list[MetricItemOut]

@@ -136,12 +136,12 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 | Notifications | 90 days after read |
 | Jobs | succeeded/cancelled: 7 days; dead: 90 days |
 | Audit logs | 2 years (**not enforced in Phase 6**: audit rows are never deleted, see below) |
-| Daily reports | lifetime of workspace (aggregates only) |
+| Daily reports and contributing evidence | lifetime of workspace; immutable aggregates and content-free membership/measurements, never copied message text or webhook payloads |
 | Media assets | orphaned 7 days; otherwise with their content item; published items' media 90 days after publication (`media_cleanup`, Phase 6) |
 
-**Implemented in Phase 6 (`app/retention/`, plan H17).** The job `retention_cleanup` runs once a day (from 02:00 UTC, dedup `retention:{date}`). The defaults above are global settings (`RETENTION_*`, [environment-variables.md](../operations/environment-variables.md)); per-workspace values are deferred. Every rule works in batches of 1 000 rows, one statement and one transaction per batch, and the run is idempotent:
+**Implemented in Phase 6 (`app/retention/`, plan H17).** The job `retention_cleanup` runs once a day (from 02:00 UTC, dedup `retention:{date}`). The defaults above are global settings (`RETENTION_*`, [environment-variables.md](../operations/environment-variables.md)); per-workspace values are deferred. Every rule works in batches of 1 000 rows, one short transaction per batch (failed-event deletion also inserts its source-gap markers), and the run is idempotent:
 
-- `inbound_events.payload` is nulled after 30 days (from `received_at`), the row is deleted after 90 days.
+- `inbound_events.payload` is nulled after 30 days (from `received_at`), the row is deleted after 90 days. Each deleted failed event records a content-free point gap for `integration_errors` at its reporting timestamp in the same transaction. Saved `report_items` survive independently; regeneration over a source gap is refused explicitly. Migration 0015 treats pre-upgrade count-only deletion audits conservatively because their tenant/day cannot be recovered.
 - `agent_runs.input_snapshot` is nulled after 30 days; a run that is still `queued` or `running` keeps it.
 - `messages.text` (age: `provider_timestamp`, the clock every report uses) and `reply_drafts.text`, `template`, `suggestion_text` (age: `created_at`) are nulled after 365 days. This is the **only** sanctioned write to those columns after creation (INV-17): the row, its direction, time, flags and links stay, so no report count changes. A report is a stored row of its own and is not touched; regenerating a day after the cleanup counts the same messages, except `integration_errors`, which reads failed `inbound_events` rows and so loses them after 90 days.
 - Notifications are deleted 90 days after they were read; an unread notification is never deleted.

@@ -5,17 +5,19 @@ INV-08: nothing here is estimated or model-generated. INV-01: every row set filt
 timezone (``app.reporting.periods``).
 """
 
+import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Numeric, cast, func, select, text
+from sqlalchemy import Numeric, Subquery, cast, func, select, text
 from sqlalchemy.orm import Session
 
 from app.core.context import WorkspaceContext
 from app.reporting.definitions import DEFINITIONS, DEFINITIONS_VERSION, Definition
+from app.reporting.models import ReportItem
 
 MEDIAN_DECIMALS = 1
 
@@ -66,6 +68,10 @@ def _compute_one(
     now: datetime,
 ) -> Metric:
     rows = definition.rows(session, ctx, start, end, now).subquery("rows")
+    return _aggregate(session, definition, rows)
+
+
+def _aggregate(session: Session, definition: Definition, rows: Subquery) -> Metric:
     if definition.value == "median":
         stmt = select(
             func.count(),
@@ -87,6 +93,28 @@ def _compute_one(
         ).all()
         breakdown = {str(key): int(n) for key, n in sorted(grouped)}
     return Metric(definition.key, int(count), breakdown, bool(simulated))
+
+
+def compute_stored_metrics(
+    session: Session, ctx: WorkspaceContext, report_id: uuid.UUID
+) -> Metrics:
+    """SQL aggregations over the captured membership, never a second read of live state."""
+    with _read_only(session):
+        computed = tuple(
+            _aggregate(
+                session,
+                definition,
+                select(ReportItem)
+                .where(
+                    ReportItem.workspace_id == ctx.workspace_id,
+                    ReportItem.report_id == report_id,
+                    ReportItem.metric_key == definition.key,
+                )
+                .subquery("rows"),
+            )
+            for definition in DEFINITIONS
+        )
+    return Metrics(computed)
 
 
 @contextmanager

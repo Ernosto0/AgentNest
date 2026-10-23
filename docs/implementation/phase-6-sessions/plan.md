@@ -1,5 +1,7 @@
 # Phase 6 implementation plan: Reports, activity, failure UX and demo completion
 
+**Owner Q&A follow-up (2026-10-22):** [phase-6-qa.md](phase-6-qa.md) supersedes H1/H3 historical storage: migration 0015 appends immutable report generations and content-free membership, pins links/cursors, and rejects regeneration after source loss. It also aligns reconnect wording. Original session briefs and verification reports below remain historical records.
+
 ## Context
 Phases 1–5 are on `main` (latest `6cd3b05`, Q10). Phase 5 is treated as **accepted** with the owner's follow-ups Q1, Q3, Q4 and Q10 already committed. Phase 5 open questions Q2, Q5–Q9 are still open (see §6). Phase 6 completes the **local MVP**:
 

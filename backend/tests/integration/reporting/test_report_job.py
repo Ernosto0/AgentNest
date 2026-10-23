@@ -159,7 +159,7 @@ def test_the_job_stores_the_report_and_announces_it_once(
         select(Notification).where(Notification.type == "report.daily_ready")
     ).all()
     assert len(notices) == 2  # owner and manager
-    # Re-running the same job (a duplicate delivery) overwrites, and does not announce again.
+    # Re-running captures another immutable generation, without another unread announcement.
     [job] = _jobs(db_session)
     job.status, job.finished_at = "queued", None
     db_session.commit()
@@ -168,7 +168,7 @@ def test_the_job_stores_the_report_and_announces_it_once(
         == 1
     )
     db_session.expire_all()
-    assert db_session.scalar(select(func.count()).select_from(DailyReport)) == 1
+    assert db_session.scalar(select(func.count()).select_from(DailyReport)) == 2
     assert (
         db_session.scalar(
             select(func.count())

@@ -293,7 +293,7 @@
     },
     "ACCOUNT_NEEDS_REAUTH": {
       "what": "Instagram bağlantısının yenilenmesi gerekiyor.",
-      "next": "Ayarlar'da Yeniden bağla'ya basın."
+      "next": "Instagram bağlantısı ekranını açıp yeniden bağlanın."
     },
     "OUTCOME_UNKNOWN": {
       "what": "Yayınlanıp yayınlanmadığını hâlâ kontrol ediyoruz.",
@@ -322,6 +322,14 @@
     "LAST_OWNER_REQUIRED": {
       "what": "Çalışma alanında en az bir sahip kalmalı.",
       "next": "Önce başka birini sahip yapın, sonra bu işlemi tekrarlayın."
+    },
+    "REPORT_EVIDENCE_UNAVAILABLE": {
+      "what": "Bu eski raporun ayrıntı kayıtları saklanmamış.",
+      "next": "Kaynak kayıtlar hâlâ mevcutsa raporu yeniden oluşturun. Mevcut rapor korunur."
+    },
+    "REPORT_SOURCES_RETAINED_OUT": {
+      "what": "Saklama süresi dolan kaynaklar silindiği için bu rapor eksiksiz yeniden oluşturulamıyor.",
+      "next": "Daha önce kaydedilmiş raporu kullanın veya başka bir gün seçin."
     }
   },
   "connections": {

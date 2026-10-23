@@ -18,11 +18,14 @@ def _link(api: str | None, route: str | None) -> Link:
     return {"api": api, "route": route}
 
 
-def metric_link(workspace_id: uuid.UUID, local_date: date, key: str) -> Link:
+def metric_link(
+    workspace_id: uuid.UUID, local_date: date, key: str, snapshot_id: uuid.UUID | None = None
+) -> Link:
     ws = str(workspace_id)
+    query = f"?snapshot_id={snapshot_id}" if snapshot_id else ""
     return _link(
-        f"{API_ROOT}/{ws}/reports/daily/{local_date.isoformat()}/metrics/{key}",
-        f"/w/{ws}/more/reports/{local_date.isoformat()}/{key}",
+        f"{API_ROOT}/{ws}/reports/daily/{local_date.isoformat()}/metrics/{key}{query}",
+        f"/w/{ws}/more/reports/{local_date.isoformat()}/{key}{query}",
     )
 
 

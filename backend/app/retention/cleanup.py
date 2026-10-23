@@ -1,8 +1,8 @@
 """The retention rules (plan H17). Pure data work: no job, no audit, no external call.
 
-Every rule runs in batches of ``BATCH_SIZE`` rows: one statement per batch, each batch in its own
-short transaction, until a batch comes back short. A crash therefore loses at most one batch and
-the next run continues; a rule that is run twice does nothing the second time.
+Every rule runs in batches of ``BATCH_SIZE`` rows, each batch in its own short transaction,
+until a batch comes back short. Failed inbound-event deletion also records source gaps in that
+transaction. A crash rolls back the current batch; the next run continues idempotently.
 
 ``audit_logs`` is **never** touched here: INV-12 allows no delete path, and the two-year purge
 needs an ADR with the Phase 8 database privileges (plan H17). The text columns of messages and
@@ -15,7 +15,19 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import ColumnElement, Executable, and_, delete, func, null, or_, select, update
+from sqlalchemy import (
+    ColumnElement,
+    Executable,
+    Select,
+    and_,
+    delete,
+    func,
+    null,
+    or_,
+    select,
+    update,
+)
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.ai.models import AgentRun
@@ -23,6 +35,7 @@ from app.core.config import Settings
 from app.inbox.models import InboundEvent, Message, ReplyDraft
 from app.jobs.models import Job
 from app.notifications.models import Notification
+from app.reporting.models import ReportSourceGap
 
 BATCH_SIZE = 1000
 
@@ -44,7 +57,7 @@ class RetentionCounts:
         return asdict(self)
 
 
-def _ids_of(model: Any, where: ColumnElement[bool], batch: int) -> Executable:
+def _ids_of(model: Any, where: ColumnElement[bool], batch: int) -> Select[Any]:
     # ``model`` is any mapped class with an ``id`` column: every table cleaned here has one.
     return select(model.id).where(where).limit(batch)
 
@@ -90,6 +103,53 @@ def _delete_rows(model: Any, where: ColumnElement[bool]) -> Callable[[int], Exec
     return statement
 
 
+def _delete_inbound_events(
+    session_factory: sessionmaker[Session], cutoff: datetime, batch_size: int
+) -> int:
+    """Source removal and its completeness markers commit together, including crash recovery."""
+    total = 0
+    while True:
+        with session_factory() as session:
+            removed = session.execute(
+                delete(InboundEvent)
+                .where(
+                    InboundEvent.id.in_(
+                        _ids_of(InboundEvent, InboundEvent.received_at < cutoff, batch_size)
+                    )
+                )
+                .returning(
+                    InboundEvent.workspace_id,
+                    InboundEvent.status,
+                    func.coalesce(InboundEvent.processed_at, InboundEvent.received_at).label(
+                        "failed_at"
+                    ),
+                )
+            ).all()
+            lost = {(row.workspace_id, row.failed_at) for row in removed if row.status == "failed"}
+            if lost:
+                session.execute(
+                    pg_insert(ReportSourceGap)
+                    .values(
+                        [
+                            {
+                                "workspace_id": ws,
+                                "metric_key": "integration_errors",
+                                "start_at": at,
+                                "end_at": at,
+                            }
+                            for ws, at in lost
+                        ]
+                    )
+                    .on_conflict_do_nothing(
+                        index_elements=["workspace_id", "metric_key", "start_at", "end_at"]
+                    )
+                )
+            session.commit()
+        total += len(removed)
+        if len(removed) < batch_size:
+            return total
+
+
 def run_retention(
     session_factory: sessionmaker[Session],
     settings: Settings,
@@ -107,11 +167,8 @@ def run_retention(
 
     # Raw webhook payload: the whole row is gone at 90 days; a younger row loses its payload
     # at 30.
-    rows_deleted = run(
-        _delete_rows(
-            InboundEvent,
-            InboundEvent.received_at < cutoff(settings.retention_inbound_event_row_days),
-        )
+    rows_deleted = _delete_inbound_events(
+        session_factory, cutoff(settings.retention_inbound_event_row_days), batch_size
     )
     payloads_nulled = run(
         _null_columns(

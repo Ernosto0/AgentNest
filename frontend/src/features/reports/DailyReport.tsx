@@ -27,7 +27,8 @@ export function DailyReport() {
   const requested = params.get("date");
   // Nothing after today: a later date falls back to today.
   const day = isLocalDay(requested) && requested < today ? requested : today;
-  const report = useDailyReport(workspace.id, day === today ? null : day);
+  const snapshot = params.get("snapshot_id");
+  const report = useDailyReport(workspace.id, day === today ? null : day, snapshot);
   const generate = useGenerateReport(workspace.id);
   const canGenerate = role === "owner" || role === "manager";
 
@@ -76,7 +77,11 @@ export function DailyReport() {
       {generate.isError ? <ErrorMessage error={generate.error} /> : null}
 
       {canGenerate && report.data ? (
-        <Button variant="secondary" disabled={generate.isPending} onClick={() => generate.mutate(day)}>
+        <Button
+          variant="secondary"
+          disabled={generate.isPending}
+          onClick={() => generate.mutate(day, { onSuccess: () => go(day) })}
+        >
           {generate.isPending ? t("common.saving") : t("reports.regenerate")}
         </Button>
       ) : null}
@@ -109,6 +114,10 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
         ) : null}
         {report.has_simulated_data ? <SimulatedBadge /> : null}
       </div>
+
+      {!report.evidence_complete ? (
+        <p role="status" className="text-sm text-slate-700">{t("reports.evidenceUnavailable")}</p>
+      ) : null}
 
       {report.summary.empty ? (
         <EmptyState title={report.summary.text} description={t("reports.emptyHint")} />

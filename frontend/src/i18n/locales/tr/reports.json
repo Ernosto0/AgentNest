@@ -38,6 +38,7 @@
       "content_on_hold_now": "Beklemedeki gönderi (şu an)",
       "fact_changes": "Bilgi değişikliği",
       "integration_errors": "Bağlantı hatası"
-    }
+    },
+    "evidenceUnavailable": "Bu eski raporun ayrıntı kayıtları saklanmamış. Kaynaklar hâlâ mevcutsa yeni bir rapor oluşturabilirsiniz."
   }
 }

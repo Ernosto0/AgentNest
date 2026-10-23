@@ -32,6 +32,8 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "ACCOUNT_NOT_CONNECTED": ErrorSpec(409),
     "INVITE_INVALID": ErrorSpec(400),
     "LAST_OWNER_REQUIRED": ErrorSpec(409),
+    "REPORT_EVIDENCE_UNAVAILABLE": ErrorSpec(409),
+    "REPORT_SOURCES_RETAINED_OUT": ErrorSpec(409),
     # Submitting content: the blocking item codes are in params.errors / the problem's ``errors``.
     "CONTENT_VALIDATION_FAILED": ErrorSpec(422),
     "MEDIA_INVALID": ErrorSpec(422),

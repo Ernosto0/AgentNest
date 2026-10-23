@@ -9,6 +9,7 @@ import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import func, insert, inspect, select
@@ -19,12 +20,14 @@ from app.audit import service as audit
 from app.audit.models import AuditLog
 from app.core.clock import FrozenClock
 from app.core.config import Settings
+from app.core.errors import AppError
 from app.identity.models import User, Workspace
 from app.inbox.models import InboundEvent, Message, ReplyDraft
 from app.jobs.models import Job
 from app.jobs.testing import run_due_jobs
 from app.notifications.models import Notification
 from app.reporting import service as reporting
+from app.reporting.models import ReportSourceGap
 from app.retention import cleanup
 from app.retention import jobs as retention_jobs
 from tests.factories import add_member, create_user, create_workspace, knowledge_ctx
@@ -162,6 +165,39 @@ def test_webhook_payload_is_nulled_at_30_days_and_the_row_deleted_at_90(
     assert counts.webhook_payloads_nulled == 3  # old, older, gone_just_before
 
 
+def test_failed_source_deletion_and_gap_recording_roll_back_together(
+    db_session: Session,
+    shared_session_factory: SessionFactory,
+    settings: Settings,
+    world: World,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    event = world.builder.inbound_event("failed", ago(100))
+    event_id = event.id
+    db_session.commit()
+
+    def fail_marker(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("marker write failed")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(cleanup, "pg_insert", fail_marker)
+        with pytest.raises(RuntimeError, match="marker write failed"):
+            cleanup.run_retention(shared_session_factory, settings, NOW)
+    db_session.expire_all()
+    assert db_session.get(InboundEvent, event_id) is not None
+    assert db_session.scalar(select(func.count()).select_from(ReportSourceGap)) == 0
+    counts = go(db_session, shared_session_factory, settings)
+    assert counts.webhook_rows_deleted == 1
+    assert db_session.get(InboundEvent, event_id) is None
+    assert db_session.scalar(select(func.count()).select_from(ReportSourceGap)) == 1
+    # The same marker also protects a day whose report was never saved before retention.
+    local_day = ago(100).astimezone(ZoneInfo(TIMEZONE)).date()
+    with pytest.raises(AppError, match="REPORT_SOURCES_RETAINED_OUT"):
+        reporting.get_report(
+            db_session, FrozenClock(NOW), knowledge_ctx(world.workspace), local_day
+        )
+
+
 # --- agent run input ------------------------------------------------------------------------
 
 
@@ -231,18 +267,14 @@ def test_the_report_for_a_day_is_unchanged_when_its_message_text_is_nulled(
     assert stored.generated_at == before.generated_at
     assert stored.metrics == before.metrics
 
-    # A regeneration counts the same messages. The one number that reads webhook rows
-    # (``integration_errors``: failed inbound events) loses them at 90 days, by design.
-    after = reporting.generate_daily_report(
-        db_session, FrozenClock(scenario.now), ctx, DAY, scheduled=False
-    )
-    assert after.metrics.keys() == before.metrics.keys()
-    for key in before.metrics:
-        if key != "integration_errors":
-            assert after.value(key) == before.value(key), key
-    assert before.value("inbound_messages") == after.value("inbound_messages")
-    assert (before.value("inbound_messages") or 0) > 0
-    assert (before.value("integration_errors"), after.value("integration_errors")) == (18, 11)
+    # Source deletion can no longer silently regenerate integration_errors as 11 instead of 18.
+    with pytest.raises(AppError) as raised:
+        reporting.generate_daily_report(
+            db_session, FrozenClock(year_later), ctx, DAY, scheduled=False
+        )
+    assert raised.value.code == "REPORT_SOURCES_RETAINED_OUT"
+    assert raised.value.params == {"metrics": ["integration_errors"]}
+    assert stored.value("integration_errors") == 18
 
 
 # --- notifications and jobs -----------------------------------------------------------------

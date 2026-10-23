@@ -41,6 +41,8 @@ export function report(date: string, overrides: Partial<DailyReport> = {}): Dail
     metric("integration_errors", 2, "problems", date),
   ];
   return {
+    snapshot_id: null,
+    evidence_complete: true,
     local_date: date,
     timezone: "Europe/Istanbul",
     period_start: `${date}T00:00:00Z`,
@@ -83,7 +85,7 @@ export function metricItems(
   items: MetricItem[],
   next_cursor: string | null = null,
 ): MetricItems {
-  return { key, value, items, next_cursor };
+  return { key, value, items, next_cursor, snapshot_id: null };
 }
 
 export function entry(n: number, overrides: Partial<ActivityEntry> = {}): ActivityEntry {

@@ -72,9 +72,10 @@ def test_a_past_day_comes_back_complete_with_a_link_on_every_number(report_env: 
         assert metric["value"] == EXPECTED[key], key
         definition = BY_KEY[key]
         assert (metric["kind"], metric["section"]) == (definition.kind, definition.section)
+        query = f"?snapshot_id={body['snapshot_id']}"
         assert metric["link"] == {
-            "api": f"/api/v1/workspaces/{ws}/reports/daily/{D}/metrics/{key}",
-            "route": f"/w/{ws}/more/reports/{D}/{key}",
+            "api": f"/api/v1/workspaces/{ws}/reports/daily/{D}/metrics/{key}{query}",
+            "route": f"/w/{ws}/more/reports/{D}/{key}{query}",
         }
         has_breakdown = key == "pending_approvals_now"
         assert (
@@ -132,7 +133,7 @@ def test_today_is_live_and_partial(report_env: ReportEnv) -> None:
     assert {m["key"]: m["value"] for m in again["metrics"]}["inbound_messages"] == 1
 
 
-def test_generate_overwrites_the_stored_report(report_env: ReportEnv) -> None:
+def test_generate_selects_a_new_generation_and_keeps_the_old_links(report_env: ReportEnv) -> None:
     env = report_env
     stored = _report(env).json()
     builder = env.builder()
@@ -147,6 +148,10 @@ def test_generate_overwrites_the_stored_report(report_env: ReportEnv) -> None:
     assert values["inbound_messages"] == EXPECTED["inbound_messages"] + 1
     assert regenerated["generated_at"] > stored["generated_at"]
     assert _report(env).json()["metrics"] == regenerated["metrics"]  # the stored copy changed
+    assert regenerated["snapshot_id"] != stored["snapshot_id"]
+    old = _get(env.env, stored["metrics"][0]["link"]["api"])
+    assert old.status_code == 200
+    assert old.json()["value"] == EXPECTED["inbound_messages"]
 
 
 def test_the_manager_may_generate_and_staff_may_not(report_env: ReportEnv) -> None:

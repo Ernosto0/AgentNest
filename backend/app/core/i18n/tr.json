@@ -92,7 +92,7 @@
   "errors.CAPABILITY_MISSING.what": "Bu işlem için izin verilmemiş.",
   "errors.CAPABILITY_MISSING.next": "Hesabı yeniden bağlayıp izni verin.",
   "errors.ACCOUNT_NEEDS_REAUTH.what": "Instagram bağlantısının yenilenmesi gerekiyor.",
-  "errors.ACCOUNT_NEEDS_REAUTH.next": "Ayarlar'da Yeniden bağla'ya basın.",
+  "errors.ACCOUNT_NEEDS_REAUTH.next": "Instagram bağlantısı ekranını açıp yeniden bağlanın.",
   "errors.OUTCOME_UNKNOWN.what": "Yayınlanıp yayınlanmadığını hâlâ kontrol ediyoruz.",
   "errors.OUTCOME_UNKNOWN.next": "Biraz bekleyin. Henüz elle yeniden paylaşmayın.",
   "errors.OUTCOME_UNCONFIRMED.what": "Yayınlanıp yayınlanmadığını doğrulayamadık.",
@@ -264,5 +264,9 @@
   "activity.resource.operation": "İşlem",
   "activity.resource.operation.send_reply": "Yanıt gönderimi",
   "activity.resource.operation.publish_content": "Gönderi yayımlama",
-  "activity.resource.operation.refresh_token": "Bağlantı yenileme"
+  "activity.resource.operation.refresh_token": "Bağlantı yenileme",
+  "errors.REPORT_EVIDENCE_UNAVAILABLE.what": "Bu eski raporun ayrıntı kayıtları saklanmamış.",
+  "errors.REPORT_EVIDENCE_UNAVAILABLE.next": "Kaynak kayıtlar hâlâ mevcutsa raporu yeniden oluşturun. Mevcut rapor korunur.",
+  "errors.REPORT_SOURCES_RETAINED_OUT.what": "Saklama süresi dolan kaynaklar silindiği için bu rapor eksiksiz yeniden oluşturulamıyor.",
+  "errors.REPORT_SOURCES_RETAINED_OUT.next": "Daha önce kaydedilmiş raporu kullanın veya başka bir gün seçin."
 }
