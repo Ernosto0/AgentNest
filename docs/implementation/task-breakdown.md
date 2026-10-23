@@ -22,7 +22,9 @@
 
 ## 2. Index
 
-Phase 6 status (2026-10-22): P6-01–P6-09 implemented; P6-10's local verification and docs are recorded in the [Phase 6 summary](phase-summaries/phase-06-summary.md), **waiting for review**. Local MVP acceptance/Gate 1 is pending the listed acceptance/invariant decisions and owner Windows/phone/CI evidence. Phase 7 is not started.
+Phase 6 status (2026-10-22): P6-01–P6-09 implemented; P6-10's local verification and docs are recorded in the [Phase 6 summary](phase-summaries/phase-06-summary.md), **waiting for review**. Local MVP acceptance/Gate 1 is pending the listed acceptance/invariant decisions and owner Windows/phone/CI evidence.
+
+Phase 7 status (2026-10-23): offline Sessions 1-4 are complete and operator-accepted under the owner's gates-pending exception. P7-01/02/03/04/06/07/08 have offline implementations; P7-05/09 have synthetic fixture contracts and an unrun manual harness, with authentic recordings/live checks pending. P7-10 setup/contract docs and required local verification are complete (backend 2,904 passes / 4 intended manual skips, frontend 497 passes, fake eval 166/166 and statics). P7-00 research-based final re-plan and Gates 1/2 remain pending. See [Phase 7 summary](phase-summaries/phase-07-summary.md). No real Meta/S3 requests, tunnel, deployment, App Review, push or Phase 8 work is authorized by this exception.
 
 | ID | Title | Depends on | Size |
 |---|---|---|---|

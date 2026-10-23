@@ -29,7 +29,7 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 |---|---|
 | `GET /healthz` | Liveness (no DB). |
 | `GET /readyz` | DB reachable, migrations at head. |
-| `GET /api/v1/meta` | Public non-secret config for the SPA: `{product_name, demo_tools_enabled, llm_mode: "fake"|"real" (from `LLM_PROVIDER`), supported_locales, instagram_providers: ("mock"|"meta")[], mock_requires_demo_workspace: bool}`. Providers are deterministic (`mock`, then `meta`, enabled entries only). Mock requires `workspace.is_demo` in production; production startup also requires permitted simulated workspaces. Outside production mock is allowed on non-demo workspaces even if demo tools are off. `demo_tools_enabled` does not control account eligibility. |
+| `GET /api/v1/meta` | Public non-secret config for the SPA: `{product_name, demo_tools_enabled, llm_mode: "fake"\|"real", supported_locales, instagram_providers: ("mock"\|"meta")[], mock_requires_demo_workspace: bool}`. `llm_mode` derives from `LLM_PROVIDER`. Providers are deterministic (`mock`, then `meta`, enabled entries only). Mock requires `workspace.is_demo` in production; production startup also requires permitted simulated workspaces. Outside production mock is allowed on non-demo workspaces even if demo tools are off. `demo_tools_enabled` does not control account eligibility. |
 
 ### 2.2 Auth and identity (Phase 1; invites Phase 6)
 | Method & path | Request → Response |

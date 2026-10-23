@@ -2,6 +2,10 @@
 
 > **Gated.** Start only after Gate 1 (local MVP) and Gate 2 (research items V-01, V-02, V-03, V-05, V-08 and V-09 recorded in [platform-capabilities.md](../../research/platform-capabilities.md)). Before starting, re-read this plan against the research results and **update it**. Tasks below assume the documented behaviour.
 
+**Owner exception (2026-10-23):** sequential offline Sessions 1-4 are authorized while both gates remain pending. All four sessions are offline-complete and accepted by the operator: final backend 2,904 passed / 4 intentionally skipped manual probes, frontend 497 passed, strict fake eval 166/166 and required statics green. No real Meta/S3 calls, public tunnel, credentials collection, deployment, App Review or push are included. P7-00's final research-based re-plan, authentic recordings and all real-account acceptance remain pending. [Session plan](../phase-07-sessions.md) records the approved offline contract adaptations; these do not close any live criterion or authorize Phase 8.
+
+**Offline contract updates:** Meta always requires S3; reserved local-media configuration cannot enable it. OAuth migration is `0017` after webhook deletion migration `0016`. Actual returned grants, disconnect invalidation, workspace `FOR NO KEY UPDATE` fencing and refresh attempt fences govern credentials. Optional erasure waits durably for uncertain sends, with no unconditional deletion deadline. The UI follows public provider/workspace policy and real provider provenance; the future manual adapter harness separates required reads from explicitly opted-in DM/image side effects. Full details/evidence are in the session reports and [Phase 7 summary](../phase-summaries/phase-07-summary.md).
+
 ## Objective
 Connect a real Instagram professional account through Instagram Login and run the same workflows (C, E, G) through `MetaInstagramProvider`, with encrypted tokens, real signed webhooks, S3-compatible media with signed URLs, token refresh, and disconnection, first with the founder's own account and then with tester accounts.
 

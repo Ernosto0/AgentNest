@@ -188,6 +188,10 @@ Status legend:
 ---
 
 ## 6. Verification backlog (feeds research track R in the roadmap)
+**Phase 7 offline update (2026-10-23):** Sessions 1-4 implement synthetic fixture contracts, OAuth/refresh/disconnect and UI, plus a manually opted-in adapter harness. They provide no live platform evidence. V-01/V-02/V-03/V-05/V-08/V-09, Gate 2 and P7-00's final research-based re-plan remain pending. Story support, actual scope/token response envelopes, native echo delivery, account webhook subscription and signed media fetch behavior must be verified before real acceptance. All committed Meta JSON fixtures remain explicitly synthetic; there are no authentic recordings.
+
+Official Meta [business-login](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login) and [webhook](https://developers.facebook.com/docs/instagram-platform/webhooks/) pages returned HTTP 429 on 2026-10-23. Unreachable pages do not reconfirm the older 2026-10-15 claims. The local setup checklist records provisional dashboard steps and required future verification. Public [Vite host allow-list](https://vite.dev/config/server-options#server-allowedhosts) and [Cloudflare Quick Tunnel](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/) docs were accessible and support the same-origin development setup only; no public tunnel was launched. The `meta_live` harness remains unrun; no provider/bucket/tester facts were promoted by this session.
+
 
 | ID | What to verify | How | Blocks |
 |---|---|---|---|

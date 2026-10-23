@@ -12,6 +12,10 @@ Phase 7 is split into **4 sequential sessions**. Run strictly in order (`Session
 
 **Session 3 offline adaptations:** migration `0017` adds `invalidated_at` to OAuth states to fence disconnect-during-exchange callbacks; requested scopes never imply grants, and absent short-exchange `permissions` gives no capabilities. Flat/one-item-wrapped short exchanges are synthetic assumptions; live research remains pending. Optional disconnect erasure is synchronous except for in-progress/unknown sends: a durable `delete_account_conversations` job preserves reconciliation and waits without spending attempts. Queued/running/dead cleanup blocks workspace Meta authorization until recovery/completion. Payload nulling/token removal are immediate; no unconditional deletion deadline is claimed. Disconnected-row reuse requires new OAuth authorization. Refresh recovery uses a two-minute attempt lease and credential/attempt fences; three attempts share the original daily operation even across midnight.
 
+**Session 4 offline adaptations:** `/meta` adds deterministic typed `instagram_providers` and `mock_requires_demo_workspace` (production only); UI uses `workspace.is_demo`, independently of demo tools. Callback OpenAPI declares its actual 303 redirect. Optional erasure removes history caches; product copy permits pending send verification and does not promise reconnection at any time. Demo-workspace notice distinguishes real connections from simulation-labelled actions. The manual direct-adapter probes require two explicit live inputs, with separate optional DM/image inputs for real side effects; no live probe or recorder was run. Customer sends/publishes continue through the ledger. Same-origin OAuth uses a tunnel to frontend 5173 with an exact Vite host allow-list; backend-only 8000 tunnels are webhook-only for this flow. Token-ring generation requires `--kind token-encryption`. Official Meta pages remained unreachable (429), so P7-00 and live research remain pending.
+
+**Offline completion (2026-10-23):** all four sessions are implemented, locally verified and accepted by the operator. Session 4 final checks: backend 2,904 passed / 4 intentionally skipped manual probes (720.83 seconds), frontend 497 passed (40.81 seconds), final focused UI 28 passed, required statics/i18n/build green, strict fake eval 166/166 and local synthetic mobile smoke passed. See [s04-report.md](phase-7-sessions/s04-report.md) and [Phase 7 summary](phase-summaries/phase-07-summary.md). Gates 1/2, P7-00, live research/acceptance and Phase 8 remain pending.
+
 ---
 
 ## 1. Module Layout & Import Contracts
@@ -302,7 +306,7 @@ frontend/src/features/settings/
 
 #### What to Build
 1. **Public Meta Endpoint & OpenAPI Regeneration (`backend/app/api/router.py`, `frontend/openapi.json`, `frontend/src/api/schema.d.ts`):**
-   - Expose `instagram_providers: list[str]` on `GET /api/v1/meta`.
+   - Expose deterministic `instagram_providers: list[Literal["mock", "meta"]]` and `mock_requires_demo_workspace: bool` on `GET /api/v1/meta`. Production startup permits mock only with allowed simulated workspaces, and mock connection additionally requires `workspace.is_demo`; nonproduction may connect mock on non-demo workspaces even with demo tools off.
    - Run `uv run python -m app.cli export-openapi -o ../frontend/openapi.json` and `npm run gen:api`.
 2. **Frontend Connections Screen (`frontend/src/features/settings/Connections.tsx`, `hooks.ts`, `frontend/src/i18n/{tr,en}/...`):**
    - When no account is connected:
@@ -323,7 +327,7 @@ frontend/src/features/settings/
      4. Optional live image container creation (`create_media_container`), status poll (`get_container_status`), publish (`publish_container`), and permalink fetch (`get_media`) when `META_LIVE_IMAGE_URL` is provided;
      5. Optional sanitised fixture recorder helper to dump real response shapes into `backend/tests/contract/fixtures/meta/`.
 4. **Documentation & Phase 7 Summary (`P7-00`, `P7-10`):**
-   - `docs/operations/local-development.md`: add section on running Phase 7 locally with a tunnel (`cloudflared tunnel --url http://localhost:8000`), configuring the Meta Developer App (Instagram Login redirect URI, webhook callback URL + `META_WEBHOOK_VERIFY_TOKEN`, subscribing to `messages` and `message_echoes`), S3/R2/MinIO setup, and generating `TOKEN_ENCRYPTION_KEYS` via `uv run python -m app.cli generate-key`.
+   - `docs/operations/local-development.md`: document same-origin sign-in/OAuth/webhooks through `cloudflared tunnel --url http://localhost:5173`, exact Vite allowed hostname, HTTPS frontend/callback settings and public-origin sign-in. Backend-only port 8000 works for webhooks but does not share the localhost frontend cookie. Include the provisional Meta dashboard redirect/subscription checklist, S3/R2/MinIO public HTTPS presigned fetches and `uv run python -m app.cli generate-key --kind token-encryption`. Do not promote unverified platform facts.
    - Sync `docs/architecture/{api-design,data-model,integrations,workflows,observability,security-and-privacy}.md`, `docs/research/platform-capabilities.md`, `docs/implementation/{roadmap,task-breakdown}.md`, and `.env.example`.
    - Write `docs/implementation/phase-summaries/phase-07-summary.md` mapping every Phase 7 acceptance criterion (AC 1–7) to its proving automated tests and live verification checklist.
 

@@ -106,7 +106,7 @@ git diff --exit-code -- openapi.json src/api/schema.d.ts
 | `harbor-pilates` "Harbor Pilates Studio" (fictional) | en / EUR / Europe/Lisbon | Same structure in English (`facts_harbor_pilates.yaml`), including the P6 history |
 | `other-workspace` | en / EUR / Europe/Berlin | No facts (isolation demo) |
 
-All demo workspaces have `is_demo = true` and show the **SİMÜLASYON / SIMULATED** banner.
+All demo workspaces have `is_demo = true` and show a **Demo çalışma alanı / Demo workspace** notice. The seeded mock accounts and their records show **SİMÜLASYON / SIMULATED** badges. Provider-derived flags determine simulation: a real Meta connection can act on a real account even on a demo workspace.
 
 **Yesterday's history (Phase 6, `backend/app/demo/history_seed.py`).** `seed` gives each studio (`golkent-fitness`, `harbor-pilates`) one day of history, so Home, Activity and Reports are not empty on the first run: **6 inbound customer messages, 4 replies sent (each approved by the owner and sent through the operations ledger), 1 conversation handed to a person (a complaint), 1 draft still waiting for approval, 1 published feed post and 1 failed feed post** (`invalid_media`). It runs through the real paths (simulator webhook, jobs, approvals, mock send, publish executor) with a frozen clock at 17:00-21:00 local time **yesterday** in the workspace timezone, and then stores yesterday's daily report. Every row is simulated, and no job is left queued (periodic jobs are the worker's). `seed` adds the history only to a studio that has no conversations yet, so running `seed` again changes nothing; `other-workspace` has none. The draft left waiting is valid for 24 hours from yesterday evening, so it may show as expired when you open the demo late the next day. A conversation's `created_at` is set by the database, so the seed back-dates it to the first message (otherwise "new conversations" would read 0 for yesterday). The draft-stage audit entries `content.created` and `media.uploaded` are not marked simulated (Phase 5 behaviour: a draft has no account yet).
 
@@ -195,7 +195,72 @@ From `frontend/`, run `npm run dev -- --host 0.0.0.0`. In another PowerShell run
 
 ## 12. Real Instagram development (Phase 7, optional)
 
-Requires a Meta app (Instagram Login), a professional test account and a tunnel for webhooks (e.g., `cloudflared tunnel --url http://localhost:8000`). Set the `META_*` variables, `MEDIA_STORAGE_BACKEND=s3` and the `S3_*` variables. Detailed steps are added in task P7-10.
+**Status (2026-10-23):** the offline implementation is available; Gate 1, Gate 2, P7-00 research and real-account acceptance remain pending. The following is a future owner-operated setup, not evidence that a tunnel, dashboard, bucket or live account has been tested. Keep the credential-free fake/mock/local defaults for ordinary development. Do not run `seed --reset` or the default E2E setup against data you need to preserve.
+
+### Same-origin HTTPS for sign-in, OAuth and webhooks
+
+The OAuth callback requires the same authenticated user session that started the connection. Tunnel the **frontend on 5173**: Vite already proxies `/api`, `/oauth` and `/webhooks` to the backend on 8000. Opening the UI at localhost while receiving the callback on a backend-only public tunnel loses the host-bound session cookie. A tunnel to 8000 alone is suitable for webhook-only investigation, not this OAuth sign-in flow.
+
+1. Install `cloudflared` separately, start the API on 8000 and later keep its worker running. Start the tunnel in a separate terminal:
+
+   ```powershell
+   cloudflared tunnel --url http://localhost:5173
+   ```
+
+2. Copy only the assigned hostname into an explicit Vite allow-list before starting/restarting Vite. For example, replace this placeholder with the exact hostname assigned to your tunnel:
+
+   ```powershell
+   cd frontend
+   $env:__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = 'your-assigned-host.trycloudflare.com'
+   npm run dev -- --host 127.0.0.1 --strictPort
+   ```
+
+   Do not use `allowedHosts: true` or allow all `.trycloudflare.com` hosts. The installed Vite version supports this environment variable. No host-header rewrite is needed with the exact allow-list; the proxy preserves the request origin. Stop the tunnel after testing. Quick-tunnel hostnames can change on restart; update every origin/redirect setting together.
+
+3. In the backend's private environment set `FRONTEND_ORIGIN=https://your-assigned-host.trycloudflare.com`, `META_OAUTH_REDIRECT_URI=https://your-assigned-host.trycloudflare.com/oauth/instagram/callback`, and `COOKIE_SECURE=true`. Keep `VITE_API_BASE_URL` unset so browser API calls stay same-origin. Restart API/worker after configuration changes. Sign in **at that HTTPS origin**, then open More → Instagram connection. A localhost session does not transfer to it. A stable named tunnel/reverse proxy can use the same route arrangement.
+
+The [Vite allowed-host documentation](https://vite.dev/config/server-options#server-allowedhosts) and [Cloudflare Quick Tunnel documentation](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/) were accessible on 2026-10-23. This verifies configuration instructions only; no public tunnel was launched during offline implementation.
+
+### Private configuration and Meta dashboard checklist
+
+- Generate the **token-encryption** ring from `backend/`: `uv run python -m app.cli generate-key --kind token-encryption`. Store the returned ring privately in `TOKEN_ENCRYPTION_KEYS` and select its ID with `TOKEN_ENCRYPTION_ACTIVE_KEY_ID`. The command's default kind generates `SECRET_KEY`, which is not a token key ring. Retain old IDs while old ciphertext exists.
+- Set `INSTAGRAM_ENABLED_PROVIDERS=meta` (or `mock,meta` only if you need both), `META_APP_ID`, `META_APP_SECRET`, a distinct explicit `META_WEBHOOK_VERIFY_TOKEN`, the pinned `META_GRAPH_API_VERSION` and the exact redirect URI above. Meta requires the ring and S3 in every environment. Never paste tokens/secrets into screenshots, tickets, shell history, logs or frontend variables. Keep stories gated by research V-03; the configuration flag alone does not verify support.
+- In the developer app's **Instagram API with Instagram Login** configuration, register the exact HTTPS OAuth redirect including `/oauth/instagram/callback`. Verify the professional account/tester role and granted scopes (`instagram_business_basic`, `instagram_business_manage_messages`, `instagram_business_content_publish`). UI labels, access-level limitations and tester onboarding remain V-01 research; do not substitute Facebook Login instructions.
+- Configure webhook callback `https://your-assigned-host.trycloudflare.com/webhooks/instagram` with the private verification token. The handshake must echo `hub.challenge`; POST bodies require `X-Hub-Signature-256` signed with `META_APP_SECRET`. Select the planned `messages` and `message_echoes` subscriptions where offered, and verify any account-level subscription/Live-mode requirements before acceptance. The application does not currently auto-subscribe an account. Capture real text, attachments, native-app echoes, story replies, reactions and deletion shapes only during authorized research, sanitizing all identifiers/content before adding fixtures.
+- Official Meta business-login and webhook pages returned HTTP 429 during this session. These dashboard steps are the repository's provisional checklist, not freshly verified Meta behavior. V-01/V-02/V-03/V-05/V-08/V-09 and P7-00 remain open; see [platform-capabilities.md](../research/platform-capabilities.md).
+
+### S3, R2 or MinIO media fetches
+
+Use `MEDIA_STORAGE_BACKEND=s3` with a private bucket, scoped explicit `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY`, and `S3_BUCKET`. For AWS leave `S3_ENDPOINT_URL` empty and set the actual bucket `S3_REGION`. For R2 use its S3 API endpoint and `S3_REGION=auto`. MinIO requires its S3 API endpoint (not the console), a valid publicly trusted HTTPS endpoint reachable by Meta, and an appropriate region. A localhost/private-network MinIO URL or self-signed certificate cannot demonstrate a Meta fetch.
+
+`S3MediaStorage` signs GET requests for `MEDIA_PUBLIC_URL_TTL_SECONDS` (default 3600). Presigned URLs grant temporary access to a private object: do not publish/log them, rewrite their host/query after signing, or replace them with a public bucket website URL. The adapter receives the URL only for container creation; owners view media through the authenticated API. `MEDIA_PUBLIC_BASE_URL` is reserved and does not expose local files or bypass the Meta/S3 startup requirement. Mock/local remains the default; mixed mock/S3 publishing is unsupported. V-09 must verify Meta's actual fetch, TTL and processing behavior.
+
+### Manual adapter probes (future explicit opt-in)
+
+`backend/tests/contract/test_meta_live.py` is marked `meta_live`. Both `META_LIVE_ACCESS_TOKEN` and `META_LIVE_IG_USER_ID` must be present or all probes skip. Supply them only through your private process environment when live research is authorized; do not put credentials in commands or captured output. Then run `uv run pytest -m meta_live tests/contract/test_meta_live.py -q --tb=no` from `backend/`.
+
+With only the two required inputs, probes read profile and publishing quota. Adding `META_LIVE_RECIPIENT_ID` opts into **one real DM**, then read-only lookup polling matching its returned ID and recipient; the recipient must be eligible and inside the messaging window. Adding `META_LIVE_IMAGE_URL` opts into **one real feed post** from a public HTTPS JPEG, including bounded processing polls and permalink lookup. Omit these optional inputs for read-only probes. These are deliberate direct adapter contract probes, outside the application ledger; production/customer sends and publishes must still use approvals and the operations ledger. The harness never automatically retries a send/publish. On ambiguity, inspect the real account safely before another manual run. It neither records fixtures nor prints live objects/URLs/exceptions; do not use `--showlocals`, debugger capture or HTTP debug logging with credentials. Passing a probe does not prove OAuth/webhook/scheduled-ledger acceptance. No live probe was run in offline Sessions 1-4.
+
+For ordinary full-suite runs, explicitly blank both required live inputs, even if your parent shell has credentials:
+
+```powershell
+$env:META_LIVE_ACCESS_TOKEN = ''
+$env:META_LIVE_IG_USER_ID = ''
+uv run pytest -q
+```
+
+### Troubleshooting
+
+| Symptom | Next check |
+|---|---|
+| Vite blocks the public hostname | Set the exact assigned hostname in `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS`, then restart Vite. Keep port 5173 fixed with `--strictPort`. |
+| OAuth callback requires sign-in or state is invalid | Sign in on the public HTTPS frontend origin, verify the exact registered redirect and current tunnel hostname, then start a fresh connection. State is single use and lasts ten minutes. |
+| Account mismatch after reconnect | Choose the same Instagram account originally linked to this workspace. A different account cannot overwrite it. |
+| Connection blocked after deleting history | An ongoing send may still need verification; failed cleanup may require operator recovery. Do not bypass cleanup or force a second authorization. |
+| Webhook handshake/signature rejected | Check the explicit verify token, app secret, exact path and unmodified raw body. Never disable signature verification. |
+| No webhook despite successful handshake | Verify dashboard/account subscriptions, app mode, tester access and real payload shapes in V-01/V-08. OAuth success alone does not prove delivery. |
+| Image fetch/container fails | Verify trusted public HTTPS reachability, private-object signing endpoint/region, JPEG constraints, clock/expiry and V-09. Do not reveal the signed URL. |
+| Mock connect is absent | Check public `instagram_providers` and `mock_requires_demo_workspace` plus `workspace.is_demo`; `demo_tools_enabled` is a separate setting. Production also requires permitted simulated workspaces. |
 
 ## 13. Landing page (outside the phase roadmap)
 
