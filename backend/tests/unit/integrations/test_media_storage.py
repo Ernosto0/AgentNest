@@ -116,7 +116,13 @@ def test_the_local_fetch_url_is_an_opaque_reference_with_an_expiry(
 def test_the_registry_builds_the_configured_backend(tmp_path: Path) -> None:
     settings = Settings(_env_file=None, media_local_root=str(tmp_path))  # type: ignore[call-arg]
     assert get_media_storage(settings, FrozenClock()).backend == "local"
-    s3 = Settings(_env_file=None, media_storage_backend="s3")  # type: ignore[call-arg]
+    s3 = Settings(
+        _env_file=None,
+        media_storage_backend="s3",
+        s3_bucket="test-bucket",
+        s3_access_key_id="synthetic-access-id",
+        s3_secret_access_key="synthetic-secret-key",
+    )  # type: ignore[call-arg]
     with pytest.raises(MediaStorageUnavailable, match="Phase 7"):
         get_media_storage(s3, FrozenClock())
 

@@ -52,9 +52,10 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `META_APP_SECRET` 🔒 | empty | required if meta | Webhook signatures, OAuth |
 | `META_GRAPH_API_VERSION` | `v25.0` (verify current at P7) | pinned | |
 | `META_OAUTH_REDIRECT_URI` | `http://localhost:8000/oauth/instagram/callback` | `https://<domain>/oauth/instagram/callback` | Must match the app config |
+| `META_STORIES_ENABLED` | `true` | capability switch | Live story support remains pending V-03; the switch alone does not establish it |
 | `TOKEN_ENCRYPTION_KEYS` 🔒 | empty | required if meta | `k1:<base64-32-bytes>[,k2:…]` |
 | `TOKEN_ENCRYPTION_ACTIVE_KEY_ID` | empty | required if meta | |
-| `TOKEN_REFRESH_DAYS_BEFORE_EXPIRY` | `20` | `20` | |
+| `TOKEN_REFRESH_DAYS_BEFORE_EXPIRY` | `20` | `20` | Positive refresh horizon in days; refresh jobs are implemented in Session 3 |
 | `REPLY_DEBOUNCE_SECONDS` | `8` | `8` | |
 | `SEND_RECONCILE_WINDOW_MINUTES` | `10` | `10` | |
 | `CIRCUIT_FAILURE_THRESHOLD` / `CIRCUIT_WINDOW_MINUTES` / `CIRCUIT_COOLDOWN_MINUTES` | `5` / `10` / `10` | same | Circuit breaker (workflows.md §G.2): failures within the window open it; the cooldown is how long the account is left alone before it is probed |
@@ -67,7 +68,10 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `MEDIA_LOCAL_ROOT` | `./var/media` | — | Relative to `backend/` (git-ignored under `backend/var/`); an absolute path is used as is |
 | `MEDIA_MAX_IMAGE_BYTES` | `8388608` | same | 8 MB. Larger uploads are refused with 413 `MEDIA_TOO_LARGE` |
 | `MEDIA_PUBLIC_URL_TTL_SECONDS` | `3600` | `3600` | Presigned URL lifetime for Meta fetch; for `local`, the expiry in the `localmedia:` reference |
-| `S3_ENDPOINT_URL`, `S3_REGION`, `S3_BUCKET` | empty | required if s3 | |
+| `MEDIA_PUBLIC_BASE_URL` | empty | unused | Reserved for a future secured local-media tunnel contract; does not enable Meta with local storage |
+| `S3_ENDPOINT_URL` | empty | optional | Empty selects AWS's default endpoint; set for R2, MinIO or another S3-compatible provider |
+| `S3_REGION` | `auto` | non-empty if s3 | Use the bucket's actual AWS region for AWS; `auto` is suitable for R2 |
+| `S3_BUCKET` | empty | required if s3 | Private bucket |
 | `S3_ACCESS_KEY_ID` 🔒, `S3_SECRET_ACCESS_KEY` 🔒 | empty | required if s3 | |
 | `SIM_CONTAINER_DELAY_SECONDS` | `2` | `2` | Mock container processing time: a container is `IN_PROGRESS` for this long after creation, then `FINISHED`. `0` finishes at once |
 | `PUBLISH_DAILY_LIMIT` | `50` | `50` | Conservative (OQ-18). Posts per rolling 24 h: the mock reports it as the quota `limit` and refuses to publish beyond it (`ProviderRateLimited`) |
@@ -112,3 +116,5 @@ There is **no audit setting**: audit rows are never deleted in Phase 6 (plan H17
 | Variable | dev | prod | Description |
 |---|---|---|---|
 | `VITE_WAITLIST_ENDPOINT` | empty (preview mode) | required to collect signups | URL that accepts a JSON `POST` of `{ business, instagram, contact, city, lang }`. When empty, the form says nothing was sent. The destination is not chosen yet. |
+
+**Phase 7 provider/storage checks (all environments):** enabling `meta` requires the Meta app ID/secret, an explicitly configured webhook verification token, OAuth redirect URI, a valid encryption key ring and S3. A supplied key ring is validated even when Meta is disabled. Selecting S3 requires bucket, region and explicit access/secret keys; endpoint is optional for AWS. `MEDIA_PUBLIC_BASE_URL` is reserved until secured public local-media serving exists and does not allow Meta with local storage. Mock/local defaults still require no external credentials. S3 presigned GET TTLs are restricted to 1 through 604800 seconds. Live verification and both phase gates remain pending.

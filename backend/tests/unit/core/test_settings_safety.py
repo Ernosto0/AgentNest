@@ -1,5 +1,6 @@
 """AC-X6: production refuses unsafe configuration (INV-20)."""
 
+import base64
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,19 @@ def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "META_APP_SECRET",
         "MEDIA_STORAGE_BACKEND",
         "MEDIA_LOCAL_ROOT",
+        "META_APP_ID",
+        "META_GRAPH_API_VERSION",
+        "META_OAUTH_REDIRECT_URI",
+        "META_STORIES_ENABLED",
+        "TOKEN_ENCRYPTION_KEYS",
+        "TOKEN_ENCRYPTION_ACTIVE_KEY_ID",
+        "TOKEN_REFRESH_DAYS_BEFORE_EXPIRY",
+        "MEDIA_PUBLIC_BASE_URL",
+        "S3_ENDPOINT_URL",
+        "S3_REGION",
+        "S3_BUCKET",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -43,8 +57,14 @@ def prod(**overrides: object) -> Settings:
         "llm_provider": "openai",
         "openai_api_key": "sk-test-key",
         "meta_app_secret": "meta-secret",
+        "meta_app_id": "test-meta-app",
         "meta_webhook_verify_token": "verify-token",
+        "token_encryption_keys": "k1:" + base64.b64encode(b"k" * 32).decode(),
+        "token_encryption_active_key_id": "k1",
         "media_storage_backend": "s3",  # Meta needs a public URL; local is refused with it
+        "s3_bucket": "test-bucket",
+        "s3_access_key_id": "synthetic-access-key",
+        "s3_secret_access_key": "synthetic-secret-key",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)  # type: ignore[arg-type]
@@ -255,3 +275,134 @@ def test_every_retention_variable_is_in_the_example_env_and_the_docs() -> None:
         variable = name.upper()
         assert f"{variable}=" in example, f"{variable} is missing from .env.example"
         assert f"`{variable}`" in docs, f"{variable} is missing from environment-variables.md"
+
+
+# --- Phase 7 foundations -------------------------------------------------------------------
+
+PHASE7_FIELDS = (
+    "meta_app_id",
+    "meta_graph_api_version",
+    "meta_oauth_redirect_uri",
+    "meta_stories_enabled",
+    "token_encryption_keys",
+    "token_encryption_active_key_id",
+    "token_refresh_days_before_expiry",
+    "media_public_base_url",
+    "s3_endpoint_url",
+    "s3_region",
+    "s3_bucket",
+    "s3_access_key_id",
+    "s3_secret_access_key",
+)
+
+
+def test_phase7_defaults_preserve_the_credential_free_local_demo() -> None:
+    settings = Settings(_env_file=None)
+    assert settings.instagram_providers == {"mock"}
+    assert settings.media_storage_backend == "local"
+    assert settings.meta_app_id == ""
+    assert settings.meta_graph_api_version == "v25.0"
+    assert settings.meta_oauth_redirect_uri == "http://localhost:8000/oauth/instagram/callback"
+    assert settings.meta_stories_enabled is True
+    assert settings.token_encryption_keys.get_secret_value() == ""
+    assert settings.token_encryption_active_key_id == ""
+    assert settings.token_refresh_days_before_expiry == 20
+    assert settings.media_public_base_url == ""
+    assert settings.s3_endpoint_url == ""
+    assert settings.s3_region == "auto"
+    assert settings.safety_problems() == []
+
+
+@pytest.mark.parametrize("environment", ["development", "test", "production"])
+@pytest.mark.parametrize(
+    ("field", "error"),
+    [
+        ("meta_app_id", "META_APP_ID"),
+        ("meta_app_secret", "META_APP_SECRET"),
+        ("meta_webhook_verify_token", "META_WEBHOOK_VERIFY_TOKEN"),
+        ("meta_oauth_redirect_uri", "META_OAUTH_REDIRECT_URI"),
+        ("token_encryption_keys", "TOKEN_ENCRYPTION_KEYS"),
+        ("token_encryption_active_key_id", "TOKEN_ENCRYPTION_ACTIVE_KEY_ID"),
+    ],
+)
+def test_meta_requires_credentials_and_keys_in_every_environment(
+    environment: str, field: str, error: str
+) -> None:
+    with pytest.raises(ConfigError, match=error):
+        prod(app_env=environment, instagram_enabled_providers="meta", **{field: ""})
+
+
+@pytest.mark.parametrize("environment", ["development", "test", "production"])
+def test_a_tunnel_setting_does_not_make_local_media_public(environment: str) -> None:
+    with pytest.raises(ConfigError, match="public local-media serving is not implemented"):
+        prod(
+            app_env=environment,
+            instagram_enabled_providers="meta",
+            media_storage_backend="local",
+            media_public_base_url="https://tunnel.example.test",
+        )
+
+
+@pytest.mark.parametrize("environment", ["development", "test", "production"])
+@pytest.mark.parametrize(
+    "field", ["s3_bucket", "s3_region", "s3_access_key_id", "s3_secret_access_key"]
+)
+def test_s3_requires_its_configuration_even_without_meta(environment: str, field: str) -> None:
+    with pytest.raises(ConfigError, match=field.upper()):
+        prod(
+            app_env=environment,
+            instagram_enabled_providers="mock",
+            allow_simulated_workspaces=True,
+            mock_instagram_app_secret="mock-secret",
+            **{field: " "},
+        )
+
+
+def test_meta_verification_token_must_be_explicit_not_the_development_placeholder() -> None:
+    with pytest.raises(ConfigError, match="META_WEBHOOK_VERIFY_TOKEN"):
+        Settings(_env_file=None, instagram_enabled_providers="meta")
+
+
+@pytest.mark.parametrize("environment", ["development", "test", "production"])
+def test_optional_keys_are_validated_even_when_meta_is_disabled(environment: str) -> None:
+    with pytest.raises(ConfigError, match="TOKEN_ENCRYPTION_KEYS"):
+        prod(
+            app_env=environment,
+            instagram_enabled_providers="",
+            token_encryption_keys="secret-bad-key",
+        )
+
+
+def test_phase7_secrets_do_not_appear_in_public_settings_or_config_errors() -> None:
+    settings = prod()
+    public = settings.public_dict()
+    for name in ("token_encryption_keys", "s3_access_key_id", "s3_secret_access_key"):
+        assert name not in public
+        assert getattr(settings, name).get_secret_value() not in str(public)
+    with pytest.raises(ConfigError) as info:
+        prod(token_encryption_keys="do-not-disclose-this-input")
+    assert "do-not-disclose-this-input" not in str(info.value)
+
+
+@pytest.mark.parametrize("days", [0, -1])
+def test_token_refresh_horizon_must_be_positive(days: int) -> None:
+    with pytest.raises(ValueError):
+        Settings(_env_file=None, token_refresh_days_before_expiry=days)
+
+
+def test_phase7_environment_variables_are_read_and_documented(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("META_GRAPH_API_VERSION", "v99.0")
+    monkeypatch.setenv("META_STORIES_ENABLED", "false")
+    monkeypatch.setenv("TOKEN_REFRESH_DAYS_BEFORE_EXPIRY", "7")
+    settings = Settings(_env_file=None)
+    assert settings.meta_graph_api_version == "v99.0"
+    assert settings.meta_stories_enabled is False
+    assert settings.token_refresh_days_before_expiry == 7
+    root = Path(__file__).resolve().parents[4]
+    example = (root / ".env.example").read_text(encoding="utf-8")
+    docs = (root / "docs/operations/environment-variables.md").read_text(encoding="utf-8")
+    for name in PHASE7_FIELDS:
+        assert f"{name.upper()}=" in example
+        assert f"`{name.upper()}`" in docs

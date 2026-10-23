@@ -21,6 +21,8 @@ dependencies = [
     "openai>=3.31.0",
     "pillow>=13.0.0",
     "python-multipart>=0.0.32",
+    "cryptography>=43.0",
+    "boto3>=1.35",
 ]
 
 [dependency-groups]
@@ -30,6 +32,7 @@ dev = [
     "mypy>=1.11",
     "import-linter>=2.0",
     "types-pyyaml>=6.0",
+    "types-boto3-lite[s3]>=1.35",
 ]
 
 [tool.uv]

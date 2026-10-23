@@ -25,8 +25,11 @@ In `production`:
 
 In every environment: log the effective non-secret configuration at startup (secrets redacted).
 
+**Phase 7 Session 1:** Meta requires `META_APP_ID`, `META_APP_SECRET`, an explicitly set `META_WEBHOOK_VERIFY_TOKEN`, `META_OAUTH_REDIRECT_URI`, a valid key ring and S3 in **every environment**, including development/test. S3 requires bucket, non-empty region and explicit access/secret keys whenever selected; endpoint is optional for AWS. Any supplied encryption key ring is validated even when Meta is disabled. Development keeps the fake/mock/local defaults and needs no external credentials. The reserved `MEDIA_PUBLIC_BASE_URL` does not enable local-media serving.
+
 ### Secrets in storage
 - Instagram tokens: **application-level authenticated encryption** (AES-256-GCM via `cryptography`'s `AESGCM`, or Fernet) with a key from `TOKEN_ENCRYPTION_KEYS`. Format `key_id:base64key`, comma-separated; `TOKEN_ENCRYPTION_ACTIVE_KEY_ID` selects the key for new writes. Ciphertext rows store `token_key_id` to allow rotation (a re-encryption job is added when needed).
+- Phase 7 uses AES-256-GCM specifically: a random 12-byte nonce prefixes the ciphertext and authentication tag. AAD is UTF-8 `"{workspace_id}:{social_account_id}"`; decrypting with another account/workspace fails authentication. `TokenKeyRing.encrypt` returns `(blob, active_key_id)`; `decrypt` uses the stored key ID. Malformed keys and failed authentication raise content-free `TokenCryptoError` messages.
 - Tokens are decrypted only inside the Meta provider adapter at call time and never logged, serialised in API responses, or placed in job payloads (jobs carry `social_account_id` only).
 - Passwords: argon2id hashes. Session tokens: only SHA-256 hashes stored.
 - Webhook secrets (`META_APP_SECRET`, `MOCK_INSTAGRAM_APP_SECRET`, `TELEGRAM_WEBHOOK_SECRET`) only from the environment.

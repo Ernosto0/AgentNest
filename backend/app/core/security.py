@@ -1,12 +1,16 @@
-"""Password hashing, session/CSRF tokens. Token encryption (AES-GCM) arrives with Phase 7."""
+"""Password hashing, session/CSRF tokens and account-bound token encryption (ADR-017)."""
 
 import base64
+import binascii
 import hashlib
 import hmac
 import secrets
+import uuid
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 MIN_PASSWORD_LENGTH = 10
 
@@ -85,3 +89,48 @@ def generate_secret_key() -> str:
 def generate_encryption_key(key_id: str = "k1") -> str:
     """``key_id:base64(32 random bytes)``, the TOKEN_ENCRYPTION_KEYS entry format (ADR-017)."""
     return f"{key_id}:{base64.b64encode(secrets.token_bytes(32)).decode()}"
+
+
+class TokenCryptoError(ValueError):
+    """Invalid key configuration or unauthenticated token ciphertext; never contains secrets."""
+
+
+class TokenKeyRing:
+    """AES-256-GCM keys: new writes use the active key; retained keys decrypt older rows."""
+
+    def __init__(self, keys: str, active_key_id: str) -> None:
+        self._keys: dict[str, bytes] = {}
+        for entry in keys.split(","):
+            key_id, separator, encoded = entry.strip().partition(":")
+            key_id = key_id.strip()
+            if not separator or not key_id or key_id in self._keys:
+                raise TokenCryptoError("TOKEN_ENCRYPTION_KEYS has empty or duplicate key IDs.")
+            try:
+                key = base64.b64decode(encoded, validate=True)
+            except (binascii.Error, ValueError):
+                raise TokenCryptoError("TOKEN_ENCRYPTION_KEYS must contain base64 keys.") from None
+            if len(key) != 32:
+                raise TokenCryptoError("TOKEN_ENCRYPTION_KEYS keys must decode to 32 bytes.")
+            self._keys[key_id] = key
+        if active_key_id not in self._keys:
+            raise TokenCryptoError("TOKEN_ENCRYPTION_ACTIVE_KEY_ID must name a configured key.")
+        self.active_key_id = active_key_id
+
+    def encrypt(self, plaintext: str, *, aad: bytes = b"") -> tuple[bytes, str]:
+        nonce = secrets.token_bytes(12)
+        encrypted = AESGCM(self._keys[self.active_key_id]).encrypt(nonce, plaintext.encode(), aad)
+        return nonce + encrypted, self.active_key_id
+
+    def decrypt(self, blob: bytes, key_id: str, *, aad: bytes = b"") -> str:
+        key = self._keys.get(key_id)
+        if key is None or len(blob) < 28:  # 12-byte nonce and 16-byte authentication tag
+            raise TokenCryptoError("Token ciphertext or key ID is invalid.")
+        try:
+            return AESGCM(key).decrypt(blob[:12], blob[12:], aad).decode("utf-8")
+        except (InvalidTag, UnicodeDecodeError, ValueError):
+            raise TokenCryptoError("Token ciphertext authentication failed.") from None
+
+
+def account_token_aad(workspace_id: uuid.UUID, account_id: uuid.UUID) -> bytes:
+    """Bind ciphertext to its tenant and account so moving a stored blob cannot authenticate."""
+    return f"{workspace_id}:{account_id}".encode()

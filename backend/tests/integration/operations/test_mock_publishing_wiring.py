@@ -76,7 +76,13 @@ def test_the_registry_wires_storage_and_the_publishing_settings_into_the_mock(
 def test_without_a_buildable_storage_messaging_still_works_and_publishing_fails(
     shared_session_factory: sessionmaker[Session], clock: FrozenClock
 ) -> None:
-    settings = Settings(_env_file=None, media_storage_backend="s3")  # type: ignore[call-arg]
+    settings = Settings(
+        _env_file=None,
+        media_storage_backend="s3",
+        s3_bucket="test-bucket",
+        s3_access_key_id="synthetic-access-id",
+        s3_secret_access_key="synthetic-secret-key",
+    )  # type: ignore[call-arg]
     provider = get_provider(
         "mock", settings=settings, session_factory=shared_session_factory, clock=clock
     )

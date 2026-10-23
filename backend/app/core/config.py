@@ -13,6 +13,8 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
+from app.core.security import TokenCryptoError, TokenKeyRing
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # Development-only placeholders. Production refuses the example secret key.
@@ -32,6 +34,9 @@ _SECRET_FIELDS = frozenset(
         "mock_instagram_app_secret",
         "meta_webhook_verify_token",
         "meta_app_secret",
+        "token_encryption_keys",
+        "s3_access_key_id",
+        "s3_secret_access_key",
     }
 )
 
@@ -102,6 +107,14 @@ class Settings(BaseSettings):
     mock_instagram_app_secret: SecretStr = SecretStr("dev-mock-instagram-app-secret")
     meta_webhook_verify_token: SecretStr = SecretStr("dev-meta-webhook-verify-token")
     meta_app_secret: SecretStr = SecretStr("")
+    # Phase 7 foundations. Enabling Meta requires explicit credentials in every environment.
+    meta_app_id: str = ""
+    meta_graph_api_version: str = "v25.0"
+    meta_oauth_redirect_uri: str = "http://localhost:8000/oauth/instagram/callback"
+    meta_stories_enabled: bool = True
+    token_encryption_keys: SecretStr = SecretStr("")
+    token_encryption_active_key_id: str = ""
+    token_refresh_days_before_expiry: int = Field(default=20, ge=1)
     reply_debounce_seconds: int = Field(default=8, ge=0)
     send_reconcile_window_minutes: int = Field(default=10, ge=1)
     # Circuit breaker (Phase 6, workflows.md G.2): N transient failures within the window
@@ -116,6 +129,13 @@ class Settings(BaseSettings):
     media_local_root: str = "./var/media"
     media_max_image_bytes: int = Field(default=8_388_608, ge=1)
     media_public_url_ttl_seconds: int = Field(default=3600, ge=1)
+    # Reserved for a future secured local-media tunnel contract; does not enable Meta/local.
+    media_public_base_url: str = ""
+    s3_endpoint_url: str = ""  # Empty selects AWS's default endpoint.
+    s3_region: str = "auto"
+    s3_bucket: str = ""
+    s3_access_key_id: SecretStr = SecretStr("")
+    s3_secret_access_key: SecretStr = SecretStr("")
 
     # --- Mock publishing (Phase 5, integrations.md §3.3) ---
     sim_container_delay_seconds: int = Field(default=2, ge=0)
@@ -140,30 +160,46 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _apply_environment_rules(self) -> "Settings":
-        if self.app_env != "production":
-            return self
         explicit = self.model_fields_set
         # Production defaults are safe; explicit unsafe values are refused below.
-        if "demo_tools_enabled" not in explicit:
-            self.demo_tools_enabled = False
-        if "cookie_secure" not in explicit:
-            self.cookie_secure = True
-        if "log_format" not in explicit:
-            self.log_format = "json"
-        if "allow_simulated_workspaces" not in explicit:
-            self.allow_simulated_workspaces = False
-        if "instagram_enabled_providers" not in explicit:
-            self.instagram_enabled_providers = "meta"
+        if self.app_env == "production":
+            if "demo_tools_enabled" not in explicit:
+                self.demo_tools_enabled = False
+            if "cookie_secure" not in explicit:
+                self.cookie_secure = True
+            if "log_format" not in explicit:
+                self.log_format = "json"
+            if "allow_simulated_workspaces" not in explicit:
+                self.allow_simulated_workspaces = False
+            if "instagram_enabled_providers" not in explicit:
+                self.instagram_enabled_providers = "meta"
         problems = self.safety_problems()
         if problems:
             raise ConfigError(problems)
         return self
 
     def safety_problems(self) -> list[str]:
-        """Return the reasons this configuration is unsafe in production (empty otherwise)."""
+        """Provider/storage safety applies everywhere; production has extra deployment checks."""
+        problems = self._instagram_problems()
+        keys = self.token_encryption_keys.get_secret_value()
+        if keys or self.token_encryption_active_key_id or "meta" in self.instagram_providers:
+            try:
+                TokenKeyRing(keys, self.token_encryption_active_key_id)
+            except TokenCryptoError as exc:
+                problems.append(str(exc))
+        if self.media_storage_backend == "s3":
+            for name in ("s3_bucket", "s3_region", "s3_access_key_id", "s3_secret_access_key"):
+                value = getattr(self, name)
+                raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+                if not raw.strip():
+                    problems.append(f"{name.upper()} must be set when MEDIA_STORAGE_BACKEND=s3.")
+        if "meta" in self.instagram_providers and self.media_storage_backend != "s3":
+            problems.append(
+                "MEDIA_STORAGE_BACKEND must be 's3' when 'meta' is enabled; "
+                "public local-media serving is not implemented."
+            )
         if self.app_env != "production":
-            return []
-        problems: list[str] = []
+            return problems
         secret = self.secret_key.get_secret_value()
         if "secret_key" not in self.model_fields_set or not secret:
             problems.append("SECRET_KEY must be set in production.")
@@ -183,10 +219,6 @@ class Settings(BaseSettings):
             problems.append("OPENAI_API_KEY must be set when LLM_PROVIDER=openai.")
         if self.llm_provider == "openai" and not self.llm_model_default.strip():
             problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
-        problems.extend(self._instagram_problems())
-        if "meta" in self.instagram_providers and self.media_storage_backend == "local":
-            # Meta fetches the image from a public URL, which the local backend cannot serve.
-            problems.append("MEDIA_STORAGE_BACKEND must not be 'local' when 'meta' is enabled.")
         return problems
 
     @property
@@ -209,7 +241,7 @@ class Settings(BaseSettings):
         if unknown:
             problems.append(f"INSTAGRAM_ENABLED_PROVIDERS has unknown kinds: {sorted(unknown)}.")
         explicit = self.model_fields_set
-        if "mock" in kinds:
+        if "mock" in kinds and self.app_env == "production":
             if not self.allow_simulated_workspaces:
                 problems.append(
                     "INSTAGRAM_ENABLED_PROVIDERS contains 'mock' in production, which requires "
@@ -220,12 +252,16 @@ class Settings(BaseSettings):
             ):
                 problems.append("MOCK_INSTAGRAM_APP_SECRET must be set when 'mock' is enabled.")
         if "meta" in kinds:
-            if not self.meta_app_secret.get_secret_value():
+            if not self.meta_app_id.strip():
+                problems.append("META_APP_ID must be set when 'meta' is enabled.")
+            if not self.meta_app_secret.get_secret_value().strip():
                 problems.append("META_APP_SECRET must be set when 'meta' is enabled.")
             if "meta_webhook_verify_token" not in explicit or not (
-                self.meta_webhook_verify_token.get_secret_value()
+                self.meta_webhook_verify_token.get_secret_value().strip()
             ):
                 problems.append("META_WEBHOOK_VERIFY_TOKEN must be set when 'meta' is enabled.")
+            if not self.meta_oauth_redirect_uri.strip():
+                problems.append("META_OAUTH_REDIRECT_URI must be set when 'meta' is enabled.")
         return problems
 
     def llm_model_for(self, task: str) -> str:
