@@ -49,7 +49,7 @@ from app.integrations.instagram.errors import (
     ProviderWindowClosed,
 )
 from app.integrations.instagram.models import SocialAccount
-from app.integrations.instagram.registry import get_provider
+from app.integrations.instagram.registry import account_ref, get_provider
 from app.jobs.queue import enqueue
 from app.operations import health
 from app.operations.models import Operation
@@ -106,7 +106,7 @@ def execute_send_reply(
     """Send ``draft_id`` once. Safe to call again for the same draft (a retry, a re-run after a
     crash): the ledger and the draft state decide what, if anything, still has to happen."""
     with session_factory() as session:  # [T4]
-        prepared = _prepare(session, clock, workspace_id, draft_id, correlation_id)
+        prepared = _prepare(session, clock, workspace_id, draft_id, correlation_id, settings)
         session.commit()
     if isinstance(prepared, SendOutcome):
         return prepared
@@ -142,6 +142,7 @@ def _prepare(
     workspace_id: uuid.UUID,
     draft_id: uuid.UUID,
     correlation_id: uuid.UUID | None,
+    settings: Settings,
 ) -> _Prepared | SendOutcome:
     draft = drafts.get_draft(session, workspace_id, draft_id, lock=True)
     ctx = system_context(session, workspace_id, "operations.send")
@@ -231,7 +232,7 @@ def _prepare(
         workspace_id=workspace_id,
         operation_id=operation.id,
         draft_id=draft.id,
-        account=AccountRef(account.id, workspace_id, account.external_account_id),
+        account=account_ref(account, settings),
         provider_kind=account.provider_kind,
         recipient_id=conversation.customer_external_id,
         text=draft.text,

@@ -20,10 +20,10 @@ from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.inbox.system import system_context
 from app.integrations.instagram import queries
-from app.integrations.instagram.base import AccountRef, InstagramProvider
+from app.integrations.instagram.base import InstagramProvider
 from app.integrations.instagram.errors import ProviderAuthError, ProviderError
 from app.integrations.instagram.models import SocialAccount
-from app.integrations.instagram.registry import get_provider
+from app.integrations.instagram.registry import account_ref, get_provider
 from app.operations import health
 
 Result = Literal["skipped", "recovered", "still_degraded", "needs_reauth"]
@@ -42,7 +42,7 @@ def run_health_check(
         account = queries.get_account_in_workspace(session, workspace_id, social_account_id)
         if account is None or account.status != "degraded":
             return "skipped"
-        ref = AccountRef(account.id, workspace_id, account.external_account_id)
+        ref = account_ref(account, settings)
         kind = account.provider_kind
     reader = provider or get_provider(
         kind, settings=settings, session_factory=session_factory, clock=clock

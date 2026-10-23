@@ -21,10 +21,10 @@ from app.inbox.echoes import Echo
 from app.inbox.models import ReplyDraft
 from app.inbox.system import system_context
 from app.integrations.instagram import queries
-from app.integrations.instagram.base import AccountRef, InstagramProvider, OutboundMessageInfo
+from app.integrations.instagram.base import InstagramProvider, OutboundMessageInfo
 from app.integrations.instagram.errors import ProviderError
 from app.integrations.instagram.models import SocialAccount
-from app.integrations.instagram.registry import get_provider
+from app.integrations.instagram.registry import account_ref, get_provider
 from app.jobs.queue import enqueue
 from app.operations.models import Operation
 from app.operations.payloads import ReconcileSendPayload
@@ -136,7 +136,7 @@ def reconcile_send(
         account = queries.get_account_in_workspace(session, workspace_id, op.social_account_id)
         if account is None:
             return "resolved"
-        ref = AccountRef(account.id, workspace_id, account.external_account_id)
+        ref = account_ref(account, settings)
         kind, recipient = account.provider_kind, str(op.provider_ref.get("recipient_id", ""))
         digest, since = op.provider_ref.get("text_sha256"), op.started_at - CLOCK_SKEW
 

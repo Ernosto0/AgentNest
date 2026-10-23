@@ -144,6 +144,8 @@ source_modules = [
     "app.knowledge.impact",
     "app.integrations",
     "app.integrations.storage.s3",
+    "app.integrations.instagram.meta",
+    "app.integrations.instagram.error_mapping",
     "app.operations.accounts",
     "app.operations.schemas",
     "app.inbox.models",
@@ -349,8 +351,8 @@ forbidden_modules = [
 name = "inbox uses only the webhook side of the Instagram integration (INV-15)"
 type = "forbidden"
 source_modules = ["app.inbox", "app.knowledge", "app.policy"]
-forbidden_modules = ["app.integrations.instagram.mock"]
-allow_indirect_imports = true  # the registry builds the mock; only direct use is forbidden
+forbidden_modules = ["app.integrations.instagram.mock", "app.integrations.instagram.meta"]
+allow_indirect_imports = true  # the registry builds adapters; only direct use is forbidden
 
 [[tool.importlinter.contracts]]
 name = "the policy rules are pure"

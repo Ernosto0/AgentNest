@@ -101,6 +101,8 @@ class PublishingQuota:
 @dataclass(frozen=True)
 class TokenInfo:
     expires_at: datetime | None
+    # Refresh consumer encrypts this immediately; never serialize or log this shape.
+    access_token: str | None = field(default=None, repr=False)
 
 
 class InstagramProvider(Protocol):
