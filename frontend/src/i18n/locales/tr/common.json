@@ -44,8 +44,8 @@
     "create": "Çalışma alanı oluştur"
   },
   "banner": {
-    "simulation": "Demo çalışma alanı — simülasyon",
-    "simulationDetail": "Bu çalışma alanı simülasyondur, gerçek Instagram'a hiçbir şey gönderilmez."
+    "simulation": "Demo çalışma alanı",
+    "simulationDetail": "Simülasyon etiketli işlemler gerçek Instagram'a gönderilmez. Gerçek Instagram bağlantıları gerçek hesabınızda işlem yapar."
   },
   "badge": {
     "simulated": "SİMÜLASYON"
@@ -330,13 +330,21 @@
     "REPORT_SOURCES_RETAINED_OUT": {
       "what": "Saklama süresi dolan kaynaklar silindiği için bu rapor eksiksiz yeniden oluşturulamıyor.",
       "next": "Daha önce kaydedilmiş raporu kullanın veya başka bir gün seçin."
+    },
+    "ACCOUNT_MISMATCH": {
+      "what": "Farklı bir Instagram hesabı seçtiniz.",
+      "next": "Bu çalışma alanına bağlı olan hesapla yeniden bağlanın."
+    },
+    "OAUTH_STATE_INVALID": {
+      "what": "Instagram oturum açma işleminin süresi dolmuş veya işlem artık geçerli değil.",
+      "next": "Bu ekrandan bağlantıyı yeniden başlatın."
     }
   },
   "connections": {
     "title": "Instagram bağlantısı",
-    "intro": "Hesabınızın bağlantı durumu ve neler yapabildiği. Bağlantı koparsa yanıtlar ve gönderiler bekler, siz yeniden bağlanınca devam eder.",
+    "intro": "Hesabınızın bağlantı durumu ve neler yapabildiği. Bağlantı koparsa yanıtlar ve gönderiler bekler. Yeniden bağlandıktan sonra beklemeye alınan gönderileri gözden geçirip tekrar onaylayın.",
     "none": "Bağlı bir Instagram hesabı yok.",
-    "connectMock": "Simüle edilmiş hesap bağla",
+    "connectMock": "Demo hesabı bağla (simülasyon)",
     "status": "Durum",
     "capabilities": "Yapabildikleri",
     "lastError": "Son hata",
@@ -348,10 +356,17 @@
     "reconnectReal": "Gerçek hesaplar Instagram girişi ile yeniden bağlanır.",
     "disconnect": "Bağlantıyı kes",
     "disconnectTitle": "Bağlantıyı kesmek istiyor musunuz?",
-    "disconnectBody": "Bağlantı kesilince yanıt gönderilemez ve gönderi yayınlanamaz. İstediğiniz zaman yeniden bağlanabilirsiniz.",
+    "disconnectBody": "Bağlantı kesilince yanıt gönderilemez ve gönderi yayınlanamaz. Yeni gönderimler için hesabı yeniden bağlamanız gerekir.",
     "disconnectConfirm": "Evet, bağlantıyı kes",
     "disconnectCancel": "Vazgeç",
-    "ownerOnly": "Bunu yalnızca sahip değiştirebilir."
+    "ownerOnly": "Bunu yalnızca sahip değiştirebilir.",
+    "connectInstagram": "Instagram ile bağlan",
+    "reconnectInstagram": "Instagram ile bağlantıyı yenile",
+    "oauthConnected": "Instagram hesabı bağlandı.",
+    "dismiss": "Kapat",
+    "unavailable": "Bu çalışma alanı için kullanılabilir bağlantı sağlayıcısı yok.",
+    "deleteConversationData": "Konuşma ve mesaj geçmişini de sil",
+    "deleteConversationDataHint": "Silme işlemi, devam eden bir gönderimin sonucu doğrulanana kadar bekleyebilir. Bağlantınız hemen kaldırılır."
   },
   "systemHealth": {
     "title": "Sistem durumu",

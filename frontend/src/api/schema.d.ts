@@ -1294,6 +1294,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/social-accounts/instagram/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Connect Instagram */
+        post: operations["connect_instagram_api_v1_workspaces__workspace_id__social_accounts_instagram_connect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/social-accounts/mock": {
         parameters: {
             query?: never;
@@ -1374,6 +1391,23 @@ export interface paths {
          * @description Liveness: the process is up. Never touches the database.
          */
         get: operations["healthz_healthz_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/instagram/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Callback */
+        get: operations["callback_oauth_instagram_callback_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2136,6 +2170,14 @@ export interface components {
              */
             tr: string;
         };
+        /** DisconnectRequest */
+        DisconnectRequest: {
+            /**
+             * Delete Conversation Data
+             * @default false
+             */
+            delete_conversation_data: boolean;
+        };
         /** DraftPatchIn */
         DraftPatchIn: {
             /**
@@ -2359,6 +2401,22 @@ export interface components {
             checked: number;
             /** Recovered */
             recovered: number;
+        };
+        /** InstagramConnectOut */
+        InstagramConnectOut: {
+            /** Authorize Url */
+            authorize_url: string;
+        };
+        /** InstagramConnectRequest */
+        InstagramConnectRequest: {
+            /**
+             * Purpose
+             * @default connect
+             * @enum {string}
+             */
+            purpose: "connect" | "reconnect";
+            /** Social Account Id */
+            social_account_id?: string | null;
         };
         /** InviteAccept */
         InviteAccept: {
@@ -2608,8 +2666,12 @@ export interface components {
         MetaResponse: {
             /** Demo Tools Enabled */
             demo_tools_enabled: boolean;
+            /** Instagram Providers */
+            instagram_providers: ("mock" | "meta")[];
             /** Llm Mode */
             llm_mode: string;
+            /** Mock Requires Demo Workspace */
+            mock_requires_demo_workspace: boolean;
             /** Product Name */
             product_name: string;
             /** Supported Locales */
@@ -6309,6 +6371,41 @@ export interface operations {
             };
         };
     };
+    connect_instagram_api_v1_workspaces__workspace_id__social_accounts_instagram_connect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InstagramConnectRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramConnectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     connect_mock_account_api_v1_workspaces__workspace_id__social_accounts_mock_post: {
         parameters: {
             query?: never;
@@ -6354,7 +6451,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DisconnectRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -6457,6 +6558,37 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    callback_oauth_instagram_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

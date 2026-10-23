@@ -10,7 +10,7 @@ afterEach(() => vi.unstubAllGlobals());
 const TOKEN = "tok-abc-123";
 
 function meta() {
-  return json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"] });
+  return json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false });
 }
 
 function acceptOk() {

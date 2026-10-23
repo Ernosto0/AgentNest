@@ -29,19 +29,50 @@ export function useSystemHealth(ws: string) {
 /** Disconnect the account; everything that reads its status is refreshed. */
 export function useDisconnectAccount(ws: string) {
   const queryClient = useQueryClient();
-  return useMutation<SocialAccount, AppError, string>({
-    mutationFn: (accountId) =>
+  return useMutation<SocialAccount, AppError, { accountId: string; deleteConversationData: boolean }>({
+    mutationFn: ({ accountId, deleteConversationData }) =>
       unwrap(
         api.POST("/api/v1/workspaces/{workspace_id}/social-accounts/{account_id}/disconnect", {
           params: { path: { workspace_id: ws, account_id: accountId } },
+          body: { delete_conversation_data: deleteConversationData },
         }),
       ),
-    onSuccess: () =>
-      Promise.all(
-        ["social-accounts", "readiness", "automation", "system-health"].map((name) =>
+    onSuccess: (_, { deleteConversationData }) => {
+      if (deleteConversationData) {
+        // Erased history must not flash from cache when another screen mounts.
+        for (const name of [
+          "conversations", "conversation", "reply-draft", "approvals", "approval",
+          "answers", "report", "report-items",
+        ]) {
+          queryClient.removeQueries({ queryKey: [name, ws] });
+        }
+      }
+      return Promise.all(
+        [
+          "social-accounts", "readiness", "automation", "system-health", "conversations",
+          "conversation", "reply-draft", "approvals", "approval", "content-items",
+          "content-item", "notifications", "answers", "activity", "report", "report-items",
+        ].map((name) =>
           queryClient.invalidateQueries({ queryKey: [name, ws] }),
         ),
-      ),
+      );
+    },
+  });
+}
+
+/** Begin server-authenticated Instagram authorization; navigation belongs to the screen. */
+export function useConnectInstagram(ws: string) {
+  return useMutation<
+    { authorize_url: string },
+    AppError,
+    { purpose: "connect" | "reconnect"; social_account_id?: string }
+  >({
+    mutationFn: (body) => unwrap(
+      api.POST("/api/v1/workspaces/{workspace_id}/social-accounts/instagram/connect", {
+        params: { path: { workspace_id: ws } },
+        body,
+      }),
+    ),
   });
 }
 

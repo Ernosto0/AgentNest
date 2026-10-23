@@ -32,7 +32,7 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   await expect(page.getByRole("heading", { name: "Ana sayfa", level: 1 })).toBeVisible();
   const banner = page.getByTestId("simulation-banner");
   await expect(banner).toBeVisible();
-  await expect(banner).toContainText("Demo çalışma alanı — simülasyon");
+  await expect(banner).toContainText("Demo çalışma alanı");
   for (const label of ["Ana sayfa", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
     await expect(navLink(page, label)).toBeVisible();
   }
@@ -44,7 +44,7 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   await expect(page.getByRole("heading", { name: "Dil" })).toBeVisible();
   await chooseLanguage(page, "English");
   await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
-  await expect(banner).toContainText("Demo workspace — simulation");
+  await expect(banner).toContainText("Demo workspace");
   await expect(navLink(page, "Inbox")).toBeVisible();
   await expect(navLink(page, "Gelen kutusu")).toHaveCount(0);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");

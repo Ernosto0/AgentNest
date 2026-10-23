@@ -44,8 +44,8 @@
     "create": "Create a workspace"
   },
   "banner": {
-    "simulation": "Demo workspace — simulation",
-    "simulationDetail": "This workspace is simulated; nothing is sent to real Instagram."
+    "simulation": "Demo workspace",
+    "simulationDetail": "Actions labeled simulated do not reach real Instagram. Real Instagram connections act on your real account."
   },
   "badge": {
     "simulated": "SIMULATED"
@@ -330,13 +330,21 @@
     "REPORT_SOURCES_RETAINED_OUT": {
       "what": "This report cannot be fully regenerated because retained-out source records were deleted.",
       "next": "Use an existing saved report or choose another day."
+    },
+    "ACCOUNT_MISMATCH": {
+      "what": "You selected a different Instagram account.",
+      "next": "Reconnect using the account already linked to this workspace."
+    },
+    "OAUTH_STATE_INVALID": {
+      "what": "This Instagram sign-in has expired or is no longer valid.",
+      "next": "Start connecting again from this screen."
     }
   },
   "connections": {
     "title": "Instagram connection",
-    "intro": "Your account's connection status and what it can do. If the connection drops, replies and posts wait and continue when you reconnect.",
+    "intro": "Your account's connection status and what it can do. If the connection drops, replies and posts wait. After reconnecting, review and approve held posts again.",
     "none": "No Instagram account is connected.",
-    "connectMock": "Connect a simulated account",
+    "connectMock": "Connect a demo account (simulation)",
     "status": "Status",
     "capabilities": "What it can do",
     "lastError": "Last error",
@@ -348,10 +356,17 @@
     "reconnectReal": "Real accounts reconnect through Instagram sign-in.",
     "disconnect": "Disconnect",
     "disconnectTitle": "Disconnect the account?",
-    "disconnectBody": "While disconnected, replies cannot be sent and posts cannot be published. You can reconnect at any time.",
+    "disconnectBody": "While disconnected, replies cannot be sent and posts cannot be published. Reconnect the account before sending or publishing again.",
     "disconnectConfirm": "Yes, disconnect",
     "disconnectCancel": "Cancel",
-    "ownerOnly": "Only the owner can change this."
+    "ownerOnly": "Only the owner can change this.",
+    "connectInstagram": "Connect with Instagram",
+    "reconnectInstagram": "Reconnect with Instagram",
+    "oauthConnected": "Instagram account connected.",
+    "dismiss": "Dismiss",
+    "unavailable": "No connection provider is available for this workspace.",
+    "deleteConversationData": "Also delete conversation and message history",
+    "deleteConversationDataHint": "Deletion may wait until an ongoing send has been verified. Your connection is removed immediately."
   },
   "systemHealth": {
     "title": "System health",

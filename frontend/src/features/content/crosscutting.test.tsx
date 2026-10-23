@@ -29,7 +29,7 @@ function me(role: "owner" | "staff"): Me {
 function routes(extra: Record<string, () => Response> = {}, role: "owner" | "staff" = "owner") {
   return {
     "GET /api/v1/meta": () =>
-      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"] }),
+      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json(me(role)),
     [`GET /api/v1/workspaces/${WS_GOLKENT}`]: () => json(workspace(WS_GOLKENT)),
     [`GET ${BASE}/readiness`]: () => json(READINESS),
@@ -90,7 +90,7 @@ describe("approval of a content.publish", () => {
     });
     expect(body).toHaveAttribute("data-stale", "false");
     expect(within(body).getByTestId("preview-caption")).toHaveTextContent("Aylık üyelik 6.000 ₺ / ay ile başlıyor.");
-    expect(await within(body).findByTestId("preview-media")).toHaveAttribute("src", expect.stringMatching(/^blob:/));
+    await waitFor(() => expect(within(body).getByTestId("preview-media")).toHaveAttribute("src", expect.stringMatching(/^blob:/)));
     expect(within(body).getByTestId("approval-when")).toHaveTextContent("19:00 (İstanbul saati)");
     expect(body).toHaveTextContent("Gönderi · Sürüm 3");
     // No raw summary fields leak into the generic rows.

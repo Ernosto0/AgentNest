@@ -15,7 +15,7 @@ afterEach(() => vi.unstubAllGlobals());
 function routes(extra: Record<string, (request: RecordedRequest) => Response> = {}) {
   return {
     "GET /api/v1/meta": () =>
-      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"] }),
+      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json(ME),
     [`GET /api/v1/workspaces/${WS_GOLKENT}`]: () => json(workspace(WS_GOLKENT)),
     [`GET ${BASE}/readiness`]: () => json(READINESS),

@@ -124,6 +124,7 @@ def test_mock_connect_eligibility(
             "app_env": app_env,
             "instagram_enabled_providers": providers,
             "allow_simulated_workspaces": allow,
+            "demo_tools_enabled": False,
         }
     )
     assert accounts.mock_connect_allowed(candidate, ctx_for(env, is_demo=is_demo)) is expected

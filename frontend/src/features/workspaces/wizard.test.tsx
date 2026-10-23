@@ -32,7 +32,7 @@ describe("market defaults", () => {
 describe("workspace wizard", () => {
   const created = workspace(WS_GOLKENT, { id: "44444444-4444-4444-8444-444444444444", name: "Lale Pilates" });
   const base = {
-    "GET /api/v1/meta": () => json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"] }),
+    "GET /api/v1/meta": () => json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json(ME),
   };
 

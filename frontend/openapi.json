@@ -2173,6 +2173,18 @@
         "title": "DisclosureText",
         "type": "object"
       },
+      "DisconnectRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "delete_conversation_data": {
+            "default": false,
+            "title": "Delete Conversation Data",
+            "type": "boolean"
+          }
+        },
+        "title": "DisconnectRequest",
+        "type": "object"
+      },
       "DraftPatchIn": {
         "additionalProperties": false,
         "properties": {
@@ -2822,6 +2834,47 @@
         "title": "HealthCheckOut",
         "type": "object"
       },
+      "InstagramConnectOut": {
+        "properties": {
+          "authorize_url": {
+            "title": "Authorize Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authorize_url"
+        ],
+        "title": "InstagramConnectOut",
+        "type": "object"
+      },
+      "InstagramConnectRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "purpose": {
+            "default": "connect",
+            "enum": [
+              "connect",
+              "reconnect"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "social_account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Social Account Id"
+          }
+        },
+        "title": "InstagramConnectRequest",
+        "type": "object"
+      },
       "InviteAccept": {
         "additionalProperties": false,
         "properties": {
@@ -3450,9 +3503,24 @@
             "title": "Demo Tools Enabled",
             "type": "boolean"
           },
+          "instagram_providers": {
+            "items": {
+              "enum": [
+                "mock",
+                "meta"
+              ],
+              "type": "string"
+            },
+            "title": "Instagram Providers",
+            "type": "array"
+          },
           "llm_mode": {
             "title": "Llm Mode",
             "type": "string"
+          },
+          "mock_requires_demo_workspace": {
+            "title": "Mock Requires Demo Workspace",
+            "type": "boolean"
           },
           "product_name": {
             "title": "Product Name",
@@ -3470,7 +3538,9 @@
           "product_name",
           "demo_tools_enabled",
           "llm_mode",
-          "supported_locales"
+          "supported_locales",
+          "instagram_providers",
+          "mock_requires_demo_workspace"
         ],
         "title": "MetaResponse",
         "type": "object"
@@ -10851,6 +10921,66 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/social-accounts/instagram/connect": {
+      "post": {
+        "operationId": "connect_instagram_api_v1_workspaces__workspace_id__social_accounts_instagram_connect_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/InstagramConnectRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstagramConnectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Connect Instagram",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/social-accounts/mock": {
       "post": {
         "operationId": "connect_mock_account_api_v1_workspaces__workspace_id__social_accounts_mock_post",
@@ -10936,6 +11066,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DisconnectRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -11083,6 +11230,80 @@
         "summary": "Healthz",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/oauth/instagram/callback": {
+      "get": {
+        "operationId": "callback_oauth_instagram_callback_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "error",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Error"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Callback",
+        "tags": [
+          "integrations"
         ]
       }
     },

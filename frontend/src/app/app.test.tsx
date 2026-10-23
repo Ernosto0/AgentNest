@@ -9,7 +9,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const signedIn = {
   "GET /api/v1/meta": () =>
-    json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"] }),
+    json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
   "GET /api/v1/auth/me": () => json(ME),
   [`GET /api/v1/workspaces/${WS_GOLKENT}`]: () => json(workspace(WS_GOLKENT)),
   [`GET /api/v1/workspaces/${WS_HARBOR}`]: () => json(workspace(WS_HARBOR)),
@@ -88,8 +88,9 @@ describe("workspace shell", () => {
 
     expect(await screen.findByRole("heading", { name: "Ana sayfa" })).toBeInTheDocument();
     const banner = screen.getByTestId("simulation-banner");
-    expect(banner).toHaveTextContent("Demo çalışma alanı — simülasyon");
-    expect(banner).toHaveTextContent("gerçek Instagram'a hiçbir şey gönderilmez");
+    expect(banner).toHaveTextContent("Demo çalışma alanı");
+    expect(banner).toHaveTextContent("Simülasyon etiketli işlemler gerçek Instagram'a gönderilmez.");
+    expect(banner).toHaveTextContent("Gerçek Instagram bağlantıları gerçek hesabınızda işlem yapar.");
 
     for (const nav of screen.getAllByRole("navigation", { name: "Ana gezinme" })) {
       for (const label of ["Ana sayfa", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
@@ -195,7 +196,7 @@ describe("language", () => {
     await user.click(screen.getByRole("button", { name: "English" }));
 
     expect(await screen.findByRole("heading", { name: "Language" })).toBeInTheDocument();
-    expect(screen.getByTestId("simulation-banner")).toHaveTextContent("Demo workspace — simulation");
+    expect(screen.getByTestId("simulation-banner")).toHaveTextContent("Demo workspace");
     for (const nav of screen.getAllByRole("navigation", { name: "Main navigation" })) {
       expect(within(nav).getByRole("link", { name: "Inbox" })).toBeInTheDocument();
       expect(within(nav).queryByRole("link", { name: "Gelen kutusu" })).toBeNull();

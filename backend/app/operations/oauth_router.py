@@ -16,7 +16,7 @@ from app.operations import oauth_service
 router = APIRouter(tags=["integrations"])
 
 
-@router.get("/oauth/instagram/callback")
+@router.get("/oauth/instagram/callback", status_code=303, response_class=RedirectResponse)
 def callback(
     response: Response,
     code: str | None = None,

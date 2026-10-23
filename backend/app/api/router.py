@@ -1,5 +1,7 @@
 """Router assembly. Routers stay thin and call services only."""
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -32,6 +34,8 @@ class MetaResponse(BaseModel):
     demo_tools_enabled: bool
     llm_mode: str
     supported_locales: list[str]
+    instagram_providers: list[Literal["mock", "meta"]]
+    mock_requires_demo_workspace: bool
 
 
 @health_router.get("/healthz")
@@ -59,6 +63,10 @@ def meta(settings: Settings = Depends(get_app_settings)) -> MetaResponse:
         demo_tools_enabled=settings.demo_tools_enabled,
         llm_mode="fake" if settings.llm_provider == "fake" else "real",
         supported_locales=list(SUPPORTED_LOCALES),
+        instagram_providers=[
+            provider for provider in ("mock", "meta") if provider in settings.instagram_providers
+        ],
+        mock_requires_demo_workspace=settings.app_env == "production",
     )
 
 

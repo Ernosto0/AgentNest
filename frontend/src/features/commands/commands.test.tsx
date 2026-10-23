@@ -21,7 +21,7 @@ function me(role: "owner" | "staff"): Me {
 function routes(extra: Record<string, () => Response> = {}, llmMode = "fake", role: "owner" | "staff" = "owner") {
   return {
     "GET /api/v1/meta": () =>
-      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: llmMode, supported_locales: ["tr", "en"] }),
+      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: llmMode, supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json(me(role)),
     [`GET /api/v1/workspaces/${WS_GOLKENT}`]: () => json(workspace(WS_GOLKENT)),
     [`GET ${BASE}/readiness`]: () => json(READINESS),

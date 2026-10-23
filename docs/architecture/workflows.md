@@ -8,6 +8,10 @@ Notation: **[T1]**, **[T2]** = separate committed DB transactions. "Enqueue" alw
 ---
 
 ## A. Business onboarding
+**Phase 7 connection screen:** owner-only Meta connect/reconnect starts server-side OAuth then navigates to the returned authorize URL. Provider availability comes from public `/meta`; production mock eligibility additionally uses `workspace.is_demo`, independent of demo tools. Known OAuth callback outcomes show dismissible translated status/error banners; unknown codes use generic copy, and dismissal preserves unrelated query parameters. `is_simulated` remains derived from the account provider. The demo-workspace banner explicitly scopes simulation claims to labelled actions; a real connection can act on a real account even in a demo workspace.
+
+Disconnect asks separately whether to erase conversation/message history, defaulting and resetting to false each time the confirmation opens/closes. The UI says deletion can wait for an ongoing send to be verified, without promising immediate history erasure or unrestricted reconnection. Failed requests keep an actionable translated error inside the sheet. Success refreshes account, inbox, approvals, content, health, notifications, activity and report views; choosing erasure also removes history-bearing cache entries in that workspace to avoid stale deleted messages during navigation. Backend reconciliation/deferred-erasure rules remain authoritative.
+
 
 **Goal:** From workspace creation to verified facts and a readiness status.
 

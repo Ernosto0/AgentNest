@@ -29,7 +29,7 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 |---|---|
 | `GET /healthz` | Liveness (no DB). |
 | `GET /readyz` | DB reachable, migrations at head. |
-| `GET /api/v1/meta` | Public non-secret config for the SPA: `{product_name, demo_tools_enabled, llm_mode: "fake"|"real" (from `LLM_PROVIDER`), supported_locales}`. |
+| `GET /api/v1/meta` | Public non-secret config for the SPA: `{product_name, demo_tools_enabled, llm_mode: "fake"|"real" (from `LLM_PROVIDER`), supported_locales, instagram_providers: ("mock"|"meta")[], mock_requires_demo_workspace: bool}`. Providers are deterministic (`mock`, then `meta`, enabled entries only). Mock requires `workspace.is_demo` in production; production startup also requires permitted simulated workspaces. Outside production mock is allowed on non-demo workspaces even if demo tools are off. `demo_tools_enabled` does not control account eligibility. |
 
 ### 2.2 Auth and identity (Phase 1; invites Phase 6)
 | Method & path | Request → Response |
@@ -162,7 +162,7 @@ Disconnect accepts optional `{delete_conversation_data: false}`. Tokens are clea
 | `GET /…/social-accounts` | `[{id, platform, provider_kind, username, status, capabilities, connection_expires_at, last_error_code, degraded_until, is_simulated}]` (no token fields; the expiry is named `connection_expires_at` so the response-schema secret scan stays strict) |
 | `POST /…/social-accounts/mock` | connect a simulated account (only if `mock` is enabled and allowed for the workspace) |
 | `POST /…/social-accounts/instagram/connect` | → `{authorize_url}` (Phase 7) |
-| `GET /oauth/instagram/callback` | OAuth redirect target (Phase 7) |
+| `GET /oauth/instagram/callback` | Authenticated OAuth callback; 303 redirect to the fixed SPA connection status route (safe known-state result), or safe 400 for invalid state without a workspace. OpenAPI declares 303 with no JSON response body. |
 | `POST /…/social-accounts/{id}/reconnect` | `integrations.manage`; **mock accounts only** (a real account reconnects through OAuth, Phase 7). `needs_reauth → connected` for the same external account, audit `account.reconnected`, enqueues `resume_account` (queued replies are sent). Returns the account. A foreign id → 404; another provider, or an account that is not `needs_reauth` → 409 `CONFLICT_STATE`; mock provider not enabled → 403 |
 | `POST /…/social-accounts/{id}/disconnect` | |
 | `GET /webhooks/instagram` | Meta verification handshake |

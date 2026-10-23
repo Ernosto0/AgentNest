@@ -11,6 +11,7 @@
 - **Enumerations:** `text` columns with `CHECK (col IN (...))` (easier to migrate than PG enums). Allowed values are listed below and in [state-machines.md](state-machines.md).
 - **Money:** inside JSONB fact values as `{"amount": "7000.00", "currency": "TRY"}` (decimal string). Never floats.
 - **Simulation flag:** `is_simulated boolean not null default false` on every table whose rows can result from a mock provider ([INV-09](../invariants.md)).
+- **Connection UI (Phase 7 Session 4):** no new persistence or migration. `workspace.is_demo` is a workspace policy flag, not provider provenance: Meta accounts/records remain `is_simulated=false` even on a demo workspace. Optional disconnect erasure removes affected history queries from the frontend cache; safe delayed erasure and immutable ledger/audit records retain the Session 3 contract below.
 - **Naming:** snake_case. Constraint names follow SQLAlchemy naming conventions set in `core/db.py` (`pk_`, `fk_`, `uq_`, `ck_`, `ix_`).
 - **Deletion:** domain rows are not hard-deleted by normal workflows (status changes instead). Hard deletion happens only through workspace deletion, retention jobs and data deletion requests ([security-and-privacy.md §8](security-and-privacy.md)).
 

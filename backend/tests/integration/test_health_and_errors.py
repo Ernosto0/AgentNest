@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
+from app.api.deps import get_app_settings
+from app.core.config import Settings
 from app.core.errors import AppError
 
 
@@ -58,9 +60,62 @@ def test_meta_exposes_only_public_configuration(client: TestClient) -> None:
     response = client.get("/api/v1/meta")
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == {"product_name", "demo_tools_enabled", "llm_mode", "supported_locales"}
+    assert set(body) == {
+        "product_name",
+        "demo_tools_enabled",
+        "llm_mode",
+        "supported_locales",
+        "instagram_providers",
+        "mock_requires_demo_workspace",
+    }
     assert body["supported_locales"] == ["tr", "en"]
     assert body["llm_mode"] == "fake"
+    assert body["instagram_providers"] == ["mock"]
+    assert body["mock_requires_demo_workspace"] is False
+
+
+@pytest.mark.parametrize(
+    ("app_env", "providers", "tools", "expected"),
+    [
+        ("development", "mock", False, ["mock"]),
+        ("production", "mock", False, ["mock"]),
+        ("test", "meta,mock", True, ["mock", "meta"]),
+        ("test", "meta", False, ["meta"]),
+    ],
+)
+def test_meta_reports_backend_provider_policy(
+    app: FastAPI,
+    client: TestClient,
+    settings: Settings,
+    app_env: str,
+    providers: str,
+    tools: bool,
+    expected: list[str],
+) -> None:
+    # Already-validated settings copied to probe the public projection without live credentials.
+    candidate = settings.model_copy(
+        update={
+            "app_env": app_env,
+            "instagram_enabled_providers": providers,
+            "demo_tools_enabled": tools,
+        }
+    )
+    app.dependency_overrides[get_app_settings] = lambda: candidate
+    response = client.get("/api/v1/meta")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["instagram_providers"] == expected
+    assert body["mock_requires_demo_workspace"] is (app_env == "production")
+    assert body["demo_tools_enabled"] is tools
+    # The route is public, deterministic and carries no credentials or endpoints.
+    assert body == client.get("/api/v1/meta").json()
+
+
+def test_oauth_callback_openapi_declares_redirect(app: FastAPI) -> None:
+    responses = app.openapi()["paths"]["/oauth/instagram/callback"]["get"]["responses"]
+    assert "303" in responses
+    assert "200" not in responses
+    assert "content" not in responses["303"]
 
 
 def test_unknown_route_is_problem_json_404(client: TestClient) -> None:
