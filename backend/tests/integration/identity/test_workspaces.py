@@ -18,7 +18,7 @@ from tests.factories import (
 
 CREATE = {
     "name": "Gölkent Fitness & Pilates",
-    "business_category": "gym",
+    "business_category": "fitness",
     "market": "tr",
     "default_locale": "tr",
     "timezone": "Europe/Istanbul",

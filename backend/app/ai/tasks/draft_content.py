@@ -28,8 +28,7 @@ from app.ai.schemas import (
     DraftContentInput,
     DraftFact,
 )
-from app.ai.tasks.draft_reply import PRICE_HINTS
-from app.ai.tasks.matching import match_facts
+from app.ai.tasks.matching import match_facts, match_price_facts
 from app.integrations.llm.base import LLMMessage
 from app.integrations.llm.fake import fake_implementation
 from app.knowledge.claims import fold
@@ -101,6 +100,7 @@ def post_validate(task_input: DraftContentInput, output: ContentProposal) -> lis
 
 DRAFT_CONTENT: TaskDefinition[DraftContentInput, ContentProposal] = TaskDefinition(
     name=TASK,
+    prompt_version="v2",  # v2: sector-neutral example key (ADR-023)
     output_schema=ContentProposal,
     max_output_tokens=1500,
     timeout_s=45,
@@ -121,49 +121,49 @@ PRICING = re.compile(r"fiyat|ucret|uyelik|membership|\bprice|paket|package|aylik
 HOURS = re.compile(r"\bsaat|acik|calisma|opening|\bhours\b|\bopen\b")
 
 HASHTAGS = {
-    "tr": ["fitness", "sağlıklıyaşam", "spor"],
-    "en": ["fitness", "healthylifestyle", "workout"],
+    "tr": ["yerelişletme", "küçükişletme", "instagram"],
+    "en": ["smallbusiness", "shoplocal", "localbusiness"],
 }
 CALL = {"tr": "Detaylar için bize yazın.", "en": "Message us for details."}
 TEXT: dict[str, dict[str, Any]] = {
     "tr": {
-        "promo_title": "Deneme seansı duyurusu",
-        "promo_feed": "Yeni başlayanlar için güzel haber! {ph}\n{call}",
-        "promo_none": "Deneme seansı hakkında bilgi almak için bize yazın.",
-        "promo_story": ["{ph}", "Deneme için bize yazın"],
+        "promo_title": "Kampanya duyurusu",
+        "promo_feed": "Özel bir duyurumuz var! {ph}\n{call}",
+        "promo_none": "Kampanyalarımız hakkında bilgi almak için bize yazın.",
+        "promo_story": ["{ph}", "Detaylar için bize yazın"],
         "discount_title": "İndirim duyurusu",
         "discount_feed": "Hafta sonuna özel {amount} fırsatı!\n{call}",
         "discount_amount": "{amount} indirim",
         "discount_plain": "büyük indirim",
         "discount_story": ["{amount}!", "Fırsatı kaçırmayın"],
-        "price_title": "Üyelik fiyatı",
-        "price_feed": "{label}: {ph}\nHareket etmeye başlamak için bize yazın!",
-        "price_policy": "Üyelik seçeneklerimiz hakkında: {ph}",
-        "price_none": "Üyelik seçeneklerimiz için bize yazın.",
+        "price_title": "Fiyat bilgisi",
+        "price_feed": "{label}: {ph}\nDetaylı bilgi için bize yazın!",
+        "price_policy": "Fiyat ve seçeneklerimiz hakkında: {ph}",
+        "price_none": "Fiyat seçeneklerimiz için bize yazın.",
         "price_story": ["{label}", "{ph}"],
         "hours_title": "Çalışma saatleri",
         "hours_feed": "Çalışma saatlerimiz: {ph}\nSizi bekliyoruz!",
         "hours_none": "Sizi bekliyoruz! Detaylar için bize yazın.",
         "hours_story": ["Çalışma saatlerimiz için", "bize yazın"],
         "generic_title": "Haftalık paylaşım",
-        "generic_feed": "Bu hafta salonda sizi bekliyoruz! {call}",
+        "generic_feed": "Bu hafta sizi bekliyoruz! {call}",
         "generic_story": ["Bu hafta sizi bekliyoruz", "Bize yazın"],
-        "notes": "Salondan sıcak, aydınlık bir kare; {topic} öne çıksın.",
+        "notes": "Sıcak, aydınlık bir kare; {topic} öne çıksın.",
     },
     "en": {
-        "promo_title": "Trial session announcement",
-        "promo_feed": "Good news for beginners! {ph}\n{call}",
-        "promo_none": "Message us to ask about a trial session.",
-        "promo_story": ["{ph}", "Message us to try"],
+        "promo_title": "Special offer announcement",
+        "promo_feed": "Special announcement! {ph}\n{call}",
+        "promo_none": "Message us to ask about our offers.",
+        "promo_story": ["{ph}", "Message us for details"],
         "discount_title": "Discount announcement",
         "discount_feed": "A weekend special: {amount}!\n{call}",
         "discount_amount": "{amount} discount",
         "discount_plain": "a big discount",
         "discount_story": ["{amount}!", "Don't miss it"],
-        "price_title": "Membership price",
-        "price_feed": "{label}: {ph}\nMessage us to get started!",
-        "price_policy": "About our membership options: {ph}",
-        "price_none": "Message us about our membership options.",
+        "price_title": "Our prices",
+        "price_feed": "{label}: {ph}\nMessage us to learn more!",
+        "price_policy": "About our pricing options: {ph}",
+        "price_none": "Message us about our options.",
         "price_story": ["{label}", "{ph}"],
         "hours_title": "Opening hours",
         "hours_feed": "Our opening hours: {ph}\nSee you there!",
@@ -172,7 +172,7 @@ TEXT: dict[str, dict[str, Any]] = {
         "generic_title": "Weekly post",
         "generic_feed": "We are looking forward to seeing you this week! {call}",
         "generic_story": ["See you this week", "Message us"],
-        "notes": "A warm, bright shot of the studio; let {topic} stand out.",
+        "notes": "A warm, bright shot; let {topic} stand out.",
     },
 }
 
@@ -263,10 +263,12 @@ def fake_draft_content(task_input: DraftContentInput, schema: Any = None) -> Con
 
     if PRICING.search(folded):
         prices = [f for f in facts if f.key.startswith("pricing.")]
-        named = [key for pattern, key in PRICE_HINTS if pattern.search(folded)]
-        if not named:  # no particular product named (a monthly one is the default either way)
-            named = ["pricing.membership_monthly"]
-        chosen = next((f for key in named if (f := _get(prices, key)) is not None), None)
+        is_specific, matched = match_price_facts(folded, prices)
+        chosen = (
+            (matched[0] if matched else None)
+            if is_specific
+            else (prices[0] if prices else None)
+        )
         if chosen is not None:
             return _proposal(
                 task_input,

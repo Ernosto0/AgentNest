@@ -11,7 +11,18 @@ from app.core.pagination import Page as Page  # re-exported: the list envelope l
 
 Locale = Literal["tr", "en"]
 Role = Literal["owner", "manager", "staff"]
-BusinessCategory = Literal["gym", "pilates_studio", "other"]
+# ADR-023: keep in sync with ``models.BUSINESS_CATEGORIES`` (checked by a unit test).
+BusinessCategory = Literal[
+    "beauty_wellness",
+    "food_beverage",
+    "retail",
+    "fitness",
+    "health_clinic",
+    "education",
+    "hospitality",
+    "services",
+    "other",
+]
 Market = Literal["tr", "global"]
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]

@@ -14,7 +14,7 @@ const DYNAMIC: Record<string, readonly string[]> = {
   "knowledge.candidateSource": ["pasted_text", "staff_proposal", "instagram_profile", "website"],
   "knowledge.valueType": VALUE_TYPES,
   "knowledge.days": DAYS,
-  "knowledge.unit": ["none", "month", "session", "package"],
+  "knowledge.unit": ["none", "month", "session", "package", "item", "hour", "person", "day", "year"],
   "knowledge.criticality": ["standard", "critical"],
   "knowledge.required": ["drafts", "ready"],
   "knowledge.bool": ["true", "false"],
@@ -28,7 +28,17 @@ const DYNAMIC: Record<string, readonly string[]> = {
     "business_name", "contact", "location", "hours", "booking_instructions", "price_policy",
     "services", "account_connected", "automation_reviewed",
   ],
-  "wizard.categories": ["gym", "pilates_studio", "other"],
+  "wizard.categories": [
+    "beauty_wellness",
+    "food_beverage",
+    "retail",
+    "fitness",
+    "health_clinic",
+    "education",
+    "hospitality",
+    "services",
+    "other",
+  ],
   "wizard.markets": ["tr", "global"],
 };
 

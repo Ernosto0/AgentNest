@@ -86,18 +86,24 @@ def compute_readiness(
 
     disclosure = usable.get("policy.price_disclosure", {}).get("value")
     if disclosure == "share":
-        needed = tuple(
-            i.key
+        share_items = [
+            i
             for i in template.items
-            if i.key is not None
-            and i.required_for == "ready"
-            and i.required_when == "price_disclosure=share"
+            if i.required_for == "ready" and i.required_when == "price_disclosure=share"
+        ]
+        # Fixed items must each exist; a pattern (``pricing.*``) needs at least one usable fact.
+        missing_prices = tuple(
+            i.identifier
+            for i in share_items
+            if not (i.key in usable if i.key is not None else any(map(i.matches, usable)))
         )
-        missing_prices = tuple(key for key in needed if key not in usable)
         price_missing: tuple[str, ...] = missing_prices
-        price_link = (
-            _link(missing_prices[0]) if missing_prices else _link("policy.price_disclosure")
-        )
+        if not missing_prices:
+            price_link = _link("policy.price_disclosure")
+        elif missing_prices[0].endswith(".*"):
+            price_link = ReadinessLink("knowledge", missing_prices[0].split(".")[0], None)
+        else:
+            price_link = _link(missing_prices[0])
     elif disclosure == "do_not_share":
         price_missing = (
             () if "policy.price_answer_text" in usable else ("policy.price_answer_text",)
@@ -107,7 +113,11 @@ def compute_readiness(
         price_missing = ("policy.price_disclosure",)
         price_link = _link("policy.price_disclosure")
 
-    service_patterns = [i for i in template.items if i.pattern and i.required_for == "ready"]
+    service_patterns = [
+        i
+        for i in template.items
+        if i.pattern and i.category == "service" and i.required_for == "ready"
+    ]
     services_ok = any(item.matches(key) for item in service_patterns for key in usable)
 
     requirements = (

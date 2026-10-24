@@ -6,7 +6,7 @@ import { formatMoneyAmount, parseMoneyInput, type Money, type MoneyParse } from 
 import { SelectField, TextAreaField, type EditorProps, type FactValue } from "./fields";
 import { asString } from "./util";
 
-const UNITS = ["", "month", "session", "package"] as const;
+const UNITS = ["", "month", "session", "package", "item", "hour", "person", "day", "year"] as const;
 
 function initialText(value: FactValue | null): string {
   const amount = asString(value?.amount);

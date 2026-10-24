@@ -81,7 +81,7 @@ def test_the_gym_has_one_pending_discrepancy_that_is_not_used(seeded: SessionFac
         assert repository.contested_keys(session, ctx) == set()  # the verified price stays usable
 
 
-@pytest.mark.parametrize("slug", ["golkent-fitness", "harbor-pilates"])
+@pytest.mark.parametrize("slug", ["golkent-fitness", "harbor-cafe"])
 def test_seeded_workspaces_are_ready(seeded: SessionFactory, clock: FrozenClock, slug: str) -> None:
     with seeded() as session:
         workspace, ctx = _ctx(session, slug)
@@ -94,10 +94,10 @@ def test_seeded_workspaces_are_ready(seeded: SessionFactory, clock: FrozenClock,
 
 def test_harbor_is_english_and_in_euro(seeded: SessionFactory) -> None:
     with seeded() as session:
-        _, ctx = _ctx(session, "harbor-pilates")
+        _, ctx = _ctx(session, "harbor-cafe")
         facts = {f.key: f for f in repository.list_facts(session, ctx)}
-        assert facts["pricing.reformer_8_sessions"].value["currency"] == "EUR"
-        assert facts["pricing.student_monthly"].status == "unverified"
+        assert facts["pricing.cappuccino"].value["currency"] == "EUR"
+        assert facts["pricing.filter_coffee"].status == "unverified"
         assert facts["booking.instructions"].value.get("en")
         [candidate] = repository.list_candidates(session, ctx, status="pending")
         assert candidate.relation == "discrepancy"

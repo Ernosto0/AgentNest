@@ -25,24 +25,32 @@ def test_every_shipped_template_loads_and_is_consistent(category: str) -> None:
 
 def test_other_category_uses_the_common_template_only() -> None:
     other = {i.identifier for i in load_template("other").items}
-    gym = {i.identifier for i in load_template("gym").items}
+    fitness = {i.identifier for i in load_template("fitness").items}
     assert "pricing.membership_monthly" not in other
-    assert {"identity.business_name", "hours.weekly", "faq.*"} <= other
-    assert other < gym
+    assert {
+        "identity.business_name",
+        "hours.weekly",
+        "service.*",
+        "pricing.*",
+        "promotion.*",
+        "faq.*",
+    } <= other
+    assert other < fitness
 
 
 def test_find_resolves_fixed_keys_before_patterns() -> None:
-    template = load_template("gym")
+    template = load_template("fitness")
     assert template.find("pricing.membership_monthly").key == "pricing.membership_monthly"  # type: ignore[union-attr]
-    assert template.find("service.reformer_pilates").pattern == "service.*"  # type: ignore[union-attr]
-    assert template.find("promotion.trial_session").value_types == ("localized_text", "money")  # type: ignore[union-attr]
+    assert template.find("service.reformer").pattern == "service.*"  # type: ignore[union-attr]
+    assert template.find("promotion.trial_session").pattern == "promotion.*"  # type: ignore[union-attr]
     assert template.find("service") is None
     assert template.find("nonsense.key") is None
 
 
-def test_required_items_match_what_readiness_expects() -> None:
-    gym = load_template("gym")
-    drafts = {i.identifier for i in gym.items if i.required_for == "drafts"}
+@pytest.mark.parametrize("category", sorted(CATEGORY_FILES))
+def test_required_items_match_what_readiness_expects(category: str) -> None:
+    template = load_template(category)
+    drafts = {i.identifier for i in template.items if i.required_for == "drafts"}
     assert drafts == {
         "identity.business_name",
         "contact.phone",
@@ -51,12 +59,8 @@ def test_required_items_match_what_readiness_expects() -> None:
         "location.address",
         "hours.weekly",
     }
-    ready_prices = {i.key for i in gym.items if i.required_when == "price_disclosure=share"}
-    assert ready_prices == {"pricing.membership_monthly"}
-    pilates = load_template("pilates_studio")
-    assert {i.key for i in pilates.items if i.required_when == "price_disclosure=share"} == {
-        "pricing.reformer_8_sessions"
-    }
+    ready_prices = {i.identifier for i in template.items if i.required_when == "price_disclosure=share"}
+    assert ready_prices == {"pricing.*"}
 
 
 def _write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, yaml_text: str) -> None:

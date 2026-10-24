@@ -1,0 +1,23 @@
+# Optional preset for beauty, hair and wellness businesses (ADR-023).
+hashtags:
+  tr: [güzellik, bakım, kuaför]
+  en: [beauty, selfcare, salon]
+items:
+  - key: booking.appointment_policy
+    category: booking
+    label: {tr: Randevu kuralları, en: Appointment rules}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: Randevu süresi, gecikme ve kapora kuralları.
+      en: Appointment length, late arrival and deposit rules.
+
+  - key: schedule.staff
+    category: schedule
+    label: {tr: Personel çalışma günleri, en: Staff working days}
+    value_types: [localized_text]
+    criticality: standard
+    description:
+      tr: Hangi uzmanın hangi günlerde çalıştığı. Saatler yine de doğrulanır.
+      en: Which specialist works on which days. Times in it are still checked.
+

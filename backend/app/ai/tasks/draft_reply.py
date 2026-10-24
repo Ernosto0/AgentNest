@@ -23,7 +23,7 @@ from app.ai.schemas import (
     DraftReplyInput,
     ReplyProposal,
 )
-from app.ai.tasks.matching import match_facts, tokens
+from app.ai.tasks.matching import match_facts, match_price_facts, tokens
 from app.integrations.llm.base import LLMMessage
 from app.integrations.llm.fake import fake_implementation
 from app.knowledge.claims import fold
@@ -83,6 +83,7 @@ def snapshot(task_input: DraftReplyInput) -> dict[str, Any]:
 
 DRAFT_REPLY: TaskDefinition[DraftReplyInput, ReplyProposal] = TaskDefinition(
     name=TASK,
+    prompt_version="v2",  # v2: sector-neutral example key (ADR-023)
     output_schema=ReplyProposal,
     max_output_tokens=800,
     timeout_s=30,
@@ -111,22 +112,15 @@ HOURS = re.compile(
 LOCATION = re.compile(r"nerede|adres|konum|yol tarifi|\bwhere\b|address|location|directions")
 CONTACT = re.compile(r"telefon|numara|iletisim|whatsapp|phone|contact|call you")
 BOOKING = re.compile(r"rezervasyon|randevu|kayit ol|nasil kayit|\bbook|reserv|appointment|sign up")
+# Sector-neutral words only (ADR-023): a question about a particular service is recognised by
+# the labels of the workspace's own ``service.*`` facts instead.
 SERVICES = re.compile(
-    r"hizmet|\bders|pilates|reformer|fitness|antrenman|egzersiz"
-    r"|classes|services|\boffer|do you have"
+    r"hizmet|\bders|\burun|\bmenu|neler var|satiyor"
+    r"|classes|services|products|\boffer|do you have|do you sell"
 )
 GREETING = re.compile(
     r"^(merhaba|selam|gunaydin|iyi gunler|hello|hi|hey|good (?:morning|evening))\b"
 )
-
-# A specific product named by the customer. Without one, the monthly membership is the default.
-PRICE_HINTS = (
-    (re.compile(r"3 ay|uc ay|3 month|quarter"), "pricing.membership_3_months"),
-    (re.compile(r"reformer|8 seans|8 session"), "pricing.reformer_8_sessions"),
-    (re.compile(r"ogrenci|student"), "pricing.student_monthly"),
-    (re.compile(r"tek seans|single|drop.?in"), "pricing.single_session"),
-)
-MONTHLY = re.compile(r"aylik|monthly|month")
 
 TEXT = {
     "tr": {
@@ -233,18 +227,12 @@ def _price_reply(
     prices = _by_prefix(facts, "pricing.")
     if not prices:
         return _cannot(task_input, "pricing")
-    named = [key for pattern, key in PRICE_HINTS if pattern.search(folded)]
-    if not named and MONTHLY.search(folded):
-        named = ["pricing.membership_monthly"]
-    if named:
-        # The customer asked about a particular product: answer with that price or not at all.
-        # Another product's price is never substituted for one that is not usable.
-        chosen = [fact for key in named if (fact := _get(prices, key)) is not None]
-        if len(chosen) < len(named):
-            return _cannot(task_input, "pricing")
-    else:
-        monthly = _get(prices, "pricing.membership_monthly")
-        chosen = [monthly] if monthly else prices[:3]
+    # The product is recognised by the labels of the workspace's own prices (ADR-023), so no
+    # sector-specific key is ever assumed. Generic price words never select a product.
+    is_specific, matched = match_price_facts(folded, prices)
+    if is_specific and not matched:
+        return _cannot(task_input, "pricing")
+    chosen = matched[:3] if is_specific else prices[:3]
     if len(chosen) == 1:
         only = chosen[0]
         return _proposal(
@@ -353,7 +341,8 @@ def fake_draft_reply(task_input: DraftReplyInput, schema: Any = None) -> ReplyPr
         return _proposal(
             task_input, "booking", template=strings["plain"].format(ph=booking.placeholder)
         )
-    if SERVICES.search(folded):
+    services = _by_prefix(task_input.facts, "service.")
+    if SERVICES.search(folded) or match_facts(folded, services):
         return _list_reply(task_input, folded, "services", "service.", "services", strings)
     if GREETING.search(folded) and len(folded.split()) <= 4:
         return _proposal(task_input, "greeting", template=strings["greeting"])

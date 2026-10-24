@@ -1,0 +1,14 @@
+# Optional preset for clinics, dietitians and therapists (ADR-023).
+hashtags:
+  tr: [sağlık, klinik, sağlıklıyaşam]
+  en: [health, wellbeing, clinic]
+items:
+  - key: booking.appointment_policy
+    category: booking
+    label: {tr: Randevu kuralları, en: Appointment rules}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: Randevu süresi, iptal ve ön görüşme kuralları.
+      en: Appointment length, cancellation and first-visit rules.
+

@@ -273,5 +273,10 @@
   "errors.OAUTH_STATE_INVALID.what": "Bağlantı isteği geçersiz veya süresi dolmuş.",
   "errors.OAUTH_STATE_INVALID.next": "Bağlantıyı yeniden başlatın.",
   "errors.ACCOUNT_MISMATCH.what": "Farklı bir Instagram hesabına izin verildi.",
-  "errors.ACCOUNT_MISMATCH.next": "Önceki hesaba izin verin."
+  "errors.ACCOUNT_MISMATCH.next": "Önceki hesaba izin verin.",
+  "knowledge.unit.item": "adet",
+  "knowledge.unit.hour": "saat",
+  "knowledge.unit.person": "kişi",
+  "knowledge.unit.day": "gün",
+  "knowledge.unit.year": "yıl"
 }

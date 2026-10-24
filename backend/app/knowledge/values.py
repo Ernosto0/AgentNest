@@ -82,7 +82,9 @@ class LocalizedStr(_Strict):
 class MoneyValue(_Strict):
     amount: Decimal
     currency: Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
-    unit: Literal["month", "session", "package"] | None = None
+    unit: (
+        Literal["month", "session", "package", "item", "hour", "person", "day", "year"] | None
+    ) = None
     conditions: LocalizedStr | None = None
 
     @field_validator("amount", mode="before")

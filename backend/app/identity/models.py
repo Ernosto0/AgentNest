@@ -23,7 +23,18 @@ from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScop
 
 ROLES = ("owner", "manager", "staff")
 LOCALES = ("tr", "en")
-BUSINESS_CATEGORIES = ("gym", "pilates_studio", "other")
+# ADR-023: every small business on Instagram; the category only selects an optional preset.
+BUSINESS_CATEGORIES = (
+    "beauty_wellness",
+    "food_beverage",
+    "retail",
+    "fitness",
+    "health_clinic",
+    "education",
+    "hospitality",
+    "services",
+    "other",
+)
 MARKETS = ("tr", "global")
 WORKSPACE_STATUSES = ("active", "deleting")
 

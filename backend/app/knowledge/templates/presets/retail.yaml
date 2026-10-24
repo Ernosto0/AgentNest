@@ -1,0 +1,23 @@
+# Optional preset for shops, boutiques and online stores (ADR-023).
+hashtags:
+  tr: [alışveriş, butik, yerelişletme]
+  en: [shopping, boutique, shoplocal]
+items:
+  - key: policy.shipping
+    category: policy
+    label: {tr: Kargo, en: Shipping}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: Kargo seçenekleri, süreleri ve ücretleri.
+      en: Shipping options, times and costs.
+
+  - key: policy.returns
+    category: policy
+    label: {tr: İade ve değişim, en: Returns and exchanges}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: İade ve değişim kuralları.
+      en: Return and exchange rules.
+

@@ -273,5 +273,10 @@
   "errors.OAUTH_STATE_INVALID.what": "The authorization request is invalid or expired.",
   "errors.OAUTH_STATE_INVALID.next": "Start the connection again.",
   "errors.ACCOUNT_MISMATCH.what": "A different Instagram account was authorized.",
-  "errors.ACCOUNT_MISMATCH.next": "Authorize the original account."
+  "errors.ACCOUNT_MISMATCH.next": "Authorize the original account.",
+  "knowledge.unit.item": "item",
+  "knowledge.unit.hour": "hour",
+  "knowledge.unit.person": "person",
+  "knowledge.unit.day": "day",
+  "knowledge.unit.year": "year"
 }

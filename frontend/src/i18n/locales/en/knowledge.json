@@ -102,7 +102,12 @@
       "none": "No unit",
       "month": "per month",
       "session": "per session",
-      "package": "per package"
+      "package": "per package",
+      "item": "per item",
+      "hour": "per hour",
+      "person": "per person",
+      "day": "per day",
+      "year": "per year"
     },
     "bool": {
       "true": "Yes",
@@ -257,8 +262,14 @@
     "name": "Business name",
     "category": "What kind of business is it?",
     "categories": {
-      "gym": "Gym or fitness studio",
-      "pilates_studio": "Pilates studio",
+      "beauty_wellness": "Beauty, hair & wellness",
+      "food_beverage": "Café, restaurant & bakery",
+      "retail": "Shop, boutique & retail",
+      "fitness": "Fitness, pilates & yoga",
+      "health_clinic": "Clinic, dietitian & therapy",
+      "education": "Courses, workshops & tutoring",
+      "hospitality": "Hotel, guesthouse & travel",
+      "services": "Services & trade",
       "other": "Something else"
     },
     "market": "Market",

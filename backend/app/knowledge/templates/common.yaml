@@ -93,6 +93,38 @@ items:
       tr: Müşteri nasıl randevu veya rezervasyon alır?
       en: How does a customer book or reserve?
 
+  # Services, prices and promotions are owner-named so that any kind of business can use them
+  # (ADR-023). Presets may add suggested fixed keys under the same prefixes.
+  - key_pattern: service.*
+    category: service
+    label: {tr: Hizmet / ürün, en: Service or product}
+    value_types: [localized_text]
+    criticality: standard
+    required_for: ready
+    description:
+      tr: Sunduğunuz bir hizmetin veya ürünün açıklaması (en az bir tane).
+      en: A description of a service or product you offer (at least one).
+
+  - key_pattern: pricing.*
+    category: pricing
+    label: {tr: Fiyat, en: Price}
+    value_types: [money]
+    criticality: critical
+    required_for: ready
+    required_when: price_disclosure=share
+    description:
+      tr: Bir hizmetin, ürünün veya paketin fiyatı (fiyat paylaşıyorsanız en az bir tane).
+      en: The price of a service, product or package (at least one if you share prices).
+
+  - key_pattern: promotion.*
+    category: promotion
+    label: {tr: Kampanya, en: Promotion}
+    value_types: [localized_text, money]
+    criticality: critical
+    description:
+      tr: Geçerlilik tarihli bir kampanya.
+      en: A promotion with a validity window.
+
   - key: policy.price_disclosure
     category: policy
     label: {tr: Fiyat paylaşım politikası, en: Price disclosure policy}

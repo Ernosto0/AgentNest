@@ -1,0 +1,32 @@
+# Optional preset for cafés, restaurants and bakeries (ADR-023).
+hashtags:
+  tr: [kafe, lezzet, yerelişletme]
+  en: [cafe, foodie, shoplocal]
+items:
+  - key: service.menu
+    category: service
+    label: {tr: Menü, en: Menu}
+    value_types: [localized_text]
+    criticality: standard
+    description:
+      tr: Menünüzün kısa bir özeti. Fiyatlar ayrı fiyat kayıtlarına girilir.
+      en: A short summary of your menu. Prices are entered as separate price facts.
+
+  - key: booking.reservations
+    category: booking
+    label: {tr: Masa rezervasyonu, en: Table reservations}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: Rezervasyon alıyor musunuz, nasıl?
+      en: Do you take reservations, and how?
+
+  - key: policy.delivery
+    category: policy
+    label: {tr: Paket servis / teslimat, en: Takeaway and delivery}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: Paket servis ve teslimat seçenekleri.
+      en: Takeaway and delivery options.
+

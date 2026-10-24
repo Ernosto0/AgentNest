@@ -50,31 +50,31 @@ def test_seed_creates_the_documented_demo_data(
         "owner@demo.local",
         "staff@demo.local",
     ]
-    assert report.created_workspaces == ["golkent-fitness", "harbor-pilates", "other-workspace"]
+    assert report.created_workspaces == ["golkent-fitness", "harbor-cafe", "other-workspace"]
     assert memberships(session_factory) == {
         ("golkent-fitness", "owner@demo.local", "owner"),
         ("golkent-fitness", "manager@demo.local", "manager"),
         ("golkent-fitness", "staff@demo.local", "staff"),
-        ("harbor-pilates", "owner@demo.local", "owner"),
-        ("harbor-pilates", "manager@demo.local", "manager"),
-        ("harbor-pilates", "staff@demo.local", "staff"),
+        ("harbor-cafe", "owner@demo.local", "owner"),
+        ("harbor-cafe", "manager@demo.local", "manager"),
+        ("harbor-cafe", "staff@demo.local", "staff"),
         ("other-workspace", "other@demo.local", "owner"),
     }
     with session_factory() as session:
         by_slug = {w.slug: w for w in session.scalars(select(Workspace))}
-    golkent, harbor = by_slug["golkent-fitness"], by_slug["harbor-pilates"]
+    golkent, harbor = by_slug["golkent-fitness"], by_slug["harbor-cafe"]
     assert (golkent.default_locale, golkent.currency, golkent.timezone) == (
         "tr",
         "TRY",
         "Europe/Istanbul",
     )
-    assert (golkent.business_category, golkent.market) == ("gym", "tr")
+    assert (golkent.business_category, golkent.market) == ("fitness", "tr")
     assert (harbor.default_locale, harbor.currency, harbor.timezone) == (
         "en",
         "EUR",
         "Europe/Lisbon",
     )
-    assert harbor.business_category == "pilates_studio"
+    assert harbor.business_category == "food_beverage"
     assert all(w.is_demo for w in by_slug.values())
 
 
@@ -97,7 +97,7 @@ def test_seeded_users_can_log_in_with_the_demo_password(
     assert bad.status_code == 401
 
 
-def test_other_user_is_isolated_from_the_gym_workspaces(
+def test_other_user_is_isolated_from_the_demo_workspaces(
     session_factory: SessionFactory,
     clock: FrozenClock,
     settings: Settings,
@@ -112,7 +112,7 @@ def test_other_user_is_isolated_from_the_gym_workspaces(
 
     listing = client.get("/api/v1/workspaces").json()
     assert [i["workspace_name"] for i in listing["items"]] == ["Other Workspace"]
-    for slug in ("golkent-fitness", "harbor-pilates"):
+    for slug in ("golkent-fitness", "harbor-cafe"):
         for suffix in ("", "/members"):
             response = client.get(f"/api/v1/workspaces/{ids[slug]}{suffix}")
             assert response.status_code == 404
@@ -120,7 +120,7 @@ def test_other_user_is_isolated_from_the_gym_workspaces(
     assert client.get(f"/api/v1/workspaces/{ids['other-workspace']}").status_code == 200
 
 
-def test_owner_sees_both_gym_workspaces_but_not_the_isolation_one(
+def test_owner_sees_both_demo_workspaces_but_not_the_isolation_one(
     session_factory: SessionFactory,
     clock: FrozenClock,
     settings: Settings,
@@ -132,7 +132,7 @@ def test_owner_sees_both_gym_workspaces_but_not_the_isolation_one(
     me = client.get("/api/v1/auth/me").json()
     assert [(m["workspace_name"], m["role"], m["is_demo"]) for m in me["memberships"]] == [
         ("Gölkent Fitness & Pilates", "owner", True),
-        ("Harbor Pilates Studio", "owner", True),
+        ("Harbor Café & Bakery", "owner", True),
     ]
 
 
@@ -237,7 +237,7 @@ def test_the_seed_data_file_is_valid_and_matches_the_docs() -> None:
     ]
     assert [w.slug for w in data.workspaces] == [
         "golkent-fitness",
-        "harbor-pilates",
+        "harbor-cafe",
         "other-workspace",
     ]
 
@@ -250,7 +250,7 @@ def test_the_seed_data_file_is_valid_and_matches_the_docs() -> None:
                 {
                     "slug": "x",
                     "name": "X",
-                    "business_category": "gym",
+                    "business_category": "fitness",
                     "market": "tr",
                     "default_locale": "tr",
                     "timezone": "UTC",
@@ -264,7 +264,7 @@ def test_the_seed_data_file_is_valid_and_matches_the_docs() -> None:
                 {
                     "slug": "x",
                     "name": "X",
-                    "business_category": "gym",
+                    "business_category": "fitness",
                     "market": "tr",
                     "default_locale": "tr",
                     "timezone": "UTC",

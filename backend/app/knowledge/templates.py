@@ -6,7 +6,7 @@ item. Items are *not* materialised as rows: missing items are computed by compar
 template with the existing facts.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -18,8 +18,24 @@ from app.knowledge.constants import CATEGORIES, CRITICALITIES, KEY_RE
 from app.knowledge.values import VALUE_TYPES
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
-# business_category -> extra template file (every workspace also gets ``common``)
-CATEGORY_FILES = {"gym": "gym", "pilates_studio": "pilates_studio", "other": None}
+# business_category -> optional preset file (ADR-023). Every workspace gets ``common``, which is
+# complete on its own; a preset only adds suggested items and hashtags, never requirements.
+CATEGORY_FILES: dict[str, str | None] = {
+    "beauty_wellness": "presets/beauty_wellness",
+    "food_beverage": "presets/food_beverage",
+    "retail": "presets/retail",
+    "fitness": "presets/fitness",
+    "health_clinic": "presets/health_clinic",
+    "education": "presets/education",
+    "hospitality": "presets/hospitality",
+    "services": "presets/services",
+    "other": None,
+}
+# Used by content drafting when a category has no preset.
+DEFAULT_HASHTAGS: dict[str, tuple[str, ...]] = {
+    "tr": ("yerelişletme", "instagram"),
+    "en": ("smallbusiness", "shoplocal"),
+}
 
 
 class TemplateError(Exception):
@@ -72,13 +88,19 @@ class TemplateItemModel(_Strict):
             raise ValueError(f"{identifier}: a fixed item has exactly one value type")
         if ("enum" in self.value_types) != bool(self.allowed_values):
             raise ValueError(f"{identifier}: enum items (only) need allowed_values")
-        if self.key_pattern is not None and (self.required_group or self.required_when):
-            raise ValueError(f"{identifier}: pattern items cannot use groups or conditions")
+        if self.key_pattern is not None and self.required_group:
+            raise ValueError(f"{identifier}: pattern items cannot use groups")
         return self
 
 
+class Hashtags(_Strict):
+    tr: list[str] = Field(min_length=1, max_length=10)
+    en: list[str] = Field(min_length=1, max_length=10)
+
+
 class TemplateFile(_Strict):
-    items: list[TemplateItemModel]
+    items: list[TemplateItemModel] = Field(default_factory=list)
+    hashtags: Hashtags | None = None
 
 
 @dataclass(frozen=True)
@@ -116,6 +138,8 @@ class TemplateItem:
 class Template:
     business_category: str
     items: tuple[TemplateItem, ...]
+    # locale -> hashtags without "#" (the preset's, else ``DEFAULT_HASHTAGS``)
+    hashtags: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
     def find(self, key: str) -> TemplateItem | None:
         """The fixed item for ``key``, else the pattern item it falls under."""
@@ -128,12 +152,15 @@ class Template:
         return None
 
 
-def _load_file(name: str) -> list[TemplateItem]:
+def _parse_file(name: str) -> TemplateFile:
     path = TEMPLATE_DIR / f"{name}.yaml"
     try:
-        parsed = TemplateFile.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+        return TemplateFile.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
     except Exception as exc:
         raise TemplateError(f"{path.name}: {exc}") from exc
+
+
+def _items(parsed: TemplateFile) -> list[TemplateItem]:
     return [
         TemplateItem(
             key=item.key,
@@ -156,19 +183,26 @@ def _load_file(name: str) -> list[TemplateItem]:
 def load_template(business_category: str) -> Template:
     if business_category not in CATEGORY_FILES:
         raise TemplateError(f"unknown business category {business_category}")
-    names = ["common"]
-    extra = CATEGORY_FILES[business_category]
-    if extra is not None:
-        names.append(extra)
-    items: list[TemplateItem] = []
-    for name in names:
-        items.extend(_load_file(name))
+    common = _parse_file("common")
+    items = _items(common)
+    hashtags = dict(DEFAULT_HASHTAGS)
+    preset_name = CATEGORY_FILES[business_category]
+    if preset_name is not None:
+        preset = _parse_file(preset_name)
+        preset_items = _items(preset)
+        for item in preset_items:
+            # A preset suggests; it never adds readiness requirements (ADR-023).
+            if item.required_for or item.required_group or item.required_when:
+                raise TemplateError(f"{preset_name}: {item.identifier} cannot be required")
+        items.extend(preset_items)
+        if preset.hashtags is not None:
+            hashtags = {"tr": tuple(preset.hashtags.tr), "en": tuple(preset.hashtags.en)}
     seen: set[str] = set()
     for item in items:
         if item.identifier in seen:
             raise TemplateError(f"{business_category}: duplicate template item {item.identifier}")
         seen.add(item.identifier)
-    return Template(business_category=business_category, items=tuple(items))
+    return Template(business_category=business_category, items=tuple(items), hashtags=hashtags)
 
 
 def validate_templates() -> None:

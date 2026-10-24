@@ -19,7 +19,17 @@ import {
   type Market,
 } from "./wizardDefaults";
 
-const CATEGORIES = ["gym", "pilates_studio", "other"] as const;
+const CATEGORIES = [
+  "beauty_wellness",
+  "food_beverage",
+  "retail",
+  "fitness",
+  "health_clinic",
+  "education",
+  "hospitality",
+  "services",
+  "other",
+] as const;
 const STEPS = ["name", "category", "locale"] as const;
 
 function useCreateWorkspace() {
@@ -37,7 +47,7 @@ export function CreateWorkspaceWizard() {
   const create = useCreateWorkspace();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("gym");
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number] | null>(null);
   const [market, setMarket] = useState<Market>("tr");
   const [settings, setSettings] = useState(() => defaultsForMarket("tr", browserTimezone()));
 
@@ -52,13 +62,18 @@ export function CreateWorkspaceWizard() {
   };
 
   const last = step === STEPS.length - 1;
-  const canContinue = step !== 0 || name.trim().length > 0;
+  const canContinue =
+    (step === 0 && name.trim().length > 0) ||
+    (step === 1 && category !== null) ||
+    step === 2;
 
-  const submit = () =>
+  const submit = () => {
+    if (!category) return;
     create.mutate(
       { name: name.trim(), business_category: category, market, ...settings },
       { onSuccess: (workspace) => void navigate(`/w/${workspace.id}/more/knowledge`) },
     );
+  };
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 py-8">

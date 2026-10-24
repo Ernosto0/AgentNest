@@ -223,8 +223,8 @@ def test_ac_d1_the_draft_has_its_placeholders_rendered_and_its_references_stored
     assert body["status"] == "draft" and body["version"] == 2  # the text is a new version
     caption = body["caption"]
     assert PRICE in caption and "{{" not in caption  # the value comes from the verified fact
-    assert caption.endswith("#fitness #sağlıklıyaşam #spor")  # appended by code
-    assert body["title"] == "Üyelik fiyatı" and body["visual_notes"]
+    assert caption.endswith("#yerelişletme #küçükişletme #instagram")  # appended by code
+    assert body["title"] == "Fiyat bilgisi" and body["visual_notes"]
     assert body["overlay_text_suggestions"] == []
     assert body["generation"] == {"status": "succeeded", "error_code": None}
     # The price is the verified one: the report shows it as grounded, and nothing blocks.

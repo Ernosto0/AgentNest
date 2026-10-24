@@ -1,7 +1,7 @@
 # Named fact fixture for the eval datasets: the demo gym (Gölkent Fitness & Pilates).
 name: demo_gym
 workspace:
-  business_category: gym
+  business_category: fitness
   default_locale: tr
   currency: TRY
   timezone: Europe/Istanbul

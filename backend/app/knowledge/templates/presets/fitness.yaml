@@ -1,22 +1,14 @@
-# Additions for gyms (business-knowledge.md §3).
+# Optional preset for fitness businesses: gyms, Pilates, yoga (ADR-023).
+# A preset only suggests items and hashtags; readiness comes from common.yaml alone.
+hashtags:
+  tr: [spor, sağlıklıyaşam, fitness]
+  en: [fitness, healthylifestyle, workout]
 items:
-  - key_pattern: service.*
-    category: service
-    label: {tr: Hizmet, en: Service}
-    value_types: [localized_text]
-    criticality: standard
-    required_for: ready
-    description:
-      tr: Sunduğunuz bir hizmetin açıklaması (en az bir tane).
-      en: A description of a service you offer (at least one).
-
   - key: pricing.membership_monthly
     category: pricing
     label: {tr: Aylık üyelik, en: Monthly membership}
     value_types: [money]
     criticality: critical
-    required_for: ready
-    required_when: price_disclosure=share
     description:
       tr: Aylık üyelik ücreti.
       en: The monthly membership price.
@@ -57,15 +49,6 @@ items:
       tr: Öğrenciler için aylık üyelik ücreti.
       en: The monthly membership price for students.
 
-  - key_pattern: promotion.*
-    category: promotion
-    label: {tr: Kampanya, en: Promotion}
-    value_types: [localized_text, money]
-    criticality: critical
-    description:
-      tr: Geçerlilik tarihli bir kampanya.
-      en: A promotion with a validity window.
-
   - key: schedule.classes
     category: schedule
     label: {tr: Ders programı, en: Class schedule}
@@ -74,3 +57,4 @@ items:
     description:
       tr: Ders programı metni. Saatler yine de doğrulanır.
       en: The class timetable as text. Times in it are still checked.
+

@@ -54,7 +54,7 @@ describe("workspace wizard", () => {
     await user.type(name, "  Lale Pilates ");
     await user.click(screen.getByRole("button", { name: "Devam" }));
 
-    await user.click(screen.getByRole("radio", { name: "Pilates stüdyosu" }));
+    await user.click(screen.getByRole("radio", { name: "Spor salonu, pilates ve yoga" }));
     await user.click(screen.getByRole("button", { name: "Devam" }));
 
     // Türkiye defaults
@@ -74,7 +74,7 @@ describe("workspace wizard", () => {
     const post = requests.find((r) => r.method === "POST");
     expect(post?.body).toEqual({
       name: "Lale Pilates",
-      business_category: "pilates_studio",
+      business_category: "fitness",
       market: "tr",
       default_locale: "tr",
       timezone: "Europe/Istanbul",

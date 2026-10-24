@@ -44,7 +44,7 @@ def test_the_fake_provider_passes_every_case_strictly(tmp_path: Path) -> None:
     for report in data["reports"]:
         assert report["metrics"]["hard_failures"] == 0
         assert report["metrics"]["accuracy"] == 1.0
-        assert report["provider"] == "fake" and report["prompt_version"] == "v1"
+        assert report["provider"] == "fake" and report["prompt_version"] in {"v1", "v2"}
     assert "All cases passed." in report_md.read_text(encoding="utf-8")
 
 

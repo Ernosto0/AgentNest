@@ -25,7 +25,7 @@ export function workspace(id: string, overrides: Partial<Workspace> = {}): Works
     id,
     name: member?.workspace_name ?? "Unknown",
     slug: "slug",
-    business_category: "gym",
+    business_category: "fitness",
     market: "tr",
     default_locale: "tr",
     reply_languages: ["tr"],

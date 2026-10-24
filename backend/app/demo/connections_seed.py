@@ -33,7 +33,7 @@ class Connection:
 # workspace slug -> the simulated account and the languages the studio answers in.
 CONNECTIONS = {
     "golkent-fitness": Connection("golkent.fitness.demo", ("tr", "en")),
-    "harbor-pilates": Connection("harbor.pilates.demo", ("en",)),
+    "harbor-cafe": Connection("harbor.cafe.demo", ("en",)),
 }
 
 

@@ -201,4 +201,4 @@ def test_the_objective_is_a_labelled_data_section_and_the_system_prompt_has_no_d
     assert "<business_facts>" in message.content and "<brand_voice>" in message.content
     system = render_system(DRAFT_CONTENT.name, DRAFT_CONTENT.prompt_version)
     assert "Ignore previous instructions" not in system
-    assert "{{fact:pricing.membership_monthly}}" in system  # the placeholder syntax it explains
+    assert "{{fact:hours.weekly}}" in system  # the placeholder syntax it explains

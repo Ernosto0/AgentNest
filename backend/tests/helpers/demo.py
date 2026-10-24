@@ -16,7 +16,7 @@ from app.reporting.periods import local_date_of
 
 SessionFactory = sessionmaker[Session]
 PASSWORD = "demo-password"
-STUDIOS = ("golkent-fitness", "harbor-pilates")
+STUDIOS = ("golkent-fitness", "harbor-cafe")
 SIM_TABLES = (
     "sim_inbound_messages",
     "sim_sent_messages",

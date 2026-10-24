@@ -17,7 +17,7 @@ users:
 workspaces:
   - slug: golkent-fitness
     name: Gölkent Fitness & Pilates
-    business_category: gym
+    business_category: fitness
     market: tr
     default_locale: tr
     timezone: Europe/Istanbul
@@ -27,9 +27,9 @@ workspaces:
       manager@demo.local: manager
       staff@demo.local: staff
 
-  - slug: harbor-pilates
-    name: Harbor Pilates Studio
-    business_category: pilates_studio
+  - slug: harbor-cafe
+    name: Harbor Café & Bakery
+    business_category: food_beverage
     market: global
     default_locale: en
     timezone: Europe/Lisbon

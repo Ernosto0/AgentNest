@@ -1,0 +1,14 @@
+# Optional preset for courses, workshops and tutoring (ADR-023).
+hashtags:
+  tr: [kurs, eğitim, atölye]
+  en: [learning, workshop, classes]
+items:
+  - key: schedule.classes
+    category: schedule
+    label: {tr: Ders programı, en: Class schedule}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: Ders veya atölye programı metni. Saatler yine de doğrulanır.
+      en: The class or workshop timetable as text. Times in it are still checked.
+

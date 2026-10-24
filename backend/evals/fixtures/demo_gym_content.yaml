@@ -2,7 +2,7 @@
 # promotion, one promotion nobody has verified, the price policy and the brand voice.
 name: demo_gym_content
 workspace:
-  business_category: gym
+  business_category: fitness
   default_locale: tr
   currency: TRY
   timezone: Europe/Istanbul

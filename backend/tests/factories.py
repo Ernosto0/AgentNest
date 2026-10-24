@@ -46,7 +46,7 @@ def create_workspace(
     *,
     name: str = "Test Workspace",
     slug: str | None = None,
-    business_category: str = "gym",
+    business_category: str = "fitness",
     market: str = "tr",
     default_locale: str = "tr",
     timezone: str = "Europe/Istanbul",

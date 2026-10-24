@@ -26,7 +26,7 @@ READY_FACTS: dict[str, dict[str, Any]] = {
 def _compute(
     usable: dict[str, dict[str, Any]],
     *,
-    category: str = "gym",
+    category: str = "fitness",
     account: bool = True,
     reviewed: datetime | None = REVIEWED,
 ) -> Readiness:
@@ -87,7 +87,7 @@ def test_price_policy_depends_on_the_disclosure_choice() -> None:
     report = _compute(no_price)
     assert report.level == "ready_for_drafts"
     policy = next(r for r in report.requirements if r.code == "price_policy")
-    assert policy.missing_keys == ("pricing.membership_monthly",)
+    assert policy.missing_keys == ("pricing.*",)
 
     hidden = {**no_price, "policy.price_disclosure": {"value": "do_not_share"}}
     assert not _status(_compute(hidden))["price_policy"]  # needs the answer text
@@ -98,11 +98,12 @@ def test_price_policy_depends_on_the_disclosure_choice() -> None:
     assert not _status(_compute(undecided))["price_policy"]
 
 
-def test_pilates_requires_the_reformer_package_price_not_the_monthly_membership() -> None:
+def test_any_pricing_fact_satisfies_price_disclosure() -> None:
     facts = {k: v for k, v in READY_FACTS.items() if k != "pricing.membership_monthly"}
-    assert _compute(facts, category="pilates_studio").level == "ready_for_drafts"
+    assert _compute(facts, category="fitness").level == "ready_for_drafts"
     facts["pricing.reformer_8_sessions"] = {"amount": "4800.00", "currency": "TRY"}
-    assert _compute(facts, category="pilates_studio").level == "ready"
+    assert _compute(facts, category="fitness").level == "ready"
+    assert _compute(facts, category="beauty_wellness").level == "ready"
 
 
 def test_at_least_one_service_is_required() -> None:

@@ -32,7 +32,7 @@ DATA_DIR = Path(__file__).parent / "data"
 # workspace slug -> facts file
 FACT_FILES = {
     "golkent-fitness": "facts_golkent_fitness.yaml",
-    "harbor-pilates": "facts_harbor_pilates.yaml",
+    "harbor-cafe": "facts_harbor_cafe.yaml",
 }
 SEED_ACTOR = ActorRef.system("seed")
 

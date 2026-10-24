@@ -88,9 +88,18 @@ Localization must not be implemented as scattered hardcoded language checks. Use
 
 # 3. Target Users and Initial Scope
 
-## 3.1 Initial customer segment
+## 3.1 Target customer segments (ADR-023)
 
-Start by testing the product with gyms and Pilates studios.
+Any small local business communicating with customers on Instagram is a target customer. Common segments include:
+
+- Cafés, restaurants and bakeries (menus, table reservations, daily specials)
+- Beauty, hair and wellness salons (appointments, services, price lists)
+- Retail shops and boutiques (opening hours, stock/delivery inquiries, pricing)
+- Fitness studios, Pilates and gyms (membership prices, schedules, trial sessions)
+- Health clinics, dietitians and therapies (consultation booking, service info)
+- Service businesses, hotels, workshops and tutors
+
+The platform provides a business-agnostic core with optional category presets (ADR-023).
 
 Typical use cases include:
 

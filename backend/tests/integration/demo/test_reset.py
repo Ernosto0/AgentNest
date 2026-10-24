@@ -69,7 +69,7 @@ def test_reset_recreates_the_workspace_with_a_new_id(
     media_root = seed_settings.media_root
     assert len(media_files(media_root, old)) == 2  # one upload per history post
     assert old_sim["sim_inbound_messages"] > 0 and old_sim["sim_published_media"] == 1
-    harbor_before = row_ids(seeded, ids["harbor-pilates"])
+    harbor_before = row_ids(seeded, ids["harbor-cafe"])
     other_before = row_ids(seeded, ids["other-workspace"])
 
     headers = sign_in(client, "owner@demo.local")
@@ -139,17 +139,17 @@ def test_reset_recreates_the_workspace_with_a_new_id(
     values = {k: v["value"] for k, v in stored_report(seeded, new).metrics.items()}
     assert all(values[k] == v for k, v in YESTERDAY_REPORT.items())
     # Other workspaces are untouched: same primary keys in every table.
-    assert row_ids(seeded, after["harbor-pilates"]) == harbor_before
+    assert row_ids(seeded, after["harbor-cafe"]) == harbor_before
     assert row_ids(seeded, after["other-workspace"]) == other_before
 
 
 def test_reset_by_slug_for_the_cli_path(
     seeded: SessionFactory, clock: FrozenClock, seed_settings: Settings
 ) -> None:
-    old = workspace_ids(seeded)["harbor-pilates"]
-    new = reset_workspace(seeded, clock, seed_settings, slug="harbor-pilates")
+    old = workspace_ids(seeded)["harbor-cafe"]
+    new = reset_workspace(seeded, clock, seed_settings, slug="harbor-cafe")
     assert new != old
-    assert workspace_ids(seeded)["harbor-pilates"] == new
+    assert workspace_ids(seeded)["harbor-cafe"] == new
     with pytest.raises(AppError) as unknown:
         reset_workspace(seeded, clock, seed_settings, slug="nope")
     assert unknown.value.code == "NOT_FOUND"

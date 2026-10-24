@@ -32,17 +32,17 @@ def test_seed_connects_a_simulated_account_to_each_studio(
     session_factory: SessionFactory, clock: FrozenClock, seed_settings: Settings
 ) -> None:
     report = seed(session_factory, clock, seed_settings)
-    assert report.connected_accounts == ["golkent-fitness", "harbor-pilates"]
+    assert report.connected_accounts == ["golkent-fitness", "harbor-cafe"]
     with session_factory() as session:
         accounts = {}
-        for slug in ("golkent-fitness", "harbor-pilates", "other-workspace"):
+        for slug in ("golkent-fitness", "harbor-cafe", "other-workspace"):
             workspace = workspace_row(session, slug)
             found = session.scalars(
                 select(SocialAccount).where(SocialAccount.workspace_id == workspace.id)
             ).first()
             if found is not None:
                 accounts[slug] = found
-    assert set(accounts) == {"golkent-fitness", "harbor-pilates"}
+    assert set(accounts) == {"golkent-fitness", "harbor-cafe"}
     assert all(a.provider_kind == "mock" and a.status == "connected" for a in accounts.values())
     assert accounts["golkent-fitness"].username == "golkent.fitness.demo"
 
@@ -63,7 +63,7 @@ def test_the_demo_studios_become_ready_and_answer_in_their_languages(
     seed(session_factory, clock, seed_settings)
     with session_factory() as session:
         golkent = workspace_row(session, "golkent-fitness")
-        harbor = workspace_row(session, "harbor-pilates")
+        harbor = workspace_row(session, "harbor-cafe")
         assert golkent.reply_languages == ["tr", "en"]
         assert harbor.reply_languages == ["en"]
         for workspace in (golkent, harbor):

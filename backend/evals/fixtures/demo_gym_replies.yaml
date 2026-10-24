@@ -2,7 +2,7 @@
 # (address, hours, offers, booking, services, price policy, hand-over words).
 name: demo_gym_replies
 workspace:
-  business_category: gym
+  business_category: fitness
   default_locale: tr
   currency: TRY
   timezone: Europe/Istanbul

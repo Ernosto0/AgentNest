@@ -450,14 +450,14 @@ export const copy: Record<Lang, Copy> = {
         },
         {
           q: 'Hangi işletmeler için uygun?',
-          a: 'Spor salonları, Pilates stüdyoları, güzellik salonları ve her gün aynı soruları yanıtlayan yerel işletmeler için.',
+          a: 'Instagram üzerinden müşterileriyle iletişim kuran tüm yerel işletmeler için: kafeler, butikler, güzellik salonları, spor stüdyoları, klinikler ve hizmet işletmeleri.',
         },
       ],
     },
     pilot: {
       title: 'Pilot listesine katılın',
       body:
-        'Az sayıda spor salonu, Pilates stüdyosu ve benzeri işletmeyle başlıyoruz. Listeye katılırsanız sizi arayıp işletmenizi ve Instagram’ı nasıl kullandığınızı konuşuruz. Uygun olursa kurulumu sizinle birlikte yaparız.',
+        'Instagram kullanan seçilmiş yerel işletmelerle pilot uygulamaya başlıyoruz. Listeye katılırsanız sizi arayıp işletmenizi ve Instagram’ı nasıl kullandığınızı konuşuruz. Uygun olursa kurulumu sizinle birlikte yaparız.',
       expectationsTitle: 'Pilot programı hakkında bilmeniz gerekenler',
       expectations: [
         {
@@ -476,7 +476,7 @@ export const copy: Record<Lang, Copy> = {
           badge: '10–15 işletme · Birebir destek',
           title: 'Her işletmeyle doğrudan kurucu ekip ilgileniyor.',
           detail:
-            'Kalabalık bir çağrı merkezi değil; stüdyonuzun çalışma düzenini bilen, ihtiyaç duyduğunuzda doğrudan ulaşabileceğiniz küçük bir ekiple çalışırsınız.',
+            'Kalabalık bir çağrı merkezi değil; işletmenizin çalışma düzenini bilen, ihtiyaç duyduğunuzda doğrudan ulaşabileceğiniz küçük bir ekiple çalışırsınız.',
         },
         {
           badge: 'Resmi bağlantı · Şifre paylaşılmaz',
@@ -496,7 +496,15 @@ export const copy: Record<Lang, Copy> = {
     form: {
       dossierHeader: 'Pilot Başvuru Kartı',
       categoryLabel: 'İşletme türü',
-      categories: ['Pilates / Yoga', 'Spor Salonu', 'Güzellik / Bakım', 'Diğer'],
+      categories: [
+        'Güzellik / Bakım',
+        'Kafe / Restoran',
+        'Mağaza / Butik',
+        'Spor / Pilates',
+        'Klinik / Sağlık',
+        'Hizmet İşletmesi',
+        'Diğer',
+      ],
       business: 'İşletme adı',
       instagram: 'Instagram hesabı',
       instagramHint: '@kullaniciadi',
@@ -817,14 +825,14 @@ export const copy: Record<Lang, Copy> = {
         },
         {
           q: 'Which businesses is it for?',
-          a: 'Gyms, Pilates studios, beauty salons, and any local business that answers the same questions every day.',
+          a: 'For any small business that communicates with customers on Instagram: cafés, boutiques, salons, fitness studios, clinics and service businesses.',
         },
       ],
     },
     pilot: {
       title: 'Join the pilot waitlist',
       body:
-        'We are starting with a small number of gyms, Pilates studios and similar businesses. If you join, we will call you to talk about your business and how you use Instagram. If it is a good fit, we set it up together with you.',
+        'We are starting with a small cohort of local businesses using Instagram. If you join, we will call you to talk about your business and how you use Instagram. If it is a good fit, we set it up together with you.',
       expectationsTitle: 'What to expect in the pilot programme',
       expectations: [
         {
@@ -843,7 +851,7 @@ export const copy: Record<Lang, Copy> = {
           badge: '10–15 businesses · Direct support',
           title: 'You work directly with the founding team.',
           detail:
-            'No ticket queues—we work closely with a small cohort of studios and gyms so you can reach us directly whenever you need help.',
+            'No ticket queues—we work closely with a small cohort of local businesses so you can reach us directly whenever you need help.',
         },
         {
           badge: 'Official login · Password stays yours',
@@ -863,7 +871,15 @@ export const copy: Record<Lang, Copy> = {
     form: {
       dossierHeader: 'Pilot Application Card',
       categoryLabel: 'Business type',
-      categories: ['Pilates / Yoga', 'Gym / Fitness', 'Beauty / Wellness', 'Other'],
+      categories: [
+        'Beauty / Salon',
+        'Café / Restaurant',
+        'Shop / Retail',
+        'Fitness / Yoga',
+        'Clinic / Health',
+        'Services',
+        'Other',
+      ],
       business: 'Business name',
       instagram: 'Instagram account',
       instagramHint: '@username',

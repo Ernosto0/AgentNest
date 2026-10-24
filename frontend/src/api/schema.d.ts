@@ -3490,7 +3490,7 @@ export interface components {
              * Business Category
              * @enum {string}
              */
-            business_category: "gym" | "pilates_studio" | "other";
+            business_category: "beauty_wellness" | "food_beverage" | "retail" | "fitness" | "health_clinic" | "education" | "hospitality" | "services" | "other";
             /** Currency */
             currency: string;
             /**
@@ -3514,7 +3514,7 @@ export interface components {
              * Business Category
              * @enum {string}
              */
-            business_category: "gym" | "pilates_studio" | "other";
+            business_category: "beauty_wellness" | "food_beverage" | "retail" | "fitness" | "health_clinic" | "education" | "hospitality" | "services" | "other";
             /**
              * Created At
              * Format: date-time
@@ -3557,7 +3557,7 @@ export interface components {
         /** WorkspacePatch */
         WorkspacePatch: {
             /** Business Category */
-            business_category?: ("gym" | "pilates_studio" | "other") | null;
+            business_category?: ("beauty_wellness" | "food_beverage" | "retail" | "fitness" | "health_clinic" | "education" | "hospitality" | "services" | "other") | null;
             /** Currency */
             currency?: string | null;
             /** Default Locale */
@@ -3574,7 +3574,7 @@ export interface components {
         };
         /**
          * WorkspaceSettings
-         * @description Validates ``workspaces.settings`` (data-model.md §3.1).
+         * @description Validates ``workspaces.settings`` (data-model.md ┬º3.1).
          */
         WorkspaceSettings: {
             /** Automation Reviewed At */

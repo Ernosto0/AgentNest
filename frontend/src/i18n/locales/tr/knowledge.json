@@ -102,7 +102,12 @@
       "none": "Birim yok",
       "month": "aylık",
       "session": "seans başına",
-      "package": "paket başına"
+      "package": "paket başına",
+      "item": "adet başına",
+      "hour": "saat başına",
+      "person": "kişi başı",
+      "day": "günlük",
+      "year": "yıllık"
     },
     "bool": {
       "true": "Evet",
@@ -257,9 +262,15 @@
     "name": "İşletme adı",
     "category": "İşletmeniz ne tür bir işletme?",
     "categories": {
-      "gym": "Spor salonu veya fitness stüdyosu",
-      "pilates_studio": "Pilates stüdyosu",
-      "other": "Başka bir şey"
+      "beauty_wellness": "Güzellik, kuaför ve bakım",
+      "food_beverage": "Kafe, restoran ve pastane",
+      "retail": "Mağaza, butik ve e-ticaret",
+      "fitness": "Spor salonu, pilates ve yoga",
+      "health_clinic": "Klinik, diyetisyen ve terapi",
+      "education": "Kurs, atölye ve eğitim",
+      "hospitality": "Otel, pansiyon ve turizm",
+      "services": "Hizmet işletmesi",
+      "other": "Diğer"
     },
     "market": "Pazar",
     "markets": {

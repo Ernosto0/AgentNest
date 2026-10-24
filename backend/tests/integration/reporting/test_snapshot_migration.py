@@ -50,7 +50,7 @@ def test_upgrade_preserves_values_and_marks_legacy_uncertainty(
     report_id = uuid.uuid4()
     cleanup_at = datetime(2026, 10, 21, tzinfo=UTC)
     with Session(isolated) as session:
-        workspace = create_workspace(session)
+        workspace = create_workspace(session, business_category="gym")
         workspace.created_at = at(DAY, 0)
         session.flush()
         workspace_id = workspace.id

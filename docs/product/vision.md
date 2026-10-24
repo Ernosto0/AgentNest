@@ -14,7 +14,7 @@ The value is **trust under delegation**. The owner hands over repetitive work on
 
 ## 2. Problem
 
-Owners of gyms, Pilates studios and similar local businesses:
+Owners of local small businesses (cafés, boutiques, salons, studios, clinics, services):
 - answer the same DM questions (price, hours, location, trial session) dozens of times a week, often late;
 - lose leads because replies are slow or forgotten;
 - post irregularly because content preparation competes with running the business;

@@ -44,7 +44,7 @@ from app.reporting.periods import day_bounds, local_date_of
 
 SEED_ACTOR = ActorRef.system("seed")
 
-STUDIOS = ("golkent-fitness", "harbor-pilates")
+STUDIOS = ("golkent-fitness", "harbor-cafe")
 
 FEED_SAMPLE = Path(__file__).parent / "media" / "feed-sample.jpg"
 
@@ -59,20 +59,20 @@ STUDIO_HISTORY: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("Zeynep", "Adresiniz nerede?", "leave"),
         ("Burak", "Bu bir rezalet, çok memnuniyetsizim.", "escalate"),
     ),
-    "harbor-pilates": (
-        ("Emma", "How much is the monthly membership?", "approve"),
+    "harbor-cafe": (
+        ("Emma", "How much is the brunch combo?", "approve"),
         ("Liam", "What are your opening hours?", "approve"),
-        ("Olivia", "Do you have a free first class?", "approve"),
+        ("Olivia", "Do you have any morning promotions?", "approve"),
         ("Noah", "Where are you located?", "approve"),
-        ("Mia", "What services do you offer?", "leave"),
-        ("Ethan", "This is terrible, I am very unhappy.", "escalate"),
+        ("Mia", "Can we book a table for 8 people?", "leave"),
+        ("Ethan", "This is terrible, I am very unhappy with the service.", "escalate"),
     ),
 }
 
 # (caption, fail) per studio: one post goes out, the next one fails on an invalid image.
 STUDIO_POSTS: dict[str, tuple[str, str]] = {
     "golkent-fitness": ("Yeni haftaya hazırız!", "Bugün harika bir gün!"),
-    "harbor-pilates": ("Ready for the new week!", "See you on the mat!"),
+    "harbor-cafe": ("Fresh morning croissants just out of the oven!", "See you for coffee today!"),
 }
 
 STEP = timedelta(minutes=30)

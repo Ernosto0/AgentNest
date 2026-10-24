@@ -1,0 +1,23 @@
+# Optional preset for hotels, guesthouses and tours (ADR-023).
+hashtags:
+  tr: [tatil, otel, seyahat]
+  en: [travel, hotel, getaway]
+items:
+  - key: policy.check_in_out
+    category: policy
+    label: {tr: Giriş ve çıkış, en: Check-in and check-out}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: Giriş ve çıkış kuralları. Saatler yine de doğrulanır.
+      en: Check-in and check-out rules. Times in it are still checked.
+
+  - key: booking.reservations
+    category: booking
+    label: {tr: Rezervasyon, en: Reservations}
+    value_types: [localized_text]
+    criticality: critical
+    description:
+      tr: Rezervasyon nasıl yapılır, kapora alınır mı?
+      en: How to reserve, and whether a deposit is needed.
+

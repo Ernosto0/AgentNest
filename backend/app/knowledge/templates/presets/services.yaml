@@ -1,0 +1,14 @@
+# Optional preset for service businesses: photography, events, repairs, cleaning (ADR-023).
+hashtags:
+  tr: [hizmet, yerelişletme, profesyonel]
+  en: [services, smallbusiness, shoplocal]
+items:
+  - key: service.area
+    category: service
+    label: {tr: Hizmet bölgesi, en: Service area}
+    value_types: [localized_text]
+    criticality: standard
+    description:
+      tr: Hangi bölgelere hizmet veriyorsunuz?
+      en: Which areas do you serve?
+

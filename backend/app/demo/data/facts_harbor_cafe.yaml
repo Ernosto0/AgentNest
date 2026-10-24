@@ -1,0 +1,93 @@
+# Fictional demo facts for "Harbor Café & Bakery" (English, EUR, Europe/Lisbon, ADR-023).
+# Demonstrates AgentNest for food & beverage businesses.
+facts:
+  - key: identity.business_name
+    value: {text: Harbor Café & Bakery}
+
+  - key: contact.phone
+    value: {e164: "+351210000000"}
+
+  - key: contact.email
+    value: {email: hello@harbor-cafe.example}
+
+  - key: location.address
+    value:
+      lines: [Rua do Exemplo 1]
+      district: Alfama
+      city: Lisbon
+
+  - key: hours.weekly
+    value:
+      mon: [["08:00", "19:00"]]
+      tue: [["08:00", "19:00"]]
+      wed: [["08:00", "19:00"]]
+      thu: [["08:00", "19:00"]]
+      fri: [["08:00", "20:00"]]
+      sat: [["08:30", "20:00"]]
+      sun: [["09:00", "17:00"]]
+      exceptions:
+        - {date: "2026-12-25", closed: true, note: {en: Christmas Day, tr: Noel}}
+
+  - key: pricing.brunch_combo
+    label: {en: Brunch combo, tr: Brunch menüsü}
+    value: {amount: "14.50", unit: item}
+
+  - key: pricing.cappuccino
+    label: {en: Cappuccino, tr: Cappuccino}
+    value: {amount: "3.50", unit: item}
+
+  - key: pricing.daily_pastry
+    label: {en: Daily pastry, tr: Günlük tatlı}
+    value: {amount: "4.00", unit: item}
+
+  - key: pricing.filter_coffee
+    status: unverified
+    label: {en: Filter coffee, tr: Filtre kahve}
+    value:
+      amount: "3.00"
+      unit: item
+
+  - key: promotion.morning_combo
+    label: {en: Morning coffee combo, tr: Sabah kahve menüsü}
+    value_type: localized_text
+    value:
+      en: Free filter coffee with any breakfast pastry before 10am.
+      tr: Sabah 10'a kadar tüm kahvaltı hamur işlerinin yanında filtre kahve ücretsiz.
+    valid_until: {end_of_month: 1}
+
+  - key: booking.instructions
+    value:
+      en: Walk-ins are always welcome. For groups of 6 or more, please message us to reserve.
+      tr: Rezervasyonsuz gelebilirsiniz. 6 kişi ve üzeri gruplar için bize yazarak rezervasyon yapabilirsiniz.
+
+  - key: policy.price_disclosure
+    value: {value: share}
+
+  - key: service.specialty_coffee
+    label: {en: Specialty Coffee, tr: Nitelikli Kahve}
+    value_type: localized_text
+    value:
+      en: Single-origin espresso and filter coffees, sourced ethically and roasted locally.
+      tr: Doğrudan üreticiden tedarik edilen, yerel kavrulmuş nitelikli espresso ve filtre kahveler.
+
+  - key: service.fresh_bakery
+    label: {en: Fresh Bakery, tr: Taze Fırın Ürünleri}
+    value_type: localized_text
+    value:
+      en: Artisanal sourdough breads, croissants and cakes baked fresh in-house every morning.
+      tr: Her sabah fırınımızda taze pişirilen ekşi mayalı ekmekler, kruvasanlar ve tatlılar.
+
+  - key: brand.voice_guidelines
+    value:
+      en: Warm, inviting and artisanal, plain English, at most one emoji.
+      tr: Sıcak, samimi ve kaliteli, sade bir dil, en fazla bir emoji.
+
+  - key: escalation.keywords
+    value: {items: [allergy, complaint, refund, lawyer]}
+
+candidates:
+  - key: pricing.cappuccino
+    value: {amount: "3.00", unit: item}
+    source_type: pasted_text
+    excerpt: "Instagram bio: Artisanal coffee in Alfama from 3 EUR"
+
