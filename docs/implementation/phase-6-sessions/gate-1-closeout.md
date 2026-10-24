@@ -69,6 +69,9 @@ greater-than assertions. Both failed runs remain available; neither is reported 
 | Full production-build E2E, all projects, zero retries | Pending |
 | Reviewed-revision GitHub CI: backend/frontend/E2E/security | Pending |
 
+Draft review: [PR #1](https://github.com/Ernosto0/AgentNest/pull/1). The owner authorized
+publishing this branch and a draft PR; no merge is authorized or performed.
+
 Local logs, JUnit, Playwright JSON and failure traces are ignored under
 `backend/var/gate1-evidence/`. The browser stack uses a separate
 `agentnest_gate1_e2e_test` database, ports 8400/5573 and its own media directory.
@@ -78,13 +81,12 @@ Backend pytest retains its `_test` database-name guard.
 ## Owner acceptance and final gate
 
 The owner reported **both unassisted Windows and real-phone walkthroughs completed**
-in this conversation on October 24, and said details would follow. Do not substitute
-automated emulation for those checks or invent device/date/scenario evidence.
-
-Record the walkthrough date, Windows/browser or phone model/OS/browser, scenarios A-G
-and reset covered, any assistance and any failures. Until supplied, detailed evidence
-and explicit outcome remain pending.
+in this conversation on October 24. When asked for device/date/scenario detail, the
+owner said they did not know those details and explicitly requested skipping them.
+Record this as **owner-reported manual acceptance**, without independently verified
+device/version/date records. Those optional details are omitted at the owner's request;
+automated emulation is not substituted for the owner's confirmation.
 
 Gate 1 can close only when the current automated/CI results, the navigation investigation,
-owner walkthrough evidence and final invariant review are recorded. Nothing here accepts
+owner-reported walkthrough acceptance and final invariant review are recorded. Nothing here accepts
 Gate 2, authentic Meta recordings or production/customer-data readiness.
