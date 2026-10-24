@@ -46,7 +46,7 @@ docs/
 │   ├── security-and-privacy.md   threat model, permissions, KVKK/GDPR view, retention
 │   ├── observability.md          IDs, logs, error catalog, audit catalog, health
 │   ├── deployment.md             local and pilot production topology
-│   └── decisions/                ADR-001…020
+│   └── decisions/                ADR-001 to ADR-022
 ├── implementation/
 │   ├── roadmap.md                phases, gates, research track, working agreement, risks
 │   ├── task-breakdown.md         task index and per-task protocol

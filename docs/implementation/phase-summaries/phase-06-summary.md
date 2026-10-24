@@ -1,10 +1,10 @@
 # Phase 6 summary: Reports, activity, failure UX and demo completion
 
-**Current Gate 1 follow-up (2026-10-24):** see [gate-1-closeout.md](../phase-6-sessions/gate-1-closeout.md) for current decisions, fixes and verification. The session-11 status/results below are historical, including its original AC-E3 defect and CI availability; they are not the current gate ledger.
+**Current Gate 1 review (2026-10-25): criteria verified for reviewed code `b47b019`; main landing tracked in PR #1.** see [gate-1-closeout.md](../phase-6-sessions/gate-1-closeout.md) for current decisions, fixes and verification. The session-11 status/results below are historical, including its original AC-E3 defect and CI availability; they are not the current gate ledger.
 
 **Owner Q&A follow-up (2026-10-22):** Q1/Q2 historical snapshot and retention changes, plus Q8 reconnect wording, are implemented in the [Q&A implementation report](../phase-6-sessions/qa-implementation-report.md). The session-11 results below remain the original review record; use the follow-up for the current reporting contract and verification. This does not approve Gate 1.
 
-**Status:** implementation and local review complete; **waiting for review**. **The Local MVP DoD and Gate 1 are not met.** The full E2E run has one unexplained WebKit navigation failure, AC-E3 has a reproduced historical snapshot mismatch, and invariant decisions, an unassisted Windows walkthrough, a real-phone walkthrough and GitHub CI remain open. Phase 7 has not started.
+**Historical session-11 status (2026-10-22):** implementation and local review complete; **waiting for review**. **The Local MVP DoD and Gate 1 are not met.** The full E2E run has one unexplained WebKit navigation failure, AC-E3 has a reproduced historical snapshot mismatch, and invariant decisions, an unassisted Windows walkthrough, a real-phone walkthrough and GitHub CI remain open. Phase 7 has not started.
 
 **Date:** 2026-10-22 (Europe/Istanbul). **Scope:** [Phase 6](../phases/phase-06-reporting-and-demo.md), [session plan](../phase-6-sessions/plan.md), sessions 1–11. Phase 5 was treated as accepted with its owner follow-ups already committed. **Branch:** `main`; local commits only, nothing pushed. Separate landing-page changes present before session 11 are preserved and excluded from its commits.
 

@@ -160,6 +160,7 @@ jobs:
           name: playwright-report
           path: |
             frontend/playwright-report
+            frontend/e2e/playwright-report/results.json
             frontend/test-results
           retention-days: 7
 
