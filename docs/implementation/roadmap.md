@@ -40,13 +40,13 @@ flowchart LR
 
 ## 3. Gates
 
-**Phase 6 review (2026-10-22):** P6-01–P6-09 are implemented; session 11 records the local checks, documentation close-out and remaining decisions in [phase-06-summary.md](phase-summaries/phase-06-summary.md). **Gate 1 remains open**: GitHub CI has not run (nothing pushed), unassisted Windows and real-phone acceptance remain owner checks, and the summary lists unresolved acceptance/invariant issues.
+**Gate 1 review (2026-10-25):** local MVP criteria verified for reviewed code `b47b019`: [complete CI](https://github.com/Ernosto0/AgentNest/actions/runs/40129750466), owner-reported unassisted Windows/phone acceptance, accepted ADR-021/022, atomic media-deletion audits and the [current close-out record](phase-6-sessions/gate-1-closeout.md). CI E2E is 174/174 with zero retries; independent Windows backend is 2,905 passed / four intentional live-only skips and WebKit regressions are 8/8. [PR #1](https://github.com/Ernosto0/AgentNest/pull/1) tracks main landing. The [Phase 6 summary](phase-summaries/phase-06-summary.md) preserves the historical review.
 
-**Phase 7 owner exception (2026-10-23):** offline Sessions 1-4 are complete and operator-accepted before gates pass; see [Phase 7 summary](phase-summaries/phase-07-summary.md). Required local checks pass (backend 2,904 passes / 4 intended manual skips, frontend 497 passes, fake eval 166/166 and statics). Gates 1/2, P7-00's final research re-plan, authentic recordings and all founder/tester/Meta/S3 acceptance remain pending. No live calls, public tunnel, deployment, App Review or push were performed. Phase 8 remains pending.
+**Phase 7 owner exception (2026-10-23):** offline Sessions 1-4 are complete and operator-accepted before gates pass; see [Phase 7 summary](phase-summaries/phase-07-summary.md). Required local checks pass (backend 2,904 passes / 4 intended manual skips, frontend 497 passes, fake eval 166/166 and statics). Gate 1 criteria are now verified; Gate 2, P7-00's final research re-plan, authentic recordings and all founder/tester/Meta/S3 acceptance remain pending. No live calls, public tunnel, deployment, App Review or push were performed. Phase 8 remains pending.
 
 | Gate | Condition | Evidence |
 |---|---|---|
-| **Gate 1: Local MVP** | All AC-A…G and AC-X pass in CI. Manual walkthrough on Windows and on a phone. | CI run link; phase 6 summary |
+| **Gate 1: Local MVP** | All AC-A…G and AC-X pass in CI. Manual walkthrough on Windows and on a phone. | [Verified code CI](https://github.com/Ernosto0/AgentNest/actions/runs/40129750466); [close-out](phase-6-sessions/gate-1-closeout.md); [main landing](https://github.com/Ernosto0/AgentNest/pull/1) |
 | **Gate 2: Platform verified** | V-01, V-02, V-03, V-05, V-08, V-09 answered in [platform-capabilities.md](../research/platform-capabilities.md) | Updated doc with dates and fixtures |
 | **Gate 3: Real customer data** | Phase 8 checklist complete; legal review of OQ-04, OQ-12, OQ-13 done; restore drill passed | Phase 8 summary; counsel notes |
 | **Gate 4: Owner channel** | OQ-01 resolved from interviews | open-questions.md updated |

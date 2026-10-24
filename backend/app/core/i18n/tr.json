@@ -201,6 +201,7 @@
   "activity.content.failed": "Gönderi yayımlanamadı",
   "activity.media.uploaded": "Görsel yüklendi",
   "activity.media.rejected": "Görsel kabul edilmedi",
+  "activity.media.deleted": "Saklama süresi dolan görsel silindi",
   "activity.fact.created": "Bilgi eklendi",
   "activity.fact.updated": "Bilgi güncellendi",
   "activity.fact.verified": "Bilgi doğrulandı",

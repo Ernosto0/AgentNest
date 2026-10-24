@@ -72,6 +72,7 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "content.failed",
         "media.uploaded",
         "media.rejected",
+        "media.deleted",
     ),
     "knowledge": (
         "fact.created",

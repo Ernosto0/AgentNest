@@ -474,7 +474,8 @@ describe("content generation", () => {
 describe("media upload", () => {
   const jpeg = () => new File(["fake-image-bytes"], "foto.jpg", { type: "image/jpeg" });
   const fileInput = () => screen.getByTestId("media-upload").querySelector("input[type=file]") as HTMLInputElement;
-  const image = () => new Response(new Blob(["jpeg"], { type: "image/jpeg" }), { headers: { "content-type": "image/jpeg" } });
+  // Response uses Node fetch in jsdom; bytes work on both Node 22 (CI) and 24.
+  const image = () => new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), { headers: { "content-type": "image/jpeg" } });
 
   it("uploads, attaches the image with expected_version, shows the authenticated preview and the check warnings", async () => {
     let attached = false;

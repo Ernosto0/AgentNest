@@ -32,7 +32,10 @@ test("A1: Home shows the workspace, its readiness and the simulation banner", as
   await signInToWorkspace(page, OWNER, GYM);
 
   await expect(page.getByRole("main").getByText("Gölkent Fitness & Pilates")).toBeVisible();
-  await expect(page.getByTestId("simulation-banner")).toContainText("simülasyon");
+  const simulation = page.getByTestId("simulation-banner");
+  await expect(simulation).toContainText("Demo çalışma alanı");
+  await expect(simulation).toContainText("Simülasyon etiketli işlemler gerçek Instagram'a gönderilmez.");
+  await expect(simulation).toContainText("Gerçek Instagram bağlantıları gerçek hesabınızda işlem yapar.");
   await expect(page.getByTestId("simulated-badge").first()).toBeVisible();
   // The seeded gym has a simulated Instagram account and a reviewed automation setup: fully ready.
   await expect(page.getByTestId("readiness-level")).toHaveText("Hazır");

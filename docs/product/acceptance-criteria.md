@@ -92,7 +92,7 @@ Format: *Given* (state) / *When* (action) / *Then* (observable result). "Demo gy
 | ID | Criterion | Proven by |
 |---|---|---|
 | AC-X1 | Isolation suite: for every workspace-scoped endpoint, a member of workspace A using IDs from B gets 404, and listing endpoints never return B's rows. | `tests/isolation/` |
-| AC-X2 | Every record produced via the mock provider has `is_simulated=true`. Inbox, content, approvals, report and notifications display the badge. | `tests/integration/test_simulation_flag.py`; E2E |
+| AC-X2 | Every provider-result record produced via the mock provider has `is_simulated=true` (ADR-021 defines the provider-neutral upload/internal simulator boundary). Inbox, account-bound content, approvals, reports and notifications display the badge. | `tests/integration/test_simulation_flag.py`; E2E |
 | AC-X3 | `tr` and `en` catalogs have identical key sets. Switching language changes all visible strings on main screens. | `npm run i18n:check`; `e2e/i18n.spec.ts` |
 | AC-X4 | All E2E scenarios pass at 390×844 (WebKit and Chromium) without horizontal scroll. | Playwright config |
 | AC-X5 | A queued and a scheduled job survive stopping and restarting the worker. | `tests/integration/jobs/test_restart.py` |

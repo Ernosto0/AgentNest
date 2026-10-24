@@ -201,6 +201,7 @@
   "activity.content.failed": "Post could not be published",
   "activity.media.uploaded": "Image uploaded",
   "activity.media.rejected": "Image rejected",
+  "activity.media.deleted": "Image deleted after retention",
   "activity.fact.created": "Information added",
   "activity.fact.updated": "Information updated",
   "activity.fact.verified": "Information verified",

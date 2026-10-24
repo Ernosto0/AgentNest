@@ -25,9 +25,11 @@ from pydantic import BaseModel
 from sqlalchemy import ColumnElement, and_, exists, or_, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.audit import service as audit
 from app.content.models import ContentItem, MediaAsset
-from app.core.clock import Clock
+from app.core.clock import Clock, FrozenClock
 from app.core.config import Settings, get_settings
+from app.core.context import ActorRef
 from app.core.logging import get_logger
 from app.integrations.storage.base import InvalidStorageKey, MediaStorage
 from app.integrations.storage.registry import get_media_storage
@@ -112,14 +114,27 @@ def run_media_cleanup(
                 _log.exception("media_cleanup_delete_failed", asset_id=str(asset_id))
                 continue
             with session_factory() as session:
-                result = session.execute(
+                workspace_id = session.scalar(
                     update(MediaAsset)
                     .where(MediaAsset.id == asset_id, condition)
                     .values(status="deleted", deleted_at=now)
+                    .returning(MediaAsset.workspace_id)
                     .execution_options(synchronize_session=False)
                 )
+                if workspace_id is not None:
+                    audit.record(
+                        session,
+                        None,
+                        "media.deleted",
+                        "media_asset",
+                        asset_id,
+                        {"reason": "retention"},
+                        clock=FrozenClock(now),
+                        actor=ActorRef.system("media_cleanup"),
+                        workspace_id=workspace_id,
+                    )
                 session.commit()
-            if result.rowcount == 1:  # type: ignore[attr-defined]
+            if workspace_id is not None:
                 deleted += 1
             else:
                 _log.warning("media_cleanup_raced", asset_id=str(asset_id))

@@ -38,7 +38,7 @@ function routes(extra: Record<string, () => Response> = {}, role: "owner" | "sta
   };
 }
 
-const image = () => new Response(new Blob(["jpeg"], { type: "image/jpeg" }), { headers: { "content-type": "image/jpeg" } });
+const image = () => new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), { headers: { "content-type": "image/jpeg" } });
 
 describe("approval of a content.publish", () => {
   const SUBJECT_VERSION = 3;
