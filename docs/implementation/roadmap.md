@@ -40,7 +40,7 @@ flowchart LR
 
 ## 3. Gates
 
-**Phase 6 review (2026-10-22):** P6-01–P6-09 are implemented; session 11 records the local checks, documentation close-out and remaining decisions in [phase-06-summary.md](phase-summaries/phase-06-summary.md). **Gate 1 remains open**: GitHub CI has not run (nothing pushed), unassisted Windows and real-phone acceptance remain owner checks, and the summary lists unresolved acceptance/invariant issues.
+**Gate 1 follow-up (2026-10-24):** [current close-out record](phase-6-sessions/gate-1-closeout.md). The owner accepted ADR-021/022 and reported Windows/phone walkthroughs complete, with details pending. Media-deletion auditing and Node 22 fixture corrections are implemented; full local/remote verification and navigation investigation remain in progress. Gate 1 is not signed off. The [Phase 6 summary](phase-summaries/phase-06-summary.md) preserves the original review.
 
 **Phase 7 owner exception (2026-10-23):** offline Sessions 1-4 are complete and operator-accepted before gates pass; see [Phase 7 summary](phase-summaries/phase-07-summary.md). Required local checks pass (backend 2,904 passes / 4 intended manual skips, frontend 497 passes, fake eval 166/166 and statics). Gates 1/2, P7-00's final research re-plan, authentic recordings and all founder/tester/Meta/S3 acceptance remain pending. No live calls, public tunnel, deployment, App Review or push were performed. Phase 8 remains pending.
 

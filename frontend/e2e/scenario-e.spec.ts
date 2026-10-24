@@ -8,6 +8,7 @@ import {
   ownerSetup,
   reseedDemo,
   say,
+  settleSeededExpiry,
   signInToWorkspace,
   simulateMessage,
   type ReportMetric,
@@ -25,6 +26,9 @@ test.setTimeout(180_000); // Includes seeding and tapping every nonzero metric i
 
 test.beforeEach(() => {
   reseedDemo();
+  // After the evening window closes, the periodic sweep can otherwise change attention
+  // between capturing a live count and visiting its drill-down, or during a baseline poll.
+  settleSeededExpiry();
 });
 
 /** The Turkish label of each metric the report can show (frontend/src/i18n/locales/tr/reports.json). */
@@ -80,6 +84,7 @@ test("E: the command answer equals the report; every number opens a list of that
   request,
 }, testInfo) => {
   const { csrf, workspaceId } = await ownerSetup(request);
+  const pendingBefore = metricValue(await dailyReport(request, workspaceId), "pending_approvals_now");
   await simulateMessage(request, csrf, workspaceId, "price");
   await simulateMessage(request, csrf, workspaceId, "hours");
   // The worker turns the webhook events into messages: wait until both are counted.
@@ -88,6 +93,9 @@ test("E: the command answer equals the report; every number opens a list of that
       timeout: 30_000,
     })
     .toBe(2);
+  await expect.poll(async () => metricValue(await dailyReport(request, workspaceId), "pending_approvals_now"), {
+    timeout: 30_000,
+  }).toBe(pendingBefore + 2);
 
   await signInToWorkspace(page, OWNER, GYM);
   await say(page, "Bugün kaç DM geldi?");
@@ -180,19 +188,21 @@ test("E: historical links stay on their snapshot after state changes and regener
   const originalSnapshot = new URL(attention.link.api!, API).searchParams.get("snapshot_id");
   expect(originalSnapshot).toBeTruthy();
 
-  // Yesterday's pending approval may already have expired, so measure today's baseline.
+  // Create enough distinct customers to differ from the saved snapshot even after all
+  // yesterday's windows have expired. Preserve the exact baseline + additions assertion.
   const before = metricValue(await dailyReport(request, workspaceId), "attention_now");
-  for (const alias of ["Snapshot customer one", "Snapshot customer two"]) {
+  const additions = Math.max(2, attention.value! - before + 1);
+  for (let index = 0; index < additions; index += 1) {
     const simulated = await request.post(`${API}/api/v1/dev/workspaces/${workspaceId}/simulate/customer-message`, {
-      data: { customer_alias: alias, text: "Bu bir rezalet, çok memnuniyetsizim." },
+      data: { customer_alias: `Snapshot customer ${index + 1}`, text: "Bu bir rezalet, çok memnuniyetsizim." },
       headers: { "X-CSRF-Token": csrf },
     });
     expect(simulated.ok()).toBe(true);
   }
   await expect.poll(async () => metricValue(await dailyReport(request, workspaceId), "attention_now"), {
     timeout: 30_000,
-  }).toBe(before + 2);
-  expect(before + 2).toBeGreaterThan(attention.value!);
+  }).toBe(before + additions);
+  expect(before + additions).toBeGreaterThan(attention.value!);
   const generated = await request.post(`${API}/api/v1/workspaces/${workspaceId}/reports/daily/generate`, {
     data: { date }, headers: { "X-CSRF-Token": csrf },
   });

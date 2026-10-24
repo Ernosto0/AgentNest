@@ -15,6 +15,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.audit import service as audit
 from app.content import media_cleanup
 from app.content.models import ContentItem, MediaAsset
 from app.core.clock import FrozenClock
@@ -165,6 +166,36 @@ def test_a_run_is_idempotent_and_a_missing_file_is_not_an_error(
     assert studio.run(shared_session_factory) == 1
     assert gone.status == "deleted" and already.status == "deleted"
     assert studio.run(shared_session_factory) == 0
+    (entry,) = audit.list_entries(studio.session, action="media.deleted")
+    assert entry.workspace_id == studio.workspace.id
+    assert entry.resource_type == "media_asset" and entry.resource_id == gone.id
+    assert entry.occurred_at == NOW
+    assert (entry.actor_type, entry.actor_id) == ("system", "media_cleanup")
+    assert entry.metadata_ == {"reason": "retention"}
+
+
+def test_audit_failure_rolls_back_the_transition_and_retry_records_it_once(
+    studio: Studio, shared_session_factory: SessionFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    asset = studio.asset(ago(30))
+    real_record = audit.record
+
+    def fail(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("audit unavailable")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(audit, "record", fail)
+        with pytest.raises(RuntimeError, match="audit unavailable"):
+            studio.run(shared_session_factory)
+    studio.session.expire_all()
+    assert asset.status == "ready" and asset.deleted_at is None
+    assert not studio.has_file(asset)
+    assert audit.list_entries(studio.session, action="media.deleted") == []
+    assert audit.record is real_record
+    assert studio.run(shared_session_factory) == 1
+    assert studio.run(shared_session_factory) == 0
+    (entry,) = audit.list_entries(studio.session, action="media.deleted")
+    assert entry.resource_id == asset.id
 
 
 def test_the_file_goes_first_and_a_failing_delete_leaves_the_row_for_the_next_run(

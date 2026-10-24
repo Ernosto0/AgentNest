@@ -81,6 +81,21 @@ export function reseedDemo(): void {
   });
 }
 
+/** Settle yesterday's already-closed windows before measuring live report baselines.
+ * The production expiry service uses the current clock; no deadlines are moved.
+ */
+export function settleSeededExpiry(): void {
+  const backendDir = fileURLToPath(new URL("../../backend", import.meta.url));
+  execFileSync("uv", ["run", "python", "-c", [
+    "from app.core.clock import SystemClock",
+    "from app.core.db import get_session_factory",
+    "from app.handlers import load_handlers",
+    "from app.inbox.expiry import expire_closed_window_drafts",
+    "load_handlers()",
+    "expire_closed_window_drafts(get_session_factory(), SystemClock())",
+  ].join("\n")], { cwd: backendDir, stdio: "pipe" });
+}
+
 /** Sign in through the UI and open a workspace by (part of) its name. */
 export async function signInToWorkspace(page: Page, email: string, workspaceName: RegExp) {
   await page.goto("/login");

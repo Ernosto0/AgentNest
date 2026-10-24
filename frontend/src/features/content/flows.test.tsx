@@ -54,7 +54,7 @@ function setSchedule(date: string, time: string) {
 const draftWithMedia = (overrides: Partial<ContentItem> = {}) =>
   contentItem({ media_asset_id: MEDIA_ID, caption: "Aylık üyelik şimdi çok uygun!", ...overrides });
 
-const image = () => new Response(new Blob(["jpeg"], { type: "image/jpeg" }), { headers: { "content-type": "image/jpeg" } });
+const image = () => new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), { headers: { "content-type": "image/jpeg" } });
 
 async function openSchedule(item: ContentItem, extra: Handlers = {}, role: "owner" | "manager" | "staff" = "owner") {
   const requests = mockApi(

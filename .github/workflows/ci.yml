@@ -12,11 +12,16 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# No external credentials and no network egress beyond package installation are needed
-# (INV-14, AC-X8): the stack runs with the fake/mock/local defaults.
+# Runtime suites run with loopback-only egress (INV-14, AC-X8). Dependency installation
+# and the Actions runner retain network access; tests and their child processes do not.
 env:
   DATABASE_URL: postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest
   TEST_DATABASE_URL: postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest_test
+  LLM_PROVIDER: fake
+  INSTAGRAM_ENABLED_PROVIDERS: mock
+  MEDIA_STORAGE_BACKEND: local
+  META_LIVE_ACCESS_TOKEN: ""
+  META_LIVE_IG_USER_ID: ""
 
 jobs:
   backend:
@@ -54,11 +59,17 @@ jobs:
       - name: Import rules (component-design.md §3)
         run: uv run lint-imports
       - name: Tests (unit, integration, isolation, security, jobs)
-        run: uv run pytest
+        run: bash ../.github/scripts/offline-tests.sh uv run pytest --junitxml=var/ci/backend.xml
       # Deterministic fake provider: proves the pipeline (prompts, schemas, resolver, extraction
       # checks) and the hard assertions (INV-02/03/04). Real-provider evals are run by hand.
       - name: AI evals (fake provider)
-        run: uv run python -m evals run --all --provider fake --strict --no-report
+        run: bash ../.github/scripts/offline-tests.sh uv run python -m evals run --all --provider fake --strict --no-report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-results
+          path: backend/var/ci/backend.xml
+          retention-days: 7
 
   frontend:
     runs-on: ubuntu-latest
@@ -76,7 +87,7 @@ jobs:
         working-directory: frontend
       - run: npm run typecheck
         working-directory: frontend
-      - run: npm test
+      - run: bash ../.github/scripts/offline-tests.sh npm test
         working-directory: frontend
       - run: npm run i18n:check
         working-directory: frontend
@@ -139,11 +150,12 @@ jobs:
       # production build with `vite preview` (see e2e/playwright.config.ts).
       - name: Playwright (mobile-webkit, mobile-chromium, desktop-chromium)
         working-directory: frontend
-        run: npm run e2e
+        run: bash ../.github/scripts/offline-tests.sh npm run e2e -- --reporter=list,html,json
         env:
           CI: "true"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results.json
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: playwright-report
           path: |

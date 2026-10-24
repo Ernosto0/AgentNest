@@ -23,7 +23,8 @@ export default defineConfig({
   // A scenario includes rebuilding both studios' history as well as browser setup and actions.
   timeout: 60_000,
   forbidOnly: CI,
-  retries: CI ? 1 : 0,
+  // Gate 1 requires a clean full run; an isolated or automatic retry cannot clear a failure.
+  retries: 0,
   reporter: CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
