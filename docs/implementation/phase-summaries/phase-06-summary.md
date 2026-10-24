@@ -1,6 +1,6 @@
 # Phase 6 summary: Reports, activity, failure UX and demo completion
 
-**Current Gate 1 review (2026-10-25): criteria verified for reviewed code `b47b019`; main landing tracked in PR #1.** see [gate-1-closeout.md](../phase-6-sessions/gate-1-closeout.md) for current decisions, fixes and verification. The session-11 status/results below are historical, including its original AC-E3 defect and CI availability; they are not the current gate ledger.
+**Current Gate 1 status (2026-10-25): CLOSED on main `dadf673` after the owner-authorized squash merge of PR #1 and successful main CI.** See [gate-1-closeout.md](../phase-6-sessions/gate-1-closeout.md) for the merge, pipeline, current decisions, fixes and verification. The session-11 status/results below are historical, including its original AC-E3 defect and CI availability; they are not the current gate ledger.
 
 **Owner Q&A follow-up (2026-10-22):** Q1/Q2 historical snapshot and retention changes, plus Q8 reconnect wording, are implemented in the [Q&A implementation report](../phase-6-sessions/qa-implementation-report.md). The session-11 results below remain the original review record; use the follow-up for the current reporting contract and verification. This does not approve Gate 1.
 

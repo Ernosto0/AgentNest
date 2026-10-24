@@ -1,8 +1,11 @@
 # Gate 1 close-out
 
 **Implementation:** 2026-10-24. **Final review:** 2026-10-25 (Europe/Istanbul).
-**Status:** Gate 1 criteria verified on reviewed application/test code `b47b019`;
-[PR #1](https://github.com/Ernosto0/AgentNest/pull/1) tracks landing on `main`.
+**Status: CLOSED on `main`, 2026-10-25 (Europe/Istanbul).**
+The owner authorized squash merge of [PR #1](https://github.com/Ernosto0/AgentNest/pull/1),
+which landed as [`dadf673`](https://github.com/Ernosto0/AgentNest/commit/dadf6733ade4af1590af282de3deba058376179e).
+[Fresh main CI](https://github.com/Ernosto0/AgentNest/actions/runs/40133915582)
+passed all four jobs. The merged application/test code matches reviewed `b47b019`.
 This is the current Gate 1 record. Earlier Phase 6 session reports remain historical
 evidence. Gate 2, live Meta acceptance, Phase 8 and Gate 3 are separate.
 
@@ -73,13 +76,19 @@ greater-than assertions. Both failed runs remain available; neither is reported 
 | Offline CI wrapper | Disposable Linux smoke and full GitHub backend/eval/frontend/E2E runtime suites passed |
 | Full backend CI, b47b019 | 2,905 passed / 4 intended live-probe skips; zero failures/errors; JUnit time 445.402 seconds |
 | Isolated Windows full backend | 2,905 passed / 4 intended live-probe skips; zero failures/errors; 1,441.53 seconds |
-| Scenario E diagnostics | Failed runs retained above; final correction is being verified by full E2E |
+| Scenario E diagnostics | Failed runs retained above; final correction passed the complete reviewed-revision E2E run |
 | Full production-build E2E CI, all projects | 174/174 passed (58 each); zero retries, unexpected/flaky/skipped results; 17.0 minutes |
 | Windows WebKit visibility/report-return regressions | 8/8 passed (four cases, two independent repetitions); zero retries/failures/flaky/skipped; 4.1 minutes |
 | Reviewed-revision GitHub CI | [b47b019 run](https://github.com/Ernosto0/AgentNest/actions/runs/40129750466): all four jobs passed; GitGuardian also passed |
+| Merged-main backend, dadf673 | 2,905 passed / 4 intended live-probe skips; zero failures/errors; JUnit time 461.912 seconds; fake eval 166/166 with zero hard failures |
+| Merged-main frontend, dadf673 | 497 passed; lint/typecheck, 1,170 translation keys and OpenAPI regeneration passed |
+| Merged-main E2E, dadf673 | 174/174 passed, 58 per project; zero retries/failures/flaky/skipped/global errors; 909.583 seconds; standalone JSON artifact downloaded and verified |
+| Merged-main GitHub CI | [dadf673 run](https://github.com/Ernosto0/AgentNest/actions/runs/40133915582): backend, frontend, E2E and security all passed |
 
-Draft review: [PR #1](https://github.com/Ernosto0/AgentNest/pull/1). The owner authorized
-publishing the branch and a draft PR. Main landing and its approval are tracked through that PR.
+Review and landing: [PR #1](https://github.com/Ernosto0/AgentNest/pull/1). The owner first
+authorized publishing the branch and draft PR, then explicitly authorized the squash merge.
+The resulting `main` commit is `dadf673`; its application/test code matches reviewed
+`b47b019`. Fresh main CI passed before Gate 1 was recorded closed.
 
 Local logs, JUnit, Playwright JSON and failure traces are ignored under
 `backend/var/gate1-evidence/`. The first browser diagnostic used `agentnest_gate1_e2e_test` and ports 8400/5573. Final Windows verification uses an isolated Git worktree at `C:\Users\ernos\AgentNest-gate1-review`, `agentnest_gate1_unit_test` and `agentnest_gate1_browser_test`, browser ports 8500/5673 and its own media directory. Final evidence is under that worktree's ignored `backend/var/gate1-evidence/`.
@@ -145,7 +154,7 @@ automated emulation is not substituted for the owner's confirmation.
 
 | Local MVP DoD | Acceptance evidence |
 |---|---|
-| 1. AC-A through G and AC-X pass in CI | All four jobs green for reviewed code `b47b019`; backend 2,905 passed / four intentional live-only skips, frontend 497 tests, fake eval 166/166, E2E 174/174 with zero retries |
+| 1. AC-A through G and AC-X pass in CI | All four jobs green for reviewed code `b47b019` and merged main `dadf673`; backend 2,905 passed / four intentional live-only skips, frontend 497 tests, fake eval 166/166, E2E 174/174 with zero retries |
 | 2. Unassisted Windows walkthrough | Owner-reported complete; optional device/date metadata omitted at owner's request |
 | 3. Real-phone walkthrough | Owner-reported complete; automated emulation is not substituted |
 | 4. No open local-MVP invariant issue | ADR-021/022 accepted by owner; media-deletion auditing implemented; evidence map and complete regression results above |
@@ -154,7 +163,11 @@ automated emulation is not substituted for the owner's confirmation.
 The final evidence follow-up changes documentation and adds the standalone JSON path to
 artifact upload only. Application code, tests and test-execution settings match the fully
 verified `b47b019` snapshot. The path is independently checked through Playwright's
-list-only JSON reporter. Main landing and its fresh pipeline are tracked through PR #1.
+list-only JSON reporter and the downloaded main-CI artifact at
+`e2e/playwright-report/results.json`. Every one of its 174 results passed on retry index
+zero, with 58 cases in each configured browser project. Main landing and its successful
+fresh pipeline are linked above. This closure follow-up changes documentation only;
+application code, tests, workflows and execution settings remain identical to `dadf673`.
 
 Gate 2, authentic Meta recordings, Phase 7 live acceptance, Phase 8 and real-customer-data
 Gate 3 remain pending. The other task's category/template/prompt changes in the original

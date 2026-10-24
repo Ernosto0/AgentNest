@@ -1,6 +1,6 @@
 # Phase 7 summary: offline Meta integration
 
-**Date:** 2026-10-23 (Europe/Istanbul). **Status:** offline Sessions 1-4 implementation/verification complete and accepted by the operator. **Gate 1 criteria were subsequently verified on 2026-10-25 ([close-out](../phase-6-sessions/gate-1-closeout.md)); Gate 2, P7-00 research, all real-account acceptance and Phase 8 remain pending.** The owner authorized offline Sessions 1-4 before gates were met. This summary distinguishes synthetic automated evidence from future manually verified behavior; no live success is claimed.
+**Date:** 2026-10-23 (Europe/Istanbul). **Status:** offline Sessions 1-4 implementation/verification complete and accepted by the operator. **Gate 1 was subsequently closed on main after successful CI on 2026-10-25 ([close-out](../phase-6-sessions/gate-1-closeout.md)); Gate 2, P7-00 research, all real-account acceptance and Phase 8 remain pending.** The owner authorized offline Sessions 1-4 before gates were met. This summary distinguishes synthetic automated evidence from future manually verified behavior; no live success is claimed.
 
 ## Implementation and evidence
 
