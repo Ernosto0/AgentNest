@@ -105,5 +105,6 @@ Phase 7 status (2026-10-23): offline Sessions 1-4 are complete and operator-acce
 | P6-09 | Full E2E, i18n, accessibility | all P6 | L |
 | P6-10 | Local MVP DoD review | P6-09 | S |
 | **Phase 7: Meta integration (gated)** | P7-00 … P7-10 | Gate 1 + Gate 2 | see phase doc |
-| **Phase 8: Hardening (gated)** | P8-01 … P8-12 | Phase 7 | see phase doc |
+| **Phase 7.5: Account agent (planned)** | [P7.5-01 through P7.5-18](phases/phase-7.5.md), [18 session briefs](phase-7.5-sessions/phase-7.5-sessions.md) | Phase 7 baseline; staged gates in phase plan | one scoped session per task |
+| **Phase 8: Hardening (gated)** | P8-01 … P8-12 | Phase 7 baseline + stable Phase 7.5 offline surfaces; live access may depend on Phase 8 | see phase doc |
 | **Phase 9: Owner channel (gated)** | P9-01 … P9-05 | Phase 8 + OQ-01 | see phase doc |

@@ -4,6 +4,8 @@ AgentNest (working name) is an open-source core, with a possible hosted SaaS, th
 
 This folder is the **primary engineering specification**. It is written in English for engineers and coding agents. The original product idea is preserved unchanged in [idea.md](idea.md). Where the two differ, these documents win, and [review/gap-analysis.md](review/gap-analysis.md) explains why.
 
+**Phase 7.5 planned (2026-10-25):** the requested target is an autonomous conversational Instagram account agent with memory, personality, owner collaboration and comment management. The full [phase plan](implementation/phases/phase-7.5.md) and [18 implementation sessions](implementation/phase-7.5-sessions/phase-7.5-sessions.md) define the work; [ADR-024](architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md) describes the target architecture. These are planning documents; the existing runtime and accepted contracts have not yet been replaced.
+
 ## Reading order
 
 | If you are… | Read |

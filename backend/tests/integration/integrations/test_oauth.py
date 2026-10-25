@@ -16,6 +16,7 @@ from app.identity.models import AuthSession, WorkspaceMember
 from app.inbox.models import Conversation, Message, ReplyDraft
 from app.inbox.payloads import SendReplyPayload
 from app.integrations.instagram import oauth, registry
+from app.integrations.instagram.base import AccountProfile
 from app.integrations.instagram.meta import MetaInstagramProvider
 from app.integrations.instagram.models import OAuthState, SocialAccount
 from app.jobs.models import Job
@@ -57,7 +58,7 @@ def flow(env, settings, app, shared_session_factory, monkeypatch):
                 200,
                 json={
                     "access_token": "synthetic-short",
-                    "user_id": "123",
+                    "user_id": "exchange-alias-456",
                     "permissions": [oauth.SCOPES[1]],
                 },
             )
@@ -114,6 +115,7 @@ def test_connect_consumes_before_exchange_encrypts_and_whitelists_response(env, 
     env.session.expire_all()
     account = env.session.scalar(select(SocialAccount))
     assert account.status == "connected" and not account.is_simulated
+    assert account.external_account_id == "123"
     assert account.capabilities == {
         "messaging": True,
         "publish_feed_image": False,
@@ -133,7 +135,22 @@ def test_connect_consumes_before_exchange_encrypts_and_whitelists_response(env, 
     listed = env.call(env.owner, "GET", "/social-accounts").json()
     assert "synthetic-long" not in str(listed) and "token_ciphertext" not in str(listed)
     assert callback(env, raw).status_code == 400
-    assert len(calls) == 3
+    assert len(calls) == 4
+    assert calls[2].url.path == "/v25.0/me"
+    assert calls[3].url.path == "/v25.0/123"
+
+
+def test_first_connect_still_rejects_a_profile_different_from_token_owner(env, flow, monkeypatch):
+    monkeypatch.setattr(
+        MetaInstagramProvider,
+        "get_account_profile",
+        lambda self, account: AccountProfile("different-owner", "offline-account"),
+    )
+    raw = start(env)
+    response = callback(env, raw)
+    assert "code=ACCOUNT_MISMATCH" in response.headers["location"]
+    assert env.session.scalar(select(SocialAccount.id)) is None
+    assert env.session.scalar(select(OAuthState.used_at)) is not None
 
 
 @pytest.mark.parametrize("case", ["unknown", "expired", "used", "invalidated", "wrong_user"])

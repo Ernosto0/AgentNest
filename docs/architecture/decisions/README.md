@@ -31,3 +31,4 @@ Each ADR records one significant decision: its context, the alternatives, the ch
 | [ADR-020](ADR-020-frontend-stack.md) | React + TypeScript + Vite SPA, TanStack Query, generated API client | Accepted |
 | [ADR-021](ADR-021-simulation-provenance-boundary.md) | Provider-result provenance; neutral uploads and internal simulator state | Accepted |
 | [ADR-022](ADR-022-privacy-redaction-and-audit-retention.md) | Bounded privacy erasure; append-only audit retention | Accepted |
+| [ADR-024](ADR-024-account-agent-and-delegated-autonomy.md) | Account agent with memory and delegated autonomy | Proposed target; not implemented |

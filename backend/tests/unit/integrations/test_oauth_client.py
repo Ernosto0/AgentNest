@@ -44,19 +44,52 @@ def test_exchange_uses_fixed_endpoints_and_never_assumes_requested_scopes(
             assert b"code=synthetic-code" in request.content
             return httpx.Response(200, json={"data": [short]} if wrapped else short)
         assert request.url.host == "graph.instagram.com"
-        assert request.url.path == "/access_token"
-        assert request.url.params["access_token"] == "synthetic-short"
-        return httpx.Response(200, json={"access_token": "synthetic-long", "expires_in": 5184000})
+        if request.url.path == "/access_token":
+            assert request.url.params["access_token"] == "synthetic-short"
+            return httpx.Response(
+                200, json={"access_token": "synthetic-long", "expires_in": 5184000}
+            )
+        assert request.url.path == f"/{cfg.meta_graph_api_version}/me"
+        assert dict(request.url.params) == {"fields": "user_id"}
+        assert request.headers["Authorization"] == "Bearer synthetic-long"
+        return httpx.Response(200, json={"id": "123", "user_id": "canonical-456"})
 
     with caplog.at_level(logging.DEBUG):
         result = exchange_code_for_long_lived_token(
             cfg, "synthetic-code", transport=httpx.MockTransport(handle)
         )
-    assert result.ig_user_id == "123" and result.granted_scopes == sorted(permissions)
-    assert len(calls) == 2
+    assert result.ig_user_id == "canonical-456" and result.granted_scopes == sorted(permissions)
+    assert len(calls) == 3
     assert "synthetic-long" not in repr(result)
     for value in ("synthetic-secret", "synthetic-short", "synthetic-long", "synthetic-code"):
         assert value not in caplog.text
+
+
+@pytest.mark.parametrize("body", [{}, {"id": "exchange-only"}, {"user_id": True}, {"user_id": ""}])
+def test_invalid_token_owner_never_falls_back_to_exchange_identifier(settings, body):
+    def handle(request):
+        if request.method == "POST":
+            return httpx.Response(200, json={"access_token": "short", "user_id": "exchange-id"})
+        if request.url.path == "/access_token":
+            return httpx.Response(200, json={"access_token": "private-long", "expires_in": 5184000})
+        return httpx.Response(200, json=body)
+
+    with pytest.raises(ProviderTransientError) as exc:
+        exchange_code_for_long_lived_token(settings, "code", transport=httpx.MockTransport(handle))
+    assert "private-long" not in str(exc.value)
+
+
+def test_token_owner_authorization_failure_is_not_accepted(settings):
+    def handle(request):
+        if request.method == "POST":
+            return httpx.Response(200, json={"access_token": "short", "user_id": "exchange-id"})
+        if request.url.path == "/access_token":
+            return httpx.Response(200, json={"access_token": "private-long", "expires_in": 5184000})
+        return httpx.Response(403, json={"error": "private-provider-error"})
+
+    with pytest.raises(ProviderAuthError) as exc:
+        exchange_code_for_long_lived_token(settings, "code", transport=httpx.MockTransport(handle))
+    assert "private-provider-error" not in str(exc.value)
 
 
 @pytest.mark.parametrize(

@@ -4,7 +4,7 @@
 
 ## 1. Strategy
 
-1. **Build a coherent end-to-end demo first** (Phases 1–6, all simulated), then connect real Instagram (Phase 7), then harden for real customers (Phase 8), then add an owner messenger if evidence supports it (Phase 9).
+1. **Build a coherent end-to-end demo first** (Phases 1–6, all simulated), then connect real Instagram (Phase 7), deliver the conversational account agent (Phase 7.5), harden the expanded system for real customers (Phase 8), then add an owner messenger if evidence supports it (Phase 9).
 2. **Every phase ends in a runnable, demoable state** with tests that prove its acceptance criteria.
 3. **Safety mechanisms come before features that need them.** Approvals exist before replies are sent. The operations ledger exists before the first simulated send. Placeholders and the validator exist before the first AI reply.
 4. **External uncertainty is retired in parallel**: a manual research track (R) runs alongside Phases 1–6 so that Phase 7 starts with verified facts.
@@ -20,7 +20,8 @@
 | 5 | [Content and scheduling](phases/phase-05-content-and-scheduling.md) | Media, content items, AI content drafts, approval and scheduling, mock publish with containers, retries, reconciliation, fact-change holds | 4 | Story draft → upload → approve & schedule → simulated publish; failure injection; no duplicates |
 | 6 | [Reports, activity and demo completion](phases/phase-06-reporting-and-demo.md) | Daily report, activity feed, Home dashboard, notification centre, integration-failure UX with mock, invites, demo reset, full E2E | 5 | **Local MVP Definition of Done** ([acceptance-criteria.md](../product/acceptance-criteria.md)) |
 | 7 | [Meta Instagram integration](phases/phase-07-meta-integration.md) | Real Instagram Login, encrypted tokens, real webhooks, sends and image publishing, S3 media | 6 + Gate R | Founder's own professional account: real DM answered after approval; real image published at a scheduled time |
-| 8 | [Production hardening and pilot readiness](phases/phase-08-hardening.md) | Deployment, backups, RLS, throttling, deletion and export, Meta callbacks, legal artifacts, security review, App Review preparation | 7 | Deployed instance passing a restore drill and security checklist; first pilot business onboarded |
+| 7.5 | [Autonomous Instagram account agent](phases/phase-7.5.md) | Central coordinator, tools, memory/personality, owner questions, DMs, comments/moderation/private replies and existing content tools | Phase 7 baseline; separate offline/model/platform gates in phase plan | Agent handles a multi-turn comment-to-DM conversation, remembers context, consults the owner and performs delegated account actions |
+| 8 | [Production hardening and pilot readiness](phases/phase-08-hardening.md) | Deployment, backups, RLS, throttling, deletion and export, Meta callbacks, legal artifacts, security review, App Review preparation | Phase 7 baseline + stable Phase 7.5 offline surfaces; live pilot also needs agent/platform acceptance | Deployed instance passing a restore drill and security checklist; first pilot business onboarded |
 | 9 | [Owner messaging channel](phases/phase-09-owner-channel.md) | Telegram (provisional) via the channel abstraction | 8 + OQ-01 | Owner receives an approval in Telegram and approves with a button |
 
 ```mermaid
@@ -32,13 +33,19 @@ flowchart LR
   G2 --> P7
   P7 --> G3{{Gate 3: legal + security}}
   P8[8 Hardening] --> G3
-  P7 --> P8
+  P7 --> P75[7.5 Offline agent, memory and comments]
+  P75 --> P8
+  P75 --> LIVE75[7.5 Live capability acceptance]
+  P8 -. Access and App Review if required .-> LIVE75
+  LIVE75 --> PILOT
   G3 --> PILOT[Pilots]
   OQ1{{OQ-01 resolved}} --> P9[9 Owner channel]
   P8 --> P9
 ```
 
 ## 3. Gates
+
+**Phase 7.5 planned (2026-10-25):** [full plan](phases/phase-7.5.md) and [18 session briefs](phase-7.5-sessions/phase-7.5-sessions.md) are written; implementation has not started. Its contract, offline, model-quality, per-capability platform and founder-acceptance gates are distinct. Session 01 reconciles existing ADR/runtime contracts; no live permissions or completed Phase 7 gates are inferred from this planning update. Phase 8's detailed checklist will be expanded for the new surfaces during the Phase 7.5 handoff. Hardening/App Review work may start from the stable offline agent implementation; new live capability acceptance may depend on that access work, so it is not a prerequisite for beginning it. Pilots require both sets of applicable gates.
 
 **Gate 1 CLOSED (2026-10-25):** the owner authorized squash merge of [PR #1](https://github.com/Ernosto0/AgentNest/pull/1) into `main` as `dadf673`; [fresh main CI](https://github.com/Ernosto0/AgentNest/actions/runs/40133915582) passed all four jobs. Backend is 2,905 passed / four intentional live-only skips, frontend 497 passed and E2E 174/174 with zero retries. The [close-out record](phase-6-sessions/gate-1-closeout.md) includes owner-reported unassisted Windows/phone acceptance, accepted ADR-021/022, atomic media-deletion audits and independent Windows verification (full backend and 8/8 WebKit regressions). The [Phase 6 summary](phase-summaries/phase-06-summary.md) preserves the historical review.
 

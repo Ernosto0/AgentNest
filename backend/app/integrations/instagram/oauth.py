@@ -38,6 +38,11 @@ class _Long(BaseModel):
     expires_in: int = Field(gt=0, le=366 * 86400)
 
 
+class _TokenOwner(BaseModel):
+    model_config = ConfigDict(strict=True)
+    user_id: str = Field(min_length=1)
+
+
 def build_authorize_url(settings: Settings, state: str) -> str:
     return "https://www.instagram.com/oauth/authorize?" + urlencode(
         {
@@ -100,10 +105,20 @@ def exchange_code_for_long_lived_token(
             )
             _check(long_response)
             long = _Long.model_validate(long_response.json())
+            # The exchange's user_id can differ from the Graph profile's user_id.
+            # Resolve the authenticated token owner in the namespace used by profiles
+            # and webhooks before account comparisons or persistence.
+            owner_response = client.get(
+                f"https://graph.instagram.com/{settings.meta_graph_api_version}/me",
+                params={"fields": "user_id"},
+                headers={"Authorization": f"Bearer {long.access_token}"},
+            )
+            _check(owner_response)
+            owner = _TokenOwner.model_validate(owner_response.json())
             return TokenExchangeResult(
                 long.access_token,
                 long.expires_in,
-                str(short.user_id),
+                owner.user_id,
                 sorted(set(short.permissions)),
             )
     except (httpx.HTTPError, ValueError, ValidationError):
