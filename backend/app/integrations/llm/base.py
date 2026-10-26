@@ -1,14 +1,17 @@
-"""The thin LLM provider interface (ADR-009): one method, structured output, no tools.
+"""Thin LLM provider interface: legacy structured tasks and typed account-agent steps.
 
 ``context`` is an optional typed copy of the task input. Real providers ignore it; the
 deterministic fake reads it so it never has to parse prompt text. Tasks never import a vendor
-SDK; only ``app.ai`` imports this package.
+SDK. The account-agent broker imports only vendor-neutral step types from this package.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from app.integrations.llm.steps import LLMStepRequest, LLMStepResult
 
 
 @dataclass(frozen=True)
@@ -55,3 +58,5 @@ class LLMProvider(Protocol):
         timeout_s: float,
         context: object | None = None,
     ) -> LLMResult: ...
+
+    def generate_step(self, request: "LLMStepRequest") -> "LLMStepResult": ...

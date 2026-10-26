@@ -46,6 +46,7 @@ class Operation(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base)
     __tablename__ = "operations"
     __table_args__ = (
         UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint("workspace_id", "social_account_id", "id"),
         UniqueConstraint("idempotency_key"),
         ForeignKeyConstraint(
             ["workspace_id", "social_account_id"],

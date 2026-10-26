@@ -12,6 +12,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     DateTime,
+    ForeignKeyConstraint,
     Index,
     Integer,
     SmallInteger,
@@ -24,7 +25,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
 
-AGENT_TASKS = ("interpret_command", "draft_reply", "draft_content", "extract_fact_candidates")
+AGENT_TASKS = (
+    "interpret_command",
+    "draft_reply",
+    "draft_content",
+    "extract_fact_candidates",
+    "account_agent_step",
+)
 AGENT_RUN_STATUSES = ("queued", "running", "succeeded", "failed")
 
 
@@ -36,6 +43,9 @@ class AgentRun(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
     __tablename__ = "agent_runs"
     __table_args__ = (
         UniqueConstraint("workspace_id", "id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "agent_step_id"], ["agent_steps.workspace_id", "agent_steps.id"]
+        ),
         CheckConstraint(_in("task", AGENT_TASKS), name="task"),
         CheckConstraint(_in("status", AGENT_RUN_STATUSES), name="status"),
         CheckConstraint("repair_attempts >= 0", name="repair_attempts"),
@@ -46,6 +56,7 @@ class AgentRun(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
     )
 
     task: Mapped[str] = mapped_column(Text, nullable=False)
+    agent_step_id: Mapped[uuid.UUID | None] = mapped_column(index=True)
     provider: Mapped[str | None] = mapped_column(Text)
     model: Mapped[str | None] = mapped_column(Text)
     prompt_version: Mapped[str | None] = mapped_column(Text)

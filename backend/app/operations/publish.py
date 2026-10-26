@@ -30,6 +30,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.agent.delegation import fence_action
 from app.approvals import repository as approvals_repo
 from app.approvals import service as approvals
 from app.audit import service as audit
@@ -454,6 +455,21 @@ def _begin(
         if item.social_account_id is not None
         else None
     )
+    if item.origin == "agent":
+        try:
+            if account is None or item.agent_action_id is None:
+                raise AppError("APPROVAL_STALE")
+            fence_action(
+                session,
+                clock,
+                workspace_id,
+                item.agent_action_id,
+                account_id=account.id,
+                payload_hash_value=bound_payload_hash(session, item),
+                expected_action="content.publish",
+            )
+        except AppError:
+            return _refuse(session, clock, ctx, item, op, "APPROVAL_STALE")
     capability = capability_for(item.content_type)
     if (
         account is None

@@ -1,6 +1,6 @@
 # ADR-014: Deterministic policy engine and version-bound approvals
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-024 only for topic-first agent authority and mandatory approval of every publication; legacy policy and exact human approvals retained
 - **Date:** 2026-10-15
 
 ## Context

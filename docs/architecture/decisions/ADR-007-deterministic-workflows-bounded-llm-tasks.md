@@ -1,6 +1,6 @@
 # ADR-007: Deterministic workflows with bounded LLM tasks (no autonomous agents)
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-024 for the Phase 7.5 account-agent path; retained for legacy bounded tasks
 - **Date:** 2026-10-15
 
 ## Context

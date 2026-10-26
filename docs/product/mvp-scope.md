@@ -8,6 +8,7 @@
 |---|---|---|---|
 | **S1: Local MVP demo** | 1–6 | Complete, honest, simulated end-to-end product on a laptop. Satisfies the original spec §20 "Definition of Done for the First Build". | None (Docker for Postgres only) |
 | **S2: Real Instagram** | 7 | One real professional account (founder's own, then 1–3 testers) connected, receiving DMs and publishing images. | Meta app, Standard Access, public HTTPS endpoint, S3-compatible storage |
+| **S2.5: Account agent** | 7.5 | Offline agent handles natural multi-turn DMs, comment context, memory, owner questions and delegated supported actions; each real capability has its own research and live acceptance gate. | Offline fake/mock needs no credentials; real comments and private replies depend on verified Meta access |
 | **S3: Pilot readiness** | 8 (+9 optional) | Deployed, backed up, secured. Legal basics in place. Optional owner messenger channel. | VPS, domain, legal review, (Telegram/WhatsApp) |
 | **S4: Self-service SaaS** | not planned in detail | App Review approved, self-service signup, billing. | Meta Advanced Access, payment provider |
 
@@ -41,12 +42,13 @@ The test for inclusion: **is it needed to demonstrate the core value loop credib
 - Instagram Login OAuth, token encryption and refresh, real webhooks with signature verification, real send and publish (images), S3 media with signed URLs, capability detection, disconnect.
 - Deployment to a single VPS (TLS, backups, restore drill), RLS defence in depth, login throttling, security review, retention and deletion jobs, Meta data deletion callback, privacy notice and DPA templates (legal review), SMTP for invites.
 - Optional (OQ-01): Telegram owner channel.
+- Phase 7.5: one account agent with explicit action-level delegation, durable multi-turn DM/comment handling, bounded customer memory and personality, owner questions, moderation/private replies and existing image-content tools. Its offline work is independently demonstrable; real comment capabilities remain disabled until evidenced.
 
 ## 4. Deferred (with reason and trigger)
 
 | Feature | Reason for deferral | Revisit trigger |
 |---|---|---|
-| **Comment automation** ("fiyat?" → private reply) | Comment webhooks need **Advanced Access**. It adds a second inbound surface. | After App Review; OQ-07 interviews show high value |
+| **Real-account comment automation before capability acceptance** | Phase 7.5 builds an offline signed mock path; Meta access, eligibility and actual result semantics remain capability gates. | R75 research, App Review if required, and authentic live evidence |
 | WhatsApp owner channel | Cost, verification, policy uncertainty | OQ-01 |
 | Story/post **image generation** (template cards) | Not core to the trust loop; design effort | OQ-15 after pilots |
 | Video/Reels/carousels | Transcoding and validation complexity | Pilot demand |

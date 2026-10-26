@@ -1,4 +1,4 @@
-﻿{
+{
   "components": {
     "schemas": {
       "AccountHealth": {
@@ -73,6 +73,52 @@
           "is_simulated"
         ],
         "title": "AccountHealth",
+        "type": "object"
+      },
+      "ActionRule": {
+        "additionalProperties": false,
+        "properties": {
+          "max_per_day": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Per Day"
+          },
+          "mode": {
+            "default": "off",
+            "enum": [
+              "automatic",
+              "ask",
+              "off"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "sources": {
+            "default": [
+              "customer",
+              "owner_task"
+            ],
+            "items": {
+              "enum": [
+                "customer",
+                "owner_task"
+              ],
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "title": "ActionRule",
         "type": "object"
       },
       "ActivityActorOut": {
@@ -2152,6 +2198,128 @@
           "payload_hash"
         ],
         "title": "DecisionIn",
+        "type": "object"
+      },
+      "DelegationChange": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "format": "uuid",
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "expected_config_version": {
+            "minimum": 1.0,
+            "title": "Expected Config Version",
+            "type": "integer"
+          },
+          "expected_delegation_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Delegation Version"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/DelegationPolicy"
+          }
+        },
+        "required": [
+          "expected_config_version",
+          "client_request_id",
+          "policy"
+        ],
+        "title": "DelegationChange",
+        "type": "object"
+      },
+      "DelegationOut": {
+        "properties": {
+          "config_version": {
+            "title": "Config Version",
+            "type": "integer"
+          },
+          "controller_epoch": {
+            "title": "Controller Epoch",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/DelegationPolicy"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "policy",
+          "config_version",
+          "controller_epoch"
+        ],
+        "title": "DelegationOut",
+        "type": "object"
+      },
+      "DelegationPolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "actions": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionRule"
+            },
+            "propertyNames": {
+              "enum": [
+                "dm.send",
+                "comment.reply",
+                "comment.private_reply",
+                "comment.hide",
+                "comment.unhide",
+                "comment.delete",
+                "content.prepare",
+                "content.schedule",
+                "content.publish",
+                "content.cancel"
+              ]
+            },
+            "title": "Actions",
+            "type": "object"
+          }
+        },
+        "required": [
+          "actions"
+        ],
+        "title": "DelegationPolicy",
+        "type": "object"
+      },
+      "DelegationPreview": {
+        "properties": {
+          "changed_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed Actions",
+            "type": "array"
+          },
+          "next_version": {
+            "title": "Next Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "next_version",
+          "changed_actions"
+        ],
+        "title": "DelegationPreview",
         "type": "object"
       },
       "DisclosureText": {
@@ -5329,6 +5497,49 @@
         "title": "SocialAccountOut",
         "type": "object"
       },
+      "StateChange": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_config_version": {
+            "minimum": 1.0,
+            "title": "Expected Config Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_config_version"
+        ],
+        "title": "StateChange",
+        "type": "object"
+      },
+      "StateOut": {
+        "properties": {
+          "config_version": {
+            "title": "Config Version",
+            "type": "integer"
+          },
+          "controller_epoch": {
+            "title": "Controller Epoch",
+            "type": "integer"
+          },
+          "controller_mode": {
+            "title": "Controller Mode",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "controller_mode",
+          "config_version",
+          "controller_epoch"
+        ],
+        "title": "StateOut",
+        "type": "object"
+      },
       "SubjectLinkOut": {
         "description": "Structured so the API stays free of frontend routes.",
         "properties": {
@@ -6270,7 +6481,7 @@
       },
       "WorkspaceSettings": {
         "additionalProperties": false,
-        "description": "Validates ``workspaces.settings`` (data-model.md ┬º3.1).",
+        "description": "Validates ``workspaces.settings`` (data-model.md §3.1).",
         "properties": {
           "automation_reviewed_at": {
             "anyOf": [
@@ -7170,6 +7381,319 @@
         "summary": "Patch Workspace",
         "tags": [
           "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/delegation": {
+      "get": {
+        "operationId": "get_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DelegationOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Delegation Api V1 Workspaces  Workspace Id  Accounts  Account Id  Agent Delegation Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Delegation",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/delegation/apply": {
+      "post": {
+        "operationId": "apply_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegationChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DelegationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Delegation",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/delegation/preview": {
+      "post": {
+        "operationId": "preview_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegationChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DelegationPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Delegation",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/pause": {
+      "post": {
+        "operationId": "pause_api_v1_workspaces__workspace_id__accounts__account_id__agent_pause_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StateChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pause",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/resume": {
+      "post": {
+        "operationId": "resume_api_v1_workspaces__workspace_id__accounts__account_id__agent_resume_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StateChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resume",
+        "tags": [
+          "agent"
         ]
       }
     },

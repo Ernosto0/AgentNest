@@ -26,6 +26,10 @@ backend/app/
 ├── jobs/                   # jobs table, enqueue(), worker runtime, scheduler, handler registry
 ├── knowledge/              # facts, versions, candidates, templates, readiness, renderer, claims validator, approved answers, impact analysis
 ├── ai/                     # LLM task definitions (prompts, schemas, context builders, post-validators), task runner, agent_runs
+├── agent/                  # Phase 7.5: durable account coordinator, events, sessions/steps, typed broker/tools
+├── memory/                 # Phase 7.5: account-scoped customer identity, memory, summaries, privacy lifecycle
+├── owner_requests/         # Phase 7.5: owner information questions, answers and continuations
+├── comments/               # Phase 7.5: owned media/comment/thread context and public reads
 ├── commands/               # owner_commands, command registry, reference resolver, executors
 ├── approvals/              # approvals service, expiry sweep
 ├── policy/                 # policy engine, rules, automation_policies
@@ -51,6 +55,8 @@ Each domain module uses the same internal shape where applicable:
 - `repository.py`: queries; always takes `WorkspaceContext`.
 - `router.py`: FastAPI routes; thin.
 - `jobs.py`: job handlers registered with `jobs`.
+
+**Phase 7.5 import and transaction contract.** [Account-agent contracts](account-agent-contracts.md) define the new modules and interfaces. `agent` coordinates through domain service interfaces; `inbox`, `comments`, `owner_requests`, approvals and operations emit durable agent events through a registered narrow callback/event writer in their existing transaction rather than importing the coordinator. `agent.tools` alone resolves server-issued references, source permissions and visibility; it never invokes side-effecting Instagram methods. `operations` remains the only side-effecting provider caller. A coordinator claim/commit transaction ends before any model or network call; result validation opens a new transaction and rechecks cursor, epoch, policy and deletion generation. Session 01 fixes this direction; Session 02+ must add corresponding import-linter rules with each module.
 
 ## 2. Module responsibilities and public interfaces
 

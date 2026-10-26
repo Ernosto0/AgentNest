@@ -1,6 +1,6 @@
 # ADR-009: Thin LLM provider abstraction with structured outputs and a deterministic fake
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-024 only for the single-method/no-tool restriction; thin provider abstraction and legacy bounded tasks retained
 - **Date:** 2026-10-15
 
 ## Context

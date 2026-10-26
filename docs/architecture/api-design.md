@@ -2,6 +2,8 @@
 
 **Purpose:** HTTP API conventions and endpoint groups, with request and response shapes where they matter for correctness. FastAPI generates the full OpenAPI schema from code. This document defines the contract that the code must satisfy and the phase that introduces each group.
 
+The planned Phase 7.5 account agent, delegation, question, memory and comment routes are specified in [account-agent-contracts.md §5](account-agent-contracts.md). They use all conventions below and are not implemented yet. Sessions 03 and 08–15 add typed routes and regenerate the client as they land.
+
 ## 1. Conventions
 
 | Topic | Rule |

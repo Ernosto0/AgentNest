@@ -1,5 +1,7 @@
 # Functional Workflow Contracts
 
+The flows below are the implemented bounded/legacy workflows. An account explicitly switched to the Phase 7.5 controller follows [account-agent-contracts.md](account-agent-contracts.md) for event routing, waits, tool authorization and recovery; it still uses these existing reply/content subjects and operation executors where applicable. A customer DM can never enter the owner command interpreter. Agent effects require a policy grant or exact human approval, current capability and a committed operation before the provider call.
+
 **Purpose:** Precise, implementation-ready contracts for the seven core workflows (A–G). For each one: trigger, preconditions, inputs, main steps (with transaction boundaries), state transitions, permissions, persistence effects, external side effects, failure paths, idempotency and acceptance tests.
 **Related:** states in [state-machines.md](state-machines.md), tables in [data-model.md](data-model.md), endpoints in [api-design.md](api-design.md), LLM tasks in [agent-runtime.md](agent-runtime.md), UX in [user-journeys.md](../product/user-journeys.md).
 

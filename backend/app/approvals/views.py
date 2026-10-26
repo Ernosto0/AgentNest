@@ -31,7 +31,15 @@ def approval_out(
         expires_at=approval.expires_at,
         execute_before=approval.execute_before,
         required_permission=approval.required_permission,
-        can_decide=service.can_decide(approval, ctx, clock.now()),
+        can_decide=service.can_decide(approval, ctx, clock.now())
+        and (
+            approval.subject_type != "agent_action"
+            or (
+                handler is not None
+                and handler.current_version(session, ctx, approval.subject_id)
+                == approval.subject_version
+            )
+        ),
         is_simulated=approval.is_simulated,
         created_at=approval.created_at,
         decided_at=approval.decided_at,

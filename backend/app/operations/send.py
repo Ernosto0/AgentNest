@@ -22,6 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.agent.delegation import fence_action
 from app.approvals import service as approvals
 from app.audit import service as audit
 from app.core.canonical import payload_hash
@@ -169,6 +170,22 @@ def _prepare(
         drafts.transition(session, clock, ctx, draft, "expire", reason="MESSAGING_WINDOW_CLOSED")
         attention.refresh(session, conversation)
         return SendOutcome("expired", error_code="MESSAGING_WINDOW_CLOSED")
+
+    if draft.origin == "agent":
+        try:
+            if draft.agent_action_id is None:
+                raise AppError("APPROVAL_STALE")
+            fence_action(
+                session,
+                clock,
+                workspace_id,
+                draft.agent_action_id,
+                account_id=account.id,
+                payload_hash_value=payload_hash(approval_payload(draft, conversation)),
+                expected_action="dm.send",
+            )
+        except AppError as exc:
+            return _cancel_queued(session, clock, ctx, draft, conversation, exc.code)
 
     # The approval: approved, for this version, not past its execution deadline, and for exactly
     # this text (INV-16). Anything else cancels the send.

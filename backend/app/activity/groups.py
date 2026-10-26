@@ -129,6 +129,16 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "retention.cleanup_ran",
         "demo.reset",
         "demo.failure_rule_set",
+        "agent.event_recorded",
+        "agent.action_proposed",
+        "agent.session_transition",
+        "agent.thread_transition",
+        "agent.step_transition",
+        "agent.action_transition",
+        "agent.delegation_applied",
+        "agent.action_authorized",
+        "agent.action_cancelled",
+        "agent.state_changed",
     ),
 }
 

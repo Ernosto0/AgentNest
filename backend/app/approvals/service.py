@@ -10,6 +10,7 @@ callback runs in the **same transaction** as the decision, so a failing callback
 decision back and the approval stays pending.
 """
 
+import re
 import uuid
 from collections.abc import Mapping
 from datetime import datetime
@@ -113,6 +114,7 @@ def request(
     expires_at: datetime,
     execute_before: datetime | None = None,
     is_simulated: bool = False,
+    exact_payload_hash: str | None = None,
 ) -> Approval:
     """Create a pending approval for exactly ``payload`` (in the caller's transaction).
 
@@ -120,6 +122,10 @@ def request(
     not, because its requester is looking at the card. One pending approval per subject: a
     second ``request`` is a ``CONFLICT_STATE``.
     """
+    if exact_payload_hash is not None and (
+        subject_type != "agent_action" or re.fullmatch(r"[0-9a-f]{64}", exact_payload_hash) is None
+    ):
+        raise ValueError("exact hash is only valid for an agent action")
     approval = Approval(
         workspace_id=ctx.workspace_id,
         kind=kind,
@@ -127,7 +133,7 @@ def request(
         subject_type=subject_type,
         subject_id=subject_id,
         subject_version=subject_version,
-        payload_hash=compute_payload_hash(payload),
+        payload_hash=exact_payload_hash or compute_payload_hash(payload),
         summary=dict(summary),
         required_permission=required_permission,
         status=apply_approval_event(None, "request"),

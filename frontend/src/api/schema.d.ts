@@ -318,6 +318,91 @@ export interface paths {
         patch: operations["patch_workspace_api_v1_workspaces__workspace_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/delegation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Delegation */
+        get: operations["get_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/delegation/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Delegation */
+        post: operations["apply_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/delegation/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Delegation */
+        post: operations["preview_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause */
+        post: operations["pause_api_v1_workspaces__workspace_id__accounts__account_id__agent_pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume */
+        post: operations["resume_api_v1_workspaces__workspace_id__accounts__account_id__agent_resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/activity": {
         parameters: {
             query?: never;
@@ -1477,6 +1562,25 @@ export interface components {
             /** Username */
             username: string | null;
         };
+        /** ActionRule */
+        ActionRule: {
+            /** Max Per Day */
+            max_per_day?: number | null;
+            /**
+             * Mode
+             * @default off
+             * @enum {string}
+             */
+            mode: "automatic" | "ask" | "off";
+            /**
+             * Sources
+             * @default [
+             *       "customer",
+             *       "owner_task"
+             *     ]
+             */
+            sources: ("customer" | "owner_task")[];
+        };
         /** ActivityActorOut */
         ActivityActorOut: {
             /** Label */
@@ -2156,6 +2260,48 @@ export interface components {
             note?: string | null;
             /** Payload Hash */
             payload_hash: string;
+        };
+        /** DelegationChange */
+        DelegationChange: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Expected Config Version */
+            expected_config_version: number;
+            /** Expected Delegation Version */
+            expected_delegation_version?: number | null;
+            policy: components["schemas"]["DelegationPolicy"];
+        };
+        /** DelegationOut */
+        DelegationOut: {
+            /** Config Version */
+            config_version: number;
+            /** Controller Epoch */
+            controller_epoch: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            policy: components["schemas"]["DelegationPolicy"];
+            /** Version */
+            version: number;
+        };
+        /** DelegationPolicy */
+        DelegationPolicy: {
+            /** Actions */
+            actions: {
+                [key: string]: components["schemas"]["ActionRule"];
+            };
+        };
+        /** DelegationPreview */
+        DelegationPreview: {
+            /** Changed Actions */
+            changed_actions: string[];
+            /** Next Version */
+            next_version: number;
         };
         /** DisclosureText */
         DisclosureText: {
@@ -3257,6 +3403,22 @@ export interface components {
             /** Username */
             username: string | null;
         };
+        /** StateChange */
+        StateChange: {
+            /** Expected Config Version */
+            expected_config_version: number;
+        };
+        /** StateOut */
+        StateOut: {
+            /** Config Version */
+            config_version: number;
+            /** Controller Epoch */
+            controller_epoch: number;
+            /** Controller Mode */
+            controller_mode: string;
+            /** State */
+            state: string;
+        };
         /**
          * SubjectLinkOut
          * @description Structured so the API stays free of frontend routes.
@@ -3574,7 +3736,7 @@ export interface components {
         };
         /**
          * WorkspaceSettings
-         * @description Validates ``workspaces.settings`` (data-model.md ┬º3.1).
+         * @description Validates ``workspaces.settings`` (data-model.md §3.1).
          */
         WorkspaceSettings: {
             /** Automation Reviewed At */
@@ -4209,6 +4371,182 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DelegationChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DelegationChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_api_v1_workspaces__workspace_id__accounts__account_id__agent_pause_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StateChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_api_v1_workspaces__workspace_id__accounts__account_id__agent_resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StateChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StateOut"];
                 };
             };
             /** @description Validation Error */

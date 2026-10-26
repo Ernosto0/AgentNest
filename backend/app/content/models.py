@@ -93,6 +93,10 @@ class ContentItem(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
         ForeignKeyConstraint(
             ["workspace_id", "agent_run_id"], ["agent_runs.workspace_id", "agent_runs.id"]
         ),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "agent_action_id"],
+            ["agent_actions.workspace_id", "agent_actions.social_account_id", "agent_actions.id"],
+        ),
         # Idempotent creation: one item per author and client request (plan.md G7).
         UniqueConstraint(
             "workspace_id",
@@ -102,6 +106,12 @@ class ContentItem(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
         ),
         CheckConstraint(_in("content_type", CONTENT_TYPES), name="content_type"),
         CheckConstraint(_in("status", CONTENT_STATUSES), name="status"),
+        CheckConstraint("origin IN ('legacy', 'agent')", name="origin"),
+        CheckConstraint(
+            "(origin = 'legacy' AND agent_action_id IS NULL) OR "
+            "(origin = 'agent' AND agent_action_id IS NOT NULL AND social_account_id IS NOT NULL)",
+            name="agent_origin",
+        ),
         CheckConstraint("version >= 1", name="version"),
         Index(
             "ix_content_items_workspace_status_scheduled", "workspace_id", "status", "scheduled_at"
@@ -109,6 +119,8 @@ class ContentItem(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
     )
 
     social_account_id: Mapped[uuid.UUID | None] = mapped_column()  # required at submit
+    origin: Mapped[str] = mapped_column(Text, nullable=False, server_default="legacy")
+    agent_action_id: Mapped[uuid.UUID | None] = mapped_column()
     content_type: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     # Increments on every payload change (caption, overlay suggestions, media) and on re-approval.

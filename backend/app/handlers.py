@@ -6,6 +6,8 @@ both processes call ``load_handlers()`` at startup. Later phases add their modul
 
 
 def load_handlers() -> None:
+    import app.agent.jobs  # noqa: F401
+    import app.agent.subject  # noqa: F401
     import app.ai.jobs  # noqa: F401
     import app.approvals.jobs  # noqa: F401
     import app.commands.jobs  # noqa: F401

@@ -2,6 +2,8 @@
 
 **Purpose:** The canonical states and allowed transitions for every stateful entity. Code must implement transitions **only** as listed here, through one function per entity (e.g., `content.transitions.apply(item, event)`) that rejects anything else with `CONFLICT_STATE`. Each transition writes an audit entry ([INV-12](../invariants.md)) unless marked *(no audit)*.
 
+Phase 7.5 adds the separate account-agent session, step and action states in [account-agent-contracts.md §3](account-agent-contracts.md). The existing states below continue to govern legacy drafts, approvals and operations; agent DM sends reuse those states through an action-origin link. Session 02 implements the new transition module and records its allowed edges here with code.
+
 Common rules:
 - Transitions are applied with a row lock or a conditional update on the expected current state.
 - Terminal states are marked ■.

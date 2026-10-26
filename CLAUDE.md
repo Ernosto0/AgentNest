@@ -18,7 +18,7 @@ Planning is complete. Implementation follows `docs/implementation/roadmap.md`, p
 
 ## Non-negotiables (details: `docs/invariants.md`)
 - Workspace isolation on every query and route. Foreign IDs → 404.
-- LLM output is a proposal: closed schemas, no tools, and model flags can only escalate decisions.
+- LLM output is a proposal. Legacy bounded tasks have no tools. The Phase 7.5 account agent may request only registered, typed tools through a server-side broker; deterministic scope, delegation, approval, grounding and executor checks decide every effect. Model flags cannot enlarge authority.
 - Prices, hours, contacts, URLs and promotions come only from verified facts via `{{fact:key}}` placeholders, and are checked by the claim validator.
 - External side effects only through the `operations` ledger; reconcile before any retry; never auto-resend an ambiguous DM.
 - Approvals are explicit, version- and hash-bound, single-use and expiring. Free text never approves.

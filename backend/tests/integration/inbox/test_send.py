@@ -9,6 +9,18 @@ from datetime import timedelta
 import pytest
 from sqlalchemy import select
 
+from app.agent.delegation import (
+    ACTIONS,
+    ActionRule,
+    DelegationChange,
+    DelegationPolicy,
+    authorize_action,
+    record_effect_grant,
+)
+from app.agent.delegation import (
+    apply as apply_delegation,
+)
+from app.agent.models import AccountAgent, AgentAction, AgentSession, AgentThread
 from app.audit.models import AuditLog
 from app.core.canonical import payload_hash
 from app.core.errors import RetryableError
@@ -42,6 +54,116 @@ def run_send(inbox: InboxEnv, draft: ReplyDraft, provider: object = None):  # ty
         draft.id,
         provider=provider,  # type: ignore[arg-type]
     )
+
+
+def test_agent_send_is_fenced_after_delegation_revocation(inbox: InboxEnv) -> None:
+    inbox.deliver_and_process("Hello")
+    draft = inbox.make_draft(status="queued", with_approval=False, text="Hello!")
+    conversation = inbox.conversation()
+    agent = inbox.session.scalar(
+        select(AccountAgent).where(
+            AccountAgent.workspace_id == inbox.env.workspace.id,
+            AccountAgent.social_account_id == inbox.account.id,
+        )
+    )
+    assert agent is not None
+    rules = {action: ActionRule(mode="off") for action in ACTIONS}
+    rules["dm.send"] = ActionRule(mode="automatic")
+    policy = DelegationPolicy(actions=rules)
+    first = apply_delegation(
+        inbox.session,
+        inbox.clock,
+        inbox.env.ctx(inbox.env.owner),
+        inbox.account.id,
+        DelegationChange(
+            expected_config_version=agent.config_version,
+            client_request_id=uuid.uuid4(),
+            policy=policy,
+        ),
+    )
+    agent.controller_mode = "agent"
+    agent.state = "active"
+    thread = AgentThread(
+        workspace_id=inbox.env.workspace.id,
+        social_account_id=inbox.account.id,
+        surface="dm",
+        source_ref=str(conversation.id),
+        dm_conversation_id=conversation.id,
+        controller_epoch=agent.controller_epoch,
+    )
+    inbox.session.add(thread)
+    inbox.session.flush()
+    run = AgentSession(
+        workspace_id=inbox.env.workspace.id,
+        thread_id=thread.id,
+        initiating_event_cursor=0,
+        goal_key="greeting",
+    )
+    inbox.session.add(run)
+    inbox.session.flush()
+    action = AgentAction(
+        workspace_id=inbox.env.workspace.id,
+        social_account_id=inbox.account.id,
+        thread_id=thread.id,
+        session_id=run.id,
+        intent_key="greeting-send",
+        action_type="dm.send",
+        target_ref=str(conversation.id),
+        payload_hash=payload_hash(approval_payload(draft, conversation)),
+        initiating_cursor=0,
+    )
+    inbox.session.add(action)
+    inbox.session.flush()
+    assert (
+        authorize_action(
+            inbox.session,
+            inbox.clock,
+            inbox.env.ctx(inbox.env.owner),
+            action.id,
+            source="customer",
+            target_owned=True,
+            visibility_allowed=True,
+            claims_valid=True,
+            quota_available=True,
+        ).kind
+        == "automatic"
+    )
+    approval_id = record_effect_grant(
+        inbox.session,
+        inbox.clock,
+        inbox.env.ctx(inbox.env.owner),
+        action_id=action.id,
+        subject_type="reply_draft",
+        subject_id=draft.id,
+        subject_version=draft.version,
+        payload=approval_payload(draft, conversation),
+        summary={"draft_id": str(draft.id)},
+        required_permission="reply.approve",
+        expires_at=inbox.clock.now() + timedelta(hours=1),
+    )
+    draft.origin = "agent"
+    draft.agent_action_id = action.id
+    draft.approval_id = approval_id
+    inbox.session.commit()
+
+    rules["dm.send"] = ActionRule(mode="off")
+    apply_delegation(
+        inbox.session,
+        inbox.clock,
+        inbox.env.ctx(inbox.env.owner),
+        inbox.account.id,
+        DelegationChange(
+            expected_config_version=agent.config_version,
+            expected_delegation_version=first.version,
+            client_request_id=uuid.uuid4(),
+            policy=DelegationPolicy(actions=rules),
+        ),
+    )
+    inbox.session.commit()
+    spy = CountingProvider(inbox)
+    outcome = run_send(inbox, draft, spy)
+    assert outcome.kind == "failed" and outcome.error_code == "APPROVAL_STALE"
+    assert spy.calls == [] and inbox.operation(draft) is None
 
 
 class CountingProvider:

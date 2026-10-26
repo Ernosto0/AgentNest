@@ -108,6 +108,7 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Ba
     __tablename__ = "conversations"
     __table_args__ = (
         UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint("workspace_id", "social_account_id", "id"),
         ForeignKeyConstraint(
             ["workspace_id", "social_account_id"],
             ["social_accounts.workspace_id", "social_accounts.id"],
@@ -207,6 +208,9 @@ class ReplyDraft(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
             ["workspace_id", "agent_run_id"], ["agent_runs.workspace_id", "agent_runs.id"]
         ),
         ForeignKeyConstraint(
+            ["workspace_id", "agent_action_id"], ["agent_actions.workspace_id", "agent_actions.id"]
+        ),
+        ForeignKeyConstraint(
             ["workspace_id", "operation_id"], ["operations.workspace_id", "operations.id"]
         ),
         ForeignKeyConstraint(
@@ -214,6 +218,12 @@ class ReplyDraft(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
             ["reply_drafts.workspace_id", "reply_drafts.id"],
         ),
         CheckConstraint(_in("source", DRAFT_SOURCES), name="source"),
+        CheckConstraint(_in("origin", ("legacy", "agent")), name="origin"),
+        CheckConstraint(
+            "(origin = 'legacy' AND agent_action_id IS NULL) OR "
+            "(origin = 'agent' AND agent_action_id IS NOT NULL)",
+            name="agent_origin",
+        ),
         CheckConstraint(_in("decision", DRAFT_DECISIONS), name="decision"),
         CheckConstraint(_in("status", DRAFT_STATUSES), name="status"),
         CheckConstraint("version >= 1", name="version"),
@@ -242,6 +252,8 @@ class ReplyDraft(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
     conversation_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     covers_through_message_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     source: Mapped[str] = mapped_column(Text, nullable=False)
+    origin: Mapped[str] = mapped_column(Text, nullable=False, server_default="legacy")
+    agent_action_id: Mapped[uuid.UUID | None] = mapped_column()
     language: Mapped[str | None] = mapped_column(Text)
     intent: Mapped[str | None] = mapped_column(Text)
     flags: Mapped[list[str]] = mapped_column(

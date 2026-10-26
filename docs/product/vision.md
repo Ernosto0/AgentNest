@@ -6,7 +6,7 @@ Working name: **AgentNest** (repository name; final product name is open, see OQ
 
 ## 1. Vision
 
-Small businesses run their Instagram from a phone, between customers. AgentNest learns verified facts about the business. It drafts and, when allowed, sends answers to routine customer DMs. It helps prepare and schedule posts. It tells the owner what happened, honestly. The owner gives instructions in plain Turkish or English and approves anything important with one explicit tap.
+Small businesses run their Instagram from a phone, between customers. AgentNest learns verified facts about the business. Its Phase 7.5 account agent can hold natural DM and public-comment conversations, remember relevant customer context, ask the owner for missing information and perform supported actions within explicit account delegation. It helps prepare and schedule posts and tells the owner what actually happened. The earlier bounded draft and approval workflow remains available for accounts that have not switched controllers.
 
 > **The business owner should not have to adapt to the software. The software should adapt to how the business owner works.** (from the original specification)
 
@@ -49,14 +49,14 @@ Existing tools need dashboards, rule builders or technical setup, and are usuall
 
 ## 5. Non-goals (for the MVP and pilots)
 
-- Fully autonomous campaign management or unsupervised publishing.
+- Fully autonomous campaign optimization or publishing without an explicit, action-specific owner delegation.
 - Instagram Ads, multi-platform publishing (Facebook, TikTok), agency-scale multi-account management.
 - CRM (lead pipelines, customer profiles beyond the conversation), booking/appointment system integration.
 - AI image or video generation.
 - Complex analytics and insights dashboards.
 - Subscription billing and self-service payments.
-- Multi-agent collaboration or open-ended agent loops.
-- Comment moderation and automation (deferred; high value, see [mvp-scope.md](mvp-scope.md) and OQ-07).
+- Multi-agent teams or unbounded agent execution; Phase 7.5's single logical account agent has durable, bounded steps.
+- Comment actions on arbitrary third-party posts; Phase 7.5 handles only evidenced capabilities on the connected business's media.
 - Outbound messaging to customers who have not written first (prohibited by Instagram's model anyway).
 
 ## 6. Market structure: one codebase, two experiences

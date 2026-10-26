@@ -3,6 +3,8 @@
 The task runner maps these to ``TaskOutcome`` error codes; adapters never decide retry policy.
 """
 
+from app.integrations.llm.base import LLMUsage
+
 
 class LLMError(Exception):
     """Base class. ``code`` is the stable app error code the runner reports."""
@@ -43,6 +45,13 @@ class LLMInvalidOutput(LLMError):
 
     code = "LLM_OUTPUT_INVALID"
 
-    def __init__(self, detail: str | None = None, *, raw_text: str | None = None) -> None:
+    def __init__(
+        self,
+        detail: str | None = None,
+        *,
+        raw_text: str | None = None,
+        usage: LLMUsage | None = None,
+    ) -> None:
         super().__init__(detail)
         self.raw_text = raw_text
+        self.usage = usage

@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from app.integrations.llm.base import LLMMessage, LLMResult, LLMUsage
 from app.integrations.llm.errors import LLMConfigError
+from app.integrations.llm.steps import LLMStepRequest, LLMStepResult
 
 # (typed task input, output schema) -> output model or a plain dict
 FakeImplementation = Callable[[Any, type[BaseModel]], BaseModel | dict[str, Any]]
@@ -54,7 +55,9 @@ class FakeLLMProvider:
 
     def __init__(self) -> None:
         self._queued: dict[str, deque[Scripted]] = defaultdict(deque)
+        self._step_queue: deque[LLMStepResult | Exception] = deque()
         self.calls: list[FakeCall] = []
+        self.step_calls: list[LLMStepRequest] = []
 
     def queue(self, task: str, item: Scripted) -> None:
         """Override the next call of ``task`` (calls are consumed in FIFO order)."""
@@ -62,7 +65,31 @@ class FakeLLMProvider:
 
     def reset(self) -> None:
         self._queued.clear()
+        self._step_queue.clear()
         self.calls.clear()
+        self.step_calls.clear()
+
+    def queue_step(self, item: LLMStepResult | Exception) -> None:
+        """Script one model decision for coordinator and broker tests."""
+        self._step_queue.append(item)
+
+    def generate_step(self, request: LLMStepRequest) -> LLMStepResult:
+        self.step_calls.append(request)
+        if self._step_queue:
+            item = self._step_queue.popleft()
+            if isinstance(item, Exception):
+                raise item
+            return item
+        # An unscripted offline agent yields visibly instead of inventing an effect.
+        return LLMStepResult(
+            kind="handoff",
+            usage=LLMUsage(),
+            latency_ms=0,
+            provider=self.name,
+            model="fake",
+            is_fake=True,
+            explanation="No scripted offline agent step is available.",
+        )
 
     def generate_structured(
         self,

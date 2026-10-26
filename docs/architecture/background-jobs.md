@@ -1,5 +1,7 @@
 # Background Jobs, Scheduling and Domain Events
 
+Phase 7.5 adds `agent_wake`, `agent_continue`, `agent_wake_due` and `agent_recover` with ID-only payloads and short claim/result transactions, specified in [account-agent-contracts.md §3](account-agent-contracts.md). They are planned, not registered in the current worker. Existing job lease fencing and operation reconciliation remain authoritative. Domain owners emit agent events in the same transaction as their source state, not through a second in-memory bus.
+
 **Purpose:** The job queue's semantics, the worker runtime, the scheduler, the catalog of job types with payload contracts, and how domain events are represented. Decision record: [ADR-006](decisions/ADR-006-postgres-job-queue.md).
 
 ## 1. Model

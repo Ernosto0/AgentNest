@@ -9,6 +9,7 @@ from app.core.db import Base
 # Import every model module so that its tables are registered on Base.metadata.
 # Later phases add their modules here.
 import app.ai.models  # noqa: F401  # isort: skip
+import app.agent.models  # noqa: F401  # isort: skip
 import app.approvals.models  # noqa: F401  # isort: skip
 import app.audit.models  # noqa: F401  # isort: skip
 import app.commands.models  # noqa: F401  # isort: skip

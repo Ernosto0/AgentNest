@@ -1,10 +1,10 @@
 # AI Runtime: LLM Tasks, Commands, Bounds and Safety
 
-**Purpose:** Contracts for every use of an LLM: inputs, outputs, allowed tools (none), permissions, bounds, error behaviour, tracing, and how prompt injection and hallucination are contained. Rationale is in [ADR-007](decisions/ADR-007-deterministic-workflows-bounded-llm-tasks.md), [ADR-008](decisions/ADR-008-structured-business-knowledge.md) and [ADR-009](decisions/ADR-009-llm-provider-abstraction.md).
+**Purpose:** Contracts for the existing bounded LLM tasks: inputs, outputs, permissions, bounds, error behaviour, tracing, and how prompt injection and hallucination are contained. These tasks still have no tools. The separately staged Phase 7.5 agent-step/tool contract is in [account-agent-contracts.md](account-agent-contracts.md), under [ADR-024](decisions/ADR-024-account-agent-and-delegated-autonomy.md). Rationale for the legacy tasks is in [ADR-007](decisions/ADR-007-deterministic-workflows-bounded-llm-tasks.md), [ADR-008](decisions/ADR-008-structured-business-knowledge.md) and [ADR-009](decisions/ADR-009-llm-provider-abstraction.md).
 
 ## 1. Principles
 
-1. **An LLM task is a pure proposal function.** Inputs: a validated context object. Output: a validated Pydantic model. No tools, no DB access, no side effects.
+1. **A legacy LLM task is a pure proposal function.** Inputs: a validated context object. Output: a validated Pydantic model. No tools, no DB access, no side effects. Agent steps are proposals too, but may request broker-mediated typed tools.
 2. **Deterministic code decides.** Resolution, permissions, policy, approval, execution and verification never depend on model judgement alone, and model flags can only escalate ([INV-04](../invariants.md)).
 3. **Critical values are placeholders**, rendered by code from usable facts and checked by the claim validator ([INV-02](../invariants.md)).
 4. **Untrusted text is data.** It is placed only in delimited data sections of the user message, never in the system prompt ([INV-03](../invariants.md)).
@@ -29,7 +29,7 @@
 | `draft_content` | 45 s | 1500 | objective ≤ 1000 chars | 3 |
 | `extract_fact_candidates` | 60 s | 2000 | pasted text ≤ 8000 chars | 2 |
 
-**Cancellation and resume:** tasks are single calls, so there is no long-lived agent session to resume. "Cancel" means cancelling the job before it starts or **discarding the result** if the subject changed while the call was running. Every handler re-checks its subject's state before saving (e.g., `draft_reply` re-checks that the covered inbound message is still the latest unanswered one). A crash mid-call leaves `agent_runs.status = running`; a sweeper marks runs older than 10 minutes as `failed (ABANDONED)`, and the job's lease expiry re-runs the task.
+**Cancellation and resume for these four legacy tasks:** each is a single call, so none has a long-lived session. "Cancel" means cancelling the job before it starts or **discarding the result** if the subject changed while the call was running. Every handler re-checks its subject's state before saving (e.g., `draft_reply` re-checks that the covered inbound message is still the latest unanswered one). A crash mid-call leaves `agent_runs.status = running`; a sweeper marks runs older than 10 minutes as `failed (ABANDONED)`, and the job's lease expiry re-runs the task. The Phase 7.5 coordinator has separate durable session/step state.
 
 ## 3. Task: `interpret_command`
 
@@ -208,3 +208,36 @@ Input snapshots stored in `agent_runs` follow the same rule and are deleted afte
 ## 11. Evaluation
 
 Each task has an eval dataset and hard assertions ([testing-strategy.md §6](../implementation/testing-strategy.md)). Prompt template versions are recorded so that any eval report can be tied to `prompt_version` + `model`.
+
+## 12. Account-agent step transport (Phase 7.5 Session 04)
+
+Legacy bounded tasks above continue through `generate_structured` without tools. The new
+`generate_step(LLMStepRequest)` contract carries registered, versioned tool schemas and bounded
+prior observations. Its result is exactly one tool proposal or an explicit `wait`, `complete`,
+or `handoff` decision. External-facing text is never treated as a final model answer: later
+sessions must register an authorized send/reply tool and use the domain operation ledger.
+
+The OpenAI adapter uses the Responses API's native strict function calls with
+`parallel_tool_calls=false`, `tool_choice=required`, `store=false`, and no provider-retained
+conversation state. It accepts one `function_call` per step and feeds its `call_id` and a bounded
+`function_call_output` into the next request. The application converts its closed Pydantic tool
+argument schemas to strict JSON Schema without importing a private SDK helper. Unknown or
+invalid calls cannot dynamically invoke Python code. The deterministic fake can queue steps;
+an unscripted step explicitly hands off instead of inventing an effect.
+
+`app/agent/tools/broker.py` registers capability-scoped handlers. It derives workspace,
+account, thread, surface and event source from server-owned context and rechecks thread scope
+before dispatch. Its first tools read usable business facts and the current private DM thread;
+the latter is unavailable to a public-comment context. Tool results and model arguments are
+bounded, and default read text is neutralised as data. The current fact read delegates to the
+existing workspace-wide `usable_facts()` function, then slices its output; Session 06 replaces
+this with bounded database retrieval and versioned source selection.
+
+`app/ai/step_runner.py` commits a redacted, step-linked `agent_runs` row before each model
+interaction and finalizes status, call/repair count and available usage afterward. It reserves
+the single allowed repair under a workspace row lock before making that extra call. It stores
+tool names and counts, never prompts, private tool bodies or raw model arguments. The legacy
+task runner retains its earlier budget implementation; Session 05 must unify atomic workspace
+quota and cumulative goal accounting across both paths. A model's `wait_for` is a proposal:
+Session 05 must validate it against an existing persisted question, approval, operation or
+scheduled wake condition before entering a waiting state.

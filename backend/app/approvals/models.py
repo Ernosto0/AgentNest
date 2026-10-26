@@ -34,8 +34,12 @@ APPROVAL_ACTIONS = (
     "command.cancel_content",
     "reply.send",
     "content.publish",
+    "comments.approve",
+    "content.prepare",
+    "content.schedule",
+    "content.cancel",
 )
-APPROVAL_SUBJECT_TYPES = ("owner_command", "reply_draft", "content_item")
+APPROVAL_SUBJECT_TYPES = ("owner_command", "reply_draft", "content_item", "agent_action")
 DECISION_CHANNELS = ("web", "telegram", "policy")
 
 

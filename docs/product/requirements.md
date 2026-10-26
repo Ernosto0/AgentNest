@@ -121,6 +121,24 @@ Phase numbers refer to [roadmap.md](../implementation/roadmap.md).
 | FR-102 | Reset a demo workspace to its seed state. | M | 6 | §15 |
 | FR-103 | All simulated records and screens are visibly labelled "Simulated". | M | 4+ | §11, §15 |
 
+### 1.10 Account agent (Phase 7.5 target; not current runtime)
+
+These requirements add the bounded account-agent path under [ADR-024](../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md) and the [Phase 7.5 plan](../implementation/phases/phase-7.5.md). Existing FR-030–035 and FR-040–052 remain the legacy path until an explicit account cutover; a customer event cannot invoke the owner command interpreter. Real Meta capabilities remain separately gated.
+
+| ID | Requirement | Pri | Phase | Trace |
+|---|---|---|---|---|
+| FR-110 | An owner explicitly activates, pauses and configures one logical agent per connected account; migrated accounts remain on their legacy controller. | P | 7.5 | ADR-024 §§1–2 |
+| FR-111 | The agent conducts bounded, natural TR/EN multi-turn DMs and public comment conversations without a required FAQ/intent match; each effect is grounded and authorized. | P | 7.5 | ADR-024 §§1,3 |
+| FR-112 | Agent goals, tone, formality, length and channel style are versioned; voice and goals cannot grant authority or change facts. | P | 7.5 | ADR-024 §4 |
+| FR-113 | Owner delegation sets `automatic`, `ask` or `off` per supported DM, comment, moderation and existing image-content action; a broad comment-delete grant may authorize deletion without a per-action tap. | P | 7.5 | ADR-024 §2 |
+| FR-114 | Every action has stable intent identity, exact payload evidence, current policy/capability checks and a committed operation before external effects; ambiguous outcomes reconcile without duplicate sends or deletions. | P | 7.5 | ADR-024 §§3,7 |
+| FR-115 | Customer preferences and thread summaries are account scoped, sourced, bounded, correctable and erasable; public contexts never expose private DM memory. | P | 7.5 | ADR-024 §4 |
+| FR-116 | The agent may ask an authorized business member for information, wait durably, then resume the latest eligible customer context. An information answer does not approve an action. | P | 7.5 | ADR-024 §5 |
+| FR-117 | Verified signed comment events retain account/media ownership, parent context, deduplication and deletion/hidden state; simulated comment events travel through signed ingestion. | P | 7.5 | ADR-024 §6 |
+| FR-118 | Public replies, eligible private replies and comment hide/unhide/delete use capability-specific authorization, operations and truthful outcomes. | P | 7.5 | ADR-024 §§2,6 |
+| FR-119 | Owners inspect actions, questions, memory and health, take over a thread or pause the account; unsent work is fenced while in-flight effects reconcile. | P | 7.5 | ADR-024 §§5,7 |
+| FR-120 | The agent may prepare, schedule, publish or cancel the existing feed/story image workflow only under the corresponding explicit delegation and current provider capability. | P | 7.5 | ADR-024 §§2–3 |
+
 ## 2. Nonfunctional requirements
 
 | ID | Requirement | Measurement | Phase | Trace |
@@ -147,7 +165,7 @@ These are deliberate changes, not omissions. Rationale in [gap-analysis.md](../r
 | Original | Status |
 |---|---|
 | §7.1 Redis + Celery | Replaced by PostgreSQL job queue ([ADR-006](../architecture/decisions/ADR-006-postgres-job-queue.md)) |
-| §6 eight components as agents | Four bounded LLM tasks + deterministic services ([ADR-007](../architecture/decisions/ADR-007-deterministic-workflows-bounded-llm-tasks.md)) |
+| §6 eight components as agents | S1–7 use four bounded LLM tasks and deterministic services; Phase 7.5 adds one bounded account agent, not eight independent agents ([ADR-024](../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md)) |
 | §9 `scheduled_jobs` table | Split into domain status + `jobs` + `operations` |
 | §9 `business_fact_versions(previous_value, new_value)` | Full snapshots in `fact_versions` + `fact_candidates` |
 | §4.4 "Story copy" as caption | Overlay text suggestion; text must be in the image |
@@ -173,7 +191,7 @@ Every section of [idea.md](../idea.md) and where it now lives. "Kept" means adop
 | §4.7 Messaging control, channels, approval security | Kept; web first, channel gated by OQ-01 | FR-097, FR-099; [ADR-012](../architecture/decisions/ADR-012-owner-channel-abstraction.md) |
 | §4.8 Reports and activity | Kept; metrics defined precisely | FR-080–084; [workflows.md §F](../architecture/workflows.md) |
 | §5 Approval and autonomy model | Kept; deterministic policy + bound approvals | [ADR-014](../architecture/decisions/ADR-014-approval-and-policy-model.md) |
-| §6 Agent architecture | Changed (four bounded tasks) | [ADR-007](../architecture/decisions/ADR-007-deterministic-workflows-bounded-llm-tasks.md) |
+| §6 Agent architecture | Changed (legacy bounded tasks; Phase 7.5 account agent) | [ADR-024](../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md) |
 | §7 Technical stack | Kept, except Redis/Celery | [system-overview.md §3](../architecture/system-overview.md) |
 | §8 System architecture flow | Kept, mapped to components | [system-overview.md §4, §6](../architecture/system-overview.md) |
 | §9 Database model | Changed (revised schema) | [data-model.md](../architecture/data-model.md) |

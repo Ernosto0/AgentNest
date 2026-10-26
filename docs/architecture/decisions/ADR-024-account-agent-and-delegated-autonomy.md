@@ -1,9 +1,9 @@
 # ADR-024: Account agent with memory and delegated autonomy
 
-- **Status:** Proposed target architecture; not implemented
+- **Status:** Accepted target architecture (2026-10-26); staged implementation pending
 - **Date:** 2026-10-25
 - **Product direction:** Requested by the owner: a conversational Instagram agent that manages DMs and comments, remembers context, maintains a tone, asks questions, requests help when necessary, and chooses actions independently within delegated account authority.
-- **Intended supersession:** ADR-007's prohibition on autonomous orchestration; the no-tool restriction in ADR-009; ADR-014's topic-first automation configuration and fixed publication approval requirement. Their existing contracts remain active until replaced in the implementation slices below. All unrelated decisions remain in force.
+- **Supersession:** ADR-007's prohibition on autonomous orchestration; the no-tool restriction in ADR-009; ADR-014's topic-first agent authority and fixed publication approval requirement. Legacy bounded tasks, legacy topic policies and exact human approval mechanics remain active until an account is explicitly cut over. All unrelated decisions remain in force. [Account-agent contracts](../account-agent-contracts.md) fix the implementation names and boundaries.
 
 ## Context
 
@@ -112,7 +112,7 @@ Retain the modular monolith, PostgreSQL jobs, tenant isolation, provider adapter
 
 Replace the single-call-only conversation controller, fixed intent coverage as an autonomy boundary, mandatory human handling based solely on topic, and per-topic settings as the main product experience. Extend the LLM abstraction, not the vendor SDK throughout business code. Existing bounded extraction/content tasks may remain useful tools behind the coordinator.
 
-ADR-007, ADR-009, ADR-014, INV-03/04/16, product scope and runtime/data/workflow contracts need coordinated amendments when implementation starts. The no-tool enforcement mechanism must change while preserving the underlying protections. No invariant is weakened silently by this target document.
+Session 01 records the scoped ADR supersession, amends INV-03/04/16 and the product/runtime/data/workflow target contracts in [account-agent-contracts.md](../account-agent-contracts.md). Existing bounded tasks retain their no-tool behavior until an account is explicitly switched. Implementation sessions must add the specified enforcement and tests before enabling the new controller. No invariant is weakened silently by this target document.
 
 ## Trade-offs
 
