@@ -147,6 +147,25 @@ persisted scoped authority/visibility service. Customer values never update busi
 
 The mock may exercise provisional comment/private-reply shapes but must label them simulated. Real Meta action flags remain disabled until R75 research, authentic account evidence and capability-specific acceptance are complete.
 
+Session 12 implements `comment.private_reply` as a separate broker/provider action and
+`comment_private_reply` ledger effect. The provisional mock permits one private reply per
+visible, verified-synthetic source comment for seven days after its provider timestamp;
+this is an explicit simulator fixture, not a Meta limit. A unique account/comment
+`private_reply_opportunities` row binds the exact action, source/media versions, proposal,
+deadline and operation. An unknown outcome retains the reservation. Positive keyed mock
+readback can settle it; absence or failed lookup cannot permit resend. The real adapter
+rejects mutation and lookup until R75-04/05 are verified.
+
+The mock provider may return a recipient identifier with the reply result. This is stored
+as provider evidence, without merging the public author with a DM identity. Only a new
+inbound DM from that exact account-scoped recipient binds the public source to its private
+conversation. A prior conversation, duplicate webhook, unknown private reply, missing
+recipient, or ambiguous multiple pending matches creates no link. The private DM context
+may then include a bounded public source excerpt; public context has no path to private
+turns or memory. The private reply itself does not update `last_inbound_at`, establish a
+normal messaging window, or authorize `dm.send`. Normal continuation still uses the
+independently received customer message and existing DM send checks.
+
 ## Session 07 implementation: controller-owned DMs
 
 Migration `0023` adds account `cutover_generation`, thread `ownership_generation`, step `captured_ownership_generation` and action `ownership_generation`. A mode switch advances both controller epoch and cutover generation; policy/pause changes advance the agent epoch without invalidating ordinary legacy authority merely because an inactive agent policy was edited. Legacy plans/drafts capture cutover generation. Agent steps/actions additionally bind thread ownership, so takeover followed by release cannot make an old result or grant fresh again.

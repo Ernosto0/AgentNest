@@ -93,6 +93,12 @@ def on_decided(session: Session, clock: Clock, ctx: WorkspaceContext, approval: 
                 raise AppError("APPROVAL_STALE")
         action.status = "authorized"
         action.authorized_at = clock.now()
+        if action.action_type == "comment.private_reply":
+            from app.comments.private_reply import eligibility, queue
+
+            if not eligibility(session, clock, action):
+                raise AppError("APPROVAL_STALE")
+            queue(session, clock, action)
         if action.action_type in {
             "comment.reply",
             "comment.hide",
@@ -122,6 +128,12 @@ def on_decided(session: Session, clock: Clock, ctx: WorkspaceContext, approval: 
             queue_send(session, clock, draft, action)
     elif approval.status in ("rejected", "expired"):
         action.status = "cancelled"
+        if action.action_type == "comment.private_reply" and action.payload_ref:
+            from app.comments.models import PrivateReplyOpportunity
+
+            row = session.get(PrivateReplyOpportunity, action.payload_ref)
+            if row is not None and row.status == "reserved":
+                row.status, row.text, row.proposal = "cancelled", None, None
         if action.action_type == "dm.send" and action.payload_ref:
             from app.inbox import drafts
             from app.inbox.models import ReplyDraft

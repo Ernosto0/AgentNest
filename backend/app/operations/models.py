@@ -34,6 +34,7 @@ OPERATION_TYPES = (
     "comment_hide",
     "comment_unhide",
     "comment_delete",
+    "comment_private_reply",
 )
 OPERATION_STATUSES = (
     "pending",

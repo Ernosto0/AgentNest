@@ -73,11 +73,18 @@ class ToolBroker:
             raise ValueError("tool name is reserved or already registered")
         self._tools[spec.name] = spec
 
-    def available(self, context: BrokerContext) -> tuple[LLMToolDefinition, ...]:
+    def available(
+        self, context: BrokerContext, *, capabilities: dict[str, bool] | None = None
+    ) -> tuple[LLMToolDefinition, ...]:
         return tuple(
             LLMToolDefinition(spec.name, spec.description, spec.arguments_schema, spec.version)
             for spec in self._tools.values()
             if _allowed(spec, context)
+            and (
+                capabilities is None
+                or spec.name != "comment.private_reply"
+                or capabilities.get("comment_private_reply") is True
+            )
         )
 
     def dispatch(
@@ -264,6 +271,8 @@ def build_default_broker() -> ToolBroker:
     broker = ToolBroker()
     from app.comments.actions import ModerateArgs, PublicReplyArgs
     from app.comments.actions import propose as propose_public
+    from app.comments.private_reply import PrivateReplyArgs
+    from app.comments.private_reply import propose as propose_private
     from app.comments.service import PublicRead, public_context
 
     broker.register(
@@ -300,6 +309,18 @@ def build_default_broker() -> ToolBroker:
             frozenset({"customer"}),
             ModerateArgs,
             propose_public,
+        )
+    )
+    broker.register(
+        ToolSpec(
+            "comment.private_reply",
+            "v1",
+            "Propose a one-shot private reply to an eligible source comment; no DM window opens.",
+            "external_effect",
+            frozenset({"comment"}),
+            frozenset({"customer"}),
+            PrivateReplyArgs,
+            propose_private,
         )
     )
 

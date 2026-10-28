@@ -174,3 +174,65 @@ class SimCommentEffect(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     provider_id: Mapped[str] = mapped_column(Text)
     text: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime]
+
+
+class PrivateReplyOpportunity(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """One reserved private reply per source comment, including unknown outcomes."""
+
+    __tablename__ = "private_reply_opportunities"
+    __table_args__ = (
+        *scope(),
+        UniqueConstraint("social_account_id", "comment_id"),
+        UniqueConstraint("agent_action_id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "comment_id"],
+            [
+                "public_comments.workspace_id",
+                "public_comments.social_account_id",
+                "public_comments.id",
+            ],
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "agent_action_id"],
+            ["agent_actions.workspace_id", "agent_actions.social_account_id", "agent_actions.id"],
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "bound_conversation_id"],
+            ["conversations.workspace_id", "conversations.social_account_id", "conversations.id"],
+        ),
+        CheckConstraint(
+            "status IN ('reserved','succeeded','outcome_unknown','failed','cancelled')",
+            name="status",
+        ),
+    )
+    social_account_id: Mapped[uuid.UUID]
+    comment_id: Mapped[uuid.UUID]
+    agent_action_id: Mapped[uuid.UUID]
+    comment_version: Mapped[int] = mapped_column(BigInteger)
+    media_version: Mapped[int] = mapped_column(BigInteger)
+    text: Mapped[str | None] = mapped_column(Text)
+    proposal: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(Text)
+    eligibility_expires_at: Mapped[datetime]
+    provider_reply_id: Mapped[str | None] = mapped_column(Text)
+    provider_recipient_id: Mapped[str | None] = mapped_column(Text)
+    bound_conversation_id: Mapped[uuid.UUID | None]
+    created_at: Mapped[datetime]
+
+
+class SimPrivateReply(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """Independent mock provider record for private-reply readback."""
+
+    __tablename__ = "sim_private_replies"
+    __table_args__ = (
+        *scope(),
+        UniqueConstraint("social_account_id", "comment_external_id"),
+        UniqueConstraint("social_account_id", "operation_key"),
+    )
+    social_account_id: Mapped[uuid.UUID]
+    comment_external_id: Mapped[str] = mapped_column(Text)
+    operation_key: Mapped[str] = mapped_column(Text)
+    provider_reply_id: Mapped[str] = mapped_column(Text)
+    recipient_external_id: Mapped[str | None] = mapped_column(Text)
+    text: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime]

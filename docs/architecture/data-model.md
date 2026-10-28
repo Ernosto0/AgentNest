@@ -616,3 +616,16 @@ and operation. The operations and simulator failure constraints gain distinct pu
 hide, unhide and delete types. Reply bodies are cleared from action and simulator evidence
 after verified success or public-source erasure. The operation ledger keeps only target ID,
 version, result ID/state and error code. Downgrade refuses populated public-effect history.
+
+### Phase 7.5 Session 12: private-reply opportunity (0028)
+
+`private_reply_opportunities` has one unique row per account/comment. Composite FKs bind
+the workspace/account comment, agent action and optional inbound DM conversation. It
+stores exact comment/media versions, proposal and eligibility deadline until settled;
+then the body is cleared. Reserved and unknown rows continue to block another private
+reply. Provider-returned reply/recipient IDs are separate from public author IDs, and a
+conversation link is written only on a new matching inbound DM. Public-source erasure
+clears recipient evidence and the conversation link. `sim_private_replies` is an
+independent mock provider record keyed by account/comment and operation, with injectable
+send and lookup failures. The operation and failure-rule constraints add distinct
+private-reply types. Populated evidence prevents an unreviewed downgrade.

@@ -10,10 +10,11 @@ and the reconciliation reads (INV-15); ``inbox`` uses only ``verify_signature`` 
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Literal, Protocol
 
 ProviderKind = Literal["mock", "meta"]
+MOCK_PRIVATE_REPLY_WINDOW = timedelta(days=7)  # Provisional simulator fixture only.
 EventType = Literal["message", "echo", "delete", "reaction", "read", "postback", "other", "comment"]
 
 
@@ -57,6 +58,12 @@ class SendResult:
 class PublicEffectResult:
     provider_id: str
     state: str | None = None
+
+
+@dataclass(frozen=True)
+class PrivateReplyResult:
+    reply_id: str
+    recipient_id: str | None
 
 
 @dataclass(frozen=True)
@@ -149,6 +156,14 @@ class InstagramProvider(Protocol):
         account: AccountRef,
         operation_key: str,
     ) -> PublicEffectResult | None: ...
+
+    def send_private_reply(
+        self, account: AccountRef, comment_id: str, text: str, operation_key: str
+    ) -> PrivateReplyResult: ...
+
+    def find_private_reply(
+        self, account: AccountRef, operation_key: str
+    ) -> PrivateReplyResult | None: ...
 
     def create_media_container(self, account: AccountRef, spec: ContainerSpec) -> str: ...
 

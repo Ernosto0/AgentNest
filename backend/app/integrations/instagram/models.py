@@ -45,6 +45,8 @@ FAILURE_OPERATIONS = (
     "comment_unhide",
     "comment_delete",
     "comment_lookup",
+    "comment_private_reply",
+    "private_reply_lookup",
     "any",
 )
 CONTAINER_MEDIA_TYPES = ("IMAGE", "STORIES")

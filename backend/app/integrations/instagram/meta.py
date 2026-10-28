@@ -25,6 +25,7 @@ from app.integrations.instagram.base import (
     MediaInfo,
     NormalizedInboundEvent,
     OutboundMessageInfo,
+    PrivateReplyResult,
     ProviderKind,
     PublicEffectResult,
     PublishingQuota,
@@ -159,6 +160,16 @@ class MetaInstagramProvider:
         self, account: AccountRef, operation_key: str
     ) -> PublicEffectResult | None:
         raise ProviderInvalidRequest("COMMENT_LOOKUP_NOT_VERIFIED")
+
+    def send_private_reply(
+        self, account: AccountRef, comment_id: str, text: str, operation_key: str
+    ) -> PrivateReplyResult:
+        raise ProviderInvalidRequest("PRIVATE_REPLY_NOT_VERIFIED")
+
+    def find_private_reply(
+        self, account: AccountRef, operation_key: str
+    ) -> PrivateReplyResult | None:
+        raise ProviderInvalidRequest("PRIVATE_REPLY_LOOKUP_NOT_VERIFIED")
 
     def __init__(
         self,

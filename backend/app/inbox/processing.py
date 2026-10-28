@@ -196,6 +196,9 @@ def _on_customer_message(
     )
     if message_id is None:  # the same provider message arrived twice
         return
+    from app.comments.private_reply import bind_inbound
+
+    bind_inbound(session, account.id, conversation)
     conversation.last_inbound_at = _greatest(conversation.last_inbound_at, moment)
     conversation.last_message_at = _greatest(conversation.last_message_at, moment)
     audit.record(

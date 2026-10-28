@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from app.core.clock import Clock
 from app.integrations.instagram import webhook_format
 from app.integrations.instagram.base import (
+    MOCK_PRIVATE_REPLY_WINDOW,
     AccountProfile,
     AccountRef,
     ContainerSpec,
@@ -29,6 +30,7 @@ from app.integrations.instagram.base import (
     MediaInfo,
     NormalizedInboundEvent,
     OutboundMessageInfo,
+    PrivateReplyResult,
     ProviderKind,
     PublicEffectResult,
     PublishingQuota,
@@ -251,6 +253,91 @@ class MockInstagramProvider:
             return PublicEffectResult(
                 row.provider_id,
                 {"hide": "hidden", "unhide": "visible", "delete": "deleted"}.get(row.effect),
+            )
+
+    def send_private_reply(
+        self, account: AccountRef, comment_id: str, text: str, operation_key: str
+    ) -> PrivateReplyResult:
+        """Provisional one-shot mock rule; this never opens a normal DM window."""
+        from app.comments.models import SimPrivateReply, SimPublicComment
+
+        rule = self._consume_failure(account, "comment_private_reply")
+        if rule is not None and rule.mode != "timeout_after_success":
+            self._raise_for(rule)
+        if not text.strip() or len(text.encode("utf-8")) > MAX_TEXT_BYTES:
+            raise ProviderInvalidRequest("INVALID_PRIVATE_REPLY")
+        with self._session_factory() as session:
+            prior = session.scalar(
+                select(SimPrivateReply).where(
+                    SimPrivateReply.workspace_id == account.workspace_id,
+                    SimPrivateReply.social_account_id == account.social_account_id,
+                    SimPrivateReply.comment_external_id == comment_id,
+                )
+            )
+            if prior is not None:
+                if prior.operation_key != operation_key:
+                    raise ProviderInvalidRequest("PRIVATE_REPLY_ALREADY_USED")
+                return PrivateReplyResult(prior.provider_reply_id, prior.recipient_external_id)
+            source = session.scalar(
+                select(SimPublicComment)
+                .where(
+                    SimPublicComment.workspace_id == account.workspace_id,
+                    SimPublicComment.social_account_id == account.social_account_id,
+                    SimPublicComment.external_id == comment_id,
+                )
+                .with_for_update()
+            )
+            if source is None or source.value is None or source.value.get("state") != "visible":
+                raise ProviderInvalidRequest("COMMENT_NOT_FOUND")
+            # The explicit provisional remote fixture independently enforces the
+            # seven-day opportunity; the application cannot extend it by retrying.
+            timestamp = source.value.get("timestamp")
+            if not isinstance(timestamp, str):
+                raise ProviderInvalidRequest("PRIVATE_REPLY_TIMESTAMP_UNKNOWN")
+            try:
+                posted_at = datetime.fromisoformat(timestamp)
+            except ValueError as exc:
+                raise ProviderInvalidRequest("PRIVATE_REPLY_TIMESTAMP_UNKNOWN") from exc
+            if self._clock.now() >= posted_at + MOCK_PRIVATE_REPLY_WINDOW:
+                raise ProviderInvalidRequest("PRIVATE_REPLY_EXPIRED")
+            recipient = source.value.get("author_id")
+            row = SimPrivateReply(
+                workspace_id=account.workspace_id,
+                social_account_id=account.social_account_id,
+                comment_external_id=comment_id,
+                operation_key=operation_key,
+                provider_reply_id=f"mock-private-reply-{uuid.uuid4().hex}",
+                recipient_external_id=recipient if isinstance(recipient, str) else None,
+                text=text,
+                created_at=self._clock.now(),
+            )
+            session.add(row)
+            session.commit()
+            answer = PrivateReplyResult(row.provider_reply_id, row.recipient_external_id)
+        if rule is not None:
+            raise ProviderOutcomeUnknown("simulated timeout after private reply")
+        return answer
+
+    def find_private_reply(
+        self, account: AccountRef, operation_key: str
+    ) -> PrivateReplyResult | None:
+        from app.comments.models import SimPrivateReply
+
+        rule = self._consume_failure(account, "private_reply_lookup")
+        if rule is not None:
+            self._raise_for(rule)
+        with self._session_factory() as session:
+            row = session.scalar(
+                select(SimPrivateReply).where(
+                    SimPrivateReply.workspace_id == account.workspace_id,
+                    SimPrivateReply.social_account_id == account.social_account_id,
+                    SimPrivateReply.operation_key == operation_key,
+                )
+            )
+            return (
+                PrivateReplyResult(row.provider_reply_id, row.recipient_external_id)
+                if row is not None
+                else None
             )
 
     def record_simulated_inbound(

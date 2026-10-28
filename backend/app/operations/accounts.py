@@ -40,6 +40,7 @@ MOCK_CAPABILITIES = {
     "messaging": True,
     "comment_reply": True,
     "comment_moderate": True,
+    "comment_private_reply": True,
     "publish_feed_image": True,
     "publish_story_image": True,
 }

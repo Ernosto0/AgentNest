@@ -33,10 +33,20 @@ from app.integrations.llm.steps import LLMStepRequest, LLMStepResult, LLMToolObs
 LEASE = timedelta(seconds=90)
 TOKEN_RESERVATION = 40000  # includes bounded context and one repair
 GOAL_TOKEN_LIMIT = 960000
-PUBLIC_ACTIONS = ("comment.reply", "comment.hide", "comment.unhide", "comment.delete")
+PUBLIC_ACTIONS = (
+    "comment.reply",
+    "comment.hide",
+    "comment.unhide",
+    "comment.delete",
+    "comment.private_reply",
+)
 
 
 def effect_result(db: Session, action: "AgentAction") -> dict[str, object]:
+    if action.action_type == "comment.private_reply":
+        from app.comments.private_reply import result
+
+        return result(db, action)
     if action.action_type in PUBLIC_ACTIONS:
         from app.comments.actions import result
 
@@ -371,6 +381,23 @@ def run_activation(
             from app.agent.context import assemble
 
             model_context = assemble(db, deps.clock, claimed.context)
+            from app.integrations.instagram.models import SocialAccount
+
+            provider_account = db.get(SocialAccount, claimed.context.account_id)
+            capabilities = (
+                dict(provider_account.capabilities) if provider_account is not None else {}
+            )
+            current_policy = current_delegation(
+                db, claimed.context.workspace.workspace_id, claimed.context.account_id
+            )
+            if (
+                current_policy is None
+                or current_policy.policy.get("actions", {})
+                .get("comment.private_reply", {})
+                .get("mode")
+                == "off"
+            ):
+                capabilities["comment_private_reply"] = False
             db.commit()
         if model_context.language is None:
             with deps.session_factory() as db:
@@ -386,7 +413,7 @@ def run_activation(
             model="fake",
             system=model_context.system,
             messages=model_context.messages,
-            tools=broker.available(claimed.context),
+            tools=broker.available(claimed.context, capabilities=capabilities),
             observations=observations,
         )
         encoded_request = json.dumps(
@@ -574,7 +601,13 @@ def run_activation(
                     return
                 if (
                     result.tool_name
-                    in {"dm.send", "approval.request", "comment.reply", "comment.moderate"}
+                    in {
+                        "dm.send",
+                        "approval.request",
+                        "comment.reply",
+                        "comment.moderate",
+                        "comment.private_reply",
+                    }
                     and tool.ok
                     and tool.data.get("status") == "waiting_customer"
                 ):
@@ -591,7 +624,13 @@ def run_activation(
                     return
                 if (
                     result.tool_name
-                    in {"dm.send", "approval.request", "comment.reply", "comment.moderate"}
+                    in {
+                        "dm.send",
+                        "approval.request",
+                        "comment.reply",
+                        "comment.moderate",
+                        "comment.private_reply",
+                    }
                     and tool.ok
                     and tool.data.get("action_id")
                 ):

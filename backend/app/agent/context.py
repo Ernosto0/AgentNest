@@ -14,7 +14,7 @@ from app.ai.prompt import json_section, untrusted_section
 from app.core.clock import Clock
 from app.identity.models import Workspace
 from app.inbox.language import choose_reply_language
-from app.inbox.models import Message
+from app.inbox.models import Conversation, Message
 from app.integrations.llm.base import LLMMessage
 
 SYSTEM = """You propose one registered tool or control decision for the current task.
@@ -63,6 +63,13 @@ def assemble(db: Session, clock: Clock, context: BrokerContext) -> ModelContext:
             )
         )
     public = None
+    private_origin = None
+    if context.surface == "dm" and thread.dm_conversation_id:
+        from app.comments.private_reply import dm_source_context
+
+        conversation = db.get(Conversation, thread.dm_conversation_id)
+        if conversation is not None and conversation.social_account_id == context.account_id:
+            private_origin = dm_source_context(db, conversation)
     if context.surface == "comment" and thread.public_thread_id is not None:
         from app.comments.service import model_context
 
@@ -110,6 +117,8 @@ def assemble(db: Session, clock: Clock, context: BrokerContext) -> ModelContext:
         "customer_memory": memory,
         "owner_answers": owner_answers,
     }
+    if context.surface == "dm":
+        data["private_origin"] = private_origin
     body = untrusted_section("untrusted_agent_context", json.dumps(data, ensure_ascii=False))
     body += "\n" + json_section(
         "source_references",
