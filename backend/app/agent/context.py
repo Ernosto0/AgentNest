@@ -64,6 +64,17 @@ def assemble(db: Session, clock: Clock, context: BrokerContext) -> ModelContext:
         )
     public = None
     private_origin = None
+    owner_task = None
+    if context.surface == "owner_task":
+        from app.agent.owner_tasks import for_thread
+
+        task = for_thread(db, thread)
+        owner_task = {
+            "task_id": str(task.id),
+            "text": task.request_text[:4000],
+            "source_channel": task.source_channel,
+            "requester_role": context.workspace.role,
+        }
     if context.surface == "dm" and thread.dm_conversation_id:
         from app.comments.private_reply import dm_source_context
 
@@ -119,6 +130,8 @@ def assemble(db: Session, clock: Clock, context: BrokerContext) -> ModelContext:
     }
     if context.surface == "dm":
         data["private_origin"] = private_origin
+    if context.surface == "owner_task":
+        data["owner_task"] = owner_task
     body = untrusted_section("untrusted_agent_context", json.dumps(data, ensure_ascii=False))
     body += "\n" + json_section(
         "source_references",

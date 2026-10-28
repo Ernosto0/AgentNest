@@ -231,8 +231,18 @@ def claim(deps: RunnerDeps, workspace_id: uuid.UUID, thread_id: uuid.UUID) -> Cl
         from app.memory.service import resolve_identity
 
         identity = resolve_identity(db, deps.clock, thread)
+        requester_context = None
+        if thread.surface == "owner_task":
+            from app.agent.owner_tasks import current_context, for_thread
+
+            requester_context = current_context(db, for_thread(db, thread))
+            if requester_context is None:
+                set_state(db, deps, goal, thread, "failed", reason="OWNER_TASK_AUTHORITY_LOST")
+                db.commit()
+                return None
         context = BrokerContext(
-            WorkspaceContext(
+            requester_context
+            or WorkspaceContext(
                 workspace_id,
                 ActorRef.system("account_agent"),
                 None,

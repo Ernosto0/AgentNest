@@ -126,6 +126,16 @@ class ToolBroker:
         )
         if thread is None:
             return ToolResult(False, name, spec.version, {}, "TOOL_SCOPE_INVALID")
+        if context.surface == "owner_task":
+            from app.agent.owner_tasks import current_context, for_thread
+
+            current = current_context(session, for_thread(session, thread))
+            if (
+                current is None
+                or current.actor != context.workspace.actor
+                or current.role != context.workspace.role
+            ):
+                return ToolResult(False, name, spec.version, {}, "TOOL_FORBIDDEN")
         try:
             data = spec.handler(session, clock, context, parsed)
             output = json.dumps(data, ensure_ascii=False)

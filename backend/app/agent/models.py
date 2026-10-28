@@ -193,6 +193,37 @@ class AgentThread(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
     last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class OwnerTask(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
+    """An authenticated member's durable request to one account agent."""
+
+    __tablename__ = "agent_owner_tasks"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint("workspace_id", "social_account_id", "id"),
+        UniqueConstraint(
+            "workspace_id", "social_account_id", "requester_user_id", "client_request_id"
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id"],
+            ["account_agents.workspace_id", "account_agents.social_account_id"],
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "thread_id"],
+            ["agent_threads.workspace_id", "agent_threads.social_account_id", "agent_threads.id"],
+        ),
+        CheckConstraint("source_channel IN ('api')", name="source_channel"),
+        CheckConstraint("length(request_text) BETWEEN 1 AND 4000", name="request_text_length"),
+    )
+
+    social_account_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    thread_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    requester_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    requester_role: Mapped[str] = mapped_column(Text, nullable=False)
+    source_channel: Mapped[str] = mapped_column(Text, nullable=False)
+    client_request_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    request_text: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class AgentEvent(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     __tablename__ = "agent_events"
     __table_args__ = (
