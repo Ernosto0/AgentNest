@@ -26,6 +26,7 @@ from app.integrations.instagram.base import (
     NormalizedInboundEvent,
     OutboundMessageInfo,
     ProviderKind,
+    PublicEffectResult,
     PublishingQuota,
     SendResult,
     TokenInfo,
@@ -143,6 +144,21 @@ def _identifier(value: str) -> str:
 
 class MetaInstagramProvider:
     kind: ProviderKind = "meta"
+
+    def perform_comment_effect(
+        self,
+        account: AccountRef,
+        target_id: str,
+        effect: str,
+        text: str | None,
+        operation_key: str,
+    ) -> PublicEffectResult:
+        raise ProviderInvalidRequest("COMMENT_ACTION_NOT_VERIFIED")
+
+    def find_comment_effect(
+        self, account: AccountRef, operation_key: str
+    ) -> PublicEffectResult | None:
+        raise ProviderInvalidRequest("COMMENT_LOOKUP_NOT_VERIFIED")
 
     def __init__(
         self,

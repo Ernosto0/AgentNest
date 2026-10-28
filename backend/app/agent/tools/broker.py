@@ -262,6 +262,8 @@ def build_default_broker() -> ToolBroker:
     from app.memory.service import MemoryProposal, MemoryRead, private_context, write_proposal
 
     broker = ToolBroker()
+    from app.comments.actions import ModerateArgs, PublicReplyArgs
+    from app.comments.actions import propose as propose_public
     from app.comments.service import PublicRead, public_context
 
     broker.register(
@@ -274,6 +276,30 @@ def build_default_broker() -> ToolBroker:
             frozenset({"customer"}),
             PublicRead,
             public_context,
+        )
+    )
+    broker.register(
+        ToolSpec(
+            "comment.reply",
+            "v1",
+            "Propose one grounded public reply to a versioned comment.",
+            "external_effect",
+            frozenset({"comment"}),
+            frozenset({"customer"}),
+            PublicReplyArgs,
+            propose_public,
+        )
+    )
+    broker.register(
+        ToolSpec(
+            "comment.moderate",
+            "v1",
+            "Propose hide, unhide, or delete for a versioned public comment under delegation.",
+            "external_effect",
+            frozenset({"comment"}),
+            frozenset({"customer"}),
+            ModerateArgs,
+            propose_public,
         )
     )
 

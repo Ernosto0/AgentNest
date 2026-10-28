@@ -335,6 +335,23 @@ export interface paths {
         patch: operations["patch_workspace_api_v1_workspaces__workspace_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/actions/{action_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Action Detail */
+        get: operations["action_detail_api_v1_workspaces__workspace_id__accounts__account_id__agent_actions__action_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/activate": {
         parameters: {
             query?: never;
@@ -1886,6 +1903,24 @@ export interface components {
             /** Username */
             username: string | null;
         };
+        /** ActionOut */
+        ActionOut: {
+            /** Action Type */
+            action_type: string;
+            /** Approval Id */
+            approval_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Operation Id */
+            operation_id: string | null;
+            /** Outcome Code */
+            outcome_code: string | null;
+            /** Status */
+            status: string;
+        };
         /** ActionRule */
         ActionRule: {
             /** Max Per Day */
@@ -3018,7 +3053,7 @@ export interface components {
              * Operation
              * @enum {string}
              */
-            operation: "send" | "lookup" | "echo" | "create_container" | "container_status" | "publish" | "refresh" | "profile" | "any";
+            operation: "send" | "lookup" | "echo" | "create_container" | "container_status" | "publish" | "refresh" | "profile" | "comment_reply" | "comment_hide" | "comment_unhide" | "comment_delete" | "comment_lookup" | "any";
             /**
              * Remaining
              * @default 1
@@ -5162,6 +5197,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    action_detail_api_v1_workspaces__workspace_id__accounts__account_id__agent_actions__action_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                action_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionOut"];
                 };
             };
             /** @description Validation Error */

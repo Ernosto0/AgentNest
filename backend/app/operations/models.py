@@ -26,7 +26,15 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
 
-OPERATION_TYPES = ("send_reply", "publish_content", "refresh_token")
+OPERATION_TYPES = (
+    "send_reply",
+    "publish_content",
+    "refresh_token",
+    "comment_reply",
+    "comment_hide",
+    "comment_unhide",
+    "comment_delete",
+)
 OPERATION_STATUSES = (
     "pending",
     "in_progress",

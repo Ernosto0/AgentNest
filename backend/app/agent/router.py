@@ -4,10 +4,11 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agent import delegation
-from app.agent.models import AgentDelegation
+from app.agent.models import AgentAction, AgentDelegation
 from app.agent.personality import (
     PersonalityChange,
     PersonalityOut,
@@ -84,6 +85,49 @@ def patch_personality(
 class DelegationPreview(BaseModel):
     next_version: int
     changed_actions: list[str]
+
+
+class ActionOut(BaseModel):
+    id: uuid.UUID
+    action_type: str
+    status: str
+    operation_id: uuid.UUID | None
+    approval_id: uuid.UUID | None
+    outcome_code: str | None
+
+
+@router.get("/actions/{action_id}", response_model=ActionOut)
+def action_detail(
+    account_id: uuid.UUID,
+    action_id: uuid.UUID,
+    ctx: WorkspaceContext = Depends(require_membership("approvals.view")),
+    db: Session = Depends(get_db),
+) -> ActionOut:
+    try:
+        scoped_account(db, ctx.workspace_id, account_id)
+    except AgentScopeError as exc:
+        raise AppError("NOT_FOUND") from exc
+    action = db.scalar(
+        select(AgentAction).where(
+            AgentAction.id == action_id,
+            AgentAction.workspace_id == ctx.workspace_id,
+            AgentAction.social_account_id == account_id,
+        )
+    )
+    if action is None:
+        raise AppError("NOT_FOUND")
+    if action.action_type.startswith("comment."):
+        from app.comments.actions import result
+
+        result(db, action)
+    return ActionOut(
+        id=action.id,
+        action_type=action.action_type,
+        status=action.status,
+        operation_id=action.operation_id,
+        approval_id=action.approval_id,
+        outcome_code=action.outcome_code,
+    )
 
 
 class DelegationOut(BaseModel):

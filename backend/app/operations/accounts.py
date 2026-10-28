@@ -38,6 +38,8 @@ from app.operations.resolution import set_operation
 
 MOCK_CAPABILITIES = {
     "messaging": True,
+    "comment_reply": True,
+    "comment_moderate": True,
     "publish_feed_image": True,
     "publish_story_image": True,
 }

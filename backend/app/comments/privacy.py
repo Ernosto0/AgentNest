@@ -8,12 +8,41 @@ from sqlalchemy.orm import Session
 
 from app.agent.models import AgentThread
 from app.agent.repository import scoped_account
-from app.comments.models import PublicComment, PublicMedia, SimPublicComment
+from app.comments.models import (
+    PublicComment,
+    PublicCommentAction,
+    PublicMedia,
+    SimCommentEffect,
+    SimPublicComment,
+)
 from app.core.clock import Clock
 from app.inbox.models import InboundEvent
 
 
 def redact_receipts(db: Session, workspace: uuid.UUID, account: uuid.UUID, external: str) -> None:
+    targets = select(PublicComment.id).where(
+        PublicComment.workspace_id == workspace,
+        PublicComment.social_account_id == account,
+        PublicComment.external_id == external,
+    )
+    db.execute(
+        update(PublicCommentAction)
+        .where(
+            PublicCommentAction.workspace_id == workspace,
+            PublicCommentAction.social_account_id == account,
+            PublicCommentAction.comment_id.in_(targets),
+        )
+        .values(text=None, proposal=null())
+    )
+    db.execute(
+        update(SimCommentEffect)
+        .where(
+            SimCommentEffect.workspace_id == workspace,
+            SimCommentEffect.social_account_id == account,
+            SimCommentEffect.target_external_id == external,
+        )
+        .values(text=None)
+    )
     db.execute(
         update(InboundEvent)
         .where(
@@ -36,6 +65,34 @@ def redact_receipts(db: Session, workspace: uuid.UUID, account: uuid.UUID, exter
 
 
 def redact_media_caches(db: Session, media: PublicMedia) -> None:
+    target_ids = select(PublicComment.id).where(
+        PublicComment.workspace_id == media.workspace_id,
+        PublicComment.social_account_id == media.social_account_id,
+        PublicComment.media_id == media.id,
+    )
+    target_external_ids = select(PublicComment.external_id).where(
+        PublicComment.workspace_id == media.workspace_id,
+        PublicComment.social_account_id == media.social_account_id,
+        PublicComment.media_id == media.id,
+    )
+    db.execute(
+        update(PublicCommentAction)
+        .where(
+            PublicCommentAction.workspace_id == media.workspace_id,
+            PublicCommentAction.social_account_id == media.social_account_id,
+            PublicCommentAction.comment_id.in_(target_ids),
+        )
+        .values(text=None, proposal=null())
+    )
+    db.execute(
+        update(SimCommentEffect)
+        .where(
+            SimCommentEffect.workspace_id == media.workspace_id,
+            SimCommentEffect.social_account_id == media.social_account_id,
+            SimCommentEffect.target_external_id.in_(target_external_ids),
+        )
+        .values(text=None)
+    )
     db.execute(
         update(InboundEvent)
         .where(
@@ -59,6 +116,22 @@ def redact_media_caches(db: Session, media: PublicMedia) -> None:
 
 def erase_account(db: Session, clock: Clock, workspace: uuid.UUID, account: uuid.UUID) -> None:
     scoped_account(db, workspace, account, lock=True)
+    db.execute(
+        update(PublicCommentAction)
+        .where(
+            PublicCommentAction.workspace_id == workspace,
+            PublicCommentAction.social_account_id == account,
+        )
+        .values(text=None, proposal=null())
+    )
+    db.execute(
+        update(SimCommentEffect)
+        .where(
+            SimCommentEffect.workspace_id == workspace,
+            SimCommentEffect.social_account_id == account,
+        )
+        .values(text=None)
+    )
     db.execute(
         update(PublicComment)
         .where(PublicComment.workspace_id == workspace, PublicComment.social_account_id == account)

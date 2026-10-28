@@ -54,6 +54,12 @@ class SendResult:
 
 
 @dataclass(frozen=True)
+class PublicEffectResult:
+    provider_id: str
+    state: str | None = None
+
+
+@dataclass(frozen=True)
 class AccountProfile:
     external_account_id: str
     username: str | None
@@ -128,6 +134,21 @@ class InstagramProvider(Protocol):
     def send_text_message(
         self, account: AccountRef, recipient_id: str, text: str
     ) -> SendResult: ...
+
+    def perform_comment_effect(
+        self,
+        account: AccountRef,
+        target_id: str,
+        effect: str,
+        text: str | None,
+        operation_key: str,
+    ) -> PublicEffectResult: ...
+
+    def find_comment_effect(
+        self,
+        account: AccountRef,
+        operation_key: str,
+    ) -> PublicEffectResult | None: ...
 
     def create_media_container(self, account: AccountRef, spec: ContainerSpec) -> str: ...
 

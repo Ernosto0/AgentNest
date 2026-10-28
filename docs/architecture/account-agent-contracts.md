@@ -370,3 +370,29 @@ versions remain exact. Full bodies remain available through scoped member APIs. 
 previews may omit the suffix of a long source; full-topic/model-quality evaluation is
 pending Session 17. Maximum eight-comment Unicode/escaping observations are tested through
 the actual second model request against the existing 16,000-byte request envelope.
+
+## Session 11 offline public effects
+
+`comment.reply` and `comment.moderate` are comment-surface broker tools. The latter accepts
+only `hide`, `unhide`, or `delete`; both require a scoped comment UUID and exact local version.
+Reply text is rendered by `reply.validate` from current verified fact versions. The target
+must be a non-owner comment on a synthetically verified post, in the correct state; the
+source event must be the current customer-comment obligation. A conflicting pending or
+unknown action for that comment reserves the target. A succeeded reply reserves its target
+permanently against reworded replans. A model may complete with no action.
+
+`public_comment_actions` binds the action, target, local comment version, shared media
+version, effect, reply payload and hash. An exact `agent_action` approval is required for
+`ask`; `automatic` uses the versioned delegation grant. Queued jobs carry only the action ID.
+The worker rechecks approval or grant, account state, delegation, capability, ownership,
+source/media versions and grounded reply before committing one `comment_*` operation.
+Only then does the mock provider perform the effect outside a database transaction.
+`GET /accounts/{account_id}/agent/actions/{action_id}` and the existing operation detail
+expose queued, performed, failed, and unknown states without reply bodies.
+
+The mock's `sim_comment_effects` gives positive readback by operation key. A lost response
+becomes `outcome_unknown`; a repeated job never calls the provider again. Positive readback
+can resolve it. Missing effect evidence, including an absent comment/404, remains unknown
+and blocks duplicates. Source erasure and retention remove pending reply bodies from action
+and mock evidence; audit and operation metadata contain IDs and status only. Real Meta
+comment mutations and readback reject calls until R75-03/06 and Session 16 verification.

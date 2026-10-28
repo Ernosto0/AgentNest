@@ -54,6 +54,8 @@ def test_public_context_cannot_read_private_thread(db_session: Session, clock: F
         "knowledge.answers",
         "reply.validate",
         "public.thread",
+        "comment.reply",
+        "comment.moderate",
     }
     denied = broker.dispatch(
         db_session, clock, public, name="thread.read", version="v1", arguments={"limit": 1}

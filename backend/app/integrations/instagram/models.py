@@ -40,6 +40,11 @@ FAILURE_OPERATIONS = (
     "publish",
     "refresh",
     "profile",
+    "comment_reply",
+    "comment_hide",
+    "comment_unhide",
+    "comment_delete",
+    "comment_lookup",
     "any",
 )
 CONTAINER_MEDIA_TYPES = ("IMAGE", "STORIES")

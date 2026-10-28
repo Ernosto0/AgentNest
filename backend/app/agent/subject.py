@@ -93,6 +93,18 @@ def on_decided(session: Session, clock: Clock, ctx: WorkspaceContext, approval: 
                 raise AppError("APPROVAL_STALE")
         action.status = "authorized"
         action.authorized_at = clock.now()
+        if action.action_type in {
+            "comment.reply",
+            "comment.hide",
+            "comment.unhide",
+            "comment.delete",
+        }:
+            from app.comments.actions import queue
+            from app.comments.actions import revalidate as revalidate_public
+
+            if not revalidate_public(session, clock, action):
+                raise AppError("APPROVAL_STALE")
+            queue(session, clock, action)
         if action.action_type == "dm.send" and action.payload_ref:
             from app.agent.dm import queue_send, revalidate
             from app.inbox.models import Conversation, ReplyDraft

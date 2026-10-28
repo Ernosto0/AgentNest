@@ -30,6 +30,7 @@ from app.integrations.instagram.base import (
     NormalizedInboundEvent,
     OutboundMessageInfo,
     ProviderKind,
+    PublicEffectResult,
     PublishingQuota,
     SendResult,
     TokenInfo,
@@ -158,6 +159,99 @@ class MockInstagramProvider:
                 )
                 if row.value is not None
             ]
+
+    def perform_comment_effect(
+        self,
+        account: AccountRef,
+        target_id: str,
+        effect: str,
+        text: str | None,
+        operation_key: str,
+    ) -> PublicEffectResult:
+        """One remote effect with persistent independent evidence and lost-answer injection."""
+        from app.comments.models import SimCommentEffect, SimPublicComment
+
+        if effect not in {"reply", "hide", "unhide", "delete"}:
+            raise ProviderInvalidRequest("INVALID_COMMENT_ACTION")
+        rule = self._consume_failure(account, f"comment_{effect}")
+        if rule is not None and rule.mode != "timeout_after_success":
+            self._raise_for(rule)
+        if effect == "reply" and (not text or not text.strip() or len(text.encode("utf-8")) > 1000):
+            raise ProviderInvalidRequest("INVALID_COMMENT_REPLY")
+        with self._session_factory() as session:
+            prior = session.scalar(
+                select(SimCommentEffect).where(
+                    SimCommentEffect.social_account_id == account.social_account_id,
+                    SimCommentEffect.operation_key == operation_key,
+                )
+            )
+            if prior is not None:
+                return PublicEffectResult(
+                    prior.provider_id,
+                    {"hide": "hidden", "unhide": "visible", "delete": "deleted"}.get(prior.effect),
+                )
+            target = session.scalar(
+                select(SimPublicComment)
+                .where(
+                    SimPublicComment.workspace_id == account.workspace_id,
+                    SimPublicComment.social_account_id == account.social_account_id,
+                    SimPublicComment.external_id == target_id,
+                )
+                .with_for_update()
+            )
+            if target is None or target.value is None or target.value.get("state") == "deleted":
+                raise ProviderInvalidRequest("COMMENT_NOT_FOUND")
+            provider_id = f"mock-comment-effect-{uuid.uuid4().hex}"
+            if effect != "reply":
+                value = dict(target.value)
+                value["state"] = {"hide": "hidden", "unhide": "visible", "delete": "deleted"}[
+                    effect
+                ]
+                value["version"] = value.get("version", 0) + 1
+                if effect == "delete":
+                    value["text"] = None
+                target.value, target.updated_at = value, self._clock.now()
+            session.add(
+                SimCommentEffect(
+                    workspace_id=account.workspace_id,
+                    social_account_id=account.social_account_id,
+                    operation_key=operation_key,
+                    target_external_id=target_id,
+                    effect=effect,
+                    provider_id=provider_id,
+                    text=text if effect == "reply" else None,
+                    created_at=self._clock.now(),
+                )
+            )
+            session.commit()
+        if rule is not None:
+            raise ProviderOutcomeUnknown("simulated timeout after public effect")
+        return PublicEffectResult(
+            provider_id, {"hide": "hidden", "unhide": "visible", "delete": "deleted"}.get(effect)
+        )
+
+    def find_comment_effect(
+        self, account: AccountRef, operation_key: str
+    ) -> PublicEffectResult | None:
+        from app.comments.models import SimCommentEffect
+
+        rule = self._consume_failure(account, "comment_lookup")
+        if rule is not None:
+            self._raise_for(rule)
+        with self._session_factory() as session:
+            row = session.scalar(
+                select(SimCommentEffect).where(
+                    SimCommentEffect.workspace_id == account.workspace_id,
+                    SimCommentEffect.social_account_id == account.social_account_id,
+                    SimCommentEffect.operation_key == operation_key,
+                )
+            )
+            if row is None:
+                return None
+            return PublicEffectResult(
+                row.provider_id,
+                {"hide": "hidden", "unhide": "visible", "delete": "deleted"}.get(row.effect),
+            )
 
     def record_simulated_inbound(
         self, account: AccountRef, sender_id: str, mid: str, received_at: datetime

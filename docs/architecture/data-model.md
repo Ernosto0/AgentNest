@@ -608,3 +608,11 @@ erasure and retention redact source-bearing receipt/mock caches. Disconnect's ex
 erasure request clears public bodies immediately while preserving content-free IDs and
 existing uncertain-operation evidence. Public tools/context suppress deleted/hidden sources.
 Migration 0026 refuses downgrade with public sources until explicit archival/erasure.
+
+Session 11 migration `0027` adds `public_comment_actions` with composite workspace/account
+FKs to one agent action and one public target, exact local target/media versions and reply
+payload; `sim_comment_effects` holds independent mock outcome evidence keyed by account
+and operation. The operations and simulator failure constraints gain distinct public reply,
+hide, unhide and delete types. Reply bodies are cleared from action and simulator evidence
+after verified success or public-source erasure. The operation ledger keeps only target ID,
+version, result ID/state and error code. Downgrade refuses populated public-effect history.

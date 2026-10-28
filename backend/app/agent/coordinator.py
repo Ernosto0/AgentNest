@@ -12,7 +12,14 @@ from sqlalchemy.orm import Session
 
 from app.agent import transitions
 from app.agent.delegation import current_delegation
-from app.agent.models import ACTIVE_RUN_STATES, AccountAgent, AgentSession, AgentStep, AgentThread
+from app.agent.models import (
+    ACTIVE_RUN_STATES,
+    AccountAgent,
+    AgentAction,
+    AgentSession,
+    AgentStep,
+    AgentThread,
+)
 from app.agent.repository import scoped_account, scoped_thread
 from app.agent.tools.broker import BrokerContext, Surface, ToolBroker
 from app.ai.models import AgentRun
@@ -26,6 +33,17 @@ from app.integrations.llm.steps import LLMStepRequest, LLMStepResult, LLMToolObs
 LEASE = timedelta(seconds=90)
 TOKEN_RESERVATION = 40000  # includes bounded context and one repair
 GOAL_TOKEN_LIMIT = 960000
+PUBLIC_ACTIONS = ("comment.reply", "comment.hide", "comment.unhide", "comment.delete")
+
+
+def effect_result(db: Session, action: "AgentAction") -> dict[str, object]:
+    if action.action_type in PUBLIC_ACTIONS:
+        from app.comments.actions import result
+
+        return result(db, action)
+    from app.agent.dm import action_result
+
+    return action_result(db, action)
 
 
 @dataclass(frozen=True)
@@ -296,14 +314,13 @@ def run_activation(
             observations = ()
         observation_generation = current_generation
         with deps.session_factory() as db:
-            from app.agent.dm import action_result
             from app.agent.models import AgentAction
 
             latest_action = db.scalar(
                 select(AgentAction)
                 .where(
                     AgentAction.thread_id == claimed.context.thread_id,
-                    AgentAction.action_type == "dm.send",
+                    AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS)),
                 )
                 .order_by(AgentAction.created_at.desc())
                 .limit(1)
@@ -311,7 +328,10 @@ def run_activation(
             if latest_action is not None:
                 observations = (
                     LLMToolObservation(
-                        str(latest_action.id), "dm.send", {}, action_result(db, latest_action)
+                        str(latest_action.id),
+                        latest_action.action_type,
+                        {},
+                        effect_result(db, latest_action),
                     ),
                 )
                 db.commit()
@@ -553,7 +573,8 @@ def run_activation(
                     db.commit()
                     return
                 if (
-                    result.tool_name in {"dm.send", "approval.request"}
+                    result.tool_name
+                    in {"dm.send", "approval.request", "comment.reply", "comment.moderate"}
                     and tool.ok
                     and tool.data.get("status") == "waiting_customer"
                 ):
@@ -569,7 +590,8 @@ def run_activation(
                     db.commit()
                     return
                 if (
-                    result.tool_name in {"dm.send", "approval.request"}
+                    result.tool_name
+                    in {"dm.send", "approval.request", "comment.reply", "comment.moderate"}
                     and tool.ok
                     and tool.data.get("action_id")
                 ):
@@ -615,7 +637,7 @@ def run_activation(
                     select(AgentAction)
                     .where(
                         AgentAction.thread_id == thread.id,
-                        AgentAction.action_type == "dm.send",
+                        AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS)),
                         AgentAction.status.in_(
                             (
                                 "waiting_approval",
@@ -630,7 +652,7 @@ def run_activation(
                     .limit(1)
                 )
                 if outstanding is not None:
-                    action_result(db, outstanding)
+                    effect_result(db, outstanding)
                 if outstanding is not None and outstanding.status not in {
                     "succeeded",
                     "failed",
@@ -712,7 +734,7 @@ def valid_wait(db: Session, goal: AgentSession, thread: AgentThread, result: LLM
                 AgentAction.id == ref,
                 AgentAction.workspace_id == goal.workspace_id,
                 AgentAction.thread_id == thread.id,
-                AgentAction.action_type == "dm.send",
+                AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS)),
                 AgentAction.status.in_(("authorized", "queued", "in_progress", "outcome_unknown")),
             )
         )
@@ -791,10 +813,8 @@ def wait_resolved(db: Session, deps: RunnerDeps, goal: AgentSession, thread: Age
         )
         if approval is not None and approval.status == "approved":
             action = db.scalar(select(AgentAction).where(AgentAction.approval_id == approval.id))
-            if action is not None and action.action_type == "dm.send":
-                from app.agent.dm import action_result
-
-                action_result(db, action)
+            if action is not None and action.action_type in ("dm.send", *PUBLIC_ACTIONS):
+                effect_result(db, action)
                 if action.status not in {"succeeded", "failed", "cancelled"}:
                     set_state(
                         db,
@@ -813,13 +833,11 @@ def wait_resolved(db: Session, deps: RunnerDeps, goal: AgentSession, thread: Age
                 AgentAction.id == ref,
                 AgentAction.workspace_id == goal.workspace_id,
                 AgentAction.thread_id == thread.id,
-                AgentAction.action_type == "dm.send",
+                AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS)),
             )
         )
         if action is not None:
-            from app.agent.dm import action_result
-
-            action_result(db, action)
+            effect_result(db, action)
             return (
                 action.status in {"succeeded", "failed", "cancelled"}
                 or thread.event_cursor > goal.activation_cursor

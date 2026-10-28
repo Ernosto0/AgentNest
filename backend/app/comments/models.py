@@ -125,3 +125,52 @@ class SimPublicComment(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     external_id: Mapped[str] = mapped_column(Text)
     value: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     updated_at: Mapped[datetime]
+
+
+class PublicCommentAction(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """Exact, version-bound public effect. Body is kept only for a pending reply."""
+
+    __tablename__ = "public_comment_actions"
+    __table_args__ = (
+        *scope(),
+        UniqueConstraint("agent_action_id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "comment_id"],
+            [
+                "public_comments.workspace_id",
+                "public_comments.social_account_id",
+                "public_comments.id",
+            ],
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "agent_action_id"],
+            ["agent_actions.workspace_id", "agent_actions.social_account_id", "agent_actions.id"],
+        ),
+        CheckConstraint("effect IN ('reply','hide','unhide','delete')", name="effect"),
+    )
+    social_account_id: Mapped[uuid.UUID]
+    comment_id: Mapped[uuid.UUID]
+    agent_action_id: Mapped[uuid.UUID]
+    effect: Mapped[str] = mapped_column(Text)
+    text: Mapped[str | None] = mapped_column(Text)
+    proposal: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    comment_version: Mapped[int] = mapped_column(BigInteger)
+    media_version: Mapped[int] = mapped_column(BigInteger)
+    created_at: Mapped[datetime]
+
+
+class SimCommentEffect(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """Mock provider evidence, independent of application operation state."""
+
+    __tablename__ = "sim_comment_effects"
+    __table_args__ = (
+        *scope(),
+        UniqueConstraint("social_account_id", "operation_key"),
+    )
+    social_account_id: Mapped[uuid.UUID]
+    operation_key: Mapped[str] = mapped_column(Text)
+    target_external_id: Mapped[str] = mapped_column(Text)
+    effect: Mapped[str] = mapped_column(Text)
+    provider_id: Mapped[str] = mapped_column(Text)
+    text: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime]
