@@ -1,6 +1,6 @@
 # Session 09: Owner questions and continuation
 
-**Task:** P7.5-09. **Status:** Planned. **Prerequisite:** Session 08.
+**Task:** P7.5-09. **Status:** Offline complete, operator reviewed ([report](s09-report.md)). **Prerequisite:** Session 08.
 Read the [common session rules](phase-7.5-sessions.md) and phase sections 6, 8-9.
 
 ## Goal

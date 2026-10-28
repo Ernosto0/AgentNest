@@ -100,6 +100,7 @@
       "CONTAINS_GENERAL_FAQ": "Contains a common-question answer, so the general questions setting applies",
       "AUTOMATION_OFF": "Automation is off for this topic",
       "HUMAN_TAKEOVER": "You are handling this conversation",
+      "CONTROLLER_CHANGED": "The account assistant settings changed",
       "LANGUAGE_UNSUPPORTED": "Unsupported language",
       "INTENT_COMPLAINT": "Complaint",
       "INTENT_REFUND_REQUEST": "Refund request",

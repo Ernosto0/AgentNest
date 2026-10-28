@@ -24,6 +24,7 @@ from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.errors import RetryableError
 from app.core.logging import get_logger, redact_value
+from app.identity.models import Workspace
 from app.integrations.llm import LLMProvider
 from app.integrations.llm.base import LLMMessage, LLMUsage
 from app.integrations.llm.errors import (
@@ -109,16 +110,33 @@ def create_queued_run(
 def _budget_used(session: Session, deps: RunnerDeps, ctx: WorkspaceContext) -> int:
     since = deps.clock.now() - BUDGET_WINDOW
     stmt = (
-        select(func.count())
+        select(func.coalesce(func.sum(1 + AgentRun.repair_attempts), 0))
         .select_from(AgentRun)
         .where(
             AgentRun.workspace_id == ctx.workspace_id,
             AgentRun.created_at >= since,
             AgentRun.status != "queued",
-            or_(AgentRun.error_code.is_(None), AgentRun.error_code != BUDGET_EXCEEDED),
+            or_(
+                AgentRun.error_code.is_(None),
+                AgentRun.error_code != BUDGET_EXCEEDED,
+                AgentRun.output.is_not(None),
+            ),
         )
     )
     return int(session.scalar(stmt) or 0)
+
+
+def reserve_repair_call(deps: RunnerDeps, ctx: WorkspaceContext, run_id: uuid.UUID) -> bool:
+    with deps.session_factory() as session:
+        session.scalar(select(Workspace).where(Workspace.id == ctx.workspace_id).with_for_update())
+        run = session.get(AgentRun, run_id)
+        if run is None or run.status != "running":
+            return False
+        if _budget_used(session, deps, ctx) >= deps.settings.llm_max_calls_per_workspace_per_day:
+            return False
+        run.repair_attempts = 1
+        session.commit()
+        return True
 
 
 def _validation_problems(exc: ValidationError) -> list[str]:
@@ -155,6 +173,7 @@ def run_task[InputT, OutputT: BaseModel](
 
     # [T1] budget check and the run row, committed before the call.
     with deps.session_factory() as session:
+        session.scalar(select(Workspace).where(Workspace.id == ctx.workspace_id).with_for_update())
         if _budget_used(session, deps, ctx) >= settings.llm_max_calls_per_workspace_per_day:
             run = _start_or_create_run(
                 session, deps, ctx, task, agent_run_id, snapshot, model, correlation_id, job_id
@@ -171,7 +190,13 @@ def run_task[InputT, OutputT: BaseModel](
         run_id = run.id
         session.commit()
 
-    execution = execute_task(deps.provider, task, task_input, model)
+    execution = execute_task(
+        deps.provider,
+        task,
+        task_input,
+        model,
+        reserve_repair=lambda: reserve_repair_call(deps, ctx, run_id),
+    )
     if execution.error is not None:
         return _finish_with_error(deps, run_id, execution.totals, execution.error)
     if execution.output is None:
@@ -212,6 +237,8 @@ def execute_task[InputT, OutputT: BaseModel](
     task: TaskDefinition[InputT, OutputT],
     task_input: InputT,
     model: str,
+    *,
+    reserve_repair: Callable[[], bool] = lambda: True,
 ) -> Execution[OutputT]:
     """The model call itself: prompt, call, validation, and at most one repair call.
 
@@ -249,6 +276,8 @@ def execute_task[InputT, OutputT: BaseModel](
             if output is not None:
                 return Execution(output, [], totals)
         if attempt == 0:  # one repair call, carrying the validation errors back to the model
+            if not reserve_repair():
+                return Execution(None, [BUDGET_EXCEEDED], totals)
             history = list(messages)
             if raw_text:
                 history.append(LLMMessage("assistant", raw_text))

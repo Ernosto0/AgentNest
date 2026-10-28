@@ -72,6 +72,8 @@ def add_event_and_wake(
     The caller first stores the authoritative domain record. This operation never commits.
     A duplicate source returns the original event without a second logical wake.
     """
+    if kind in {"echo", "own_message", "outbound_message"}:
+        raise AgentScopeError("own-message events cannot trigger conversational work")
     # Account-first locking also serializes a duplicated source routed to two threads.
     account = scoped_account(session, workspace_id, account_id, lock=True)
     thread = scoped_thread(session, workspace_id, account_id, thread_id, lock=True)
@@ -87,7 +89,7 @@ def add_event_and_wake(
         if existing.thread_id != thread_id:
             raise AgentScopeError("source identity already belongs to another thread")
         return existing
-    if account.controller_mode != "agent" or account.state != "active":
+    if account.controller_mode != "agent" or account.state not in {"active", "paused"}:
         raise AgentScopeError("account agent is inactive")
     if thread.controller_epoch != account.controller_epoch or thread.handling_mode != "agent":
         raise AgentScopeError("thread controller is stale")
@@ -115,7 +117,7 @@ def add_event_and_wake(
         AgentWakePayload(thread_id=thread_id),
         workspace_id=workspace_id,
         correlation_id=event.id,
-        dedup_key=f"agent_wake:{thread_id}",
+        dedup_key=f"agent_wake:{thread_id}:{event.cursor}",
         clock=clock,
     )
     record(
@@ -214,6 +216,7 @@ def admit_action(
             target_ref=target_ref,
             initiating_event_id=source_event_id,
             initiating_cursor=event.cursor,
+            ownership_generation=thread.ownership_generation,
             status="proposed",
             created_at=clock.now(),
             updated_at=clock.now(),

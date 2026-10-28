@@ -118,6 +118,7 @@ def close_open_drafts(
     reason: str,
     events: Mapping[str, str],
     superseded_by_id: uuid.UUID | None = None,
+    defer_approvals: bool = False,
 ) -> list[ReplyDraft]:
     """Retire the conversation's open draft when it is in a state listed in ``events``
     (``status -> event``), withdrawing a pending approval. Drafts in other states (for example
@@ -125,7 +126,7 @@ def close_open_drafts(
     draft = get_open_draft(session, conversation.workspace_id, conversation.id, lock=True)
     if draft is None or draft.status not in events:
         return []
-    if draft.status == "pending_approval":
+    if draft.status == "pending_approval" and not defer_approvals:
         approvals.cancel_for_subject(session, clock, ctx, SUBJECT_TYPE, draft.id, reason)
     transition(
         session,

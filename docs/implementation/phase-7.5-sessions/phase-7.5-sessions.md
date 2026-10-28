@@ -1,6 +1,6 @@
 # Phase 7.5: Implementation Sessions
 
-**Status:** All sessions planned; none started or accepted by this planning change.
+**Status:** Sessions 01-10 implemented and operator reviewed; Session 11 remains planned. See individual reports for actual evidence and remaining gates.
 **Canonical phase:** [phase-7.5.md](../phases/phase-7.5.md).
 **Target decision:** [ADR-024](../../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md).
 
@@ -10,16 +10,16 @@ Run the following 18 sessions in order. Each brief is an implementable unit with
 
 | Session | Brief | Task | Status |
 |---|---|---|---|
-| 01 | [Contracts and architecture alignment](s01-contracts-and-architecture.md) | P7.5-01 | Planned |
-| 02 | [Persistence and migrations](s02-persistence-and-migrations.md) | P7.5-02 | Planned |
-| 03 | [Delegation and authorization](s03-delegation-and-authorization.md) | P7.5-03 | Planned |
-| 04 | [Model step and tool broker](s04-model-step-and-tool-broker.md) | P7.5-04 | Planned |
-| 05 | [Durable coordinator](s05-durable-coordinator.md) | P7.5-05 | Planned |
-| 06 | [Knowledge, grounding and personality](s06-knowledge-grounding-and-personality.md) | P7.5-06 | Planned |
-| 07 | [Autonomous DM conversations](s07-autonomous-dm-conversations.md) | P7.5-07 | Planned |
-| 08 | [Customer memory and privacy](s08-customer-memory-and-privacy.md) | P7.5-08 | Planned |
-| 09 | [Owner questions and continuation](s09-owner-questions-and-continuation.md) | P7.5-09 | Planned |
-| 10 | [Comment ingestion and context](s10-comment-ingestion-and-context.md) | P7.5-10 | Planned |
+| 01 | [Contracts and architecture alignment](s01-contracts-and-architecture.md) | P7.5-01 | Operator reviewed |
+| 02 | [Persistence and migrations](s02-persistence-and-migrations.md) | P7.5-02 | Operator reviewed |
+| 03 | [Delegation and authorization](s03-delegation-and-authorization.md) | P7.5-03 | Operator reviewed |
+| 04 | [Model step and tool broker](s04-model-step-and-tool-broker.md) | P7.5-04 | Operator reviewed |
+| 05 | [Durable coordinator](s05-durable-coordinator.md) | P7.5-05 | Offline complete, operator reviewed |
+| 06 | [Knowledge, grounding and personality](s06-knowledge-grounding-and-personality.md) | P7.5-06 | Offline complete, operator reviewed |
+| 07 | [Autonomous DM conversations](s07-autonomous-dm-conversations.md) | P7.5-07 | Offline complete, operator reviewed |
+| 08 | [Customer memory and privacy](s08-customer-memory-and-privacy.md) | P7.5-08 | Offline complete, operator reviewed |
+| 09 | [Owner questions and continuation](s09-owner-questions-and-continuation.md) | P7.5-09 | Offline complete, operator reviewed |
+| 10 | [Comment ingestion and context](s10-comment-ingestion-and-context.md) | P7.5-10 | Offline complete, operator reviewed |
 | 11 | [Public replies and moderation](s11-public-replies-and-moderation.md) | P7.5-11 | Planned |
 | 12 | [Comment-to-DM](s12-comment-to-dm.md) | P7.5-12 | Planned |
 | 13 | [Owner tasks and content tools](s13-owner-tasks-and-content-tools.md) | P7.5-13 | Planned |

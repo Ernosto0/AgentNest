@@ -1,6 +1,6 @@
 # Session 10: Comment ingestion and context
 
-**Task:** P7.5-10. **Status:** Planned. **Prerequisite:** Session 09.
+**Task:** P7.5-10. **Status:** Offline complete, operator reviewed. **Prerequisite:** Session 09.
 Read the [common session rules](phase-7.5-sessions.md) and phase sections 7-8, 10.
 
 ## Goal
@@ -26,3 +26,5 @@ Test duplicate deliveries, delete-before-create, parent ordering, pagination bou
 ## Handoff
 
 Write `s10-report.md` with provider/event schema changes, media ownership checks, mock scenarios and research assumptions. AC75-09/12/15/19 has ingestion/context evidence; no comment send or real Meta success is claimed yet.
+
+Actual offline evidence, provisional schema limits and remaining external gates: [Session 10 report](s10-report.md).

@@ -20,6 +20,7 @@ from typing import Literal
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.agent.delegation import fence_action
@@ -29,7 +30,7 @@ from app.core.canonical import payload_hash
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
-from app.core.errors import AppError
+from app.core.errors import AppError, RetryableError
 from app.core.ids import new_id
 from app.core.logging import get_logger
 from app.inbox import attention, drafts
@@ -110,6 +111,7 @@ def execute_send_reply(
         prepared = _prepare(session, clock, workspace_id, draft_id, correlation_id, settings)
         session.commit()
     if isinstance(prepared, SendOutcome):
+        _wake_agent(session_factory, clock, workspace_id, draft_id)
         return prepared
 
     sender = provider or get_provider(
@@ -127,7 +129,24 @@ def execute_send_reply(
     with session_factory() as session:  # [T5]
         outcome = _record(session, clock, prepared, message_id, error)
         session.commit()
+    _wake_agent(session_factory, clock, workspace_id, draft_id)
     return outcome
+
+
+def _wake_agent(
+    factory: sessionmaker[Session], clock: Clock, workspace_id: uuid.UUID, draft_id: uuid.UUID
+) -> None:
+    from app.agent.jobs import wake
+    from app.agent.models import AgentAction
+
+    with factory() as db:
+        draft = db.get(ReplyDraft, draft_id)
+        action = (
+            db.get(AgentAction, draft.agent_action_id) if draft and draft.agent_action_id else None
+        )
+        if action is not None and draft is not None:
+            wake(db, clock, workspace_id, action.thread_id, f"send:{draft_id}:{draft.status}")
+            db.commit()
 
 
 # --- T4 ------------------------------------------------------------------------------------------
@@ -145,16 +164,58 @@ def _prepare(
     correlation_id: uuid.UUID | None,
     settings: Settings,
 ) -> _Prepared | SendOutcome:
-    draft = drafts.get_draft(session, workspace_id, draft_id, lock=True)
+    candidate = drafts.get_draft(session, workspace_id, draft_id)
     ctx = system_context(session, workspace_id, "operations.send")
-    if draft is None or ctx is None:
+    if candidate is None or ctx is None:
         return _skip("draft_missing")
+    from app.agent.models import AccountAgent
+    from app.approvals.models import Approval
+
+    ref = session.get(Conversation, candidate.conversation_id)
+    if ref is None:
+        return _skip("conversation_missing")
+    # Approval first matches human callbacks/cleanup. Account NOWAIT prevents a
+    # domain-first disconnect/legacy transaction from creating a lock cycle.
+    if candidate.approval_id:
+        session.scalar(
+            select(Approval).where(Approval.id == candidate.approval_id).with_for_update()
+        )
+    try:
+        controller = session.scalar(
+            select(AccountAgent)
+            .where(
+                AccountAgent.workspace_id == workspace_id,
+                AccountAgent.social_account_id == ref.social_account_id,
+            )
+            .with_for_update(nowait=True)
+        )
+    except OperationalError as exc:
+        if getattr(exc.orig, "sqlstate", None) == "55P03":
+            raise RetryableError(
+                "CONFLICT_STATE", "controller busy", retry_after_seconds=1
+            ) from exc
+        raise
+    draft = drafts.get_draft(session, workspace_id, draft_id, lock=True)
+    if draft is None:
+        return _skip("draft_missing")
+    session.refresh(draft)
     if draft.status == "sent":
         return SendOutcome("sent", detail="already_sent")
     if draft.status in ("sending", "outcome_unknown"):
-        return _skip(f"in_flight:{draft.status}")  # never start a second send
+        return _skip(f"in_flight:{draft.status}")
     if draft.status != "queued":
         return _skip(f"not_queued:{draft.status}")
+    if (
+        controller
+        and draft.origin != "agent"
+        and draft.source != "owner"
+        and (
+            controller.controller_mode == "agent"
+            or draft.validation.get("controller_cutover_generation", 0)
+            != controller.cutover_generation
+        )
+    ):
+        return _cancel_queued(session, clock, ctx, draft, ref, "CONTROLLER_CHANGED")
 
     conversation = lock_conversation(session, draft)
     account = queries.get_account_in_workspace(
@@ -174,6 +235,10 @@ def _prepare(
     if draft.origin == "agent":
         try:
             if draft.agent_action_id is None:
+                raise AppError("APPROVAL_STALE")
+            from app.agent.dm import revalidate
+
+            if not revalidate(session, clock, draft, conversation):
                 raise AppError("APPROVAL_STALE")
             fence_action(
                 session,

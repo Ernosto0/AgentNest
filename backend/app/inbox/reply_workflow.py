@@ -133,6 +133,14 @@ def persist_plan(
     No commit."""
     ctx = context.ctx
     now = clock.now()
+    from app.agent.repository import scoped_account
+
+    controller = scoped_account(session, context.workspace_id, context.social_account_id, lock=True)
+    if (
+        controller.controller_mode == "agent"
+        or controller.cutover_generation != context.controller_cutover_generation
+    ):
+        return None
     conversation = session.scalars(
         select(Conversation)
         .where(
@@ -159,6 +167,7 @@ def persist_plan(
     suffix = disclosure_suffix(context) if decision.outcome == AUTO else ""
     sendable = decision.outcome in (APPROVAL, AUTO)
     validation = dict(plan.validation)
+    validation["controller_cutover_generation"] = context.controller_cutover_generation
     text = (plan.text + suffix) if sendable and plan.text is not None else None
     if text is not None and suffix and plan.text is not None:
         validation["suffix_span"] = [len(plan.text), len(text)]

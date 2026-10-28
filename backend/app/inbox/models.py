@@ -30,10 +30,15 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
 
-EVENT_TYPES = ("message", "echo", "delete", "reaction", "read", "postback", "other")
+EVENT_TYPES = ("message", "echo", "delete", "reaction", "read", "postback", "other", "comment")
 EVENT_STATUSES = ("received", "processed", "ignored", "failed")
 # Why an event was stored but not processed (observability.md §4.1).
-IGNORE_REASONS = ("UNKNOWN_ACCOUNT", "ACCOUNT_DISCONNECTED", "UNSUPPORTED_EVENT")
+IGNORE_REASONS = (
+    "UNKNOWN_ACCOUNT",
+    "ACCOUNT_DISCONNECTED",
+    "UNSUPPORTED_EVENT",
+    "PUBLIC_SOURCE_CONFLICT",
+)
 
 HANDLING_MODES = ("automatic", "human")
 ATTENTION_STATES = ("none", "needs_approval", "needs_human", "failed")
@@ -139,6 +144,9 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Ba
 class Message(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     __tablename__ = "messages"
     __table_args__ = (
+        UniqueConstraint(
+            "workspace_id", "social_account_id", "id", name="uq_messages_workspace_account_id"
+        ),
         UniqueConstraint("workspace_id", "id"),
         ForeignKeyConstraint(
             ["workspace_id", "conversation_id"],

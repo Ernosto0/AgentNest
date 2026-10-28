@@ -1,6 +1,18 @@
 {
   "types": [
     {
+      "type": "owner_question.requested",
+      "severity": "attention"
+    },
+    {
+      "type": "owner_question.expired",
+      "severity": "info"
+    },
+    {
+      "type": "owner_question.window_closed",
+      "severity": "attention"
+    },
+    {
       "type": "approval.requested",
       "severity": "attention"
     },

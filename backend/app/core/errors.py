@@ -16,6 +16,7 @@ class ErrorSpec:
 
 
 ERROR_CATALOG: dict[str, ErrorSpec] = {
+    "OWNER_QUESTION_CLOSED": ErrorSpec(409),
     "AUTH_REQUIRED": ErrorSpec(401),
     "INVALID_CREDENTIALS": ErrorSpec(401),
     "CSRF_FAILED": ErrorSpec(403),

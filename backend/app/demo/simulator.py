@@ -38,6 +38,33 @@ from app.integrations.instagram.models import (
 SCRIPTS_FILE = Path(__file__).parent / "scripts" / "customer_messages.yaml"
 
 
+def simulate_comment(
+    factory: sessionmaker[Session],
+    clock: Clock,
+    settings: Settings,
+    workspace_id: uuid.UUID,
+    value: dict[str, Any],
+) -> IngestResult:
+    """Synthetic R75-02 fixture through persisted mock state and actual signed ingestion."""
+    with factory() as db:
+        account = mock_account(db, workspace_id)
+        ref = _ref(account)
+    provider = MockInstagramProvider(
+        factory, clock, settings.mock_instagram_app_secret.get_secret_value()
+    )
+    provider.record_simulated_comment(ref, value)
+    payload = {
+        "object": "instagram",
+        "entry": [{"id": ref.external_account_id, "synthetic_comments": [value]}],
+    }
+    body = webhook_format.serialize(payload)
+    signature = webhook_format.sign(body, settings.mock_instagram_app_secret.get_secret_value())
+    with factory() as db:
+        return ingest_webhook(
+            db, clock, settings, "mock", body, {webhook_format.SIGNATURE_HEADER: signature}
+        )
+
+
 class Script(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

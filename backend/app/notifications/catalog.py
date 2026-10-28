@@ -29,6 +29,24 @@ class NotificationSpec:
 
 _SPECS = (
     NotificationSpec(
+        "owner_question.requested",
+        ATTENTION,
+        "owner_questions.answer",
+        "owner_question.requested:{question_id}",
+    ),
+    NotificationSpec(
+        "owner_question.expired",
+        INFO,
+        "owner_questions.answer",
+        "owner_question.expired:{question_id}",
+    ),
+    NotificationSpec(
+        "owner_question.window_closed",
+        ATTENTION,
+        "owner_questions.answer",
+        "owner_question.window_closed:{question_id}",
+    ),
+    NotificationSpec(
         "approval.requested", ATTENTION, "approval's required permission", "approval:{approval_id}"
     ),
     NotificationSpec(

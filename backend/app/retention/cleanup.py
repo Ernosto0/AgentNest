@@ -31,6 +31,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.ai.models import AgentRun
+from app.core.clock import FrozenClock
 from app.core.config import Settings
 from app.inbox.models import InboundEvent, Message, ReplyDraft
 from app.jobs.models import Job
@@ -52,6 +53,8 @@ class RetentionCounts:
     notifications_deleted: int = 0
     jobs_finished_deleted: int = 0
     jobs_dead_deleted: int = 0
+    memories_nulled: int = 0
+    public_sources_nulled: int = 0
 
     def as_dict(self) -> dict[str, int]:
         return asdict(self)
@@ -197,6 +200,60 @@ def run_retention(
     # Message and draft text: nulled at 365 days. The message age is its provider time, the
     # clock every report uses, so the day it belongs to never changes (INV-17, H17).
     text_cutoff = cutoff(settings.retention_message_text_days)
+    from app.memory.service import erase_source, retention_batch
+    from app.owner_requests.service import recover_questions
+
+    privacy_clock = FrozenClock(now)
+    from app.comments.privacy import retention_batch as public_retention
+
+    public_count = 0
+    while True:
+        with session_factory() as session:
+            changed, examined = public_retention(session, privacy_clock, text_cutoff, batch_size)
+            session.commit()
+        public_count += changed
+        if examined < batch_size:
+            break
+    recover_questions(session_factory, privacy_clock, batch_size)
+    memory_count = 0
+    while True:
+        with session_factory() as session:
+            changed = retention_batch(
+                session, privacy_clock, cutoff(settings.retention_customer_memory_days), batch_size
+            )
+            session.commit()
+        memory_count += changed
+        if changed < batch_size:
+            break
+    # Source expiry invalidates memory before its authoritative message loses its body.
+    while True:
+        with session_factory() as session:
+            from app.memory.models import MemorySource
+            from app.owner_requests.models import OwnerQuestion
+
+            sources = list(
+                session.scalars(
+                    select(Message)
+                    .where(
+                        Message.provider_timestamp < text_cutoff,
+                        Message.id.in_(
+                            select(MemorySource.message_id)
+                            .where(MemorySource.message_id.is_not(None))
+                            .union(
+                                select(OwnerQuestion.source_message_id).where(
+                                    OwnerQuestion.source_message_id.is_not(None)
+                                )
+                            )
+                        ),
+                    )
+                    .limit(batch_size)
+                )
+            )
+            for source in sources:
+                erase_source(session, privacy_clock, source)
+            session.commit()
+        if len(sources) < batch_size:
+            break
     messages = run(
         _null_columns(
             Message,
@@ -216,6 +273,22 @@ def run_retention(
                     ReplyDraft.suggestion_text.is_not(None),
                 ),
             ),
+        )
+    )
+    run(
+        lambda batch: (
+            update(ReplyDraft)
+            .where(
+                ReplyDraft.id.in_(
+                    _ids_of(
+                        ReplyDraft,
+                        and_(ReplyDraft.created_at < text_cutoff, ReplyDraft.validation != {}),
+                        batch,
+                    )
+                )
+            )
+            .values(validation={})
+            .execution_options(synchronize_session=False)
         )
     )
 
@@ -257,4 +330,6 @@ def run_retention(
         notifications_deleted=notifications,
         jobs_finished_deleted=jobs_done,
         jobs_dead_deleted=jobs_dead,
+        memories_nulled=memory_count,
+        public_sources_nulled=public_count,
     )

@@ -1,9 +1,10 @@
 """Meta-format webhook payloads: build, sign, verify and parse (integrations.md §3.3).
 
-The simulator builds payloads in exactly the format Meta sends, signs them with the app
-secret and submits the raw bytes to the same ingestion function as a real webhook, so the
-pipeline cannot tell them apart except by the provider kind of the receiving account.
-The Meta adapter (Phase 7) reuses ``verify`` and ``parse`` unchanged.
+The messaging simulator uses the baseline Meta-format messaging fixtures, signs them with
+the app secret and submits the raw bytes to the same ingestion function as a real webhook.
+Comment fixtures are explicitly synthetic/provisional and enabled only by the mock codec;
+they are not authentic Meta recordings. The Meta adapter reuses ``verify`` and ``parse``
+with synthetic comment parsing disabled.
 """
 
 import hashlib
@@ -44,14 +45,17 @@ class WebhookCodec:
     The mock provider and the Meta adapter (Phase 7) both delegate to it.
     """
 
-    def __init__(self, secret: str) -> None:
+    def __init__(self, secret: str, *, synthetic_comments: bool = False) -> None:
         self._secret = secret
+        self._synthetic_comments = synthetic_comments
 
     def verify_signature(self, raw_body: bytes, signature_header: str | None) -> bool:
         return verify(raw_body, signature_header, self._secret)
 
     def parse_webhook(self, payload: Any) -> list[NormalizedInboundEvent]:
-        return parse(payload)
+        from app.comments.codec import parse as parse_comments
+
+        return parse(payload) + (parse_comments(payload) if self._synthetic_comments else [])
 
 
 # --- building -------------------------------------------------------------------------------

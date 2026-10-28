@@ -91,6 +91,7 @@ class DraftContext:
     auto_replies_last_hour: int
     usable_keys: frozenset[str] = field(default_factory=frozenset)
     unusable_keys: frozenset[str] = field(default_factory=frozenset)  # exist, but not usable
+    controller_cutover_generation: int = 0
 
     @property
     def customer_text(self) -> str:
@@ -201,6 +202,16 @@ def prepare(
     ).one_or_none()
     if ctx is None or conversation is None:
         return DraftSkip("conversation_missing")
+    from app.agent.models import AccountAgent
+
+    controller = session.scalar(
+        select(AccountAgent).where(
+            AccountAgent.workspace_id == workspace_id,
+            AccountAgent.social_account_id == conversation.social_account_id,
+        )
+    )
+    if controller is not None and controller.controller_mode == "agent":
+        return DraftSkip("agent_controller")
     if conversation.handling_mode == "human" and not requested:
         return DraftSkip("human_mode")
     newest = _newest_inbound(session, workspace_id, conversation_id)
@@ -272,6 +283,9 @@ def prepare(
         language=language,
         facts=usable,
         price_disclosure=price_disclosure,
+        controller_cutover_generation=controller.cutover_generation
+        if controller is not None
+        else 0,
         approved_answers=answers,
         brand_voice=_localized(voice_fact.value, language.code or "tr") if voice_fact else None,
         escalation_keywords=[

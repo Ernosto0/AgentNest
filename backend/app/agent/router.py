@@ -8,6 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.agent import delegation
 from app.agent.models import AgentDelegation
+from app.agent.personality import (
+    PersonalityChange,
+    PersonalityOut,
+    change_personality,
+    read_personality,
+)
 from app.agent.repository import AgentScopeError, scoped_account
 from app.api.deps import get_clock, require_membership
 from app.audit import service as audit
@@ -17,6 +23,62 @@ from app.core.db import get_db
 from app.core.errors import AppError
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/accounts/{account_id}/agent", tags=["agent"])
+
+from app.agent.control import ControllerChange, change_controller  # noqa: E402
+
+
+class ControllerOut(BaseModel):
+    state: str
+    controller_mode: str
+    config_version: int
+    controller_epoch: int
+
+
+@router.post("/activate", response_model=ControllerOut)
+def activate_agent(
+    account_id: uuid.UUID,
+    body: ControllerChange,
+    ctx: WorkspaceContext = Depends(require_membership("agent.control")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> ControllerOut:
+    try:
+        account = change_controller(db, clock, ctx, account_id, body)
+    except AgentScopeError as exc:
+        raise AppError("NOT_FOUND") from exc
+    db.commit()
+    return ControllerOut(
+        state=account.state,
+        controller_mode=account.controller_mode,
+        config_version=account.config_version,
+        controller_epoch=account.controller_epoch,
+    )
+
+
+@router.get("/personality", response_model=PersonalityOut)
+def get_personality(
+    account_id: uuid.UUID,
+    ctx: WorkspaceContext = Depends(require_membership()),
+    db: Session = Depends(get_db),
+) -> PersonalityOut:
+    try:
+        account = scoped_account(db, ctx.workspace_id, account_id)
+    except AgentScopeError as exc:
+        raise AppError("NOT_FOUND") from exc
+    return read_personality(account)
+
+
+@router.patch("/personality", response_model=PersonalityOut)
+def patch_personality(
+    account_id: uuid.UUID,
+    body: PersonalityChange,
+    ctx: WorkspaceContext = Depends(require_membership("agent.settings.edit")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> PersonalityOut:
+    result = change_personality(db, clock, ctx, account_id, body)
+    db.commit()
+    return result
 
 
 class DelegationPreview(BaseModel):
@@ -137,6 +199,12 @@ def _state_change(
         raise AppError("CONFLICT_STATE", entity="account_agent", status=account.state)
     account.state = target
     account.controller_epoch += 1
+    from app.agent.control import adopt_threads
+
+    adopt_threads(db, clock, account)
+    from app.agent.jobs import enqueue_cleanup
+
+    enqueue_cleanup(db, clock, ctx.workspace_id, account_id, account.controller_epoch)
     account.config_version += 1
     account.updated_at = clock.now()
     audit.record(

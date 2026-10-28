@@ -23,6 +23,12 @@ GROUP_NAMES: tuple[str, ...] = get_args(Group)
 
 _BY_GROUP: dict[str, tuple[str, ...]] = {
     "messages": (
+        "comment.source_ingested",
+        "comment.media_changed",
+        "owner_question.created",
+        "owner_question.proposed",
+        "owner_question.decided",
+        "owner_question.expired",
         "message.received",
         "message.native_reply_recorded",
         "conversation.takeover",
@@ -139,6 +145,11 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "agent.action_authorized",
         "agent.action_cancelled",
         "agent.state_changed",
+        "agent.personality_changed",
+        "memory.written",
+        "memory.corrected",
+        "memory.forgotten",
+        "memory.erased",
     ),
 }
 

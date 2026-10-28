@@ -1,0 +1,45 @@
+# Mechanics fixtures, not model-quality acceptance. Session17 owns evaluator wiring.
+version: s06-v1
+journeys:
+  - id: salon-en
+    category: beauty_wellness
+    language: en
+    turns: ["Hello! I am new to salons.", "What services do you offer and can you explain the choices?"]
+    greeting: "Hello! What would you like help choosing?"
+    service: "Hair styling consultations"
+    reply: "We offer {{fact:custom.services}}. What would you like to know?"
+  - id: salon-tr
+    category: beauty_wellness
+    language: tr
+    turns: ["Merhaba, ilk kez geliyorum.", "Hangi hizmetler var ve nasıl seçim yapabilirim?"]
+    greeting: "Merhaba! Nasıl yardımcı olabilirim?"
+    service: "Saç şekillendirme danışmanlığı"
+    reply: "{{fact:custom.services}} sunuyoruz. Ne öğrenmek istersiniz?"
+  - id: retail-en
+    category: retail
+    language: en
+    turns: ["Hello, I need help choosing a gift.", "What services do you offer and can you recommend a starting point?"]
+    greeting: "Hello! Tell me about the person you are choosing for."
+    service: "Gift selection guidance"
+    reply: "We offer {{fact:custom.services}}. What would you like to know?"
+  - id: retail-tr
+    category: retail
+    language: tr
+    turns: ["Merhaba, hediye seçiyorum.", "Hangi hizmetler var ve nasıl seçim yapabilirim?"]
+    greeting: "Merhaba! Kime hediye arıyorsunuz?"
+    service: "Hediye seçimi desteği"
+    reply: "{{fact:custom.services}} sunuyoruz. Ne öğrenmek istersiniz?"
+  - id: fitness-en
+    category: fitness
+    language: en
+    turns: ["Hello, I am a beginner and feel nervous.", "What services do you offer and how can I get started?"]
+    greeting: "Hello! We can talk through your goals at your pace."
+    service: "Beginner movement consultations"
+    reply: "We offer {{fact:custom.services}}. What would you like to know?"
+  - id: fitness-tr
+    category: fitness
+    language: tr
+    turns: ["Merhaba, yeni başlıyorum ve biraz çekiniyorum.", "Hangi hizmetler var ve nasıl başlayabilirim?"]
+    greeting: "Merhaba! Hedeflerinizden söz etmek ister misiniz?"
+    service: "Başlangıç hareket danışmanlığı"
+    reply: "{{fact:custom.services}} sunuyoruz. Ne öğrenmek istersiniz?"

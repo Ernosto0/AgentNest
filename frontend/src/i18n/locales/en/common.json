@@ -338,6 +338,10 @@
     "OAUTH_STATE_INVALID": {
       "what": "This Instagram sign-in has expired or is no longer valid.",
       "next": "Start connecting again from this screen."
+    },
+    "OWNER_QUESTION_CLOSED": {
+      "what": "This information request is closed.",
+      "next": "Open the latest request."
     }
   },
   "connections": {

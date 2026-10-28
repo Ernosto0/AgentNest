@@ -147,6 +147,7 @@ class Settings(BaseSettings):
     retention_inbound_event_row_days: int = Field(default=90, ge=1)
     retention_agent_input_days: int = Field(default=30, ge=1)
     retention_message_text_days: int = Field(default=365, ge=1)
+    retention_customer_memory_days: int = Field(default=365, ge=1)
     retention_notifications_read_days: int = Field(default=90, ge=1)
     retention_jobs_succeeded_days: int = Field(default=7, ge=1)
     retention_jobs_dead_days: int = Field(default=90, ge=1)

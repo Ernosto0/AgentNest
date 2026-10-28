@@ -191,6 +191,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dev/workspaces/{workspace_id}/simulate/comment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simulate Comment */
+        post: operations["simulate_comment_api_v1_dev_workspaces__workspace_id__simulate_comment_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dev/workspaces/{workspace_id}/simulate/customer-message": {
         parameters: {
             query?: never;
@@ -318,6 +335,23 @@ export interface paths {
         patch: operations["patch_workspace_api_v1_workspaces__workspace_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Activate Agent */
+        post: operations["activate_agent_api_v1_workspaces__workspace_id__accounts__account_id__agent_activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/delegation": {
         parameters: {
             query?: never;
@@ -386,6 +420,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/personality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Personality */
+        get: operations["get_personality_api_v1_workspaces__workspace_id__accounts__account_id__agent_personality_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Personality */
+        patch: operations["patch_personality_api_v1_workspaces__workspace_id__accounts__account_id__agent_personality_patch"];
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/resume": {
         parameters: {
             query?: never;
@@ -397,6 +449,278 @@ export interface paths {
         put?: never;
         /** Resume */
         post: operations["resume_api_v1_workspaces__workspace_id__accounts__account_id__agent_resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Account Comments */
+        get: operations["account_comments_api_v1_workspaces__workspace_id__accounts__account_id__comments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Media Page */
+        get: operations["media_page_api_v1_workspaces__workspace_id__accounts__account_id__comments_media_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/media/{media_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Media Detail */
+        get: operations["media_detail_api_v1_workspaces__workspace_id__accounts__account_id__comments_media__media_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/media/{media_id}/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Thread Page */
+        get: operations["thread_page_api_v1_workspaces__workspace_id__accounts__account_id__comments_media__media_id__threads_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/threads/{thread_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comment Page */
+        get: operations["comment_page_api_v1_workspaces__workspace_id__accounts__account_id__comments_threads__thread_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comment Detail */
+        get: operations["comment_detail_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/{comment_id}/thread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comment Thread */
+        get: operations["comment_thread_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__thread_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/customers/{customer_id}/memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect Memory */
+        get: operations["inspect_memory_api_v1_workspaces__workspace_id__accounts__account_id__customers__customer_id__memory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/customers/{customer_id}/memory/{memory_id}/correct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Correct Memory */
+        post: operations["correct_memory_api_v1_workspaces__workspace_id__accounts__account_id__customers__customer_id__memory__memory_id__correct_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/customers/{customer_id}/memory/{memory_id}/forget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Forget Memory */
+        post: operations["forget_memory_api_v1_workspaces__workspace_id__accounts__account_id__customers__customer_id__memory__memory_id__forget_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/customers/{customer_id}/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect Sources */
+        get: operations["inspect_sources_api_v1_workspaces__workspace_id__accounts__account_id__customers__customer_id__sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/owner-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Questions */
+        get: operations["list_questions_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/owner-questions/{question_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["detail_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions__question_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/owner-questions/{question_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer */
+        post: operations["answer_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions__question_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/owner-questions/{question_id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Answers */
+        get: operations["list_answers_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions__question_id__answers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/owner-questions/{question_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel */
+        post: operations["cancel_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions__question_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1669,6 +1993,63 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** AnswerOut */
+        AnswerOut: {
+            /** Author Role */
+            author_role: string;
+            /** Body */
+            body: string | null;
+            /** Candidate Id */
+            candidate_id: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "answer" | "proposal" | "cancel";
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+            /** Version */
+            version: number;
+        };
+        /** AnswerPage */
+        AnswerPage: {
+            /** Items */
+            items: components["schemas"]["AnswerOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** AnswerRequest */
+        AnswerRequest: {
+            /** Body */
+            body: string;
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Expected Version */
+            expected_version: number;
+            /**
+             * Kind
+             * @default answer
+             * @enum {string}
+             */
+            kind: "answer" | "proposal";
+            reusable_knowledge?: components["schemas"]["ReusableKnowledge"] | null;
+        };
         /** ApprovalOut */
         ApprovalOut: {
             /**
@@ -1809,6 +2190,16 @@ export interface components {
             /** File */
             file: string;
         };
+        /** CancelRequest */
+        CancelRequest: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Expected Version */
+            expected_version: number;
+        };
         /** CandidateOut */
         CandidateOut: {
             /**
@@ -1837,6 +2228,8 @@ export interface components {
              * @constant
              */
             kind: "candidate";
+            /** Owner Answer Id */
+            owner_answer_id?: string | null;
             /** Proposed By Name */
             proposed_by_name: string | null;
             /** Proposed Display */
@@ -1863,6 +2256,14 @@ export interface components {
             status: "pending" | "accepted" | "rejected" | "superseded";
             /** Value Type */
             value_type: string;
+        };
+        /** ChangedOut */
+        ChangedOut: {
+            /**
+             * Changed
+             * @default true
+             */
+            changed: boolean;
         };
         /** ClarificationAnswer */
         ClarificationAnswer: {
@@ -1937,6 +2338,100 @@ export interface components {
             params: {
                 [key: string]: unknown;
             };
+        };
+        /** CommentEvent */
+        CommentEvent: {
+            /** Author Id */
+            author_id?: string | null;
+            /** Id */
+            id: string;
+            /** Media Caption */
+            media_caption?: string | null;
+            /**
+             * Media Deleted
+             * @default false
+             */
+            media_deleted: boolean;
+            /** Media Id */
+            media_id: string;
+            /**
+             * Media Verified
+             * @default false
+             */
+            media_verified: boolean;
+            /**
+             * Media Version
+             * @default 1
+             */
+            media_version: number;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Root Id */
+            root_id: string;
+            /**
+             * Schema
+             * @default synthetic-comment-v1
+             * @constant
+             */
+            schema: "synthetic-comment-v1";
+            /**
+             * State
+             * @default visible
+             * @enum {string}
+             */
+            state: "visible" | "hidden" | "deleted" | "unknown";
+            /** Text */
+            text?: string | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Version */
+            version: number;
+        };
+        /** CommentOut */
+        CommentOut: {
+            /** Author External Id */
+            author_external_id: string | null;
+            /** External Id */
+            external_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Owner */
+            is_owner: boolean;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /**
+             * Media Id
+             * Format: uuid
+             */
+            media_id: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Provider Timestamp */
+            provider_timestamp: string | null;
+            /** State */
+            state: string;
+            /** Text */
+            text: string | null;
+            /**
+             * Thread Id
+             * Format: uuid
+             */
+            thread_id: string;
+            /** Version */
+            version: number;
+        };
+        /** CommentPage */
+        CommentPage: {
+            /** Items */
+            items: components["schemas"]["CommentOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /**
          * ContentApprovalStateOut
@@ -2160,6 +2655,33 @@ export interface components {
             /** Warnings */
             warnings?: components["schemas"]["ContentCheckItemOut"][];
         };
+        /** ControllerChange */
+        ControllerChange: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Expected Config Version */
+            expected_config_version: number;
+            /**
+             * Mode
+             * @default agent
+             * @enum {string}
+             */
+            mode: "legacy" | "agent";
+        };
+        /** ControllerOut */
+        ControllerOut: {
+            /** Config Version */
+            config_version: number;
+            /** Controller Epoch */
+            controller_epoch: number;
+            /** Controller Mode */
+            controller_mode: string;
+            /** State */
+            state: string;
+        };
         /** ConversationDetailOut */
         ConversationDetailOut: {
             conversation: components["schemas"]["ConversationOut"];
@@ -2335,6 +2857,13 @@ export interface components {
             expected_version: number;
             /** Text */
             text: string;
+        };
+        /** Examples */
+        Examples: {
+            /** En */
+            en?: string[];
+            /** Tr */
+            tr?: string[];
         };
         /** ExtractionCreate */
         ExtractionCreate: {
@@ -2730,6 +3259,33 @@ export interface components {
             /** Width */
             width: number;
         };
+        /** MediaOut */
+        MediaOut: {
+            /** Caption */
+            caption: string | null;
+            /** External Id */
+            external_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Ownership State */
+            ownership_state: string;
+            /** State */
+            state: string;
+            /** Version */
+            version: number;
+        };
+        /** MediaPage */
+        MediaPage: {
+            /** Items */
+            items: components["schemas"]["MediaOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
         /** MemberOut */
         MemberOut: {
             /** Display Name */
@@ -2776,6 +3332,41 @@ export interface components {
             workspace_id: string;
             /** Workspace Name */
             workspace_name: string;
+        };
+        /** MemoryChange */
+        MemoryChange: {
+            /** Body */
+            body: string;
+            /** Expected Version */
+            expected_version: number;
+        };
+        /** MemoryOut */
+        MemoryOut: {
+            /** Body */
+            body: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Topic */
+            topic: string;
+            /** Version */
+            version: number;
+        };
+        /** MemoryPage */
+        MemoryPage: {
+            /** Items */
+            items: components["schemas"]["MemoryOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** MessageOut */
         MessageOut: {
@@ -3137,6 +3728,58 @@ export interface components {
              */
             role: "owner" | "manager" | "staff";
         };
+        /** Personality */
+        Personality: {
+            /**
+             * Comment Style
+             * @default concise
+             * @enum {string}
+             */
+            comment_style: "conversational" | "concise";
+            /**
+             * Dm Style
+             * @default conversational
+             * @enum {string}
+             */
+            dm_style: "conversational" | "concise";
+            /**
+             * Emoji
+             * @default none
+             * @enum {string}
+             */
+            emoji: "none" | "sparse";
+            examples?: components["schemas"]["Examples"];
+            /**
+             * Formality
+             * @default professional
+             * @enum {string}
+             */
+            formality: "casual" | "professional";
+            /**
+             * Length
+             * @default short
+             * @enum {string}
+             */
+            length: "short" | "medium";
+            /**
+             * Tone
+             * @default warm
+             * @enum {string}
+             */
+            tone: "warm" | "neutral" | "direct";
+        };
+        /** PersonalityChange */
+        PersonalityChange: {
+            /** Expected Version */
+            expected_version: number;
+            personality: components["schemas"]["Personality"];
+        };
+        /** PersonalityOut */
+        PersonalityOut: {
+            personality: components["schemas"]["Personality"];
+            /** Version */
+            version: number;
+        };
         /** PoliciesIn */
         PoliciesIn: {
             /** Items */
@@ -3188,6 +3831,59 @@ export interface components {
              * Format: date-time
              */
             published_at: string;
+        };
+        /** QuestionOut */
+        QuestionOut: {
+            /** Answer Id */
+            answer_id: string | null;
+            /** Body */
+            body: string | null;
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Required Info
+             * @enum {string}
+             */
+            required_info: "availability" | "exception" | "service_detail" | "business_policy" | "other";
+            /** Source Cursor */
+            source_cursor: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "answered" | "expired" | "cancelled";
+            /**
+             * Thread Id
+             * Format: uuid
+             */
+            thread_id: string;
+            /** Version */
+            version: number;
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "customer_reply" | "private_business";
+        };
+        /** QuestionPage */
+        QuestionPage: {
+            /** Items */
+            items: components["schemas"]["QuestionOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** ReadinessLinkOut */
         ReadinessLinkOut: {
@@ -3330,6 +4026,13 @@ export interface components {
              */
             workspace_id: string;
         };
+        /** ReusableKnowledge */
+        ReusableKnowledge: {
+            /** Key */
+            key: string;
+            /** Text */
+            text: string;
+        };
         /** RunDueOut */
         RunDueOut: {
             /** Ran */
@@ -3402,6 +4105,37 @@ export interface components {
             status: string;
             /** Username */
             username: string | null;
+        };
+        /** SourceOut */
+        SourceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Memory Id
+             * Format: uuid
+             */
+            memory_id: string;
+            /** Memory Version */
+            memory_version: number;
+            /** Message Id */
+            message_id: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Removed */
+            removed: boolean;
+        };
+        /** SourcePage */
+        SourcePage: {
+            /** Items */
+            items: components["schemas"]["SourceOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** StateChange */
         StateChange: {
@@ -3533,6 +4267,28 @@ export interface components {
             status: string;
             /** Value Types */
             value_types: string[];
+        };
+        /** ThreadOut */
+        ThreadOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Media Id
+             * Format: uuid
+             */
+            media_id: string;
+            /** Root External Id */
+            root_external_id: string;
+        };
+        /** ThreadPage */
+        ThreadPage: {
+            /** Items */
+            items: components["schemas"]["ThreadOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** UserOut */
         UserOut: {
@@ -4111,6 +4867,41 @@ export interface operations {
             };
         };
     };
+    simulate_comment_api_v1_dev_workspaces__workspace_id__simulate_comment_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     simulate_customer_message_api_v1_dev_workspaces__workspace_id__simulate_customer_message_post: {
         parameters: {
             query?: never;
@@ -4384,6 +5175,42 @@ export interface operations {
             };
         };
     };
+    activate_agent_api_v1_workspaces__workspace_id__accounts__account_id__agent_activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ControllerChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ControllerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_delegation_api_v1_workspaces__workspace_id__accounts__account_id__agent_delegation_get: {
         parameters: {
             query?: never;
@@ -4524,6 +5351,74 @@ export interface operations {
             };
         };
     };
+    get_personality_api_v1_workspaces__workspace_id__accounts__account_id__agent_personality_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_personality_api_v1_workspaces__workspace_id__accounts__account_id__agent_personality_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonalityChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     resume_api_v1_workspaces__workspace_id__accounts__account_id__agent_resume_post: {
         parameters: {
             query?: never;
@@ -4547,6 +5442,574 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    account_comments_api_v1_workspaces__workspace_id__accounts__account_id__comments_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+                media_id?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    media_page_api_v1_workspaces__workspace_id__accounts__account_id__comments_media_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    media_detail_api_v1_workspaces__workspace_id__accounts__account_id__comments_media__media_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                media_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    thread_page_api_v1_workspaces__workspace_id__accounts__account_id__comments_media__media_id__threads_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                media_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    comment_page_api_v1_workspaces__workspace_id__accounts__account_id__comments_threads__thread_id__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                thread_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    comment_detail_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                comment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    comment_thread_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__thread_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                comment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_memory_api_v1_workspaces__workspace_id__accounts__account_id__customers__customer_id__memory_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                customer_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_memory_api_v1_workspaces__workspace_id__accounts__account_id__customers__customer_id__memory__memory_id__correct_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                customer_id: string;
+                memory_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemoryChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forget_memory_api_v1_workspaces__workspace_id__accounts__account_id__customers__customer_id__memory__memory_id__forget_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                customer_id: string;
+                memory_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_sources_api_v1_workspaces__workspace_id__accounts__account_id__customers__customer_id__sources_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                customer_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourcePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_questions_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+                customer_id?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detail_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions__question_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                question_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions__question_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                question_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_answers_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions__question_id__answers_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                question_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_api_v1_workspaces__workspace_id__accounts__account_id__owner_questions__question_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                question_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerOut"];
                 };
             };
             /** @description Validation Error */

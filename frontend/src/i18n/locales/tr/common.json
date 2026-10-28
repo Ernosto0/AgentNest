@@ -338,6 +338,10 @@
     "OAUTH_STATE_INVALID": {
       "what": "Instagram oturum açma işleminin süresi dolmuş veya işlem artık geçerli değil.",
       "next": "Bu ekrandan bağlantıyı yeniden başlatın."
+    },
+    "OWNER_QUESTION_CLOSED": {
+      "what": "Bu bilgi talebi kapal?.",
+      "next": "En g?ncel talebi a??n."
     }
   },
   "connections": {

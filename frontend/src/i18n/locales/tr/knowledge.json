@@ -35,7 +35,8 @@
       "owner_command": "Sohbet komutu",
       "candidate_accepted": "Kabul edilen öneri",
       "seed": "Demo verisi",
-      "template_default": "Şablon"
+      "template_default": "Şablon",
+      "owner_answer": "??letme yan?t?"
     },
     "candidateSource": {
       "pasted_text": "Yapıştırdığınız metin",

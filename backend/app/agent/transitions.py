@@ -33,7 +33,7 @@ _SESSION_NEXT = {
     },
     "waiting_customer": {"queued", "cancelled", "failed"},
     "waiting_owner": {"queued", "cancelled", "failed"},
-    "waiting_approval": {"queued", "cancelled", "failed"},
+    "waiting_approval": {"queued", "waiting_operation", "cancelled", "failed"},
     "waiting_operation": {"queued", "cancelled", "failed"},
     "sleeping": {"queued", "cancelled", "failed"},
 }

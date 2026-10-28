@@ -81,6 +81,7 @@ class AccountAgent(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Ba
     controller_mode: Mapped[str] = mapped_column(Text, nullable=False, server_default="legacy")
     state: Mapped[str] = mapped_column(Text, nullable=False, server_default="inactive")
     controller_epoch: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    cutover_generation: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
     config_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     persona_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     goals: Mapped[dict[str, Any]] = mapped_column(
@@ -127,9 +128,26 @@ class AgentDelegation(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
 class AgentThread(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
     __tablename__ = "agent_threads"
     __table_args__ = (
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "customer_identity_id"],
+            [
+                "customer_identities.workspace_id",
+                "customer_identities.social_account_id",
+                "customer_identities.id",
+            ],
+            name="fk_agent_threads_customer_identity",
+        ),
         UniqueConstraint("workspace_id", "id"),
         UniqueConstraint("workspace_id", "social_account_id", "id"),
         UniqueConstraint("workspace_id", "social_account_id", "surface", "source_ref"),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id", "public_thread_id"],
+            [
+                "public_threads.workspace_id",
+                "public_threads.social_account_id",
+                "public_threads.id",
+            ],
+        ),
         ForeignKeyConstraint(
             ["workspace_id", "social_account_id"],
             ["account_agents.workspace_id", "account_agents.social_account_id"],
@@ -160,12 +178,16 @@ class AgentThread(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
     surface: Mapped[str] = mapped_column(Text, nullable=False)
     source_ref: Mapped[str] = mapped_column(Text, nullable=False)
     dm_conversation_id: Mapped[uuid.UUID | None] = mapped_column()
+    public_thread_id: Mapped[uuid.UUID | None] = mapped_column()
     customer_identity_id: Mapped[uuid.UUID | None] = mapped_column()
     state: Mapped[str] = mapped_column(Text, nullable=False, server_default="queued")
     handling_mode: Mapped[str] = mapped_column(Text, nullable=False, server_default="agent")
     thread_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="1")
     event_cursor: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
     controller_epoch: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    ownership_generation: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default="0"
+    )
     deletion_generation: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
     current_goal_key: Mapped[str | None] = mapped_column(Text)
     last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -231,10 +253,17 @@ class AgentSession(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Ba
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="queued")
     version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="1")
     model_steps: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    validation_failures: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     tool_calls: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     input_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
     output_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
     cost_microusd: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    activation_cursor: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    activation_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    activation_steps: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    activation_tools: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    reserved_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    outcome_code: Mapped[str | None] = mapped_column(Text)
     deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     wake_kind: Mapped[str | None] = mapped_column(Text)
     wake_ref: Mapped[str | None] = mapped_column(Text)
@@ -270,12 +299,20 @@ class AgentStep(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base)
     claim_token: Mapped[uuid.UUID] = mapped_column(nullable=False)
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     captured_cursor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    captured_public_version: Mapped[int | None] = mapped_column(BigInteger)
     captured_epoch: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    captured_ownership_generation: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default="0"
+    )
     captured_policy_version: Mapped[int | None] = mapped_column(Integer)
+    captured_persona_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="1"
+    )
     captured_deletion_generation: Mapped[int] = mapped_column(BigInteger, nullable=False)
     model_version: Mapped[str | None] = mapped_column(Text)
     prompt_version: Mapped[str | None] = mapped_column(Text)
     tool_version: Mapped[str | None] = mapped_column(Text)
+    read_checkpoint: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     input_ref: Mapped[str | None] = mapped_column(Text)
     output_ref: Mapped[str | None] = mapped_column(Text)
     reserved_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
@@ -333,6 +370,9 @@ class AgentAction(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
     target_ref: Mapped[str] = mapped_column(Text, nullable=False)
     initiating_event_id: Mapped[uuid.UUID | None] = mapped_column()
     initiating_cursor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    ownership_generation: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default="0"
+    )
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="proposed")
     delegation_version: Mapped[int | None] = mapped_column(Integer)
     policy_grant: Mapped[dict[str, Any] | None] = mapped_column(JSONB)

@@ -22,7 +22,13 @@ CRITICALITIES = ("critical", "standard")
 FACT_STATUSES = ("unverified", "verified", "archived")
 SOURCE_TYPES = ("owner_entry", "owner_command", "candidate_accepted", "seed", "template_default")
 CHANGE_KINDS = ("created", "value_changed", "verified", "archived", "restored")
-CANDIDATE_SOURCES = ("staff_proposal", "pasted_text", "instagram_profile", "website")
+CANDIDATE_SOURCES = (
+    "staff_proposal",
+    "pasted_text",
+    "instagram_profile",
+    "website",
+    "owner_answer",
+)
 CANDIDATE_RELATIONS = ("new", "same", "discrepancy", "contest")
 CANDIDATE_STATUSES = ("pending", "accepted", "rejected", "superseded")
 # Tier 2 (staff) can contest a verified value; tier 3 (pasted text, profile, website) cannot.

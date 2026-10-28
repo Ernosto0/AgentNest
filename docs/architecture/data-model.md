@@ -521,3 +521,90 @@ Downgrade to `0018` refuses any agent thread, event, delegation, session, step, 
 | Report source gaps | Retention; migration for legacy uncertainty | Insert-only completeness markers | Lifetime of workspace |
 | Media | Uploads | Status (`ready` to `deleted`, by `media_cleanup`) | Orphans after 7 days; with content otherwise; published items' media 90 days after publication (implemented, Phase 6) |
 | Tokens | OAuth | Rotated | Deleted immediately on disconnect |
+
+### Phase 7.5 Session 05, migration 0021
+
+`agent_sessions` gains `activation_cursor bigint`, `activation_started_at timestamptz`,
+`activation_steps bigint`, `activation_tools bigint`, `reserved_tokens bigint` and nullable
+`outcome_code text`. The counters survive worker retry/restart; only a resolved wait or new
+eligible event starts a new activation, while cumulative goal counters remain charged.
+`agent_steps.read_checkpoint jsonb` stores only successful built-in read names and validated
+routing arguments; it contains no message body or tool result. Reads are reconstructed from
+scoped source records on resume. Downgrade refuses when any session evidence exists.
+
+### Phase 7.5 Session 06, migration 0022
+
+`agent_steps.captured_persona_version integer NOT NULL DEFAULT 1` fences model results
+after a voice edit. `agent_sessions.validation_failures integer NOT NULL DEFAULT 0` limits
+grounding repair to one retry per activation; cumulative model/token budgets remain charged.
+Downgrade refuses while agent session evidence exists. Existing `account_agents.persona`
+stores the closed Session 06 voice schema and `persona_version` provides optimistic editing.
+Voice edits increment `config_version` without changing controller ownership or delegation.
+No customer text, retrieved result, or voice example is copied into generic steps/runs.
+
+### Phase 7.5 Session 07: migration 0023
+
+`0023` follows `0022` and adds monotonic `account_agents.cutover_generation`, `agent_threads.ownership_generation`, `agent_steps.captured_ownership_generation`, and `agent_actions.ownership_generation`, each non-null bigint defaulting to zero. Controller mode changes advance the cutover fence used by legacy plans/drafts. Every agent thread takeover/release or epoch adoption advances thread ownership; steps and stable actions bind the captured value. The downgrade refuses to discard execution/cutover evidence.
+
+Agent-origin DM payloads remain in `reply_drafts`: `validation.agent_proposal` is the closed Session 06 typed proposal, with cursor/ownership metadata. It follows the draft's personal-data lifecycle; generic steps/jobs/actions retain only IDs, hashes and routing/state metadata. Actions point to the draft through `payload_ref`; operation linkage is projected from the existing draft/ledger. Conversation erasure explicitly nulls `agent_threads.dm_conversation_id` and increments deletion generation before deleting personal domain rows, preserving minimal controller/action/run/ledger history.
+
+### Phase 7.5 Session 08: migration 0024
+
+Account-scoped `customer_identities` store provider subject digest/evidence, generation,
+revision and content-free erasure cutoff metadata. `customer_memories` hold one bounded
+preference/customer claim/open goal per closed business topic, correction version and expiry.
+`customer_memory_versions` carry provenance and correcting user ID; explicit privacy changes
+null historical bodies. `customer_memory_sources` link exact message/version evidence through
+workspace/account composite FKs; removed links expose no message body/reference through APIs.
+`customer_summary_versions` carry thread/customer scope, source cursor, generation/revision,
+query digest and derived body; privacy invalidation clears body and query digest.
+`customer_source_fences` preserve only scoped source hashes across physical deletion to reject
+old-source replay. Thread identity references and source-message links have account-composite
+FKs. A populated privacy-evidence downgrade is refused. The send proposal now binds thread
+deletion generation; erasure marks retained uncertain drafts `privacy_redacted` so read DTOs
+and later delivery projection cannot resurrect personal bodies.
+
+### Phase 7.5 Session 09: migration 0025
+
+`owner_questions` persist a private question body, pending/answered/expired/cancelled state,
+version, required-information slot, visibility and seven-day expiry. Scope includes
+workspace/account/thread/customer/session; original message/cursor/hash, knowledge digest
+and ownership/deletion generations fence continuation. The unique continuation key is
+server-derived from thread/session/source/slot. Nullable exact answer and holding-action
+links use scoped composite FKs. `owner_answers` persist versioned authoritative answers,
+staff proposals and cancellations, author/user role, UUID request/hash, answer expiry and
+optional reusable candidate. Request IDs are unique per question; answer versions are unique
+per question. Bodies redact while minimal ledger/version identifiers survive.
+
+`fact_candidates.owner_answer_id` and `source_type=owner_answer` preserve true provenance
+for explicitly requested reusable knowledge; these are unverified candidates, never an
+automatic change to business facts. Answer/candidate and question/answer cycles use named
+scoped constraints. Downgrade refuses when any owner-question evidence exists.
+
+
+## Phase 7.5 Session 10: public sources (0026)
+
+`public_media` owns account-scoped provider IDs, ownership state (`unverified` or
+`verified_synthetic`), caption, provider timestamp/revision, local version and terminal
+provider-deleted state. A comment cannot establish media ownership through another
+account's rows. Missing post details remain unknown. `public_threads` maps one root
+provider-comment ID to one media/account. `public_comments` stores provider ID, scoped
+thread/media/parent, optional stable provider-author ID, owner flag, visible/hidden/
+unknown/deleted text lifecycle, provider timestamp/revision and local version.
+Composite FKs bind workspace/account/media/thread for parent links; public agent threads
+have a scoped `public_thread_id` FK. No public record resolves a private customer identity.
+Scoped page indexes support bounded UUID cursor reads.
+
+The provisional synthetic schema supports a root and direct replies only; an out-of-order
+reply creates its placeholder root. Conflicting media/lineage/authors reject atomically.
+Nested lineage is rejected pending R75-02. Higher provider revisions replace live source
+state; equal revisions retain the first body except deletion wins a tie. Terminal deleted
+or erased sources cannot resurrect. Server receipt time drives local retention; provider
+UTC timestamps and revisions remain separate. Caption expiry clears its body and bumps
+media version without claiming provider deletion or suppressing fresh comments.
+
+`sim_public_comments` stores separate mock remote state. Public source deletion, account
+erasure and retention redact source-bearing receipt/mock caches. Disconnect's existing
+erasure request clears public bodies immediately while preserving content-free IDs and
+existing uncertain-operation evidence. Public tools/context suppress deleted/hidden sources.
+Migration 0026 refuses downgrade with public sources until explicit archival/erasure.

@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 
 from sqlalchemy import func, or_, select
 
-from app.agent.models import AgentStep
+from app.agent.models import AgentSession, AgentStep
 from app.ai.models import AgentRun
 from app.ai.runner import BUDGET_EXCEEDED, BUDGET_WINDOW, RunnerDeps
 from app.core.context import WorkspaceContext
@@ -61,6 +61,20 @@ def _reserve_repair(deps: RunnerDeps, workspace_id: uuid.UUID, run_id: uuid.UUID
         )
         if int(used or 0) >= deps.settings.llm_max_calls_per_workspace_per_day:
             return False
+        if run.agent_step_id is not None:
+            step = session.get(AgentStep, run.agent_step_id)
+            goal = (
+                session.scalar(
+                    select(AgentSession).where(AgentSession.id == step.session_id).with_for_update()
+                )
+                if step
+                else None
+            )
+            if goal is not None:
+                if goal.model_steps >= 24 or goal.activation_steps >= 8:
+                    return False
+                goal.model_steps += 1
+                goal.activation_steps += 1
         run.repair_attempts = 1
         session.commit()
         return True
@@ -99,6 +113,10 @@ def run_step(
             raise ValueError("agent step not found in workspace")
         if step.status != "model_pending":
             raise ValueError("agent step is not waiting for a model result")
+        if session.scalar(select(AgentRun.id).where(AgentRun.agent_step_id == step.id)) is not None:
+            raise ValueError(
+                "agent step already has model-call evidence; recovery must claim a new step"
+            )
         used = session.scalar(
             select(func.coalesce(func.sum(1 + AgentRun.repair_attempts), 0)).where(
                 AgentRun.workspace_id == ctx.workspace_id,

@@ -55,6 +55,25 @@ class SimulationOut(BaseModel):
     ignored: int
 
 
+from app.comments.codec import CommentEvent  # noqa: E402
+
+
+@router.post("/workspaces/{workspace_id}/simulate/comment", response_model=SimulationOut)
+def simulate_comment(
+    body: CommentEvent,
+    ctx: WorkspaceContext = Depends(require_membership("integrations.manage")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> SimulationOut:
+    result = simulator.simulate_comment(
+        _factory(db), clock, settings, ctx.workspace_id, body.model_dump(mode="json", by_alias=True)
+    )
+    return SimulationOut(
+        received=result.received, duplicates=result.duplicates, ignored=result.ignored
+    )
+
+
 class NativeReplyIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

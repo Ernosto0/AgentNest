@@ -105,6 +105,7 @@ class CandidateOut(BaseModel):
     status: CandidateStatus
     source_type: str
     source_excerpt: str | None
+    owner_answer_id: uuid.UUID | None = None
     proposed_by_name: str | None
     created_at: datetime
     resolved_at: datetime | None

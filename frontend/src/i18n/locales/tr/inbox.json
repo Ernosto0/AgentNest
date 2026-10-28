@@ -100,6 +100,7 @@
       "CONTAINS_GENERAL_FAQ": "Sık sorulan soru bilgisi içeriyor, genel soru ayarı geçerli",
       "AUTOMATION_OFF": "Bu konuda otomasyon kapalı",
       "HUMAN_TAKEOVER": "Konuşmayı siz yürütüyorsunuz",
+      "CONTROLLER_CHANGED": "Hesap asistanı ayarları değişti",
       "LANGUAGE_UNSUPPORTED": "Desteklenmeyen dil",
       "INTENT_COMPLAINT": "Şikayet",
       "INTENT_REFUND_REQUEST": "İade talebi",

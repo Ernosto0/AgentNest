@@ -52,7 +52,7 @@ def last_messages(
 
 
 def _preview(message: Message | None) -> str | None:
-    if message is None:
+    if message is None or message.is_deleted:
         return None
     text = (message.text or "").strip()
     if not text and message.attachments:
@@ -80,7 +80,7 @@ def message_out(message: Message) -> MessageOut:
         direction=message.direction,
         sender_kind=message.sender_kind,
         text=None if message.is_deleted else message.text,
-        attachments=list(message.attachments or []),
+        attachments=[] if message.is_deleted else list(message.attachments or []),
         provider_timestamp=message.provider_timestamp,
         is_simulated=message.is_simulated,
     )
@@ -157,8 +157,8 @@ def draft_out(
         language=draft.language,
         intent=draft.intent,
         flags=list(draft.flags),
-        text=draft.text,
-        suggestion_text=draft.suggestion_text,
+        text=None if draft.validation.get("privacy_redacted") else draft.text,
+        suggestion_text=None if draft.validation.get("privacy_redacted") else draft.suggestion_text,
         rendered_facts=rendered_facts,
         validation=ValidationOut(
             passed=bool(draft.validation.get("passed")),

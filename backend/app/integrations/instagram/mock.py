@@ -82,7 +82,7 @@ class MockInstagramProvider:
     ) -> None:
         self._session_factory = session_factory
         self._clock = clock
-        self._codec = webhook_format.WebhookCodec(app_secret)
+        self._codec = webhook_format.WebhookCodec(app_secret, synthetic_comments=True)
         self._storage = storage
         self._container_delay = timedelta(seconds=container_delay_s)
         self._daily_publish_limit = daily_publish_limit
@@ -96,6 +96,68 @@ class MockInstagramProvider:
         return self._codec.parse_webhook(payload)
 
     # --- simulator support (not part of the provider protocol) --------------------------------
+
+    def record_simulated_comment(self, account: AccountRef, value: dict[str, Any]) -> None:
+        """Persist provisional remote state before delivering its signed notification."""
+        from app.comments.codec import CommentEvent
+        from app.comments.models import SimPublicComment
+
+        event = CommentEvent.model_validate(value)
+        with self._session_factory() as session:
+            social = session.scalar(
+                select(SocialAccount)
+                .where(
+                    SocialAccount.id == account.social_account_id,
+                    SocialAccount.workspace_id == account.workspace_id,
+                    SocialAccount.provider_kind == "mock",
+                )
+                .with_for_update()
+            )
+            if social is None or social.status == "disconnected":
+                raise ProviderInvalidRequest("ACCOUNT_NOT_CONNECTED")
+            row = session.scalar(
+                select(SimPublicComment).where(
+                    SimPublicComment.workspace_id == account.workspace_id,
+                    SimPublicComment.social_account_id == account.social_account_id,
+                    SimPublicComment.external_id == event.id,
+                )
+            )
+            if row is None:
+                row = SimPublicComment(
+                    workspace_id=account.workspace_id,
+                    social_account_id=account.social_account_id,
+                    external_id=event.id,
+                    value=None,
+                    updated_at=self._clock.now(),
+                )
+                session.add(row)
+            if row.value is None or (
+                row.value.get("state") != "deleted" and event.version > row.value.get("version", 0)
+            ):
+                row.value = event.model_dump(mode="json", by_alias=True)
+                row.updated_at = self._clock.now()
+            session.commit()
+
+    def simulated_comments(self, account: AccountRef, *, limit: int = 20) -> list[dict[str, Any]]:
+        from app.comments.models import SimPublicComment
+
+        if not 1 <= limit <= 50:
+            raise ProviderInvalidRequest("INVALID_LIMIT")
+        with self._session_factory() as session:
+            return [
+                row.value
+                for row in session.scalars(
+                    select(SimPublicComment)
+                    .where(
+                        SimPublicComment.workspace_id == account.workspace_id,
+                        SimPublicComment.social_account_id == account.social_account_id,
+                        SimPublicComment.value.is_not(None),
+                    )
+                    .order_by(SimPublicComment.id)
+                    .limit(limit)
+                )
+                if row.value is not None
+            ]
 
     def record_simulated_inbound(
         self, account: AccountRef, sender_id: str, mid: str, received_at: datetime

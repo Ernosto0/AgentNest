@@ -213,6 +213,19 @@ def disconnect(
 ) -> SocialAccount:
     lock_workspace(session, ctx.workspace_id)
     # Match executor lock order: drafts/conversations and content before the account/ledger.
+    from app.agent.control import adopt_threads
+    from app.agent.jobs import enqueue_cleanup
+    from app.agent.repository import AgentScopeError, scoped_account
+
+    try:
+        agent = scoped_account(session, ctx.workspace_id, account_id, lock=True)
+    except AgentScopeError as exc:
+        raise AppError("NOT_FOUND") from exc
+    if agent.controller_mode == "agent":
+        agent.state = "paused"
+        agent.controller_epoch += 1
+        adopt_threads(session, clock, agent)
+        enqueue_cleanup(session, clock, ctx.workspace_id, account_id, agent.controller_epoch)
     conversation_ids = select(Conversation.id).where(
         Conversation.workspace_id == ctx.workspace_id, Conversation.social_account_id == account_id
     )

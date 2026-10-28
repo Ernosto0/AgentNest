@@ -48,6 +48,20 @@ def wipe(session: Session, clock: Clock, workspace_id: uuid.UUID, account_id: uu
     conversation_ids = select(Conversation.id).where(
         Conversation.workspace_id == workspace_id, Conversation.social_account_id == account_id
     )
+    from app.agent.models import AgentThread
+
+    session.execute(
+        update(AgentThread)
+        .where(
+            AgentThread.workspace_id == workspace_id,
+            AgentThread.social_account_id == account_id,
+        )
+        .values(
+            dm_conversation_id=None,
+            handling_mode="human",
+            deletion_generation=AgentThread.deletion_generation + 1,
+        )
+    )
     draft_ids = select(ReplyDraft.id).where(
         ReplyDraft.workspace_id == workspace_id, ReplyDraft.conversation_id.in_(conversation_ids)
     )
@@ -102,6 +116,12 @@ def wipe(session: Session, clock: Clock, workspace_id: uuid.UUID, account_id: uu
 
 
 def request(session: Session, clock: Clock, workspace_id: uuid.UUID, account_id: uuid.UUID) -> None:
+    from app.comments.privacy import erase_account as erase_public
+    from app.memory.service import erase_account
+
+    # Memory has no reconciliation purpose and is erased even while a send is uncertain.
+    erase_account(session, clock, workspace_id, account_id)
+    erase_public(session, clock, workspace_id, account_id)
     session.execute(
         update(InboundEvent)
         .where(

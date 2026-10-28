@@ -49,7 +49,12 @@ def _seed(db: Session, *, surface: str = "dm") -> BrokerContext:
 def test_public_context_cannot_read_private_thread(db_session: Session, clock: FrozenClock) -> None:
     broker = build_default_broker()
     public = _seed(db_session, surface="comment")
-    assert {tool.name for tool in broker.available(public)} == {"knowledge.read"}
+    assert {tool.name for tool in broker.available(public)} == {
+        "knowledge.read",
+        "knowledge.answers",
+        "reply.validate",
+        "public.thread",
+    }
     denied = broker.dispatch(
         db_session, clock, public, name="thread.read", version="v1", arguments={"limit": 1}
     )

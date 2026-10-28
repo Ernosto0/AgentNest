@@ -359,7 +359,11 @@ def test_more_than_1000_rows_are_removed_in_batches_of_1000(
     assert db_session.scalar(select(func.count()).select_from(InboundEvent)) == 1
     assert exists(db_session, InboundEvent, keep)
     # 2 500 rows = batches of 1 000, 1 000 and 500 for the first rule, one empty pass per other.
-    assert len(sessions_opened) == 3 + 7
+    # Memory expiry, source invalidation and saved proposal redaction each add one
+    # bounded privacy sweep; no extra per-row transaction is introduced.
+    # Session 09 adds one bounded owner-question expiry selection before memory cleanup.
+    # Session 10 adds one bounded public-source expiry selection.
+    assert len(sessions_opened) == 3 + 12
 
 
 def test_a_small_batch_size_gives_the_same_result(

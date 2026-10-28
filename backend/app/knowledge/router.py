@@ -79,6 +79,7 @@ def _candidate_out(view: service.CandidateView) -> CandidateOut:
         status=candidate.status,
         source_type=candidate.source_type,
         source_excerpt=candidate.source_excerpt,
+        owner_answer_id=candidate.owner_answer_id,
         proposed_by_name=view.proposed_by_name,
         created_at=candidate.created_at,
         resolved_at=candidate.resolved_at,

@@ -164,6 +164,7 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 
 | Area | Actions |
 |---|---|
+| Public comments | `comment.source_ingested`, `comment.media_changed` | Same-transaction source/version/state IDs only; public bodies remain in domain tables. |
 | Auth & members | `auth.login`, `auth.logout`, `auth.login_failed` (system-level, no workspace), `workspace.created`, `workspace.updated`, `member.invited`, `member.invite_revoked`, `member.joined`, `member.role_changed`, `member.removed` |
 | Knowledge | `fact.created`, `fact.updated`, `fact.verified`, `fact.archived`, `fact.restored`, `fact_candidate.created`, `fact_candidate.accepted`, `fact_candidate.rejected`, `knowledge.extraction_requested` (character count and an injection flag, never the text), `approved_answer.created/updated/archived`, `policy.updated`, `policy.reviewed` |
 | Commands | `command.received`, `command.interpreted`, `command.executed`, `command.failed`, `command.cancelled`, `command.expired` |
@@ -171,7 +172,8 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 | Inbox | `message.received`, `message.native_reply_recorded`, `reply_draft.created`, `reply_draft.edited`, `reply_draft.<status>` (one entry per draft status change: `pending_approval`, `needs_human`, `queued`, `sending`, `outcome_unknown`, `sent`, `failed`, `rejected`, `expired`, `superseded`, `cancelled`, `blocked`), `reply.sent`, `reply.failed`, `reply.outcome_unknown`, `reply.outcome_unconfirmed`, `reply.late_confirmation`, `conversation.takeover`, `conversation.release` |
 | Content | `content.created`, `content.generated`, `content.updated`, `content.submitted`, `content.scheduled`, `content.on_hold`, `content.cancelled`, `content.rejected`, `content.publishing`, `content.retry_scheduled`, `content.published`, `content.failed`, `media.uploaded`, `media.rejected`, `media.deleted` |
 | Operations & accounts | `operation.started`, `operation.succeeded`, `operation.failed`, `operation.outcome_unknown`, `operation.reconciled`, `social_account.connected`, `social_account.degraded`, `social_account.needs_reauth`, `social_account.disconnected`, `account.reconnected`, `social_account.token_refreshed` (implemented offline in Phase 7 Session 3) |
-| Account agent | `agent.event_recorded`, `agent.action_proposed`, `agent.session_transition`, `agent.thread_transition`, `agent.step_transition`, `agent.action_transition`, `agent.delegation_applied`, `agent.action_authorized`, `agent.action_cancelled`, `agent.state_changed` (Phase 7.5, ID/version/reason metadata only) |
+| Account agent | `agent.event_recorded`, `agent.action_proposed`, `agent.session_transition`, `agent.thread_transition`, `agent.step_transition`, `agent.action_transition`, `agent.delegation_applied`, `agent.action_authorized`, `agent.action_cancelled`, `agent.state_changed`, `agent.personality_changed` (Phase 7.5, ID/version/reason metadata only) |
+| Customer memory | `memory.written`, `memory.corrected`, `memory.forgotten`, `memory.erased` (identity ID, generation and revision only; never customer/source bodies) |
 | System | `webhook.signature_invalid`, `report.generated`, `retention.cleanup_ran`, `demo.reset` (on the **new** workspace; metadata `previous_workspace_id`), `demo.failure_rule_set` |
 
 **Account audit names.** Every status change of a social account is audited as `social_account.<new status>` (entity type `social_account`; the previous status is in the metadata), which is what the code does (`operations/accounts.transition_account`). The one exception is the reconnect of a simulated account, which has a name of its own, `account.reconnected` (Phase 5, passed as `audit_action`). Earlier drafts of these docs called the status changes `account.connected`, `account.disconnected` and `account.status_changed`; those names are not used.
@@ -210,6 +212,21 @@ Computed from tables (no metrics backend):
 | **Commercial SLAs** | uptime, response time | — | **None promised** until monitoring and multi-instance deployment exist |
 
 ## 8. AI evaluation reporting
+
+Session 09 adds `OWNER_QUESTION_CLOSED` (409) with Turkish/English next steps and private
+in-app notification types `owner_question.requested` (attention), `.expired` (info), and
+`.window_closed` (attention), routed to `owner_questions.answer` holders. Dedup keys bind
+type/question ID; notification params contain only question ID. No owner messenger is used.
+Activity's `messages` group includes `owner_question.created`, `.proposed`, `.decided`, and
+`.expired`. These audit records contain only version/state metadata in the same transaction;
+private question/answer bodies remain in their domain tables, never jobs/events/logs.
 Eval reports (`backend/evals/reports/<date>-<task>-<provider>-<model>-<prompt_version>.{json,md}`) record dataset version, metrics per label, hard-assertion failures, tokens and cost. Process in [testing-strategy.md §6](../implementation/testing-strategy.md).
 
 Phase 7 Session 3 adds safe errors `OAUTH_STATE_INVALID` (400, restart authorization) and `ACCOUNT_MISMATCH` (409, authorize the original account), with tr/en texts. Refresh writes `operation.started`, `operation.succeeded`/`operation.failed` and `social_account.token_refreshed` atomically with its ledger/account changes. `social_account.disconnected` metadata includes `delete_conversation_data`; a later first erasure request reuses that audit action with `from=disconnected`. Raw OAuth denial/query/provider text is never an error code or redirect value. Queued/running/dead deferred erasure jobs are visible through existing health tooling and fence Meta reuse until cleanup succeeds.
+
+
+Session 10 adds `comment.source_ingested` and `comment.media_changed` to the messages activity
+group with TR/EN labels. Metadata holds source/version/state/thread IDs only. The retention
+summary includes `public_sources_nulled`, counted from changed comment/caption sources;
+account-first locks and a fresh source reread prevent an old retention candidate from
+erasing a newly committed edit. Receipts remain durable dedup evidence after payload erasure.

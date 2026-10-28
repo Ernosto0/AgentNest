@@ -17,6 +17,10 @@ _OWNER_ONLY = frozenset({OWNER})
 
 # permission -> roles that hold it
 PERMISSION_MATRIX: dict[str, frozenset[str]] = {
+    "owner_questions.answer": _OWNER_MANAGER,
+    "owner_questions.propose": _ALL,
+    "memory.correct": _OWNER_MANAGER,
+    "memory.forget": _OWNER_MANAGER,
     "workspace.manage": _OWNER_ONLY,
     "members.manage": _OWNER_ONLY,
     "integrations.manage": _OWNER_ONLY,
@@ -25,6 +29,7 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
     "agent.delegation.manage": _OWNER_ONLY,
     "agent.control": _OWNER_ONLY,
     "agent.activity.view": _OWNER_MANAGER,
+    "comments.view": _ALL,
     "comments.approve": _OWNER_MANAGER,
     "comments.moderate": _OWNER_MANAGER,
     "knowledge.edit": _ALL,

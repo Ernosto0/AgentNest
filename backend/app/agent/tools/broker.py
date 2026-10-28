@@ -6,17 +6,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.agent.knowledge import answers_page, facts_page
 from app.agent.models import AgentThread
 from app.ai.injection import neutralise_untrusted
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.inbox.models import Message
 from app.integrations.llm.steps import LLMToolDefinition
-from app.knowledge import service as knowledge_service
 
 Capability = Literal["public_read", "private_read", "internal_write", "external_effect"]
 Surface = Literal["dm", "comment", "owner_task"]
@@ -30,6 +30,7 @@ class BrokerContext:
     thread_id: uuid.UUID
     surface: Surface
     source: Source
+    memory_generation: int | None = None
 
 
 @dataclass(frozen=True)
@@ -149,23 +150,54 @@ def _knowledge_read(
     request = KnowledgeReadArgs.model_validate(args)
     if not 1 <= request.limit <= 20:
         raise ToolInputError("invalid limit")
-    facts = knowledge_service.usable_facts(session, clock, context.workspace)
-    facts.sort(key=lambda item: item.key)
-    if request.cursor is not None:
-        facts = [fact for fact in facts if fact.key > request.cursor]
-    page = facts[: request.limit + 1]
+    return facts_page(
+        session,
+        clock,
+        context.workspace,
+        limit=request.limit,
+        cursor=request.cursor,
+    )
+
+
+class AnswersReadArgs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    limit: int = Field(ge=1, le=10)
+    cursor: uuid.UUID | None
+    language: Literal["tr", "en"]
+
+
+def _answers_read(
+    session: Session,
+    clock: Clock,
+    context: BrokerContext,
+    args: BaseModel,
+) -> dict[str, Any]:
+    request = AnswersReadArgs.model_validate(args)
+    return answers_page(
+        session,
+        clock,
+        context.workspace,
+        language=request.language,
+        limit=request.limit,
+        cursor=request.cursor,
+    )
+
+
+def _validate_reply(
+    session: Session,
+    clock: Clock,
+    context: BrokerContext,
+    args: BaseModel,
+) -> dict[str, Any]:
+    from app.agent.grounding import ReplyValidationArgs, validate_reply
+
+    result = validate_reply(session, clock, context, ReplyValidationArgs.model_validate(args))
     return {
-        "facts": [
-            {
-                "id": str(fact.fact_id),
-                "key": fact.key,
-                "version": fact.version,
-                "display": neutralise_untrusted(fact.display),
-                "placeholder": fact.placeholder,
-            }
-            for fact in page[: request.limit]
-        ],
-        "next_cursor": page[request.limit - 1].key if len(page) > request.limit else None,
+        "valid": result.valid,
+        "text": result.text,
+        "errors": list(result.errors),
+        "facts": [{"id": str(fid), "version": version} for fid, version in result.facts],
+        "customer_source": str(result.customer_source) if result.customer_source else None,
     }
 
 
@@ -197,10 +229,21 @@ def _thread_read(
             Message.workspace_id == context.workspace.workspace_id,
             Message.social_account_id == context.account_id,
             Message.conversation_id == conversation_id,
+            Message.is_deleted.is_(False),
         )
-        .order_by(Message.provider_timestamp.desc(), Message.id.desc())
+        .order_by(Message.provider_timestamp.desc(), Message.created_at.desc(), Message.id.desc())
         .limit(request.limit)
     ).all()
+    from app.memory.service import source_visible
+
+    identity_id = session.scalar(
+        select(AgentThread.customer_identity_id).where(
+            AgentThread.workspace_id == context.workspace.workspace_id,
+            AgentThread.social_account_id == context.account_id,
+            AgentThread.id == context.thread_id,
+        )
+    )
+    rows = [row for row in rows if source_visible(session, identity_id, row)]
     return {
         "messages": [
             {
@@ -214,7 +257,126 @@ def _thread_read(
 
 
 def build_default_broker() -> ToolBroker:
+    from app.agent.dm import send
+    from app.agent.grounding import ReplyValidationArgs
+    from app.memory.service import MemoryProposal, MemoryRead, private_context, write_proposal
+
     broker = ToolBroker()
+    from app.comments.service import PublicRead, public_context
+
+    broker.register(
+        ToolSpec(
+            "public.thread",
+            "v1",
+            "Read bounded public post and current comment thread only.",
+            "public_read",
+            frozenset({"comment"}),
+            frozenset({"customer"}),
+            PublicRead,
+            public_context,
+        )
+    )
+
+    from app.owner_requests.service import AskOwner, ask
+
+    broker.register(
+        ToolSpec(
+            "owner.ask",
+            "v1",
+            "Ask the business for missing information; never approves an action.",
+            "internal_write",
+            frozenset({"dm"}),
+            frozenset({"customer"}),
+            AskOwner,
+            ask,
+        )
+    )
+
+    # This is the existing exact DM action path: its result is an action/approval
+    # reference, never an information answer. It cannot approve its own proposal.
+    def request_approval(
+        db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel
+    ) -> dict[str, Any]:
+        return send(db, clock, ctx, args, require_human=True)
+
+    broker.register(
+        ToolSpec(
+            "approval.request",
+            "v1",
+            "Propose an exact grounded DM through current delegation and explicit approval policy.",
+            "external_effect",
+            frozenset({"dm"}),
+            frozenset({"customer"}),
+            ReplyValidationArgs,
+            request_approval,
+        )
+    )
+
+    def read_memory(
+        db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel
+    ) -> dict[str, Any]:
+        request = MemoryRead.model_validate(args)
+        result = private_context(db, clock, ctx, request.relevant_to) or {"memories": []}
+        result["memories"] = result["memories"][: request.limit]
+        return result
+
+    def write_memory(
+        db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel
+    ) -> dict[str, Any]:
+        return write_proposal(db, clock, ctx, MemoryProposal.model_validate(args))
+
+    for name, schema, handler in (
+        ("memory.read", MemoryRead, read_memory),
+        ("memory.write", MemoryProposal, write_memory),
+    ):
+        broker.register(
+            ToolSpec(
+                name,
+                "v1",
+                "Private self-reported customer preferences/claims; never business authority.",
+                "private_read" if name.endswith("read") else "internal_write",
+                frozenset({"dm"}),
+                frozenset({"customer"}),
+                schema,
+                handler,
+            )
+        )
+    broker.register(
+        ToolSpec(
+            "dm.send",
+            "v1",
+            "Propose a grounded private reply and observe its durable action result.",
+            "external_effect",
+            frozenset({"dm"}),
+            frozenset({"customer"}),
+            ReplyValidationArgs,
+            send,
+        )
+    )
+    broker.register(
+        ToolSpec(
+            "knowledge.answers",
+            "v1",
+            "Read active business answer templates and versions.",
+            "public_read",
+            frozenset({"dm", "comment", "owner_task"}),
+            frozenset({"customer", "owner_task"}),
+            AnswersReadArgs,
+            _answers_read,
+        )
+    )
+    broker.register(
+        ToolSpec(
+            "reply.validate",
+            "v1",
+            "Validate a proposed reply with exact fact source versions.",
+            "public_read",
+            frozenset({"dm", "comment", "owner_task"}),
+            frozenset({"customer", "owner_task"}),
+            ReplyValidationArgs,
+            _validate_reply,
+        )
+    )
     broker.register(
         ToolSpec(
             "knowledge.read",

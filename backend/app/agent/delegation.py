@@ -251,6 +251,12 @@ def apply(
     session.add(delegation)
     account.config_version += 1
     account.controller_epoch += 1
+    from app.agent.control import adopt_threads
+
+    adopt_threads(session, clock, account)
+    from app.agent.jobs import enqueue_cleanup
+
+    enqueue_cleanup(session, clock, ctx.workspace_id, account_id, account.controller_epoch)
     account.updated_at = now
     session.flush()
     audit.record(
@@ -281,6 +287,8 @@ def _grantor_still_owner(session: Session, workspace_id: uuid.UUID, grantor_id: 
 
 def current_action_authority(session: Session, action: AgentAction) -> bool:
     """Read-side status for approval cards; dispatch still uses locked ``fence_action``."""
+    if action.status in {"cancelled", "failed"}:
+        return False
     try:
         account = scoped_account(session, action.workspace_id, action.social_account_id)
     except AgentScopeError:
@@ -299,6 +307,8 @@ def current_action_authority(session: Session, action: AgentAction) -> bool:
         and delegation is not None
         and action.delegation_version == delegation.version
         and thread is not None
+        and action.ownership_generation == thread.ownership_generation
+        and (action.action_type != "dm.send" or action.initiating_cursor == thread.event_cursor)
         and thread.handling_mode == "agent"
         and thread.controller_epoch == account.controller_epoch
         and _grantor_still_owner(session, action.workspace_id, delegation.grantor_user_id)
@@ -348,6 +358,8 @@ def fence_action(
         or delegation is None
         or action.delegation_version != delegation.version
         or thread is None
+        or action.ownership_generation != thread.ownership_generation
+        or (action.action_type == "dm.send" and action.initiating_cursor != thread.event_cursor)
         or thread.handling_mode != "agent"
         or thread.controller_epoch != account.controller_epoch
         or action.status not in allowed_statuses
@@ -383,6 +395,7 @@ def authorize_action(
     visibility_allowed: bool,
     claims_valid: bool,
     quota_available: bool,
+    require_human: bool = False,
 ) -> Decision:
     """Authorize a scoped proposed action; call with facts from server-owned domain checks."""
     candidate = session.scalar(
@@ -471,6 +484,8 @@ def authorize_action(
     )
     if decision.kind not in ("automatic", "ask"):
         return decision
+    if require_human and decision.kind == "automatic":
+        decision = Decision("ask", "explicit_approval_requested")
     action.delegation_version = delegation.version
     action.execute_before = clock.now() + timedelta(hours=24)
     if decision.kind == "automatic":

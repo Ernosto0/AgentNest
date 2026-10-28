@@ -392,9 +392,15 @@ def takeover(
     session: Session, clock: Clock, ctx: WorkspaceContext, conversation_id: uuid.UUID
 ) -> Conversation:
     """The person takes over: no drafts are made, and a waiting draft is withdrawn. Commits."""
+    from app.agent.control import takeover_thread
+    from app.agent.repository import scoped_account
+
+    ref = get_conversation(session, ctx, conversation_id)
+    scoped_account(session, ctx.workspace_id, ref.social_account_id, lock=True)
     conversation = get_conversation(session, ctx, conversation_id, lock=True)
     if conversation.handling_mode != "human":
         conversation.handling_mode = "human"
+        controlled = takeover_thread(session, clock, conversation, human=True)
         drafts.close_open_drafts(
             session,
             clock,
@@ -402,6 +408,7 @@ def takeover(
             conversation,
             reason="HUMAN_TAKEOVER",
             events=drafts.ON_TAKEOVER,
+            defer_approvals=controlled,
         )
         audit.record(
             session, ctx, "conversation.takeover", "conversation", conversation.id, {},
@@ -416,9 +423,15 @@ def release(
     session: Session, clock: Clock, ctx: WorkspaceContext, conversation_id: uuid.UUID
 ) -> Conversation:
     """Back to automatic handling; a customer message still waiting is drafted. Commits."""
+    from app.agent.control import takeover_thread
+    from app.agent.repository import scoped_account
+
+    ref = get_conversation(session, ctx, conversation_id)
+    scoped_account(session, ctx.workspace_id, ref.social_account_id, lock=True)
     conversation = get_conversation(session, ctx, conversation_id, lock=True)
     if conversation.handling_mode != "automatic":
         conversation.handling_mode = "automatic"
+        controlled = takeover_thread(session, clock, conversation, human=False)
         audit.record(
             session, ctx, "conversation.release", "conversation", conversation.id, {},
             is_simulated=conversation.is_simulated, clock=clock,
@@ -429,7 +442,7 @@ def release(
             and conversation.last_inbound_at is not None
             and conversation.last_outbound_at >= conversation.last_inbound_at
         )
-        if newest is not None and not answered:
+        if newest is not None and not answered and not controlled:
             enqueue(
                 session,
                 "draft_reply",

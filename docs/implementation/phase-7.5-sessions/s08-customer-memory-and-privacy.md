@@ -1,6 +1,6 @@
 # Session 08: Customer memory and privacy
 
-**Task:** P7.5-08. **Status:** Planned. **Prerequisite:** Session 07.
+**Task:** P7.5-08. **Status:** In progress; offline implementation/checks finished, operator acceptance pending. **Prerequisite:** Session 07.
 Read the [common session rules](phase-7.5-sessions.md) and phase sections 7-8.
 
 ## Goal

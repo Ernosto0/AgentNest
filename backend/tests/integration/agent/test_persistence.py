@@ -168,7 +168,7 @@ def test_event_and_wake_are_atomic_and_replay_keeps_cursor(
             session.scalar(select(AgentThread.event_cursor).where(AgentThread.id == thread_id)) == 1
         )
         assert (
-            session.scalar(select(Job).where(Job.dedup_key == f"agent_wake:{thread_id}"))
+            session.scalar(select(Job).where(Job.dedup_key == f"agent_wake:{thread_id}:1"))
             is not None
         )
         assert len(session.scalars(select(AgentEvent)).all()) == 1

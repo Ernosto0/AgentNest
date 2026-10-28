@@ -187,7 +187,10 @@
       "account_permission_missing": "Instagram izni eksik: {{what}}",
       "account_degraded": "Instagram bağlantısı kararsız. Gönderim ve paylaşım birkaç dakika duraklatıldı, otomatik devam edecek.",
       "account_recovered": "Instagram bağlantısı yeniden çalışıyor. Bekleyen yanıtlar gönderiliyor.",
-      "member_joined": "{{name}} çalışma alanına katıldı"
+      "member_joined": "{{name}} çalışma alanına katıldı",
+      "owner_question_requested": "Bir m??teri talebi i?letme bilgisi gerektiriyor.",
+      "owner_question_expired": "Bir bilgi talebinin s?resi doldu.",
+      "owner_question_window_closed": "Yan?t kaydedildi. M??terinin mesajla?ma penceresini yeniden a?mas? gerekiyor."
     },
     "open": "Aç",
     "intro": "Sizin için önemli olan gelişmeler burada toplanır.",

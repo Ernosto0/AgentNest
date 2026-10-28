@@ -35,7 +35,8 @@
       "owner_command": "Chat command",
       "candidate_accepted": "Accepted suggestion",
       "seed": "Demo data",
-      "template_default": "Template"
+      "template_default": "Template",
+      "owner_answer": "Business answer"
     },
     "candidateSource": {
       "pasted_text": "Your pasted text",

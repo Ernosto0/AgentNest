@@ -187,7 +187,10 @@
       "account_permission_missing": "Instagram permission missing: {{what}}",
       "account_degraded": "Instagram connection is unstable. Sending and publishing pause for a few minutes and resume automatically.",
       "account_recovered": "Instagram connection is working again. Waiting replies are being sent.",
-      "member_joined": "{{name}} joined the workspace"
+      "member_joined": "{{name}} joined the workspace",
+      "owner_question_requested": "A customer request needs business information.",
+      "owner_question_expired": "An information request expired.",
+      "owner_question_window_closed": "The answer is saved. The customer must reopen the messaging window."
     },
     "open": "Open",
     "intro": "The developments that matter to you are collected here.",

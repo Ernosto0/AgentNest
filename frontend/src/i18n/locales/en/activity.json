@@ -18,6 +18,16 @@
       "accounts": "Accounts",
       "members": "Members",
       "system": "System"
+    },
+    "owner_question": {
+      "created": "Business information requested.",
+      "proposed": "Information proposed for business review.",
+      "decided": "Business information request decided.",
+      "expired": "Business information request expired."
+    },
+    "comment": {
+      "source_ingested": "Public comment source updated.",
+      "media_changed": "Public post context updated."
     }
   }
 }

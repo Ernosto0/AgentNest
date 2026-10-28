@@ -136,7 +136,9 @@ def test_token_wipe_invalidates_pending_oauth_and_can_be_repeated_with_delete(in
             select(AuditLog).where(AuditLog.action == "social_account.disconnected")
         )
     )
-    assert len(logs) == 2 and [r.metadata_["delete_conversation_data"] for r in logs] == [
+    # The query intentionally has no ordering; frozen occurred_at values do not
+    # establish chronology. Assert the exact two distinct requests and idempotency.
+    assert len(logs) == 2 and sorted(r.metadata_["delete_conversation_data"] for r in logs) == [
         False,
         True,
     ]

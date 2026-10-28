@@ -81,7 +81,7 @@ All paths below have the existing `/api/v1/workspaces/{workspace_id}` prefix, CS
 | `GET /accounts/{account_id}/agent/sessions`, `/actions`; `GET /agent/threads/{id}` | Paginated, scoped operational evidence. Never return raw hidden prompt/context or credentials. |
 | `POST /accounts/{account_id}/agent/tasks` | `commands.use` plus action-specific requester permission; durable task ID and client request ID, no direct authority increase. |
 | `GET /owner-questions`, `GET /owner-questions/{id}`, `POST /owner-questions/{id}/answer`, `/cancel` | Question visibility by role/thread; answer has `expected_version` and client request ID. Answer is information, never approval. |
-| `GET /customers/{id}/memory`, `/sources`; `POST /customers/{id}/memory/{memory_id}/correct`, `/forget` | Account/customer scoped and role checked; owner can inspect/correct/forget, manager only if separately granted by the Session 08 role contract. Generation fencing prevents erased data from returning. |
+| `GET /customers/{id}/memory`, `/sources`; `POST /customers/{id}/memory/{memory_id}/correct`, `/forget` | Account/customer scoped. Members inspect; owner/manager correct or forget, staff cannot authoritatively correct. Correction requires `expected_version`; UUID cursor pagination is bounded at 50. Generation fencing prevents erased data from returning. |
 | `GET /accounts/{account_id}/comments`, `/comments/{id}`, `/comments/{id}/thread` | Paginated account/public context, with independent action endpoints through the operation ledger in Session 11. |
 
 **Session 03 implementation boundary.** `POST /delegation/preview` and `/apply` accept a complete, closed set of the ten action rules (`mode`, optional `max_per_day`, and allowed `customer`/`owner_task` sources), expected account configuration/delegation versions and a UUID client request ID. Apply stores the request ID uniquely per account, revokes the old immutable policy version and increments the account configuration/controller epoch. Replaying the same request ID and policy returns the original version; a reused ID with different policy conflicts. It does not activate the agent. `GET /delegation` returns the current scoped version. Owner-only `/pause` and `/resume` use expected configuration version. A policy change or pause makes unsubmitted agent approvals and queued effects stale at decision/executor time; Session 05 adds a durable cleanup wake to close their visible pending states without racing the approval service's lock order. Activation/cutover remains Session 07 work once the coordinator and DM path exist.
@@ -89,6 +89,51 @@ All paths below have the existing `/api/v1/workspaces/{workspace_id}` prefix, CS
 The Session 03 decision service reads current membership for human-task requesters and the grantor, account state/capability, action-scoped facts and limits. `automatic` stores a policy grant on `agent_actions` with exact hash, target, action/version, delegation/version/grantor and controller epoch; `ask` creates a single-use `agent_action` approval whose hash equals the exact effect payload hash. The two are distinguishable. A projected automatic DM or publish subject obtains a policy-channel approval only through `record_effect_grant`, which verifies action type, subject type, required permission and exact payload hash. The existing send/publish executors additionally call `fence_action` for agent-origin subjects before creating an operation. They retain their own provider capability, window/media/quota and exact subject checks. Session 07 owns DM projection and Session 13 owns content projection; neither may bypass these checks. Existing legacy automation/approvals retain their original behavior.
 
 Session 08 owns **agent memory and derived summary** inspection, correction, forgetting and account-disconnect/retention erasure. It must expose an internal, customer-scoped export/erase service for its own records that Phase 8 P8-05 can call; no existing general customer export/deletion route is claimed. The current code has only `data.export`/`data.delete` permission constants. Phase 8 owns the general data-subject export/deletion API, cross-domain orchestration and Meta callbacks. Session 08 tests its service and ensures that memory never survives an existing disconnect-erasure request or source deletion. A Session 08 report must state any Phase 8 dependency honestly rather than claiming full data-rights acceptance from a memory table alone. Personal source bodies, memory, summaries and prompt snapshots follow explicit retention/erasure rules; only minimal content-free action/operation evidence can survive an unresolved side effect until reconciliation ends.
+
+## Session 06 runtime boundary: context, voice and grounding
+
+Migration `0022` follows `0021`: steps capture `captured_persona_version`, and sessions
+persist `validation_failures`. A persona edit fences an in-flight model result without
+changing thread ownership. `GET /accounts/{account_id}/agent/personality` is member-readable;
+`PATCH` requires `agent.settings.edit` (owner/manager), `expected_version`, and a closed
+personality object. The response is `{version, personality}`. Tone, formality, length,
+emoji and DM/comment styles are enums; TR/EN examples are at most two strings per language,
+160 characters each. Updates increment persona/configuration versions and audit only
+version metadata. Examples are delimited untrusted data, never delegation or fact authority.
+
+The actual coordinator calls `app.agent.context.assemble`: at most eight non-deleted DM
+turns, four relevant visible facts and two active approved answers, current persona and
+server-selected TR/EN language. Public contexts do not query DM turns. All owner/customer
+and retrieved text is neutralized inside an untrusted section; a separate server-generated
+source table supplies fact IDs/versions/placeholders. Summaries remain absent until Session 08.
+Knowledge relevance is a bounded lexical key/label/title search, not a semantic search guarantee.
+
+`knowledge.read` v1 retains `{limit:1..20,cursor:fact_key|null}` but now uses scoped SQL
+usability/visibility predicates and `LIMIT limit+1` before materialization. The cursor is a
+keyset bound. Internal escalation/brand/schedule categories and the price-disclosure control
+fact are withheld; missing/unusable disclosure defaults to no money/pricing values. Pending
+contests, validity dates in workspace time, archives and unverified facts are excluded in SQL.
+Each item includes ID, version, placeholder, validity and `public_business` visibility.
+`knowledge.answers` v1 uses `{limit:1..10,cursor:uuid|null,language:tr|en}`. Only active,
+current usable/visible dependency versions pass its SQL predicate; each bounded page also
+re-renders and claim-validates templates with at most 20 dependencies. Malformed legacy
+rows can underfill a page; callers follow its scan cursor. No raw customer example questions
+are returned. The result carries answer and fact source IDs/versions. Neither path loads the
+legacy all-facts/all-answers collection.
+
+`reply.validate` v1 and `validate_reply` are the shared pre-send contract for Session 07:
+`{template,language,fact_sources:[{id,version}],customer_clarification:null|{message_id,start,end,kind}}`.
+Exact currently visible fact versions must match every placeholder. Literal critical values
+still fail the existing renderer/claim validator. A customer date/time clarification requires
+an empty business template and no fact sources, a current same-thread inbound source span,
+and a closed date/time value. Code constructs the entire attributed question; arbitrary model
+prose cannot surround an exempt numeric span. Public surfaces cannot use this private source.
+The validator returns `{valid,text,errors,facts,customer_source}` and never sends or grants
+authority. The coordinator permits one invalid validation result to be repaired; a second
+persists `AGENT_GROUNDING_REJECTED`. Session 07 must persist the exact proposal in domain
+storage and re-run this path before dispatch, preserving fact references and current source
+deletion checks. One-off owner-answer evidence stays closed until Session 09 provides its
+persisted scoped authority/visibility service. Customer values never update business facts.
 
 ## 6. Five transition examples
 
@@ -101,3 +146,227 @@ Session 08 owns **agent memory and derived summary** inspection, correction, for
 | Unknown operation | Executor records `outcome_unknown` and emits result event only when evidence changes | Existing exact action/operation identity remains reserved | Reconciler may mark succeeded/failed or terminal unconfirmed; coordinator waits and presents truthful status |
 
 The mock may exercise provisional comment/private-reply shapes but must label them simulated. Real Meta action flags remain disabled until R75 research, authentic account evidence and capability-specific acceptance are complete.
+
+## Session 07 implementation: controller-owned DMs
+
+Migration `0023` adds account `cutover_generation`, thread `ownership_generation`, step `captured_ownership_generation` and action `ownership_generation`. A mode switch advances both controller epoch and cutover generation; policy/pause changes advance the agent epoch without invalidating ordinary legacy authority merely because an inactive agent policy was edited. Legacy plans/drafts capture cutover generation. Agent steps/actions additionally bind thread ownership, so takeover followed by release cannot make an old result or grant fresh again.
+
+Owner-only `POST /accounts/{id}/agent/activate` accepts `expected_config_version`, UUID `client_request_id` and `mode=agent|legacy`, returning state/mode/configuration version/epoch. The latest identical request replays without a second change; stale older versions conflict. No migration activates accounts. Cutover fences queued work and defers approval/draft retirement until after commit. Existing agent threads are adopted/replanned after epoch changes with cumulative budgets intact; historical legacy inquiries are not automatically sent on initial activation.
+
+`dm.send` accepts Session 06's exact `ReplyValidationArgs`, validates and persists the proposal only on its `ReplyDraft`, then admits a stable customer-event response obligation and reuses the existing send job/ledger. A latest control/result event cannot authorize a new send. The original ask approval is preserved as a real human `agent_action` decision and exact payload binding; automatic mode projects the policy grant to the existing draft executor. Ask approvals also reserve the delegation's UTC authorization-day quota under the account lock. The executor re-runs the same source/claim/language validation and checks cursor/ownership/policy before dispatch. Closed customer date/time questions have no global numeric exemption.
+
+Response coverage resolves the captured customer event's scoped message ID rather than choosing a maximum random UUID when provider timestamps tie. Release compares bounded inbound/outbound message records using provider timestamp, persisted arrival time and ID; a new human-mode inbound produces one durable eligible event on release, while an already answered native obligation stops. An unresolved send continues reserving its slot despite that conversational stop. Context/thread history uses persisted arrival time before ID for tied provider timestamps.
+
+After enqueue, the coordinator enters an action-ID-backed `waiting_operation` even if an operation ID does not yet exist. An approval decision can transition `waiting_approval -> waiting_operation`; it does not imply delivery. Recovery resolves action -> draft -> operation state, including a crash after ledger result commit but before a wake. Pending/unknown actions block a new reworded intent. Only a verified terminal result permits a completed goal; unknown results keep reconciliation ownership. Result observations are reconstructed from domain records rather than stored personal tool output in generic steps.
+
+Executor admission locks approval first, then attempts the account lock without waiting, then obtains draft/domain locks. Contention yields a retry and releases its transaction. Deferred cleanup matches approval -> account -> draft ordering; thread change keys include ownership generation. Takeover/native replies fence claims immediately, while in-flight/unknown ledger effects are preserved. Disconnect erasure unlinks thread conversation FKs and advances deletion generation before deleting personal conversation records. Session 08 extends proposal/source redaction to memory and summaries; Session 09 owns explicit owner-answer continuation obligations.
+
+## Session 05 implemented coordinator (migration 0021)
+
+The coordinator uses short account -> thread -> session locks, a unique claim token and a
+90-second step lease. It rechecks cursor, account/thread epoch, current delegation version,
+deletion generation, handling mode and the 120-second activation deadline before dispatch.
+A model call holds no transaction. Broker handlers may only read local data or create durable
+domain intents in that transaction; network effects remain operations jobs.
+
+Event wake keys are now `agent_wake:{thread_id}:{event_cursor}`. This intentionally replaces
+the earlier thread-only job dedup contract: a new event committed while an older wake is
+running must own a durable queued row even if the earlier handler has returned but its worker
+has not finalized the job. Account/thread claims still coalesce computation. Recovery wake keys
+include the minute and continuation keys include the durable step ID. Recovery scans only
+runnable/due/resolved waits, rotates eligible rows by updated time, and excludes terminal and
+indefinite human/customer waits from its bounded batch.
+
+Migration 0021 adds activation cursor/start/step/tool counters, cumulative token reservation
+and a content-free outcome code on sessions, plus a built-in-read checkpoint on steps.
+Defaults remain 8 provider calls (repairs included), 12 tool dispatches, 120 seconds per
+activation and 24 calls per unresolved goal. Each model step conservatively reserves 40,000
+tokens for its original/repair calls; the unresolved goal cap is 960,000 reserved tokens.
+Requests are capped at 16,000 UTF-8 bytes of context/schema, with 800 output tokens per call;
+reservations never refund on restart. Actual available usage is reconciled from AgentRun,
+including stale output and a restart after run evidence was committed. Unknown usage remains
+unknown in AgentRun; reservations still charge it. No dollar-price assumption is introduced.
+
+An activation resets on an eligible newly received event or an actually resolved wait/scheduled
+wake, never on an ordinary job retry. Three identical dispatched tool requests are allowed;
+the fourth hands off with `AGENT_LOOP_LIMIT`. Exhaustion/final errors persist failed session
+state and outcome code; dead jobs remain in the existing job-health surface.
+
+Built-in knowledge/thread reads save only successfully validated read routing arguments.
+A non-null fact cursor must match an existing scoped fact key before checkpointing. Read
+results and customer bodies are reloaded from current scoped domain storage on restart;
+they never enter the generic step row. Later write/effect tools must reconstruct results from
+their durable domain/action references and retain stable intent admission.
+
+Customer waits require a later non-echo inbound message event. Approval and operation waits
+require matching actions in the same session and resume only after persisted approval/ledger
+resolution. `sleep_until` is the server-owned scheduling entry point. Owner-question wait
+validation is intentionally closed until Session 09 supplies its durable question service.
+Own-message/echo/outbound events are rejected by the conversational event writer.
+
+Policy/pause transactions enqueue `agent_cleanup_approvals` after advancing the epoch and
+never lock pending approvals. Decision callbacks and cleanup use approval -> account -> action
+ordering; authorization/executor paths use account -> action. Cleanup cancels stale pending
+approvals after the policy transaction, preserves ledger outcomes, and does not acquire an
+approval lock while holding an account lock. Approval decisions enqueue a durable wake;
+recovery also detects persisted approval/operation resolution without relying on callbacks.
+
+## Session 08 implemented memory contract
+
+Migration `0024` adds account-scoped `customer_identities`, `customer_memories`,
+`customer_memory_versions`, `customer_memory_sources`, `customer_summary_versions` and
+`customer_source_fences`. Identity evidence is the provider-scoped DM participant ID from
+the authoritative conversation, stored as a digest; handles never establish continuity.
+No public/comment path resolves or retrieves private identity/memory.
+
+Private tools `memory.read`/`memory.write` v1 consume server-bound scope. Writes accept an
+exact bounded self-reported source quote and closed useful business topic/kind, never a
+verified fact or authority update. The coordinator binds identity generation in the
+server claim. Memory changes invalidate relevant summary generations and projected DM
+proposals; executor validation binds thread deletion generation as well as ownership/cursor.
+Explicit privacy changes retain content-free source tombstones to prevent old source replay.
+Summaries are bounded deterministic customer-context snapshots with identity revision,
+thread source cursor and versions, never critical-fact authority.
+
+Members inspect paginated memory and source metadata; owner/manager may authoritatively
+correct/forget (`memory.correct`/`memory.forget`), staff cannot. Corrections require the
+expected version and record user/version provenance. Owner-only internal
+`memory.service.export_customer`/`erase_customer` implement the memory-domain rights hook
+under `data.export`/`data.delete`; general DSAR orchestration remains Phase 8.
+
+Memory defaults to 365-day retention. Correction/forget/source erasure clears derived
+summary/history/proposal caches and fences late models and queued sends. Ordinary correction
+preserves historical sent business text. Explicit erasure immediately removes memory even
+while an old send is uncertain; only existing minimal reconciliation evidence may wait.
+Personal proposal caches and API bodies are hidden immediately, reconciliation never recreates
+an erased body, and definitive resolution clears retained draft text. Source fences retain
+only scoped provider-source hashes; invalidated summary query digests are cleared.
+
+Memory invalidation touches only agent-origin/explicit agent proposal caches, not human/manual
+drafts. Linked unsubmitted actions/drafts cancel atomically and immediately make their approval
+cards/decisions stale; deferred cleanup uses the existing approval-first lock ordering and a
+customer-generation-specific job key. Historical sent business message bodies remain outside
+memory-only forget/erase scope; account conversation erasure retains its explicit wider scope.
+Configured memory retention controls stored write/correction deadlines and effective read/API
+expiry, including shorter policy changes before the next retention sweep.
+
+## Session 09 implemented private owner-information contract
+
+Migration `0025` follows `0024`. `owner_questions` bind workspace/account/thread/customer,
+the unresolved session, original customer message/hash/cursor, ownership/deletion generations,
+closed required-information slot, visibility, expiry and a server-owned continuation key.
+Deduplication hashes thread + session + source event + required slot, never model wording.
+`owner_answers` are versioned information decisions/proposals with author role/user,
+UUID request id/hash and expiry. Composite FKs bind question answers to that exact question,
+holding actions to its account and reusable candidates to its workspace. Neither record is
+an action grant. Existing accounts remain legacy until explicit owner activation.
+
+Private `owner.ask` v1 accepts `{question,required_info,visibility,holding_response:false}`.
+Required slots are `availability|exception|service_detail|business_policy|other`; visibility
+is `customer_reply|private_business`. Its result is
+`{question_id,state,version,wait_for:"owner",approval_id:null}`. A pending result immediately
+ends the activation in a question-ID-backed `waiting_owner`, with a consumed step and no
+retained worker/DB transaction. Optional holding text is server-written, tracked once by
+`holding_action_id`, and goes through the same delegation, stable intent and send ledger.
+Uncertain effects continue reserving the thread slot. `approval.request` v1 instead accepts
+the closed reply proposal and creates an exact `agent_action` human approval through the
+existing Session 03/07 path, even under an automatic rule. It still cannot override `off`.
+
+All routes below use `/workspaces/{workspace_id}/accounts/{account_id}/owner-questions`:
+
+| Route | Contract |
+|---|---|
+| `GET /`, `GET /{id}` | Member inspection; bounded UUID pagination (`limit=1..50`, `cursor`), optional customer filter; foreign persisted account/customer/question IDs return 404. |
+| `GET /{id}/answers` | Version/proposal history with the same pagination bounds; private bodies never enter public tools/context. |
+| `POST /{id}/answer` | `{expected_version,client_request_id,body,kind:"answer"|"proposal",reusable_knowledge:null}`. Owner/manager authoritatively answer; staff may propose while pending. A proposal after an authoritative answer rejects without changing its version. |
+| `POST /{id}/cancel` | Owner/manager only; `{expected_version,client_request_id}`. Cancellation is versioned and idempotent. |
+
+Information decisions lock account -> thread -> question, never approval. Answer + event +
+cursor advancement + durable wake commit in one caller transaction; duplicate identical
+requests replay the same record, conflicting retries/version races return 409. Expired or
+cancelled questions reject late answers. Replacements retain version history, invalidate old
+proposals and emit a new wake. The existing periodic recovery finds the exact persisted
+question referenced by owner waits and independently expires a bounded oldest-deadline batch.
+Unanswered people do not consume model/failure attempts or precede resolved waits in the scan.
+Recovery can find a committed answer after a worker dies before processing its wake.
+
+The closed reply evidence is `owner_answer:{id,version}` with empty `template`, no fact
+sources and no customer clarification. The server renders the **entire** attributed reply
+from the persisted answer. Arbitrary model prose cannot borrow its authority, and an answer
+ID is never a BusinessFact ID or a numeric/span exemption. Dispatch repeats exact question,
+thread/customer, current answer, visibility, expiry, original message hash, current author
+membership, knowledge-generation digest and ownership/deletion checks. Existing critical
+fact render/claim validators remain unchanged. The independently evidenced DM obligation
+guard admits only the matching `owner_answer` event (or a current customer event using valid
+answer evidence); generic control/result wakes cannot mint another DM intent.
+
+The coordinator rereads current messages/facts/delegation/takeover before continuation and
+the executor still checks provider capability, messaging window and the exact payload grant.
+A closed window retains valid information, creates a deduplicated in-app notification and
+waits for a customer interaction, with no background send/delivery claim. Reopening is
+deliberately conservative: only an exact repeat of the original request can reuse the
+still-valid answer automatically; a changed request must be clarified/replanned. A workspace
+knowledge aggregate digest conservatively invalidates answers after any fact/candidate
+change. Its output is bounded but its database aggregate scans the workspace; performance
+at large knowledge volume remains an optimization dependency.
+
+Cancellation/replacement/expiry immediately cancel linked **unsubmitted** actions/drafts and
+make approval cards stale. Deferred cleanup alone takes approval locks in the existing
+approval-first order. In-flight/unknown outcomes keep their reservations and reconciliation
+evidence; sent messages/manual drafts are preserved. Between-claim tool observations are
+cleared when either customer memory generation or thread event cursor changes.
+
+Explicit reusable knowledge accepts only `{key:"custom.<slug>",text}` and creates an
+unverified typed text candidate with `source_type=owner_answer` and persisted
+`owner_answer_id`; normal knowledge verification remains mandatory. Private-business answers
+cannot create reusable candidates. Question/answer bodies and linked proposal caches redact
+on linked source removal, disconnect erasure and expiry; memory-only correction/forget does
+not rewrite historical business messages. The broader conversation/data-subject erasure API
+remains the separate owner `data.delete`/Phase 8 workflow. Jobs, events, notifications, audit
+and generic model runs contain IDs/counters/state, never question/answer bodies.
+
+
+### Session 10 public ingestion/context implementation
+
+Only the mock webhook codec accepts `synthetic_comments` using the explicitly provisional
+`synthetic-comment-v1` schema. HMAC verification of raw bytes precedes parsing. The actual
+inbound receipt/dedup/job pipeline persists and processes comments; R75-01/02 remain open,
+and the real Meta codec and comment capabilities remain disabled. Developer-only
+`POST /api/v1/dev/workspaces/{workspace_id}/simulate/comment` records mock state and signs
+the payload before passing it through this same ingestion path. Its fields explicitly
+include root/parent IDs, stable optional author, state/revision/time and synthetic post
+metadata; there is no username-based identity inference.
+
+Member permission `comments.view` permits bounded account comment lists, detail and thread
+reads under `/accounts/{account_id}/comments`, plus media/detail/thread pages. Page limits
+are 1-50 with UUID cursors; foreign workspace/account/media/thread IDs return 404.
+`public.thread` is a read-only comment-surface broker tool (1-8 comments) exposing only the
+current post/thread, source IDs/versions, unknown/ownership states and simulation provenance.
+Private DM, memory and owner-question tools remain unavailable. No public reply, moderation
+or private-reply effect is registered in Session 10.
+
+Actual model context pins the current scoped event's exact comment source/version, even
+when it is beyond the first page, with at most five public turns and a bounded post caption.
+Language and knowledge relevance use that current eligible customer comment. Native owner
+sources update context and ownership fencing without becoming customer-comment obligations.
+Each source change advances its thread cursor; captured media versions fence post changes
+across sibling threads, and carried observations are discarded across either generation.
+Durable public read checkpoints contain validated routing arguments only and are reread
+on restart. No public/customer body is stored in jobs, generic agent events or audit metadata.
+
+
+A historical/unlinked comment scaffold with no `public_thread_id` receives empty public
+context and no private turns. It cannot use the strict public-thread tool or establish a
+public source obligation. This retains the earlier adversarial surface-switch privacy
+checks while real ingestion always creates the scoped public link.
+
+
+Public model/tool display budgets are measured after neutralisation and JSON escaping,
+including the extra encoding layer in the model request: comment preview 280 bytes and
+post caption 320 bytes. Opaque author IDs are emitted exactly only if their display fits
+100 bytes and needs no neutralisation; otherwise `author_id` is null with
+`author_id_omitted: true`. Author identity in domain records, UUID source references and
+versions remain exact. Full bodies remain available through scoped member APIs. These
+previews may omit the suffix of a long source; full-topic/model-quality evaluation is
+pending Session 17. Maximum eight-comment Unicode/escaping observations are tested through
+the actual second model request against the existing 16,000-byte request envelope.

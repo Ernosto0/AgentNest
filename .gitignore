@@ -12,6 +12,9 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+# Disposable pytest scratch directories used by the Phase 7.5 offline runs
+backend/tmp-session*/
+backend/tmp-s05-review/
 *.egg-info/
 dist/
 build/

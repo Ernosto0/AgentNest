@@ -131,6 +131,11 @@ class FactVersion(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
 class FactCandidate(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
     __tablename__ = "fact_candidates"
     __table_args__ = (
+        ForeignKeyConstraint(
+            ["workspace_id", "owner_answer_id"],
+            ["owner_answers.workspace_id", "owner_answers.id"],
+            name="fk_fact_candidates_owner_answer",
+        ),
         UniqueConstraint("workspace_id", "id"),
         # fact_id is nullable (MATCH SIMPLE): the pair is only checked when a fact is referenced.
         ForeignKeyConstraint(
@@ -171,6 +176,7 @@ class FactCandidate(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, B
     proposed_by_actor_type: Mapped[str] = mapped_column(Text, nullable=False)
     proposed_by_actor_id: Mapped[str | None] = mapped_column(Text)
     agent_run_id: Mapped[uuid.UUID | None] = mapped_column()
+    owner_answer_id: Mapped[uuid.UUID | None] = mapped_column()
     resolved_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )

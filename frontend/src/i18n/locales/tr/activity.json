@@ -18,6 +18,16 @@
       "accounts": "Hesaplar",
       "members": "Üyeler",
       "system": "Sistem"
+    },
+    "owner_question": {
+      "created": "??letmeden bilgi istendi.",
+      "proposed": "??letme incelemesi i?in bilgi ?nerildi.",
+      "decided": "??letme bilgi talebi yan?tland?.",
+      "expired": "??letme bilgi talebinin s?resi doldu."
+    },
+    "comment": {
+      "source_ingested": "Herkese açık yorum kaynağı güncellendi.",
+      "media_changed": "Herkese açık gönderi bağlamı güncellendi."
     }
   }
 }

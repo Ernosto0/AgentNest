@@ -76,7 +76,7 @@ def record_delivered(
             direction="outbound",
             sender_kind="business_app",
             external_message_id=message_id,
-            text=draft.text,
+            text=None if draft.validation.get("privacy_redacted") else draft.text,
             attachments=[],
             provider_timestamp=sent_at,
             reply_draft_id=draft.id,
@@ -92,6 +92,8 @@ def record_delivered(
     if conversation.last_message_at is None or sent_at > conversation.last_message_at:
         conversation.last_message_at = sent_at
     drafts.transition(session, clock, ctx, draft, "succeed")
+    if draft.validation.get("privacy_redacted"):
+        draft.text = None
     attention.refresh(session, conversation)
     audit.record(
         session,
@@ -142,6 +144,8 @@ def resolve_unconfirmed(
     message may well have been delivered, and a duplicate to a customer is worse than a miss."""
     set_operation(clock, op, "fail", code="OUTCOME_UNCONFIRMED")
     drafts.transition(session, clock, ctx, draft, "fail", reason="OUTCOME_UNCONFIRMED")
+    if draft.validation.get("privacy_redacted"):
+        draft.text = None
     conversation = lock_conversation(session, draft)
     attention.refresh(session, conversation)
     notify_reply_failed(session, clock, ctx, draft, "OUTCOME_UNCONFIRMED")
@@ -183,7 +187,7 @@ def record_late_delivery(
             direction="outbound",
             sender_kind="business_app",
             external_message_id=message_id,
-            text=draft.text,
+            text=None if draft.validation.get("privacy_redacted") else draft.text,
             attachments=[],
             provider_timestamp=sent_at,
             reply_draft_id=draft.id,
@@ -196,6 +200,8 @@ def record_late_delivery(
     )
     if conversation.last_outbound_at is None or sent_at > conversation.last_outbound_at:
         conversation.last_outbound_at = sent_at
+    if draft.validation.get("privacy_redacted"):
+        draft.text = None
     attention.refresh(session, conversation)
     audit.record(
         session,

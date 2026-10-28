@@ -86,6 +86,7 @@ Global values, in whole days (at least 1); per-workspace values are deferred. Th
 | `RETENTION_INBOUND_EVENT_ROW_DAYS` | `90` | the `inbound_events` row is deleted after this age |
 | `RETENTION_AGENT_INPUT_DAYS` | `30` | `agent_runs.input_snapshot` is nulled (runs that are still `queued` or `running` keep it) |
 | `RETENTION_MESSAGE_TEXT_DAYS` | `365` | `messages.text` (age = `provider_timestamp`) and `reply_drafts.text/template/suggestion_text` (age = `created_at`) are nulled; the rows and their metadata stay |
+| `RETENTION_CUSTOMER_MEMORY_DAYS` | `365` | Customer memory expiry sweep; invalidates source-derived history/summaries/cached proposals and fences old writes while preserving content-free tombstones |
 | `RETENTION_NOTIFICATIONS_READ_DAYS` | `90` | a notification is deleted this long after it was read; an unread one is never deleted |
 | `RETENTION_JOBS_SUCCEEDED_DAYS` | `7` | `succeeded` and `cancelled` jobs are deleted (age = `finished_at`) |
 | `RETENTION_JOBS_DEAD_DAYS` | `90` | `dead` jobs are deleted |

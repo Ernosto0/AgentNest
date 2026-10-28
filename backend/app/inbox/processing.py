@@ -54,7 +54,24 @@ def process_inbound_event(
         session.commit()
         return
 
+    if event.event_type == "comment":
+        from app.comments.codec import CommentEvent
+        from app.comments.service import apply
+
+        if account.provider_kind != "mock" or not event.payload:
+            event.status, event.ignore_reason = "ignored", "UNSUPPORTED_EVENT"
+        else:
+            accepted = apply(session, clock, account, CommentEvent.model_validate(event.payload))
+            event.status = "processed" if accepted else "ignored"
+            event.ignore_reason = None if accepted else "PUBLIC_SOURCE_CONFLICT"
+        event.processed_at = clock.now()
+        session.commit()
+        return
+
     normalized = _normalized(event, account)
+    from app.agent.repository import scoped_account
+
+    scoped_account(session, workspace_id, account.id, lock=True)
     if normalized is not None and normalized.event_type == "delete" and normalized.mid:
         message = session.scalars(
             select(Message)
@@ -67,6 +84,9 @@ def process_inbound_event(
         ).one_or_none()
         if message is not None:
             message.is_deleted = True
+            from app.memory.service import erase_source
+
+            erase_source(session, clock, message)
     if normalized is not None and normalized.customer_id:
         if normalized.event_type == "message":
             _on_customer_message(session, clock, ctx, account, event, normalized, debounce_seconds)
@@ -189,10 +209,41 @@ def _on_customer_message(
         correlation_id=event.correlation_id,
         clock=clock,
     )
+    from app.agent.repository import add_event_and_wake, scoped_account
+
+    controller = scoped_account(session, account.workspace_id, account.id)
     # The customer wrote again: whatever is waiting for a person is out of date.
     drafts.close_open_drafts(
-        session, clock, ctx, conversation, reason="NEW_INBOUND", events=drafts.ON_NEW_INBOUND
+        session,
+        clock,
+        ctx,
+        conversation,
+        reason="NEW_INBOUND",
+        events=drafts.ON_NEW_INBOUND,
+        defer_approvals=controller.controller_mode == "agent",
     )
+    from app.agent.control import ensure_thread
+
+    if controller.controller_mode == "agent":
+        thread = ensure_thread(session, conversation, controller)
+        if thread.handling_mode == "agent":
+            add_event_and_wake(
+                session,
+                workspace_id=account.workspace_id,
+                account_id=account.id,
+                thread_id=thread.id,
+                kind="customer_message",
+                source_kind="message",
+                source_key=str(message_id),
+                source_id=str(message_id),
+                source_version=1,
+                clock=clock,
+            )
+            from app.agent.jobs import enqueue_cleanup
+
+            enqueue_cleanup(session, clock, account.workspace_id, account.id, thread.event_cursor)
+        attention.refresh(session, conversation)
+        return
     if conversation.handling_mode == "automatic":
         enqueue(
             session,
@@ -254,6 +305,11 @@ def _on_echo(
     )
     if message_id is None:  # already known (recorded by the send, or a duplicate)
         return
+    from app.agent.control import takeover_thread
+
+    native_controlled = takeover_thread(session, clock, conversation, human=True)
+    if native_controlled:
+        conversation.handling_mode = "human"
     conversation.last_outbound_at = _greatest(conversation.last_outbound_at, moment)
     conversation.last_message_at = _greatest(conversation.last_message_at, moment)
     audit.record(
@@ -275,5 +331,6 @@ def _on_echo(
         conversation,
         reason="OWNER_REPLIED_NATIVELY",
         events=drafts.ON_NATIVE_REPLY,
+        defer_approvals=native_controlled,
     )
     attention.refresh(session, conversation)
