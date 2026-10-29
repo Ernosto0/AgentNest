@@ -1,6 +1,7 @@
 """Owner account-agent delegation controls."""
 
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field
@@ -8,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agent import delegation
+from app.agent.grounding import FactEvidence
 from app.agent.models import AgentAction, AgentDelegation
 from app.agent.personality import (
     PersonalityChange,
@@ -87,6 +89,20 @@ class DelegationPreview(BaseModel):
     changed_actions: list[str]
 
 
+class ContentPreview(BaseModel):
+    account_id: uuid.UUID
+    content_id: uuid.UUID | None = None
+    version: int
+    content_type: str | None = None
+    caption: str | None = None
+    media_asset_id: uuid.UUID | None = None
+    media_sha256: str | None = None
+    scheduled_at: datetime | None = None
+    execute_before: datetime | None = None
+    overlay_text: list[str] = Field(default_factory=list)
+    fact_versions: list[FactEvidence] = Field(default_factory=list)
+
+
 class ActionOut(BaseModel):
     id: uuid.UUID
     action_type: str
@@ -94,6 +110,7 @@ class ActionOut(BaseModel):
     operation_id: uuid.UUID | None
     approval_id: uuid.UUID | None
     outcome_code: str | None
+    content: ContentPreview | None = None
 
 
 @router.get("/actions/{action_id}", response_model=ActionOut)
@@ -116,6 +133,35 @@ def action_detail(
     )
     if action is None:
         raise AppError("NOT_FOUND")
+    preview = None
+    if action.content_intent is not None:
+        from app.agent.content import result
+
+        result(db, action)
+        intent = action.content_intent
+        payload = intent.get("payload", {})
+        request = intent.get("request", {})
+        preview = ContentPreview(
+            account_id=account_id,
+            content_id=action.payload_ref,
+            version=action.version,
+            content_type=payload.get("content_type", request.get("content_type")),
+            caption=payload.get("caption", intent.get("rendered_caption")),
+            media_asset_id=payload.get("media_asset_id", request.get("media_asset_id")),
+            media_sha256=payload.get("media_sha256", intent.get("media_sha256")),
+            scheduled_at=payload.get("scheduled_at"),
+            execute_before=action.execute_before,
+            overlay_text=payload.get("overlay_text", []),
+            fact_versions=[
+                FactEvidence(id=fid, version=version)
+                for fid, version in payload.get("fact_versions", [])
+            ]
+            if payload
+            else [
+                FactEvidence.model_validate(source)
+                for source in (request.get("caption") or {}).get("fact_sources", [])
+            ],
+        )
     if action.action_type.startswith("comment."):
         from app.comments.actions import result
 
@@ -127,6 +173,7 @@ def action_detail(
         operation_id=action.operation_id,
         approval_id=action.approval_id,
         outcome_code=action.outcome_code,
+        content=preview,
     )
 
 

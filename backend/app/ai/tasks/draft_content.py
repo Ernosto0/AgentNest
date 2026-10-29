@@ -265,9 +265,7 @@ def fake_draft_content(task_input: DraftContentInput, schema: Any = None) -> Con
         prices = [f for f in facts if f.key.startswith("pricing.")]
         is_specific, matched = match_price_facts(folded, prices)
         chosen = (
-            (matched[0] if matched else None)
-            if is_specific
-            else (prices[0] if prices else None)
+            (matched[0] if matched else None) if is_specific else (prices[0] if prices else None)
         )
         if chosen is not None:
             return _proposal(

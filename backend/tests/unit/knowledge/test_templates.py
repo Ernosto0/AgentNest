@@ -59,7 +59,9 @@ def test_required_items_match_what_readiness_expects(category: str) -> None:
         "location.address",
         "hours.weekly",
     }
-    ready_prices = {i.identifier for i in template.items if i.required_when == "price_disclosure=share"}
+    ready_prices = {
+        i.identifier for i in template.items if i.required_when == "price_disclosure=share"
+    }
     assert ready_prices == {"pricing.*"}
 
 

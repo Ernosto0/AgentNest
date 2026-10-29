@@ -1,6 +1,6 @@
 # Session 13: Owner tasks and content tools
 
-**Task:** P7.5-13. **Status:** Planned. **Prerequisite:** Session 12.
+**Task:** P7.5-13. **Status:** Offline complete; see [report](s13-report.md). **Prerequisite:** Session 12.
 Read the [common session rules](phase-7.5-sessions.md) and phase sections 2, 6-7.
 
 ## Goal

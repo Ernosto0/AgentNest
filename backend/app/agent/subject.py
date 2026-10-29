@@ -93,6 +93,10 @@ def on_decided(session: Session, clock: Clock, ctx: WorkspaceContext, approval: 
                 raise AppError("APPROVAL_STALE")
         action.status = "authorized"
         action.authorized_at = clock.now()
+        if action.content_intent is not None and action.action_type.startswith("content."):
+            from app.agent.content import execute
+
+            execute(session, clock, action)
         if action.action_type == "comment.private_reply":
             from app.comments.private_reply import eligibility, queue
 

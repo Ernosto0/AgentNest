@@ -188,6 +188,24 @@ Disconnect accepts optional `{delete_conversation_data: false}`. Tokens are clea
 | `POST /api/v1/dev/workspaces/{ws}/reset` | reset a demo workspace: it is **re-created with a new id** (same slug, members and settings from the seed data; its cascade data, `sim_*` rows and local media files are deleted; facts, account, review and yesterday's history are seeded again; the old audit rows stay; `demo.reset` is audited on the new workspace with `previous_workspace_id`). `workspace.manage` (owner); `is_demo` only (else 403); a demo workspace that is not in the seed data → 409 `CONFLICT_STATE`; foreign workspace → 404. Returns `{workspace_id}` (the new id) |
 | `GET /api/v1/dev/scripts` | scripted customer messages |
 
+### 2.11 Account-agent owner tasks (Phase 7.5 Session 13)
+
+Under `/api/v1/workspaces/{ws}/accounts/{account_id}/agent`, all task routes require
+authenticated `commands.use`, workspace membership and the actual account scope.
+Tasks and their clarification answers are visible only to their requester.
+
+| Method & suffix | Contract |
+|---|---|
+| `POST /tasks` | 202. `{text, client_request_id, media_asset_id?, content_id?}`; UUID request ID is idempotent per requester/account and binds text plus initial selections. New tasks require an active agent. |
+| `GET /tasks` | Cursor `Page[TaskOut]`, bounded `limit` 1–100, nullable UUID `cursor`. Unknown/foreign cursor or account is 404. |
+| `GET /tasks/{id}` | Task status/outcome, pending clarification and question version, plus typed per-action content states and simulation provenance. Foreign/requester-mismatched task is 404. |
+| `POST /tasks/{id}/answers` | 202. Task input shape plus `expected_version`, matching `question_version`; independent idempotent answer request ID. Information and asset selection never approve an action. |
+| `GET /actions/{id}` | Existing scoped action result now includes a nullable typed content preview: exact account/content/version, caption, overlay, media/hash, fact versions, instant and deadline. No storage credentials or URLs. |
+
+The broker schemas, ambiguity rules, independent schedule/publication authority and
+deadlines are specified in [account-agent contracts](account-agent-contracts.md#session-13-authenticated-owner-tasks-and-image-content).
+Manual content endpoints retain their existing contracts.
+
 ## 3. OpenAPI and client generation
 - `GET /openapi.json` is served in development and test. The backend command `uv run python -m app.cli export-openapi -o ../frontend/openapi.json` exports it (deterministic, UTF-8, LF; `-o` is used instead of a shell redirect because Windows PowerShell 5.1 redirects write UTF-16; without `-o` the JSON goes to stdout), and `npm run gen:api` produces `src/api/schema.d.ts`.
 - CI regenerates both and fails if the committed files differ.

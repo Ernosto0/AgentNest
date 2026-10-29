@@ -23,6 +23,7 @@ from app.integrations.llm.steps import LLMStepResult
 from app.jobs.models import Job
 from app.jobs.queue import claim_one
 from app.jobs.worker import execute_job
+from tests.factories import add_member, create_user, knowledge_ctx
 
 pytestmark = pytest.mark.commits
 
@@ -49,17 +50,15 @@ def seed(factory: sessionmaker[Session], clock: FrozenClock) -> tuple[uuid.UUID,
         assert account is not None
         account.state = "active"
         account.controller_mode = "agent"
-        thread = AgentThread(
-            workspace_id=ws.id,
-            social_account_id=social.id,
-            source_ref=uuid.uuid4().hex,
-            surface="owner_task",
+        # Owner-task claims now reconstruct a real authenticated requester (Session 13).
+        from app.agent.owner_tasks import submit
+
+        user = create_user(db)
+        add_member(db, ws, user)
+        task = submit(
+            db, clock, knowledge_ctx(ws, user, "owner"), social.id, "Test task", uuid.uuid4()
         )
-        db.add(thread)
-        db.flush()
-        add_event(db, clock, thread)
-        db.commit()
-        return ws.id, thread.id
+        return ws.id, task.thread_id
 
 
 def add_event(db: Session, clock: FrozenClock, thread: AgentThread) -> None:

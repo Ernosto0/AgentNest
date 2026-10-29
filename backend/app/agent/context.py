@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -74,6 +75,11 @@ def assemble(db: Session, clock: Clock, context: BrokerContext) -> ModelContext:
             "text": task.request_text[:4000],
             "source_channel": task.source_channel,
             "requester_role": context.workspace.role,
+            "clarification_answers": task.answers[-8:],
+            "selected_media_id": task.read_refs.get("selected_media_id"),
+            "selected_content_id": task.read_refs.get("selected_content_id"),
+            "timezone": ctx.timezone,
+            "local_now": clock.now().astimezone(ZoneInfo(ctx.timezone)).isoformat(),
         }
     if context.surface == "dm" and thread.dm_conversation_id:
         from app.comments.private_reply import dm_source_context

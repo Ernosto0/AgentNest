@@ -45,6 +45,14 @@ def bound_payload_hash(session: Session, item: ContentItem) -> str | None:
     )
     if sha256 is None:
         return None
+    fact_versions = None
+    if item.origin == "agent":
+        from app.agent.models import AgentAction
+
+        action = session.get(AgentAction, item.agent_action_id)
+        if action is None or not action.content_intent:
+            return None
+        fact_versions = action.content_intent["fact_refs"]
     return approval_payload_hash(
         approval_payload(
             item,
@@ -52,6 +60,7 @@ def bound_payload_hash(session: Session, item: ContentItem) -> str | None:
             social_account_id=item.social_account_id,
             media_sha256=sha256,
             scheduled_at=item.scheduled_at,
+            fact_versions=fact_versions,
         )
     )
 

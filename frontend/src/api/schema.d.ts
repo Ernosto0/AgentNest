@@ -472,6 +472,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tasks */
+        get: operations["list_tasks_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks_get"];
+        put?: never;
+        /** Submit Task */
+        post: operations["submit_task_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Task */
+        get: operations["get_task_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks__task_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/tasks/{task_id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer Task */
+        post: operations["answer_task_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks__task_id__answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments": {
         parameters: {
             query?: never;
@@ -1909,6 +1961,7 @@ export interface components {
             action_type: string;
             /** Approval Id */
             approval_id: string | null;
+            content?: components["schemas"]["ContentPreview"] | null;
             /**
              * Id
              * Format: uuid
@@ -2674,6 +2727,56 @@ export interface components {
             /** Visual Notes */
             visual_notes?: string | null;
         };
+        /** ContentPreview */
+        ContentPreview: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Caption */
+            caption?: string | null;
+            /** Content Id */
+            content_id?: string | null;
+            /** Content Type */
+            content_type?: string | null;
+            /** Execute Before */
+            execute_before?: string | null;
+            /** Fact Versions */
+            fact_versions?: components["schemas"]["FactEvidence"][];
+            /** Media Asset Id */
+            media_asset_id?: string | null;
+            /** Media Sha256 */
+            media_sha256?: string | null;
+            /** Overlay Text */
+            overlay_text?: string[];
+            /** Scheduled At */
+            scheduled_at?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** ContentResult */
+        ContentResult: {
+            /**
+             * Action Id
+             * Format: uuid
+             */
+            action_id: string;
+            /** Action Type */
+            action_type: string;
+            /** Approval Id */
+            approval_id?: string | null;
+            /** Content Id */
+            content_id?: string | null;
+            /** Content Status */
+            content_status?: string | null;
+            /** Is Simulated */
+            is_simulated?: boolean | null;
+            /** Outcome Code */
+            outcome_code?: string | null;
+            /** Status */
+            status: string;
+        };
         /** ContentValidationOut */
         ContentValidationOut: {
             /** Errors */
@@ -2949,6 +3052,16 @@ export interface components {
             /** Value Type */
             value_type?: string | null;
         };
+        /** FactEvidence */
+        FactEvidence: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+        };
         /** FactOut */
         FactOut: {
             /**
@@ -3053,7 +3166,7 @@ export interface components {
              * Operation
              * @enum {string}
              */
-            operation: "send" | "lookup" | "echo" | "create_container" | "container_status" | "publish" | "refresh" | "profile" | "comment_reply" | "comment_hide" | "comment_unhide" | "comment_delete" | "comment_lookup" | "any";
+            operation: "send" | "lookup" | "echo" | "create_container" | "container_status" | "publish" | "refresh" | "profile" | "comment_reply" | "comment_hide" | "comment_unhide" | "comment_delete" | "comment_lookup" | "comment_private_reply" | "private_reply_lookup" | "any";
             /**
              * Remaining
              * @default 1
@@ -3733,6 +3846,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[TaskOut] */
+        Page_TaskOut_: {
+            /** Items */
+            items: components["schemas"]["TaskOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[VersionOut] */
         Page_VersionOut_: {
             /** Items */
@@ -4261,6 +4381,66 @@ export interface components {
             webhooks: components["schemas"]["WebhooksHealth"];
             /** Window Hours */
             window_hours: number;
+        };
+        /** TaskAnswer */
+        TaskAnswer: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Content Id */
+            content_id?: string | null;
+            /** Expected Version */
+            expected_version: number;
+            /** Media Asset Id */
+            media_asset_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** TaskCreate */
+        TaskCreate: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Content Id */
+            content_id?: string | null;
+            /** Media Asset Id */
+            media_asset_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** TaskOut */
+        TaskOut: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Actions */
+            actions: components["schemas"]["ContentResult"][];
+            /** Clarification */
+            clarification: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Outcome Code */
+            outcome_code: string | null;
+            /** Question Version */
+            question_version: number | null;
+            /** Source Channel */
+            source_channel: string;
+            /** Status */
+            status: string;
         };
         /** TemplateItemOut */
         TemplateItemOut: {
@@ -5510,6 +5690,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tasks_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_TaskOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_task_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_task_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_task_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks__task_id__answers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskAnswer"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
                 };
             };
             /** @description Validation Error */

@@ -459,7 +459,7 @@ def _begin(
         try:
             if account is None or item.agent_action_id is None:
                 raise AppError("APPROVAL_STALE")
-            fence_action(
+            action = fence_action(
                 session,
                 clock,
                 workspace_id,
@@ -468,6 +468,10 @@ def _begin(
                 payload_hash_value=bound_payload_hash(session, item),
                 expected_action="content.publish",
             )
+            from app.agent.content import publication_current
+
+            if not publication_current(session, clock, item, action):
+                raise AppError("APPROVAL_STALE")
         except AppError:
             return _refuse(session, clock, ctx, item, op, "APPROVAL_STALE")
     capability = capability_for(item.content_type)

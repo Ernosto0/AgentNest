@@ -415,3 +415,62 @@ can resolve it. Missing effect evidence, including an absent comment/404, remain
 and blocks duplicates. Source erasure and retention remove pending reply bodies from action
 and mock evidence; audit and operation metadata contain IDs and status only. Real Meta
 comment mutations and readback reject calls until R75-03/06 and Session 16 verification.
+
+## Session 13: authenticated owner tasks and image content
+
+`POST /accounts/{account_id}/agent/tasks` accepts `text`, UUID `client_request_id`
+and optional exact `media_asset_id` / `content_id` selections. It returns a durable task
+ID (202); the same requester/account/request ID and input return the original task,
+including after a pause. Reusing the ID with different text or selections conflicts.
+The account must belong to the authenticated workspace and have an active agent for a
+new task. No customer ingestion path invokes this API. Staff may submit tasks, but
+each requested effect independently checks their current role. Claim, broker dispatch,
+approval execution and scheduled publication reconstruct membership rather than trusting
+the stored requester role.
+
+GET list/detail are requester-only; foreign accounts/tasks/cursors return 404. Lists
+use a descending UUID cursor with a bounded `limit` and `next_cursor`. Responses include
+`clarification`, `question_version` and typed content action results, including the
+actual content status and simulation provenance. `POST /tasks/{id}/answers` takes the
+original task shape plus required `expected_version` matching `question_version`;
+answers have independent request IDs. It records at most eight clarification answers
+and atomically emits a wake. Replays are idempotent; stale/different answers conflict.
+Answers are information only and cannot approve publication.
+
+Migration `0029` stores owner tasks. Additive `0030` stores bounded read/selection receipts,
+clarifications/answers, and durable content intents on actions. No migrated account is
+activated or given new grants. Existing manual submission/self-approval remains the
+legacy path; explicitly resubmitting or reapproving an agent item manually establishes
+a new legacy approval. It cannot reuse an old agent grant.
+
+All tools below are `v1`, restricted to `owner_task` source/surface, and reject extra
+arguments. Bodies remain in domain records; jobs, audit metadata and step checkpoints
+contain routing IDs/hashes rather than caption or request bodies.
+
+| Tool | Arguments and behavior |
+|---|---|
+| `content.read` | `kind: content/media`, nullable UUID `cursor`, `limit` 1–10. Returns scoped content/version or ready-media/hash receipts. No foreign-account content or storage URLs. |
+| `content.prepare` | `content_type: feed_image/story_image`, `title`, nullable `media_asset_id`, nullable grounded `caption` proposal. Requires a seen ready asset; captions use exact fact-source evidence. Stories have no caption. No customer/private-answer evidence or new media generation. |
+| `content.schedule` | `content_id`, `expected_version`, workspace-local ISO `local_date` and `HH:MM local_time`. Authorizes scheduling separately, then proposes publication under its own rule. |
+| `content.publish` | `content_id`, `expected_version`. Proposes the current draft for now; queued/scheduled is not published. |
+| `content.cancel` | `content_id`, `expected_version`. Separate cancellation delegation; uses existing cancellation rules. Cannot cancel an uncertain/in-flight publish. |
+| `task.clarify` | `question` (1–500 characters). Persists one pending requester question and pauses the goal until a versioned answer. |
+
+Selections must have been read and remain current. With multiple possible records the
+requester must select the exact ID in intake/answer (or supply that ID in their text);
+the model cannot resolve ambiguity by guessing an unseen alias. A single available
+record is unambiguous. Missing imagery/details return a clarification requirement.
+Drafting does not imply permission to schedule or publish. Automatic, ask and off apply
+independently to all four effects. Publication `ask` uses an explicit single-use
+`agent_action` approval; automatic publication projects its policy grant to the existing
+content executor. Both bind content/media/account/instant and sorted fact versions.
+The action version equals the bound content version, including edited drafts.
+
+The original content validation, fact holds, media fences, quota, ledger and reconciliation
+remain authoritative. Scheduled grants expire at the scheduled instant plus the workspace
+publish delay, rather than the generic 24-hour action lifetime. Pending human decisions
+expire by the earlier of 24 hours and the requested future instant (for “now”, the publish
+deadline). The executor checks current delegation, requester membership, pause, exact
+payload and fact versions. Unknown publish outcomes retain the same operation/container;
+revocation does not prevent positive reconciliation of an effect that already happened.
+Task action results reconstruct scheduled/published/unknown states from persisted records.

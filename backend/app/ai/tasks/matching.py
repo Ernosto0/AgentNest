@@ -26,7 +26,7 @@ def tokens(text: str) -> set[str]:
     return set(re.findall(r"[a-z0-9]+", fold(text)))
 
 
-PRICE_STOP_WORDS = frozenset(
+_PRICE_STOP_WORD_TEXT = (
     "fiyat fiyati fiyata fiyatlar fiyatlari fiyatlarimiz fiyatlariniz fiyatini "
     "ucret ucreti ucretler ucretleri ucretimiz ucretiniz "
     "nedir ne kadar kac kaca kacadir "
@@ -40,16 +40,15 @@ PRICE_STOP_WORDS = frozenset(
     "information info please can you give would like to know "
     "paket paketi paketini package packages "
     "merhaba selam gunaydin iyi gunler aksamlar hello hi hey good morning evening thanks "
-    "tesekkurler tesekkur ederim lutfen bir one acaba bana bize".split()
+    "tesekkurler tesekkur ederim lutfen bir one acaba bana bize"
 )
+PRICE_STOP_WORDS = frozenset(_PRICE_STOP_WORD_TEXT.split())
 
 
 def _word_match(w1: str, w2: str) -> bool:
     if w1 == w2:
         return True
-    if len(w1) >= 4 and len(w2) >= 4 and (w1.startswith(w2) or w2.startswith(w1)):
-        return True
-    return False
+    return len(w1) >= 4 and len(w2) >= 4 and (w1.startswith(w2) or w2.startswith(w1))
 
 
 def match_price_facts[E: Labelled](text: str, entries: Sequence[E]) -> tuple[bool, list[E]]:

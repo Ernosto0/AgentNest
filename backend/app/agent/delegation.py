@@ -380,6 +380,16 @@ def fence_action(
         )
     ):
         raise AppError("APPROVAL_STALE")
+    if action.content_intent is not None:
+        from app.agent.owner_tasks import current_context, for_thread
+
+        if thread is None:
+            raise AppError("APPROVAL_STALE")
+        requester_context = current_context(session, for_thread(session, thread))
+        if requester_context is None or not has_permission(
+            requester_context.role, REQUESTER_PERMISSIONS[action.action_type]
+        ):
+            raise AppError("APPROVAL_STALE")
     return action
 
 
@@ -458,6 +468,11 @@ def authorize_action(
             and has_permission(requester.role, REQUESTER_PERMISSIONS[action.action_type])
         )
     capability = CAPABILITIES[action.action_type]
+    if action.action_type == "content.publish" and action.content_intent is not None:
+        content_type = action.content_intent.get("payload", {}).get("content_type")
+        if content_type not in {"feed_image", "story_image"}:
+            return Decision("blocked", "target_or_claims_invalid")
+        capability = f"publish_{content_type}"
     thread = session.scalar(
         select(AgentThread).where(
             AgentThread.workspace_id == ctx.workspace_id,

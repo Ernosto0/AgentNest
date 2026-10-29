@@ -629,3 +629,27 @@ clears recipient evidence and the conversation link. `sim_private_replies` is an
 independent mock provider record keyed by account/comment and operation, with injectable
 send and lookup failures. The operation and failure-rule constraints add distinct
 private-reply types. Populated evidence prevents an unreviewed downgrade.
+
+### Phase 7.5 Session 13: owner tasks and content intents (0029–0030)
+
+`agent_owner_tasks` stores workspace/account/thread, authenticated requester ID and intake
+role, API source channel, UUID client request ID and bounded request text. Composite FKs
+bind its account and thread; the requester is an existing user. The unique
+workspace/account/requester/request key makes intake durable and idempotent. A stored role
+is historical: runtime claims and dispatch reconstruct current membership.
+
+`0030` adds bounded `read_refs` JSONB (seen content versions, media hashes, immutable intake
+selections and current explicit selections), nullable `clarification`, and bounded `answers`
+JSONB (request IDs, question/body and optional selections). Their defaults preserve existing
+tasks. Clarification version is `len(answers) + 1`, so stale answers cannot answer a newer
+question. Answers and their owner-task event/wake commit together.
+
+`agent_actions.content_intent` stores the durable typed content proposal and exact rendered
+caption or publication snapshot. Publication snapshots bind target account, item/version,
+media/hash, sorted fact source versions, UTC instant, original workspace-local schedule and
+deadline. Bodies are not copied into job/audit/step evidence. `payload_ref` points to the
+existing content item once prepared; scheduling/publication/cancellation retain separate
+actions. Existing content `origin`/`agent_action_id` link publication to its executor fence.
+No account defaults or delegation modes are changed by either migration. Downgrade `0030`
+refuses content intents or populated clarification/selection/answer evidence; `0029` refuses
+populated owner tasks until archival.

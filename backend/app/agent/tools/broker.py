@@ -15,6 +15,7 @@ from app.agent.models import AgentThread
 from app.ai.injection import neutralise_untrusted
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
+from app.core.errors import AppError
 from app.inbox.models import Message
 from app.integrations.llm.steps import LLMToolDefinition
 
@@ -46,6 +47,17 @@ class ToolResult:
 
 
 ToolHandler = Callable[[Session, Clock, BrokerContext, BaseModel], dict[str, Any]]
+
+
+def _content_handler(handler: ToolHandler) -> ToolHandler:
+    def guarded(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> dict[str, Any]:
+        try:
+            with db.begin_nested():
+                return handler(db, clock, ctx, args)
+        except AppError as exc:
+            return {"valid": False, "error": exc.code}
+
+    return guarded
 
 
 class ToolInputError(ValueError):
@@ -279,6 +291,30 @@ def build_default_broker() -> ToolBroker:
     from app.memory.service import MemoryProposal, MemoryRead, private_context, write_proposal
 
     broker = ToolBroker()
+    from app.agent import content
+
+    for name, content_schema, content_handler in (
+        ("content.read", content.Read, content.read),
+        ("content.prepare", content.Prepare, content.prepare),
+        ("content.schedule", content.Schedule, content.schedule),
+        ("content.publish", content.Target, content.publish),
+        ("content.cancel", content.Target, content.cancel),
+        ("task.clarify", content.Clarify, content.clarify),
+    ):
+        broker.register(
+            ToolSpec(
+                name,
+                "v1",
+                "Operate selected image content for this owner task; read IDs first. "
+                "Missing/ambiguous selections require task.clarify. "
+                "Scheduling and publication have separate delegation.",
+                "public_read" if name == "content.read" else "internal_write",
+                frozenset({"owner_task"}),
+                frozenset({"owner_task"}),
+                content_schema,
+                _content_handler(content_handler),
+            )
+        )
     from app.comments.actions import ModerateArgs, PublicReplyArgs
     from app.comments.actions import propose as propose_public
     from app.comments.private_reply import PrivateReplyArgs

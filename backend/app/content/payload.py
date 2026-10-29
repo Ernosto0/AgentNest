@@ -41,6 +41,7 @@ def approval_payload(
     social_account_id: uuid.UUID,
     media_sha256: str,
     scheduled_at: datetime,
+    fact_versions: list[list[Any]] | None = None,
 ) -> dict[str, Any]:
     """The canonical payload of a submission of ``item`` as version ``version`` (plan.md G5).
 
@@ -48,7 +49,7 @@ def approval_payload(
     story (the story itself publishes no text). ``version`` and the schedule are passed in
     because a re-approval binds the *next* version and a new instant.
     """
-    return {
+    payload = {
         "content_id": item.id,
         "version": version,
         "content_type": item.content_type,
@@ -59,6 +60,9 @@ def approval_payload(
         "media_sha256": media_sha256,
         "scheduled_at": scheduled_at,
     }
+    if fact_versions is not None:
+        payload["fact_versions"] = fact_versions
+    return payload
 
 
 def approval_payload_hash(payload: dict[str, Any]) -> str:

@@ -377,6 +377,7 @@ def _check(
     schedule: ScheduleRequest | None,
     *,
     needs_approval: bool,
+    account_id: uuid.UUID | None = None,
 ) -> Checked:
     """Gather the facts of a submission and run the G17 rules. Changes nothing."""
     asset = (
@@ -408,7 +409,11 @@ def _check(
 
     # The workspace's one active account (one per workspace, mock in Phase 5). A content item
     # has no account until it is submitted; submit sets it (api-design.md 2.7).
-    account = accounts.get_active_for_workspace(session, ctx.workspace_id)
+    account = (
+        accounts.get_account_in_workspace(session, ctx.workspace_id, account_id)
+        if account_id is not None
+        else accounts.get_active_for_workspace(session, ctx.workspace_id)
+    )
     connected = account is not None and account.status == "connected"
     quota_exceeded = False
     if resolved is not None and account is not None and connected:
@@ -585,6 +590,8 @@ def submit(
     ready = _require_valid(checked, ctx.locale)
 
     arguments = _approval_arguments(session, ctx, item, ready, item.version)
+    # A deliberate manual submission establishes its own existing approval contract.
+    item.origin, item.agent_action_id = "legacy", None
     changes = _schedule_changes(ready)
     if self_approve:
         approval = record_policy_grant(session, clock, ctx, self_approved=True, **arguments)
@@ -629,6 +636,7 @@ def reapprove(
     ready = _require_valid(checked, ctx.locale)
 
     new_version = item.version + 1
+    item.origin, item.agent_action_id = "legacy", None
     approval = record_policy_grant(
         session,
         clock,

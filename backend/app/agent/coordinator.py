@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agent import transitions
+from app.agent.content import CONTENT_ACTIONS
 from app.agent.delegation import current_delegation
 from app.agent.models import (
     ACTIVE_RUN_STATES,
@@ -43,6 +44,10 @@ PUBLIC_ACTIONS = (
 
 
 def effect_result(db: Session, action: "AgentAction") -> dict[str, object]:
+    if action.action_type in CONTENT_ACTIONS:
+        from app.agent.content import result
+
+        return result(db, action)
     if action.action_type == "comment.private_reply":
         from app.comments.private_reply import result
 
@@ -340,7 +345,7 @@ def run_activation(
                 select(AgentAction)
                 .where(
                     AgentAction.thread_id == claimed.context.thread_id,
-                    AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS)),
+                    AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
                 )
                 .order_by(AgentAction.created_at.desc())
                 .limit(1)
@@ -592,6 +597,18 @@ def run_activation(
                         step.read_checkpoint = {"name": result.tool_name, "arguments": args}
                 step_state(db, deps, step, "dispatched")
                 step_state(db, deps, step, "consumed")
+                if result.tool_name == "task.clarify" and tool.ok:
+                    set_state(
+                        db,
+                        deps,
+                        goal,
+                        thread,
+                        "waiting_owner",
+                        wake_kind="owner",
+                        wake_ref=str(thread.id),
+                    )
+                    db.commit()
+                    return
                 if (
                     result.tool_name == "owner.ask"
                     and tool.ok
@@ -617,6 +634,7 @@ def run_activation(
                         "comment.reply",
                         "comment.moderate",
                         "comment.private_reply",
+                        *CONTENT_ACTIONS,
                     }
                     and tool.ok
                     and tool.data.get("status") == "waiting_customer"
@@ -640,6 +658,7 @@ def run_activation(
                         "comment.reply",
                         "comment.moderate",
                         "comment.private_reply",
+                        *CONTENT_ACTIONS,
                     }
                     and tool.ok
                     and tool.data.get("action_id")
@@ -686,7 +705,7 @@ def run_activation(
                     select(AgentAction)
                     .where(
                         AgentAction.thread_id == thread.id,
-                        AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS)),
+                        AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
                         AgentAction.status.in_(
                             (
                                 "waiting_approval",
@@ -783,7 +802,7 @@ def valid_wait(db: Session, goal: AgentSession, thread: AgentThread, result: LLM
                 AgentAction.id == ref,
                 AgentAction.workspace_id == goal.workspace_id,
                 AgentAction.thread_id == thread.id,
-                AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS)),
+                AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
                 AgentAction.status.in_(("authorized", "queued", "in_progress", "outcome_unknown")),
             )
         )
@@ -834,6 +853,8 @@ def wait_resolved(db: Session, deps: RunnerDeps, goal: AgentSession, thread: Age
         ref = uuid.UUID(goal.wake_ref or "")
     except ValueError:
         return False
+    if goal.status == "waiting_owner" and thread.surface == "owner_task":
+        return thread.event_cursor > goal.activation_cursor
     if goal.status == "waiting_owner":
         from app.owner_requests.models import OwnerQuestion
 
@@ -862,7 +883,11 @@ def wait_resolved(db: Session, deps: RunnerDeps, goal: AgentSession, thread: Age
         )
         if approval is not None and approval.status == "approved":
             action = db.scalar(select(AgentAction).where(AgentAction.approval_id == approval.id))
-            if action is not None and action.action_type in ("dm.send", *PUBLIC_ACTIONS):
+            if action is not None and action.action_type in (
+                "dm.send",
+                *PUBLIC_ACTIONS,
+                *CONTENT_ACTIONS,
+            ):
                 effect_result(db, action)
                 if action.status not in {"succeeded", "failed", "cancelled"}:
                     set_state(
@@ -882,7 +907,7 @@ def wait_resolved(db: Session, deps: RunnerDeps, goal: AgentSession, thread: Age
                 AgentAction.id == ref,
                 AgentAction.workspace_id == goal.workspace_id,
                 AgentAction.thread_id == thread.id,
-                AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS)),
+                AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
             )
         )
         if action is not None:

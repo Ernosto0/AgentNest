@@ -222,6 +222,11 @@ class OwnerTask(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base)
     source_channel: Mapped[str] = mapped_column(Text, nullable=False)
     client_request_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     request_text: Mapped[str] = mapped_column(Text, nullable=False)
+    read_refs: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
+    clarification: Mapped[str | None] = mapped_column(Text)
+    answers: Mapped[list[dict[str, str]]] = mapped_column(
+        JSONB, nullable=False, server_default="[]"
+    )
 
 
 class AgentEvent(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
@@ -396,6 +401,7 @@ class AgentAction(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
     intent_key: Mapped[str] = mapped_column(Text, nullable=False)
     action_type: Mapped[str] = mapped_column(Text, nullable=False)
     payload_ref: Mapped[uuid.UUID | None] = mapped_column()
+    content_intent: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     payload_hash: Mapped[str] = mapped_column(Text, nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     target_ref: Mapped[str] = mapped_column(Text, nullable=False)
