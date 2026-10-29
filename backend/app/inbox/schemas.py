@@ -16,6 +16,7 @@ class StrictModel(BaseModel):
 
 class ConversationOut(BaseModel):
     id: uuid.UUID
+    social_account_id: uuid.UUID | None = None
     customer_handle: str | None
     customer_number: int  # for customers without a known handle: "Customer #4821"
     last_message_preview: str | None

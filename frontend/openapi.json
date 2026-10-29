@@ -308,6 +308,65 @@
         "title": "ActivityResourceOut",
         "type": "object"
       },
+      "AgentOverview": {
+        "properties": {
+          "config_version": {
+            "title": "Config Version",
+            "type": "integer"
+          },
+          "controller_epoch": {
+            "title": "Controller Epoch",
+            "type": "integer"
+          },
+          "controller_mode": {
+            "title": "Controller Mode",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "pending_approvals": {
+            "title": "Pending Approvals",
+            "type": "integer"
+          },
+          "pending_questions": {
+            "title": "Pending Questions",
+            "type": "integer"
+          },
+          "recent_actions": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewAction"
+            },
+            "title": "Recent Actions",
+            "type": "array"
+          },
+          "session_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Session Counts",
+            "type": "object"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "controller_mode",
+          "config_version",
+          "controller_epoch",
+          "is_simulated",
+          "session_counts",
+          "pending_questions",
+          "pending_approvals",
+          "recent_actions"
+        ],
+        "title": "AgentOverview",
+        "type": "object"
+      },
       "AiHealth": {
         "properties": {
           "budget_limit": {
@@ -603,7 +662,11 @@
               "command.update_brand_voice",
               "command.cancel_content",
               "reply.send",
-              "content.publish"
+              "content.publish",
+              "comments.approve",
+              "content.prepare",
+              "content.schedule",
+              "content.cancel"
             ],
             "title": "Action",
             "type": "string"
@@ -2782,6 +2845,18 @@
             ],
             "title": "Last Message Preview"
           },
+          "social_account_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Social Account Id"
+          },
           "window_ends_at": {
             "anyOf": [
               {
@@ -3149,6 +3224,107 @@
           "expected_version"
         ],
         "title": "DraftPatchIn",
+        "type": "object"
+      },
+      "ExactActionPreview": {
+        "properties": {
+          "account_id": {
+            "format": "uuid",
+            "title": "Account Id",
+            "type": "string"
+          },
+          "action_type": {
+            "title": "Action Type",
+            "type": "string"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "payload_hash": {
+            "title": "Payload Hash",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Ref"
+          },
+          "target_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Text"
+          },
+          "target_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Version"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "account_id",
+          "version",
+          "payload_hash",
+          "status",
+          "action_type",
+          "is_simulated"
+        ],
+        "title": "ExactActionPreview",
         "type": "object"
       },
       "Examples": {
@@ -4165,6 +4341,95 @@
           "password"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "ManualModeration": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "format": "uuid",
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "effect": {
+            "enum": [
+              "hide",
+              "unhide",
+              "delete"
+            ],
+            "title": "Effect",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version",
+          "effect",
+          "client_request_id"
+        ],
+        "title": "ManualModeration",
+        "type": "object"
+      },
+      "ManualModerationOut": {
+        "properties": {
+          "effect": {
+            "title": "Effect",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "operation_id": {
+            "format": "uuid",
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status",
+          "effect",
+          "is_simulated"
+        ],
+        "title": "ManualModerationOut",
+        "type": "object"
+      },
+      "ManualModerationPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ManualModerationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ManualModerationPage",
         "type": "object"
       },
       "ManualReplyIn": {
@@ -5257,6 +5522,49 @@
         "title": "OperationsHealth",
         "type": "object"
       },
+      "OverviewAction": {
+        "properties": {
+          "action_type": {
+            "title": "Action Type",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Id"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "action_type",
+          "status",
+          "operation_id",
+          "created_at"
+        ],
+        "title": "OverviewAction",
+        "type": "object"
+      },
       "Page_ActivityEntryOut_": {
         "properties": {
           "items": {
@@ -5825,6 +6133,18 @@
             "title": "Expected Version",
             "type": "integer"
           },
+          "goals": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goals"
+          },
           "personality": {
             "$ref": "#/components/schemas/Personality"
           }
@@ -5838,6 +6158,11 @@
       },
       "PersonalityOut": {
         "properties": {
+          "goals": {
+            "default": "",
+            "title": "Goals",
+            "type": "string"
+          },
           "personality": {
             "$ref": "#/components/schemas/Personality"
           },
@@ -7263,6 +7588,59 @@
         "title": "TaskOut",
         "type": "object"
       },
+      "TaskSelectionOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "kind"
+        ],
+        "title": "TaskSelectionOut",
+        "type": "object"
+      },
+      "TaskSelectionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskSelectionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "TaskSelectionPage",
+        "type": "object"
+      },
       "TemplateItemOut": {
         "properties": {
           "allowed_values": {
@@ -7772,6 +8150,212 @@
           "signature_failures_24h_system_wide"
         ],
         "title": "WebhooksHealth",
+        "type": "object"
+      },
+      "WorkActionOut": {
+        "properties": {
+          "action_type": {
+            "title": "Action Type",
+            "type": "string"
+          },
+          "approval_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Id"
+          },
+          "outcome_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome Code"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "action_type",
+          "status",
+          "approval_id",
+          "operation_id",
+          "outcome_code",
+          "is_simulated"
+        ],
+        "title": "WorkActionOut",
+        "type": "object"
+      },
+      "WorkControl": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "format": "uuid",
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "handling_mode": {
+            "pattern": "^(agent|human)$",
+            "title": "Handling Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "client_request_id",
+          "handling_mode"
+        ],
+        "title": "WorkControl",
+        "type": "object"
+      },
+      "WorkThreadOut": {
+        "properties": {
+          "account_id": {
+            "format": "uuid",
+            "title": "Account Id",
+            "type": "string"
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/WorkActionOut"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "handling_mode": {
+            "title": "Handling Mode",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "source_ref": {
+            "title": "Source Ref",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "surface": {
+            "title": "Surface",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "account_id",
+          "surface",
+          "source_ref",
+          "state",
+          "handling_mode",
+          "version",
+          "customer_id",
+          "goal",
+          "is_simulated",
+          "actions"
+        ],
+        "title": "WorkThreadOut",
+        "type": "object"
+      },
+      "WorkThreadPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkThreadOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "WorkThreadPage",
         "type": "object"
       },
       "WorkspaceCreate": {
@@ -9027,6 +9611,60 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent": {
+      "get": {
+        "description": "Bounded, body-free operational projection; detail domains retain their own access.",
+        "operationId": "get_overview_api_v1_workspaces__workspace_id__accounts__account_id__agent_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Overview",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/actions/{action_id}": {
       "get": {
         "operationId": "action_detail_api_v1_workspaces__workspace_id__accounts__account_id__agent_actions__action_id__get",
@@ -9580,6 +10218,98 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/task-selections": {
+      "get": {
+        "operationId": "task_selections_api_v1_workspaces__workspace_id__accounts__account_id__agent_task_selections_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "pattern": "^(media|content)$",
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSelectionPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Task Selections",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/tasks": {
       "get": {
         "operationId": "list_tasks_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks_get",
@@ -9852,6 +10582,240 @@
           }
         },
         "summary": "Answer Task",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/threads": {
+      "get": {
+        "operationId": "threads_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source_ref",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Ref"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkThreadPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Threads",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/threads/{thread_id}": {
+      "get": {
+        "operationId": "detail_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads__thread_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkThreadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Detail",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/threads/{thread_id}/control": {
+      "post": {
+        "operationId": "control_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads__thread_id__control_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkControl"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkThreadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Control",
         "tags": [
           "agent"
         ]
@@ -10343,6 +11307,171 @@
           }
         },
         "summary": "Comment Detail",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/{comment_id}/moderate": {
+      "post": {
+        "operationId": "moderate_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__moderate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Comment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualModeration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManualModerationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Moderate",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/{comment_id}/moderation-operations": {
+      "get": {
+        "operationId": "history_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__moderation_operations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Comment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManualModerationPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "History",
         "tags": [
           "comments"
         ]
@@ -11295,6 +12424,59 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/agent-actions/{action_id}": {
+      "get": {
+        "operationId": "exact_action_api_v1_workspaces__workspace_id__agent_actions__action_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "action_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Action Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExactActionPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exact Action",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/approvals": {
       "get": {
         "operationId": "list_approvals_api_v1_workspaces__workspace_id__approvals_get",
@@ -11344,7 +12526,11 @@
                     "command.update_brand_voice",
                     "command.cancel_content",
                     "reply.send",
-                    "content.publish"
+                    "content.publish",
+                    "comments.approve",
+                    "content.prepare",
+                    "content.schedule",
+                    "content.cancel"
                   ],
                   "type": "string"
                 },

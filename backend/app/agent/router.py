@@ -5,12 +5,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.agent import delegation
 from app.agent.grounding import FactEvidence
-from app.agent.models import AgentAction, AgentDelegation
+from app.agent.models import AgentAction, AgentDelegation, AgentSession, AgentThread
 from app.agent.personality import (
     PersonalityChange,
     PersonalityOut,
@@ -313,4 +313,104 @@ def _state_change(
         controller_mode=account.controller_mode,
         config_version=account.config_version,
         controller_epoch=account.controller_epoch,
+    )
+
+
+class OverviewAction(BaseModel):
+    id: uuid.UUID
+    action_type: str
+    status: str
+    operation_id: uuid.UUID | None
+    created_at: datetime
+
+
+class AgentOverview(BaseModel):
+    state: str
+    controller_mode: str
+    config_version: int
+    controller_epoch: int
+    is_simulated: bool
+    session_counts: dict[str, int]
+    pending_questions: int
+    pending_approvals: int
+    recent_actions: list[OverviewAction]
+
+
+@router.get("", response_model=AgentOverview)
+def get_overview(
+    account_id: uuid.UUID,
+    ctx: WorkspaceContext = Depends(require_membership()),
+    db: Session = Depends(get_db),
+) -> AgentOverview:
+    """Bounded, body-free operational projection; detail domains retain their own access."""
+    from app.integrations.instagram.queries import get_account
+    from app.owner_requests.models import OwnerQuestion
+
+    try:
+        account = scoped_account(db, ctx.workspace_id, account_id)
+    except AgentScopeError as exc:
+        raise AppError("NOT_FOUND") from exc
+    social = get_account(db, ctx, account_id)
+    if social is None:
+        raise AppError("NOT_FOUND")
+    counts = db.execute(
+        select(AgentSession.status, func.count(AgentSession.id))
+        .join(
+            AgentThread,
+            (AgentThread.id == AgentSession.thread_id)
+            & (AgentThread.workspace_id == AgentSession.workspace_id),
+        )
+        .where(
+            AgentThread.workspace_id == ctx.workspace_id,
+            AgentThread.social_account_id == account_id,
+        )
+        .group_by(AgentSession.status)
+    ).all()
+    scope = (
+        AgentAction.workspace_id == ctx.workspace_id,
+        AgentAction.social_account_id == account_id,
+    )
+    actions = db.scalars(
+        select(AgentAction)
+        .where(*scope)
+        .order_by(AgentAction.created_at.desc(), AgentAction.id.desc())
+        .limit(10)
+    ).all()
+    questions = (
+        db.scalar(
+            select(func.count(OwnerQuestion.id)).where(
+                OwnerQuestion.workspace_id == ctx.workspace_id,
+                OwnerQuestion.social_account_id == account_id,
+                OwnerQuestion.state == "pending",
+            )
+        )
+        or 0
+    )
+    approvals = (
+        db.scalar(
+            select(func.count(AgentAction.id)).where(
+                *scope, AgentAction.status == "waiting_approval"
+            )
+        )
+        or 0
+    )
+    return AgentOverview(
+        state=account.state,
+        controller_mode=account.controller_mode,
+        config_version=account.config_version,
+        controller_epoch=account.controller_epoch,
+        is_simulated=social.provider_kind == "mock",
+        session_counts=dict(counts),
+        pending_questions=questions,
+        pending_approvals=approvals,
+        recent_actions=[
+            OverviewAction(
+                id=a.id,
+                action_type=a.action_type,
+                status=a.status,
+                operation_id=a.operation_id,
+                created_at=a.created_at,
+            )
+            for a in actions
+        ],
     )

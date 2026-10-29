@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.agent.delegation import authorize_action
 from app.agent.grounding import ReplyValidationArgs, validate_reply
 from app.agent.models import ACTIVE_RUN_STATES, AgentAction, AgentEvent, AgentSession
-from app.agent.repository import admit_action, scoped_thread
+from app.agent.repository import admit_action, scoped_account, scoped_thread
 from app.agent.tools.broker import BrokerContext, ToolInputError
 from app.comments.models import PublicComment, PublicCommentAction, PublicMedia
 from app.core.canonical import payload_hash
@@ -64,6 +64,7 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
         if isinstance(args, PublicReplyArgs)
         else ModerateArgs.model_validate(args)
     )
+    scoped_account(db, ctx.workspace.workspace_id, ctx.account_id, lock=True)
     thread = scoped_thread(db, ctx.workspace.workspace_id, ctx.account_id, ctx.thread_id, lock=True)
     if ctx.surface != "comment" or thread.surface != "comment" or thread.handling_mode != "agent":
         raise ToolInputError("public thread unavailable")
@@ -94,6 +95,12 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
         )
         .with_for_update()
     )
+    from app.comments.reservations import unresolved
+
+    if comment is not None and unresolved(
+        db, thread.workspace_id, thread.social_account_id, comment.id
+    ):
+        raise ToolInputError("manual moderation pending or unresolved")
     if comment is None or comment.version != request.comment_version or comment.is_owner:
         raise ToolInputError("target unavailable or stale")
     media = db.scalar(

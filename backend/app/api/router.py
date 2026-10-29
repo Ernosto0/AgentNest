@@ -9,9 +9,11 @@ from pydantic import BaseModel
 from app.activity.router import router as activity_router
 from app.agent.owner_tasks_router import router as owner_tasks_router
 from app.agent.router import router as agent_router
+from app.agent.work_views import router as agent_work_router
 from app.api.deps import enforce_csrf, get_app_settings
 from app.approvals.router import router as approvals_router
 from app.commands.router import router as commands_router
+from app.comments.manual import router as manual_comments_router
 from app.comments.router import router as comments_router
 from app.content.router import router as content_router
 from app.core.config import Settings
@@ -95,3 +97,7 @@ api_router.include_router(reports_router)
 api_router.include_router(activity_router)
 api_router.include_router(agent_router)
 api_router.include_router(owner_tasks_router)
+
+api_router.include_router(agent_work_router)
+
+api_router.include_router(manual_comments_router)

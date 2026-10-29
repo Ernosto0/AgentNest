@@ -37,7 +37,11 @@
       "content_scheduled_next_24h": "Posts scheduled for the next 24 hours",
       "content_on_hold_now": "Posts on hold (now)",
       "fact_changes": "Information changes",
-      "integration_errors": "Integration errors"
+      "integration_errors": "Integration errors",
+      "agent_automatic_v1": "Verified automatic assistant effects",
+      "agent_approved_v1": "Assistant effects verified after human approval",
+      "agent_owner_questions_v1": "Business information requests created",
+      "agent_unknown_now_v1": "Assistant effects with unresolved outcomes"
     },
     "evidenceUnavailable": "The detail records for this older report were not saved. You can generate a new report if its sources are still available."
   }

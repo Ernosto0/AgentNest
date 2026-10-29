@@ -1,3 +1,5 @@
+import { AgentPage } from "@/features/agent/AgentPage";
+import { useAgentOverview } from "@/features/agent/hooks";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -22,6 +24,18 @@ const MODES: Mode[] = ["approval", "auto", "off"];
 /** The Instagram connection and how much the assistant may do alone, per kind of reply. */
 export function AutomationSettings() {
   const { t } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
+  const accounts = useSocialAccounts(workspace.id);
+  const account = accounts.data?.find(a => a.status !== "disconnected");
+  const agent = useAgentOverview(workspace.id, account?.id ?? "");
+  if (accounts.isPending || (account && agent.isPending)) return <p role="status">{t("common.loading")}</p>;
+  if (accounts.error) return <ErrorMessage error={accounts.error} />;
+  if (account && agent.error) return <ErrorMessage error={agent.error} />;
+  return agent.data?.controller_mode === "agent" ? <AgentPage /> : <LegacyAutomationSettings />;
+}
+
+function LegacyAutomationSettings() {
+  const { t } = useTranslation();
   const { workspace, role } = useCurrentWorkspace();
   const owner = role === "owner";
   const accounts = useSocialAccounts(workspace.id);
@@ -37,6 +51,7 @@ export function AutomationSettings() {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl font-semibold">{t("automation.title")}</h1>
+      <Link className="text-indigo-700 underline" to={`/w/${workspace.id}/more/agent`}>{t("agent.title")}</Link>
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">{t("automation.connection")}</h2>

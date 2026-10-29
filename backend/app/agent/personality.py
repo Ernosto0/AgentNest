@@ -42,15 +42,18 @@ class PersonalityChange(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1)
     personality: Personality
+    goals: str | None = Field(default=None, max_length=500)
 
 
 class PersonalityOut(BaseModel):
     version: int
     personality: Personality
+    goals: str = ""
 
 
 def read_personality(account: AccountAgent) -> PersonalityOut:
     return PersonalityOut(
+        goals=str(account.goals.get("instructions", "")),
         version=account.persona_version,
         personality=Personality.model_validate(account.persona),
     )
@@ -72,6 +75,8 @@ def change_personality(
     if account.persona_version != change.expected_version:
         raise AppError("VERSION_CONFLICT")
     account.persona = change.personality.model_dump(mode="json")
+    if change.goals is not None:
+        account.goals = {**account.goals, "instructions": change.goals.strip()}
     account.persona_version += 1
     account.config_version += 1
     account.updated_at = clock.now()

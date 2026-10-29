@@ -34,6 +34,7 @@ function routes(ws: string, accounts: () => SocialAccount[], extra: Record<strin
     [`GET ${base}`]: () => json(workspace(ws)),
     [`GET ${base}/readiness`]: () => json(READINESS),
     [`GET ${base}/social-accounts`]: () => json({ items: accounts(), next_cursor: null }),
+    [`GET ${base}/accounts/${ACCOUNT_ID}/agent`]: () => json({ controller_mode: "legacy", state: "inactive" }),
     [`GET ${base}/automation-policies`]: () =>
       json({ auto_allowed: false, items: [], readiness_level: "ready", reviewed_at: null }),
     ...extra,

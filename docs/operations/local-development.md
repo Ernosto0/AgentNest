@@ -241,6 +241,13 @@ Use `MEDIA_STORAGE_BACKEND=s3` with a private bucket, scoped explicit `S3_ACCESS
 
 With only the two required inputs, probes read profile and publishing quota. Adding `META_LIVE_RECIPIENT_ID` opts into **one real DM**, then read-only lookup polling matching its returned ID and recipient; the recipient must be eligible and inside the messaging window. Adding `META_LIVE_IMAGE_URL` opts into **one real feed post** from a public HTTPS JPEG, including bounded processing polls and permalink lookup. Omit these optional inputs for read-only probes. These are deliberate direct adapter contract probes, outside the application ledger; production/customer sends and publishes must still use approvals and the operations ledger. The harness never automatically retries a send/publish. On ambiguity, inspect the real account safely before another manual run. It neither records fixtures nor prints live objects/URLs/exceptions; do not use `--showlocals`, debugger capture or HTTP debug logging with credentials. Passing a probe does not prove OAuth/webhook/scheduled-ledger acceptance. No live probe was run in offline Sessions 1-4.
 
+Session 16 comment harness cases require `META_LIVE_COMMENT_MEDIA_ID` and
+`META_LIVE_COMMENT_ID` for exact founder-owned disposable targets. Mutations separately
+require `META_LIVE_COMMENT_EFFECT` to equal one of `reply`, `private_reply`, `hide`,
+`unhide`, `delete`. New cases currently skip even with credentials/targets: R75-01..06
+evidence is pending and no environment bypass exists. No arbitrary comment is selected
+or mutation retried. See [research evidence](../research/meta-comments-session16.md).
+
 For ordinary full-suite runs, explicitly blank both required live inputs, even if your parent shell has credentials:
 
 ```powershell

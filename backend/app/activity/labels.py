@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.agent.models import AgentAction, AgentThread
 from app.approvals.models import Approval
 from app.audit.models import AuditLog
 from app.content.models import ContentItem
@@ -24,6 +25,7 @@ from app.inbox.models import Conversation, Message, ReplyDraft
 from app.integrations.instagram.models import SocialAccount
 from app.knowledge.models import ApprovedAnswer, BusinessFact, FactCandidate
 from app.operations.models import Operation
+from app.owner_requests.models import OwnerQuestion
 from app.reporting import links
 from app.reporting.models import DailyReport
 
@@ -106,6 +108,42 @@ def resolve_resources(
     for row in rows:
         if row.resource_type and row.resource_id:
             ids[row.resource_type].add(row.resource_id)
+
+    agent_routes: dict[uuid.UUID, str] = {}
+    if ids["agent_action"]:
+        for agent_action, thread in session.execute(
+            select(AgentAction, AgentThread)
+            .join(
+                AgentThread,
+                (AgentThread.id == AgentAction.thread_id)
+                & (AgentThread.workspace_id == AgentAction.workspace_id),
+            )
+            .where(
+                AgentAction.workspace_id == ws,
+                AgentAction.id.in_(ids["agent_action"]),
+                AgentThread.workspace_id == ws,
+            )
+        ):
+            if thread.surface == "dm" and thread.dm_conversation_id:
+                agent_routes[agent_action.id] = f"/w/{ws}/inbox/{thread.dm_conversation_id}"
+            elif thread.surface == "comment" and thread.public_thread_id:
+                agent_routes[agent_action.id] = (
+                    f"/w/{ws}/more/agent/comments/{thread.public_thread_id}?account={agent_action.social_account_id}"
+                )
+            else:
+                agent_routes[agent_action.id] = (
+                    f"/w/{ws}/more/agent?account={agent_action.social_account_id}"
+                )
+    question_routes: dict[uuid.UUID, str] = {}
+    if ids["owner_question"]:
+        question_routes = {
+            q.id: f"/w/{ws}/more/agent/questions/{q.id}?account={q.social_account_id}"
+            for q in session.scalars(
+                select(OwnerQuestion).where(
+                    OwnerQuestion.workspace_id == ws, OwnerQuestion.id.in_(ids["owner_question"])
+                )
+            )
+        }
 
     # Customers: a conversation, a message or a reply draft all lead to a conversation.
     conversation_of: dict[uuid.UUID, uuid.UUID] = {}
@@ -232,6 +270,17 @@ def resolve_resources(
             result[row.id] = conversation_resource(row, conversation_of.get(rid))
         elif kind == "conversation":
             result[row.id] = conversation_resource(row, rid)
+        elif kind == "agent_action":
+            result[row.id] = Resource(
+                kind,
+                rid,
+                _text("activity.resource.agent_action", locale, "activity.resource.other"),
+                agent_routes.get(rid),
+            )
+        elif kind == "owner_question":
+            result[row.id] = Resource(
+                kind, rid, t("report.item.owner_question", locale), question_routes.get(rid)
+            )
         elif kind == "content_item":
             title = titles.get(rid)
             route = links.content_link(ws, rid)["route"] if title is not None else None

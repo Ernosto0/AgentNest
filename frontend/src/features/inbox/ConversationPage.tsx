@@ -1,3 +1,4 @@
+import { ConversationAgentWork } from "@/features/agent-work/WorkPages";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
@@ -66,6 +67,7 @@ export function ConversationPage() {
         {suggest.error ? <ErrorMessage error={suggest.error} /> : null}
       </div>
 
+      {conversation.social_account_id ? <ConversationAgentWork account={conversation.social_account_id} conversation={conversationId} /> : null}
       <ol className="flex flex-col gap-2" aria-label={t("convo.messages")} data-testid="messages">
         {messages.map((message) => {
           const mine = message.direction === "outbound";

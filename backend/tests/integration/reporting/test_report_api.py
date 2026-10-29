@@ -63,7 +63,7 @@ def test_a_past_day_comes_back_complete_with_a_link_on_every_number(report_env: 
     assert body["period_start"] == "2026-03-09T21:00:00Z"
     assert body["period_end"] == "2026-03-10T21:00:00Z"
     assert body["is_partial"] is False
-    assert body["definitions_version"] == "1"
+    assert body["definitions_version"] == "2"
     assert body["has_simulated_data"] is True
     assert [m["key"] for m in body["metrics"]] == list(KEYS)
     ws = report_env.env.workspace.id

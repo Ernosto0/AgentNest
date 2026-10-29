@@ -4,6 +4,11 @@ import type { AppNotification } from "@/api/types";
 export function notificationTarget(workspaceId: string, notification: AppNotification): string | null {
   const base = `/w/${workspaceId}`;
   const params = notification.params as Record<string, unknown>;
+  if (notification.type.startsWith("owner_question.")) {
+    const account = params.account_id;
+    const question = params.question_id;
+    return typeof account === "string" && typeof question === "string" ? `${base}/more/agent/questions/${encodeURIComponent(question)}?account=${encodeURIComponent(account)}` : `${base}/more/agent/questions`;
+  }
   if (notification.type.startsWith("approval.")) return `${base}/approvals`;
   if (notification.type.startsWith("content.")) {
     const id = params.content_id;

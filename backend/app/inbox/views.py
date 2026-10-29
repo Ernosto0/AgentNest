@@ -63,6 +63,7 @@ def _preview(message: Message | None) -> str | None:
 def conversation_out(conversation: Conversation, last: Message | None) -> ConversationOut:
     return ConversationOut(
         id=conversation.id,
+        social_account_id=conversation.social_account_id,
         customer_handle=conversation.customer_handle,
         customer_number=customer_number(conversation.id),
         last_message_preview=_preview(last),

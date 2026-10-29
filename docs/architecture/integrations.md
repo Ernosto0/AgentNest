@@ -62,7 +62,10 @@ For Meta sends and publishes, malformed successful responses (invalid JSON, miss
 `social_accounts.capabilities` is computed at connect and refresh:
 - `messaging`: scope `instagram_business_manage_messages` granted.
 - `publish_feed_image`, `publish_story_image`: scope `instagram_business_content_publish` granted (story: pending V-03; mock: true). These are the only publishing capability names: an earlier build used `content_publish` for mock accounts, and migration `0011` rewrote those rows to the two documented names (keeping their value). `MOCK_CAPABILITIES = {messaging, publish_feed_image, publish_story_image}` (plan G4).
-- `comments`: false in MVP.
+- Meta `comment_read`, `comment_reply`, `comment_moderate`, `comment_private_reply`:
+  explicitly false until R75-01..06 evidence permits each capability. Returned
+  `instagram_business_manage_comments` alone cannot enable them. OAuth consent and
+  subscriptions remain unchanged. Mock effects use separate synthetic capabilities.
 
 The policy engine (R1) and the content submit validation check capabilities. Missing capability → `CAPABILITY_MISSING`.
 
@@ -85,6 +88,14 @@ The policy engine (R1) and the content submit validation check capabilities. Mis
 | Time | Uses the injected `Clock`, so tests control expiry and readiness. |
 
 ### 3.4 Meta adapter (`MetaInstagramProvider`): Phase 7
+
+**Phase 7.5 Session 16:** default comment reads/effects/lookups stay disabled.
+`SyntheticMetaCommentProvider` requires an exact `httpx.MockTransport` and is never
+constructed by the registry. Its provisional fixture contract covers ownership,
+pagination, public/moderation/private shapes and deadlines, without operation-key
+readback evidence. Generic transient mutation responses are unknown unless a definitive
+rejection applies. See [research evidence](../research/meta-comments-session16.md).
+No real comment webhook parser is enabled.
 
 **Offline Session 2 implementation:** profile, send, outbound lookup, containers/status/publish/media/quota and refresh are implemented with fixture transports. All current Meta fixtures are explicitly synthetic offline contracts, not recordings. Gate 2/V-05 and all live acceptance remain pending; the error mapping must be checked against authentic sanitized responses before live use. OAuth and refresh scheduling are implemented offline in Session 3; live response verification remains pending.
 

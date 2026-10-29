@@ -14,6 +14,10 @@ ApprovalAction = Literal[
     "command.cancel_content",
     "reply.send",
     "content.publish",
+    "comments.approve",
+    "content.prepare",
+    "content.schedule",
+    "content.cancel",
 ]
 
 

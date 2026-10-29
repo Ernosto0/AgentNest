@@ -474,3 +474,77 @@ deadline). The executor checks current delegation, requester membership, pause, 
 payload and fact versions. Unknown publish outcomes retain the same operation/container;
 revocation does not prevent positive reconciliation of an effect that already happened.
 Task action results reconstruct scheduled/published/unknown states from persisted records.
+
+## Session 14 settings projection and goals
+
+`GET /accounts/{account_id}/agent` is a member-readable bounded, body-free overview:
+controller state/configuration version/epoch, simulation provenance, persisted session
+status counts, pending information-question and action-approval counts, and the latest
+ten action IDs/types/statuses/operation IDs/timestamps. It is an operational snapshot,
+not historical reporting or proof of delivery. Detail bodies stay in their owning domains.
+Unknown account/foreign workspace IDs return 404. No controller request metadata is exposed.
+
+Personality GET/PATCH additionally returns/accepts `goals` (maximum 500 characters).
+An omitted goals field preserves existing instructions. Goals and personality share the
+existing `expected_version`/persona version lock; changes retain controller metadata and
+increment configuration version. Owner/manager can edit; goals convey no authority.
+The UI's conversation sample is explicitly local illustration with no model invocation,
+Instagram send or model spend. Agent-controlled accounts opening the previous automation
+route see the agent controls; legacy accounts retain topic settings and explicit cutover.
+
+## Session 15: owner work inspection and explicit moderation
+
+Member UI routes under `/w/{workspace_id}/more/agent` expose `/questions`,
+`/questions/{question_id}`, `/comments`, `/comments/{public_thread_id}`,
+`/memory/{evidenced_customer_id}` and `/tasks/{requester_task_id}`. The account is
+selected explicitly in the query string. DM details acquire their account ID from the
+scoped conversation response; public comment pages never resolve private identity,
+private memory or owner-question bodies.
+
+The member-safe `/accounts/{account_id}/agent/threads` projection is bounded/paginated,
+excludes private owner-task threads and contains state, current goal status, ownership,
+provenance and the latest twenty action outcomes. Only DM threads expose their evidenced
+customer identity. Public ownership changes use `/agent/threads/{thread_id}/control`
+with expected version, request UUID and `handling_mode=human|agent`. Replays under the
+same authenticated actor return without another transition; conflicting requests fail.
+Release advances ownership, invalidates old steps and queues a fresh replan; it does not
+restore an old approval. Existing DM takeover/release remains the conversation service.
+
+`GET /agent-actions/{action_id}` resolves the exact action within the authenticated
+workspace for an approval card. DM/public/private-reply bodies come from their owning
+subject tables, with the action version/hash and provider provenance. Agent approval cards
+never look up a content item or reply draft using an action UUID. Current backend
+approval/executor validation remains authoritative. Private preview caches are removed
+before correction/forget refetch; source reads poll and expire on unmount.
+
+Owner-question answers remain information, with expected version and a stable retry UUID.
+Staff can propose; owner/manager can authoritatively answer. Reusable information is an
+explicit unverified candidate. Expired/answered questions do not expose a new answer form.
+Task clarifications use actual scoped media/content choices and persisted question versions;
+no typed raw UUID entry or implicit publication approval is required. The new paginated
+`/accounts/{account_id}/agent/task-selections?kind=media|content` exposes ready workspace
+media display names and content belonging to that account (or unbound drafts), without
+storage keys/URLs. Existing task execution still validates selection receipts and authority.
+
+Explicit manual moderation is separate from delegation. Owner/manager POST
+`/accounts/{account_id}/comments/{comment_id}/moderate` with `effect=hide|unhide|delete`,
+expected comment version and request UUID. The exact request becomes a committed shared
+`Operation` with subject `public_comment`, a five-minute deadline, body-free immutable
+source/media versions and actor evidence. No policy grant or artificial approval is created.
+The IDs-only `manual_comment_effect` worker reconstructs active membership and current
+`comments.moderate`, account capability, ownership, versions and target state before it
+commits `in_progress` and calls the provider outside a transaction. A repeat reconciles the
+same operation; an unknown outcome blocks manual/public/private conflicting proposals.
+`reconcile_manual_comment` accepts positive readback only; missing evidence stays unknown.
+The paginated `/moderation-operations` history reports pending, verified, failed/cancelled
+and unknown with simulated provenance. These explicit controls cover moderation; manual
+free-text public/private reply composition remains outside this UI increment.
+
+No migration is required; the head remains `0030`. Real comment capabilities remain disabled
+until Session 16/18 evidence. New reports use definitions version `2`, preserving the original
+twenty definitions/order and appending `agent_automatic_v1`, `agent_approved_v1`,
+`agent_owner_questions_v1` (period) and `agent_unknown_now_v1` (snapshot). Effect counters
+join actual succeeded operations; owner interruptions count persisted questions; unknown
+counts unresolved operations. Historical snapshots retain their original version, metric
+membership and values; an absent new metric in an old snapshot returns 404. Activity links
+use scoped persisted action/thread/question routing and never include personal bodies.

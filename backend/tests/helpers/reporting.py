@@ -29,6 +29,10 @@ DAY = date(2026, 3, 10)
 TIMEZONE = "Europe/Istanbul"
 
 EXPECTED: dict[str, int | float] = {
+    "agent_automatic_v1": 0,
+    "agent_approved_v1": 0,
+    "agent_owner_questions_v1": 0,
+    "agent_unknown_now_v1": 0,
     "inbound_messages": 15,
     "conversations_with_inbound": 8,
     "new_conversations": 6,

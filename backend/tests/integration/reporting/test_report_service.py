@@ -152,7 +152,7 @@ def test_the_audit_entry_has_no_text_and_follows_the_report(report_env: ReportEn
     assert entry.metadata_ == {
         "local_date": DAY.isoformat(),
         "scheduled": False,
-        "definitions_version": "1",
+        "definitions_version": "2",
         "is_partial": False,
     }
     assert entry.is_simulated is True  # the scripted day is simulated (INV-09)

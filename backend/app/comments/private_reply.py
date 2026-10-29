@@ -137,6 +137,12 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
         )
         .with_for_update()
     )
+    from app.comments.reservations import unresolved
+
+    if comment is not None and unresolved(
+        db, ctx.workspace.workspace_id, ctx.account_id, comment.id
+    ):
+        raise ToolInputError("manual moderation pending or unresolved")
     if comment is None:
         raise ToolInputError("target unavailable")
     prior = db.scalar(

@@ -16,6 +16,15 @@ SCOPES = (
     "instagram_business_content_publish",
 )
 
+# R75-01..06: requesting or receiving manage_comments does not establish support.
+# Consent expansion and real webhook/effect activation remain separate research gates.
+COMMENT_CAPABILITIES = (
+    "comment_read",
+    "comment_reply",
+    "comment_moderate",
+    "comment_private_reply",
+)
+
 
 @dataclass(frozen=True)
 class TokenExchangeResult:
@@ -60,6 +69,7 @@ def compute_capabilities(granted_scopes: list[str], stories_enabled: bool) -> di
         "messaging": SCOPES[1] in granted_scopes,
         "publish_feed_image": SCOPES[2] in granted_scopes,
         "publish_story_image": SCOPES[2] in granted_scopes and stories_enabled,
+        **dict.fromkeys(COMMENT_CAPABILITIES, False),
     }
 
 

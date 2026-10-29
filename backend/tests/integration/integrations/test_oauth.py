@@ -120,6 +120,10 @@ def test_connect_consumes_before_exchange_encrypts_and_whitelists_response(env, 
         "messaging": True,
         "publish_feed_image": False,
         "publish_story_image": False,
+        "comment_read": False,
+        "comment_reply": False,
+        "comment_moderate": False,
+        "comment_private_reply": False,
     }
     assert (
         TokenKeyRing(KEYS, "k1").decrypt(

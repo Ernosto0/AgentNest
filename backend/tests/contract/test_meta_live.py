@@ -17,6 +17,7 @@ import pytest
 from app.core.clock import SystemClock
 from app.integrations.instagram.base import AccountRef, ContainerSpec
 from app.integrations.instagram.meta import MetaInstagramProvider
+from app.integrations.instagram.oauth import compute_capabilities
 
 pytestmark = pytest.mark.meta_live
 
@@ -115,3 +116,53 @@ def test_live_optional_image_publish(
         and bool(media.permalink)
         and media.permalink.startswith("https://")
     )
+
+
+def _comment_probe_inputs(effect: str) -> tuple[str, str]:
+    """Exact founder-owned fixtures only; never select a customer comment automatically."""
+    media_id = os.environ.get("META_LIVE_COMMENT_MEDIA_ID", "").strip()
+    comment_id = os.environ.get("META_LIVE_COMMENT_ID", "").strip()
+    if not media_id or not comment_id:
+        pytest.skip("Comment probes require exact media and comment test targets.")
+    if effect != "read" and os.environ.get("META_LIVE_COMMENT_EFFECT", "") != effect:
+        pytest.skip("Each comment mutation requires a separate exact effect opt-in.")
+    capability = {
+        "read": "comment_read",
+        "reply": "comment_reply",
+        "private_reply": "comment_private_reply",
+        "hide": "comment_moderate",
+        "unhide": "comment_moderate",
+        "delete": "comment_moderate",
+    }[effect]
+    # Do not introduce a test-only flag that can bypass an unresolved research gate.
+    # Replace this gate only with reviewed authenticated capability evidence.
+    if not compute_capabilities([], False)[capability]:
+        pytest.skip("R75 comment capability evidence remains pending; real probe disabled.")
+    return media_id, comment_id
+
+
+@pytest.mark.parametrize("effect", ["read", "reply", "private_reply", "hide", "unhide", "delete"])
+def test_live_optional_comment_target(
+    live_account: tuple[MetaInstagramProvider, AccountRef, SystemClock], effect: str
+) -> None:
+    media_id, comment_id = _comment_probe_inputs(effect)
+    provider, account, _ = live_account
+    source = _probe(lambda: provider.read_comment(account, comment_id))
+    _check(source.id == comment_id and source.media.id == media_id)
+    if effect == "read":
+        return
+    operation_key = f"manual-contract-{uuid.uuid4()}"
+    text = "AgentNest explicitly authorized synthetic-test-target contract probe."
+    if effect == "private_reply":
+        value = _probe(
+            lambda: provider.send_private_reply(account, comment_id, text, operation_key)
+        )
+        _check(bool(value.reply_id))
+        return
+    result = _probe(
+        lambda: provider.perform_comment_effect(
+            account, comment_id, effect, text if effect == "reply" else None, operation_key
+        )
+    )
+    _check(bool(result.provider_id))
+    # No repeat mutation on uncertainty. An acknowledgement alone is not readback.

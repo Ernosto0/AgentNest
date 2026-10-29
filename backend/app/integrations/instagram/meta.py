@@ -72,6 +72,15 @@ class Media(ID):
     timestamp: AwareDatetime | None = None
 
 
+class Comment(ID):
+    """Provisional typed shape; only the synthetic-only scaffold can construct it."""
+
+    media: ID
+    timestamp: AwareDatetime
+    text: str | None = None
+    hidden: bool | None = None
+
+
 class Refreshed(Shape):
     access_token: str = Field(min_length=1, repr=False)
     expires_in: int = Field(gt=0, le=366 * 86400)
@@ -145,6 +154,12 @@ def _identifier(value: str) -> str:
 
 class MetaInstagramProvider:
     kind: ProviderKind = "meta"
+
+    def read_comments(self, account: AccountRef, media_id: str) -> list[Comment]:
+        raise ProviderInvalidRequest("COMMENT_READ_NOT_VERIFIED")
+
+    def read_comment(self, account: AccountRef, comment_id: str) -> Comment:
+        raise ProviderInvalidRequest("COMMENT_READ_NOT_VERIFIED")
 
     def perform_comment_effect(
         self,

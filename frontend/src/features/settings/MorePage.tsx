@@ -18,6 +18,7 @@ export function MorePage() {
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl font-semibold">{t("more.title")}</h1>
       <ul className="flex flex-col gap-3">
+        <li><Link to={`/w/${workspace.id}/more/agent`} className={ROW}>{t("agent.title")}<ChevronRightIcon className="text-xl text-slate-400" /></Link></li>
         <li>
           <Link to={`/w/${workspace.id}/more/reports`} className={ROW}>
             {t("more.reports")}

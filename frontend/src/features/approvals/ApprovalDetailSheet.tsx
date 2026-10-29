@@ -1,3 +1,5 @@
+import { AgentApprovalBody } from "./AgentApprovalBody";
+import { useExactAction } from "@/features/agent-work/hooks";
 import { useTranslation } from "react-i18next";
 import type { Approval } from "@/api/types";
 import { BottomSheet } from "@/components/BottomSheet";
@@ -62,16 +64,30 @@ function ExtraFields({ summary }: { summary: Record<string, unknown> }) {
  * One approval, rendered generically by its action: what will change, what it touches, when it
  * expires, and the two explicit decisions. The decision carries the displayed payload hash.
  */
-export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval; onClose: () => void }) {
+export function ApprovalDetailSheet({
+  approval,
+  onClose,
+}: {
+  approval: Approval;
+  onClose: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const decide = useDecideApproval(workspace.id);
   const pending = approval.status === "pending";
-  const isPublish = approval.action === "content.publish";
+  const isAgent = approval.subject.type === "agent_action";
+  const exact = useExactAction(workspace.id, approval.subject.id, isAgent);
+  const isPublish = approval.action === "content.publish" && !isAgent;
   const isCancel = approval.action === "command.cancel_content";
   // A publish approval is decided on what it covers, so the item is read first.
   const content = useContentItem(workspace.id, approval.subject.id, isPublish);
-  const cannotApprove = isPublish && (!content.data || isStaleFor(approval, content.data));
+  const cannotApprove =
+    (isPublish && (!content.data || isStaleFor(approval, content.data))) ||
+    (isAgent &&
+      (!exact.data ||
+        exact.data.version !== approval.subject.version ||
+        exact.data.payload_hash !== approval.payload_hash ||
+        exact.data.status !== "waiting_approval"));
 
   const decideWith = (decision: "approve" | "reject") =>
     decide.mutate({ approval, decision }, { onSuccess: onClose });
@@ -84,10 +100,17 @@ export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval;
         pending ? (
           approval.can_decide ? (
             <div className="flex flex-wrap gap-2">
-              <Button disabled={decide.isPending || cannotApprove} onClick={() => decideWith("approve")}>
+              <Button
+                disabled={decide.isPending || cannotApprove}
+                onClick={() => decideWith("approve")}
+              >
                 {decide.isPending ? t("approvals.detail.deciding") : t("approvals.detail.approve")}
               </Button>
-              <Button variant="secondary" disabled={decide.isPending} onClick={() => decideWith("reject")}>
+              <Button
+                variant="secondary"
+                disabled={decide.isPending}
+                onClick={() => decideWith("reject")}
+              >
                 {t("approvals.detail.reject")}
               </Button>
             </div>
@@ -103,7 +126,9 @@ export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval;
         data-payload-hash={approval.payload_hash}
       >
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          <span className="font-medium text-slate-900">{t(`approvals.action.${actionKey(approval.action)}`)}</span>
+          <span className="font-medium text-slate-900">
+            {t(`approvals.action.${actionKey(approval.action)}`)}
+          </span>
           <span>·</span>
           <span>
             {approval.kind === "confirmation"
@@ -112,7 +137,10 @@ export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval;
           </span>
           {approval.is_simulated ? <SimulatedBadge /> : null}
         </div>
-        {approval.action === "reply.send" ? <ReplyApprovalBody approval={approval} /> : null}
+        {isAgent ? <AgentApprovalBody approval={approval} /> : null}
+        {approval.action === "reply.send" && !isAgent ? (
+          <ReplyApprovalBody approval={approval} />
+        ) : null}
         {isPublish ? (
           <ContentApprovalBody
             approval={approval}
@@ -122,10 +150,14 @@ export function ApprovalDetailSheet({ approval, onClose }: { approval: Approval;
           />
         ) : null}
         {isCancel ? <CancelContentSummary summary={approval.summary} /> : null}
-        {isPublish ? null : (
+        {isPublish || isAgent ? null : (
           <>
             {isCancel ? null : (
-              <ChangeSummary summary={approval.summary} fromKey="approvals.detail.from" toKey="approvals.detail.to" />
+              <ChangeSummary
+                summary={approval.summary}
+                fromKey="approvals.detail.from"
+                toKey="approvals.detail.to"
+              />
             )}
             <ExtraFields summary={approval.summary} />
             <ImpactSummary

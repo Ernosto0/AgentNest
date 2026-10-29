@@ -235,7 +235,7 @@ export function useConnectMock(ws: string) {
       ),
     onSuccess: () =>
       Promise.all(
-        ["social-accounts", "readiness", "automation"].map((name) =>
+        ["agent", "social-accounts", "readiness", "automation"].map((name) =>
           queryClient.invalidateQueries({ queryKey: [name, ws] }),
         ),
       ),
@@ -253,7 +253,7 @@ export function useReconnectMock(ws: string) {
       ),
     onSuccess: () =>
       Promise.all(
-        ["social-accounts", "readiness", "automation", "conversations", "system-health"].map((name) =>
+        ["agent", "social-accounts", "readiness", "automation", "conversations", "system-health"].map((name) =>
           queryClient.invalidateQueries({ queryKey: [name, ws] }),
         ),
       ),

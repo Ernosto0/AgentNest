@@ -1,6 +1,6 @@
 # Phase 7.5: Implementation Sessions
 
-**Status:** Sessions 01-12 offline implemented and operator reviewed; Session 13 is offline complete and ready for review. See individual reports for actual evidence and remaining gates.
+**Status:** Sessions 01-12 and 14-15 are offline implemented and operator reviewed; Session 13 is offline complete and ready for review. Session 16 has an operator-reviewed offline scaffold, with real Meta capabilities externally pending. See individual reports for actual evidence and remaining gates.
 **Canonical phase:** [phase-7.5.md](../phases/phase-7.5.md).
 **Target decision:** [ADR-024](../../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md).
 
@@ -23,9 +23,9 @@ Run the following 18 sessions in order. Each brief is an implementable unit with
 | 11 | [Public replies and moderation](s11-public-replies-and-moderation.md) | P7.5-11 | Offline complete, operator reviewed |
 | 12 | [Comment-to-DM](s12-comment-to-dm.md) | P7.5-12 | Offline complete, operator reviewed |
 | 13 | [Owner tasks and content tools](s13-owner-tasks-and-content-tools.md) | P7.5-13 | Offline complete; see [report](s13-report.md) |
-| 14 | [Agent settings and overview UI](s14-agent-settings-and-overview-ui.md) | P7.5-14 | Planned |
-| 15 | [Conversations, questions and memory UI](s15-conversations-questions-and-memory-ui.md) | P7.5-15 | Planned |
-| 16 | [Meta capability adapters](s16-meta-capability-adapters.md) | P7.5-16 | Planned |
+| 14 | [Agent settings and overview UI](s14-agent-settings-and-overview-ui.md) | P7.5-14 | Offline complete, operator reviewed; see [report](s14-report.md) |
+| 15 | [Conversations, questions and memory UI](s15-conversations-questions-and-memory-ui.md) | P7.5-15 | Offline complete, operator reviewed; see [report](s15-report.md) |
+| 16 | [Meta capability adapters](s16-meta-capability-adapters.md) | P7.5-16 | Offline scaffold reviewed, real capabilities externally pending; see [report](s16-report.md) |
 | 17 | [Evaluation and end-to-end verification](s17-evaluation-and-e2e.md) | P7.5-17 | Planned |
 | 18 | [Rollout and close-out](s18-rollout-and-closeout.md) | P7.5-18 | Planned |
 

@@ -117,7 +117,7 @@
   },
   "approvals": {
     "title": "Approvals",
-    "intro": "What needs your decision is here. Nothing happens without your approval.",
+    "intro": "Review actions that need your decision. Delegated automatic work appears in activity.",
     "tabs": {
       "label": "Approval list",
       "pending": "Pending",
@@ -131,7 +131,11 @@
       "command_update_brand_voice": "Brand voice update",
       "command_cancel_content": "Content cancellation",
       "reply_send": "Sending a reply",
-      "content_publish": "Publishing content"
+      "content_publish": "Publishing content",
+      "comments_approve": "Review comment action",
+      "content_prepare": "Prepare content",
+      "content_schedule": "Schedule content",
+      "content_cancel": "Cancel content"
     },
     "status": {
       "pending": "Pending",

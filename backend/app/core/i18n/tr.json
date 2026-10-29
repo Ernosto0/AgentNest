@@ -304,5 +304,10 @@
   "notifications.type.owner_question_expired": "Bir bilgi talebinin s?resi doldu.",
   "notifications.type.owner_question_window_closed": "Yan?t kaydedildi. M??terinin mesajla?ma penceresini yeniden a?mas? gerekiyor.",
   "activity.comment.source_ingested": "Herkese açık yorum kaynağı güncellendi.",
-  "activity.comment.media_changed": "Herkese açık gönderi bağlamı güncellendi."
+  "activity.comment.media_changed": "Herkese açık gönderi bağlamı güncellendi.",
+  "report.summary.messages.agent_automatic_v1": "Asistanın otomatik gerçekleştirdiği doğrulanmış işlemler: {count}",
+  "report.summary.messages.agent_approved_v1": "İnsan onayından sonra doğrulanan asistan işlemleri: {count}",
+  "report.summary.messages.agent_owner_questions_v1": "İşletmeye sorulan bilgi istekleri: {count}",
+  "report.summary.messages.agent_unknown_now_v1": "Sonucu belirsiz asistan işlemleri: {count}",
+  "report.item.owner_question": "İşletme bilgi isteği"
 }

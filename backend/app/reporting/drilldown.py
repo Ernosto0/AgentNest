@@ -213,6 +213,9 @@ def _describe(session: Session, ctx: WorkspaceContext, rows: list[Any], locale: 
                 if conversation_id is not None:
                     route = links.conversation_link(ws, conversation_id)["route"]
             link = links.operation_link(ws, row.subject_id, route)
+        elif kind == "owner_question":
+            label = t("report.item.owner_question", locale)
+            link = {"api": None, "route": f"/w/{ws}/more/agent/questions"}
         elif kind == "inbound_event":
             label = t("report.item.inbound_event", locale)
         else:  # audit_log: fact changes and account problems
@@ -271,6 +274,8 @@ def metric_items(
         report = get_report(session, clock, ctx, local_date, snapshot_id=snapshot_id)
         if not report.evidence_complete:
             raise AppError("REPORT_EVIDENCE_UNAVAILABLE")
+        if key not in report.metrics:
+            raise AppError("NOT_FOUND")
         snapshot_id = report.snapshot_id
         value = report.value(key)
         rows = (

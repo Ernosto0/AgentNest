@@ -128,7 +128,7 @@ def notify(db: Session, clock: Clock, ctx: WorkspaceContext, q: OwnerQuestion, k
         type=kind,
         subject_type="owner_question",
         subject_id=q.id,
-        params={"question_id": str(q.id)},
+        params={"question_id": str(q.id), "account_id": str(q.social_account_id)},
         dedup_key=f"{kind}:{q.id}",
         is_simulated=bool(social and social.provider_kind == "mock"),
     )

@@ -1,4 +1,6 @@
+import { QuestionsPage, QuestionPage, MemoryPage, CommentsPage, CommentThreadPage, TaskPage } from "@/features/agent-work/WorkPages";
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router-dom";
+import { AgentPage } from "@/features/agent/AgentPage";
 import { NotificationCenter } from "@/features/notifications/NotificationCenter";
 import { ActivityFeed } from "@/features/activity/ActivityFeed";
 import { ApprovalsList } from "@/features/approvals/ApprovalsList";
@@ -41,6 +43,12 @@ export const appRoutes: RouteObject[] = [
         element: <WorkspaceGate />,
         children: [
           { index: true, element: <HomePage /> },
+          { path: "more/agent/questions", element: <QuestionsPage /> },
+          { path: "more/agent/questions/:questionId", element: <QuestionPage /> },
+          { path: "more/agent/memory/:customerId", element: <MemoryPage /> },
+          { path: "more/agent/comments", element: <CommentsPage /> },
+          { path: "more/agent/comments/:threadId", element: <CommentThreadPage /> },
+          { path: "more/agent/tasks/:taskId", element: <TaskPage /> },
           { path: "inbox", element: <InboxPage /> },
           { path: "inbox/:conversationId", element: <ConversationPage /> },
           { path: "content", element: <ContentPage /> },
@@ -54,6 +62,7 @@ export const appRoutes: RouteObject[] = [
           { path: "more/knowledge", element: <KnowledgePage /> },
           { path: "more/knowledge/suggestions", element: <SuggestionsPage /> },
           { path: "more/knowledge/answers", element: <ApprovedAnswers /> },
+          { path: "more/agent", element: <AgentPage /> },
           { path: "more/automation", element: <AutomationSettings /> },
           { path: "more/reports", element: <DailyReport /> },
           { path: "more/reports/:date/:key", element: <MetricItems /> },

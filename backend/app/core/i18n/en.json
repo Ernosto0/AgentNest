@@ -304,5 +304,10 @@
   "notifications.type.owner_question_expired": "An information request expired.",
   "notifications.type.owner_question_window_closed": "The answer is saved. The customer must reopen the messaging window.",
   "activity.comment.source_ingested": "Public comment source updated.",
-  "activity.comment.media_changed": "Public post context updated."
+  "activity.comment.media_changed": "Public post context updated.",
+  "report.summary.messages.agent_automatic_v1": "Verified automatic assistant effects: {count}",
+  "report.summary.messages.agent_approved_v1": "Assistant effects verified after human approval: {count}",
+  "report.summary.messages.agent_owner_questions_v1": "Business information requests created: {count}",
+  "report.summary.messages.agent_unknown_now_v1": "Assistant effects with unresolved outcomes: {count}",
+  "report.item.owner_question": "Business information request"
 }

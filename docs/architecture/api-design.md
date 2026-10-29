@@ -209,3 +209,23 @@ Manual content endpoints retain their existing contracts.
 ## 3. OpenAPI and client generation
 - `GET /openapi.json` is served in development and test. The backend command `uv run python -m app.cli export-openapi -o ../frontend/openapi.json` exports it (deterministic, UTF-8, LF; `-o` is used instead of a shell redirect because Windows PowerShell 5.1 redirects write UTF-16; without `-o` the JSON goes to stdout), and `npm run gen:api` produces `src/api/schema.d.ts`.
 - CI regenerates both and fails if the committed files differ.
+
+### Phase 7.5 Session 15 work inspection
+
+Additive account-scoped agent routes: paginated `GET /accounts/{account_id}/agent/threads`
+(optional exact source reference), `GET /threads/{thread_id}` and versioned/idempotent
+`POST /threads/{thread_id}/control` (`expected_version`, UUID `client_request_id`,
+`handling_mode=agent|human`). Owner-task threads are excluded; DM identity is evidenced,
+and public projections contain no private identity. `GET /agent-actions/{action_id}` is
+workspace-scoped exact approval display data. `GET /accounts/{account_id}/agent/task-selections`
+accepts `kind=media|content`, limit 1–50 and UUID cursor with display-safe ready-media/content
+choices. Foreign account/thread/action/selection-cursor IDs return 404.
+
+Explicit owner/manager comment moderation uses
+`POST /accounts/{account_id}/comments/{comment_id}/moderate` with closed hide/unhide/delete,
+expected source version and request UUID. Response 202 returns operation ID, actual status,
+effect and simulation flag; it never reports performed from admission alone. Member
+`GET /.../{comment_id}/moderation-operations` is paginated (limit 1–50, scoped UUID cursor).
+The five-minute manual request authority is checked again against active membership and
+provider/source state before ledger dispatch. Exact retry requests replay; changed requests
+or unresolved target conflicts reject. See the implemented [account-agent contract](account-agent-contracts.md#session-15-owner-work-inspection-and-explicit-moderation).

@@ -37,7 +37,11 @@
       "content_scheduled_next_24h": "Önümüzdeki 24 saatte zamanlanan gönderi",
       "content_on_hold_now": "Beklemedeki gönderi (şu an)",
       "fact_changes": "Bilgi değişikliği",
-      "integration_errors": "Bağlantı hatası"
+      "integration_errors": "Bağlantı hatası",
+      "agent_automatic_v1": "Asistanın otomatik gerçekleştirdiği doğrulanmış işlemler",
+      "agent_approved_v1": "İnsan onayından sonra doğrulanan asistan işlemleri",
+      "agent_owner_questions_v1": "İşletmeye sorulan bilgi istekleri",
+      "agent_unknown_now_v1": "Sonucu belirsiz asistan işlemleri"
     },
     "evidenceUnavailable": "Bu eski raporun ayrıntı kayıtları saklanmamış. Kaynaklar hâlâ mevcutsa yeni bir rapor oluşturabilirsiniz."
   }

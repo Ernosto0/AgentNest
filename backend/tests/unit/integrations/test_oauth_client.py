@@ -9,6 +9,7 @@ from pydantic import SecretStr
 
 from app.integrations.instagram.errors import ProviderAuthError, ProviderTransientError
 from app.integrations.instagram.oauth import (
+    COMMENT_CAPABILITIES,
     SCOPES,
     build_authorize_url,
     compute_capabilities,
@@ -25,6 +26,7 @@ def test_authorize_and_capabilities(settings):
         "messaging": False,
         "publish_feed_image": True,
         "publish_story_image": False,
+        **dict.fromkeys(COMMENT_CAPABILITIES, False),
     }
 
 

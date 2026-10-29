@@ -335,6 +335,26 @@ export interface paths {
         patch: operations["patch_workspace_api_v1_workspaces__workspace_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Overview
+         * @description Bounded, body-free operational projection; detail domains retain their own access.
+         */
+        get: operations["get_overview_api_v1_workspaces__workspace_id__accounts__account_id__agent_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/actions/{action_id}": {
         parameters: {
             query?: never;
@@ -472,6 +492,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/task-selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Task Selections */
+        get: operations["task_selections_api_v1_workspaces__workspace_id__accounts__account_id__agent_task_selections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/tasks": {
         parameters: {
             query?: never;
@@ -518,6 +555,57 @@ export interface paths {
         put?: never;
         /** Answer Task */
         post: operations["answer_task_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks__task_id__answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Threads */
+        get: operations["threads_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/threads/{thread_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["detail_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads__thread_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent/threads/{thread_id}/control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Control */
+        post: operations["control_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads__thread_id__control_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -618,6 +706,40 @@ export interface paths {
         };
         /** Comment Detail */
         get: operations["comment_detail_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/{comment_id}/moderate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Moderate */
+        post: operations["moderate_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__moderate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments/{comment_id}/moderation-operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History */
+        get: operations["history_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__moderation_operations_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -805,6 +927,23 @@ export interface paths {
         };
         /** List Activity */
         get: operations["list_activity_api_v1_workspaces__workspace_id__activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent-actions/{action_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exact Action */
+        get: operations["exact_action_api_v1_workspaces__workspace_id__agent_actions__action_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2040,6 +2179,29 @@ export interface components {
             /** Type */
             type: string;
         };
+        /** AgentOverview */
+        AgentOverview: {
+            /** Config Version */
+            config_version: number;
+            /** Controller Epoch */
+            controller_epoch: number;
+            /** Controller Mode */
+            controller_mode: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Pending Approvals */
+            pending_approvals: number;
+            /** Pending Questions */
+            pending_questions: number;
+            /** Recent Actions */
+            recent_actions: components["schemas"]["OverviewAction"][];
+            /** Session Counts */
+            session_counts: {
+                [key: string]: number;
+            };
+            /** State */
+            state: string;
+        };
         /** AiHealth */
         AiHealth: {
             /** Budget Limit */
@@ -2144,7 +2306,7 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "reply.send" | "content.publish";
+            action: "command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel";
             /** Can Decide */
             can_decide: boolean;
             /** Cancel Reason */
@@ -2856,6 +3018,8 @@ export interface components {
             last_message_at: string | null;
             /** Last Message Preview */
             last_message_preview: string | null;
+            /** Social Account Id */
+            social_account_id?: string | null;
             /** Window Ends At */
             window_ends_at: string | null;
         };
@@ -2995,6 +3159,41 @@ export interface components {
             expected_version: number;
             /** Text */
             text: string;
+        };
+        /** ExactActionPreview */
+        ExactActionPreview: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Action Type */
+            action_type: string;
+            /** Content */
+            content?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Payload Hash */
+            payload_hash: string;
+            /** Status */
+            status: string;
+            /** Target Ref */
+            target_ref?: string | null;
+            /** Target Text */
+            target_text?: string | null;
+            /** Target Version */
+            target_version?: number | null;
+            /** Text */
+            text?: string | null;
+            /** Version */
+            version: number;
         };
         /** Examples */
         Examples: {
@@ -3355,6 +3554,42 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** ManualModeration */
+        ManualModeration: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /**
+             * Effect
+             * @enum {string}
+             */
+            effect: "hide" | "unhide" | "delete";
+            /** Expected Version */
+            expected_version: number;
+        };
+        /** ManualModerationOut */
+        ManualModerationOut: {
+            /** Effect */
+            effect: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /** Status */
+            status: string;
+        };
+        /** ManualModerationPage */
+        ManualModerationPage: {
+            /** Items */
+            items: components["schemas"]["ManualModerationOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** ManualReplyIn */
         ManualReplyIn: {
@@ -3741,6 +3976,25 @@ export interface components {
             /** Latest Failures */
             latest_failures: components["schemas"]["OperationFailure"][];
         };
+        /** OverviewAction */
+        OverviewAction: {
+            /** Action Type */
+            action_type: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Operation Id */
+            operation_id: string | null;
+            /** Status */
+            status: string;
+        };
         /** Page[ActivityEntryOut] */
         Page_ActivityEntryOut_: {
             /** Items */
@@ -3927,10 +4181,17 @@ export interface components {
         PersonalityChange: {
             /** Expected Version */
             expected_version: number;
+            /** Goals */
+            goals?: string | null;
             personality: components["schemas"]["Personality"];
         };
         /** PersonalityOut */
         PersonalityOut: {
+            /**
+             * Goals
+             * @default
+             */
+            goals: string;
             personality: components["schemas"]["Personality"];
             /** Version */
             version: number;
@@ -4442,6 +4703,25 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** TaskSelectionOut */
+        TaskSelectionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+        };
+        /** TaskSelectionPage */
+        TaskSelectionPage: {
+            /** Items */
+            items: components["schemas"]["TaskSelectionOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
         /** TemplateItemOut */
         TemplateItemOut: {
             /** Allowed Values */
@@ -4616,6 +4896,76 @@ export interface components {
             received_24h: number;
             /** Signature Failures 24H System Wide */
             signature_failures_24h_system_wide: number;
+        };
+        /** WorkActionOut */
+        WorkActionOut: {
+            /** Action Type */
+            action_type: string;
+            /** Approval Id */
+            approval_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Operation Id */
+            operation_id: string | null;
+            /** Outcome Code */
+            outcome_code: string | null;
+            /** Status */
+            status: string;
+        };
+        /** WorkControl */
+        WorkControl: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Expected Version */
+            expected_version: number;
+            /** Handling Mode */
+            handling_mode: string;
+        };
+        /** WorkThreadOut */
+        WorkThreadOut: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Actions */
+            actions: components["schemas"]["WorkActionOut"][];
+            /** Customer Id */
+            customer_id: string | null;
+            /** Goal */
+            goal: string | null;
+            /** Handling Mode */
+            handling_mode: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Source Ref */
+            source_ref: string;
+            /** State */
+            state: string;
+            /** Surface */
+            surface: string;
+            /** Version */
+            version: number;
+        };
+        /** WorkThreadPage */
+        WorkThreadPage: {
+            /** Items */
+            items: components["schemas"]["WorkThreadOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** WorkspaceCreate */
         WorkspaceCreate: {
@@ -5390,6 +5740,38 @@ export interface operations {
             };
         };
     };
+    get_overview_api_v1_workspaces__workspace_id__accounts__account_id__agent_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentOverview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     action_detail_api_v1_workspaces__workspace_id__accounts__account_id__agent_actions__action_id__get: {
         parameters: {
             query?: never;
@@ -5703,6 +6085,42 @@ export interface operations {
             };
         };
     };
+    task_selections_api_v1_workspaces__workspace_id__accounts__account_id__agent_task_selections_get: {
+        parameters: {
+            query: {
+                kind: string;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskSelectionPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_tasks_api_v1_workspaces__workspace_id__accounts__account_id__agent_tasks_get: {
         parameters: {
             query?: {
@@ -5831,6 +6249,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    threads_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads_get: {
+        parameters: {
+            query?: {
+                source_ref?: string | null;
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkThreadPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detail_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads__thread_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                thread_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkThreadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    control_api_v1_workspaces__workspace_id__accounts__account_id__agent_threads__thread_id__control_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                thread_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkControl"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkThreadOut"];
                 };
             };
             /** @description Validation Error */
@@ -6040,6 +6564,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    moderate_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__moderate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                comment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualModeration"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualModerationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    history_api_v1_workspaces__workspace_id__accounts__account_id__comments__comment_id__moderation_operations_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                comment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualModerationPage"];
                 };
             };
             /** @description Validation Error */
@@ -6448,11 +7045,43 @@ export interface operations {
             };
         };
     };
+    exact_action_api_v1_workspaces__workspace_id__agent_actions__action_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExactActionPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_approvals_api_v1_workspaces__workspace_id__approvals_get: {
         parameters: {
             query?: {
                 status?: ("pending" | "approved" | "rejected" | "expired" | "cancelled") | null;
-                action?: ("command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "reply.send" | "content.publish") | null;
+                action?: ("command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel") | null;
                 limit?: number;
             };
             header?: never;

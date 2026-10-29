@@ -1,7 +1,8 @@
 # Synthetic offline Meta contracts
 
-Every JSON in this directory was authored for offline Phase 7 Session 2 tests on
-2026-10-23. **None is a recorded response or evidence of live platform behavior.**
+Baseline JSON in this directory was authored for offline Phase 7 Session 2 tests on
+2026-10-23. `comments_synthetic_v1.json` was hand-authored on 2026-10-29 for
+Phase 7.5 Session 16. **None is a recorded response or evidence of live platform behavior.**
 `_fixture_source` explicitly labels that provenance without changing the modeled fields.
 IDs, tokens, trace IDs and media URLs are synthetic. No production credentials are used.
 
@@ -16,3 +17,10 @@ Container PUBLISHED intentionally has no media ID: the current documented contra
 allows `ContainerStatus.media_id=None`. The executor can record a verified publication
 without inventing a permalink. Quota duration is interpreted as seconds; quota total
 is read from the response, never hardcoded by the adapter.
+
+The comment fixture assumes media-owner, comment-media, timestamp/hidden fields,
+cursor pagination, reply ID, moderation success and private-message response shapes.
+These remain provisional R75-01..06 questions. Only `SyntheticMetaCommentProvider`,
+which requires an exact `httpx.MockTransport`, exercises this scaffold. The real
+registry, default adapter and OAuth capability map cannot enable it. An operation
+key has no assumed remote idempotency or readback meaning; lookups return no evidence.

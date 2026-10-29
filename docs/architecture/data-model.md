@@ -653,3 +653,14 @@ actions. Existing content `origin`/`agent_action_id` link publication to its exe
 No account defaults or delegation modes are changed by either migration. Downgrade `0030`
 refuses content intents or populated clarification/selection/answer evidence; `0029` refuses
 populated owner tasks until archival.
+
+### Session 15 reporting additions
+
+Definitions version `2` preserves all twenty original row-set definitions and appends four
+versioned keys: verified automatic agent effects, verified human-approved agent effects,
+created owner-information questions and current unresolved agent effects. Every effect count
+joins `agent_actions.operation_id` to the existing `operations` ledger; no model-provided
+numbers contribute. Saved generations retain original metrics, version and report-item
+membership; old snapshots do not acquire new zero-valued metrics. Explicit manual moderation
+uses existing `operations` rows (`subject_type=public_comment`) and content-free actor,
+source/media-version and exact request-hash evidence; no new table or migration is added.

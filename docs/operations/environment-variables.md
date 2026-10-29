@@ -108,6 +108,12 @@ There is **no audit setting**: audit rows are never deleted in Phase 6 (plan H17
 
 ## Manual Meta diagnostics (private process environment)
 
+Session 16 additionally defines optional `META_LIVE_COMMENT_MEDIA_ID`,
+`META_LIVE_COMMENT_ID` (exact founder-owned test targets) and
+`META_LIVE_COMMENT_EFFECT` (one explicit `reply`, `private_reply`, `hide`, `unhide`
+or `delete`). These are harness inputs, not application settings or capability flags.
+All new comment probes remain disabled pending R75 evidence, even when inputs exist.
+
 Manual Phase 7 probes read process environment variables directly, not application configuration: `META_LIVE_ACCESS_TOKEN` (secret) and `META_LIVE_IG_USER_ID` are both required. `META_LIVE_RECIPIENT_ID` separately opts into a real DM; `META_LIVE_IMAGE_URL` (potentially a secret presigned URL) separately opts into a real feed post. All are empty by default in `.env.example`. Ordinary pytest/CI must explicitly blank the two required variables. These diagnostics do not enable any product workflow or replace OAuth/ledger acceptance. For a future local HTTPS tunnel, Vite's process-only `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` must contain the exact assigned frontend tunnel hostname; see [local-development.md §12](local-development.md#12-real-instagram-development-phase-7-optional).
 ## Frontend (build time)
 

@@ -117,7 +117,7 @@
   },
   "approvals": {
     "title": "Onaylar",
-    "intro": "Karar vermeniz gereken işler burada. Hiçbir şey siz onaylamadan yapılmaz.",
+    "intro": "Kararınızı bekleyen işlemleri inceleyin. Yetkilendirilmiş otomatik işler etkinlikte görünür.",
     "tabs": {
       "label": "Onay listesi",
       "pending": "Bekleyen",
@@ -131,7 +131,11 @@
       "command_update_brand_voice": "Marka dili güncelleme",
       "command_cancel_content": "İçerik iptali",
       "reply_send": "Yanıt gönderme",
-      "content_publish": "İçerik yayınlama"
+      "content_publish": "İçerik yayınlama",
+      "comments_approve": "Yorum işlemini inceleme",
+      "content_prepare": "İçerik hazırlama",
+      "content_schedule": "İçerik zamanlama",
+      "content_cancel": "İçeriği iptal etme"
     },
     "status": {
       "pending": "Bekliyor",

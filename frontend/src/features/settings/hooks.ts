@@ -49,7 +49,7 @@ export function useDisconnectAccount(ws: string) {
       }
       return Promise.all(
         [
-          "social-accounts", "readiness", "automation", "system-health", "conversations",
+          "agent", "social-accounts", "readiness", "automation", "system-health", "conversations",
           "conversation", "reply-draft", "approvals", "approval", "content-items",
           "content-item", "notifications", "answers", "activity", "report", "report-items",
         ].map((name) =>

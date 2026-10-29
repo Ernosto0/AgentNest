@@ -37,9 +37,9 @@ def scenario(db_session: Session) -> Scenario:
 # --- registry -----------------------------------------------------------------------------------
 
 
-def test_registry_has_the_twenty_v1_metrics() -> None:
-    assert DEFINITIONS_VERSION == "1"
-    assert len(KEYS) == len(set(KEYS)) == 20
+def test_registry_preserves_twenty_legacy_metrics_and_adds_four_agent_metrics() -> None:
+    assert DEFINITIONS_VERSION == "2"
+    assert len(KEYS) == len(set(KEYS)) == 24
     assert set(KEYS) == set(EXPECTED)
     kinds = {d.key: d.kind for d in DEFINITIONS}
     assert {k for k, kind in kinds.items() if kind == "snapshot"} == {
@@ -48,6 +48,7 @@ def test_registry_has_the_twenty_v1_metrics() -> None:
         "pending_approvals_now",
         "content_scheduled_next_24h",
         "content_on_hold_now",
+        "agent_unknown_now_v1",
     }
     assert {d.key for d in DEFINITIONS if d.value == "median"} == {"median_first_response_minutes"}
     assert {d.key for d in DEFINITIONS if d.grouped} == {"pending_approvals_now"}
@@ -108,11 +109,12 @@ def test_ac_e1_every_metric_has_its_exact_known_value(
     metrics = _compute(db_session, scenario)
 
     assert [m.key for m in metrics.metrics] == list(KEYS)
-    assert metrics.definitions_version == "1"
+    assert metrics.definitions_version == "2"
     for key, expected in EXPECTED.items():
         assert metrics.value(key) == expected, key
     # The fixture is built so that no two metrics share a value.
-    assert len(set(EXPECTED.values())) == len(EXPECTED)
+    legacy = {k: v for k, v in EXPECTED.items() if not k.startswith("agent_")}
+    assert len(set(legacy.values())) == len(legacy)
     assert metrics.by_key["pending_approvals_now"].breakdown == EXPECTED_BREAKDOWN
     assert all(m.breakdown is None for m in metrics.metrics if m.key != "pending_approvals_now")
     assert metrics.has_simulated_data is True

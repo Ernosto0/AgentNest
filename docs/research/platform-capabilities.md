@@ -125,6 +125,12 @@ Status legend:
 
 ### 1.8 Phase 7.5 research register (opened 2026-10-26)
 
+**Session 16 refresh (2026-10-29):** moderation/private-reply URLs were inaccessible
+through the browser tool; messaging/webhook pages returned HTTP 429. No fresh primary
+text or authentic recording was obtained. R75-01..06 remain open; all real comment
+capabilities stay disabled, including with `manage_comments` in returned scopes.
+The synthetic-only scaffold is not live support. See [dated evidence](meta-comments-session16.md).
+
 The following are **open capability questions**, not evidence that a real account can perform an action. On 2026-10-26 an unauthenticated HTTP HEAD request reached the official Meta webhook, comment-moderation and messaging pages (HTTP 200 after redirects). The old private-replies URL below returned HTTP 404; this does not prove the feature was removed. The OpenAI function-calling guide redirected to `developers.openai.com` and returned HTTP 200. HEAD availability alone does not verify page contents, permissions, event payloads, quota semantics or actual behavior. No Meta app, token or live account was used. Retain real-capability flags off until fresh primary text and authentic sanitized observations are captured.
 
 | ID | Primary source and question | Evidence status / implementation assumption |

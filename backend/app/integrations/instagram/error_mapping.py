@@ -70,7 +70,9 @@ def response_error(
     if code in range(36000, 36005) or (isinstance(subcode, int) and 2207001 <= subcode <= 2207085):
         return ProviderInvalidRequest("MEDIA_REJECTED")
     if error.get("is_transient") is True:
-        return ProviderTransientError()
+        # A generic transient flag does not prove a mutation was rejected before
+        # processing. Rate/auth/permission rejections above remain authoritative.
+        return malformed_response(ambiguous=True) if ambiguous else ProviderTransientError()
     if status >= 400 or (node is not None and isinstance(code, int)):
         return ProviderInvalidRequest("PROVIDER_REJECTED")
     if node is not None:

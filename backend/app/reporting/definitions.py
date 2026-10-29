@@ -43,14 +43,17 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session, aliased
 
+from app.agent.models import AgentAction
 from app.approvals.models import Approval
 from app.audit.models import AuditLog
 from app.content.models import ContentItem
 from app.core.context import WorkspaceContext
 from app.inbox.models import Conversation, InboundEvent, Message, ReplyDraft
+from app.integrations.instagram.models import SocialAccount
 from app.operations.models import Operation
+from app.owner_requests.models import OwnerQuestion
 
-DEFINITIONS_VERSION = "1"
+DEFINITIONS_VERSION = "2"
 
 # The 24 h customer-service window of Instagram messaging. Kept equal to
 # ``app.inbox.context.MESSAGING_WINDOW`` by a test, so reporting need not import the inbox logic.
@@ -533,6 +536,111 @@ def integration_errors(
     return select(*combined.c)
 
 
+# New metric keys carry their own version; existing definitions and saved generations stay intact.
+def _agent_effects(ctx: WorkspaceContext, start: datetime, end: datetime) -> Select[Any]:
+    return (
+        select(
+            *_row(
+                "operation",
+                Operation.id,
+                Operation.completed_at,
+                Operation.is_simulated,
+                Operation.id,
+            )
+        )
+        .join(
+            AgentAction,
+            and_(
+                AgentAction.workspace_id == Operation.workspace_id,
+                AgentAction.operation_id == Operation.id,
+            ),
+        )
+        .where(
+            Operation.workspace_id == ctx.workspace_id,
+            AgentAction.workspace_id == ctx.workspace_id,
+            Operation.status == "succeeded",
+            Operation.completed_at >= start,
+            Operation.completed_at < end,
+        )
+    )
+
+
+def agent_automatic_v1(
+    session: Session, ctx: WorkspaceContext, start: datetime, end: datetime, now: datetime
+) -> Select[Any]:
+    return _agent_effects(ctx, start, end).where(
+        func.jsonb_typeof(AgentAction.policy_grant) == "object"
+    )
+
+
+def agent_approved_v1(
+    session: Session, ctx: WorkspaceContext, start: datetime, end: datetime, now: datetime
+) -> Select[Any]:
+    return _agent_effects(ctx, start, end).where(
+        AgentAction.approval_id.is_not(None),
+        or_(
+            AgentAction.policy_grant.is_(None),
+            func.jsonb_typeof(AgentAction.policy_grant) == "null",
+        ),
+    )
+
+
+def agent_owner_questions_v1(
+    session: Session, ctx: WorkspaceContext, start: datetime, end: datetime, now: datetime
+) -> Select[Any]:
+    return (
+        select(
+            *_row(
+                "owner_question",
+                OwnerQuestion.id,
+                OwnerQuestion.created_at,
+                (SocialAccount.provider_kind == "mock"),
+                OwnerQuestion.id,
+            )
+        )
+        .join(
+            SocialAccount,
+            and_(
+                SocialAccount.workspace_id == OwnerQuestion.workspace_id,
+                SocialAccount.id == OwnerQuestion.social_account_id,
+            ),
+        )
+        .where(
+            OwnerQuestion.workspace_id == ctx.workspace_id,
+            OwnerQuestion.created_at >= start,
+            OwnerQuestion.created_at < end,
+        )
+    )
+
+
+def agent_unknown_now_v1(
+    session: Session, ctx: WorkspaceContext, start: datetime, end: datetime, now: datetime
+) -> Select[Any]:
+    return (
+        select(
+            *_row(
+                "operation",
+                Operation.id,
+                Operation.created_at,
+                Operation.is_simulated,
+                Operation.id,
+            )
+        )
+        .join(
+            AgentAction,
+            and_(
+                AgentAction.workspace_id == Operation.workspace_id,
+                AgentAction.operation_id == Operation.id,
+            ),
+        )
+        .where(
+            Operation.workspace_id == ctx.workspace_id,
+            AgentAction.workspace_id == ctx.workspace_id,
+            Operation.status == "outcome_unknown",
+        )
+    )
+
+
 # --- the registry -----------------------------------------------------------------------------
 
 
@@ -577,6 +685,10 @@ DEFINITIONS: tuple[Definition, ...] = (
     _d("content_on_hold_now", "snapshot", "content", content_on_hold_now),
     _d("fact_changes", "period", "knowledge", fact_changes),
     _d("integration_errors", "period", "problems", integration_errors),
+    _d("agent_automatic_v1", "period", "messages", agent_automatic_v1),
+    _d("agent_approved_v1", "period", "messages", agent_approved_v1),
+    _d("agent_owner_questions_v1", "period", "messages", agent_owner_questions_v1),
+    _d("agent_unknown_now_v1", "snapshot", "messages", agent_unknown_now_v1),
 )
 
 BY_KEY: dict[str, Definition] = {d.key: d for d in DEFINITIONS}
