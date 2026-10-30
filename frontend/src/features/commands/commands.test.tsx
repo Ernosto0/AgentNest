@@ -289,7 +289,9 @@ describe("offline demo AI indicator", () => {
   it("is shown for the fake provider and hidden for a real one", async () => {
     mockApi(routes({}, "fake"));
     const { unmount } = renderApp(`/w/${WS_GOLKENT}`);
-    expect(await screen.findByTestId("ai-mode")).toHaveTextContent("Çevrimdışı demo yapay zekâsı");
+    expect(await screen.findByTestId("ai-mode")).toHaveTextContent("Çevrimdışı yapay zekâ");
+    await userEvent.setup().click(screen.getByText("Demo çalışma alanı"));
+    expect(screen.getByTestId("simulation-banner")).toHaveTextContent("Çevrimdışı demo yapay zekâsı");
     unmount();
     vi.unstubAllGlobals();
 

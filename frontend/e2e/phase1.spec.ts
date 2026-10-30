@@ -33,14 +33,14 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   const banner = page.getByTestId("simulation-banner");
   await expect(banner).toBeVisible();
   await expect(banner).toContainText("Demo çalışma alanı");
-  for (const label of ["Ana sayfa", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
+  for (const label of ["Bug\u00fcn", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
     await expect(navLink(page, label)).toBeVisible();
   }
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
 
   // More → Settings → Language → English: the strings change.
   await navLink(page, "Daha fazla").click();
-  await page.getByRole("link", { name: "Ayarlar" }).click();
+  await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
   await expect(page.getByRole("heading", { name: "Dil" })).toBeVisible();
   await chooseLanguage(page, "English");
   await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
@@ -58,9 +58,9 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   await expect(page.getByLabel("Workspace").locator("option:checked")).toHaveText(
     "Harbor Café & Bakery",
   );
-  await navLink(page, "Home").click();
+  await navLink(page, "Today").click();
   await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
-  await expect(page.getByRole("main").getByText("Harbor Café & Bakery")).toBeVisible();
+  await expect(page.getByRole("main").getByText("Harbor Café & Bakery", { exact: true }).filter({ visible: true }).last()).toBeVisible();
   await expect(banner).toBeVisible();
 
   // Sign out.
@@ -153,13 +153,13 @@ test("every main screen fits a 360x740 phone without horizontal scroll, in both 
 
   await page.getByRole("link", { name: /Gölkent Fitness & Pilates/ }).click();
   const screens = {
-    tr: ["Ana sayfa", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"],
-    en: ["Home", "Inbox", "Content", "Approvals", "More"],
+    tr: ["Bug\u00fcn", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"],
+    en: ["Today", "Inbox", "Content", "Approvals", "More"],
   };
   for (const language of ["tr", "en"] as const) {
     if (language === "en") {
       await navLink(page, "Daha fazla").click();
-      await page.getByRole("link", { name: "Ayarlar" }).click();
+      await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
       await page.getByRole("button", { name: "English" }).click();
       await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
       expect(await hasHorizontalScroll(page), "en: settings").toBe(false);

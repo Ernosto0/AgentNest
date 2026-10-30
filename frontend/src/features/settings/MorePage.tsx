@@ -1,11 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { MORE_GROUPS, allowedDestination, workspaceTarget } from "@/app/layout/navigation";
+import { Button } from "@/components/Button";
+import { ListRow, PageHeader } from "@/components/Layout";
 import { ChevronRightIcon } from "@/components/icons";
 import { useLogout, useMeta } from "@/features/auth/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
-const ROW =
-  "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-white px-4 text-left text-base font-medium text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
+const ROW = "flex min-h-11 min-w-0 items-center gap-3 rounded-control px-2 py-2 text-form font-medium text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-focus";
 
 export function MorePage() {
   const { t } = useTranslation();
@@ -13,107 +15,23 @@ export function MorePage() {
   const { workspace, role } = useCurrentWorkspace();
   const logout = useLogout();
   const meta = useMeta();
-
-  return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-2xl font-semibold">{t("more.title")}</h1>
-      <ul className="flex flex-col gap-3">
-        <li><Link to={`/w/${workspace.id}/more/agent`} className={ROW}>{t("agent.title")}<ChevronRightIcon className="text-xl text-slate-400" /></Link></li>
-        <li>
-          <Link to={`/w/${workspace.id}/more/reports`} className={ROW}>
-            {t("more.reports")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        <li>
-          <Link to={`/w/${workspace.id}/more/notifications`} className={ROW}>
-            {t("more.notifications")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        {role === "owner" || role === "manager" ? (
-          <li>
-            <Link to={`/w/${workspace.id}/more/activity`} className={ROW}>
-              {t("more.activity")}
-              <ChevronRightIcon className="text-xl text-slate-400" />
-            </Link>
-          </li>
-        ) : null}
-        <li>
-          <Link to={`/w/${workspace.id}/more/knowledge`} className={ROW}>
-            {t("more.knowledge")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        <li>
-          <Link to={`/w/${workspace.id}/more/knowledge/answers`} className={ROW}>
-            {t("more.answers")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        <li>
-          <Link to={`/w/${workspace.id}/more/automation`} className={ROW}>
-            {t("more.automation")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        <li>
-          <Link to={`/w/${workspace.id}/more/settings/members`} className={ROW}>
-            {t("more.members")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        <li>
-          <Link to={`/w/${workspace.id}/more/settings/connections`} className={ROW}>
-            {t("more.connections")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        {role === "owner" || role === "manager" ? (
-          <li>
-            <Link to={`/w/${workspace.id}/more/settings/system-health`} className={ROW}>
-              {t("more.systemHealth")}
-              <ChevronRightIcon className="text-xl text-slate-400" />
-            </Link>
-          </li>
-        ) : null}
-        {meta.data?.demo_tools_enabled ? (
-          <li>
-            <Link to={`/w/${workspace.id}/more/dev`} className={ROW}>
-              {t("more.devPanel")}
-              <ChevronRightIcon className="text-xl text-slate-400" />
-            </Link>
-          </li>
-        ) : null}
-        <li>
-          <Link to={`/w/${workspace.id}/more/settings`} className={ROW}>
-            {t("more.settings")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        <li>
-          <Link to="/" className={ROW}>
-            {t("more.switchWorkspace")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        <li>
-          <Link to="/workspaces/new" className={ROW}>
-            {t("more.newWorkspace")}
-            <ChevronRightIcon className="text-xl text-slate-400" />
-          </Link>
-        </li>
-        <li>
-          <button
-            type="button"
-            className={ROW}
-            disabled={logout.isPending}
-            onClick={() => logout.mutate(undefined, { onSettled: () => navigate("/login") })}
-          >
-            {logout.isPending ? t("auth.signingOut") : t("more.signOut")}
-          </button>
-        </li>
-      </ul>
+  return <div className="flex flex-col gap-6">
+    <PageHeader title={t("more.title")} description={t("shell.moreHint")} />
+    <div className="grid min-w-0 gap-6 min-[1000px]:grid-cols-2">
+      {MORE_GROUPS.map(group => <section key={group.labelKey} aria-label={t(group.labelKey)} className="min-w-0 rounded-panel border border-border bg-surface p-4">
+        <h2 className="type-section px-2">{t(group.labelKey)}</h2>
+        <ul>{group.items.filter(item => allowedDestination(item, role, Boolean(meta.data?.demo_tools_enabled))).map(({ path, labelKey, icon: Icon }) => <ListRow key={path} className="py-1">
+          <Link to={workspaceTarget(workspace.id, path)} className={ROW}><Icon className="shrink-0 text-xl text-secondary" /><span className="min-w-0 flex-1 break-words">{t(labelKey)}</span><ChevronRightIcon className="shrink-0 text-xl text-secondary" /></Link>
+        </ListRow>)}</ul>
+      </section>)}
     </div>
-  );
+    <section aria-label={t("shell.account")} className="rounded-panel border border-border bg-surface p-4">
+      <h2 className="type-section px-2">{t("shell.account")}</h2>
+      <ul>
+        <ListRow className="py-1"><Link to="/" className={ROW}>{t("more.switchWorkspace")}<ChevronRightIcon className="ml-auto shrink-0 text-xl text-secondary" /></Link></ListRow>
+        <ListRow className="py-1"><Link to="/workspaces/new" className={ROW}>{t("more.newWorkspace")}<ChevronRightIcon className="ml-auto shrink-0 text-xl text-secondary" /></Link></ListRow>
+      </ul>
+      <Button variant="ghost" pending={logout.isPending} onClick={() => logout.mutate(undefined, { onSettled: () => navigate("/login") })} className="mt-3">{logout.isPending ? t("auth.signingOut") : t("more.signOut")}</Button>
+    </section>
+  </div>;
 }

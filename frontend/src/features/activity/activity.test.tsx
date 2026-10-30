@@ -124,11 +124,11 @@ describe("activity feed", () => {
   it("is in the More menu for the owner and not for staff", async () => {
     mockApi(routes());
     const owner = renderApp(`/w/${WS_GOLKENT}/more`);
-    expect(await screen.findByRole("link", { name: /Etkinlik/ })).toHaveAttribute(
+    expect(await within(await screen.findByRole("main")).findByRole("link", { name: /Etkinlik/ })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/more/activity`,
     );
-    expect(screen.getByRole("link", { name: /Günlük rapor/ })).toHaveAttribute(
+    expect(within(screen.getByRole("main")).getByRole("link", { name: /Günlük rapor/ })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/more/reports`,
     );
@@ -137,7 +137,7 @@ describe("activity feed", () => {
     vi.unstubAllGlobals();
     mockApi(routes({}, STAFF_ME));
     renderApp(`/w/${WS_GOLKENT}/more`);
-    expect(await screen.findByRole("link", { name: /Günlük rapor/ })).toBeInTheDocument();
+    expect(await within(await screen.findByRole("main")).findByRole("link", { name: /Günlük rapor/ })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Etkinlik/ })).toBeNull();
   });
 });

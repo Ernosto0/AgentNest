@@ -93,7 +93,7 @@ describe("workspace shell", () => {
     expect(banner).toHaveTextContent("Gerçek Instagram bağlantıları gerçek hesabınızda işlem yapar.");
 
     for (const nav of screen.getAllByRole("navigation", { name: "Ana gezinme" })) {
-      for (const label of ["Ana sayfa", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
+      for (const label of ["Bugün", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
         expect(within(nav).getByRole("link", { name: label })).toBeInTheDocument();
       }
     }
@@ -189,8 +189,8 @@ describe("language", () => {
     renderApp(`/w/${WS_GOLKENT}`);
     await screen.findByRole("heading", { name: "Ana sayfa" });
 
-    await user.click(within(screen.getAllByRole("navigation")[1]!).getByRole("link", { name: "Daha fazla" }));
-    await user.click(await screen.findByRole("link", { name: "Ayarlar" }));
+    await user.click(within(screen.getAllByRole("navigation", { name: "Ana gezinme" })[1]!).getByRole("link", { name: "Daha fazla" }));
+    await user.click(await within(screen.getByRole("main")).findByRole("link", { name: "Ayarlar" }));
     expect(await screen.findByRole("heading", { name: "Dil" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "English" }));

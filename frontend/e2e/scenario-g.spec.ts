@@ -73,7 +73,7 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   await expect(card).not.toHaveAttribute("data-draft-status", "sent");
 
   // AC-G1: the red banner on Home (icon and words, not colour alone), with the way out.
-  await navLink(page, "Ana sayfa").click();
+  await navLink(page, "Bug\u00fcn").click();
   const banner = page.getByTestId("banner-needs-reauth");
   await expect(banner).toBeVisible();
   await expect(banner).toContainText("Instagram bağlantınız yenilenmeli.");
@@ -117,7 +117,7 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   await expect(page.getByTestId("simulated-badge").first()).toBeVisible(); // the account is simulated
   await expectNoHorizontalScroll(page, "connections");
 
-  await navLink(page, "Ana sayfa").click();
+  await navLink(page, "Bug\u00fcn").click();
   await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "connected");
   await expect(page.getByTestId("banner-needs-reauth")).toHaveCount(0);
 

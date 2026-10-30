@@ -18,7 +18,7 @@ test.afterEach(async ({ page }) => {
 
 async function openKnowledge(page: Page) {
   await navLink(page, "Daha fazla").click();
-  await page.getByRole("link", { name: "İşletme bilgileri" }).click();
+  await page.getByRole("main").getByRole("link", { name: "İşletme bilgileri" }).click();
   await expect(page.getByRole("heading", { name: "İşletme bilgileri", level: 1 })).toBeVisible();
 }
 
@@ -99,7 +99,7 @@ test("A4: the bio discrepancy is explained and rejected, and Home shows what is 
   await card.getByRole("button", { name: "Mevcut değeri koru" }).click();
   await expect(page.getByText("İncelenecek öneri yok")).toBeVisible();
 
-  await navLink(page, "Ana sayfa").click();
+  await navLink(page, "Bug\u00fcn").click();
   await expect(page.getByTestId("readiness-level")).toHaveText("Hazır");
   await expect(page.locator('[data-requirement="account_connected"]')).toHaveCount(0);
   await expect(page.locator('[data-requirement="automation_reviewed"]')).toHaveCount(0);

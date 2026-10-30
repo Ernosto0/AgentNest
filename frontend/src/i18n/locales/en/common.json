@@ -5,7 +5,7 @@
   },
   "nav": {
     "label": "Main navigation",
-    "home": "Home",
+    "home": "Today",
     "inbox": "Inbox",
     "content": "Content",
     "approvals": "Approvals",
@@ -449,5 +449,29 @@
         "failed": "failed"
       }
     }
+  },
+  "shell": {
+    "compactBrand": "AN",
+    "shortcut": "Ctrl/⌘ K",
+    "daily": "Daily work",
+    "business": "Assistant and business",
+    "workspace": "Workspace",
+    "account": "Your account",
+    "assistant": "Assistant",
+    "expandNavigation": "Expand navigation labels",
+    "breadcrumb": "Page context",
+    "destinations": "Go to",
+    "openLauncher": "Open navigation destinations",
+    "launcherTitle": "Go to a page",
+    "launcherHint": "Find a destination in this workspace. This navigates pages; it does not search records or run commands.",
+    "filterDestinations": "Filter destinations",
+    "noDestination": "No destinations match. Try another page name.",
+    "moreHint": "Find your assistant, business knowledge and workspace tools.",
+    "environment": "Workspace environment",
+    "offlineShort": "Offline AI",
+    "questions": "Owner questions",
+    "comments": "Comments",
+    "memory": "Customer memory",
+    "task": "Task"
   }
 }

@@ -23,6 +23,13 @@ function Svg({ children, ...props }: SVGProps<SVGSVGElement> & { children: React
 
 type IconProps = SVGProps<SVGSVGElement>;
 
+export const BookIcon = (p: IconProps) => <Svg {...p}><path d="M12 5C8 3 5 3 3 4v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-2-1-5-1-9 1Zm0 0v15" /></Svg>;
+export const ChartIcon = (p: IconProps) => <Svg {...p}><path d="M4 3v17h17M8 15v-4M13 15V7M18 15v-7" /></Svg>;
+export const SettingsIcon = (p: IconProps) => <Svg {...p}><path d="M4 7h2m6 0h8M4 17h8m6 0h2" /><circle cx="9" cy="7" r="3" /><circle cx="15" cy="17" r="3" /></Svg>;
+export const SparkIcon = (p: IconProps) => <Svg {...p}><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z" /></Svg>;
+export const UsersIcon = (p: IconProps) => <Svg {...p}><circle cx="9" cy="8" r="3" /><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M21 21v-3a6 6 0 0 0-4-5" /></Svg>;
+export const LinkIcon = (p: IconProps) => <Svg {...p}><path d="m10 13 4-4M8 16l-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M14 8l2-2a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" /></Svg>;
+
 export const PencilIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M12 20h9" />

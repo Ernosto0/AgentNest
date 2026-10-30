@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { workspaceSwitchTarget } from "@/app/layout/navigation";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMe } from "@/features/auth/hooks";
@@ -23,11 +24,9 @@ export function WorkspaceSwitcher() {
         id={id}
         value={workspace.id}
         onChange={(event) =>
-          void navigate({
-            pathname: location.pathname.replace(`/w/${workspace.id}`, `/w/${event.target.value}`),
-          })
+          void navigate(workspaceSwitchTarget(location.pathname, location.search, workspace.id, event.target.value))
         }
-        className="min-h-11 w-full max-w-56 min-w-0 truncate rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
+        className="min-h-11 w-full max-w-40 min-[1200px]:max-w-64 min-w-0 truncate rounded-lg border border-control bg-surface px-3 text-base text-primary focus-visible:outline-2 focus-visible:outline-focus"
       >
         {memberships.map((m) => (
           <option key={m.workspace_id} value={m.workspace_id}>

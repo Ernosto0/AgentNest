@@ -32,7 +32,7 @@ test.afterEach(async ({ page }) => {
 async function openPricing(page: Page) {
   await navLink(page, "Daha fazla").click();
   // Exact: a command result may also show an "İşletme bilgilerini aç" link.
-  await page.getByRole("link", { name: "İşletme bilgileri", exact: true }).click();
+  await page.getByRole("main").getByRole("link", { name: "İşletme bilgileri", exact: true }).click();
   await page.getByRole("link", { name: /Fiyatlar/ }).click();
   await expect(page.getByRole("heading", { name: "Fiyatlar", level: 1 })).toBeVisible();
 }
@@ -152,7 +152,7 @@ test("a staff confirmation becomes a suggestion for the owner, not a change", as
 test("A6: pasted text yields suggestions with excerpts and changes no fact", async ({ page }) => {
   await signInToWorkspace(page, OWNER, GYM);
   await navLink(page, "Daha fazla").click();
-  await page.getByRole("link", { name: "İşletme bilgileri", exact: true }).click();
+  await page.getByRole("main").getByRole("link", { name: "İşletme bilgileri", exact: true }).click();
 
   await page.getByTestId("open-paste-extract").click();
   await page
@@ -201,7 +201,7 @@ test("fact change holds the scheduled post (AC-C4)", async ({
   await expect(statusBadge(page)).toHaveAttribute("data-status", "scheduled");
 
   // The owner changes the price by command; the confirmation says what it touches.
-  await navLink(page, "Ana sayfa").click();
+  await navLink(page, "Bug\u00fcn").click();
   await say(page, "Aylık üyelik artık 7.000 TL");
   const card = page.getByTestId("confirmation-card");
   await expect(card).toBeVisible({ timeout: 15_000 });

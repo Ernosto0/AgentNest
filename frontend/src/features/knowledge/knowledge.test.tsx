@@ -331,7 +331,7 @@ describe("overview", () => {
     const user = userEvent.setup();
     mockApi(routes());
     renderApp(`/w/${WS_GOLKENT}/more`);
-    await user.click(await screen.findByRole("link", { name: /İşletme bilgileri/ }));
+    await user.click(await within(await screen.findByRole("main")).findByRole("link", { name: /İşletme bilgileri/ }));
     expect(await screen.findByRole("heading", { name: "İşletme bilgileri" })).toBeInTheDocument();
   });
 

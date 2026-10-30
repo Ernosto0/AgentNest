@@ -214,7 +214,7 @@ describe("notifications for content (G14)", () => {
       }),
     );
     renderApp(`/w/${WS_GOLKENT}`);
-    await userEvent.setup().click(await screen.findByRole("link", { name: /Bildirimler/ }));
+    await userEvent.setup().click(await screen.findByRole("link", { name: /Bildirimler, 1/ }));
     const list = await screen.findByRole("list", { name: "Bildirimler" });
     expect(within(list).getByText("“Yaz kampanyası” yayınlandı.")).toBeInTheDocument();
     expect(within(list).getByTestId("simulated-badge")).toBeInTheDocument();

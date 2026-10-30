@@ -302,7 +302,7 @@ export async function ownerSetup(
 export async function openMore(page: Page, linkName: string | RegExp) {
   await navLink(page, "Daha fazla").click();
   // Exact: the notification bell is also a link named "Bildirimler, N okunmamış bildirim".
-  await page.getByRole("link", { name: linkName, exact: typeof linkName === "string" }).click();
+  await page.getByRole("main").getByRole("link", { name: linkName, exact: typeof linkName === "string" }).click();
 }
 
 /**

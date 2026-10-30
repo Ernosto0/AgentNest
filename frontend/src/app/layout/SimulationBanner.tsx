@@ -1,16 +1,15 @@
 import { useTranslation } from "react-i18next";
+import { useCurrentWorkspace } from "@/features/workspaces/context";
 
-/** Persistent notice on demo workspaces (INV-09): simulated data is never presented as real. */
-export function SimulationBanner() {
+/** Demo workspace context never establishes provenance of individual results. */
+export function SimulationBanner({ offline = false }: { offline?: boolean }) {
   const { t } = useTranslation();
-  return (
-    <div
-      role="status"
-      data-testid="simulation-banner"
-      className="border-b border-purple-300 bg-purple-50 px-4 py-2 text-sm text-purple-950"
-    >
-      <p className="font-semibold">{t("banner.simulation")}</p>
-      <p className="text-purple-900">{t("banner.simulationDetail")}</p>
-    </div>
-  );
+  const { workspace } = useCurrentWorkspace();
+  if (!workspace.is_demo && !offline) return null;
+  return <aside aria-label={t("shell.environment")} className="border-b border-border bg-surface-subtle px-4 py-2 text-metadata text-secondary md:px-6 min-[1200px]:px-8">
+    {workspace.is_demo ? <details data-testid="simulation-banner" className="group">
+      <summary className="cursor-pointer rounded-control py-1 font-medium text-primary focus-visible:outline-2 focus-visible:outline-focus">{t("banner.simulation")}{offline ? <span data-testid="ai-mode" className="font-normal text-secondary"> · {t("shell.offlineShort")}</span> : null}</summary>
+      <p className="mt-1 max-w-prose pb-1">{t("banner.simulationDetail")}{offline ? <> {t("aiMode.offline")}</> : null}</p>
+    </details> : <p data-testid="ai-mode">{t("aiMode.offline")}</p>}
+  </aside>;
 }

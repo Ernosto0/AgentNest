@@ -144,7 +144,7 @@ test("X3: tr to en to tr on every main screen, with no raw keys on screen", asyn
 
   // The switch itself, in the Settings screen (the choice is saved on the account).
   await navLink(page, "Daha fazla").click();
-  await page.getByRole("link", { name: "Ayarlar" }).click();
+  await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
   await chooseLanguage(page, "English");
   await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
   await expect(navLink(page, "Inbox")).toBeVisible();

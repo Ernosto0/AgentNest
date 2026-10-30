@@ -24,11 +24,11 @@ describe("LanguageSwitch", () => {
         <Probe />
       </>,
     );
-    expect(screen.getByRole("heading")).toHaveTextContent("Ana sayfa");
+    expect(screen.getByRole("heading")).toHaveTextContent("Bugün");
 
     await user.click(screen.getByRole("button", { name: "English" }));
 
-    expect(screen.getByRole("heading")).toHaveTextContent("Home");
+    expect(screen.getByRole("heading")).toHaveTextContent("Today");
     expect(screen.getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Türkçe" })).toHaveAttribute("aria-pressed", "false");
   });

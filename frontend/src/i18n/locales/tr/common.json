@@ -5,7 +5,7 @@
   },
   "nav": {
     "label": "Ana gezinme",
-    "home": "Ana sayfa",
+    "home": "Bugün",
     "inbox": "Gelen kutusu",
     "content": "İçerik",
     "approvals": "Onaylar",
@@ -449,5 +449,29 @@
         "failed": "başarısız"
       }
     }
+  },
+  "shell": {
+    "compactBrand": "AN",
+    "shortcut": "Ctrl/⌘ K",
+    "daily": "Günlük işler",
+    "business": "Asistan ve işletme",
+    "workspace": "Çalışma alanı",
+    "account": "Hesabınız",
+    "assistant": "Asistan",
+    "expandNavigation": "Gezinme etiketlerini aç",
+    "breadcrumb": "Sayfa konumu",
+    "destinations": "Sayfaya git",
+    "openLauncher": "Gezinme hedeflerini aç",
+    "launcherTitle": "Bir sayfaya git",
+    "launcherHint": "Bu çalışma alanında bir hedef bulun. Sayfalar arasında gezinir; kayıtlarda arama yapmaz veya komut çalıştırmaz.",
+    "filterDestinations": "Hedefleri filtrele",
+    "noDestination": "Eşleşen hedef yok. Başka bir sayfa adı deneyin.",
+    "moreHint": "Asistanınıza, işletme bilgilerine ve çalışma alanı araçlarına ulaşın.",
+    "environment": "Çalışma alanı ortamı",
+    "offlineShort": "Çevrimdışı yapay zekâ",
+    "questions": "İşletme sahibine sorular",
+    "comments": "Yorumlar",
+    "memory": "Müşteri hafızası",
+    "task": "Görev"
   }
 }
