@@ -1,0 +1,551 @@
+{
+  "fixtureOnly": true,
+  "origin": "http://127.0.0.1:5185",
+  "node": "v26.4.0",
+  "platform": "win32",
+  "assets": [
+    {
+      "name": "index-FD2Dv324.js",
+      "bytes": 827145,
+      "gzipBytes": 238323
+    },
+    {
+      "name": "index-qb9TXkhL.css",
+      "bytes": 29135,
+      "gzipBytes": 6659
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "login-tr-phone",
+      "path": "/login",
+      "locale": "tr",
+      "width": 390,
+      "signedIn": false,
+      "browser": "156.0.8078.4",
+      "settledMs": 713,
+      "title": "Giriş yap",
+      "scrollWidth": 390,
+      "viewportWidth": 390,
+      "font": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-FD2Dv324.js",
+          "encodedBytes": 238323,
+          "decodedBytes": 827145,
+          "durationMs": 38
+        },
+        {
+          "name": "/assets/index-qb9TXkhL.css",
+          "encodedBytes": 6659,
+          "decodedBytes": 29135,
+          "durationMs": 10
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 49,
+          "decodedBytes": 49,
+          "durationMs": 8
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 8
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 401,
+          "bytes": 49
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": null
+    },
+    {
+      "id": "login-en-desktop",
+      "path": "/login",
+      "locale": "en",
+      "width": 1440,
+      "signedIn": false,
+      "browser": "156.0.8078.4",
+      "settledMs": 673,
+      "title": "Sign in",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "font": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-FD2Dv324.js",
+          "encodedBytes": 238323,
+          "decodedBytes": 827145,
+          "durationMs": 31
+        },
+        {
+          "name": "/assets/index-qb9TXkhL.css",
+          "encodedBytes": 6659,
+          "decodedBytes": 29135,
+          "durationMs": 10
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 49,
+          "decodedBytes": 49,
+          "durationMs": 3
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 4
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 401,
+          "bytes": 49
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": null
+    },
+    {
+      "id": "today-tr-desktop",
+      "path": "/w/11111111-1111-4111-8111-111111111111",
+      "locale": "tr",
+      "width": 1440,
+      "signedIn": true,
+      "browser": "156.0.8078.4",
+      "settledMs": 760,
+      "title": "Ana sayfa",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "font": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-FD2Dv324.js",
+          "encodedBytes": 238323,
+          "decodedBytes": 827145,
+          "durationMs": 34
+        },
+        {
+          "name": "/assets/index-qb9TXkhL.css",
+          "encodedBytes": 6659,
+          "decodedBytes": 29135,
+          "durationMs": 10
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 327,
+          "decodedBytes": 327,
+          "durationMs": 3
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "encodedBytes": 477,
+          "decodedBytes": 477,
+          "durationMs": 3
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications",
+          "encodedBytes": 48,
+          "decodedBytes": 48,
+          "durationMs": 5
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 6
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 7
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 7
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/social-accounts",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 7
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/reports/daily",
+          "encodedBytes": 300,
+          "decodedBytes": 300,
+          "durationMs": 7
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/readiness",
+          "encodedBytes": 211,
+          "decodedBytes": 211,
+          "durationMs": 7
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 200,
+          "bytes": 327
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "status": 200,
+          "bytes": 477
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications?limit=30",
+          "status": 200,
+          "bytes": 48
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items?tab=scheduled&limit=3",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items?status=failed&limit=3",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/social-accounts",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/reports/daily",
+          "status": 200,
+          "bytes": 300
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/readiness",
+          "status": 200,
+          "bytes": 211
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": {
+        "path": "/w/11111111-1111-4111-8111-111111111111/more",
+        "settledMs": 79,
+        "addedApiRequests": 0
+      }
+    },
+    {
+      "id": "today-en-phone",
+      "path": "/w/11111111-1111-4111-8111-111111111111",
+      "locale": "en",
+      "width": 390,
+      "signedIn": true,
+      "browser": "156.0.8078.4",
+      "settledMs": 844,
+      "title": "Home",
+      "scrollWidth": 390,
+      "viewportWidth": 390,
+      "font": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-FD2Dv324.js",
+          "encodedBytes": 238323,
+          "decodedBytes": 827145,
+          "durationMs": 48
+        },
+        {
+          "name": "/assets/index-qb9TXkhL.css",
+          "encodedBytes": 6659,
+          "decodedBytes": 29135,
+          "durationMs": 17
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 327,
+          "decodedBytes": 327,
+          "durationMs": 3
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "encodedBytes": 477,
+          "decodedBytes": 477,
+          "durationMs": 5
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications",
+          "encodedBytes": 48,
+          "decodedBytes": 48,
+          "durationMs": 6
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 9
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 10
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 10
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/social-accounts",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 11
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/reports/daily",
+          "encodedBytes": 300,
+          "decodedBytes": 300,
+          "durationMs": 11
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/readiness",
+          "encodedBytes": 211,
+          "decodedBytes": 211,
+          "durationMs": 11
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 200,
+          "bytes": 327
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "status": 200,
+          "bytes": 477
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications?limit=30",
+          "status": 200,
+          "bytes": 48
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items?tab=scheduled&limit=3",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items?status=failed&limit=3",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/social-accounts",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/reports/daily",
+          "status": 200,
+          "bytes": 300
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/readiness",
+          "status": 200,
+          "bytes": 211
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": {
+        "path": "/w/11111111-1111-4111-8111-111111111111/more",
+        "settledMs": 78,
+        "addedApiRequests": 0
+      }
+    },
+    {
+      "id": "more-staff-tr-phone",
+      "path": "/w/11111111-1111-4111-8111-111111111111/more",
+      "locale": "tr",
+      "width": 360,
+      "signedIn": true,
+      "role": "staff",
+      "browser": "156.0.8078.4",
+      "settledMs": 765,
+      "title": "Daha fazla",
+      "scrollWidth": 360,
+      "viewportWidth": 360,
+      "font": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-FD2Dv324.js",
+          "encodedBytes": 238323,
+          "decodedBytes": 827145,
+          "durationMs": 35
+        },
+        {
+          "name": "/assets/index-qb9TXkhL.css",
+          "encodedBytes": 6659,
+          "decodedBytes": 29135,
+          "durationMs": 9
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 327,
+          "decodedBytes": 327,
+          "durationMs": 3
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "encodedBytes": 477,
+          "decodedBytes": 477,
+          "durationMs": 3
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications",
+          "encodedBytes": 48,
+          "decodedBytes": 48,
+          "durationMs": 5
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 5
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 200,
+          "bytes": 327
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "status": 200,
+          "bytes": 477
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications?limit=30",
+          "status": 200,
+          "bytes": 48
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": null
+    },
+    {
+      "id": "picker-en-desktop",
+      "path": "/",
+      "locale": "en",
+      "width": 1440,
+      "signedIn": true,
+      "browser": "156.0.8078.4",
+      "settledMs": 712,
+      "title": "Choose a workspace",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "font": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-FD2Dv324.js",
+          "encodedBytes": 238323,
+          "decodedBytes": 827145,
+          "durationMs": 60
+        },
+        {
+          "name": "/assets/index-qb9TXkhL.css",
+          "encodedBytes": 6659,
+          "decodedBytes": 29135,
+          "durationMs": 25
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 327,
+          "decodedBytes": 327,
+          "durationMs": 2
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 200,
+          "bytes": 327
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": null
+    }
+  ]
+}
