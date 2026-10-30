@@ -82,6 +82,14 @@ services:
     <<: *backend-common
     restart: unless-stopped
     stop_grace_period: 15s
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      DEMO_TOOLS_ENABLED: ${DEMO_TOOLS_ENABLED:-false}
+      # Runtime containers must never hold privileged DDL credentials (ADR-025 §1.1).
+      MIGRATION_DATABASE_URL: ""
     command:
       - uvicorn
       - app.main:create_app
@@ -119,6 +127,14 @@ services:
     restart: unless-stopped
     # Exceeds SHUTDOWN_GRACE_SECONDS (30s) in app/jobs/worker.py so in-flight jobs drain cleanly (INV-07).
     stop_grace_period: 35s
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      DEMO_TOOLS_ENABLED: ${DEMO_TOOLS_ENABLED:-false}
+      # Runtime containers must never hold privileged DDL credentials (ADR-025 §1.1).
+      MIGRATION_DATABASE_URL: ""
     command: ["python", "-m", "app.worker"]
     volumes:
       - media_data:/app/backend/var/media

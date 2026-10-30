@@ -58,6 +58,9 @@ frontend/e2e/
 docs/
 landing/
 design-preview/
+scripts/
+.deploy-state*
+.deploy*.lock
 .ua/
 .vscode/
 .idea/

@@ -126,10 +126,21 @@ class ReadinessReport:
         return self.database and self.migrations
 
 
-def migration_head() -> str | None:
+def _alembic_script_directory() -> ScriptDirectory:
     config = Config(str(BACKEND_DIR / "alembic.ini"))
     config.set_main_option("script_location", str(BACKEND_DIR / "migrations"))
-    return ScriptDirectory.from_config(config).get_current_head()
+    return ScriptDirectory.from_config(config)
+
+
+def migration_head() -> str | None:
+    return _alembic_script_directory().get_current_head()
+
+
+def migration_revisions() -> tuple[str, ...]:
+    """Return all Alembic revision IDs known to this code version (oldest to newest)."""
+    revs = [rev.revision for rev in _alembic_script_directory().walk_revisions()]
+    revs.reverse()
+    return tuple(revs)
 
 
 def check_readiness(engine: Engine | None = None) -> ReadinessReport:

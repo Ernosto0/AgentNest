@@ -221,6 +221,11 @@ class Settings(BaseSettings):
                 problems.append(f"TRUSTED_PROXY_CIDRS contains an invalid IP or CIDR: {cidr!r}.")
         if self.smtp_url.get_secret_value().strip() and not self.mail_from.strip():
             problems.append("MAIL_FROM must be set when SMTP_URL is configured.")
+        if self.migration_database_url.strip():
+            try:
+                make_url(self.migration_database_url.strip())
+            except Exception:
+                problems.append("MIGRATION_DATABASE_URL must be a valid database URL when set.")
         if self.app_env != "production":
             return problems
         secret = self.secret_key.get_secret_value()
@@ -248,6 +253,21 @@ class Settings(BaseSettings):
     def effective_migration_database_url(self) -> str:
         """Database URL used by Alembic migrations (falls back to ``database_url``)."""
         return self.migration_database_url.strip() or self.database_url
+
+    @property
+    def has_separated_migration_credentials(self) -> bool:
+        """True when ``MIGRATION_DATABASE_URL`` uses a distinct DB role from ``DATABASE_URL``."""
+        raw_mig = self.migration_database_url.strip()
+        if not raw_mig:
+            return False
+        try:
+            mig_url = make_url(raw_mig)
+            app_url = make_url(self.database_url)
+        except Exception:
+            return False
+        if mig_url.username and app_url.username:
+            return mig_url.username != app_url.username
+        return raw_mig != self.database_url.strip()
 
     @property
     def trusted_proxy_networks(
@@ -315,6 +335,10 @@ class Settings(BaseSettings):
             name: value for name, value in self.model_dump().items() if name not in _SECRET_FIELDS
         }
         data["database"] = make_url(self.database_url).render_as_string(hide_password=True)
+        data["migration_database"] = make_url(
+            self.effective_migration_database_url
+        ).render_as_string(hide_password=True)
+        data["migration_credentials_separated"] = self.has_separated_migration_credentials
         return data
 
 

@@ -1,7 +1,8 @@
 """Command line: ``python -m app.cli <command>``.
 
 Commands: ``seed [--reset]``, ``create-user``, ``generate-key``, ``export-openapi``,
-``simulate-message``, ``simulate-native-reply``, ``run-due-jobs`` (the developer simulator).
+``simulate-message``, ``simulate-native-reply``, ``run-due-jobs`` (the developer simulator),
+``check-config``, and ``migration-status``.
 Machine-readable output goes to stdout; logs go to stderr.
 """
 
@@ -16,8 +17,8 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from app.core.clock import SystemClock
-from app.core.config import ConfigError, Settings, get_settings
-from app.core.db import get_session_factory
+from app.core.config import ConfigError, Settings, get_settings, validate_production_settings
+from app.core.db import check_readiness, get_session_factory, migration_head, migration_revisions
 from app.core.errors import AppError
 from app.core.logging import configure_logging
 from app.core.security import generate_encryption_key, generate_secret_key
@@ -191,6 +192,51 @@ def cmd_run_due_jobs(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_check_config(args: argparse.Namespace) -> int:
+    try:
+        settings = get_settings()
+        if args.production:
+            validate_production_settings(settings)
+    except ConfigError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    if (
+        args.require_separated_migration_credentials
+        and not settings.has_separated_migration_credentials
+    ):
+        print(
+            "error: MIGRATION_DATABASE_URL must use a distinct database role from DATABASE_URL.",
+            file=sys.stderr,
+        )
+        return 1
+    print(json.dumps(settings.public_dict(), indent=2, sort_keys=True, default=str))
+    return 0
+
+
+def cmd_migration_status(args: argparse.Namespace) -> int:
+    revisions = list(migration_revisions())
+    if args.head_only:
+        payload: dict[str, object] = {
+            "head_revision": migration_head(),
+            "known_revisions": revisions,
+        }
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+    report = check_readiness()
+    payload = {
+        "current_revision": report.current_revision,
+        "database": report.database,
+        "head_revision": report.head_revision,
+        "known_revisions": revisions,
+        "migrations": report.migrations,
+        "ready": report.ready,
+    }
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    if args.require_ready and not report.ready:
+        return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli", description="AgentNest commands")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -237,11 +283,43 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_run = sub.add_parser("run-due-jobs", help="run the jobs that are due now, once")
     p_run.set_defaults(func=cmd_run_due_jobs)
+
+    p_cfg = sub.add_parser(
+        "check-config", help="validate configuration and print redacted public settings"
+    )
+    p_cfg.add_argument(
+        "--production",
+        action="store_true",
+        help="require APP_ENV=production and all production startup safety checks",
+    )
+    p_cfg.add_argument(
+        "--require-separated-migration-credentials",
+        action="store_true",
+        help="require MIGRATION_DATABASE_URL to use a distinct database role from DATABASE_URL",
+    )
+    p_cfg.set_defaults(func=cmd_check_config)
+
+    p_mig = sub.add_parser(
+        "migration-status", help="print Alembic migration head, known revisions, and DB readiness"
+    )
+    p_mig.add_argument(
+        "--head-only",
+        action="store_true",
+        help="print code migration head and known revisions without connecting to the database",
+    )
+    p_mig.add_argument(
+        "--require-ready",
+        action="store_true",
+        help="exit non-zero unless database is reachable and current_revision equals head_revision",
+    )
+    p_mig.set_defaults(func=cmd_migration_status)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "migration-status" and getattr(args, "head_only", False):
+        return int(args.func(args))
     try:
         settings = get_settings()
     except ConfigError as exc:

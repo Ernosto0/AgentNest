@@ -1,0 +1,234 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target deployment environment (production or staging)"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+      image_tag:
+        description: "Explicit image tag to deploy (defaults to git release tag or sha-<commit>)"
+        required: false
+        default: ""
+        type: string
+      skip_build:
+        description: "Skip image build and deploy an already-published GHCR image tag"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+# Serialize deployments per target environment; never cancel an in-flight migration or rollout.
+concurrency:
+  group: deploy-${{ inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    name: Build & Push Production Images (GHCR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      sha_tag: ${{ steps.meta.outputs.sha_tag }}
+      backend_image: ${{ steps.meta.outputs.backend_image }}
+      caddy_image: ${{ steps.meta.outputs.caddy_image }}
+      backend_digest: ${{ steps.build-backend.outputs.digest }}
+      caddy_digest: ${{ steps.build-caddy.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve immutable image tags and repository names
+        id: meta
+        env:
+          INPUT_TAG: ${{ inputs.image_tag }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          SHA: ${{ github.sha }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          OWNER_LC="$(printf '%s' "${REPO_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          SHA_SHORT="${SHA:0:12}"
+          SHA_TAG="sha-${SHA_SHORT}"
+          if [[ -n "${INPUT_TAG}" ]]; then
+            IMAGE_TAG="${INPUT_TAG}"
+          elif [[ "${REF_TYPE}" == "tag" && "${REF_NAME}" == v* ]]; then
+            IMAGE_TAG="${REF_NAME}"
+          else
+            IMAGE_TAG="${SHA_TAG}"
+          fi
+          if [[ "${IMAGE_TAG}" == "latest" ]]; then
+            echo "error: refusing mutable 'latest' tag for deployment; use a release tag (v*) or sha-<commit>." >&2
+            exit 1
+          fi
+          BACKEND_IMAGE="${REGISTRY}/${OWNER_LC}/agentnest-backend"
+          CADDY_IMAGE="${REGISTRY}/${OWNER_LC}/agentnest-caddy"
+          {
+            echo "image_tag=${IMAGE_TAG}"
+            echo "sha_tag=${SHA_TAG}"
+            echo "backend_image=${BACKEND_IMAGE}"
+            echo "caddy_image=${CADDY_IMAGE}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        if: ${{ inputs.skip_build != true }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        if: ${{ inputs.skip_build != true }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image (target=backend)
+        id: build-backend
+        if: ${{ inputs.skip_build != true }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: backend
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.backend_image }}:${{ steps.meta.outputs.image_tag }}
+            ${{ steps.meta.outputs.backend_image }}:${{ steps.meta.outputs.sha_tag }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+          provenance: false
+
+      - name: Build and push Caddy + SPA image (target=caddy)
+        id: build-caddy
+        if: ${{ inputs.skip_build != true }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: caddy
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=
+          tags: |
+            ${{ steps.meta.outputs.caddy_image }}:${{ steps.meta.outputs.image_tag }}
+            ${{ steps.meta.outputs.caddy_image }}:${{ steps.meta.outputs.sha_tag }}
+          cache-from: type=gha,scope=caddy
+          cache-to: type=gha,mode=max,scope=caddy
+          provenance: false
+
+  deploy:
+    name: Deploy Over Verified SSH (${{ inputs.environment || 'production' }})
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ inputs.environment || 'production' }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout deployment manifests and scripts
+        uses: actions/checkout@v4
+
+      - name: Validate required SSH and deployment configuration
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [[ -z "${DEPLOY_SSH_HOST}" ]] && missing+=("DEPLOY_SSH_HOST")
+          [[ -z "${DEPLOY_SSH_USER}" ]] && missing+=("DEPLOY_SSH_USER")
+          [[ -z "${DEPLOY_SSH_PRIVATE_KEY}" ]] && missing+=("DEPLOY_SSH_PRIVATE_KEY")
+          [[ -z "${DEPLOY_SSH_KNOWN_HOSTS}" ]] && missing+=("DEPLOY_SSH_KNOWN_HOSTS")
+          if (( ${#missing[@]} > 0 )); then
+            echo "error: missing required GitHub Environment secrets: ${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Configure SSH key and verified known_hosts
+        env:
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "${HOME}/.ssh"
+          printf '%s\n' "${DEPLOY_SSH_PRIVATE_KEY}" > "${HOME}/.ssh/deploy_ed25519"
+          chmod 0600 "${HOME}/.ssh/deploy_ed25519"
+          printf '%s\n' "${DEPLOY_SSH_KNOWN_HOSTS}" > "${HOME}/.ssh/known_hosts"
+          chmod 0644 "${HOME}/.ssh/known_hosts"
+
+      - name: Sync deployment files and execute preflight, migration gate, and rollout
+        env:
+          DEPLOY_ENV: ${{ inputs.environment || 'production' }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/agentnest' }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN || secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          BACKEND_IMAGE_REPO: ${{ needs.build-and-push.outputs.backend_image }}
+          CADDY_IMAGE_REPO: ${{ needs.build-and-push.outputs.caddy_image }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS=(
+            -i "${HOME}/.ssh/deploy_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="${HOME}/.ssh/known_hosts"
+            -o ConnectTimeout=15
+          )
+          if [[ "${DEPLOY_ENV}" == "staging" ]]; then
+            PROJECT_NAME="${COMPOSE_PROJECT_NAME:-agentnest-staging}"
+            ENV_FILE="${ENV_FILE:-.env.staging}"
+          else
+            PROJECT_NAME="${COMPOSE_PROJECT_NAME:-agentnest}"
+            ENV_FILE="${ENV_FILE:-.env}"
+          fi
+
+          ssh "${SSH_OPTS[@]}" -p "${DEPLOY_SSH_PORT}" "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+            "mkdir -p '${DEPLOY_PATH}/scripts' && chmod 0750 '${DEPLOY_PATH}'"
+
+          scp "${SSH_OPTS[@]}" -P "${DEPLOY_SSH_PORT}" \
+            compose.prod.yml Caddyfile \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:${DEPLOY_PATH}/"
+
+          scp "${SSH_OPTS[@]}" -P "${DEPLOY_SSH_PORT}" \
+            scripts/deploy.py scripts/deploy.sh scripts/rollback.sh \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:${DEPLOY_PATH}/scripts/"
+
+          printf '%s\n' "${GHCR_READ_TOKEN}" | ssh "${SSH_OPTS[@]}" -p "${DEPLOY_SSH_PORT}" \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+            "cd '${DEPLOY_PATH}' && \
+             chmod 0750 scripts/deploy.sh scripts/rollback.sh scripts/deploy.py && \
+             docker login '${REGISTRY}' -u '${GHCR_USERNAME}' --password-stdin && \
+             AGENTNEST_BACKEND_IMAGE='${BACKEND_IMAGE_REPO}:${IMAGE_TAG}' \
+             AGENTNEST_CADDY_IMAGE='${CADDY_IMAGE_REPO}:${IMAGE_TAG}' \
+             ./scripts/deploy.sh \
+               --image-tag '${IMAGE_TAG}' \
+               --env-file '${ENV_FILE}' \
+               --project-name '${PROJECT_NAME}'"
+
+      - name: Clean up ephemeral SSH credentials
+        if: always()
+        run: |
+          rm -f "${HOME}/.ssh/deploy_ed25519" "${HOME}/.ssh/known_hosts"
