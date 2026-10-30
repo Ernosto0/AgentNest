@@ -5,6 +5,7 @@ In ``production`` the defaults are safe and unsafe combinations refuse to start.
 Checks for variables introduced in later phases are added in those phases.
 """
 
+import ipaddress
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
@@ -29,6 +30,7 @@ _SECRET_FIELDS = frozenset(
         "secret_key",
         "demo_password",
         "database_url",
+        "migration_database_url",
         "test_database_url",
         "openai_api_key",
         "mock_instagram_app_secret",
@@ -37,6 +39,8 @@ _SECRET_FIELDS = frozenset(
         "token_encryption_keys",
         "s3_access_key_id",
         "s3_secret_access_key",
+        "smtp_url",
+        "sentry_dsn",
     }
 )
 
@@ -67,6 +71,7 @@ class Settings(BaseSettings):
 
     app_env: Literal["development", "test", "production"] = "development"
     database_url: str = DEFAULT_DATABASE_URL
+    migration_database_url: str = ""
     test_database_url: str = DEFAULT_TEST_DATABASE_URL
     secret_key: SecretStr = SecretStr(EXAMPLE_SECRET_KEY)
     frontend_origin: str = "http://localhost:5173"
@@ -154,6 +159,13 @@ class Settings(BaseSettings):
     retention_media_orphan_days: int = Field(default=7, ge=1)
     retention_published_media_days: int = Field(default=90, ge=1)
 
+    # --- Production hardening, proxy boundary, email & monitoring (Phase 8, ADR-025) ---
+    trusted_proxy_cidrs: str = "127.0.0.1/32,::1/128"
+    smtp_url: SecretStr = SecretStr("")
+    mail_from: str = ""
+    operator_alert_email: str = ""
+    sentry_dsn: SecretStr = SecretStr("")
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _upper_log_level(cls, value: Any) -> Any:
@@ -199,6 +211,16 @@ class Settings(BaseSettings):
                 "MEDIA_STORAGE_BACKEND must be 's3' when 'meta' is enabled; "
                 "public local-media serving is not implemented."
             )
+        for entry in self.trusted_proxy_cidrs.split(","):
+            cidr = entry.strip()
+            if not cidr:
+                continue
+            try:
+                ipaddress.ip_network(cidr, strict=False)
+            except ValueError:
+                problems.append(f"TRUSTED_PROXY_CIDRS contains an invalid IP or CIDR: {cidr!r}.")
+        if self.smtp_url.get_secret_value().strip() and not self.mail_from.strip():
+            problems.append("MAIL_FROM must be set when SMTP_URL is configured.")
         if self.app_env != "production":
             return problems
         secret = self.secret_key.get_secret_value()
@@ -221,6 +243,22 @@ class Settings(BaseSettings):
         if self.llm_provider == "openai" and not self.llm_model_default.strip():
             problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
         return problems
+
+    @property
+    def effective_migration_database_url(self) -> str:
+        """Database URL used by Alembic migrations (falls back to ``database_url``)."""
+        return self.migration_database_url.strip() or self.database_url
+
+    @property
+    def trusted_proxy_networks(
+        self,
+    ) -> tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]:
+        """Parsed trusted proxy CIDRs that are permitted to supply forwarded client IPs."""
+        return tuple(
+            ipaddress.ip_network(entry.strip(), strict=False)
+            for entry in self.trusted_proxy_cidrs.split(",")
+            if entry.strip()
+        )
 
     @property
     def media_root(self) -> Path:
@@ -283,3 +321,14 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def validate_production_settings(settings: Settings | None = None) -> Settings:
+    """Validate and return production-safe settings, raising ``ConfigError`` on any violation."""
+    resolved = settings or get_settings()
+    problems = list(resolved.safety_problems())
+    if resolved.app_env != "production":
+        problems.insert(0, "APP_ENV must be 'production' for production deployment.")
+    if problems:
+        raise ConfigError(problems)
+    return resolved

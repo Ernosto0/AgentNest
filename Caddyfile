@@ -1,0 +1,59 @@
+# AgentNest Production & Staging Reverse Proxy (P8-01 / P8-12 / deployment.md §2).
+#
+# Parameterized via environment variables so production, optional staging (P8-12),
+# and local container rehearsals share the exact same Caddyfile without forking:
+#   - APP_DOMAIN       : Public hostname for automatic ACME HTTPS (e.g. app.example.com or
+#                        staging.example.com). Defaults to ":80" for local HTTP smoke checks.
+#   - CADDY_TLS_CONFIG : Optional TLS directive (e.g. "tls internal" for local HTTPS or
+#                        "tls ops@example.com"). Empty uses Caddy's default automatic HTTPS.
+#   - API_UPSTREAM     : Backend FastAPI upstream address (default: api:8000).
+#   - SPA_ROOT         : Path to built frontend/dist static files (default: /srv/app).
+{
+	admin off
+}
+
+# Internal container liveness probe (loopback-only; port 8080 is not published on the host).
+http://127.0.0.1:8080 {
+	respond /healthz "ok" 200
+}
+
+{$APP_DOMAIN::80} {
+	{$CADDY_TLS_CONFIG:}
+
+	request_body {
+		max_size 10MB
+	}
+
+	# Production web security headers (security-and-privacy.md §6, ADR-025).
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# Backend API, Meta/Instagram webhooks, OAuth callbacks, and health/readiness probes.
+	# `handle` preserves the full request path, query string, method, raw body, and cookies.
+	@backend path /api /api/* /webhooks /webhooks/* /oauth /oauth/* /healthz /readyz
+	handle @backend {
+		reverse_proxy {$API_UPSTREAM:api:8000}
+	}
+
+	# React SPA static files with deep-link fallback to /index.html.
+	handle {
+		root * {$SPA_ROOT:/srv/app}
+		encode zstd gzip
+
+		@immutable_assets path /assets/*
+		header @immutable_assets Cache-Control "public, max-age=31536000, immutable"
+
+		@spa_entry not path /assets/*
+		header @spa_entry Cache-Control "no-cache"
+
+		try_files {path} /index.html
+		file_server
+	}
+}

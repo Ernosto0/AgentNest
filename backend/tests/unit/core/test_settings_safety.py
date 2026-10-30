@@ -5,7 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from app.core.config import EXAMPLE_SECRET_KEY, ConfigError, Settings
+from app.core.config import (
+    EXAMPLE_SECRET_KEY,
+    ConfigError,
+    Settings,
+    validate_production_settings,
+)
 
 GOOD_SECRET = "x" * 48
 PROD_DB = "postgresql+psycopg://u:p@db.internal:5432/agentnest"
@@ -45,6 +50,12 @@ def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "S3_BUCKET",
         "S3_ACCESS_KEY_ID",
         "S3_SECRET_ACCESS_KEY",
+        "MIGRATION_DATABASE_URL",
+        "TRUSTED_PROXY_CIDRS",
+        "SMTP_URL",
+        "MAIL_FROM",
+        "OPERATOR_ALERT_EMAIL",
+        "SENTRY_DSN",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -406,3 +417,78 @@ def test_phase7_environment_variables_are_read_and_documented(
     for name in PHASE7_FIELDS:
         assert f"{name.upper()}=" in example
         assert f"`{name.upper()}`" in docs
+
+
+# --- Phase 8 foundations (production packaging, proxy boundary, email & monitoring) -----------
+
+PHASE8_FIELDS = (
+    "migration_database_url",
+    "trusted_proxy_cidrs",
+    "smtp_url",
+    "mail_from",
+    "operator_alert_email",
+    "sentry_dsn",
+)
+
+
+def test_phase8_defaults_and_migration_url_fallback() -> None:
+    settings = Settings(_env_file=None)
+    assert settings.migration_database_url == ""
+    assert settings.effective_migration_database_url == settings.database_url
+    assert [str(net) for net in settings.trusted_proxy_networks] == [
+        "127.0.0.1/32",
+        "::1/128",
+    ]
+    override_url = "postgresql+psycopg://migrator:pw@db.internal:5432/agentnest"
+    with_migrator = Settings(_env_file=None, migration_database_url=override_url)
+    assert with_migrator.effective_migration_database_url == override_url
+
+
+def test_invalid_trusted_proxy_cidr_is_refused() -> None:
+    with pytest.raises(ConfigError, match="TRUSTED_PROXY_CIDRS"):
+        Settings(_env_file=None, trusted_proxy_cidrs="127.0.0.1/32,not-a-cidr")
+
+
+def test_smtp_url_requires_mail_from() -> None:
+    with pytest.raises(ConfigError, match="MAIL_FROM must be set when SMTP_URL is configured"):
+        Settings(_env_file=None, smtp_url="smtp://user:pass@smtp.example.test:587", mail_from=" ")
+    configured = Settings(
+        _env_file=None,
+        smtp_url="smtp://user:pass@smtp.example.test:587",
+        mail_from="noreply@example.test",
+    )
+    assert configured.mail_from == "noreply@example.test"
+
+
+def test_phase8_secrets_never_appear_in_public_dict() -> None:
+    settings = prod(
+        migration_database_url="postgresql+psycopg://migrator:super-secret-mig@db.internal:5432/agentnest",
+        smtp_url="smtp://user:super-secret-smtp@smtp.example.test:587",
+        mail_from="noreply@example.test",
+        sentry_dsn="https://super-secret-dsn@o0.ingest.sentry.io/1",
+    )
+    public = settings.public_dict()
+    for name in ("migration_database_url", "smtp_url", "sentry_dsn"):
+        assert name not in public
+    dumped = str(public)
+    for secret in ("super-secret-mig", "super-secret-smtp", "super-secret-dsn"):
+        assert secret not in dumped
+
+
+def test_validate_production_settings_enforces_production_env() -> None:
+    dev = Settings(_env_file=None, app_env="development")
+    with pytest.raises(ConfigError, match="APP_ENV must be 'production'"):
+        validate_production_settings(dev)
+    valid_prod = prod()
+    assert validate_production_settings(valid_prod) is valid_prod
+
+
+def test_phase8_environment_variables_are_documented() -> None:
+    root = Path(__file__).resolve().parents[4]
+    example = (root / ".env.example").read_text(encoding="utf-8")
+    docs = (root / "docs/operations/environment-variables.md").read_text(encoding="utf-8")
+    for name in PHASE8_FIELDS:
+        assert f"{name.upper()}=" in example, f"{name.upper()} is missing from .env.example"
+        assert f"`{name.upper()}`" in docs, (
+            f"{name.upper()} is missing from environment-variables.md"
+        )

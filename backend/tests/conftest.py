@@ -16,6 +16,7 @@ from app.core.config import Settings, get_settings  # noqa: E402
 
 # Tests always run against TEST_DATABASE_URL (from the environment or .env).
 os.environ["DATABASE_URL"] = Settings().test_database_url
+os.environ.pop("MIGRATION_DATABASE_URL", None)
 get_settings.cache_clear()
 
 import pytest  # noqa: E402

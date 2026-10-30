@@ -1,0 +1,66 @@
+# Git and CI metadata
+.git
+.github
+.gitignore
+
+# Environment and secret files (never include in build context or layers; ADR-017 / INV-10)
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Python virtual environments, caches, and test/coverage artifacts
+.venv/
+backend/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+.pytest_cache/
+backend/.pytest_cache/
+.mypy_cache/
+backend/.mypy_cache/
+.ruff_cache/
+backend/.ruff_cache/
+.import_linter_cache/
+backend/.import_linter_cache/
+.coverage
+backend/.coverage
+htmlcov/
+backend/htmlcov/
+*.egg-info/
+backend/*.egg-info/
+backend/tests/
+backend/evals/reports/
+backend/tmp-*/
+
+# Runtime data and local media storage
+var/
+backend/var/
+frontend/var/
+
+# Node modules, build outputs, and Playwright E2E artifacts
+node_modules/
+frontend/node_modules/
+landing/node_modules/
+frontend/dist/
+frontend/.vite/
+**/*.tsbuildinfo
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/
+frontend/e2e/
+
+# Non-runtime directories and editor/OS files
+docs/
+landing/
+design-preview/
+.ua/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+CLAUDE.md

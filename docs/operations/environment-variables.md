@@ -9,7 +9,8 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | Variable | dev | prod | Description |
 |---|---|---|---|
 | `APP_ENV` | `development` | `production` | `development` \| `test` \| `production` |
-| `DATABASE_URL` | `postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest` | required 🔒 | Main DB |
+| `DATABASE_URL` | `postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest` | required 🔒 | Main runtime DB (`agentnest_app` / `agentnest_worker` in Phase 8) |
+| `MIGRATION_DATABASE_URL` | empty (= `DATABASE_URL`) | recommended 🔒 | Optional DDL/migration connection URL (`agentnest_migrator` in Phase 8; falls back to `DATABASE_URL` when empty) |
 | `TEST_DATABASE_URL` | `…/agentnest_test` | — | Used by pytest |
 | `SECRET_KEY` 🔒 | dev placeholder (refused in prod) | required, ≥ 32 bytes random | Signing (OAuth state HMAC, misc) |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | site origin | CORS (dev only) and redirects |
@@ -95,16 +96,39 @@ Global values, in whole days (at least 1); per-workspace values are deferred. Th
 
 There is **no audit setting**: audit rows are never deleted in Phase 6 (plan H17; the two-year purge needs an ADR with the Phase 8 database privileges). The earlier draft variable `RETENTION_AUDIT_DAYS` was therefore not introduced.
 
-## Owner channels and ops (Phases 8–9)
+## Owner channels, proxy boundary, and ops (Phases 8–9)
 
 | Variable | dev | prod | Description |
 |---|---|---|---|
-| `SMTP_URL` 🔒 | empty | required for email | Phase 8 |
-| `MAIL_FROM` | empty | required for email | |
-| `SENTRY_DSN` 🔒 | empty | optional | Phase 8 |
-| `OPERATOR_ALERT_EMAIL` | empty | recommended | Phase 8 |
+| `TRUSTED_PROXY_CIDRS` | `127.0.0.1/32,::1/128` | internal proxy CIDR(s) | Comma-separated IPs/CIDRs permitted to supply `X-Forwarded-For` (`ADR-025` §2.1). Invalid CIDRs fail startup |
+| `SMTP_URL` 🔒 | empty | required for email | SMTP connection URL (Phase 8, `OQ-16`). Requires `MAIL_FROM` when set |
+| `MAIL_FROM` | empty | required when `SMTP_URL` is set | Sender address for transactional emails |
+| `SENTRY_DSN` 🔒 | empty | optional | Optional Sentry-compatible DSN (Phase 8, `P8-07`) |
+| `OPERATOR_ALERT_EMAIL` | empty | recommended | Operator alert destination (Phase 8, `P8-07`) |
 | `TELEGRAM_BOT_TOKEN` 🔒 | empty | required if Telegram | Phase 9 |
 | `TELEGRAM_WEBHOOK_SECRET` 🔒 | empty | required if Telegram webhook | Phase 9 |
+
+## Production Compose and Caddy packaging parameters (`compose.prod.yml` / `Caddyfile`, Phase 8)
+
+These host-level Compose/Caddy variables parameterize `compose.prod.yml` and `Caddyfile` so production, optional staging (`P8-12`), and local container rehearsals use the exact same files without forking:
+
+| Variable | Default | Description |
+|---|---|---|
+| `COMPOSE_PROJECT_NAME` | `agentnest` | Docker Compose stack/volume/network prefix (`agentnest-prod`, `agentnest-staging`, etc.) |
+| `ENV_FILE` | `.env` | Path to the environment file loaded by `api`, `worker`, and `migrate` |
+| `APP_DOMAIN` | `:80` | Site address in `Caddyfile` (`app.example.com` for production ACME HTTPS, `staging.example.com` for staging, `:80` for local HTTP rehearsal) |
+| `CADDY_TLS_CONFIG` | empty | Optional Caddy TLS directive (`tls internal` for local self-signed HTTPS, `tls ops@example.com` for explicit ACME contact, or empty for automatic HTTPS) |
+| `API_UPSTREAM` | `api:8000` | Upstream FastAPI address proxied by Caddy |
+| `IMAGE_TAG` | `latest` | Container image tag for `AGENTNEST_BACKEND_IMAGE` and `AGENTNEST_CADDY_IMAGE` |
+| `WEB_CONCURRENCY` | `2` | Uvicorn worker process count in the `api` container |
+| `HTTP_PORT` / `HTTPS_PORT` | `80` / `443` | Host ports published by `caddy` |
+| `DOCKER_LOG_MAX_SIZE` / `DOCKER_LOG_MAX_FILE` | `10m` / `5` | Bounded `json-file` container log rotation limits |
+
+### Server `.env` ownership and secret handling (`ADR-017`, `INV-10`)
+
+- On production and staging hosts, `.env` (and `.env.staging` if used) must be owned by the non-root deploy user with `0600` permissions (`chown deploy:deploy /opt/agentnest/.env && chmod 600 /opt/agentnest/.env`).
+- `.dockerignore` excludes `.env`, `.env.*`, key/certificate files, `.git`, `.venv`, `node_modules`, and `var/` from the Docker build context so secrets never enter image layers or build history.
+- The frontend build stage receives only `VITE_API_BASE_URL` (empty for same-origin production); no secret is ever passed to `VITE_*` variables.
 
 ## Manual Meta diagnostics (private process environment)
 
