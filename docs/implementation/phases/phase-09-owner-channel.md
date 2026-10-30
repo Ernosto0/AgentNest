@@ -10,6 +10,17 @@ Let owners receive notifications, issue commands, send images and decide approva
 
 ## Scope and tasks (in order)
 
+**Phase 7.5 handoff:** A future owner channel must carry typed, scoped owner-question
+notifications and answers into the existing owner-question service. Preserve question ID,
+workspace/account/thread, version, expiry and responder identity; a delivered message or
+free-text answer is information, never an action approval. Approval buttons remain the
+separate exact-payload, single-use approval path. Natural-language owner tasks enter the
+authenticated owner-task intake with the requester's current permissions intersected with
+account delegation; the channel adapter cannot invoke broker tools or provider effects.
+Deduplicate updates before writing a question answer, task or decision. Handle stale
+question, takeover, role change and controller epoch by showing the current state rather
+than replaying an old response. Keep customer DMs outside this owner command channel.
+
 | ID | Task | Size |
 |---|---|---|
 | P9-01 | `channel_links` + linking flow (one-time code in web settings → `/link <code>` in the bot); unlink both ways; audit | S |

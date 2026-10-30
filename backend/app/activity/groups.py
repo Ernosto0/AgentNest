@@ -144,6 +144,7 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "agent.delegation_applied",
         "agent.action_authorized",
         "agent.action_cancelled",
+        "agent.content_applied",
         "agent.state_changed",
         "agent.personality_changed",
         "memory.written",

@@ -527,6 +527,8 @@ describe("account capabilities (G4)", () => {
     mockApi(
       routes({
         [`GET ${BASE}/social-accounts`]: () => json({ items: [socialAccount()], next_cursor: null }),
+        [`GET ${BASE}/accounts/${socialAccount().id}/agent`]: () =>
+          json({ controller_mode: "legacy", state: "inactive" }),
         [`GET ${BASE}/automation-policies`]: () =>
           json({ auto_allowed: false, items: [], readiness_level: "ready", reviewed_at: null }),
       }),

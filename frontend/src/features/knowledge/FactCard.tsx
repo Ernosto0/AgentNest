@@ -31,7 +31,7 @@ export function FactCard({ fact, timezone, canVerify, busy, onEdit, onHistory, o
       : null;
 
   return (
-    <Card className="flex flex-col gap-2" data-testid={`fact-${fact.key}`}>
+    <Card className="flex flex-col gap-2" data-testid={`${archived ? "archived-fact" : "fact"}-${fact.key}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="min-w-0 text-base font-semibold break-words">{pickLabel(fact.label, i18n.language)}</h3>
         <FactStatusChip state={fact.state} />

@@ -39,6 +39,7 @@ _PRICE_STOP_WORD_TEXT = (
     "hakkinda ogrenebilir ogrenmek var mi mu "
     "information info please can you give would like to know "
     "paket paketi paketini package packages "
+    "bir gonderi gonderisi post posts paylasim paylasimi "
     "merhaba selam gunaydin iyi gunler aksamlar hello hi hey good morning evening thanks "
     "tesekkurler tesekkur ederim lutfen bir one acaba bana bize"
 )

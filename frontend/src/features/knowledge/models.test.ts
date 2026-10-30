@@ -81,6 +81,17 @@ describe("category summary", () => {
     const custom = categoryEntries("custom", template, withService);
     expect(custom.entries).toEqual([{ kind: "other", facts: [expect.objectContaining({ key: "custom.sauna" })] }]);
   });
+
+  it("shows a fixed fact once when a broad pattern also matches its key", () => {
+    const overlapping = [
+      templateItem({ identifier: "pricing.*", key: null, pattern: "pricing.*", category: "pricing" }),
+      ...template,
+    ];
+    const entries = categoryEntries("pricing", overlapping, facts).entries;
+    const monthly = entries.flatMap((entry) => entry.kind === "fixed" ? [entry.fact] : entry.facts)
+      .filter((item) => item?.key === "pricing.membership_monthly");
+    expect(monthly).toHaveLength(1);
+  });
 });
 
 describe("slugFromLabel", () => {

@@ -225,6 +225,7 @@
   "activity.agent.delegation_applied": "Agent authority updated",
   "activity.agent.action_authorized": "Agent action authorized",
   "activity.agent.action_cancelled": "Agent action cancelled",
+  "activity.agent.content_applied": "Agent content action applied",
   "activity.agent.state_changed": "Agent state changed",
   "activity.agent.personality_changed": "Agent voice updated",
   "activity.memory.written": "Customer memory saved",

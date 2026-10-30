@@ -60,7 +60,7 @@ def test_the_list_row_has_what_the_screen_needs(inbox: InboxEnv, gym) -> None:
     assert row["window_ends_at"].startswith("2026-01-16T12:00")
     assert set(row) == {
         "id", "customer_handle", "customer_number", "last_message_preview", "last_message_at",
-        "attention", "handling_mode", "window_ends_at", "is_simulated",
+        "attention", "handling_mode", "window_ends_at", "is_simulated", "social_account_id",
     }  # fmt: skip
 
 

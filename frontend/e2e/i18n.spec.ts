@@ -59,8 +59,8 @@ const SCREENS: Screen[] = [
   {
     name: "Approvals",
     path: "/approvals",
-    tr: { heading: "Onaylar", text: "Hiçbir şey siz onaylamadan yapılmaz." },
-    en: { heading: "Approvals", text: "Nothing happens without your approval." },
+    tr: { heading: "Onaylar", text: "Kararınızı bekleyen işlemleri inceleyin." },
+    en: { heading: "Approvals", text: "Review actions that need your decision." },
   },
   {
     name: "Knowledge",

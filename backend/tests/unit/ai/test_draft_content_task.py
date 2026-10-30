@@ -77,6 +77,7 @@ def valid(**overrides: object) -> ContentProposal:
         ("Deneme seansını duyur", "tr", "promotion.trial_session"),
         ("Announce the trial session", "en", "promotion.trial_session"),
         ("Üyelik fiyatını paylaş", "tr", "pricing.membership_monthly"),
+        ("Aylık üyelik fiyatı hakkında bir gönderi", "tr", "pricing.membership_monthly"),
         ("3 aylık üyelik paketi", "tr", "pricing.membership_3_months"),
         ("Share the membership price", "en", "pricing.membership_monthly"),
         ("Çalışma saatlerimizi hatırlat", "tr", "hours.weekly"),

@@ -1,6 +1,6 @@
 # Session 18: Rollout and close-out
 
-**Task:** P7.5-18. **Status:** Planned. **Prerequisite:** Session 17; real rollout also requires G7.5-C/D and the relevant existing gates.
+**Task:** P7.5-18. **Status:** Offline rehearsal and docs complete; founder/phone acceptance pending. **Prerequisite:** Session 17; real rollout also requires G7.5-C/D and the relevant existing gates. See [report](s18-report.md).
 Read the [common session rules](phase-7.5-sessions.md) and phase sections 3, 13-14.
 
 ## Goal

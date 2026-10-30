@@ -225,6 +225,7 @@
   "activity.agent.delegation_applied": "Aracı yetkisi güncellendi",
   "activity.agent.action_authorized": "Aracı işlemi yetkilendirildi",
   "activity.agent.action_cancelled": "Aracı işlemi iptal edildi",
+  "activity.agent.content_applied": "Aracı içerik işlemi uygulandı",
   "activity.agent.state_changed": "Aracı durumu değişti",
   "activity.agent.personality_changed": "Aracı üslubu güncellendi",
   "activity.memory.written": "Müşteri hafızası kaydedildi",

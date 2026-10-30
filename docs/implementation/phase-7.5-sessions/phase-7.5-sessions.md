@@ -1,6 +1,6 @@
 # Phase 7.5: Implementation Sessions
 
-**Status:** Sessions 01-12 and 14-15 are offline implemented and operator reviewed; Session 13 is offline complete and ready for review. Session 16 has an operator-reviewed offline scaffold, with real Meta capabilities externally pending. See individual reports for actual evidence and remaining gates.
+**Status:** Sessions 01-16 have offline deliverables recorded in their reports. Session 17's full backend/frontend/browser regressions pass; its 60 varied behavioral journeys and real-model quality gate remain pending. Session 18's offline rollback rehearsal and operating guide are complete; founder-account and phone acceptance remain pending. See individual reports for exact evidence.
 **Canonical phase:** [phase-7.5.md](../phases/phase-7.5.md).
 **Target decision:** [ADR-024](../../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md).
 
@@ -26,8 +26,8 @@ Run the following 18 sessions in order. Each brief is an implementable unit with
 | 14 | [Agent settings and overview UI](s14-agent-settings-and-overview-ui.md) | P7.5-14 | Offline complete, operator reviewed; see [report](s14-report.md) |
 | 15 | [Conversations, questions and memory UI](s15-conversations-questions-and-memory-ui.md) | P7.5-15 | Offline complete, operator reviewed; see [report](s15-report.md) |
 | 16 | [Meta capability adapters](s16-meta-capability-adapters.md) | P7.5-16 | Offline scaffold reviewed, real capabilities externally pending; see [report](s16-report.md) |
-| 17 | [Evaluation and end-to-end verification](s17-evaluation-and-e2e.md) | P7.5-17 | Planned |
-| 18 | [Rollout and close-out](s18-rollout-and-closeout.md) | P7.5-18 | Planned |
+| 17 | [Evaluation and end-to-end verification](s17-evaluation-and-e2e.md) | P7.5-17 | Offline regressions passed; journey breadth/model pending; see [report](s17-report.md) |
+| 18 | [Rollout and close-out](s18-rollout-and-closeout.md) | P7.5-18 | Offline rehearsal/docs complete; founder trial pending; see [report](s18-report.md) |
 
 Research is a continuing dependency: Session 01 opens R75-01 through R75-06; Session 16 resolves adapter contracts against it; Session 18 records live evidence. Unavailable research does not turn synthetic fixtures into recordings. Independent offline work may continue with explicitly provisional assumptions and disabled real capabilities.
 

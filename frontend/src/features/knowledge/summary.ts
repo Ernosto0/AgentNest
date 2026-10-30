@@ -44,6 +44,9 @@ export function categoryEntries(
 ): { entries: Entry[]; archived: Fact[] } {
   const live = facts.filter((fact) => fact.category === category && ACTIVE(fact));
   const claimed = new Set<string>();
+  const fixedKeys = new Set(
+    template.filter((item) => item.category === category && item.key !== null).map((item) => item.key),
+  );
   const entries: Entry[] = [];
   for (const item of template.filter((i) => i.category === category)) {
     if (item.key !== null) {
@@ -52,7 +55,7 @@ export function categoryEntries(
       entries.push({ kind: "fixed", item, fact });
     } else {
       const prefix = (item.pattern ?? "").replace(/\*$/, "");
-      const matching = live.filter((f) => prefix !== "" && f.key.startsWith(prefix));
+      const matching = live.filter((f) => prefix !== "" && f.key.startsWith(prefix) && !fixedKeys.has(f.key) && !claimed.has(f.id));
       for (const fact of matching) claimed.add(fact.id);
       entries.push({ kind: "pattern", item, facts: matching });
     }

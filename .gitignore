@@ -21,6 +21,7 @@ build/
 
 # Backend runtime data (media, local state)
 backend/var/
+frontend/var/
 
 # Node
 node_modules/

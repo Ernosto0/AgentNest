@@ -30,15 +30,23 @@ def test_activation_owner_version_idempotency_and_existing_foreign_account(
         ).status_code
         == 404
     )
+    paused = env.call(
+        env.owner,
+        "POST",
+        f"/accounts/{social.id}/agent/pause",
+        json={"expected_config_version": first.json()["config_version"]},
+    )
+    assert paused.status_code == 200 and paused.json()["state"] == "paused"
+    assert paused.json()["controller_epoch"] > first.json()["controller_epoch"]
     rollback = env.call(
         env.owner,
         "POST",
         path,
         json={
-            "expected_config_version": first.json()["config_version"],
+            "expected_config_version": paused.json()["config_version"],
             "client_request_id": str(uuid.uuid4()),
             "mode": "legacy",
         },
     )
     assert rollback.status_code == 200 and rollback.json()["state"] == "inactive"
-    assert rollback.json()["controller_epoch"] > first.json()["controller_epoch"]
+    assert rollback.json()["controller_epoch"] > paused.json()["controller_epoch"]

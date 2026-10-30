@@ -1,6 +1,6 @@
 # Session 17: Evaluation and end-to-end verification
 
-**Task:** P7.5-17. **Status:** Planned. **Prerequisite:** Sessions 01-16 offline deliverables; external capability gaps explicitly listed.
+**Task:** P7.5-17. **Status:** Offline regressions passed; varied journey/model quality gates pending. **Prerequisite:** Sessions 01-16 offline deliverables; external capability gaps explicitly listed. See [report](s17-report.md).
 Read the [common session rules](phase-7.5-sessions.md) and phase section 13 in full.
 
 ## Goal

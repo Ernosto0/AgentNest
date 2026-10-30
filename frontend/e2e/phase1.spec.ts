@@ -54,13 +54,13 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
 
   // Switch to the other demo workspace (still a demo: the banner stays).
-  await page.getByLabel("Workspace").selectOption({ label: "Harbor Pilates Studio" });
+  await page.getByLabel("Workspace").selectOption({ label: "Harbor Café & Bakery" });
   await expect(page.getByLabel("Workspace").locator("option:checked")).toHaveText(
-    "Harbor Pilates Studio",
+    "Harbor Café & Bakery",
   );
   await navLink(page, "Home").click();
   await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
-  await expect(page.getByRole("main").getByText("Harbor Pilates Studio")).toBeVisible();
+  await expect(page.getByRole("main").getByText("Harbor Café & Bakery")).toBeVisible();
   await expect(banner).toBeVisible();
 
   // Sign out.
@@ -106,7 +106,7 @@ test("tenant isolation: the other user lists only their workspace and gets 'not 
   await expect(items).toHaveCount(1);
   await expect(items.first()).toContainText("Other Workspace");
 
-  for (const name of ["Gölkent Fitness & Pilates", "Harbor Pilates Studio"]) {
+  for (const name of ["Gölkent Fitness & Pilates", "Harbor Café & Bakery"]) {
     await page.goto(`/w/${ids[name]}`);
     await expect(page.getByRole("heading", { name: /Bulunamadı|Not found/ })).toBeVisible();
     await expect(page.getByTestId("simulation-banner")).toHaveCount(0);

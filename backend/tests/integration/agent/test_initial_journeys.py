@@ -20,6 +20,25 @@ FIXTURE = Path(__file__).parents[3] / "evals/account_agent/initial_journeys.yaml
 JOURNEYS = yaml.safe_load(FIXTURE.read_text(encoding="utf-8"))["journeys"]
 
 
+def test_scripted_journey_dataset_has_fixed_scope() -> None:
+    assert len(JOURNEYS) >= 60
+    assert len({row["id"] for row in JOURNEYS}) == len(JOURNEYS)
+    assert {row["category"] for row in JOURNEYS} == {"beauty_wellness", "retail", "fitness"}
+    assert {row["language"] for row in JOURNEYS} == {"tr", "en"}
+    assert {row["scenario"] for row in JOURNEYS if "scenario" in row} >= {
+        "mixed-topics",
+        "open-ended",
+        "returning",
+        "missing-price",
+        "owner-wait",
+        "approval",
+        "public-private",
+        "injection",
+        "unsupported",
+    }
+    assert all(len(row["turns"]) == 2 for row in JOURNEYS)
+
+
 @pytest.mark.commits
 @pytest.mark.parametrize("journey", JOURNEYS, ids=lambda row: row["id"])
 def test_initial_two_turn_journey_uses_actual_jobs(session_factory, clock, monkeypatch, journey):

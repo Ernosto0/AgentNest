@@ -10,10 +10,21 @@ from app.identity.permissions import PERMISSION_MATRIX, ROLES, has_permission, p
 
 # permission -> (owner, manager, staff)
 EXPECTED: dict[str, tuple[bool, bool, bool]] = {
+    "owner_questions.answer": (True, True, False),
+    "owner_questions.propose": (True, True, True),
+    "memory.correct": (True, True, False),
+    "memory.forget": (True, True, False),
     "workspace.manage": (True, False, False),
     "members.manage": (True, False, False),
     "integrations.manage": (True, False, False),
     "automation.manage": (True, False, False),
+    "agent.settings.edit": (True, True, False),
+    "agent.delegation.manage": (True, False, False),
+    "agent.control": (True, False, False),
+    "agent.activity.view": (True, True, False),
+    "comments.view": (True, True, True),
+    "comments.approve": (True, True, False),
+    "comments.moderate": (True, True, False),
     "knowledge.edit": (True, True, True),
     "knowledge.verify": (True, True, False),
     "commands.use": (True, True, True),

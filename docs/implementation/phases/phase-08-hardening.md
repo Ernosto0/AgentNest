@@ -10,6 +10,19 @@ Make the system safe to run for real businesses: deployment on a single VPS, bac
 
 ## Scope and tasks (in order)
 
+**Phase 7.5 handoff:** Extend P8-03 RLS and isolation coverage to `account_agents`,
+delegations, threads/events/sessions/steps/actions, owner tasks/questions, customer
+identities/memory/summaries and public media/comment/thread records. P8-05 must call the
+account-scoped memory export/erase service and coordinate source, derived summary,
+prompt-snapshot, owner-question and comment erasure with the existing disconnect fence;
+unresolved operations retain minimal reconciliation evidence. P8-06 sets legally reviewed
+retention periods for these records. P8-07 must alert on agent dead/recovery jobs,
+unresolved outcomes, capability loss and budget exhaustion. P8-09 reviews broker reference
+scope, public/private context separation, owner demotion and cutover races. P8-10 needs
+actual permission and app-workflow evidence for each new Meta capability before enabling
+it. See the [agent rollout runbook](../../operations/account-agent-rollout.md); this
+handoff does not claim Phase 8 implementation or real-account acceptance.
+
 | ID | Task | Size |
 |---|---|---|
 | P8-01 | Backend Dockerfile (multi-stage, non-root), `compose.prod.yml` (caddy, api, worker, optional postgres), Caddyfile (TLS, SPA, `/api`, `/webhooks`, `/oauth`, security headers + CSP), deploy workflow (build on tag → GHCR → SSH deploy → migrate → restart), `.env` handling on the server | M |

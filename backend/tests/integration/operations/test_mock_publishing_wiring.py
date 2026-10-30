@@ -30,6 +30,9 @@ def test_mock_accounts_get_the_documented_capability_names() -> None:
         "messaging": True,
         "publish_feed_image": True,
         "publish_story_image": True,
+        "comment_reply": True,
+        "comment_moderate": True,
+        "comment_private_reply": True,
     }
     assert "content_publish" not in MOCK_CAPABILITIES
 

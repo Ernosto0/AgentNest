@@ -26,7 +26,9 @@ env:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Session 17 full local backend suite took 27.5 minutes before the separate
+    # scripted journey gate; allow the complete evidence-producing run to finish.
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:16
@@ -64,6 +66,10 @@ jobs:
       # checks) and the hard assertions (INV-02/03/04). Real-provider evals are run by hand.
       - name: AI evals (fake provider)
         run: bash ../.github/scripts/offline-tests.sh uv run python -m evals run --all --provider fake --strict --no-report
+      # Scripted account-agent journeys execute real durable jobs and mock provider effects.
+      # They are a mechanics gate, separate from paid real-model quality acceptance.
+      - name: Account-agent journeys (scripted fake)
+        run: bash ../.github/scripts/offline-tests.sh uv run python -m evals.account_agent
       - uses: actions/upload-artifact@v4
         if: always()
         with:

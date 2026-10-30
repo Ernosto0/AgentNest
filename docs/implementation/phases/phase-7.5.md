@@ -1,9 +1,9 @@
 # Phase 7.5: Autonomous Instagram Account Agent
 
-**Status:** Planned; no Phase 7.5 implementation or acceptance is claimed.
+**Status:** Offline implementation and full regression checks recorded through Sessions 17-18. G7.5-A passed; G7.5-B journey breadth and G7.5-C/D/E remain open. See the [phase status](../phase-summaries/phase-7.5-summary.md).
 **Created:** 2026-10-25.
 **Session plan:** [18 sequential implementation sessions](../phase-7.5-sessions/phase-7.5-sessions.md).
-**Architecture direction:** [ADR-024](../../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md), currently proposed.
+**Architecture direction:** [ADR-024](../../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md), accepted as the target contract.
 
 ## 1. Product outcome
 
