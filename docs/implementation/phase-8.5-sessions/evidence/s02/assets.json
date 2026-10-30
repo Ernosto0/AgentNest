@@ -1,0 +1,635 @@
+{
+  "browser": "156.0.8078.4",
+  "node": "v26.4.0",
+  "platform": "win32",
+  "fixtureOnly": true,
+  "fontBytes": 173280,
+  "assets": [
+    {
+      "name": "index-BYXZeRtB.css",
+      "bytes": 35212,
+      "gzipBytes": 8029
+    },
+    {
+      "name": "index-CEoK3Kms.js",
+      "bytes": 827152,
+      "gzipBytes": 238334
+    },
+    {
+      "name": "inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+      "bytes": 85068,
+      "gzipBytes": 85116
+    },
+    {
+      "name": "inter-latin-wght-normal-Dx4kXJAl.woff2",
+      "bytes": 48256,
+      "gzipBytes": 48254
+    },
+    {
+      "name": "manrope-latin-ext-wght-normal-Ch3YOpNY.woff2",
+      "bytes": 15120,
+      "gzipBytes": 15143
+    },
+    {
+      "name": "manrope-latin-wght-normal-DHIcAJRg.woff2",
+      "bytes": 24836,
+      "gzipBytes": 24864
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "reference-tr-phone",
+      "origin": "http://127.0.0.1:5186",
+      "path": "/?ui-reference=1&lang=tr",
+      "width": 390,
+      "locale": "tr",
+      "reference": true,
+      "heading": "Çalışma alanı tasarım referansı",
+      "bodyFont": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "headingFont": "Manrope, Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "cls": 0.019510313538698955,
+      "scrollWidth": 390,
+      "viewportWidth": 390,
+      "fonts": [
+        {
+          "family": "Manrope",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Manrope",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Inter",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Inter",
+          "weight": "400 700",
+          "status": "loaded"
+        }
+      ],
+      "resources": [
+        {
+          "path": "/src/assets/fonts/manrope-latin-wght-normal.woff2",
+          "bytes": 24836,
+          "durationMs": 55
+        },
+        {
+          "path": "/src/assets/fonts/inter-latin-wght-normal.woff2",
+          "bytes": 48256,
+          "durationMs": 55
+        },
+        {
+          "path": "/src/assets/fonts/manrope-latin-ext-wght-normal.woff2",
+          "bytes": 15120,
+          "durationMs": 46
+        },
+        {
+          "path": "/src/assets/fonts/inter-latin-ext-wght-normal.woff2",
+          "bytes": 85068,
+          "durationMs": 41
+        }
+      ],
+      "contrast": [
+        {
+          "pair": "surface/text",
+          "ratio": 11.89,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface/secondary",
+          "ratio": 5.68,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface/control",
+          "ratio": 3.77,
+          "minimum": 3
+        },
+        {
+          "pair": "surface/focus",
+          "ratio": 5.35,
+          "minimum": 3
+        },
+        {
+          "pair": "surface/action",
+          "ratio": 6.7,
+          "minimum": 4.5
+        },
+        {
+          "pair": "canvas/text",
+          "ratio": 11.14,
+          "minimum": 4.5
+        },
+        {
+          "pair": "canvas/secondary",
+          "ratio": 5.32,
+          "minimum": 4.5
+        },
+        {
+          "pair": "canvas/control",
+          "ratio": 3.53,
+          "minimum": 3
+        },
+        {
+          "pair": "canvas/focus",
+          "ratio": 5.02,
+          "minimum": 3
+        },
+        {
+          "pair": "canvas/action",
+          "ratio": 6.7,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface-subtle/text",
+          "ratio": 10.69,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface-subtle/secondary",
+          "ratio": 5.11,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface-subtle/control",
+          "ratio": 3.39,
+          "minimum": 3
+        },
+        {
+          "pair": "surface-subtle/focus",
+          "ratio": 4.81,
+          "minimum": 3
+        },
+        {
+          "pair": "surface-subtle/action",
+          "ratio": 6.7,
+          "minimum": 4.5
+        },
+        {
+          "pair": "assistant/text",
+          "ratio": 10.23,
+          "minimum": 4.5
+        },
+        {
+          "pair": "assistant/secondary",
+          "ratio": 4.89,
+          "minimum": 4.5
+        },
+        {
+          "pair": "assistant/control",
+          "ratio": 3.24,
+          "minimum": 3
+        },
+        {
+          "pair": "assistant/focus",
+          "ratio": 4.61,
+          "minimum": 3
+        },
+        {
+          "pair": "assistant/action",
+          "ratio": 6.7,
+          "minimum": 4.5
+        },
+        {
+          "pair": "navigation/text",
+          "ratio": 9.58,
+          "minimum": 4.5
+        },
+        {
+          "pair": "navigation/focus",
+          "ratio": 8.86,
+          "minimum": 3
+        },
+        {
+          "pair": "navigation/selected",
+          "ratio": 8.86,
+          "minimum": 4.5
+        },
+        {
+          "pair": "success",
+          "ratio": 6.85,
+          "minimum": 4.5
+        },
+        {
+          "pair": "attention",
+          "ratio": 5.07,
+          "minimum": 4.5
+        },
+        {
+          "pair": "danger",
+          "ratio": 6.06,
+          "minimum": 4.5
+        },
+        {
+          "pair": "info",
+          "ratio": 6.05,
+          "minimum": 4.5
+        },
+        {
+          "pair": "simulation",
+          "ratio": 6.36,
+          "minimum": 4.5
+        }
+      ],
+      "renderedFonts": {
+        "[data-testid=heading-glyphs]": [
+          {
+            "familyName": "Manrope ExtraLight",
+            "postScriptName": "Manrope-ExtraLight",
+            "isCustomFont": true,
+            "glyphCount": 45
+          }
+        ],
+        "[data-testid=body-glyphs]": [
+          {
+            "familyName": "Inter",
+            "postScriptName": "Inter",
+            "isCustomFont": true,
+            "glyphCount": 45
+          }
+        ]
+      },
+      "focus": {
+        "width": "2px",
+        "color": "rgb(85, 115, 68)",
+        "visible": true
+      },
+      "apiRequests": [],
+      "blockedExternalRequests": [],
+      "errors": []
+    },
+    {
+      "id": "reference-en-desktop",
+      "origin": "http://127.0.0.1:5186",
+      "path": "/?ui-reference=1&lang=en",
+      "width": 1440,
+      "locale": "en",
+      "reference": true,
+      "heading": "Workspace design reference",
+      "bodyFont": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "headingFont": "Manrope, Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "cls": 0.0000635914994855967,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "fonts": [
+        {
+          "family": "Manrope",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Manrope",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Inter",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Inter",
+          "weight": "400 700",
+          "status": "loaded"
+        }
+      ],
+      "resources": [
+        {
+          "path": "/src/assets/fonts/manrope-latin-wght-normal.woff2",
+          "bytes": 24836,
+          "durationMs": 51
+        },
+        {
+          "path": "/src/assets/fonts/inter-latin-wght-normal.woff2",
+          "bytes": 48256,
+          "durationMs": 51
+        },
+        {
+          "path": "/src/assets/fonts/manrope-latin-ext-wght-normal.woff2",
+          "bytes": 15120,
+          "durationMs": 27
+        },
+        {
+          "path": "/src/assets/fonts/inter-latin-ext-wght-normal.woff2",
+          "bytes": 85068,
+          "durationMs": 23
+        }
+      ],
+      "contrast": [
+        {
+          "pair": "surface/text",
+          "ratio": 11.89,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface/secondary",
+          "ratio": 5.68,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface/control",
+          "ratio": 3.77,
+          "minimum": 3
+        },
+        {
+          "pair": "surface/focus",
+          "ratio": 5.35,
+          "minimum": 3
+        },
+        {
+          "pair": "surface/action",
+          "ratio": 6.7,
+          "minimum": 4.5
+        },
+        {
+          "pair": "canvas/text",
+          "ratio": 11.14,
+          "minimum": 4.5
+        },
+        {
+          "pair": "canvas/secondary",
+          "ratio": 5.32,
+          "minimum": 4.5
+        },
+        {
+          "pair": "canvas/control",
+          "ratio": 3.53,
+          "minimum": 3
+        },
+        {
+          "pair": "canvas/focus",
+          "ratio": 5.02,
+          "minimum": 3
+        },
+        {
+          "pair": "canvas/action",
+          "ratio": 6.7,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface-subtle/text",
+          "ratio": 10.69,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface-subtle/secondary",
+          "ratio": 5.11,
+          "minimum": 4.5
+        },
+        {
+          "pair": "surface-subtle/control",
+          "ratio": 3.39,
+          "minimum": 3
+        },
+        {
+          "pair": "surface-subtle/focus",
+          "ratio": 4.81,
+          "minimum": 3
+        },
+        {
+          "pair": "surface-subtle/action",
+          "ratio": 6.7,
+          "minimum": 4.5
+        },
+        {
+          "pair": "assistant/text",
+          "ratio": 10.23,
+          "minimum": 4.5
+        },
+        {
+          "pair": "assistant/secondary",
+          "ratio": 4.89,
+          "minimum": 4.5
+        },
+        {
+          "pair": "assistant/control",
+          "ratio": 3.24,
+          "minimum": 3
+        },
+        {
+          "pair": "assistant/focus",
+          "ratio": 4.61,
+          "minimum": 3
+        },
+        {
+          "pair": "assistant/action",
+          "ratio": 6.7,
+          "minimum": 4.5
+        },
+        {
+          "pair": "navigation/text",
+          "ratio": 9.58,
+          "minimum": 4.5
+        },
+        {
+          "pair": "navigation/focus",
+          "ratio": 8.86,
+          "minimum": 3
+        },
+        {
+          "pair": "navigation/selected",
+          "ratio": 8.86,
+          "minimum": 4.5
+        },
+        {
+          "pair": "success",
+          "ratio": 6.85,
+          "minimum": 4.5
+        },
+        {
+          "pair": "attention",
+          "ratio": 5.07,
+          "minimum": 4.5
+        },
+        {
+          "pair": "danger",
+          "ratio": 6.06,
+          "minimum": 4.5
+        },
+        {
+          "pair": "info",
+          "ratio": 6.05,
+          "minimum": 4.5
+        },
+        {
+          "pair": "simulation",
+          "ratio": 6.36,
+          "minimum": 4.5
+        }
+      ],
+      "renderedFonts": {
+        "[data-testid=heading-glyphs]": [
+          {
+            "familyName": "Manrope ExtraLight",
+            "postScriptName": "Manrope-ExtraLight",
+            "isCustomFont": true,
+            "glyphCount": 46
+          }
+        ],
+        "[data-testid=body-glyphs]": [
+          {
+            "familyName": "Inter",
+            "postScriptName": "Inter",
+            "isCustomFont": true,
+            "glyphCount": 46
+          }
+        ]
+      },
+      "focus": {
+        "width": "2px",
+        "color": "rgb(85, 115, 68)",
+        "visible": true
+      },
+      "apiRequests": [],
+      "blockedExternalRequests": [],
+      "errors": []
+    },
+    {
+      "id": "login-tr-phone",
+      "origin": "http://127.0.0.1:5185",
+      "path": "/login?ui-reference=1",
+      "width": 390,
+      "locale": "tr",
+      "heading": "Giriş yap",
+      "bodyFont": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "headingFont": "Manrope, Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "cls": 0.00021774097815764485,
+      "scrollWidth": 390,
+      "viewportWidth": 390,
+      "fonts": [
+        {
+          "family": "Manrope",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Manrope",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Inter",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Inter",
+          "weight": "400 700",
+          "status": "loaded"
+        }
+      ],
+      "resources": [
+        {
+          "path": "/assets/index-CEoK3Kms.js",
+          "bytes": 238334,
+          "durationMs": 54
+        },
+        {
+          "path": "/assets/index-BYXZeRtB.css",
+          "bytes": 8029,
+          "durationMs": 9
+        },
+        {
+          "path": "/assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+          "bytes": 24836,
+          "durationMs": 29
+        },
+        {
+          "path": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+          "bytes": 48256,
+          "durationMs": 29
+        },
+        {
+          "path": "/assets/manrope-latin-ext-wght-normal-Ch3YOpNY.woff2",
+          "bytes": 15120,
+          "durationMs": 17
+        },
+        {
+          "path": "/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+          "bytes": 85068,
+          "durationMs": 13
+        }
+      ],
+      "contrast": null,
+      "renderedFonts": null,
+      "focus": null,
+      "apiRequests": [
+        "/api/v1/auth/me",
+        "/api/v1/meta"
+      ],
+      "blockedExternalRequests": [],
+      "errors": []
+    },
+    {
+      "id": "login-en-desktop",
+      "origin": "http://127.0.0.1:5185",
+      "path": "/login?ui-reference=1",
+      "width": 1440,
+      "locale": "en",
+      "heading": "Sign in",
+      "bodyFont": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "headingFont": "Manrope, Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "cls": 0.0009565702461902006,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "fonts": [
+        {
+          "family": "Manrope",
+          "weight": "400 700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Manrope",
+          "weight": "400 700",
+          "status": "loaded"
+        },
+        {
+          "family": "Inter",
+          "weight": "400 700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Inter",
+          "weight": "400 700",
+          "status": "loaded"
+        }
+      ],
+      "resources": [
+        {
+          "path": "/assets/index-CEoK3Kms.js",
+          "bytes": 238334,
+          "durationMs": 28
+        },
+        {
+          "path": "/assets/index-BYXZeRtB.css",
+          "bytes": 8029,
+          "durationMs": 8
+        },
+        {
+          "path": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+          "bytes": 48256,
+          "durationMs": 27
+        },
+        {
+          "path": "/assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+          "bytes": 24836,
+          "durationMs": 27
+        }
+      ],
+      "contrast": null,
+      "renderedFonts": null,
+      "focus": null,
+      "apiRequests": [
+        "/api/v1/auth/me",
+        "/api/v1/meta"
+      ],
+      "blockedExternalRequests": [],
+      "errors": []
+    }
+  ]
+}

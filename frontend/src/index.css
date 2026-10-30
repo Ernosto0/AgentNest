@@ -1,31 +1,193 @@
 @import "tailwindcss";
 
+/* Unmodified Fontsource 5.3.0 WOFF2 subsets. Notices ship in public/fonts/. */
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/manrope-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/manrope-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
 :root {
   color-scheme: light;
+  --an-canvas: #f7f8f3;
+  --an-surface: #ffffff;
+  --an-surface-subtle: #f1f4eb;
+  --an-assistant: #eaf0e3;
+  --an-navigation: #253b31;
+  --an-navigation-text: #e0e8dc;
+  --an-navigation-selected: #d1e4b7;
+  --an-navigation-selected-text: #253b31;
+  --an-text-primary: #293b32;
+  --an-text-secondary: #5d6b54;
+  --an-action: #31664c;
+  --an-action-hover: #24583e;
+  --an-on-action: #ffffff;
+  --an-border: #e1e6db;
+  --an-control: #7a886e;
+  --an-focus: #557344;
+  --an-focus-inverse: #d1e4b7;
+  --an-success: #315c3f;
+  --an-success-subtle: #edf4e9;
+  --an-attention: #75603a;
+  --an-attention-subtle: #f4ebd5;
+  --an-danger: #a13732;
+  --an-danger-hover: #872e2a;
+  --an-danger-subtle: #fcf0ee;
+  --an-info: #315f78;
+  --an-info-subtle: #eaf1f5;
+  --an-simulation: #69478c;
+  --an-simulation-subtle: #f4edf9;
+  --an-space-1: 0.25rem;
+  --an-space-2: 0.5rem;
+  --an-space-3: 0.75rem;
+  --an-space-4: 1rem;
+  --an-space-5: 1.25rem;
+  --an-space-6: 1.5rem;
+  --an-space-8: 2rem;
+  --an-space-10: 2.5rem;
+  --an-space-12: 3rem;
+  --an-duration-fast: 120ms;
+  --an-duration-normal: 160ms;
+  --an-duration-slow: 200ms;
+  --an-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Semantic utilities coexist with legacy utilities during the staged migration. */
+@theme inline {
+  --color-canvas: var(--an-canvas);
+  --color-surface: var(--an-surface);
+  --color-surface-subtle: var(--an-surface-subtle);
+  --color-assistant: var(--an-assistant);
+  --color-navigation: var(--an-navigation);
+  --color-navigation-text: var(--an-navigation-text);
+  --color-navigation-selected: var(--an-navigation-selected);
+  --color-navigation-selected-text: var(--an-navigation-selected-text);
+  --color-primary: var(--an-text-primary);
+  --color-secondary: var(--an-text-secondary);
+  --color-action: var(--an-action);
+  --color-action-hover: var(--an-action-hover);
+  --color-on-action: var(--an-on-action);
+  --color-border: var(--an-border);
+  --color-control: var(--an-control);
+  --color-focus: var(--an-focus);
+  --color-focus-inverse: var(--an-focus-inverse);
+  --color-success: var(--an-success);
+  --color-success-subtle: var(--an-success-subtle);
+  --color-attention: var(--an-attention);
+  --color-attention-subtle: var(--an-attention-subtle);
+  --color-danger: var(--an-danger);
+  --color-danger-hover: var(--an-danger-hover);
+  --color-danger-subtle: var(--an-danger-subtle);
+  --color-info: var(--an-info);
+  --color-info-subtle: var(--an-info-subtle);
+  --color-simulation: var(--an-simulation);
+  --color-simulation-subtle: var(--an-simulation-subtle);
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Manrope", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-page: clamp(1.75rem, 1.4rem + 1vw, 2.25rem);
+  --text-page--line-height: 1.3;
+  --text-section: 1.25rem;
+  --text-section--line-height: 1.4;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.6;
+  --text-form: 1rem;
+  --text-form--line-height: 1.5;
+  --text-metadata: 0.8125rem;
+  --text-metadata--line-height: 1.5;
+  --text-metric: 2rem;
+  --text-metric--line-height: 1.3;
+  --radius-control: 0.5rem;
+  --radius-panel: 0.75rem;
+  --radius-dialog: 1rem;
+  --shadow-float: 0 12px 32px rgb(37 59 49 / 0.16);
+  --default-transition-duration: var(--an-duration-normal);
+  --default-transition-timing-function: var(--an-ease);
 }
 
 html,
 body {
   margin: 0;
-  /* No horizontal scroll at 360 px (AC 5): content wraps instead of overflowing. */
+  /* Retained while route-by-route overflow is verified during the migration. */
   overflow-x: hidden;
-  background: #f8fafc;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  background: var(--an-canvas);
+  color: var(--an-text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.55;
   -webkit-text-size-adjust: 100%;
 }
 
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+}
+
+@utility type-page {
+  font-family: var(--font-heading);
+  font-size: var(--text-page);
+  font-weight: 700;
+  line-height: var(--text-page--line-height);
+  letter-spacing: -0.025em;
+}
+
+@utility type-section {
+  font-family: var(--font-heading);
+  font-size: var(--text-section);
+  font-weight: 600;
+  line-height: var(--text-section--line-height);
+}
+
+@utility type-metric {
+  font-size: var(--text-metric);
+  font-weight: 600;
+  line-height: var(--text-metric--line-height);
+  font-variant-numeric: tabular-nums;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --an-duration-fast: 0.01ms;
+    --an-duration-normal: 0.01ms;
+    --an-duration-slow: 0.01ms;
+  }
+
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

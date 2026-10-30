@@ -17,6 +17,7 @@ RUN npm ci
 
 COPY frontend/index.html frontend/tsconfig.json frontend/tsconfig.app.json frontend/tsconfig.node.json frontend/vite.config.ts ./
 COPY frontend/src ./src
+COPY frontend/public ./public
 
 # Only VITE_API_BASE_URL is accepted at build time (empty = same origin; ADR-017 / INV-10).
 ARG VITE_API_BASE_URL=""
