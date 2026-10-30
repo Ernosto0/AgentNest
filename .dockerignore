@@ -61,6 +61,10 @@ design-preview/
 scripts/
 .deploy-state*
 .deploy*.lock
+.backup-status*
+*.dump
+*.dump.enc
+*.manifest.json
 .ua/
 .vscode/
 .idea/

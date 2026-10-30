@@ -39,6 +39,9 @@ _SECRET_FIELDS = frozenset(
         "token_encryption_keys",
         "s3_access_key_id",
         "s3_secret_access_key",
+        "backup_encryption_key",
+        "backup_s3_access_key_id",
+        "backup_s3_secret_access_key",
         "smtp_url",
         "sentry_dsn",
     }
@@ -159,8 +162,19 @@ class Settings(BaseSettings):
     retention_media_orphan_days: int = Field(default=7, ge=1)
     retention_published_media_days: int = Field(default=90, ge=1)
 
-    # --- Production hardening, proxy boundary, email & monitoring (Phase 8, ADR-025) ---
+    # --- Production hardening, proxy boundary, backups, email & monitoring (Phase 8, ADR-025) ---
     trusted_proxy_cidrs: str = "127.0.0.1/32,::1/128"
+    backup_encryption_key: SecretStr = SecretStr("")
+    backup_encryption_active_key_id: str = "b1"
+    backup_s3_bucket: str = ""
+    backup_s3_endpoint_url: str = ""
+    backup_s3_region: str = "auto"
+    backup_s3_prefix: str = "backups/postgres"
+    backup_s3_access_key_id: SecretStr = SecretStr("")
+    backup_s3_secret_access_key: SecretStr = SecretStr("")
+    backup_local_dir: str = ""
+    backup_retention_days: int = Field(default=35, ge=1)
+    backup_status_file: str = ".backup-status.json"
     smtp_url: SecretStr = SecretStr("")
     mail_from: str = ""
     operator_alert_email: str = ""
@@ -226,6 +240,21 @@ class Settings(BaseSettings):
                 make_url(self.migration_database_url.strip())
             except Exception:
                 problems.append("MIGRATION_DATABASE_URL must be a valid database URL when set.")
+        backup_key = self.backup_encryption_key.get_secret_value().strip()
+        if backup_key:
+            normalized_key = (
+                backup_key
+                if ":" in backup_key
+                else f"{self.backup_encryption_active_key_id}:{backup_key}"
+            )
+            try:
+                TokenKeyRing(normalized_key, self.backup_encryption_active_key_id)
+            except TokenCryptoError as exc:
+                problems.append(
+                    str(exc)
+                    .replace("TOKEN_ENCRYPTION_KEYS", "BACKUP_ENCRYPTION_KEY")
+                    .replace("TOKEN_ENCRYPTION_ACTIVE_KEY_ID", "BACKUP_ENCRYPTION_ACTIVE_KEY_ID")
+                )
         if self.app_env != "production":
             return problems
         secret = self.secret_key.get_secret_value()

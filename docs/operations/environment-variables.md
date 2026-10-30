@@ -96,11 +96,21 @@ Global values, in whole days (at least 1); per-workspace values are deferred. Th
 
 There is **no audit setting**: audit rows are never deleted in Phase 6 (plan H17; the two-year purge needs an ADR with the Phase 8 database privileges). The earlier draft variable `RETENTION_AUDIT_DAYS` was therefore not introduced.
 
-## Owner channels, proxy boundary, and ops (Phases 8–9)
+## Owner channels, proxy boundary, backups, and ops (Phases 8–9)
 
 | Variable | dev | prod | Description |
 |---|---|---|---|
 | `TRUSTED_PROXY_CIDRS` | `127.0.0.1/32,::1/128` | internal proxy CIDR(s) | Comma-separated IPs/CIDRs permitted to supply `X-Forwarded-For` (`ADR-025` §2.1). Invalid CIDRs fail startup |
+| `BACKUP_ENCRYPTION_KEY` 🔒 | empty | required for backups | AES-256-GCM key ring (`b1:<base64-32-bytes>[,b2:…]`) for encrypting `pg_dump -Fc` archives (`P8-02`). Store off-host alongside `TOKEN_ENCRYPTION_KEYS` |
+| `BACKUP_ENCRYPTION_ACTIVE_KEY_ID` | `b1` | `b1` | Active key ID in `BACKUP_ENCRYPTION_KEY` used when encrypting new backups |
+| `BACKUP_S3_BUCKET` | empty | required for off-site backups | S3-compatible bucket for encrypted nightly backups (`P8-02`) |
+| `BACKUP_S3_ENDPOINT_URL` | empty | optional | S3 endpoint URL for off-site backup bucket (falls back to `S3_ENDPOINT_URL` if unset) |
+| `BACKUP_S3_REGION` | `auto` | bucket region | Region for `BACKUP_S3_BUCKET` |
+| `BACKUP_S3_PREFIX` | `backups/postgres` | `backups/postgres` | Object key prefix inside `BACKUP_S3_BUCKET` |
+| `BACKUP_S3_ACCESS_KEY_ID` 🔒, `BACKUP_S3_SECRET_ACCESS_KEY` 🔒 | empty | recommended least-privilege 🔒 | Dedicated backup bucket credentials scoped to `BACKUP_S3_BUCKET`/`BACKUP_S3_PREFIX` |
+| `BACKUP_LOCAL_DIR` | empty | optional | Local directory target for offline backup/restore drills or local staging copies |
+| `BACKUP_RETENTION_DAYS` | `35` | `35` | Canonical 35-day backup retention window (`security-and-privacy.md` §9); expired archives are pruned after verified upload |
+| `BACKUP_STATUS_FILE` | `.backup-status.json` | `.backup-status.json` | Durable heartbeat status file read by `system_health.backup_health()` (`> 26h` staleness threshold per `ADR-025` §4.3) |
 | `SMTP_URL` 🔒 | empty | required for email | SMTP connection URL (Phase 8, `OQ-16`). Requires `MAIL_FROM` when set |
 | `MAIL_FROM` | empty | required when `SMTP_URL` is set | Sender address for transactional emails |
 | `SENTRY_DSN` 🔒 | empty | optional | Optional Sentry-compatible DSN (Phase 8, `P8-07`) |

@@ -4,6 +4,10 @@
 !.env.example
 .deploy-state*
 .deploy*.lock
+.backup-status*
+*.dump
+*.dump.enc
+*.manifest.json
 
 # Python
 __pycache__/

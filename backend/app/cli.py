@@ -2,7 +2,7 @@
 
 Commands: ``seed [--reset]``, ``create-user``, ``generate-key``, ``export-openapi``,
 ``simulate-message``, ``simulate-native-reply``, ``run-due-jobs`` (the developer simulator),
-``check-config``, and ``migration-status``.
+``check-config``, ``migration-status``, ``post-restore-reconcile``, and ``verify-db-roles``.
 Machine-readable output goes to stdout; logs go to stderr.
 """
 
@@ -28,6 +28,13 @@ from app.identity import repository as identity_repo
 from app.identity import service
 from app.jobs.testing import run_due_jobs
 from app.main import create_app
+from app.operations.backup_restore import (
+    TombstoneManifest,
+    load_tombstone_manifest,
+    post_restore_reconcile,
+    provision_database_roles,
+    verify_database_roles,
+)
 
 
 def cmd_seed(args: argparse.Namespace) -> int:
@@ -81,7 +88,12 @@ def cmd_create_user(args: argparse.Namespace) -> int:
 
 
 def cmd_generate_key(args: argparse.Namespace) -> int:
-    print(generate_secret_key() if args.kind == "secret" else generate_encryption_key(args.key_id))
+    if args.kind == "secret":
+        print(generate_secret_key())
+        return 0
+    default_id = "b1" if args.kind == "backup-encryption" else "k1"
+    key_id = args.key_id or default_id
+    print(generate_encryption_key(key_id))
     return 0
 
 
@@ -237,6 +249,53 @@ def cmd_migration_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_post_restore_reconcile(args: argparse.Namespace) -> int:
+    manifest: TombstoneManifest | None = None
+    if args.tombstone_manifest:
+        try:
+            manifest = load_tombstone_manifest(Path(args.tombstone_manifest))
+        except (OSError, ValueError) as exc:
+            print(f"error: invalid tombstone manifest: {exc}", file=sys.stderr)
+            return 1
+
+    session_factory = get_session_factory()
+    with session_factory() as session, session.begin():
+        report = post_restore_reconcile(
+            session,
+            SystemClock().now(),
+            tombstone_manifest=manifest,
+        )
+    print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_verify_db_roles(args: argparse.Namespace) -> int:
+    runtime_roles = tuple(
+        role.strip() for role in (args.runtime_roles or "").split(",") if role.strip()
+    )
+    if not runtime_roles:
+        print("error: --runtime-roles must name at least one role", file=sys.stderr)
+        return 1
+    session_factory = get_session_factory()
+    with session_factory() as session, session.begin():
+        if args.provision:
+            provision_database_roles(
+                session,
+                migrator_role=args.migrator_role,
+                app_role=runtime_roles[0],
+                worker_role=runtime_roles[1] if len(runtime_roles) > 1 else runtime_roles[0],
+                app_password=args.app_password,
+                worker_password=args.worker_password,
+            )
+        report = verify_database_roles(
+            session,
+            migrator_role=args.migrator_role,
+            runtime_roles=runtime_roles,
+        )
+    print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+    return 0 if report.verified else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli", description="AgentNest commands")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -255,11 +314,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_key = sub.add_parser("generate-key", help="print a new random key")
     p_key.add_argument(
         "--kind",
-        choices=("secret", "token-encryption"),
+        choices=("secret", "token-encryption", "backup-encryption"),
         default="secret",
-        help="secret: a SECRET_KEY value; token-encryption: a TOKEN_ENCRYPTION_KEYS entry",
+        help=(
+            "secret: a SECRET_KEY value; token-encryption: a TOKEN_ENCRYPTION_KEYS entry; "
+            "backup-encryption: a BACKUP_ENCRYPTION_KEY entry"
+        ),
     )
-    p_key.add_argument("--key-id", default="k1", help="key id for --kind token-encryption")
+    p_key.add_argument(
+        "--key-id",
+        default=None,
+        help="key id for --kind token-encryption (default k1) or backup-encryption (default b1)",
+    )
     p_key.set_defaults(func=cmd_generate_key)
 
     p_api = sub.add_parser("export-openapi", help="print the OpenAPI document as JSON")
@@ -313,6 +379,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="exit non-zero unless database is reachable and current_revision equals head_revision",
     )
     p_mig.set_defaults(func=cmd_migration_status)
+
+    p_reconcile = sub.add_parser(
+        "post-restore-reconcile",
+        help="fence in-flight operations/drafts/agents and re-apply tombstones after restore",
+    )
+    p_reconcile.add_argument(
+        "--tombstone-manifest",
+        help="optional path to JSON tombstone manifest for post-snapshot erased entities",
+    )
+    p_reconcile.set_defaults(func=cmd_post_restore_reconcile)
+
+    p_roles = sub.add_parser(
+        "verify-db-roles",
+        help="verify (and optionally provision) least-privilege runtime and migration DB roles",
+    )
+    p_roles.add_argument(
+        "--migrator-role",
+        default="agentnest_migrator",
+        help="DDL/migration owner role (default: agentnest_migrator)",
+    )
+    p_roles.add_argument(
+        "--runtime-roles",
+        default="agentnest_app,agentnest_worker",
+        help="comma-separated least-privilege runtime roles (default: agentnest_app,agentnest_worker)",  # noqa: E501
+    )
+    p_roles.add_argument(
+        "--provision",
+        action="store_true",
+        help="provision roles and grants before verifying",
+    )
+    p_roles.add_argument("--app-password", default=None, help="optional password when provisioning")
+    p_roles.add_argument(
+        "--worker-password", default=None, help="optional password when provisioning"
+    )
+    p_roles.set_defaults(func=cmd_verify_db_roles)
     return parser
 
 

@@ -189,6 +189,8 @@ source_modules = [
     "app.operations.jobs",
     "app.operations.publish",
     "app.operations.content_ledger",
+    "app.operations.system_health",
+    "app.operations.backup_restore",
     "app.policy.service",
     "app.policy.classes",
     "app.policy.schemas",
@@ -451,6 +453,8 @@ forbidden_modules = [
     "app.operations.resume",
     "app.operations.schemas",
     "app.operations.send",
+    "app.operations.system_health",
+    "app.operations.backup_restore",
     "app.operations.transitions",
 ]
 # The router is the one place that touches the API layer, through its shared dependencies.

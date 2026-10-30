@@ -10,6 +10,9 @@
 #   Run database migrations before rolling restart (Session 03 / deployment.md §2):
 #     docker compose -f compose.prod.yml --env-file .env --profile migrate run --rm migrate
 #
+#   Run encrypted off-site database backup (Session 04 / backup-restore.md):
+#     docker compose -f compose.prod.yml --env-file .env --profile backup run --rm backup
+#
 #   Optional staging environment (P8-12, isolated stack/volumes/hostname on same or separate VM):
 #     COMPOSE_PROJECT_NAME=agentnest-staging ENV_FILE=.env.staging \
 #       docker compose -f compose.prod.yml --env-file .env.staging up -d
@@ -75,6 +78,28 @@ services:
       - ops
     restart: "no"
     command: ["alembic", "upgrade", "head"]
+    networks:
+      - backend
+
+  backup:
+    <<: *backend-common
+    profiles:
+      - backup
+      - ops
+    restart: "no"
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      DEMO_TOOLS_ENABLED: ${DEMO_TOOLS_ENABLED:-false}
+      MIGRATION_DATABASE_URL: ""
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-35}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-}
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - backups_data:/var/backups/agentnest
+    command: ["python", "/app/scripts/backup.py", "run", "--output-dir", "/var/backups/agentnest"]
     networks:
       - backend
 
@@ -200,5 +225,6 @@ networks:
 volumes:
   postgres_data:
   media_data:
+  backups_data:
   caddy_data:
   caddy_config:

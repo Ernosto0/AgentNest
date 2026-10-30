@@ -68,10 +68,10 @@ def test_compose_prod_defines_hardened_services_volumes_and_grace_periods() -> N
 
     assert compose["name"] == "${COMPOSE_PROJECT_NAME:-agentnest}"
     services = compose["services"]
-    assert set(services) == {"postgres", "migrate", "api", "worker", "caddy"}
+    assert set(services) == {"postgres", "migrate", "backup", "api", "worker", "caddy"}
 
     # Non-root user and privilege restrictions on backend services
-    for svc_name in ("api", "worker", "migrate"):
+    for svc_name in ("api", "worker", "migrate", "backup"):
         svc = services[svc_name]
         assert svc["user"] == "10001:10001"
         assert "no-new-privileges:true" in svc["security_opt"]

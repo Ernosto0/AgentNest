@@ -8,7 +8,9 @@ no message text, no error detail.
 
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any, Literal
 
 from pydantic import BaseModel
 from sqlalchemy import func, or_, select
@@ -16,9 +18,10 @@ from sqlalchemy.orm import Session
 
 from app.ai.models import AgentRun
 from app.ai.runner import BUDGET_EXCEEDED, BUDGET_WINDOW
+from app.audit import service as audit
 from app.audit.models import AuditLog
 from app.core.clock import Clock
-from app.core.config import Settings
+from app.core.config import REPO_ROOT, Settings, get_settings
 from app.core.context import WorkspaceContext
 from app.inbox.models import InboundEvent
 from app.integrations.instagram.models import SocialAccount
@@ -26,8 +29,32 @@ from app.jobs.models import Job
 from app.operations.models import Operation
 
 WINDOW = timedelta(hours=24)
+BACKUP_STALE_THRESHOLD = timedelta(hours=26)
 LATEST_FAILURES = 5
 FAILED_OPERATION_STATUSES = ("failed", "outcome_unknown")
+BACKUP_AUDIT_ACTIONS = ("system.backup_succeeded", "system.backup_failed")
+
+
+class BackupHealth(BaseModel):
+    """System-wide backup heartbeat & staleness status (ADR-025 §4.3, P8-02 / P8-07)."""
+
+    last_backup_at: datetime | None
+    last_succeeded_at: datetime | None = None
+    last_backup_status: Literal["succeeded", "failed", "missing"]
+    last_backup_id: str | None = None
+    last_error_code: str | None = None
+    last_archive_key: str | None = None
+    last_size_bytes: int | None = None
+    age_seconds: int | None = None
+    stale_or_failed: bool
+
+    @property
+    def last_success_at(self) -> datetime | None:
+        return self.last_succeeded_at
+
+    @property
+    def last_error(self) -> str | None:
+        return self.last_error_code
 
 
 class AccountHealth(BaseModel):
@@ -258,6 +285,265 @@ def _ai(
         estimated_cost_usd=round(sum(priced), 6) if priced else None,
         budget_used=int(used or 0),
         budget_limit=settings.llm_max_calls_per_workspace_per_day,
+    )
+
+
+def _parse_iso_datetime(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+
+def resolve_backup_status_path(
+    settings: Settings | None = None, *, status_path: Path | None = None
+) -> Path:
+    if status_path is not None:
+        return status_path
+    resolved = settings or get_settings()
+    candidate = Path(resolved.backup_status_file)
+    return candidate if candidate.is_absolute() else (REPO_ROOT / candidate)
+
+
+def record_backup_audit(
+    session: Session,
+    clock: Clock,
+    *,
+    status: Literal["succeeded", "failed"] | None = None,
+    succeeded: bool | None = None,
+    backup_id: str = "",
+    archive_key: str | None = None,
+    size_bytes: int | None = None,
+    archive_size_bytes: int | None = None,
+    sha256: str | None = None,
+    archive_sha256: str | None = None,
+    alembic_revision: str | None = None,
+    pruned_count: int = 0,
+    error_code: str | None = None,
+    error_message: str | None = None,
+) -> AuditLog:
+    """Record a system-level backup outcome in ``audit_logs`` (content-free metadata; INV-12)."""
+    if status is not None:
+        resolved_status: Literal["succeeded", "failed"] = status
+    elif succeeded is not None:
+        resolved_status = "succeeded" if succeeded else "failed"
+    else:
+        resolved_status = "succeeded"
+
+    action = "system.backup_succeeded" if resolved_status == "succeeded" else "system.backup_failed"
+    metadata: dict[str, Any] = {
+        "backup_id": backup_id,
+        "status": resolved_status,
+        "pruned_count": int(pruned_count),
+    }
+    if archive_key:
+        metadata["archive_key"] = archive_key
+    effective_size = size_bytes if size_bytes is not None else archive_size_bytes
+    if effective_size is not None:
+        metadata["size_bytes"] = int(effective_size)
+    effective_sha = sha256 or archive_sha256
+    if effective_sha:
+        metadata["sha256"] = effective_sha
+    if alembic_revision:
+        metadata["alembic_revision"] = alembic_revision
+    effective_err = error_code or error_message
+    if effective_err:
+        metadata["error_code"] = effective_err
+        metadata["error"] = effective_err
+    return audit.record(
+        session,
+        None,
+        action,
+        "backup",
+        None,
+        metadata,
+        clock=clock,
+    )
+
+
+def backup_health(
+    session_or_now: Session | Clock | datetime | None = None,
+    clock: Clock | None = None,
+    settings: Settings | None = None,
+    *,
+    status_path: Path | None = None,
+    status_file: Path | None = None,
+) -> BackupHealth:
+    """Evaluate backup health and the >26h staleness / failure threshold (ADR-025 §4.3).
+
+    Combines the durable host/container status file (``.backup-status.json``) and system-level
+    ``audit_logs`` entries (``system.backup_succeeded`` / ``system.backup_failed``) so operator
+    alerts in Session 13 can detect both explicit backup failures and silent cron/timer stops.
+    """
+    session: Session | None = None
+    if isinstance(session_or_now, datetime):
+        now = (
+            session_or_now.astimezone(UTC)
+            if session_or_now.tzinfo is not None
+            else session_or_now.replace(tzinfo=UTC)
+        )
+    elif isinstance(session_or_now, Session):
+        session = session_or_now
+        now = clock.now().astimezone(UTC) if clock is not None else datetime.now(UTC)
+    elif session_or_now is not None and hasattr(session_or_now, "now"):
+        now = session_or_now.now().astimezone(UTC)
+    elif clock is not None:
+        now = clock.now().astimezone(UTC)
+    else:
+        now = datetime.now(UTC)
+
+    path = resolve_backup_status_path(settings, status_path=status_path or status_file)
+
+    file_attempt_at: datetime | None = None
+    file_succeeded_at: datetime | None = None
+    file_status: Literal["succeeded", "failed"] | None = None
+    file_backup_id: str | None = None
+    file_error_code: str | None = None
+    file_archive_key: str | None = None
+    file_size_bytes: int | None = None
+
+    if path.is_file():
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                status_val = (
+                    str(raw.get("last_backup_status") or raw.get("status") or "").strip().lower()
+                )
+                if status_val in ("succeeded", "failed"):
+                    file_status = "succeeded" if status_val == "succeeded" else "failed"
+                file_attempt_at = _parse_iso_datetime(
+                    raw.get("last_attempt_at") or raw.get("last_backup_at")
+                )
+                file_succeeded_at = _parse_iso_datetime(
+                    raw.get("last_succeeded_at")
+                    or raw.get("last_success_at")
+                    or (raw.get("last_backup_at") if file_status == "succeeded" else None)
+                )
+                if raw.get("last_backup_id") or raw.get("backup_id"):
+                    file_backup_id = str(raw.get("last_backup_id") or raw.get("backup_id"))
+                if raw.get("last_error_code") or raw.get("last_error"):
+                    file_error_code = str(raw.get("last_error_code") or raw.get("last_error"))
+                if raw.get("last_archive_key") or raw.get("archive_key"):
+                    file_archive_key = str(raw.get("last_archive_key") or raw.get("archive_key"))
+                size_raw = (
+                    raw.get("last_archive_size_bytes")
+                    if raw.get("last_archive_size_bytes") is not None
+                    else raw.get("ciphertext_size_bytes")
+                )
+                if size_raw is not None:
+                    file_size_bytes = int(size_raw)
+        except (OSError, ValueError, TypeError):
+            file_status = "failed"
+            file_error_code = "BACKUP_STATUS_CORRUPT"
+
+    db_attempt_at: datetime | None = None
+    db_succeeded_at: datetime | None = None
+    db_status: Literal["succeeded", "failed"] | None = None
+    db_backup_id: str | None = None
+    db_error_code: str | None = None
+    db_archive_key: str | None = None
+    db_size_bytes: int | None = None
+
+    if session is not None:
+        latest_audit = session.scalars(
+            select(AuditLog)
+            .where(
+                AuditLog.workspace_id.is_(None),
+                AuditLog.action.in_(BACKUP_AUDIT_ACTIONS),
+            )
+            .order_by(AuditLog.occurred_at.desc(), AuditLog.created_at.desc())
+            .limit(1)
+        ).first()
+        if latest_audit is not None:
+            db_attempt_at = latest_audit.occurred_at.astimezone(UTC)
+            db_status = (
+                "succeeded" if latest_audit.action == "system.backup_succeeded" else "failed"
+            )
+            meta = latest_audit.metadata_ or {}
+            if meta.get("backup_id"):
+                db_backup_id = str(meta["backup_id"])
+            if meta.get("error_code") or meta.get("error"):
+                db_error_code = str(meta.get("error_code") or meta.get("error"))
+            if meta.get("archive_key"):
+                db_archive_key = str(meta["archive_key"])
+            if meta.get("size_bytes") is not None:
+                db_size_bytes = int(meta["size_bytes"])
+
+        latest_success = session.scalars(
+            select(AuditLog)
+            .where(
+                AuditLog.workspace_id.is_(None),
+                AuditLog.action == "system.backup_succeeded",
+            )
+            .order_by(AuditLog.occurred_at.desc(), AuditLog.created_at.desc())
+            .limit(1)
+        ).first()
+        if latest_success is not None:
+            db_succeeded_at = latest_success.occurred_at.astimezone(UTC)
+
+    # Pick the newer attempt signal between status file and DB audit log.
+    use_db = db_status is not None and (
+        file_status is None
+        or (
+            db_attempt_at is not None
+            and (file_attempt_at is None or db_attempt_at > file_attempt_at)
+        )
+    )
+    if use_db and db_status is not None:
+        last_status: Literal["succeeded", "failed", "missing"] = db_status
+        last_backup_at = db_attempt_at
+        last_backup_id = db_backup_id
+        last_error_code = db_error_code
+        last_archive_key = db_archive_key
+        last_size_bytes = db_size_bytes
+    elif file_status is not None:
+        last_status = file_status
+        last_backup_at = file_attempt_at
+        last_backup_id = file_backup_id
+        last_error_code = file_error_code
+        last_archive_key = file_archive_key
+        last_size_bytes = file_size_bytes
+    else:
+        return BackupHealth(
+            last_backup_at=None,
+            last_succeeded_at=None,
+            last_backup_status="missing",
+            last_backup_id=None,
+            last_error_code=None,
+            last_archive_key=None,
+            last_size_bytes=None,
+            age_seconds=None,
+            stale_or_failed=True,
+        )
+
+    candidates = [ts for ts in (file_succeeded_at, db_succeeded_at) if ts is not None]
+    last_succeeded_at = max(candidates) if candidates else None
+    age_seconds = (
+        max(0, int((now - last_succeeded_at).total_seconds()))
+        if last_succeeded_at is not None
+        else None
+    )
+    is_stale = last_succeeded_at is None or (now - last_succeeded_at) > BACKUP_STALE_THRESHOLD
+    stale_or_failed = last_status != "succeeded" or is_stale
+
+    return BackupHealth(
+        last_backup_at=last_backup_at,
+        last_succeeded_at=last_succeeded_at,
+        last_backup_status=last_status,
+        last_backup_id=last_backup_id,
+        last_error_code=last_error_code,
+        last_archive_key=last_archive_key,
+        last_size_bytes=last_size_bytes,
+        age_seconds=age_seconds,
+        stale_or_failed=stale_or_failed,
     )
 
 
