@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import i18n from "@/i18n";
+import { SharedReference } from "./SharedReference";
 import { AlertIcon, CheckIcon, ClockIcon, HomeIcon, InfoIcon, ShieldCheckIcon } from "@/components/icons";
 
 // Development fixture copy is deliberately separate from the production catalogs.
@@ -33,6 +35,7 @@ const SURFACE_CLASSES = {
 export function DesignReference() {
   const [locale, setLocale] = useState<"en" | "tr">(() => new URLSearchParams(location.search).get("lang") === "en" ? "en" : "tr");
   const copy = COPY[locale];
+  useEffect(() => { void i18n.changeLanguage(locale); }, [locale]);
   return (
     <main lang={locale} className="mx-auto grid min-h-dvh max-w-7xl gap-8 px-4 py-8 text-primary md:px-8" data-testid="design-reference">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -93,6 +96,7 @@ export function DesignReference() {
           <InfoIcon className="size-6 text-info" />
         </div>
       </section>
+      <SharedReference locale={locale} />
     </main>
   );
 }

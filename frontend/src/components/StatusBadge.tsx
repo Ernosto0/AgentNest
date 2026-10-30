@@ -21,12 +21,12 @@ import type { StatusKey } from "./status";
 type Tone = "grey" | "amber" | "orange" | "blue" | "green" | "red";
 
 const TONES: Record<Tone, string> = {
-  grey: "bg-slate-100 text-slate-800 ring-slate-300",
-  amber: "bg-amber-50 text-amber-900 ring-amber-400",
-  orange: "bg-orange-50 text-orange-900 ring-orange-400",
-  blue: "bg-blue-50 text-blue-900 ring-blue-400",
-  green: "bg-green-50 text-green-900 ring-green-500",
-  red: "bg-red-50 text-red-900 ring-red-400",
+  grey: "bg-surface-subtle text-primary ring-border",
+  amber: "bg-attention-subtle text-attention ring-attention",
+  orange: "bg-attention-subtle text-attention ring-attention",
+  blue: "bg-info-subtle text-info ring-info",
+  green: "bg-success-subtle text-success ring-success",
+  red: "bg-danger-subtle text-danger ring-danger",
 };
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;

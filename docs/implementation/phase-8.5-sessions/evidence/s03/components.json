@@ -1,0 +1,135 @@
+{
+  "executedAt": "2026-10-30T22:34:22.527Z",
+  "platform": "win32",
+  "node": "v26.4.0",
+  "scenarios": [
+    {
+      "browser": "chromium",
+      "version": "156.0.8078.4",
+      "locale": "tr",
+      "width": 360,
+      "height": 900,
+      "timezone": "Europe/Istanbul",
+      "initialAxeViolations": 0,
+      "modalAxeViolations": 0,
+      "initialFocus": true,
+      "modalBounds": {
+        "x": 0,
+        "y": 16,
+        "width": 360,
+        "height": 884
+      },
+      "layout": {
+        "width": 360,
+        "scrollWidth": 360
+      },
+      "cssZoom200": {
+        "width": 360,
+        "scrollWidth": 360
+      },
+      "requests": 181,
+      "apiRequests": 0,
+      "externalRequests": 0,
+      "pageErrors": [],
+      "keyboard": "initial focus; Tab/Shift+Tab trap; nested Escape with explicit opener return; default return to prior input; parent Escape with explicit opener return",
+      "validation": "summary link focuses invalid field; save retains entered value",
+      "pagination": "caller-controlled next advances row"
+    },
+    {
+      "browser": "chromium",
+      "version": "156.0.8078.4",
+      "locale": "en",
+      "width": 1440,
+      "height": 900,
+      "timezone": "Europe/Istanbul",
+      "initialAxeViolations": 0,
+      "modalAxeViolations": 0,
+      "initialFocus": true,
+      "modalBounds": {
+        "x": 464,
+        "y": 24,
+        "width": 512,
+        "height": 852
+      },
+      "layout": {
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      "cssZoom200": {
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      "requests": 181,
+      "apiRequests": 0,
+      "externalRequests": 0,
+      "pageErrors": [],
+      "keyboard": "initial focus; Tab/Shift+Tab trap; nested Escape with explicit opener return; default return to prior input; parent Escape with explicit opener return",
+      "validation": "summary link focuses invalid field; save retains entered value",
+      "pagination": "caller-controlled next advances row"
+    },
+    {
+      "browser": "webkit",
+      "version": "27.2",
+      "locale": "tr",
+      "width": 360,
+      "height": 900,
+      "timezone": "Europe/Istanbul",
+      "initialAxeViolations": 0,
+      "modalAxeViolations": 0,
+      "initialFocus": true,
+      "modalBounds": {
+        "x": 0,
+        "y": 16,
+        "width": 360,
+        "height": 884
+      },
+      "layout": {
+        "width": 360,
+        "scrollWidth": 360
+      },
+      "cssZoom200": {
+        "width": 360,
+        "scrollWidth": 360
+      },
+      "requests": 181,
+      "apiRequests": 0,
+      "externalRequests": 0,
+      "pageErrors": [],
+      "keyboard": "initial focus; Tab/Shift+Tab trap; nested Escape with explicit opener return; default return to prior input; parent Escape with explicit opener return",
+      "validation": "summary link focuses invalid field; save retains entered value",
+      "pagination": "caller-controlled next advances row"
+    },
+    {
+      "browser": "webkit",
+      "version": "27.2",
+      "locale": "en",
+      "width": 1440,
+      "height": 900,
+      "timezone": "Europe/Istanbul",
+      "initialAxeViolations": 0,
+      "modalAxeViolations": 0,
+      "initialFocus": true,
+      "modalBounds": {
+        "x": 464,
+        "y": 24,
+        "width": 512,
+        "height": 852
+      },
+      "layout": {
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      "cssZoom200": {
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      "requests": 181,
+      "apiRequests": 0,
+      "externalRequests": 0,
+      "pageErrors": [],
+      "keyboard": "initial focus; Tab/Shift+Tab trap; nested Escape with explicit opener return; default return to prior input; parent Escape with explicit opener return",
+      "validation": "summary link focuses invalid field; save retains entered value",
+      "pagination": "caller-controlled next advances row"
+    }
+  ]
+}

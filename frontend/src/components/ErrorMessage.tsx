@@ -6,11 +6,11 @@ export function ErrorMessage({ error }: { error: unknown }) {
   const { t } = useTranslation();
   const { what, next, requestId } = localizeError(error, t);
   return (
-    <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-300">
+    <div role="alert" className="min-w-0 rounded-control border border-danger bg-danger-subtle p-4 text-body text-danger">
       <p className="font-medium">{what}</p>
       <p>{next}</p>
       {requestId ? (
-        <p className="mt-1 text-xs break-all text-red-800">{t("errors.requestId", { id: requestId })}</p>
+        <p className="mt-2 text-metadata break-all">{t("errors.requestId", { id: requestId })}</p>
       ) : null}
     </div>
   );

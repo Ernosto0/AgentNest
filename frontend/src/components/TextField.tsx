@@ -1,30 +1,20 @@
-import { useId, type InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, Ref } from "react";
+import { Field, type FieldFeedback } from "./Field";
+import { FIELD_CONTROL, useFieldIds } from "./fieldIds";
 
-interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-  error?: string;
-}
+type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & FieldFeedback & { ref?: Ref<HTMLInputElement> };
 
-export function TextField({ label, error, className = "", ...props }: TextFieldProps) {
-  const id = useId();
-  const errorId = `${id}-error`;
+export function TextField({ label, hint, error, id, "aria-describedby": describedBy, "aria-invalid": invalid, className = "", ...props }: TextFieldProps) {
+  const ids = useFieldIds(id, describedBy, hint, error);
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-slate-800">
-        {label}
-      </label>
+    <Field label={label} hint={hint} error={error} {...ids}>
       <input
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
-        className={`min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-indigo-600 ${className}`}
         {...props}
+        id={ids.id}
+        aria-invalid={error ? true : invalid}
+        aria-describedby={ids.describedBy}
+        className={`${FIELD_CONTROL} min-h-11 ${className}`}
       />
-      {error ? (
-        <p id={errorId} className="text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-    </div>
+    </Field>
   );
 }

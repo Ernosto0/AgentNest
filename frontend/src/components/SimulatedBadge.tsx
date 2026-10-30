@@ -9,7 +9,7 @@ export function SimulatedBadge({ className = "" }: { className?: string }) {
   return (
     <span
       data-testid="simulated-badge"
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide text-purple-800 ring-1 ring-purple-600 ring-inset ${className}`}
+      className={`inline-flex items-center rounded-full bg-simulation-subtle px-2 py-1 text-metadata font-semibold tracking-wide text-simulation ring-1 ring-simulation ring-inset ${className}`}
     >
       {t("badge.simulated")}
     </span>

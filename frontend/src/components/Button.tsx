@@ -1,17 +1,23 @@
-import type { ButtonHTMLAttributes } from "react";
+import { useId, type ButtonHTMLAttributes, type Ref } from "react";
+import { SpinnerIcon } from "./icons";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-indigo-700 text-white hover:bg-indigo-800 disabled:bg-indigo-300",
-  secondary: "bg-white text-slate-900 ring-1 ring-slate-300 hover:bg-slate-50 disabled:text-slate-400",
-  ghost: "bg-transparent text-slate-700 hover:bg-slate-100 disabled:text-slate-400",
-  danger: "bg-red-700 text-white hover:bg-red-800 disabled:bg-red-300",
+  primary: "bg-action text-on-action enabled:hover:bg-action-hover",
+  secondary: "border border-control bg-surface text-primary enabled:hover:bg-surface-subtle",
+  ghost: "bg-transparent text-primary enabled:hover:bg-surface-subtle",
+  danger: "bg-danger text-on-action enabled:hover:bg-danger-hover",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   block?: boolean;
+  /** The label remains visible; callers may supply a localized pending label as children. */
+  pending?: boolean;
+  /** Visible explanation, also associated with a disabled or pending control. */
+  disabledReason?: string;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 /** Touch target of at least 44 px (ADR-020). Defaults to type="button" so it never submits by accident. */
@@ -20,20 +26,33 @@ export function Button({
   block = false,
   type = "button",
   className = "",
+  pending = false,
+  disabled = false,
+  disabledReason,
+  children,
+  "aria-describedby": describedBy,
   ...props
 }: ButtonProps) {
-  return (
+  const reasonId = useId();
+  const control = (
     <button
+      {...props}
       type={type}
+      disabled={disabled || pending}
+      aria-busy={pending || undefined}
+      aria-describedby={[describedBy, disabledReason ? reasonId : undefined].filter(Boolean).join(" ") || undefined}
       className={[
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-base font-medium",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600",
-        "disabled:cursor-not-allowed",
+        "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-control px-4 py-2 text-form font-medium transition-colors",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+        "disabled:cursor-not-allowed disabled:opacity-60",
         block ? "w-full" : "",
         VARIANTS[variant],
         className,
       ].join(" ")}
-      {...props}
-    />
+    >
+      {pending ? <SpinnerIcon className="shrink-0 motion-safe:animate-spin" /> : null}
+      {children}
+    </button>
   );
+  return <>{control}{disabledReason ? <span id={reasonId} className="block text-metadata text-secondary">{disabledReason}</span> : null}</>;
 }

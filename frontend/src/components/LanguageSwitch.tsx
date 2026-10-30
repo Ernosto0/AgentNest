@@ -21,7 +21,7 @@ export function LanguageSwitch({ onChange }: LanguageSwitchProps) {
     <div
       role="group"
       aria-label={t("common.language")}
-      className="inline-flex overflow-hidden rounded-lg ring-1 ring-slate-300"
+      className="inline-flex max-w-full overflow-hidden rounded-control border border-control"
     >
       {SUPPORTED_LANGUAGES.map((language) => (
         <button
@@ -32,8 +32,8 @@ export function LanguageSwitch({ onChange }: LanguageSwitchProps) {
           onClick={() => void choose(language)}
           className={[
             "min-h-11 min-w-20 px-4 text-base font-medium",
-            "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-600",
-            language === current ? "bg-indigo-700 text-white" : "bg-white text-slate-800 hover:bg-slate-50",
+            "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus",
+            language === current ? "bg-action text-on-action" : "bg-surface text-primary hover:bg-surface-subtle",
           ].join(" ")}
         >
           {t(`settings.languages.${language}`, { lng: language })}

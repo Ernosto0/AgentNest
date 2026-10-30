@@ -8,6 +8,18 @@ fictional type, color and focus specimens. Session 03 can extend this same view
 with actual shared interactive controls. Keep fixture labels distinct from product
 catalogs; both TR and EN specimens are supplied.
 
+Session03 extends this view with `SharedReference.tsx`: actual shared fields,
+validation summary, native selection/choice, action variants and pending reasons,
+canonical status/provenance, notices/loading/empty/error/toast, rows/table/filter/
+pagination and long/nested sheets. All data remains fictional and browser-local.
+Usage and migration examples: [components/README.md](../components/README.md).
+Run `node scripts/ui-components.mjs` with this dev server to reproduce Chromium
+and WebKit axe/keyboard/reflow evidence in `evidence/s03/`; API and external
+requests are blocked. Sheet captures show the actual900px viewport, while controls
+use full-page captures. CSS200% reflow is a stress probe, not human device zoom or
+software-keyboard acceptance. The fixture checks explicit opener restoration for
+Safari pointer activation and default restoration to the prior focused field.
+
 Use semantic utilities from `index.css` when migrating components:
 
 | Purpose | Utilities |
