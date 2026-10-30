@@ -5,6 +5,10 @@
 ## Objective
 Make the system safe to run for real businesses: deployment on a single VPS, backups with a tested restore, database-level tenant isolation, authentication hardening, data export and deletion paths, Meta deauthorize and data-deletion callbacks, security headers, dependency auditing, operator alerts, privacy artifacts, a security review against the threat model, and App Review preparation.
 
+## Implementation sessions
+
+The [Phase 8 implementation plan and 16 session briefs](../phase-8-sessions/phase-08-sessions.md) define the short plan, task coverage, sequential scope, verification and handoffs. Session 01 re-plans against the actual baseline; external legal/platform and production acceptance remain explicit gates.
+
 ## Read first
 [deployment.md](../../architecture/deployment.md) · [security-and-privacy.md](../../architecture/security-and-privacy.md) · [ADR-013](../../architecture/decisions/ADR-013-authentication-and-tenancy.md) · [ADR-017](../../architecture/decisions/ADR-017-configuration-and-secrets.md) · [ADR-019](../../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md) · [open-questions.md](../../research/open-questions.md)
 
