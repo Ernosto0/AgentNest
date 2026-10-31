@@ -1,77 +1,48 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { PublicShell } from "@/app/layout/PublicShell";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { Notice, Skeleton } from "@/components/Feedback";
 import { TextField } from "@/components/TextField";
-import { useLogin, useMe, useMeta } from "./hooks";
-
-interface LocationState {
-  from?: { pathname?: string; search?: string };
-}
+import { useLogin, useMe } from "./hooks";
+import { returnDestination, type LoginLocationState } from "./returnTo";
 
 export function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const me = useMe();
-  const meta = useMeta();
   const login = useLogin();
+  const emailInput = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const from = (location.state as LocationState | null)?.from;
-  const destination = from?.pathname ? `${from.pathname}${from.search ?? ""}` : "/";
-
+  const [invalidEmail, setInvalidEmail] = useState(false);
+  const from = (location.state as LoginLocationState | null)?.from;
+  const destination = returnDestination(from);
   if (me.data) return <Navigate to={destination} replace />;
 
-  function submit(event: FormEvent) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    login.mutate(
-      { email, password },
-      { onSuccess: () => navigate(destination, { replace: true }) },
-    );
+    if (login.isPending || !email || !password) return;
+    if (emailInput.current && !emailInput.current.validity.valid) {
+      setInvalidEmail(true); emailInput.current.focus(); return;
+    }
+    setInvalidEmail(false);
+    login.mutate({ email, password }, { onSuccess: () => navigate(destination, { replace: true }) });
   }
-
-  return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-6 px-4 py-8">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-lg font-semibold text-indigo-800">
-          {meta.data?.product_name ?? t("app.name")}
-        </span>
-        <LanguageSwitch />
-      </div>
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">{t("auth.title")}</h1>
-        <p className="mt-1 text-slate-600">{t("auth.subtitle")}</p>
-      </div>
-      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-        <TextField
-          label={t("auth.email")}
-          type="email"
-          name="email"
-          autoComplete="username"
-          inputMode="email"
-          autoCapitalize="none"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <TextField
-          label={t("auth.password")}
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+  return <PublicShell title={t("auth.title")} description={t("auth.subtitle")}>
+    {me.isPending ? <Skeleton label={t("common.loading")} /> : me.isError ? <>
+      <ErrorMessage error={me.error} /><Button variant="secondary" onClick={() => void me.refetch()}>{t("common.retry")}</Button>
+    </> : <>
+      {from ? <Notice title={t("entry.signInToContinue")} /> : null}
+      <form onSubmit={submit} className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6" noValidate aria-busy={login.isPending}>
+        <TextField ref={emailInput} label={t("auth.email")} type="email" name="email" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} required maxLength={320} value={email} error={invalidEmail ? t("entry.emailInvalid") : undefined} onChange={(event) => { setEmail(event.target.value); setInvalidEmail(false); }} />
+        <TextField label={t("auth.password")} type="password" name="password" autoComplete="current-password" required maxLength={1000} value={password} onChange={(event) => setPassword(event.target.value)} />
         {login.isError ? <ErrorMessage error={login.error} /> : null}
-        <Button type="submit" block disabled={login.isPending || !email || !password}>
-          {login.isPending ? t("auth.submitting") : t("auth.submit")}
-        </Button>
+        <Button type="submit" block pending={login.isPending} disabled={!email || !password} disabledReason={!email || !password ? t("entry.credentialsRequired") : undefined}>{login.isPending ? t("auth.submitting") : t("auth.submit")}</Button>
       </form>
-    </main>
-  );
+    </>}
+  </PublicShell>;
 }

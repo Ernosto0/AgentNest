@@ -47,7 +47,7 @@ describe("the invite accept page", () => {
     const user = userEvent.setup();
 
     expect(await screen.findByRole("heading", { name: "Davet" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Adınız")).toBeInTheDocument();
+    expect(await screen.findByLabelText("Adınız")).toBeInTheDocument();
     expect(screen.getByLabelText("E-posta")).toBeInTheDocument();
     expect(screen.getByLabelText("Parola")).toBeInTheDocument();
 

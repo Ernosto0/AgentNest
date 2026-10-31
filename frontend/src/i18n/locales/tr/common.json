@@ -473,5 +473,40 @@
     "comments": "Yorumlar",
     "memory": "Müşteri hafızası",
     "task": "Görev"
+  },
+  "entry": {
+    "brandRegion": "AgentNest",
+    "brandTitle": "İşlerinize daha net bir bakış.",
+    "brandDetail": "Mesajlarınız, içerikleriniz ve işletme bilgileriniz için tek bir çalışma alanı.",
+    "brandFooter": "Kararlarınız ve işletmenizin bilgileri bir arada.",
+    "signInToContinue": "Devam etmek için hesabınıza giriş yapın.",
+    "emailInvalid": "Geçerli bir e-posta adresi girin.",
+    "credentialsRequired": "Devam etmek için e-posta adresinizi ve parolanızı girin.",
+    "inviteIntro": "Daveti kendi hesabınızla kabul edin. Çalışma alanına katılmak için davet bağlantısı gerekir.",
+    "inviteAccount": "Davet için kullanılacak hesap",
+    "signedInAs": "Giriş yapılan hesap",
+    "useAnotherAccount": "Çıkış yap ve başka hesap kullan",
+    "inviteFieldsRequired": "Adınızı, e-posta adresinizi ve parolanızı girin.",
+    "existingAccount": "Zaten hesabınız var mı?",
+    "noMembershipHint": "Bir çalışma alanı oluşturun veya mevcut bir alana katılmak için sahibinden davet bağlantısı isteyin.",
+    "wizardIntro": "İşletmenizin temel bilgilerini üç adımda hazırlayın.",
+    "setupProgress": "Kurulum adımları",
+    "steps": {
+      "name": "İşletmeniz",
+      "category": "İşletme türü",
+      "locale": "Bölge ve dil"
+    },
+    "nameHint": "En fazla 100 karakter. Bu ad çalışma alanında görünür.",
+    "nameRequired": "Devam etmek için işletmenizin adını girin.",
+    "categoryRequired": "Devam etmek için işletmenizin türünü seçin.",
+    "marketHint": "Pazarı değiştirmek dil, saat dilimi ve para birimini varsayılanlarına döndürür. Ardından ayrı ayrı değiştirebilirsiniz.",
+    "businessLanguageHint": "İşletmenin varsayılan dilidir; bu ekranın arayüz dilinden ayrıdır.",
+    "nextKnowledge": "Sonraki adım: işletme bilgileri",
+    "nextKnowledgeHint": "Çalışma alanı oluşturulduktan sonra işletmenizin bilgilerini girip hazırlık listesini gözden geçirebilirsiniz.",
+    "leaveTitle": "Kurulumdan ayrılmak istiyor musunuz?",
+    "leaveHint": "Henüz çalışma alanı oluşturulmadı. Ayrılırsanız bu formdaki bilgiler kaybolur.",
+    "keepEditing": "Düzenlemeye devam et",
+    "leave": "Kaydetmeden ayrıl",
+    "checkAccount": "Giriş durumunu kontrol et"
   }
 }

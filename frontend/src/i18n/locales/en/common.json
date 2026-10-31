@@ -473,5 +473,40 @@
     "comments": "Comments",
     "memory": "Customer memory",
     "task": "Task"
+  },
+  "entry": {
+    "brandRegion": "AgentNest",
+    "brandTitle": "A clearer view of your work.",
+    "brandDetail": "One workspace for your messages, content and business knowledge.",
+    "brandFooter": "Your decisions and business knowledge, together.",
+    "signInToContinue": "Sign in to your account to continue.",
+    "emailInvalid": "Enter a valid email address.",
+    "credentialsRequired": "Enter your email and password to continue.",
+    "inviteIntro": "Accept the invite with your own account. An invite link is required to join a workspace.",
+    "inviteAccount": "Account for this invite",
+    "signedInAs": "Signed in as",
+    "useAnotherAccount": "Sign out and use another account",
+    "inviteFieldsRequired": "Enter your name, email and password.",
+    "existingAccount": "Already have an account?",
+    "noMembershipHint": "Create a workspace or ask its owner for an invite link to join an existing one.",
+    "wizardIntro": "Set up the basics for your business in three steps.",
+    "setupProgress": "Setup steps",
+    "steps": {
+      "name": "Your business",
+      "category": "Business type",
+      "locale": "Region and language"
+    },
+    "nameHint": "Up to 100 characters. This name appears in your workspace.",
+    "nameRequired": "Enter your business name to continue.",
+    "categoryRequired": "Choose your business type to continue.",
+    "marketHint": "Changing the market resets language, time zone and currency to its defaults. You can then adjust each one.",
+    "businessLanguageHint": "The default language for your business, separate from this screen's interface language.",
+    "nextKnowledge": "Next: business knowledge",
+    "nextKnowledgeHint": "After creating the workspace, enter your business knowledge and review the readiness checklist.",
+    "leaveTitle": "Leave setup?",
+    "leaveHint": "Your workspace has not been created yet. Leaving discards the information in this form.",
+    "keepEditing": "Keep editing",
+    "leave": "Leave without saving",
+    "checkAccount": "Check sign-in status"
   }
 }

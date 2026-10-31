@@ -31,7 +31,7 @@
     "email": "Email",
     "password": "Password",
     "submit": "Create account and join",
-    "emailTaken": "This email already has an account. Sign in first, then open the link again.",
+    "emailTaken": "This email already has an account. Sign in to return to this invite.",
     "signIn": "Sign in"
   }
 }

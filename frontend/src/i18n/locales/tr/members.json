@@ -31,7 +31,7 @@
     "email": "E-posta",
     "password": "Parola",
     "submit": "Hesap oluştur ve katıl",
-    "emailTaken": "Bu e-postanın zaten bir hesabı var. Önce giriş yapın, sonra bağlantıyı yeniden açın.",
+    "emailTaken": "Bu e-posta adresiyle bir hesap zaten var. Giriş yaptıktan sonra bu davete geri döneceksiniz.",
     "signIn": "Giriş yap"
   }
 }
