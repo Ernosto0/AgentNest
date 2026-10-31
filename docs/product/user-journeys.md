@@ -6,6 +6,8 @@ UI copy examples are in Turkish (the primary market) with English in brackets. F
 
 ## 1. Navigation and screen inventory
 
+> **Planned redesign:** [Phase 8.5](../implementation/phases/phase-8.5-ui-redesign.md) and the [UI specification](ui-redesign-specification.md) define the requested target design for every screen. The navigation and journeys below remain the implemented baseline; update each affected section with its implementation session rather than treating the target as already shipped.
+
 **Mobile (< 768 px):** bottom tab bar with five tabs plus a persistent command bar on Home.
 
 | Tab | Screens |

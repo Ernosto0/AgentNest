@@ -8,6 +8,8 @@ This folder is the **primary engineering specification**. It is written in Engli
 
 ## Reading order
 
+**Complete UI redesign planned (2026-10-30):** [Phase 8.5](implementation/phases/phase-8.5-ui-redesign.md), the [28 implementation sessions](implementation/phase-8.5-sessions/phase-8.5-sessions.md), and the [application UI specification](product/ui-redesign-specification.md) cover all current app routes, tabs, nested editors/dialogs, responsive states and public presentation using the [AgentNest concept](https://agentnest-style-preview.woollyhero2.chatgpt.site). These are planned targets; existing workflow, permission and state contracts remain authoritative until the corresponding implementation is delivered.
+
 | If you are… | Read |
 |---|---|
 | New to the project | [product/vision.md](product/vision.md) → [product/mvp-scope.md](product/mvp-scope.md) → [architecture/system-overview.md](architecture/system-overview.md) → [invariants.md](invariants.md) |

@@ -4,12 +4,14 @@
 
 ## 1. Strategy
 
-1. **Build a coherent end-to-end demo first** (Phases 1–6, all simulated), then connect real Instagram (Phase 7), deliver the conversational account agent (Phase 7.5), harden the expanded system for real customers (Phase 8), then add an owner messenger if evidence supports it (Phase 9).
+1. **Build a coherent end-to-end demo first** (Phases 1–6, all simulated), then connect real Instagram (Phase 7), deliver the conversational account agent (Phase 7.5), harden the expanded system for real customers (Phase 8), redesign the complete application experience (Phase 8.5), then add an owner messenger if evidence supports it (Phase 9).
 2. **Every phase ends in a runnable, demoable state** with tests that prove its acceptance criteria.
 3. **Safety mechanisms come before features that need them.** Approvals exist before replies are sent. The operations ledger exists before the first simulated send. Placeholders and the validator exist before the first AI reply.
 4. **External uncertainty is retired in parallel**: a manual research track (R) runs alongside Phases 1–6 so that Phase 7 starts with verified facts.
 
 ## 2. Phases
+
+**UI redesign plan (2026-10-30):** [Phase 8.5](phases/phase-8.5-ui-redesign.md) and its [28 sessions](phase-8.5-sessions/phase-8.5-sessions.md) plan the complete application redesign based on the [interactive concept](https://agentnest-style-preview.woollyhero2.chatgpt.site). The default presentation sequence is Phase 8 engineering, Phase 8.5, then Phase 9's web experience. Independent UI foundations can proceed against stable contracts when assigned; final redesign acceptance includes delivered Phase 8 security/privacy surfaces. Existing production, platform and owner-channel gates are unchanged. This is planning, not an implementation or release claim.
 
 | Phase | Name | Objective | Depends on | Demo at end |
 |---|---|---|---|---|
@@ -22,7 +24,8 @@
 | 7 | [Meta Instagram integration](phases/phase-07-meta-integration.md) | Real Instagram Login, encrypted tokens, real webhooks, sends and image publishing, S3 media | 6 + Gate R | Founder's own professional account: real DM answered after approval; real image published at a scheduled time |
 | 7.5 | [Autonomous Instagram account agent](phases/phase-7.5.md) | Central coordinator, tools, memory/personality, owner questions, DMs, comments/moderation/private replies and existing content tools | Phase 7 baseline; separate offline/model/platform gates in phase plan | Agent handles a multi-turn comment-to-DM conversation, remembers context, consults the owner and performs delegated account actions |
 | 8 | [Production hardening and pilot readiness](phases/phase-08-hardening.md) | Deployment, backups, RLS, throttling, deletion and export, Meta callbacks, legal artifacts, security review, App Review preparation | Phase 7 baseline + stable Phase 7.5 offline surfaces; live pilot also needs agent/platform acceptance | Deployed instance passing a restore drill and security checklist; first pilot business onboarded |
-| 9 | [Owner messaging channel](phases/phase-09-owner-channel.md) | Telegram (provisional) via the channel abstraction | 8 + OQ-01 | Owner receives an approval in Telegram and approves with a button |
+| 8.5 | [Complete application UI and UX redesign](phases/phase-8.5-ui-redesign.md) | Warm workspace design system; all app routes, tabs, editors, states and public presentation; desktop/mobile layouts and accessibility | Stable Phase 7.5 frontend; integrate delivered Phase 8 UI contracts before final acceptance | Owner completes daily work across the redesigned app on Windows and a phone; all routes and critical states verified |
+| 9 | [Owner messaging channel](phases/phase-09-owner-channel.md) | Telegram (provisional) via the channel abstraction | 8 + OQ-01; web presentation reuses Phase 8.5 | Owner receives an approval in Telegram and approves with a button |
 
 ```mermaid
 flowchart LR
@@ -41,6 +44,8 @@ flowchart LR
   G3 --> PILOT[Pilots]
   OQ1{{OQ-01 resolved}} --> P9[9 Owner channel]
   P8 --> P9
+  P8 --> UI85[8.5 Complete UI redesign]
+  UI85 -. Web presentation .-> P9
 ```
 
 ## 3. Gates
