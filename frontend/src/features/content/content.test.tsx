@@ -133,6 +133,46 @@ describe("content list", () => {
     renderApp(`/w/${WS_GOLKENT}/content`);
     expect(await screen.findByRole("alert")).toBeInTheDocument();
   });
+
+  it("supports switching to the agenda view and displays scheduled items grouped by day", async () => {
+    mockApi(
+      routes({
+        [`GET ${LIST_URL}`]: (request) => {
+          const tab = new URLSearchParams(request.search).get("tab");
+          if (tab === "scheduled") {
+            return page([
+              contentItem({
+                id: "s1",
+                title: "Sabah Motivasyonu",
+                status: "scheduled",
+                scheduled_at: "2026-10-25T06:30:00Z",
+              }),
+              contentItem({
+                id: "s2",
+                title: "Akşam Antrenmanı",
+                status: "scheduled",
+                scheduled_at: "2026-10-25T17:00:00Z",
+              }),
+            ]);
+          }
+          return page([contentItem({ id: "d1", title: "Taslak 1", status: "draft" })]);
+        },
+      }),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}/content?view=agenda`);
+    const user = userEvent.setup();
+
+    expect(await screen.findByText("Sabah Motivasyonu")).toBeInTheDocument();
+    expect(screen.getByText("Akşam Antrenmanı")).toBeInTheDocument();
+    expect(
+      screen.getByText("Yalnızca zamanlanmış gönderiler listelenir."),
+    ).toBeInTheDocument();
+
+    // Toggle back to library view
+    await user.click(screen.getByRole("tab", { name: "Kütüphane" }));
+    expect(await screen.findByText("Taslak 1")).toBeInTheDocument();
+  });
 });
 
 describe("content editor: feed", () => {

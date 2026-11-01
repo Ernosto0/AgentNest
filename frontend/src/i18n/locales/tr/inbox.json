@@ -6,6 +6,8 @@
     "noPreview": "Henüz mesaj yok",
     "empty": "Burada konuşma yok",
     "emptyHint": "Bir müşteri Instagram hesabınıza yazdığında konuşma burada görünür.",
+    "selectConversation": "Bir konuşma seçin",
+    "selectHint": "Detayları, mesajları ve yanıt taslaklarını görüntülemek için bir konuşma seçin.",
     "back": "← Gelen kutusu",
     "handledByYou": "Size devredildi",
     "humanMode": "Bu konuşmayı siz yürütüyorsunuz. Siz geri devretmedikçe asistan yanıt taslağı hazırlamaz.",

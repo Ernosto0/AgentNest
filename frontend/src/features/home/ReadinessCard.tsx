@@ -18,10 +18,14 @@ export function ReadinessCard() {
   const { workspace } = useCurrentWorkspace();
   const readiness = useReadiness(workspace.id);
 
+  const isReady = readiness.data?.level === "ready";
+  const satisfiedCount = readiness.data?.requirements.filter((r) => r.satisfied).length ?? 0;
+  const totalCount = readiness.data?.requirements.length ?? 0;
+
   return (
     <Card className="flex flex-col gap-3" aria-labelledby="readiness-title">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="readiness-title" className="text-lg font-medium">
+        <h2 id="readiness-title" className="text-lg font-medium text-slate-900">
           {t("readiness.title")}
         </h2>
         {readiness.data ? (
@@ -40,17 +44,21 @@ export function ReadinessCard() {
         <>
           <p className="text-sm text-slate-600">
             {t("readiness.progress", {
-              done: readiness.data.requirements.filter((r) => r.satisfied).length,
-              total: readiness.data.requirements.length,
+              done: satisfiedCount,
+              total: totalCount,
             })}
           </p>
-          <ReadinessChecklist workspaceId={workspace.id} readiness={readiness.data} onlyOpen />
-          <Link
-            to={`/w/${workspace.id}/more/knowledge`}
-            className="inline-flex min-h-11 items-center font-medium text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600"
-          >
-            {t("readiness.openKnowledge")}
-          </Link>
+          {!isReady ? (
+            <ReadinessChecklist workspaceId={workspace.id} readiness={readiness.data} onlyOpen />
+          ) : null}
+          <div>
+            <Link
+              to={`/w/${workspace.id}/more/knowledge`}
+              className="inline-flex min-h-11 items-center font-medium text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600"
+            >
+              {t("readiness.openKnowledge")}
+            </Link>
+          </div>
         </>
       ) : null}
     </Card>

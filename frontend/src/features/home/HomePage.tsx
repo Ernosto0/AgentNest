@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Card } from "@/components/Card";
+import { Link } from "react-router-dom";
+import { PlusIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useMe } from "@/features/auth/hooks";
 import { CommandBar } from "@/features/commands/CommandBar";
@@ -8,35 +9,46 @@ import { Dashboard } from "./Dashboard";
 import { ReadinessCard } from "./ReadinessCard";
 
 export function HomePage() {
-  const { t } = useTranslation();
-  const { workspace, role } = useCurrentWorkspace();
+  const { t, i18n } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
   const me = useMe();
 
+  const formattedDate = new Date().toLocaleDateString(i18n.language, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: workspace.timezone,
+  });
+
   return (
-    <div className="flex flex-col gap-5 pb-20 md:pb-0">
-      <h1 className="text-2xl font-semibold">{t("home.title")}</h1>
+    <div className="flex flex-col gap-6 pb-28 md:pb-8">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            {t("home.welcome", { name: me.data?.user.display_name ?? "" })}
+          </h1>
+          <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+            <span>{formattedDate}</span>
+            <span>·</span>
+            <span className="font-medium text-slate-800">{workspace.name}</span>
+            {workspace.is_demo ? <SimulatedBadge /> : null}
+          </p>
+        </div>
+        <div>
+          <Link
+            to={`/w/${workspace.id}/content?tab=drafts`}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600"
+          >
+            <PlusIcon className="text-lg" />
+            <span>{t("home.createContent")}</span>
+          </Link>
+        </div>
+      </header>
 
       <CommandBar />
 
       <Dashboard />
-
-      <Card className="flex flex-col gap-3">
-        <p className="text-lg font-medium">
-          {t("home.welcome", { name: me.data?.user.display_name ?? "" })}
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-slate-900">{workspace.name}</span>
-          {workspace.is_demo ? <SimulatedBadge /> : null}
-        </div>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-          <dt className="text-slate-600">{t("home.yourRole")}</dt>
-          <dd>{t(`workspaces.role.${role}`)}</dd>
-          <dt className="text-slate-600">{t("home.timezone")}</dt>
-          <dd className="min-w-0 break-words">{workspace.timezone}</dd>
-          <dt className="text-slate-600">{t("home.currency")}</dt>
-          <dd>{workspace.currency}</dd>
-        </dl>
-      </Card>
 
       <ReadinessCard />
     </div>

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ChevronLeftIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { DraftCard } from "./DraftCard";
@@ -32,7 +33,7 @@ export function ConversationPage() {
   const [seed, setSeed] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
 
-  if (detail.isPending) return <p>{t("common.loading")}</p>;
+  if (detail.isPending) return <p className="text-sm text-slate-500">{t("common.loading")}</p>;
   if (detail.isError) return <ErrorMessage error={detail.error} />;
   const { conversation, messages, open_draft: openDraft, recent_drafts: recent } = detail.data;
   const canManage = role === "owner" || role === "manager";
@@ -40,73 +41,94 @@ export function ConversationPage() {
   const human = conversation.handling_mode === "human";
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <Link to={`/w/${workspace.id}/inbox`} className="text-sm font-medium text-indigo-800 underline">
-          {t("convo.back")}
-        </Link>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{customerLabel(conversation, t)}</h1>
-          {conversation.is_simulated ? <SimulatedBadge /> : null}
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-3">
-          <WindowTimer endsAt={conversation.window_ends_at} />
-          <Button
-            variant="secondary"
-            disabled={mode.isPending}
-            onClick={() => mode.mutate(human ? "release" : "takeover")}
+    <div className="flex flex-col gap-5 max-w-4xl">
+      {/* Header with back navigation, customer info, handling mode & window timer */}
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+        <div>
+          <Link
+            to={`/w/${workspace.id}/inbox`}
+            className="inline-flex items-center gap-1 text-sm font-medium text-indigo-700 hover:text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600"
           >
-            {human ? t("convo.release") : t("convo.takeover")}
-          </Button>
-          <Button variant="ghost" disabled={suggest.isPending} onClick={() => suggest.mutate()}>
-            {t("convo.suggest")}
-          </Button>
+            <ChevronLeftIcon className="text-base" />
+            <span>{t("convo.back")}</span>
+          </Link>
         </div>
-        {human ? <p className="mt-1 text-sm text-slate-700">{t("convo.humanMode")}</p> : null}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{customerLabel(conversation, t)}</h1>
+            {conversation.is_simulated ? <SimulatedBadge /> : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <WindowTimer endsAt={conversation.window_ends_at} />
+            <Button
+              variant="secondary"
+              disabled={mode.isPending}
+              onClick={() => mode.mutate(human ? "release" : "takeover")}
+            >
+              {human ? t("convo.release") : t("convo.takeover")}
+            </Button>
+            <Button variant="ghost" disabled={suggest.isPending} onClick={() => suggest.mutate()}>
+              {t("convo.suggest")}
+            </Button>
+          </div>
+        </div>
+        {human ? <p className="text-sm font-medium text-amber-900">{t("convo.humanMode")}</p> : null}
         {mode.error ? <ErrorMessage error={mode.error} /> : null}
         {suggest.error ? <ErrorMessage error={suggest.error} /> : null}
       </div>
 
-      {conversation.social_account_id ? <ConversationAgentWork account={conversation.social_account_id} conversation={conversationId} /> : null}
-      <ol className="flex flex-col gap-2" aria-label={t("convo.messages")} data-testid="messages">
-        {messages.map((message) => {
-          const mine = message.direction === "outbound";
-          return (
-            <li key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[85%] rounded-2xl px-3 py-2 break-words whitespace-pre-wrap ${
-                  mine ? "bg-indigo-700 text-white" : "bg-white ring-1 ring-slate-200"
-                }`}
-              >
-                {message.text ?? (message.attachments.length > 0 ? t("convo.attachment") : "")}
-                <span className={`mt-1 block text-xs ${mine ? "text-indigo-100" : "text-slate-600"}`}>
-                  {mine && message.sender_kind === "business_native" ? `${t("convo.sentInApp")} · ` : ""}
-                  {time(message.provider_timestamp, i18n.language, workspace.timezone)}
-                  {message.is_simulated ? ` · ${t("badge.simulated")}` : ""}
-                </span>
-                {mine && canManage ? (
-                  <button
-                    type="button"
-                    className="mt-1 block text-xs underline"
-                    disabled={saveAnswer.isPending}
-                    onClick={() =>
-                      saveAnswer.mutate(message.id, { onSuccess: () => setSaved(message.id) })
-                    }
-                  >
-                    {saved === message.id ? t("convo.savedAsAnswer") : t("convo.saveAsAnswer")}
-                  </button>
-                ) : null}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+      {conversation.social_account_id ? (
+        <ConversationAgentWork account={conversation.social_account_id} conversation={conversationId} />
+      ) : null}
+
+      {/* Message Stream */}
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-slate-50/60 p-4">
+        <ol className="flex flex-col gap-3" aria-label={t("convo.messages")} data-testid="messages">
+          {messages.map((message) => {
+            const mine = message.direction === "outbound";
+            return (
+              <li key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 break-words whitespace-pre-wrap shadow-2xs ${
+                    mine
+                      ? "bg-indigo-600 text-white rounded-br-xs"
+                      : "bg-white ring-1 ring-slate-200 text-slate-900 rounded-bl-xs"
+                  }`}
+                >
+                  <p className="text-base leading-relaxed">
+                    {message.text ?? (message.attachments.length > 0 ? t("convo.attachment") : "")}
+                  </p>
+                  <span className={`mt-1.5 flex flex-wrap items-center gap-1.5 text-xs ${mine ? "text-indigo-100" : "text-slate-500"}`}>
+                    {mine && message.sender_kind === "business_native" ? <span>{t("convo.sentInApp")} · </span> : null}
+                    <span>{time(message.provider_timestamp, i18n.language, workspace.timezone)}</span>
+                    {message.is_simulated ? <span> · {t("badge.simulated")}</span> : null}
+                  </span>
+                  {mine && canManage ? (
+                    <button
+                      type="button"
+                      className={`mt-2 block text-xs underline font-medium hover:opacity-80 focus-visible:outline-2 ${mine ? "text-indigo-100 focus-visible:outline-white" : "text-indigo-700 focus-visible:outline-indigo-600"}`}
+                      disabled={saveAnswer.isPending}
+                      onClick={() =>
+                        saveAnswer.mutate(message.id, { onSuccess: () => setSaved(message.id) })
+                      }
+                    >
+                      {saved === message.id ? t("convo.savedAsAnswer") : t("convo.saveAsAnswer")}
+                    </button>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
       {saveAnswer.error ? <ErrorMessage error={saveAnswer.error} /> : null}
 
+      {/* Grounded draft suggestion area */}
       {lastDraft ? (
         <DraftCard workspaceId={workspace.id} draft={lastDraft} onUseSuggestion={setSeed} />
       ) : null}
 
+      {/* Manual reply composer */}
       <ReplyComposer
         key={seed ?? "none"}
         workspaceId={workspace.id}

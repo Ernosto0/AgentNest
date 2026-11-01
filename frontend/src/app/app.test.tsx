@@ -73,7 +73,7 @@ describe("auth guard", () => {
         expired ? problem(401, "AUTH_REQUIRED") : json(workspace(WS_GOLKENT)),
     });
     const { client } = renderApp(`/w/${WS_GOLKENT}`);
-    expect(await screen.findByRole("heading", { name: "Ana sayfa" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Merhaba/i })).toBeInTheDocument();
 
     expired = true;
     await client.refetchQueries({ queryKey: ["workspace", WS_GOLKENT] });
@@ -86,7 +86,7 @@ describe("workspace shell", () => {
     mockApi(signedIn);
     renderApp(`/w/${WS_GOLKENT}`);
 
-    expect(await screen.findByRole("heading", { name: "Ana sayfa" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Merhaba/i })).toBeInTheDocument();
     const banner = screen.getByTestId("simulation-banner");
     expect(banner).toHaveTextContent("Demo çalışma alanı");
     expect(banner).toHaveTextContent("Simülasyon etiketli işlemler gerçek Instagram'a gönderilmez.");
@@ -104,7 +104,7 @@ describe("workspace shell", () => {
   it("shows no simulation banner on a non-demo workspace", async () => {
     mockApi(signedIn);
     renderApp(`/w/${WS_PRIVATE}`);
-    expect(await screen.findByRole("heading", { name: "Ana sayfa" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Merhaba/i })).toBeInTheDocument();
     expect(screen.queryByTestId("simulation-banner")).toBeNull();
     expect(screen.queryByTestId("simulated-badge")).toBeNull();
   });
@@ -187,7 +187,7 @@ describe("language", () => {
         json({ ...ME, user: { ...ME.user, ui_locale: (r.body as { ui_locale: "tr" | "en" }).ui_locale } }),
     });
     renderApp(`/w/${WS_GOLKENT}`);
-    await screen.findByRole("heading", { name: "Ana sayfa" });
+    await screen.findByRole("heading", { name: /Merhaba/i });
 
     await user.click(within(screen.getAllByRole("navigation", { name: "Ana gezinme" })[1]!).getByRole("link", { name: "Daha fazla" }));
     await user.click(await within(screen.getByRole("main")).findByRole("link", { name: "Ayarlar" }));
@@ -215,7 +215,7 @@ describe("language", () => {
       "GET /api/v1/auth/me": () => json({ ...ME, user: { ...ME.user, ui_locale: "en" } }),
     });
     renderApp(`/w/${WS_GOLKENT}`);
-    expect(await screen.findByRole("heading", { name: "Home" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Hello/i })).toBeInTheDocument();
   });
 });
 

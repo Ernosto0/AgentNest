@@ -74,6 +74,7 @@
   "home": {
     "title": "Home",
     "welcome": "Hello, {{name}}",
+    "createContent": "New content",
     "workspace": "Workspace",
     "yourRole": "Your role",
     "timezone": "Time zone",

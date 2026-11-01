@@ -74,6 +74,7 @@
   "home": {
     "title": "Ana sayfa",
     "welcome": "Merhaba, {{name}}",
+    "createContent": "Yeni içerik",
     "workspace": "Çalışma alanı",
     "yourRole": "Rolünüz",
     "timezone": "Saat dilimi",

@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
@@ -49,12 +50,17 @@ function withStatus(status: ContentStatus): ContentItem {
 }
 
 function renderCard(item: ContentItem) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <MemoryRouter>
-      <CurrentWorkspaceContext.Provider value={{ workspace: workspace(WS_GOLKENT), role: "owner" }}>
-        <ContentCard item={item} />
-      </CurrentWorkspaceContext.Provider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <CurrentWorkspaceContext.Provider value={{ workspace: workspace(WS_GOLKENT), role: "owner" }}>
+          <ContentCard item={item} />
+        </CurrentWorkspaceContext.Provider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

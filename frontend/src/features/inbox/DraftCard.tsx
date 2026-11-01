@@ -35,34 +35,40 @@ export function DraftCard({
   const busy = decide.isPending || edit.isPending || cancel.isPending;
 
   return (
-    <Card className="flex flex-col gap-3" data-testid="draft-card" data-draft-status={draft.status}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium">{t(`convo.status.${draft.status}`)}</span>
+    <Card
+      className="flex flex-col gap-3.5 border-indigo-200/80 bg-indigo-50/20 shadow-2xs"
+      data-testid="draft-card"
+      data-draft-status={draft.status}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-2.5">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-slate-900">{t(`convo.status.${draft.status}`)}</span>
+        </div>
         {draft.is_simulated ? <SimulatedBadge /> : null}
       </div>
 
       {draft.text !== null && !editing ? <DraftText draft={draft} /> : null}
       {draft.text === null && draft.suggestion_text ? (
-        <div className="rounded-lg bg-slate-50 p-3 text-sm">
-          <p className="font-medium">{t("convo.draft.suggestionTitle")}</p>
+        <div className="rounded-lg bg-white p-3.5 ring-1 ring-slate-200 text-sm">
+          <p className="font-semibold text-slate-900">{t("convo.draft.suggestionTitle")}</p>
           <p className="mt-1 break-words whitespace-pre-wrap text-slate-700">{draft.suggestion_text}</p>
           {onUseSuggestion ? (
-            <Button variant="secondary" className="mt-2" onClick={() => onUseSuggestion(draft.suggestion_text ?? "")}>
+            <Button variant="secondary" className="mt-2.5" onClick={() => onUseSuggestion(draft.suggestion_text ?? "")}>
               {t("convo.draft.useSuggestion")}
             </Button>
           ) : null}
         </div>
       ) : null}
       {draft.status === "needs_human" ? (
-        <p className="text-sm font-medium text-amber-900">{t("convo.draft.youMustReply")}</p>
+        <p className="text-sm font-semibold text-amber-900">{t("convo.draft.youMustReply")}</p>
       ) : null}
       {draft.status === "outcome_unknown" ? (
-        <p className="text-sm text-slate-700" role="status">
+        <p className="text-sm font-medium text-slate-700" role="status">
           {t("convo.draft.checking")}
         </p>
       ) : null}
       {draft.status === "failed" || draft.status === "blocked" ? (
-        <p className="text-sm text-red-800" role="alert">
+        <p className="text-sm font-medium text-red-800" role="alert">
           {draft.failure_code && draft.failure_code === "OUTCOME_UNCONFIRMED"
             ? t("convo.draft.unconfirmed")
             : t("convo.draft.failed")}
@@ -72,7 +78,7 @@ export function DraftCard({
       <ReasonChips reasons={draft.decision_reasons} />
 
       {draft.validation.issues.length > 0 ? (
-        <ul className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+        <ul className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-300">
           {draft.validation.issues.map((issue, index) => (
             <li key={`${issue.code}-${index}`}>{t("convo.composer.warning", { text: issue.text || issue.code })}</li>
           ))}
@@ -81,7 +87,7 @@ export function DraftCard({
 
       {editing ? (
         <div className="flex flex-col gap-2">
-          <label htmlFor={`edit-${draft.id}`} className="text-sm font-medium">
+          <label htmlFor={`edit-${draft.id}`} className="text-sm font-medium text-slate-900">
             {t("convo.draft.editLabel")}
           </label>
           <textarea
@@ -89,7 +95,7 @@ export function DraftCard({
             value={editText}
             onChange={(event) => setEditText(event.target.value)}
             rows={4}
-            className="w-full rounded-lg border border-slate-300 p-3 text-base"
+            className="w-full rounded-lg border border-slate-300 p-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
           />
           <div className="flex flex-wrap gap-2">
             <Button
@@ -112,7 +118,7 @@ export function DraftCard({
 
       {pending && !editing ? (
         canDecide && approval.data ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pt-1">
             <Button
               disabled={busy}
               onClick={() => decide.mutate({ approval: approval.data, decision: "approve" })}

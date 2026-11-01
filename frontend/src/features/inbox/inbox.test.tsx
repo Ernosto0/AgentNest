@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Conversation, ConversationDetail, ReplyDraft } from "@/api/types";
 import { approval, HASH } from "@/test/aiFixtures";
 import { ME, READINESS, WS_GOLKENT, workspace } from "@/test/fixtures";
-import { json, mockApi } from "@/test/mockApi";
+import { json, mockApi, type RecordedRequest } from "@/test/mockApi";
 import { renderApp } from "@/test/renderApp";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -85,7 +85,7 @@ function detail(open: ReplyDraft | null): ConversationDetail {
   };
 }
 
-function routes(extra: Record<string, () => Response> = {}) {
+function routes(extra: Record<string, (req: RecordedRequest) => Response> = {}) {
   return {
     "GET /api/v1/meta": () =>
       json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
@@ -371,5 +371,50 @@ describe("inbox", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Devral" }));
     await waitFor(() => expect(requests.some((r) => r.path.endsWith("/takeover"))).toBe(true));
+  });
+
+  it("switches canonical filters and requests filtered conversations", async () => {
+    const requests = mockApi(
+      routes({
+        [`GET ${BASE}/conversations`]: (req) => {
+          const attention = new URL(req.path + req.search, "http://localhost").searchParams.get("attention");
+          return json({
+            items: attention === "needs_human"
+              ? [conversation({ id: "c2", attention: "needs_human" })]
+              : [conversation()],
+            next_cursor: null,
+          });
+        },
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox`);
+    const user = userEvent.setup();
+
+    expect(await screen.findByText("Ayşe")).toBeInTheDocument();
+    const humanTab = screen.getByRole("tab", { name: "Size gerek var" });
+    await user.click(humanTab);
+    expect(humanTab).toHaveAttribute("aria-selected", "true");
+    await waitFor(() =>
+      expect(requests.some((r) => r.path.endsWith("/conversations") && r.search.includes("attention=needs_human"))).toBe(true),
+    );
+  });
+
+  it("handles long customer names cleanly", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations`]: () =>
+          json({
+            items: [
+              conversation({
+                customer_handle: "Çok Uzun İsimli Müşteri Hesabı ve Özel Karakterler İle Birlikte",
+                last_message_preview: "Çok uzun bir mesaj metni önizlemesi buraya geliyor.",
+              }),
+            ],
+            next_cursor: null,
+          }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox`);
+    expect(await screen.findByText("Çok Uzun İsimli Müşteri Hesabı ve Özel Karakterler İle Birlikte")).toBeInTheDocument();
   });
 });

@@ -1,0 +1,98 @@
+[
+  {
+    "engine": "chromium",
+    "scenario": "tr-phone-owner",
+    "width": 360,
+    "locale": "tr",
+    "role": "owner",
+    "errors": [],
+    "blocked": [],
+    "violations": 0,
+    "overflow": 0,
+    "screenshot": "chromium-tr-phone-owner.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-phone-staff",
+    "width": 390,
+    "locale": "en",
+    "role": "staff",
+    "errors": [],
+    "blocked": [],
+    "violations": 0,
+    "overflow": 0,
+    "screenshot": "chromium-en-phone-staff.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "tr-tablet-owner",
+    "width": 768,
+    "locale": "tr",
+    "role": "owner",
+    "errors": [],
+    "blocked": [],
+    "violations": 0,
+    "overflow": 0,
+    "screenshot": "chromium-tr-tablet-owner.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-desktop-owner",
+    "width": 1440,
+    "locale": "en",
+    "role": "owner",
+    "errors": [],
+    "blocked": [],
+    "violations": 0,
+    "overflow": 0,
+    "screenshot": "chromium-en-desktop-owner.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-phone-owner",
+    "width": 360,
+    "locale": "tr",
+    "role": "owner",
+    "errors": [],
+    "blocked": [],
+    "violations": 0,
+    "overflow": 0,
+    "screenshot": "webkit-tr-phone-owner.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-phone-staff",
+    "width": 390,
+    "locale": "en",
+    "role": "staff",
+    "errors": [],
+    "blocked": [],
+    "violations": 0,
+    "overflow": 0,
+    "screenshot": "webkit-en-phone-staff.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-tablet-owner",
+    "width": 768,
+    "locale": "tr",
+    "role": "owner",
+    "errors": [],
+    "blocked": [],
+    "violations": 0,
+    "overflow": 0,
+    "screenshot": "webkit-tr-tablet-owner.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-desktop-owner",
+    "width": 1440,
+    "locale": "en",
+    "role": "owner",
+    "errors": [],
+    "blocked": [],
+    "violations": 0,
+    "overflow": 0,
+    "screenshot": "webkit-en-desktop-owner.png"
+  }
+]

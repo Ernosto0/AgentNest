@@ -3,6 +3,11 @@
     "title": "Content",
     "intro": "Your Instagram posts and stories: drafts, scheduled and published.",
     "tabsLabel": "Content list",
+    "viewsLabel": "View",
+    "viewLibrary": "Library",
+    "viewAgenda": "Agenda",
+    "agendaEmpty": "No posts scheduled in the near future.",
+    "agendaNotice": "Only scheduled posts are listed.",
     "tabs": {
       "drafts": "Drafts",
       "scheduled": "Scheduled",

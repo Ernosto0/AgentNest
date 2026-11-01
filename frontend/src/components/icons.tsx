@@ -120,6 +120,21 @@ export const ChevronRightIcon = (p: IconProps) => (
     <path d="m9 6 6 6-6 6" />
   </Svg>
 );
+export const ChevronLeftIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m15 18-6-6 6-6" />
+  </Svg>
+);
+export const PlusIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </Svg>
+);
+export const XIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M18 6 6 18M6 6l12 12" />
+  </Svg>
+);
 export const BellIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7" />

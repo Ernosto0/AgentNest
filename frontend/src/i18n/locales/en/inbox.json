@@ -6,6 +6,8 @@
     "noPreview": "No messages yet",
     "empty": "No conversations here",
     "emptyHint": "When a customer writes to your Instagram account, the conversation appears here.",
+    "selectConversation": "Select a conversation",
+    "selectHint": "Select a conversation to view details, messages, and reply drafts.",
     "back": "← Inbox",
     "handledByYou": "Handled by you",
     "humanMode": "You are handling this conversation. The assistant does not draft replies until you hand it back.",
