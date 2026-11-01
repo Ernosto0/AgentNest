@@ -149,9 +149,20 @@
     },
     "account": "Hesap",
     "signedInAs": "Giriş yapan",
+    "role": "Rolünüz",
     "workspaceSection": "Bağlantı ve durum",
     "openConnections": "Instagram bağlantısını yönet",
-    "openSystemHealth": "Sistem durumunu gör"
+    "openMembers": "Ekip üyelerini yönet",
+    "openSystemHealth": "Sistem durumunu gör",
+    "workspaceDetails": "Çalışma alanı bilgileri",
+    "workspaceName": "Ad",
+    "workspaceTimezone": "Zaman dilimi",
+    "workspaceMarket": "Pazar ve para birimi",
+    "security": "Güvenlik ve oturumlar",
+    "securityDesc": "Güvenlik, parola değişiklikleri ve aktif oturumlar platform kimlik doğrulama altyapısı tarafından yönetilir.",
+    "privacy": "Gizlilik ve veri hakları",
+    "privacyDesc": "Veri hakları ve silme talepleri hesap yetkilisi tarafından destek ekibi aracılığıyla işleme alınır.",
+    "signOut": "Oturumu kapat"
   },
   "notFound": {
     "title": "Bulunamadı",

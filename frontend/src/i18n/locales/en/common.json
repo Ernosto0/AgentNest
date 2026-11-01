@@ -149,9 +149,20 @@
     },
     "account": "Account",
     "signedInAs": "Signed in as",
+    "role": "Your role",
     "workspaceSection": "Connection and health",
     "openConnections": "Manage the Instagram connection",
-    "openSystemHealth": "View system health"
+    "openMembers": "Manage team members",
+    "openSystemHealth": "View system health",
+    "workspaceDetails": "Workspace details",
+    "workspaceName": "Name",
+    "workspaceTimezone": "Timezone",
+    "workspaceMarket": "Market and currency",
+    "security": "Security and sessions",
+    "securityDesc": "Security, password changes, and active sessions are managed by platform authentication.",
+    "privacy": "Privacy and data rights",
+    "privacyDesc": "Data rights and erasure requests are processed through support by the account owner.",
+    "signOut": "Sign out"
   },
   "notFound": {
     "title": "Not found",
