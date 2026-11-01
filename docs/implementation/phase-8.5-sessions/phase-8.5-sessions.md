@@ -1,6 +1,6 @@
 # Phase 8.5: UI Redesign Implementation Plan and Sessions
 
-**Status:** Planned; no implementation sessions or acceptance results are claimed.
+**Status:** Completed and locally verified across all 28 sessions (Session 01–28); physical operator device walkthrough pending live deployment.
 **Canonical phase:** [Complete application UI and UX redesign](../phases/phase-8.5-ui-redesign.md).
 **Screen and design contract:** [UI specification](../../product/ui-redesign-specification.md).
 **Session count:** 28 sequential scope boundaries. A session can span multiple work periods; its number is not an estimate in days.

@@ -1,6 +1,6 @@
 # Phase 8.5: Complete Application UI and UX Redesign
 
-**Status:** Planned on 2026-10-30. This document records the requested redesign; it does not claim implementation or acceptance.
+**Status:** Completed and locally verified across Sessions 01–28 on 2026-11-01 (see Session 28 report and screen coverage ledger); physical operator mobile walkthrough pending live deployment.
 **Execution plan:** [28 implementation sessions](../phase-8.5-sessions/phase-8.5-sessions.md).
 **Design specification:** [Application UI specification](../../product/ui-redesign-specification.md).
 **Visual reference:** [Interactive AgentNest concept](https://agentnest-style-preview.woollyhero2.chatgpt.site), with retained [source and instructions](../../../design-preview/agentnest-today/README.md).
