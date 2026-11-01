@@ -1,12 +1,32 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { AlertIcon } from "@/components/icons";
 import { useAnswers, useArchiveAnswer, useCreateAnswer } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 const INTENTS = ["faq", "greeting", "pricing", "hours", "location_contact", "services", "booking", "promotions"];
+
+function renderTemplatePlaceholders(template: string) {
+  const parts = template.split(/(\{\{[^}]+\}\})/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("{{") && part.endsWith("}}")) {
+      return (
+        <code
+          key={index}
+          className="rounded bg-surface-elevated px-1.5 py-0.5 font-mono text-xs font-semibold text-action border border-border"
+        >
+          {part}
+        </code>
+      );
+    }
+    return part;
+  });
+}
 
 /** Replies you approved once and want reused. Values appear only as {{fact:key}} placeholders. */
 export function ApprovedAnswers() {
@@ -26,28 +46,62 @@ export function ApprovedAnswers() {
   const literal = create.error?.fieldErrors.find((e) => e.code === "LITERAL_VALUE");
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-semibold">{t("answers.title")}</h1>
-        <p className="mt-1 text-slate-600">{t("answers.intro")}</p>
+        <Link
+          to={`/w/${workspace.id}/more/knowledge`}
+          className="inline-flex min-h-11 items-center font-medium text-action hover:text-action-hover underline focus-visible:outline-2 focus-visible:outline-focus"
+        >
+          ← {t("answers.back")}
+        </Link>
+        <h1 className="mt-2 text-2xl font-heading font-semibold text-primary">{t("answers.title")}</h1>
+        <p className="mt-1 text-sm text-secondary">{t("answers.intro")}</p>
       </div>
 
+      {!canEdit ? (
+        <p className="rounded-card bg-surface-elevated p-3.5 text-sm text-secondary border border-border">
+          {t("answers.staffNote")}
+        </p>
+      ) : null}
+
       {answers.isError ? <ErrorMessage error={answers.error} /> : null}
-      {answers.data && visible.length === 0 ? <p>{t("answers.empty")}</p> : null}
+      {answers.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
+      {answers.data && visible.length === 0 ? (
+        <EmptyState title={t("answers.empty")} />
+      ) : null}
+
       <ul className="flex flex-col gap-3">
         {visible.map((answer) => (
           <li key={answer.id}>
-            <Card className="flex flex-col gap-1" data-testid="answer">
-              <p className="font-medium">
-                {answer.title}
+            <Card className="flex flex-col gap-3" data-testid="answer">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-primary">{answer.title}</span>
+                  <span className="rounded-pill bg-surface-elevated px-2.5 py-0.5 text-xs font-medium text-secondary border border-border">
+                    {t(`answers.intent.${answer.intent}`)}
+                  </span>
+                  <span className="rounded-pill bg-surface-elevated px-2 py-0.5 text-xs font-mono font-medium text-secondary border border-border uppercase">
+                    {answer.language}
+                  </span>
+                </div>
                 {answer.status === "needs_review" ? (
-                  <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
-                    {t("answers.needsReview")}
+                  <span className="inline-flex items-center gap-1.5 rounded-pill bg-attention-subtle px-2.5 py-0.5 text-xs font-semibold text-attention border border-border">
+                    <AlertIcon className="text-xs" aria-hidden="true" />
+                    <span>{t("answers.needsReview")}</span>
                   </span>
                 ) : null}
-              </p>
-              <p className="text-sm text-slate-600">{answer.example_questions.join(" · ")}</p>
-              <p className="text-sm break-words whitespace-pre-wrap">{answer.answer_template}</p>
+              </div>
+
+              {answer.example_questions.length > 0 ? (
+                <p className="text-sm text-secondary italic">
+                  "{answer.example_questions.join(" · ")}"
+                </p>
+              ) : null}
+
+              <div className="rounded-card bg-surface-elevated p-3.5 text-sm text-primary break-words whitespace-pre-wrap border border-border">
+                {renderTemplatePlaceholders(answer.answer_template)}
+              </div>
+
               {canEdit ? (
                 <div>
                   <Button variant="ghost" disabled={archive.isPending} onClick={() => archive.mutate(answer)}>
@@ -61,9 +115,10 @@ export function ApprovedAnswers() {
       </ul>
 
       {canEdit ? (
-        <Card>
+        <Card className="flex flex-col gap-4">
+          <h2 className="text-lg font-heading font-semibold text-primary">{t("answers.new")}</h2>
           <form
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-4"
             onSubmit={(event) => {
               event.preventDefault();
               create.mutate(
@@ -78,63 +133,86 @@ export function ApprovedAnswers() {
               );
             }}
           >
-            <h2 className="text-lg font-semibold">{t("answers.new")}</h2>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              {t("answers.fieldTitle")}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="answer-title" className="text-sm font-medium text-primary">
+                {t("answers.fieldTitle")}
+              </label>
               <input
+                id="answer-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                className="min-h-11 rounded-lg border border-slate-300 px-3 text-base font-normal"
+                className="min-h-11 rounded-input border border-border bg-surface px-3 text-base text-primary font-normal focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
               />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              {t("answers.fieldQuestion")}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="answer-question" className="text-sm font-medium text-primary">
+                {t("answers.fieldQuestion")}
+              </label>
               <input
+                id="answer-question"
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
-                className="min-h-11 rounded-lg border border-slate-300 px-3 text-base font-normal"
+                className="min-h-11 rounded-input border border-border bg-surface px-3 text-base text-primary font-normal focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
               />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              {t("answers.fieldTemplate")}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="answer-template" className="text-sm font-medium text-primary">
+                {t("answers.fieldTemplate")}
+              </label>
               <textarea
+                id="answer-template"
+                aria-describedby="answer-template-hint"
                 value={template}
                 onChange={(event) => setTemplate(event.target.value)}
-                rows={3}
-                className="rounded-lg border border-slate-300 p-3 text-base font-normal"
+                rows={4}
+                className="rounded-input border border-border bg-surface p-3 text-base text-primary font-normal focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
               />
-              <span className="text-xs font-normal text-slate-600">{t("answers.templateHint", { example: "{{fact:contact.phone}}" })}</span>
-            </label>
-            <div className="flex flex-wrap gap-3">
-              <select
-                aria-label={t("answers.fieldIntent")}
-                value={intent}
-                onChange={(event) => setIntent(event.target.value)}
-                className="min-h-11 rounded-lg border border-slate-300 bg-white px-3"
-              >
-                {INTENTS.map((name) => (
-                  <option key={name} value={name}>
-                    {t(`answers.intent.${name}`)}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label={t("answers.fieldLanguage")}
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as "tr" | "en")}
-                className="min-h-11 rounded-lg border border-slate-300 bg-white px-3"
-              >
-                <option value="tr">{t("answers.lang.tr")}</option>
-                <option value="en">{t("answers.lang.en")}</option>
-              </select>
+              <span id="answer-template-hint" className="text-xs text-muted font-normal">
+                {t("answers.templateHint", { example: "{{fact:contact.phone}}" })}
+              </span>
             </div>
+
+            <div className="flex flex-wrap gap-3">
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-primary">
+                {t("answers.fieldIntent")}
+                <select
+                  aria-label={t("answers.fieldIntent")}
+                  value={intent}
+                  onChange={(event) => setIntent(event.target.value)}
+                  className="min-h-11 rounded-input border border-border bg-surface px-3 text-base text-primary focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
+                >
+                  {INTENTS.map((name) => (
+                    <option key={name} value={name}>
+                      {t(`answers.intent.${name}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-primary">
+                {t("answers.fieldLanguage")}
+                <select
+                  aria-label={t("answers.fieldLanguage")}
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value as "tr" | "en")}
+                  className="min-h-11 rounded-input border border-border bg-surface px-3 text-base text-primary focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
+                >
+                  <option value="tr">{t("answers.lang.tr")}</option>
+                  <option value="en">{t("answers.lang.en")}</option>
+                </select>
+              </label>
+            </div>
+
             {literal ? (
-              <p role="alert" className="text-sm text-red-800">
+              <p role="alert" className="rounded-card bg-danger-subtle p-3.5 text-sm text-danger border border-border">
                 {t("answers.literalValue")}
               </p>
             ) : create.error ? (
               <ErrorMessage error={create.error} />
             ) : null}
+
             <div>
               <Button type="submit" disabled={create.isPending || !title.trim() || !question.trim() || !template.trim()}>
                 {t("answers.save")}

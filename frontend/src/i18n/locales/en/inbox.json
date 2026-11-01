@@ -172,6 +172,8 @@
   },
   "answers": {
     "title": "Approved answers",
+    "back": "Back to business knowledge",
+    "staffNote": "Only owners and managers can create or archive approved answers.",
     "intro": "Replies you approved once and want reused. Prices, hours and contacts are written as placeholders so they always follow your verified information.",
     "empty": "No approved answers yet.",
     "needsReview": "Needs review",

@@ -172,6 +172,8 @@
   },
   "answers": {
     "title": "Onaylı yanıtlar",
+    "back": "İşletme bilgilerine dön",
+    "staffNote": "Yalnızca işletme sahipleri ve yöneticiler onaylı yanıt oluşturabilir veya arşivleyebilir.",
     "intro": "Bir kez onayladığınız ve yeniden kullanmak istediğiniz yanıtlar. Fiyat, saat ve iletişim bilgileri yer tutucu olarak yazılır, böylece her zaman doğrulanmış bilgilerinizi izler.",
     "empty": "Henüz onaylı yanıt yok.",
     "needsReview": "Gözden geçirilmeli",

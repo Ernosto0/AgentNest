@@ -106,7 +106,7 @@ export function ConversationPage() {
                   {mine && canManage ? (
                     <button
                       type="button"
-                      className={`mt-2 block text-xs underline font-medium hover:opacity-80 focus-visible:outline-2 ${mine ? "text-indigo-100 focus-visible:outline-white" : "text-indigo-700 focus-visible:outline-indigo-600"}`}
+                      className={`mt-2 block text-xs underline font-medium opacity-90 hover:opacity-100 focus-visible:outline-2 ${mine ? "text-primary-contrast focus-visible:outline-primary-contrast" : "text-action focus-visible:outline-focus"}`}
                       disabled={saveAnswer.isPending}
                       onClick={() =>
                         saveAnswer.mutate(message.id, { onSuccess: () => setSaved(message.id) })
