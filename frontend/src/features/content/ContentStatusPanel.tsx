@@ -78,7 +78,7 @@ export function ContentStatusPanel({ item }: { item: ContentItem }) {
               href={permalink}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600"
+              className="font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
             >
               {t("content.detail.permalinkOpen")}
             </a>
@@ -100,27 +100,26 @@ export function ContentStatusPanel({ item }: { item: ContentItem }) {
           </p>,
         );
       }
-      lines.push(<p key="next">{t("content.detail.rejectedNext")}</p>);
-      break;
-    case "cancelled":
-      lines.push(<p key="cancelled">{t("content.detail.cancelled")}</p>);
+      lines.push(<p key="rejectedNext">{t("content.detail.rejectedNext")}</p>);
       break;
     case "draft":
-      if (item.hold_reason === "FACT_CHANGED" || item.hold_reason === "APPROVAL_EXPIRED") {
+      if (item.hold_reason && (item.hold_reason === "FACT_CHANGED" || item.hold_reason === "APPROVAL_EXPIRED")) {
         lines.push(
-          <p key="hold" data-testid="draft-hold" data-reason={item.hold_reason}>
+          <p key="holdReason" data-testid="draft-hold">
             {t(`content.detail.draftHold.${item.hold_reason}`)}
           </p>,
         );
       }
       break;
-    default:
+    case "cancelled":
+      lines.push(<p key="cancelled">{t("content.detail.cancelled")}</p>);
       break;
   }
 
   if (lines.length === 0) return null;
+
   return (
-    <div className="flex flex-col gap-1 text-sm text-slate-800" data-testid="status-panel">
+    <div className="flex flex-col gap-1.5 rounded-panel border border-border bg-surface p-4 text-sm text-secondary shadow-xs" data-testid="status-panel">
       {lines}
     </div>
   );

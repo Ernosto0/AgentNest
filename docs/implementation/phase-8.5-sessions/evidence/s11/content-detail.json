@@ -1,0 +1,66 @@
+[
+  {
+    "engine": "chromium",
+    "scenario": "tr-phone",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-tr-phone.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-phone",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-en-phone.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "tr-tablet",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-tr-tablet.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-desktop",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-en-desktop.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-phone",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-tr-phone.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-phone",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-en-phone.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-tablet",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-tr-tablet.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-desktop",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-en-desktop.png"
+  }
+]

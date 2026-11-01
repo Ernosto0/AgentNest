@@ -15,7 +15,7 @@ function UploadError({ error }: { error: unknown }) {
     if (error.code === "MEDIA_TOO_LARGE" && typeof error.params.limit_bytes === "number") {
       const limit = `${Math.max(1, Math.round(error.params.limit_bytes / MB))} MB`;
       return (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-300">
+        <p role="alert" className="rounded-control border border-danger bg-danger-subtle p-3 text-sm text-danger shadow-xs">
           {t("content.media.tooLarge", { limit })}
         </p>
       );
@@ -23,7 +23,7 @@ function UploadError({ error }: { error: unknown }) {
     const reason = typeof error.params.reason === "string" ? error.params.reason : null;
     if (error.code === "MEDIA_INVALID" && reason && ["EMPTY_FILE", "NOT_AN_IMAGE", "CORRUPT_IMAGE", "TOO_MANY_PIXELS"].includes(reason)) {
       return (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-300">
+        <p role="alert" className="rounded-control border border-danger bg-danger-subtle p-3 text-sm text-danger shadow-xs">
           {t(`content.media.reason.${reason}`)}
         </p>
       );
@@ -74,39 +74,39 @@ export function MediaUpload({
   };
 
   return (
-    <div className="flex flex-col gap-2" data-testid="media-upload">
-      <span className="text-sm font-medium text-slate-800">{t("content.media.label")}</span>
-      <p className="text-sm text-slate-600">
+    <div className="flex flex-col gap-2.5" data-testid="media-upload">
+      <span className="text-sm font-medium text-primary">{t("content.media.label")}</span>
+      <p className="text-sm text-secondary">
         {contentType === "story_image" ? t("content.media.storyHint") : t("content.media.feedHint")}
       </p>
 
       {mediaId && deleted ? (
-        <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700 ring-1 ring-slate-200" data-testid="media-deleted">
+        <p className="rounded-control border border-border bg-surface-subtle p-4 text-sm text-secondary" data-testid="media-deleted">
           {t("content.media.deleted")}
         </p>
       ) : mediaId ? (
-        <div className="overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
+        <div className="overflow-hidden rounded-control border border-border bg-surface-subtle p-1">
           {preview.url ? (
             <img
               src={preview.url}
               alt={t("content.media.previewAlt")}
-              className="mx-auto max-h-80 w-auto max-w-full object-contain"
+              className="mx-auto max-h-80 w-auto max-w-full rounded-control object-contain"
             />
           ) : preview.error ? (
-            <p className="p-4 text-sm text-slate-700">{t("content.media.previewFailed")}</p>
+            <p className="p-4 text-sm text-secondary">{t("content.media.previewFailed")}</p>
           ) : (
-            <p className="p-4 text-sm text-slate-700">{t("content.media.loadingPreview")}</p>
+            <p className="p-4 text-sm text-secondary">{t("content.media.loadingPreview")}</p>
           )}
         </div>
       ) : null}
       {shown ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-xs text-secondary">
           {t("content.media.size", { width: shown.width, height: shown.height })}
         </p>
       ) : null}
 
       {warnings.length > 0 ? (
-        <ul className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900" data-testid="media-warnings">
+        <ul className="rounded-control border border-attention bg-attention-subtle p-3 text-sm text-attention shadow-xs" data-testid="media-warnings">
           {warnings.map((warning, index) => (
             <li key={`${warning.code}-${index}`}>{checkMessage(warning, t)}</li>
           ))}
@@ -127,7 +127,7 @@ export function MediaUpload({
         />
         <label
           htmlFor={inputId}
-          className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg bg-white px-4 py-2 text-base font-medium text-slate-900 ring-1 ring-slate-300 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo-600 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400"
+          className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-control border border-border bg-surface px-4 py-2 text-base font-medium text-primary shadow-xs hover:bg-surface-subtle peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus peer-disabled:cursor-not-allowed peer-disabled:text-muted"
         >
           {upload.isPending
             ? t("content.media.uploading")

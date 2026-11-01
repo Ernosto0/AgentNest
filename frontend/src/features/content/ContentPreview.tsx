@@ -14,12 +14,12 @@ function MediaThumb({ mediaId }: { mediaId: string }) {
         src={preview.url}
         alt={t("content.media.previewAlt")}
         data-testid="preview-media"
-        className="max-h-40 w-auto max-w-full rounded-lg object-contain ring-1 ring-slate-200"
+        className="max-h-48 w-auto max-w-full rounded-control border border-border object-contain shadow-xs"
       />
     );
   }
   return (
-    <p className="text-sm text-slate-600" data-testid="preview-media">
+    <p className="text-sm text-secondary" data-testid="preview-media">
       {preview.error ? t("content.media.previewFailed") : t("content.media.loadingPreview")}
     </p>
   );
@@ -59,20 +59,20 @@ export function ContentPreview({
   const isStory = contentType === "story_image";
   const lines = overlay.filter((text) => text.trim() !== "");
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm" data-testid="content-preview">
-      <dt className="text-slate-600">{t(labels.media)}</dt>
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2.5 text-sm text-primary" data-testid="content-preview">
+      <dt className="font-medium text-secondary">{t(labels.media)}</dt>
       <dd className="min-w-0">
         {mediaId && mediaDeleted ? (
-          <span data-testid="preview-media-deleted">{t("content.media.deleted")}</span>
+          <span data-testid="preview-media-deleted" className="text-secondary">{t("content.media.deleted")}</span>
         ) : mediaId ? (
           <MediaThumb mediaId={mediaId} />
         ) : (
-          t(labels.noMedia)
+          <span className="text-secondary">{t(labels.noMedia)}</span>
         )}
       </dd>
       {isStory ? (
         <>
-          <dt className="text-slate-600">{t(labels.overlay)}</dt>
+          <dt className="font-medium text-secondary">{t(labels.overlay)}</dt>
           <dd className="min-w-0">
             {lines.length > 0 ? (
               <ul className="list-disc pl-5">
@@ -83,16 +83,16 @@ export function ContentPreview({
                 ))}
               </ul>
             ) : (
-              t(labels.noCaption)
+              <span className="text-secondary">{t(labels.noCaption)}</span>
             )}
-            <p className="mt-1 text-xs text-slate-600">{t(labels.overlayNote)}</p>
+            <p className="mt-1 text-xs text-secondary">{t(labels.overlayNote)}</p>
           </dd>
         </>
       ) : (
         <>
-          <dt className="text-slate-600">{t(labels.caption)}</dt>
+          <dt className="font-medium text-secondary">{t(labels.caption)}</dt>
           <dd className="min-w-0 break-words whitespace-pre-wrap" data-testid="preview-caption">
-            {caption && caption.trim() !== "" ? caption : t(labels.noCaption)}
+            {caption && caption.trim() !== "" ? caption : <span className="text-secondary">{t(labels.noCaption)}</span>}
           </dd>
         </>
       )}

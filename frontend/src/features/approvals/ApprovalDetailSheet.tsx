@@ -49,11 +49,11 @@ function ExtraFields({ summary }: { summary: Record<string, unknown> }) {
   );
   if (rows.length === 0) return null;
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
       {rows.map(([name, value]) => (
         <div key={name} className="contents">
-          <dt className="text-slate-600">{name}</dt>
-          <dd className="min-w-0 break-words">{String(value)}</dd>
+          <dt className="text-secondary font-medium">{name}</dt>
+          <dd className="min-w-0 break-words text-primary">{String(value)}</dd>
         </div>
       ))}
     </dl>
@@ -99,7 +99,7 @@ export function ApprovalDetailSheet({
       footer={
         pending ? (
           approval.can_decide ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               <Button
                 disabled={decide.isPending || cannotApprove}
                 onClick={() => decideWith("approve")}
@@ -115,7 +115,7 @@ export function ApprovalDetailSheet({
               </Button>
             </div>
           ) : (
-            <p className="text-sm text-slate-700">{t("approvals.detail.cannotDecide")}</p>
+            <p className="text-sm font-medium text-secondary">{t("approvals.detail.cannotDecide")}</p>
           )
         ) : null
       }
@@ -125,8 +125,8 @@ export function ApprovalDetailSheet({
         data-testid="approval-detail"
         data-payload-hash={approval.payload_hash}
       >
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          <span className="font-medium text-slate-900">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-secondary">
+          <span className="font-heading font-semibold text-primary">
             {t(`approvals.action.${actionKey(approval.action)}`)}
           </span>
           <span>·</span>
@@ -167,7 +167,7 @@ export function ApprovalDetailSheet({
             />
           </>
         )}
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-secondary">
           {pending
             ? t("approvals.detail.expires", {
                 time: localTime(approval.expires_at, i18n.language, workspace.timezone),

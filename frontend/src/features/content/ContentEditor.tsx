@@ -44,20 +44,20 @@ function FieldIssues({ field, issues }: { field: string; issues: ContentIssue[] 
   const blocking = mine.filter((issue) => !issue.matches_verified);
 
   return (
-    <div className="flex flex-col gap-1.5" data-testid="field-issues">
+    <div className="flex flex-col gap-2" data-testid="field-issues">
       {blocking.map((issue, index) => (
         <p
           key={`${issue.code}-${index}`}
           data-testid="blocking-issue"
           data-code={issue.code}
-          className="flex items-start gap-2 rounded-lg bg-red-50 p-2 text-sm text-red-900 ring-1 ring-red-300"
+          className="flex items-start gap-2 rounded-control bg-danger-subtle p-2.5 text-sm text-danger border border-danger shadow-xs"
         >
           <AlertIcon className="mt-0.5 shrink-0" />
           <span>{blockingIssueMessage(issue, t)}</span>
         </p>
       ))}
       {blocking.length > 0 ? (
-        <p className="text-xs text-slate-600">{t("content.editor.issues.blockingHint")}</p>
+        <p className="text-xs text-secondary">{t("content.editor.issues.blockingHint")}</p>
       ) : null}
       {grounded.map((issue, index) => {
         const fact = facts.data?.find((candidate) => candidate.key === issue.fact_key);
@@ -65,7 +65,7 @@ function FieldIssues({ field, issues }: { field: string; issues: ContentIssue[] 
           <p
             key={`${issue.code}-${index}`}
             data-testid="grounded-issue"
-            className="flex flex-wrap items-center gap-2 text-sm text-slate-700"
+            className="flex flex-wrap items-center gap-2 text-sm text-secondary"
           >
             <FactChip
               fact={{
@@ -89,7 +89,7 @@ function Counter({ id, count, max }: { id: string; count: number; max: number })
     <span
       id={id}
       data-testid="caption-counter"
-      className={`text-sm ${over ? "font-medium text-red-700" : "text-slate-600"}`}
+      className={`text-sm ${over ? "font-semibold text-danger" : "text-secondary"}`}
     >
       {over ? t("content.editor.counterOver", { count, max }) : t("content.editor.counter", { count, max })}
     </span>
@@ -104,17 +104,17 @@ function Checks({ result }: { result: ContentValidation }) {
   const warnings = (result.warnings ?? []).filter((w) => w.field !== "media_asset_id");
   if (errors.length === 0 && warnings.length === 0) {
     return (
-      <p role="status" className="text-sm text-green-800" data-testid="check-clean">
+      <p role="status" className="text-sm font-medium text-success" data-testid="check-clean">
         {t("content.editor.checkClean")}
       </p>
     );
   }
   return (
-    <div className="flex flex-col gap-2" data-testid="checks">
+    <div className="flex flex-col gap-2.5" data-testid="checks">
       {errors.length > 0 ? (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-300">
-          <p className="font-medium">{t("content.editor.checks.errorsLabel")}</p>
-          <ul className="list-disc pl-5">
+        <div className="rounded-control bg-danger-subtle p-3.5 text-sm text-danger border border-danger shadow-xs">
+          <p className="font-semibold">{t("content.editor.checks.errorsLabel")}</p>
+          <ul className="mt-1 list-disc pl-5">
             {errors.map((item, index) => (
               <li key={`${item.code}-${index}`} data-code={item.code}>
                 {checkMessage(item, t)}
@@ -124,9 +124,9 @@ function Checks({ result }: { result: ContentValidation }) {
         </div>
       ) : null}
       {warnings.length > 0 ? (
-        <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          <p className="font-medium">{t("content.editor.checks.warningsLabel")}</p>
-          <ul className="list-disc pl-5">
+        <div className="rounded-control bg-attention-subtle p-3.5 text-sm text-attention border border-attention shadow-xs">
+          <p className="font-semibold">{t("content.editor.checks.warningsLabel")}</p>
+          <ul className="mt-1 list-disc pl-5">
             {warnings.map((item, index) => (
               <li key={`${item.code}-${index}`} data-code={item.code}>
                 {checkMessage(item, t)}
@@ -144,17 +144,17 @@ function ReadOnlyText({ item }: { item: ContentItem }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-3" data-testid="content-readonly">
-      <p className="text-sm text-slate-600">{t("content.editor.readOnly")}</p>
+      <p className="text-sm font-medium text-secondary">{t("content.editor.readOnly")}</p>
       {item.media_asset_id && item.media_deleted ? (
-        <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700 ring-1 ring-slate-200" data-testid="media-deleted">
+        <p className="rounded-control bg-surface-subtle p-4 text-sm text-secondary border border-border" data-testid="media-deleted">
           {t("content.media.deleted")}
         </p>
       ) : null}
       {item.content_type === "feed_image" && item.caption ? (
-        <p className="break-words whitespace-pre-wrap">{item.caption}</p>
+        <p className="break-words whitespace-pre-wrap text-primary">{item.caption}</p>
       ) : null}
       {item.content_type === "story_image" && item.overlay_text_suggestions.length > 0 ? (
-        <ul className="list-disc pl-5">
+        <ul className="list-disc pl-5 text-primary">
           {item.overlay_text_suggestions.map((text, index) => (
             <li key={index} className="break-words whitespace-pre-wrap">
               {text}
@@ -278,7 +278,7 @@ export function ContentEditor({
       }}
     >
       {editVoidsApproval(item.status) ? (
-        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900" data-testid="voids-approval">
+        <p className="rounded-control border border-attention bg-attention-subtle p-3 text-sm text-attention shadow-xs" data-testid="voids-approval">
           {t("content.editor.editVoidsApproval")}
         </p>
       ) : null}
@@ -302,8 +302,8 @@ export function ContentEditor({
 
       {isStory ? (
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium text-slate-800">{t("content.editor.overlayLabel")}</legend>
-          <p className="text-sm text-slate-600" data-testid="overlay-note">
+          <legend className="text-sm font-medium text-primary">{t("content.editor.overlayLabel")}</legend>
+          <p className="text-sm text-secondary" data-testid="overlay-note">
             {t("content.editor.overlayNote")}
           </p>
           {overlay.map((text, index) => (
@@ -315,7 +315,7 @@ export function ContentEditor({
                   rows={2}
                   maxLength={OVERLAY_ITEM_MAX}
                   onChange={(event) => updateOverlay(index, event.target.value)}
-                  className="min-h-16 w-full rounded-lg border border-slate-300 p-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
+                  className="min-h-16 w-full rounded-control border border-border bg-surface p-3 text-base text-primary focus-visible:outline-2 focus-visible:outline-focus"
                 />
                 <Button
                   variant="ghost"
@@ -340,7 +340,7 @@ export function ContentEditor({
         </fieldset>
       ) : (
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={ids.caption} className="text-sm font-medium text-slate-800">
+          <label htmlFor={ids.caption} className="text-sm font-medium text-primary">
             {t("content.editor.captionLabel")}
           </label>
           <textarea
@@ -349,7 +349,7 @@ export function ContentEditor({
             value={caption}
             rows={6}
             onChange={(event) => edit({ caption: event.target.value })}
-            className="min-h-32 w-full rounded-lg border border-slate-300 p-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
+            className="min-h-32 w-full rounded-control border border-border bg-surface p-3 text-base text-primary focus-visible:outline-2 focus-visible:outline-focus"
           />
           <Counter id={ids.counter} count={caption.length} max={CAPTION_MAX_CHARS} />
           {dirty.caption ? null : <FieldIssues field="caption" issues={issues} />}
@@ -357,13 +357,13 @@ export function ContentEditor({
       )}
 
       {item.validation.stale ? (
-        <p className="text-sm text-amber-900" data-testid="stale-note">
+        <p className="text-sm font-medium text-attention" data-testid="stale-note">
           {t("content.editor.issues.stale")}
         </p>
       ) : null}
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={ids.notes} className="text-sm font-medium text-slate-800">
+        <label htmlFor={ids.notes} className="text-sm font-medium text-primary">
           {t("content.editor.visualNotesLabel")}
         </label>
         <textarea
@@ -372,12 +372,12 @@ export function ContentEditor({
           rows={3}
           maxLength={NOTES_MAX}
           onChange={(event) => edit({ notes: event.target.value })}
-          className="min-h-20 w-full rounded-lg border border-slate-300 p-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
+          className="min-h-20 w-full rounded-control border border-border bg-surface p-3 text-base text-primary focus-visible:outline-2 focus-visible:outline-focus"
         />
       </div>
 
       {conflict ? (
-        <p role="alert" data-testid="version-conflict" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-400">
+        <p role="alert" data-testid="version-conflict" className="rounded-control border border-attention bg-attention-subtle p-3 text-sm text-attention shadow-xs">
           {t("content.editor.conflict")}
         </p>
       ) : null}
@@ -387,7 +387,7 @@ export function ContentEditor({
       {validate.error ? <ErrorMessage error={validate.error} /> : null}
       {checks ? <Checks result={checks} /> : null}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 pt-2">
         <Button type="submit" disabled={busy || !anyDirty || title.trim() === ""}>
           {busy ? t("content.editor.saving") : t("content.editor.save")}
         </Button>
@@ -395,9 +395,9 @@ export function ContentEditor({
           {validate.isPending ? t("content.editor.checking") : t("content.editor.check")}
         </Button>
         {anyDirty ? (
-          <span className="text-sm text-slate-600">{t("content.editor.unsaved")}</span>
+          <span className="text-sm text-secondary">{t("content.editor.unsaved")}</span>
         ) : saved ? (
-          <span role="status" className="text-sm text-green-800">
+          <span role="status" className="text-sm font-medium text-success">
             {t("content.editor.saved")}
           </span>
         ) : null}

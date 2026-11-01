@@ -41,15 +41,15 @@ function GenerationNotice({ item }: { item: ContentItem }) {
 
   if (running) {
     return (
-      <div role="status" className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900 ring-1 ring-blue-300" data-testid="generation-running">
-        <p className="font-medium">{t("content.generation.running")}</p>
-        <p>{slow ? t("content.generation.slow") : t("content.generation.hint")}</p>
+      <div role="status" className="rounded-control border border-info bg-info-subtle p-3.5 text-sm text-info shadow-xs" data-testid="generation-running">
+        <p className="font-semibold">{t("content.generation.running")}</p>
+        <p className="mt-0.5">{slow ? t("content.generation.slow") : t("content.generation.hint")}</p>
       </div>
     );
   }
   if (item.generation?.status === "failed") {
     return (
-      <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-400" data-testid="generation-failed">
+      <p className="rounded-control border border-attention bg-attention-subtle p-3.5 text-sm text-attention shadow-xs" data-testid="generation-failed">
         {t("content.generation.failed")}
       </p>
     );
@@ -64,14 +64,14 @@ function ScheduleAction({ item, dirty }: { item: ContentItem; dirty: boolean }) 
   const generating = isGenerating(item);
   const blocked = dirty || generating;
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       <div>
         <Button disabled={blocked} onClick={() => setOpen(true)}>
           {t("content.actions.schedule")}
         </Button>
       </div>
-      {dirty ? <p className="text-sm text-slate-600">{t("content.actions.saveFirst")}</p> : null}
-      {generating ? <p className="text-sm text-slate-600">{t("content.actions.waitGeneration")}</p> : null}
+      {dirty ? <p className="text-xs font-medium text-secondary">{t("content.actions.saveFirst")}</p> : null}
+      {generating ? <p className="text-xs font-medium text-secondary">{t("content.actions.waitGeneration")}</p> : null}
       {open ? (
         <ScheduleSheet
           item={item}
@@ -79,7 +79,6 @@ function ScheduleAction({ item, dirty }: { item: ContentItem; dirty: boolean }) 
           onClose={() => setOpen(false)}
           onEditText={() => {
             setOpen(false);
-            // After the sheet has closed and handed focus back to its opener.
             window.setTimeout(focusEditor, 0);
           }}
         />
@@ -98,18 +97,18 @@ export function ContentDetailPage() {
   const onDirtyChange = useCallback((value: boolean) => setDirty(value), []);
 
   const back = (
-    <Link to={`/w/${workspace.id}/content`} className="text-sm font-medium text-indigo-800 underline">
+    <Link to={`/w/${workspace.id}/content`} className="inline-flex items-center text-sm font-medium text-action hover:text-action-hover hover:underline">
       {t("content.back")}
     </Link>
   );
 
-  if (query.isPending) return <p>{t("common.loading")}</p>;
+  if (query.isPending) return <p className="text-sm text-secondary">{t("common.loading")}</p>;
   if (query.isError) {
     return (
       <div className="flex flex-col gap-3">
         {back}
         {query.error instanceof AppError && query.error.status === 404 ? (
-          <p>{t("content.notFound")}</p>
+          <p className="text-sm text-secondary">{t("content.notFound")}</p>
         ) : (
           <ErrorMessage error={query.error} />
         )}
@@ -120,15 +119,18 @@ export function ContentDetailPage() {
   const badge = contentBadge(item, t, i18n.language, workspace.timezone);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6 max-w-4xl">
       <div>
         {back}
-        <h1 className="mt-1 text-2xl font-semibold break-words">{item.title || t("content.card.untitled")}</h1>
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          <span>{t(`content.type.${item.content_type}`)}</span>
+        <h1 className="mt-2 text-2xl font-heading font-semibold text-primary break-words">
+          {item.title || t("content.card.untitled")}
+        </h1>
+        <div className="mt-1 flex flex-wrap items-center gap-2.5 text-sm text-secondary">
+          <span className="font-medium">{t(`content.type.${item.content_type}`)}</span>
           <StatusBadge status={badge.status} params={badge.params} simulated={item.is_simulated} />
         </div>
       </div>
+
       <GenerationNotice item={item} />
       <ContentStatusPanel item={item} />
       <FailureDetail item={item} onEdit={focusEditor} />

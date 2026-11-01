@@ -10,14 +10,14 @@ export function ReplyApprovalBody({ approval }: { approval: Approval }) {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const draft = useReplyDraft(workspace.id, approval.subject.id);
-  if (!draft.data) return <p className="text-sm text-slate-600">{t("common.loading")}</p>;
+  if (!draft.data) return <p className="text-sm text-secondary">{t("common.loading")}</p>;
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3" data-testid="reply-approval-body">
+    <div className="flex flex-col gap-3 rounded-control border border-border bg-surface-subtle p-3.5 shadow-xs" data-testid="reply-approval-body">
       <DraftText draft={draft.data} />
       <ReasonChips reasons={draft.data.decision_reasons} />
       <Link
         to={`/w/${workspace.id}/inbox/${draft.data.conversation_id}`}
-        className="text-sm font-medium text-indigo-800 underline"
+        className="inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
       >
         {t("convo.openConversation")}
       </Link>

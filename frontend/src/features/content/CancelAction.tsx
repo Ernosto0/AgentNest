@@ -27,8 +27,8 @@ export function CancelAction({ item }: { item: ContentItem }) {
     );
   }
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3" data-testid="cancel-confirm">
-      <p className="text-sm">{t("content.actions.cancelAsk")}</p>
+    <div className="flex flex-col gap-2 rounded-control border border-border bg-surface-subtle p-3.5 shadow-xs" data-testid="cancel-confirm">
+      <p className="text-sm font-medium text-primary">{t("content.actions.cancelAsk")}</p>
       <div className="flex flex-wrap gap-2">
         <Button variant="danger" disabled={cancel.isPending} onClick={() => cancel.mutate(undefined)}>
           {cancel.isPending ? t("content.actions.cancelling") : t("content.actions.cancelConfirm")}

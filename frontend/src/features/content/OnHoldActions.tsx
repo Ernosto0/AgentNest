@@ -27,16 +27,16 @@ export function OnHoldActions({ item, onEdit }: { item: ContentItem; onEdit: () 
   const reason = isKnown(item.hold_reason) ? item.hold_reason : "unknown";
   const base = `/w/${workspace.id}`;
   const linkClass =
-    "inline-flex min-h-11 items-center text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600";
+    "inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus";
 
   return (
     <section
       aria-label={t("content.hold.title")}
       data-testid="on-hold"
       data-reason={item.hold_reason ?? "unknown"}
-      className="flex flex-col gap-3 rounded-xl bg-orange-50 p-4 text-orange-950 ring-1 ring-orange-400"
+      className="flex flex-col gap-3 rounded-panel border border-attention bg-attention-subtle p-4 text-attention shadow-xs"
     >
-      <h2 className="font-semibold">{t("content.hold.title")}</h2>
+      <h2 className="font-heading font-semibold">{t("content.hold.title")}</h2>
       <p>{t(`content.hold.${reason}.what`)}</p>
       <p>{t(`content.hold.${reason}.next`)}</p>
 
@@ -51,9 +51,9 @@ export function OnHoldActions({ item, onEdit }: { item: ContentItem; onEdit: () 
         </Link>
       ) : null}
 
-      {!canApprove ? <p className="text-sm">{t("content.hold.staffNote")}</p> : null}
+      {!canApprove ? <p className="text-sm opacity-90">{t("content.hold.staffNote")}</p> : null}
 
-      <div className="flex flex-wrap items-start gap-2">
+      <div className="flex flex-wrap items-start gap-2 pt-1">
         <Button variant="secondary" onClick={onEdit}>
           {t("content.actions.edit")}
         </Button>

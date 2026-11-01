@@ -25,18 +25,18 @@ export function CancelContentSummary({ summary }: { summary: Record<string, unkn
   const contentId = text(summary, "content_id");
 
   return (
-    <div className="flex flex-col gap-2" data-testid="cancel-content-summary">
-      {label ? <p className="text-lg font-semibold break-words">{label}</p> : null}
-      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1 text-sm">
+    <div className="flex flex-col gap-2.5 rounded-control border border-border bg-surface-subtle p-3.5" data-testid="cancel-content-summary">
+      {label ? <p className="text-base font-heading font-semibold text-primary break-words">{label}</p> : null}
+      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5 text-sm">
         {type === "feed_image" || type === "story_image" ? (
           <>
-            <dt className="text-slate-600">{t("command.confirm.cancelContent.type")}</dt>
-            <dd>{t(`content.type.${type}`)}</dd>
+            <dt className="text-secondary font-medium">{t("command.confirm.cancelContent.type")}</dt>
+            <dd className="text-primary">{t(`content.type.${type}`)}</dd>
           </>
         ) : null}
         {isContentStatus(status) ? (
           <>
-            <dt className="text-slate-600">{t("command.confirm.cancelContent.status")}</dt>
+            <dt className="text-secondary font-medium">{t("command.confirm.cancelContent.status")}</dt>
             <dd>
               {(() => {
                 const badge = contentBadge({ status, operation: null }, t, i18n.language, workspace.timezone);
@@ -47,16 +47,16 @@ export function CancelContentSummary({ summary }: { summary: Record<string, unkn
         ) : null}
         {when ? (
           <>
-            <dt className="text-slate-600">{t("command.confirm.cancelContent.when")}</dt>
-            <dd data-testid="cancel-content-when">{when}</dd>
+            <dt className="text-secondary font-medium">{t("command.confirm.cancelContent.when")}</dt>
+            <dd data-testid="cancel-content-when" className="font-medium text-primary">{when}</dd>
           </>
         ) : null}
       </dl>
-      <p className="text-sm text-slate-700">{t("command.confirm.cancelContent.consequence")}</p>
+      <p className="text-sm text-secondary">{t("command.confirm.cancelContent.consequence")}</p>
       {contentId ? (
         <Link
           to={`/w/${workspace.id}/content/${contentId}`}
-          className="inline-flex min-h-11 items-center text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600"
+          className="inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
         >
           {t("command.confirm.cancelContent.open")}
         </Link>

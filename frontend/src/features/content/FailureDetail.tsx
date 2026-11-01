@@ -32,28 +32,30 @@ export function FailureDetail({ item, onEdit }: { item: ContentItem; onEdit: () 
       aria-label={t("content.failure.title")}
       data-testid="failure-detail"
       data-code={code}
-      className={`flex flex-col gap-2 rounded-xl p-4 ring-1 ${
-        failed ? "bg-red-50 text-red-900 ring-red-300" : "bg-blue-50 text-blue-900 ring-blue-300"
+      className={`flex flex-col gap-2 rounded-panel border p-4 text-body shadow-xs ${
+        failed
+          ? "border-danger bg-danger-subtle text-danger"
+          : "border-info bg-info-subtle text-info"
       }`}
     >
-      <h2 className="font-semibold">{t("content.failure.title")}</h2>
+      <h2 className="font-heading font-semibold">{t("content.failure.title")}</h2>
       <p>{what}</p>
       {/* A retryable code on a failed item means the retries ran out: its "we will try again" must not show. */}
       <p>{failed && AUTO_RETRY.has(code) ? t("content.failure.exhausted") : next}</p>
       {retrying ? (
-        <p data-testid="failure-retry" className="font-medium">
+        <p data-testid="failure-retry" className="font-semibold">
           {time
             ? t("content.failure.retryAt", { time, attempts: item.operation?.attempts ?? 0 })
             : t("content.failure.retryAuto")}
         </p>
       ) : null}
       {failed ? (
-        <p data-testid="failure-final" className="font-medium">
+        <p data-testid="failure-final" className="font-semibold">
           {t("content.failure.noRetry")}
         </p>
       ) : null}
       {failed ? (
-        <div>
+        <div className="pt-1">
           <Button onClick={onEdit}>{t("content.actions.editResend")}</Button>
         </div>
       ) : null}

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Approval } from "@/api/types";
-import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ChevronRightIcon } from "@/components/icons";
@@ -34,25 +33,28 @@ function Row({ approval, onOpen }: { approval: Approval; onOpen: () => void }) {
           timeZone: workspace.timezone,
         })
       : summary.when);
+
   return (
     <li>
       <button
         type="button"
         onClick={onOpen}
         data-approval-id={approval.id}
-        className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-left ring-1 ring-slate-200 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        className="flex min-h-14 w-full items-center justify-between gap-3.5 rounded-control border border-border bg-surface px-4 py-3.5 text-left shadow-xs transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         <span className="min-w-0">
-          <span className="block font-medium">{t(`approvals.action.${actionKey(approval.action)}`)}</span>
-          <span className="block text-sm break-words text-slate-600">
+          <span className="block font-heading font-semibold text-primary">
+            {t(`approvals.action.${actionKey(approval.action)}`)}
+          </span>
+          <span className="mt-0.5 block text-sm break-words text-secondary">
             {[name, detail].filter(Boolean).join(" → ")}
           </span>
-          <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-            <span>{t(`approvals.status.${approval.status}`)}</span>
+          <span className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span className="font-medium text-secondary">{t(`approvals.status.${approval.status}`)}</span>
             {approval.is_simulated ? <SimulatedBadge /> : null}
           </span>
         </span>
-        <ChevronRightIcon className="shrink-0 text-xl text-slate-400" />
+        <ChevronRightIcon className="shrink-0 text-xl text-muted" />
       </button>
     </li>
   );
@@ -71,10 +73,10 @@ export function ApprovalsList() {
   const open = all.find((a) => a.id === openId) ?? null;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-semibold">{t("approvals.title")}</h1>
-        <p className="mt-1 text-slate-600">{t("approvals.intro")}</p>
+        <h1 className="text-2xl font-heading font-semibold text-primary">{t("approvals.title")}</h1>
+        <p className="mt-1 text-secondary">{t("approvals.intro")}</p>
       </div>
 
       <div role="tablist" aria-label={t("approvals.tabs.label")} className="flex gap-2">
@@ -85,8 +87,10 @@ export function ApprovalsList() {
             type="button"
             aria-selected={tab === name}
             onClick={() => setTab(name)}
-            className={`min-h-11 rounded-lg px-4 font-medium focus-visible:outline-2 focus-visible:outline-indigo-600 ${
-              tab === name ? "bg-indigo-700 text-white" : "bg-white text-slate-800 ring-1 ring-slate-300"
+            className={`min-h-11 rounded-control px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-focus ${
+              tab === name
+                ? "bg-accent text-accent-contrast shadow-xs"
+                : "border border-border bg-surface text-secondary hover:bg-surface-subtle hover:text-primary"
             }`}
           >
             {t(`approvals.tabs.${name}`)}
@@ -95,7 +99,7 @@ export function ApprovalsList() {
       </div>
 
       {approvals.isError ? <ErrorMessage error={approvals.error} /> : null}
-      {approvals.isPending ? <p>{t("common.loading")}</p> : null}
+      {approvals.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
       {approvals.data && shown.length === 0 ? (
         <EmptyState
           title={tab === "pending" ? t("approvals.empty") : t("approvals.emptyHistory")}
@@ -103,13 +107,11 @@ export function ApprovalsList() {
         />
       ) : null}
       {shown.length > 0 ? (
-        <Card className="p-0">
-          <ul className="flex flex-col gap-3 p-3" aria-label={t("approvals.tabs.label")}>
-            {shown.map((approval) => (
-              <Row key={approval.id} approval={approval} onOpen={() => setOpenId(approval.id)} />
-            ))}
-          </ul>
-        </Card>
+        <ul className="flex flex-col gap-2.5" aria-label={t("approvals.tabs.label")}>
+          {shown.map((approval) => (
+            <Row key={approval.id} approval={approval} onOpen={() => setOpenId(approval.id)} />
+          ))}
+        </ul>
       ) : null}
       {open ? <ApprovalDetailSheet approval={open} onClose={() => setOpenId(null)} /> : null}
     </div>

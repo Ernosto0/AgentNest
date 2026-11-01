@@ -1,5 +1,3 @@
-import { AgentPage } from "@/features/agent/AgentPage";
-import { useAgentOverview } from "@/features/agent/hooks";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -8,6 +6,8 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
+import { AgentPage } from "@/features/agent/AgentPage";
+import { useAgentOverview } from "@/features/agent/hooks";
 import {
   useAutomation,
   useConnectMock,
@@ -26,9 +26,16 @@ export function AutomationSettings() {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const accounts = useSocialAccounts(workspace.id);
-  const account = accounts.data?.find(a => a.status !== "disconnected");
+  const account = accounts.data?.find((a) => a.status !== "disconnected");
   const agent = useAgentOverview(workspace.id, account?.id ?? "");
-  if (accounts.isPending || (account && agent.isPending)) return <p role="status">{t("common.loading")}</p>;
+
+  if (accounts.isPending || (account && agent.isPending)) {
+    return (
+      <p role="status" className="text-sm text-secondary">
+        {t("common.loading")}
+      </p>
+    );
+  }
   if (accounts.error) return <ErrorMessage error={accounts.error} />;
   if (account && agent.error) return <ErrorMessage error={agent.error} />;
   return agent.data?.controller_mode === "agent" ? <AgentPage /> : <LegacyAutomationSettings />;
@@ -49,36 +56,44 @@ function LegacyAutomationSettings() {
   const account = accounts.data?.find((a) => a.status !== "disconnected") ?? null;
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-2xl font-semibold">{t("automation.title")}</h1>
-      <Link className="text-indigo-700 underline" to={`/w/${workspace.id}/more/agent`}>{t("agent.title")}</Link>
+    <div className="flex min-w-0 flex-col gap-6 max-w-4xl">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-heading font-semibold text-primary">{t("automation.title")}</h1>
+        <Link className="text-sm font-medium text-action hover:text-action-hover underline" to={`/w/${workspace.id}/more/agent`}>
+          {t("agent.title")}
+        </Link>
+      </div>
 
-      <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">{t("automation.connection")}</h2>
+      <Card className="flex flex-col gap-4">
+        <div className="border-b border-border pb-3">
+          <h2 className="text-lg font-heading font-semibold text-primary">{t("automation.connection")}</h2>
+        </div>
         {account ? (
           <>
-            <p data-testid="account-status">
-              <span className="font-medium">@{account.username ?? account.id}</span> ·{" "}
-              {t(`automation.accountStatus.${account.status}`)}{" "}
+            <p data-testid="account-status" className="text-base text-primary">
+              <span className="font-semibold">@{account.username ?? account.id}</span> ·{" "}
+              <span className="text-secondary">{t(`automation.accountStatus.${account.status}`)}</span>{" "}
               {account.is_simulated ? <SimulatedBadge /> : null}
             </p>
-            <p className="text-sm text-slate-700" data-testid="account-capabilities">
+            <p className="text-sm text-secondary" data-testid="account-capabilities">
               {t("content.capability.title")}:{" "}
-              {Object.entries(account.capabilities)
-                .filter(([, granted]) => granted === true)
-                .map(([name]) => capabilityLabel(name, t))
-                .join(", ") || "–"}
+              <span className="font-medium text-primary">
+                {Object.entries(account.capabilities)
+                  .filter(([, granted]) => granted === true)
+                  .map(([name]) => capabilityLabel(name, t))
+                  .join(", ") || "–"}
+              </span>
             </p>
             <Link
               to={`/w/${workspace.id}/more/settings/connections`}
-              className="font-semibold text-indigo-700 underline underline-offset-2"
+              className="text-sm font-medium text-action hover:text-action-hover underline"
             >
               {t("automation.manageConnection")}
             </Link>
           </>
         ) : (
           <>
-            <p>{t("automation.notConnected")}</p>
+            <p className="text-sm text-secondary">{t("automation.notConnected")}</p>
             {owner ? (
               <div>
                 <Button disabled={connect.isPending} onClick={() => connect.mutate()}>
@@ -86,22 +101,27 @@ function LegacyAutomationSettings() {
                 </Button>
               </div>
             ) : (
-              <p className="text-sm text-slate-600">{t("automation.ownerOnly")}</p>
+              <p className="text-sm font-medium text-secondary">{t("automation.ownerOnly")}</p>
             )}
             {connect.error ? <ErrorMessage error={connect.error} /> : null}
           </>
         )}
       </Card>
 
-      <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">{t("automation.policies")}</h2>
-        <p className="text-sm text-slate-600">{t("automation.intro")}</p>
+      <Card className="flex flex-col gap-4">
+        <div className="border-b border-border pb-3">
+          <h2 className="text-lg font-heading font-semibold text-primary">{t("automation.policies")}</h2>
+        </div>
+        <p className="text-sm text-secondary">{t("automation.intro")}</p>
         {automation.isError ? <ErrorMessage error={automation.error} /> : null}
         {automation.data ? (
           <ul className="flex flex-col gap-3">
             {automation.data.items.map((item) => (
-              <li key={item.action_class} className="flex flex-wrap items-center justify-between gap-2">
-                <label htmlFor={`mode-${item.action_class}`} className="font-medium">
+              <li
+                key={item.action_class}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-border bg-surface-subtle p-3"
+              >
+                <label htmlFor={`mode-${item.action_class}`} className="text-sm font-medium text-primary">
                   {t(`automation.class.${item.action_class.replace(".", "_")}`)}
                 </label>
                 <select
@@ -111,7 +131,7 @@ function LegacyAutomationSettings() {
                   onChange={(event) =>
                     setEdits((current) => ({ ...current, [item.action_class]: event.target.value as Mode }))
                   }
-                  className="min-h-11 rounded-lg border border-slate-300 bg-white px-3"
+                  className="min-h-11 rounded-control border border-border bg-surface px-3 py-2 text-base text-primary shadow-xs focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-60"
                 >
                   {MODES.map((mode) => (
                     <option key={mode} value={mode} disabled={mode === "auto" && !automation.data?.auto_allowed}>
@@ -124,10 +144,10 @@ function LegacyAutomationSettings() {
           </ul>
         ) : null}
         {automation.data && !automation.data.auto_allowed ? (
-          <p className="text-sm text-amber-900">{t("automation.autoNeedsReady")}</p>
+          <p className="text-sm font-medium text-attention">{t("automation.autoNeedsReady")}</p>
         ) : null}
         {automation.data?.reviewed_at ? (
-          <p className="text-sm text-slate-600">{t("automation.reviewed")}</p>
+          <p className="text-sm font-medium text-secondary">{t("automation.reviewed")}</p>
         ) : null}
         {owner ? (
           <div>
@@ -147,13 +167,17 @@ function LegacyAutomationSettings() {
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-slate-600">{t("automation.ownerOnly")}</p>
+          <p className="text-sm font-medium text-secondary">{t("automation.ownerOnly")}</p>
         )}
-        {save.isSuccess ? <p role="status">{t("automation.saved")}</p> : null}
+        {save.isSuccess ? (
+          <p role="status" className="text-sm font-medium text-success">
+            {t("automation.saved")}
+          </p>
+        ) : null}
         {save.error ? <ErrorMessage error={save.error} /> : null}
         {owner && automation.data && !automation.data.reviewed_at ? (
-          <div className="flex flex-col gap-2 border-t border-slate-200 pt-3">
-            <p className="text-sm text-slate-600">{t("automation.reviewHint")}</p>
+          <div className="flex flex-col gap-2 border-t border-border pt-4">
+            <p className="text-sm text-secondary">{t("automation.reviewHint")}</p>
             <div>
               <Button variant="secondary" disabled={review.isPending} onClick={() => review.mutate()}>
                 {t("automation.review")}
