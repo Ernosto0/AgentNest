@@ -56,6 +56,7 @@ from app.comments.privacy import erase_account as erase_public_account
 from app.comments.privacy import redact_receipts
 from app.content.models import ContentItem
 from app.core.clock import Clock, FrozenClock
+from app.core.db import CATEGORY_C_TABLES, clear_tenant_context, set_tenant_context
 from app.identity.models import Workspace
 from app.inbox.models import Conversation, InboundEvent, Message, ReplyDraft
 from app.integrations.instagram.models import SocialAccount
@@ -199,6 +200,8 @@ class RoleVerificationReport(BaseModel):
     non_owned_tables: list[str]
     role_flags: dict[str, dict[str, bool]]
     append_only_grants: dict[str, dict[str, dict[str, bool]]]
+    category_c_rls_verified: bool = True
+    unprotected_tables: list[str] = Field(default_factory=list)
     passed: bool
     problems: list[str]
 
@@ -214,6 +217,8 @@ class RoleVerificationReport(BaseModel):
         data = self.model_dump(mode="json")
         data["verified"] = self.passed
         data["errors"] = list(self.problems)
+        data["category_c_rls_verified"] = self.category_c_rls_verified
+        data["unprotected_tables"] = list(self.unprotected_tables)
         return data
 
 
@@ -500,6 +505,34 @@ def verify_database_roles(
                     f"table {tbl!r} (found UPDATE={privs['UPDATE']}, DELETE={privs['DELETE']})."
                 )
 
+    rls_rows = session.execute(
+        text(
+            "SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity "
+            "FROM pg_class c "
+            "WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r'"
+        )
+    ).all()
+    rls_map = {row[0]: (bool(row[1]), bool(row[2])) for row in rls_rows}
+
+    policies_rows = session.execute(
+        text("SELECT tablename, policyname FROM pg_policies WHERE schemaname = 'public'")
+    ).all()
+    policies_by_table = {row[0]: row[1] for row in policies_rows}
+
+    unprotected_tables: list[str] = []
+    for c_tbl in CATEGORY_C_TABLES:
+        if c_tbl not in existing_tables:
+            continue
+        rel_sec, rel_force = rls_map.get(c_tbl, (False, False))
+        has_policy = policies_by_table.get(c_tbl) == "tenant_isolation_policy"
+        if not (rel_sec and rel_force and has_policy):
+            unprotected_tables.append(c_tbl)
+            problems.append(
+                f"Category C table {c_tbl!r} lacks forced RLS or tenant_isolation_policy "
+                f"(relrowsecurity={rel_sec}, relforcerowsecurity={rel_force}, "
+                f"has_policy={has_policy})."
+            )
+
     return RoleVerificationReport(
         migrator_role=mig,
         migrator_exists=migrator_exists,
@@ -508,6 +541,8 @@ def verify_database_roles(
         non_owned_tables=non_owned_tables,
         role_flags=role_flags,
         append_only_grants=append_only_grants,
+        category_c_rls_verified=len(unprotected_tables) == 0,
+        unprotected_tables=unprotected_tables,
         passed=len(problems) == 0,
         problems=problems,
     )
@@ -863,87 +898,98 @@ def post_restore_reconcile(
         clock = clock_or_now
     now = clock.now()
 
-    # 1. Pause all account_agents and revoke active agent_delegations (ADR-025 §3.3).
-    active_agents = list(
-        session.scalars(
-            select(AccountAgent)
-            .where(or_(AccountAgent.state == "active", AccountAgent.controller_mode == "agent"))
-            .with_for_update()
-        ).all()
-    )
+    # 1. Iterate workspaces under active tenant context so forced RLS is respected (ADR-025 §1.4).
+    workspace_ids = list(session.scalars(select(Workspace.id)).all())
+    ws_targets: list[uuid.UUID | None] = [*workspace_ids] if workspace_ids else [None]
+
     paused_agents_count = 0
-    for agent in active_agents:
-        if agent.state != "paused":
-            agent.state = "paused"
-            agent.controller_epoch += 1
-            agent.config_version += 1
-            agent.updated_at = now
-            paused_agents_count += 1
-
-    revoked_res = session.execute(
-        update(AgentDelegation).where(AgentDelegation.revoked_at.is_(None)).values(revoked_at=now)
-    )
-    revoked_delegations_count = _rowcount(revoked_res)
-
-    # 2. Transition in_progress operations -> outcome_unknown and sending drafts -> outcome_unknown.
-    in_progress_ops = list(
-        session.scalars(
-            select(Operation).where(Operation.status == "in_progress").with_for_update()
-        ).all()
-    )
+    revoked_delegations_count = 0
     fenced_ops_count = 0
     enqueued_reconcile_count = 0
-    for op in in_progress_ops:
-        op.status = "outcome_unknown"
-        op.last_error_code = RESTORED_OUTCOME_UNKNOWN_CODE
-        op.updated_at = now
-        fenced_ops_count += 1
-        if op.operation_type == "send_reply":
-            enqueue(
-                session,
-                "reconcile_send",
-                ReconcileSendPayload(operation_id=op.id, round=1),
-                workspace_id=op.workspace_id,
-                correlation_id=op.correlation_id,
-                dedup_key=f"reconcile_send:{op.id}:1",
-                clock=clock,
-            )
-            enqueued_reconcile_count += 1
-        elif op.operation_type == "publish_content":
-            enqueue(
-                session,
-                "reconcile_publish",
-                ReconcilePublishPayload(operation_id=op.id),
-                workspace_id=op.workspace_id,
-                correlation_id=op.correlation_id,
-                dedup_key=f"reconcile_publish:{op.id}",
-                clock=clock,
-            )
-            enqueued_reconcile_count += 1
-
-    sending_drafts = list(
-        session.scalars(
-            select(ReplyDraft).where(ReplyDraft.status == "sending").with_for_update()
-        ).all()
-    )
     fenced_drafts_count = 0
-    for draft in sending_drafts:
-        draft.status = "outcome_unknown"
-        draft.updated_at = now
-        fenced_drafts_count += 1
-        session.execute(
-            update(Conversation)
-            .where(
-                Conversation.workspace_id == draft.workspace_id,
-                Conversation.id == draft.conversation_id,
-            )
-            .values(attention="none", updated_at=now)
-        )
+    held_items_count = 0
+    fenced_actions_count = 0
+    cancelled_sessions_count = 0
+    abandoned_steps_count = 0
+    cancelled_threads_count = 0
 
-    # Hold publishing or overdue scheduled content items (security-and-privacy.md §9).
-    held_items_res = session.execute(
-        update(ContentItem)
-        .where(
+    for ws_id in ws_targets:
+        if ws_id is not None:
+            set_tenant_context(session, ws_id)
+
+        # Pause active account_agents and revoke active agent_delegations (ADR-025 §3.3).
+        agent_stmt = select(AccountAgent).where(
+            or_(AccountAgent.state == "active", AccountAgent.controller_mode == "agent")
+        )
+        if ws_id is not None:
+            agent_stmt = agent_stmt.where(AccountAgent.workspace_id == ws_id)
+        active_agents = list(session.scalars(agent_stmt.with_for_update()).all())
+        for agent in active_agents:
+            if agent.state != "paused":
+                agent.state = "paused"
+                agent.controller_epoch += 1
+                agent.config_version += 1
+                agent.updated_at = now
+                paused_agents_count += 1
+
+        del_stmt = update(AgentDelegation).where(AgentDelegation.revoked_at.is_(None))
+        if ws_id is not None:
+            del_stmt = del_stmt.where(AgentDelegation.workspace_id == ws_id)
+        revoked_res = session.execute(del_stmt.values(revoked_at=now))
+        revoked_delegations_count += _rowcount(revoked_res)
+
+        # 2. Transition in_progress operations and sending drafts to outcome_unknown.
+        op_stmt = select(Operation).where(Operation.status == "in_progress")
+        if ws_id is not None:
+            op_stmt = op_stmt.where(Operation.workspace_id == ws_id)
+        in_progress_ops = list(session.scalars(op_stmt.with_for_update()).all())
+        for op in in_progress_ops:
+            op.status = "outcome_unknown"
+            op.last_error_code = RESTORED_OUTCOME_UNKNOWN_CODE
+            op.updated_at = now
+            fenced_ops_count += 1
+            if op.operation_type == "send_reply":
+                enqueue(
+                    session,
+                    "reconcile_send",
+                    ReconcileSendPayload(operation_id=op.id, round=1),
+                    workspace_id=op.workspace_id,
+                    correlation_id=op.correlation_id,
+                    dedup_key=f"reconcile_send:{op.id}:1",
+                    clock=clock,
+                )
+                enqueued_reconcile_count += 1
+            elif op.operation_type == "publish_content":
+                enqueue(
+                    session,
+                    "reconcile_publish",
+                    ReconcilePublishPayload(operation_id=op.id),
+                    workspace_id=op.workspace_id,
+                    correlation_id=op.correlation_id,
+                    dedup_key=f"reconcile_publish:{op.id}",
+                    clock=clock,
+                )
+                enqueued_reconcile_count += 1
+
+        draft_stmt = select(ReplyDraft).where(ReplyDraft.status == "sending")
+        if ws_id is not None:
+            draft_stmt = draft_stmt.where(ReplyDraft.workspace_id == ws_id)
+        sending_drafts = list(session.scalars(draft_stmt.with_for_update()).all())
+        for draft in sending_drafts:
+            draft.status = "outcome_unknown"
+            draft.updated_at = now
+            fenced_drafts_count += 1
+            session.execute(
+                update(Conversation)
+                .where(
+                    Conversation.workspace_id == draft.workspace_id,
+                    Conversation.id == draft.conversation_id,
+                )
+                .values(attention="none", updated_at=now)
+            )
+
+        # Hold publishing or overdue scheduled content items (security-and-privacy.md §9).
+        content_stmt = update(ContentItem).where(
             or_(
                 ContentItem.status == "publishing",
                 (
@@ -953,69 +999,88 @@ def post_restore_reconcile(
                 ),
             )
         )
-        .values(
-            status="on_hold",
-            hold_reason=RESTORED_HOLD_REASON,
-            updated_at=now,
+        if ws_id is not None:
+            content_stmt = content_stmt.where(ContentItem.workspace_id == ws_id)
+        held_items_res = session.execute(
+            content_stmt.values(
+                status="on_hold",
+                hold_reason=RESTORED_HOLD_REASON,
+                updated_at=now,
+            )
         )
-    )
-    held_items_count = _rowcount(held_items_res)
+        held_items_count += _rowcount(held_items_res)
 
-    # Fence in_progress / pending agent_actions.
-    fenced_in_progress_actions = session.execute(
-        update(AgentAction)
-        .where(AgentAction.status == "in_progress")
-        .values(
-            status="outcome_unknown",
-            outcome_code=RESTORED_OUTCOME_UNKNOWN_CODE,
-            updated_at=now,
+        # Fence in_progress / pending agent_actions.
+        act_in_progress = update(AgentAction).where(AgentAction.status == "in_progress")
+        if ws_id is not None:
+            act_in_progress = act_in_progress.where(AgentAction.workspace_id == ws_id)
+        fenced_in_progress_actions = session.execute(
+            act_in_progress.values(
+                status="outcome_unknown",
+                outcome_code=RESTORED_OUTCOME_UNKNOWN_CODE,
+                updated_at=now,
+            )
         )
-    )
-    fenced_pending_actions = session.execute(
-        update(AgentAction)
-        .where(AgentAction.status.in_(("proposed", "waiting_approval", "authorized", "queued")))
-        .values(
-            status="cancelled",
-            outcome_code=RESTORED_HOLD_REASON,
-            updated_at=now,
-        )
-    )
-    fenced_actions_count = _rowcount(fenced_in_progress_actions) + _rowcount(fenced_pending_actions)
 
-    # 3. Cancel active agent_sessions / agent_threads, abandon steps, and fence/release jobs.
-    cancelled_sessions_res = session.execute(
-        update(AgentSession)
-        .where(AgentSession.status.in_(ACTIVE_RUN_STATES))
-        .values(
-            status="cancelled",
-            outcome_code=RESTORED_HOLD_REASON,
-            completed_at=now,
-            updated_at=now,
+        act_pending = update(AgentAction).where(
+            AgentAction.status.in_(("proposed", "waiting_approval", "authorized", "queued"))
         )
-    )
-    cancelled_sessions_count = _rowcount(cancelled_sessions_res)
+        if ws_id is not None:
+            act_pending = act_pending.where(AgentAction.workspace_id == ws_id)
+        fenced_pending_actions = session.execute(
+            act_pending.values(
+                status="cancelled",
+                outcome_code=RESTORED_HOLD_REASON,
+                updated_at=now,
+            )
+        )
+        fenced_actions_count += _rowcount(fenced_in_progress_actions) + _rowcount(
+            fenced_pending_actions
+        )
 
-    abandoned_steps_res = session.execute(
-        update(AgentStep)
-        .where(AgentStep.status.in_(("claimed", "model_pending", "model_done", "dispatched")))
-        .values(
-            status="abandoned",
-            lease_expires_at=None,
-            updated_at=now,
+        # 3. Cancel active agent_sessions / agent_threads, abandon steps.
+        sess_stmt = update(AgentSession).where(AgentSession.status.in_(ACTIVE_RUN_STATES))
+        if ws_id is not None:
+            sess_stmt = sess_stmt.where(AgentSession.workspace_id == ws_id)
+        cancelled_sessions_res = session.execute(
+            sess_stmt.values(
+                status="cancelled",
+                outcome_code=RESTORED_HOLD_REASON,
+                completed_at=now,
+                updated_at=now,
+            )
         )
-    )
-    abandoned_steps_count = _rowcount(abandoned_steps_res)
+        cancelled_sessions_count += _rowcount(cancelled_sessions_res)
 
-    cancelled_threads_res = session.execute(
-        update(AgentThread)
-        .where(AgentThread.state.not_in(("completed", "cancelled", "failed")))
-        .values(
-            state="cancelled",
-            handling_mode="human",
-            updated_at=now,
+        step_stmt = update(AgentStep).where(
+            AgentStep.status.in_(("claimed", "model_pending", "model_done", "dispatched"))
         )
-    )
-    cancelled_threads_count = _rowcount(cancelled_threads_res)
+        if ws_id is not None:
+            step_stmt = step_stmt.where(AgentStep.workspace_id == ws_id)
+        abandoned_steps_res = session.execute(
+            step_stmt.values(
+                status="abandoned",
+                lease_expires_at=None,
+                updated_at=now,
+            )
+        )
+        abandoned_steps_count += _rowcount(abandoned_steps_res)
+
+        thread_stmt = update(AgentThread).where(
+            AgentThread.state.not_in(("completed", "cancelled", "failed"))
+        )
+        if ws_id is not None:
+            thread_stmt = thread_stmt.where(AgentThread.workspace_id == ws_id)
+        cancelled_threads_res = session.execute(
+            thread_stmt.values(
+                state="cancelled",
+                handling_mode="human",
+                updated_at=now,
+            )
+        )
+        cancelled_threads_count += _rowcount(cancelled_threads_res)
+
+    clear_tenant_context(session)
 
     cancelled_jobs_res = session.execute(
         update(Job)
@@ -1063,16 +1128,19 @@ def post_restore_reconcile(
 
     reapplied_customers = 0
     for cust_ts in all_customers:
+        set_tenant_context(session, cust_ts.workspace_id)
         reapplied_customers += _apply_customer_tombstone(session, clock, cust_ts)
 
     reapplied_conversations = 0
     for conv_ts in all_conversations:
+        set_tenant_context(session, conv_ts.workspace_id)
         reapplied_conversations += _delete_conversations_and_messages(
             session, clock, conv_ts.workspace_id, [conv_ts.conversation_id]
         )
 
     reapplied_accounts = 0
     for acc_ts in all_accounts:
+        set_tenant_context(session, acc_ts.workspace_id)
         acc = session.scalar(
             select(SocialAccount)
             .where(
@@ -1094,6 +1162,7 @@ def post_restore_reconcile(
 
     reapplied_workspaces = 0
     for ws_id in all_workspaces:
+        set_tenant_context(session, ws_id)
         ws = session.get(Workspace, ws_id)
         if ws is not None:
             # Disconnect and wipe all accounts in the workspace first, then delete the workspace.
@@ -1108,6 +1177,8 @@ def post_restore_reconcile(
                 conversation_deletion.wipe(session, clock, ws_id, acc.id)
             session.delete(ws)
             reapplied_workspaces += 1
+
+    clear_tenant_context(session)
 
     report = PostRestoreReconcileReport(
         reconciled_at=now,

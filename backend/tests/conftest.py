@@ -64,6 +64,7 @@ def engine(settings: Settings) -> Iterator[Engine]:
 def _truncate_all(engine: Engine) -> None:
     tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)
     with engine.begin() as conn:
+        conn.execute(text("RESET ROLE"))
         conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
 
 

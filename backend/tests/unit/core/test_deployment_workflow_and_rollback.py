@@ -118,9 +118,9 @@ def test_cli_migration_status_head_only_and_check_config(
     rc = cli.main(["migration-status", "--head-only"])
     assert rc == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["head_revision"] == migration_head() == "0031"
+    assert out["head_revision"] == migration_head() == "0032"
     assert out["known_revisions"] == list(migration_revisions())
-    assert len(out["known_revisions"]) >= 31
+    assert len(out["known_revisions"]) >= 32
 
     # check-config --production --require-separated-migration-credentials
     monkeypatch.setenv("APP_ENV", "production")
