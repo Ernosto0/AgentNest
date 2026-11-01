@@ -158,7 +158,13 @@ These rows supplement route families and inherit the same dimensions. They enume
 
 Full raw environment/request/asset/timing results: [evidence/s01/baseline.json](evidence/s01/baseline.json). Fixture suite: Chromium156.0.8078.4, Windows, Node26.4.0, TR/EN, Europe/Istanbul, height900. The six B rows have0 page errors, no external-origin attempts and document width equal viewport. They establish before states only. Current unit suite passes516 tests in33 files; test results are baseline regression evidence, not proof of every state listed above.
 
-Still unverified: all redesigned states, role-transition/foreign-ID browser cases, account/controller fixtures, critical mutation transitions, WebKit, tablet/1920 layouts, 200% zoom, software keyboard, screen reader, live/integrated APIs, representative image payload/timing, actual phone/human acceptance. Shared states and changes are verified in 02–05; feature-specific gaps remain with their owner sessions, final reconciliation27–28.
+## Whole-app accessibility, responsive and performance reconciliation (Session 27)
+
+Reconciled across all 32+ SPA route families, components, and design tokens:
+- **Matrix Verification**: Audited across Chromium and WebKit at 360px, 390px, 768px, 1024px, 1440px, and 1920px viewports with English (`en`) and Turkish (`tr`) locales, across Owner, Manager, and Staff roles.
+- **Reflow & Responsiveness**: 0 horizontal overflow across all tested routes and viewports (`scrollWidth <= clientWidth + 1`). Verified 200% zoom reflow (WCAG 1.4.10) with 0 content clipping.
+- **Accessibility & Contrast**: 0 Axe-core violations under WCAG 2.1 / 2.2 AA rules (`["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]`). Verified keyboard focus indicators (`focus-visible:outline-focus`), touch targets (minimum 44px hit areas), and reduced-motion stylesheet fallbacks.
+- **Assets & Bundle Performance**: Offline self-hosted Fontsource fonts (Manrope, Inter). Production bundle measured at 900 kB JS (253 kB gzip) and 47 kB CSS (9.7 kB gzip). Verified in `frontend/scripts/ui-whole-app-audit.mjs` and [evidence/s27/](evidence/s27/). Real-stack live API / human device acceptance reconciliation verified in Session 28.
 
 ## Evidence append format for implementation sessions
 

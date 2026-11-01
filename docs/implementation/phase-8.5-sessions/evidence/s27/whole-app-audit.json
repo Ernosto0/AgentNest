@@ -1,0 +1,107 @@
+{
+  "timestamp": "2026-11-01T16:45:11.595Z",
+  "auditResults": [
+    {
+      "engine": "chromium",
+      "scenario": "tr-phone-360",
+      "role": "staff",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "chromium",
+      "scenario": "en-phone-390",
+      "role": "manager",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "chromium",
+      "scenario": "tr-tablet-768",
+      "role": "owner",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "chromium",
+      "scenario": "en-tablet-1024",
+      "role": "staff",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "chromium",
+      "scenario": "tr-desktop-1440",
+      "role": "owner",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "chromium",
+      "scenario": "en-desktop-1920",
+      "role": "owner",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "webkit",
+      "scenario": "tr-phone-360",
+      "role": "staff",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "webkit",
+      "scenario": "en-phone-390",
+      "role": "manager",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "webkit",
+      "scenario": "tr-tablet-768",
+      "role": "owner",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "webkit",
+      "scenario": "en-tablet-1024",
+      "role": "staff",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "webkit",
+      "scenario": "tr-desktop-1440",
+      "role": "owner",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    },
+    {
+      "engine": "webkit",
+      "scenario": "en-desktop-1920",
+      "role": "owner",
+      "passed": true,
+      "routesTested": 13,
+      "pageErrors": 0
+    }
+  ],
+  "bundleMetrics": {
+    "totalJsBytes": 900043,
+    "totalJsGzip": 253837,
+    "totalCssBytes": 47277,
+    "totalCssGzip": 9711
+  }
+}
