@@ -310,5 +310,12 @@
   "report.summary.messages.agent_approved_v1": "Assistant effects verified after human approval: {count}",
   "report.summary.messages.agent_owner_questions_v1": "Business information requests created: {count}",
   "report.summary.messages.agent_unknown_now_v1": "Assistant effects with unresolved outcomes: {count}",
-  "report.item.owner_question": "Business information request"
-}
+  "report.item.owner_question": "Business information request",
+  "errors.RATE_LIMITED.what": "Too many failed attempts. Please try again later.",
+  "errors.RATE_LIMITED.next": "Wait for the lockout period to end before attempting again.",
+  "activity.auth.login_throttled": "Sign-in attempts throttled",
+  "activity.auth.password_change_failed": "Password change failed",
+  "activity.auth.password_changed": "Password changed",
+  "activity.auth.session_revoked": "Session revoked",
+  "activity.auth.sessions_revoked_all": "All other sessions revoked"
+}

@@ -36,7 +36,10 @@ from app.identity.schemas import (
     MeResponse,
     MeUpdate,
     Page,
+    PasswordChangeRequest,
     PendingInviteOut,
+    RevokeAllSessionsRequest,
+    SessionOut,
     UserOut,
     WorkspaceCreate,
     WorkspaceOut,
@@ -44,6 +47,7 @@ from app.identity.schemas import (
     WorkspaceSettings,
 )
 from app.identity.service import AuthenticatedSession
+from app.identity.throttling import extract_client_ip
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 workspaces_router = APIRouter(prefix="/workspaces", tags=["workspaces"])
@@ -101,6 +105,7 @@ def login(
     settings: Settings = Depends(get_app_settings),
     clock: Clock = Depends(get_clock),
 ) -> None:
+    client_ip = extract_client_ip(request, settings)
     result = service.login(
         db,
         clock,
@@ -109,6 +114,7 @@ def login(
         password=body.password,
         user_agent=request.headers.get("user-agent"),
         previous_token=request.cookies.get(SESSION_COOKIE),
+        ip_address=client_ip,
     )
     if result is None:
         raise AppError("INVALID_CREDENTIALS")  # generic: never says which part was wrong
@@ -142,6 +148,64 @@ def patch_me(
 ) -> MeResponse:
     service.update_me(db, auth.user, display_name=body.display_name, ui_locale=body.ui_locale)
     return _me(db, auth)
+
+
+@auth_router.get("/sessions", response_model=list[SessionOut])
+def list_sessions(
+    auth: AuthenticatedSession = Depends(current_auth),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> list[SessionOut]:
+    return service.list_user_sessions(db, clock, auth.user.id, auth.session.id)
+
+
+@auth_router.delete("/sessions/{session_id}", status_code=204)
+def revoke_session(
+    session_id: uuid.UUID,
+    response: Response,
+    auth: AuthenticatedSession = Depends(current_auth),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+    clock: Clock = Depends(get_clock),
+) -> None:
+    revoked = service.revoke_user_session(db, clock, auth.user.id, session_id)
+    if not revoked:
+        raise AppError("NOT_FOUND")
+    if session_id == auth.session.id:
+        clear_session_cookie(response, settings)
+
+
+@auth_router.post("/sessions/revoke-all", status_code=204)
+def revoke_all_sessions(
+    response: Response,
+    body: RevokeAllSessionsRequest = RevokeAllSessionsRequest(),
+    auth: AuthenticatedSession = Depends(current_auth),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+    clock: Clock = Depends(get_clock),
+) -> None:
+    service.revoke_all_user_sessions(
+        db, clock, auth.user.id, auth.session.id, include_current=body.include_current
+    )
+    if body.include_current:
+        clear_session_cookie(response, settings)
+
+
+@auth_router.post("/password", status_code=204)
+def change_password(
+    body: PasswordChangeRequest,
+    auth: AuthenticatedSession = Depends(current_auth),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> None:
+    service.change_password(
+        db,
+        clock,
+        auth.user,
+        current_password=body.current_password,
+        new_password=body.new_password,
+        current_session_id=auth.session.id,
+    )
 
 
 # --- /workspaces ----------------------------------------------------------------------------

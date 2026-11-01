@@ -16,6 +16,7 @@ class ErrorSpec:
 
 
 ERROR_CATALOG: dict[str, ErrorSpec] = {
+    "RATE_LIMITED": ErrorSpec(429, retryable=True),
     "OWNER_QUESTION_CLOSED": ErrorSpec(409),
     "AUTH_REQUIRED": ErrorSpec(401),
     "INVALID_CREDENTIALS": ErrorSpec(401),
@@ -69,12 +70,19 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
 class AppError(Exception):
     """A domain/API error identified by a catalog code plus machine-readable params."""
 
-    def __init__(self, code: str, http_status: int | None = None, **params: Any) -> None:
+    def __init__(
+        self,
+        code: str,
+        http_status: int | None = None,
+        headers: dict[str, str] | None = None,
+        **params: Any,
+    ) -> None:
         if code not in ERROR_CATALOG:
             raise ValueError(f"Unknown error code: {code}")
         super().__init__(code)
         self.code = code
         self.http_status = http_status or ERROR_CATALOG[code].http_status
+        self.headers = headers
         self.params = params
 
 

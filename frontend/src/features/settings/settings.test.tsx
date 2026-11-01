@@ -27,6 +27,18 @@ function routes(extra: Record<string, (request: RecordedRequest) => Response> = 
         mock_requires_demo_workspace: false,
       }),
     "GET /api/v1/auth/me": () => json(me),
+    "GET /api/v1/auth/sessions": () =>
+      json([
+        {
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          created_at: "2026-10-30T10:00:00Z",
+          last_seen_at: "2026-10-30T10:00:00Z",
+          expires_at: "2026-11-13T10:00:00Z",
+          user_agent: "Mozilla/5.0",
+          ip_address: "127.0.0.1",
+          is_current: true,
+        },
+      ]),
     [`GET ${base}`]: () => json(workspace(WS_GOLKENT)),
     [`GET ${base}/readiness`]: () => json(READINESS),
     ...extra,

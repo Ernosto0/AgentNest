@@ -21,6 +21,7 @@ _STATUS_TO_CODE = {
     404: "NOT_FOUND",
     409: "CONFLICT_STATE",
     422: "VALIDATION_FAILED",
+    429: "RATE_LIMITED",
 }
 
 # Pydantic error types -> stable machine codes for ``errors[].code``.
@@ -103,8 +104,16 @@ async def _app_error_handler(request: Request, exc: Exception) -> JSONResponse:
         if error.code in ("VALIDATION_FAILED", "CONTENT_VALIDATION_FAILED")
         else None
     )
+    headers = dict(error.headers or {})
+    if "retry_after" in params and "Retry-After" not in headers:
+        headers["Retry-After"] = str(params["retry_after"])
     return problem_response(
-        request, code=error.code, status=error.http_status or 500, params=params, errors=errors
+        request,
+        code=error.code,
+        status=error.http_status or 500,
+        params=params,
+        errors=errors,
+        headers=headers or None,
     )
 
 

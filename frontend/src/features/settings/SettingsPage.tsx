@@ -6,6 +6,7 @@ import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ChevronRightIcon } from "@/components/icons";
 import { useLogout, useMe, useSaveLocale } from "@/features/auth/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { AccountSecurity } from "./AccountSecurity";
 
 const LINK_ROW =
   "flex min-h-11 items-center justify-between rounded-control px-3 py-2 text-sm font-medium text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-focus transition-colors";
@@ -116,20 +117,23 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* Security & Privacy Surfaces */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-5 shadow-xs">
-          <h2 className="text-sm font-heading font-semibold text-primary">
+      {/* Security & Sessions */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-heading font-semibold text-primary">
             {t("settings.security")}
           </h2>
-          <p className="text-xs text-secondary leading-relaxed">{t("settings.securityDesc")}</p>
+          <p className="mt-0.5 text-xs text-secondary leading-relaxed">{t("settings.securityDesc")}</p>
         </div>
-        <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-5 shadow-xs">
-          <h2 className="text-sm font-heading font-semibold text-primary">
-            {t("settings.privacy")}
-          </h2>
-          <p className="text-xs text-secondary leading-relaxed">{t("settings.privacyDesc")}</p>
-        </div>
+        <AccountSecurity />
+      </div>
+
+      {/* Privacy Surface */}
+      <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-5 shadow-xs">
+        <h2 className="text-sm font-heading font-semibold text-primary">
+          {t("settings.privacy")}
+        </h2>
+        <p className="text-xs text-secondary leading-relaxed">{t("settings.privacyDesc")}</p>
       </div>
     </div>
   );

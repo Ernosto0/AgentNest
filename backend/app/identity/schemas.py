@@ -69,6 +69,27 @@ class LoginRequest(StrictModel):
     password: str = Field(min_length=1, max_length=1000)
 
 
+class SessionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    created_at: datetime
+    last_seen_at: datetime
+    expires_at: datetime
+    user_agent: str | None
+    ip_address: str | None
+    is_current: bool
+
+
+class RevokeAllSessionsRequest(StrictModel):
+    include_current: bool = False
+
+
+class PasswordChangeRequest(StrictModel):
+    current_password: str = Field(min_length=1, max_length=1000)
+    new_password: str = Field(min_length=12, max_length=1000)
+
+
 class UserOut(BaseModel):
     id: uuid.UUID
     email: str

@@ -33,6 +33,11 @@ _COMMON_PASSWORDS = frozenset(
         "changeme123",
         "parola1234",
         "sifre12345",
+        "password1234",
+        "password12345",
+        "123456789012",
+        "qwertyuiopas",
+        "parola123456",
     }
 )
 

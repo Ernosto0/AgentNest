@@ -310,5 +310,12 @@
   "report.summary.messages.agent_approved_v1": "İnsan onayından sonra doğrulanan asistan işlemleri: {count}",
   "report.summary.messages.agent_owner_questions_v1": "İşletmeye sorulan bilgi istekleri: {count}",
   "report.summary.messages.agent_unknown_now_v1": "Sonucu belirsiz asistan işlemleri: {count}",
-  "report.item.owner_question": "İşletme bilgi isteği"
-}
+  "report.item.owner_question": "İşletme bilgi isteği",
+  "errors.RATE_LIMITED.what": "Çok fazla başarısız deneme yapıldı. Lütfen daha sonra tekrar deneyin.",
+  "errors.RATE_LIMITED.next": "Yeniden denemeden önce kilitleme süresinin bitmesini bekleyin.",
+  "activity.auth.login_throttled": "Giriş denemeleri sınırlandırıldı",
+  "activity.auth.password_change_failed": "Şifre değiştirme başarısız",
+  "activity.auth.password_changed": "Şifre değiştirildi",
+  "activity.auth.session_revoked": "Oturum kapatıldı",
+  "activity.auth.sessions_revoked_all": "Diğer tüm oturumlar kapatıldı"
+}

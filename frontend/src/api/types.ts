@@ -11,6 +11,7 @@ export type Member = Schemas["MemberOut"];
 export type Invite = Schemas["InviteOut"];
 export type PendingInvite = Schemas["PendingInviteOut"];
 export type InviteAcceptOut = Schemas["InviteAcceptOut"];
+export type AuthSession = Schemas["SessionOut"];
 
 export type Fact = Schemas["FactOut"];
 export type FactCandidate = Schemas["CandidateOut"];

@@ -2,6 +2,7 @@
 
 import hashlib
 import re
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -10,6 +11,7 @@ from zoneinfo import available_timezones
 
 from babel import Locale
 from babel.numbers import get_territory_currencies
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -28,9 +30,15 @@ from app.core.security import (
 from app.identity import repository as repo
 from app.identity.models import AuthSession, User, Workspace, WorkspaceMember
 from app.identity.schemas import (
+    SessionOut,
     WorkspaceCreate,
     WorkspacePatch,
     WorkspaceSettings,
+)
+from app.identity.throttling import (
+    check_login_throttle,
+    record_login_failure,
+    record_login_success,
 )
 
 # A request extends the sliding session (and the cookie) at most this often.
@@ -109,18 +117,23 @@ def login(
     password: str,
     user_agent: str | None,
     previous_token: str | None,
+    ip_address: str | None = None,
 ) -> LoginResult | None:
     """Verify credentials and open a new session. Returns ``None`` on any failure.
 
     The failure audit entry is committed here, so the caller can simply raise the generic
     ``INVALID_CREDENTIALS`` (no distinction between unknown user, wrong password, inactive).
     """
+    effective_ip = ip_address or "127.0.0.1"
+    check_login_throttle(session, clock, email=email, ip_address=effective_ip)
+
     now = clock.now()
     normalised = normalize_email(email)
     user = repo.get_user_by_email(session, normalised)
     password_ok = verify_password(user.password_hash if user else None, password)
 
     if user is None or not password_ok or not user.is_active:
+        record_login_failure(session, clock, email=normalised, ip_address=effective_ip)
         reason = (
             "unknown_user" if user is None else "bad_password" if not password_ok else "inactive"
         )
@@ -135,6 +148,8 @@ def login(
         )
         session.commit()
         return None
+
+    record_login_success(session, email=normalised, ip_address=effective_ip)
 
     if password_needs_rehash(user.password_hash):
         user.password_hash = hash_password(password)
@@ -153,6 +168,7 @@ def login(
             expires_at=expires_at,
             last_seen_at=now,
             user_agent=(user_agent or "")[:USER_AGENT_MAX] or None,
+            ip_address=ip_address,
         ),
     )
     user.last_login_at = now
@@ -212,6 +228,169 @@ def update_me(
         user.ui_locale = ui_locale
     session.commit()
     return user
+
+
+def list_user_sessions(
+    session: Session,
+    clock: Clock,
+    user_id: uuid.UUID,
+    current_session_id: uuid.UUID,
+) -> list[SessionOut]:
+    now = clock.now()
+    rows = list(
+        session.scalars(
+            select(AuthSession)
+            .where(
+                AuthSession.user_id == user_id,
+                AuthSession.revoked_at.is_(None),
+                AuthSession.expires_at > now,
+            )
+            .order_by(AuthSession.last_seen_at.desc(), AuthSession.created_at.desc())
+        )
+    )
+    return [
+        SessionOut(
+            id=row.id,
+            created_at=row.created_at,
+            last_seen_at=row.last_seen_at,
+            expires_at=row.expires_at,
+            user_agent=row.user_agent,
+            ip_address=row.ip_address,
+            is_current=(row.id == current_session_id),
+        )
+        for row in rows
+    ]
+
+
+def revoke_user_session(
+    session: Session,
+    clock: Clock,
+    user_id: uuid.UUID,
+    session_id: uuid.UUID,
+) -> bool:
+    """Revoke a single session owned by user_id. Returns False if not found."""
+    row = session.scalars(
+        select(AuthSession).where(
+            AuthSession.id == session_id,
+            AuthSession.user_id == user_id,
+        )
+    ).first()
+    if row is None:
+        return False
+    if row.revoked_at is None:
+        row.revoked_at = clock.now()
+        audit.record(
+            session,
+            None,
+            "auth.session_revoked",
+            "user",
+            user_id,
+            {"session_id": str(session_id)},
+            actor=ActorRef.user(user_id),
+            clock=clock,
+        )
+        session.commit()
+    return True
+
+
+def revoke_all_user_sessions(
+    session: Session,
+    clock: Clock,
+    user_id: uuid.UUID,
+    current_session_id: uuid.UUID,
+    *,
+    include_current: bool = False,
+) -> int:
+    """Revoke active sessions for user_id. Returns number of sessions revoked."""
+    now = clock.now()
+    stmt = update(AuthSession).where(
+        AuthSession.user_id == user_id,
+        AuthSession.revoked_at.is_(None),
+        AuthSession.expires_at > now,
+    )
+    if not include_current:
+        stmt = stmt.where(AuthSession.id != current_session_id)
+    stmt = stmt.values(revoked_at=now)
+    result = session.execute(stmt)
+    count = int(getattr(result, "rowcount", 0))
+    audit.record(
+        session,
+        None,
+        "auth.sessions_revoked_all",
+        "user",
+        user_id,
+        {"include_current": include_current, "revoked_count": count},
+        actor=ActorRef.user(user_id),
+        clock=clock,
+    )
+    session.commit()
+    return count
+
+
+def change_password(
+    session: Session,
+    clock: Clock,
+    user: User,
+    *,
+    current_password: str,
+    new_password: str,
+    current_session_id: uuid.UUID,
+) -> None:
+    """Verify current password, validate new password (>=12 chars), update hash,
+    and revoke other sessions.
+    """
+    if not verify_password(user.password_hash, current_password):
+        audit.record(
+            session,
+            None,
+            "auth.password_change_failed",
+            "user",
+            user.id,
+            {"reason": "bad_current_password"},
+            actor=ActorRef.user(user.id),
+            clock=clock,
+        )
+        session.commit()
+        raise AppError("INVALID_CREDENTIALS")
+
+    if len(new_password) < 12:
+        raise AppError(
+            "VALIDATION_FAILED",
+            errors=[{"field": "new_password", "code": "too_short", "params": {"min_length": 12}}],
+        )
+
+    policy_errs = password_policy_problems(new_password)
+    if policy_errs:
+        raise AppError(
+            "VALIDATION_FAILED",
+            errors=[{"field": "new_password", "code": err, "params": {}} for err in policy_errs],
+        )
+
+    now = clock.now()
+    user.password_hash = hash_password(new_password)
+
+    # Invalidate all other active sessions for that user in the same transaction (ADR-025 §2.2)
+    session.execute(
+        update(AuthSession)
+        .where(
+            AuthSession.user_id == user.id,
+            AuthSession.id != current_session_id,
+            AuthSession.revoked_at.is_(None),
+            AuthSession.expires_at > now,
+        )
+        .values(revoked_at=now)
+    )
+
+    audit.record(
+        session,
+        None,
+        "auth.password_changed",
+        "user",
+        user.id,
+        actor=ActorRef.user(user.id),
+        clock=clock,
+    )
+    session.commit()
 
 
 # --- workspaces -------------------------------------------------------------------------------

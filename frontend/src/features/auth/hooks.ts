@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, setCsrfToken, unwrap } from "@/api/client";
 import { AppError } from "@/api/errors";
-import type { Me, Meta } from "@/api/types";
+import type { AuthSession, Me, Meta } from "@/api/types";
 import type { Language } from "@/i18n";
 
 export const meKey = ["me"] as const;
 export const metaKey = ["meta"] as const;
+export const sessionsKey = ["auth", "sessions"] as const;
 
 /** The signed-in user, or `null` when there is no valid session (never throws for 401). */
 async function fetchMe(): Promise<Me | null> {
@@ -62,5 +63,53 @@ export function useSaveLocale() {
   return useMutation<Me, AppError, Language>({
     mutationFn: (ui_locale) => unwrap(api.PATCH("/api/v1/auth/me", { body: { ui_locale } })),
     onSuccess: (me) => queryClient.setQueryData(meKey, me),
+  });
+}
+
+export function useSessions() {
+  return useQuery<AuthSession[]>({
+    queryKey: sessionsKey,
+    queryFn: () => unwrap(api.GET("/api/v1/auth/sessions")),
+    staleTime: 30_000,
+  });
+}
+
+export function useRevokeSession() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AppError, string>({
+    mutationFn: (sessionId: string) =>
+      unwrap<void>(
+        api.DELETE("/api/v1/auth/sessions/{session_id}", {
+          params: { path: { session_id: sessionId } },
+        })
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionsKey });
+    },
+  });
+}
+
+export function useRevokeAllSessions() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AppError, boolean | undefined>({
+    mutationFn: (includeCurrent = false) =>
+      unwrap<void>(
+        api.POST("/api/v1/auth/sessions/revoke-all", {
+          body: { include_current: includeCurrent },
+        })
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionsKey });
+    },
+  });
+}
+
+export function useChangePassword() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AppError, { current_password: string; new_password: string }>({
+    mutationFn: (body) => unwrap<void>(api.POST("/api/v1/auth/password", { body })),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionsKey });
+    },
   });
 }

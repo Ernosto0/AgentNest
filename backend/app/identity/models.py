@@ -9,6 +9,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Integer,
     LargeBinary,
     String,
     Text,
@@ -73,6 +74,25 @@ class AuthSession(UUIDPrimaryKeyMixin, Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     user_agent: Mapped[str | None] = mapped_column(Text)
+    ip_address: Mapped[str | None] = mapped_column(Text)
+
+
+IDENTIFIER_TYPES = ("email", "ip")
+
+
+class LoginThrottle(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "login_throttles"
+    __table_args__ = (
+        CheckConstraint(_in("identifier_type", IDENTIFIER_TYPES), name="identifier_type"),
+        UniqueConstraint("identifier_type", "identifier_hash"),
+    )
+
+    identifier_type: Mapped[str] = mapped_column(Text, nullable=False)
+    identifier_hash: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    failed_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    first_failed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_failed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
 
 
 class Workspace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
