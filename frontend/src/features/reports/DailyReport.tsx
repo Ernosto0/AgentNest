@@ -12,7 +12,7 @@ import { formatValue } from "./format";
 import { useDailyReport, useGenerateReport } from "./hooks";
 
 const LINK =
-  "font-semibold text-indigo-700 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-indigo-600";
+  "font-semibold text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus";
 
 function hasValue(metric: ReportMetric): metric is ReportMetric & { value: number } {
   return typeof metric.value === "number" && metric.value !== 0;
@@ -35,30 +35,30 @@ export function DailyReport() {
   const go = (target: string) => setParams(target === today ? {} : { date: target }, { replace: true });
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-semibold">{t("reports.title")}</h1>
-        <p className="mt-1 text-slate-600">{t("reports.intro")}</p>
+        <h1 className="text-2xl font-heading font-semibold text-primary">{t("reports.title")}</h1>
+        <p className="mt-1 text-sm text-secondary">{t("reports.intro")}</p>
       </div>
 
-      <div className="flex items-center justify-between gap-2" role="group" aria-label={t("reports.dateLabel")}>
+      <div className="flex items-center justify-between gap-3 rounded-card bg-surface p-3 border border-border shadow-xs" role="group" aria-label={t("reports.dateLabel")}>
         <Button variant="secondary" onClick={() => go(shiftDay(day, -1))} aria-label={t("reports.previousDay")}>
           ‹
         </Button>
         <div className="flex flex-col items-center text-center">
-          <p className="font-semibold" data-testid="report-day">
+          <p className="font-heading font-semibold text-primary" data-testid="report-day">
             {dayLabel(day, i18n.language)}
           </p>
           {day !== today ? (
             <button
               type="button"
               onClick={() => go(today)}
-              className="min-h-11 text-sm font-medium text-indigo-700 underline underline-offset-2"
+              className="min-h-11 text-sm font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
             >
               {t("reports.backToToday")}
             </button>
           ) : (
-            <p className="text-sm text-slate-600">{t("reports.today")}</p>
+            <p className="text-sm text-secondary">{t("reports.today")}</p>
           )}
         </div>
         <Button
@@ -72,18 +72,20 @@ export function DailyReport() {
       </div>
 
       {report.isError ? <ErrorMessage error={report.error} /> : null}
-      {report.isPending ? <p>{t("common.loading")}</p> : null}
+      {report.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
       {report.data ? <ReportBody report={report.data} /> : null}
-      {generate.isError ? <ErrorMessage error={generate.error} /> : null}
+      {generate.error ? <ErrorMessage error={generate.error} /> : null}
 
       {canGenerate && report.data ? (
-        <Button
-          variant="secondary"
-          disabled={generate.isPending}
-          onClick={() => generate.mutate(day, { onSuccess: () => go(day) })}
-        >
-          {generate.isPending ? t("common.saving") : t("reports.regenerate")}
-        </Button>
+        <div>
+          <Button
+            variant="secondary"
+            disabled={generate.isPending}
+            onClick={() => generate.mutate(day, { onSuccess: () => go(day) })}
+          >
+            {generate.isPending ? t("common.saving") : t("reports.regenerate")}
+          </Button>
+        </div>
       ) : null}
     </div>
   );
@@ -108,7 +110,7 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
     <>
       <div className="flex flex-wrap items-center gap-2">
         {report.is_partial ? (
-          <p className="text-sm text-slate-700" data-testid="report-as-of">
+          <p className="text-sm text-secondary" data-testid="report-as-of">
             {t("reports.asOf", { time: asOf })}
           </p>
         ) : null}
@@ -116,7 +118,9 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
       </div>
 
       {!report.evidence_complete ? (
-        <p role="status" className="text-sm text-slate-700">{t("reports.evidenceUnavailable")}</p>
+        <p role="status" className="rounded-card bg-attention-subtle p-3 text-sm text-attention border border-border">
+          {t("reports.evidenceUnavailable")}
+        </p>
       ) : null}
 
       {report.summary.empty ? (
@@ -124,10 +128,10 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
       ) : (
         sections.map((section) => (
           <Card key={section.section} aria-labelledby={`report-section-${section.section}`}>
-            <h2 id={`report-section-${section.section}`} className="text-lg font-semibold">
+            <h2 id={`report-section-${section.section}`} className="text-lg font-heading font-semibold text-primary">
               {section.title}
             </h2>
-            <ul className="mt-2 divide-y divide-slate-100">
+            <ul className="mt-2 divide-y divide-border">
               {section.metrics.map((metric) => (
                 <MetricRow key={metric.key} metric={metric as ReportMetric & { value: number }} />
               ))}
@@ -147,11 +151,11 @@ function MetricRow({ metric }: { metric: ReportMetric & { value: number } }) {
   const drill = metric.link.route;
   const screen = metric.screen_link?.route;
   return (
-    <li className="flex min-h-12 items-center justify-between gap-3 py-2">
-      <span className="text-slate-800">{label}</span>
+    <li className="flex min-h-12 items-center justify-between gap-3 py-2.5">
+      <span className="text-primary font-normal">{label}</span>
       <span className="flex flex-wrap items-center justify-end gap-3">
         {screen ? (
-          <Link to={screen} className="text-sm text-indigo-700 underline underline-offset-2">
+          <Link to={screen} className="text-sm font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus">
             {t("reports.openScreen")}
           </Link>
         ) : null}
@@ -160,7 +164,7 @@ function MetricRow({ metric }: { metric: ReportMetric & { value: number } }) {
             {shown}
           </Link>
         ) : (
-          <span className="font-semibold">{shown}</span>
+          <span className="font-semibold text-primary">{shown}</span>
         )}
       </span>
     </li>
