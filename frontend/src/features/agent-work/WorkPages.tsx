@@ -89,37 +89,25 @@ function LocalTime({ value }: { value: string }) {
 }
 
 export function WorkState({ state }: { state: string }) {
-
   const { t } = useTranslation();
-
   return (
-
     <span
-
       data-status={state}
-
       className={`inline-flex items-center rounded-control px-2.5 py-0.5 text-xs font-semibold ${
-
-        state === "answered" || state === "active"
-
+        state === "answered" || state === "active" || state === "succeeded" || state === "visible"
           ? "bg-success-subtle text-success"
-
-          : state === "expired" || state === "redacted"
-
-            ? "bg-surface text-muted"
-
-            : "bg-attention-subtle text-attention"
-
+          : state === "expired" || state === "redacted" || state === "deleted"
+            ? "bg-surface text-muted border border-border"
+            : state === "hidden"
+              ? "bg-canvas text-secondary border border-border-subtle"
+              : "bg-attention-subtle text-attention"
       }`}
-
     >
-
-      {t(`agentWork.state.${state}`, { defaultValue: t("agentWork.state.unknown") })}
-
+      {t(`agentWork.commentState.${state}`, {
+        defaultValue: t(`agentWork.state.${state}`, { defaultValue: t("agentWork.state.unknown") }),
+      })}
     </span>
-
   );
-
 }
 
 
@@ -715,337 +703,262 @@ export function MemoryPage() {
 }
 
 function MemoryDetail({ account }: { account: string }) {
-
   const { customerId = "" } = useParams();
-
   const { workspace, role } = useCurrentWorkspace();
-
   const { t } = useTranslation();
-
   const [cursor, setCursor] = useState<string>();
-
   const memories = useMemory(workspace.id, account, customerId, cursor);
-
   const [sourceCursor, setSourceCursor] = useState<string>();
-
   const sources = useMemorySources(workspace.id, account, customerId, sourceCursor);
-
   const change = useChangeMemory(workspace.id, account, customerId);
-
   const [editing, setEditing] = useState<string>();
-
   const [body, setBody] = useState("");
 
   return (
+    <div className="flex flex-col gap-5">
+      <div className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
+              {t("agentWork.customerScope")}
+            </span>
+            <span className="rounded-control bg-canvas px-2.5 py-0.5 text-xs font-mono font-medium text-primary border border-border-subtle">
+              {customerId}
+            </span>
+          </div>
+          <span className="inline-flex items-center rounded-control bg-canvas px-2.5 py-0.5 text-xs font-medium text-secondary border border-border-subtle">
+            🔒 {t("agentWork.memory")}
+          </span>
+        </div>
+        <p className="text-sm text-secondary leading-relaxed">
+          {t("agentWork.memoryIntro")}
+        </p>
+      </div>
 
-    <>
-
-      <p>{t("agentWork.memoryIntro")}</p>
+      {memories.isPending ? (
+        <p role="status" className="text-sm text-secondary">
+          {t("common.loading")}
+        </p>
+      ) : null}
 
       {memories.error ? <ErrorMessage error={memories.error} /> : null}
+      {change.error ? <ErrorMessage error={change.error} /> : null}
+      {sources.error ? <ErrorMessage error={sources.error} /> : null}
 
-      {memories.isPending ? <p>{t("common.loading")}</p> : null}
-
-      <ul className="flex flex-col gap-3">
-
+      <ul className="flex flex-col gap-4">
         {memories.data?.items.map((m) => (
+          <li
+            key={m.id}
+            className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-3.5 transition-colors hover:border-border-hover"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                  {m.topic ?? m.kind ?? t("agentWork.memory")}
+                </span>
+                <span className="text-xs text-muted">
+                  · {t("agentWork.version")} {m.version}
+                </span>
+              </div>
+              <span className="text-xs text-muted">
+                {t("agentWork.expires")} <LocalTime value={m.expires_at} />
+              </span>
+            </div>
 
-          <li key={m.id} className="rounded-lg border p-3">
-
-            <p className="break-words whitespace-pre-wrap">{m.body ?? t("agentWork.removed")}</p>
-
-            <p className="text-sm">
-
-              {t("agentWork.expires")} <LocalTime value={m.expires_at} />
-
+            <p className="text-base text-primary whitespace-pre-wrap break-words leading-relaxed font-medium">
+              {m.body ?? t("agentWork.removed")}
             </p>
 
             {role !== "staff" && m.body ? (
-
-              <div className="mt-2 flex flex-wrap gap-2">
-
+              <div className="flex flex-wrap gap-2 pt-1">
                 <Button
-
                   variant="secondary"
-
                   disabled={change.isPending}
-
                   onClick={() => {
-
                     setEditing(m.id);
-
                     setBody(m.body ?? "");
-
                   }}
-
                 >
-
                   {t("agentWork.correct")}
-
                 </Button>
-
                 <Button
-
                   variant="secondary"
-
                   disabled={change.isPending}
-
                   onClick={() => change.mutate({ id: m.id, version: m.version })}
-
                 >
-
                   {t("agentWork.forget")}
-
                 </Button>
-
               </div>
-
             ) : null}
 
             {editing === m.id ? (
-
               <form
-
+                className="rounded-panel border border-border bg-canvas p-4 flex flex-col gap-3"
                 onSubmit={(e) => {
-
                   e.preventDefault();
-
                   change.mutate(
-
                     { id: m.id, version: m.version, body },
-
                     { onSuccess: () => setEditing(undefined) },
-
                   );
-
                 }}
-
               >
-
-                <label>
-
-                  {t("agentWork.correction")}
-
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
+                  <span>{t("agentWork.correction")}</span>
                   <textarea
-
                     className={INPUT}
-
                     value={body}
-
                     onChange={(e) => setBody(e.target.value)}
-
                     minLength={3}
-
                     maxLength={240}
-
                     required
-
                   />
-
                 </label>
-
-                <Button disabled={change.isPending} type="submit">
-
-                  {t("agentWork.save")}
-
-                </Button>
-
+                <div className="flex items-center gap-2">
+                  <Button disabled={change.isPending} type="submit">
+                    {t("agentWork.save")}
+                  </Button>
+                  <Button variant="ghost" type="button" onClick={() => setEditing(undefined)}>
+                    {t("agentWork.dismiss")}
+                  </Button>
+                </div>
               </form>
-
             ) : null}
 
-            <details>
-
-              <summary className="min-h-11 cursor-pointer py-2">{t("agentWork.sources")}</summary>
-
-              {sources.data?.items
-
-                .filter((s) => s.memory_id === m.id)
-
-                .map((s) => (
-
-                  <p key={s.id}>
-
-                    {s.removed ? t("agentWork.sourceRemoved") : t("agentWork.sourceMessage")} ·{" "}
-
-                    <LocalTime value={s.observed_at} />
-
-                  </p>
-
-                ))}
-
+            <details className="border-t border-border-subtle pt-3">
+              <summary className="min-h-11 cursor-pointer py-1 text-sm font-medium text-action hover:text-action-hover select-none">
+                {t("agentWork.sources")}
+              </summary>
+              <div className="mt-2 flex flex-col gap-2">
+                {sources.data?.items
+                  .filter((s) => s.memory_id === m.id)
+                  .map((s) => (
+                    <div
+                      key={s.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-canvas p-2.5 text-xs text-secondary border border-border-subtle"
+                    >
+                      <span className="font-medium text-primary">
+                        {s.removed ? t("agentWork.sourceRemoved") : t("agentWork.sourceMessage")}
+                      </span>
+                      <LocalTime value={s.observed_at} />
+                    </div>
+                  ))}
+              </div>
             </details>
-
           </li>
-
         ))}
-
       </ul>
 
-      {change.error ? <ErrorMessage error={change.error} /> : null}
-
-      {sources.error ? <ErrorMessage error={sources.error} /> : null}
-
-      {sources.data?.next_cursor ? (
-
-        <Button onClick={() => setSourceCursor(sources.data!.next_cursor!)}>
-
-          {t("agentWork.moreSources")}
-
-        </Button>
-
+      {memories.data?.items.length === 0 ? (
+        <p className="text-sm text-secondary">{t("agentWork.emptyMemory")}</p>
       ) : null}
 
-      {memories.data?.next_cursor ? (
+      <div className="flex flex-wrap gap-2">
+        {memories.data?.next_cursor ? (
+          <Button variant="secondary" onClick={() => setCursor(memories.data!.next_cursor!)}>
+            {t("agentWork.next")}
+          </Button>
+        ) : null}
 
-        <Button onClick={() => setCursor(memories.data!.next_cursor!)}>
-
-          {t("agentWork.next")}
-
-        </Button>
-
-      ) : null}
-
-    </>
-
+        {sources.data?.next_cursor ? (
+          <Button variant="ghost" onClick={() => setSourceCursor(sources.data!.next_cursor!)}>
+            {t("agentWork.moreSources")}
+          </Button>
+        ) : null}
+      </div>
+    </div>
   );
-
 }
 
 export function ThreadSummary({
-
   thread,
-
   account,
-
 }: {
-
   thread: Schema<"WorkThreadOut">;
-
   account: string;
-
 }) {
-
   const { workspace } = useCurrentWorkspace();
-
   const { t } = useTranslation();
-
   const control = useThreadControl(workspace.id, account);
 
   return (
-
     <section
-
       aria-label={t("agentWork.agentWork")}
-
-      className="rounded-xl border border-indigo-200 p-3"
-
+      className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-3.5"
     >
-
-      <div className="flex flex-wrap gap-2">
-
-        <strong>{t("agentWork.agentWork")}</strong>
-
-        {thread.is_simulated ? <SimulatedBadge /> : null}
-
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <strong className="font-heading font-semibold text-primary">{t("agentWork.agentWork")}</strong>
+          {thread.is_simulated ? <SimulatedBadge /> : null}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-control bg-canvas px-2.5 py-0.5 text-xs font-medium text-secondary border border-border-subtle">
+            {t(thread.handling_mode === "human" ? "agentWork.human" : "agentWork.agent")}
+          </span>
+          <WorkState state={thread.state} />
+        </div>
       </div>
 
-      <p>
-
-        {t(thread.handling_mode === "human" ? "agentWork.human" : "agentWork.agent")} ·{" "}
-
-        <WorkState state={thread.state} />
-
-      </p>
-
       {thread.goal ? (
-
-        <p>
-
-          {t("agentWork.goalState")} <WorkState state={thread.goal} />
-
-        </p>
-
+        <div className="flex items-center gap-2 text-sm text-secondary">
+          <span className="font-medium text-primary">{t("agentWork.goalState")}</span>
+          <WorkState state={thread.goal} />
+        </div>
       ) : null}
 
       {thread.surface === "comment" ? (
-
-        <Button
-
-          variant="secondary"
-
-          disabled={control.isPending}
-
-          onClick={() =>
-
-            control.mutate({
-
-              id: thread.id,
-
-              version: thread.version,
-
-              mode: thread.handling_mode === "human" ? "agent" : "human",
-
-            })
-
-          }
-
-        >
-
-          {t(thread.handling_mode === "human" ? "convo.release" : "convo.takeover")}
-
-        </Button>
-
+        <div className="pt-0.5">
+          <Button
+            variant={thread.handling_mode === "human" ? "primary" : "secondary"}
+            disabled={control.isPending}
+            onClick={() =>
+              control.mutate({
+                id: thread.id,
+                version: thread.version,
+                mode: thread.handling_mode === "human" ? "agent" : "human",
+              })
+            }
+          >
+            {t(thread.handling_mode === "human" ? "convo.release" : "convo.takeover")}
+          </Button>
+        </div>
       ) : null}
 
       {control.error ? <ErrorMessage error={control.error} /> : null}
 
       {thread.customer_id && thread.surface === "dm" ? (
-
         <Link
-
           className={LINK}
-
           to={`/w/${workspace.id}/more/agent/memory/${thread.customer_id}?account=${account}`}
-
         >
-
           {t("agentWork.memory")}
-
         </Link>
-
       ) : null}
 
-      <ul>
-
-        {thread.actions.map((a) => (
-
-          <li key={a.id} className="border-t py-2">
-
-            <span>{t(actionLabelKey(a.action_type))}: </span>
-
-            <WorkState state={a.status} />
-
-            {a.approval_id ? (
-
-              <Link className={`ml-2 ${LINK}`} to={`/w/${workspace.id}/approvals`}>
-
-                {t("agentWork.approvals")}
-
-              </Link>
-
-            ) : null}
-
-          </li>
-
-        ))}
-
-      </ul>
-
+      {thread.actions.length > 0 ? (
+        <div className="border-t border-border-subtle pt-3 flex flex-col gap-2">
+          <ul className="flex flex-col gap-2">
+            {thread.actions.map((a) => (
+              <li
+                key={a.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-canvas px-3 py-2 text-sm border border-border-subtle"
+              >
+                <span className="font-medium text-primary">{t(actionLabelKey(a.action_type))}: </span>
+                <div className="flex items-center gap-2">
+                  <WorkState state={a.status} />
+                  {a.is_simulated ? <SimulatedBadge /> : null}
+                  {a.approval_id ? (
+                    <Link className={`ml-2 ${LINK}`} to={`/w/${workspace.id}/approvals`}>
+                      {t("agentWork.approvals")}
+                    </Link>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
-
   );
-
 }
 
 export function ConversationAgentWork({
@@ -1083,193 +996,170 @@ export function ConversationAgentWork({
 }
 
 export function CommentsPage() {
-
   return (
-
     <WorkFrame titleKey="agentWork.comments">
-
       {(account) => <CommentList key={account} account={account} />}
-
     </WorkFrame>
-
   );
-
 }
 
 function CommentList({ account }: { account: string }) {
-
   const { workspace } = useCurrentWorkspace();
-
   const { t } = useTranslation();
-
   const [cursor, setCursor] = useState<string>();
-
   const comments = useComments(workspace.id, account, cursor);
 
   return (
+    <div className="flex flex-col gap-4">
+      <div
+        role="note"
+        className="rounded-panel border border-border bg-surface p-4 text-sm text-secondary flex items-start gap-3 shadow-xs"
+      >
+        <span className="text-base select-none" aria-hidden="true">
+          ℹ️
+        </span>
+        <p className="leading-relaxed">{t("agentWork.publicNotice")}</p>
+      </div>
 
-    <>
+      {comments.isPending ? (
+        <p role="status" className="text-sm text-secondary">
+          {t("common.loading")}
+        </p>
+      ) : null}
 
       {comments.error ? <ErrorMessage error={comments.error} /> : null}
 
-      <p>{t("agentWork.publicNotice")}</p>
-
       <ul className="flex flex-col gap-3">
-
         {comments.data?.items.map((c) => (
-
-          <li key={c.id} className="rounded-lg border p-3">
+          <li
+            key={c.id}
+            className="rounded-panel border border-border bg-surface p-4 shadow-xs flex flex-col gap-2.5 transition-colors hover:border-border-hover"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                {t(c.is_owner ? "agentWork.nativeOwner" : "agentWork.customer")}
+              </span>
+              <div className="flex items-center gap-2">
+                <WorkState state={c.state} />
+                {c.is_simulated ? <SimulatedBadge /> : null}
+              </div>
+            </div>
 
             <Link
-
-              className={`${LINK} break-words`}
-
+              className="text-base font-semibold text-action hover:text-action-hover underline break-words"
               to={`/w/${workspace.id}/more/agent/comments/${c.thread_id}?account=${account}`}
-
             >
-
               {c.text ?? t("agentWork.removed")}
-
             </Link>
-
-            <p>
-
-              {t(`agentWork.commentState.${c.state}`, {
-
-                defaultValue: t("agentWork.state.unknown"),
-
-              })}{" "}
-
-              {c.is_simulated ? <SimulatedBadge /> : null}
-
-            </p>
-
           </li>
-
         ))}
-
       </ul>
 
-      {comments.data?.next_cursor ? (
-
-        <Button onClick={() => setCursor(comments.data!.next_cursor!)}>
-
-          {t("agentWork.next")}
-
-        </Button>
-
+      {comments.data?.items.length === 0 ? (
+        <p className="text-sm text-secondary">{t("agentWork.emptyComments")}</p>
       ) : null}
 
-    </>
-
+      {comments.data?.next_cursor ? (
+        <div>
+          <Button variant="secondary" onClick={() => setCursor(comments.data!.next_cursor!)}>
+            {t("agentWork.next")}
+          </Button>
+        </div>
+      ) : null}
+    </div>
   );
-
 }
 
 export function CommentThreadPage() {
-
   return (
-
     <WorkFrame titleKey="agentWork.commentThread">
-
       {(account) => <CommentThread key={account} account={account} />}
-
     </WorkFrame>
-
   );
-
 }
 
 function CommentThread({ account }: { account: string }) {
-
   const { workspace } = useCurrentWorkspace();
-
   const { t } = useTranslation();
-
   const { threadId = "" } = useParams();
-
   const [cursor, setCursor] = useState<string>();
-
   const comments = useComments(workspace.id, account, cursor, threadId);
-
   const threads = useWorkThreads(workspace.id, account, threadId);
-
   const media = useCommentMedia(workspace.id, account, comments.data?.items[0]?.media_id ?? "");
 
   return (
-
-    <>
-
-      <p className="rounded-lg bg-amber-50 p-3">{t("agentWork.publicNotice")}</p>
+    <div className="flex flex-col gap-5">
+      <div
+        role="note"
+        className="rounded-panel border border-border bg-surface p-4 text-sm text-secondary flex items-start gap-3 shadow-xs"
+      >
+        <span className="text-base select-none" aria-hidden="true">
+          ℹ️
+        </span>
+        <p className="leading-relaxed">{t("agentWork.publicNotice")}</p>
+      </div>
 
       {media.data ? (
-
-        <section>
-
-          <h2>{t("agentWork.post")}</h2>
-
-          <p className="break-words whitespace-pre-wrap">
-
+        <section
+          aria-labelledby="comment-post-context-heading"
+          className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-2.5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="comment-post-context-heading" className="text-lg font-heading font-semibold text-primary">
+              {t("agentWork.post")}
+            </h2>
+            <div className="flex items-center gap-2">
+              <WorkState state={media.data.state} />
+              {media.data.is_simulated ? <SimulatedBadge /> : null}
+            </div>
+          </div>
+          <p className="text-base text-primary whitespace-pre-wrap break-words leading-relaxed">
             {media.data.caption ?? t("agentWork.removed")}
-
           </p>
-
         </section>
-
       ) : null}
 
       {comments.error ? <ErrorMessage error={comments.error} /> : null}
 
       {threads.data?.items.map((thread) => (
-
         <ThreadSummary key={thread.id} thread={thread} account={account} />
-
       ))}
 
-      <ol>
-
-        {comments.data?.items.map((c) => (
-
-          <li key={c.id} className="my-2 rounded-lg border p-3">
-
-            <p>{t(c.is_owner ? "agentWork.nativeOwner" : "agentWork.customer")}</p>
-
-            <p className="whitespace-pre-wrap break-words">{c.text ?? t("agentWork.removed")}</p>
-
-            <p>
-
-              {t(`agentWork.commentState.${c.state}`, {
-
-                defaultValue: t("agentWork.state.unknown"),
-
-              })}
-
-            </p>
-
-            {c.is_simulated ? <SimulatedBadge /> : null}
-
-            <ManualActions account={account} comment={c} />
-
-          </li>
-
-        ))}
-
-      </ol>
+      <section aria-label={t("agentWork.comments")} className="flex flex-col gap-3">
+        <h2 className="text-lg font-heading font-semibold text-primary">{t("agentWork.comments")}</h2>
+        <ol className="flex flex-col gap-4">
+          {comments.data?.items.map((c) => (
+            <li
+              key={c.id}
+              className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-3.5"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                  {t(c.is_owner ? "agentWork.nativeOwner" : "agentWork.customer")}
+                </span>
+                <div className="flex items-center gap-2">
+                  <WorkState state={c.state} />
+                  {c.is_simulated ? <SimulatedBadge /> : null}
+                </div>
+              </div>
+              <p className="text-base text-primary whitespace-pre-wrap break-words leading-relaxed">
+                {c.text ?? t("agentWork.removed")}
+              </p>
+              <ManualActions account={account} comment={c} />
+            </li>
+          ))}
+        </ol>
+      </section>
 
       {comments.data?.next_cursor ? (
-
-        <Button onClick={() => setCursor(comments.data!.next_cursor!)}>
-
-          {t("agentWork.next")}
-
-        </Button>
-
+        <div>
+          <Button variant="secondary" onClick={() => setCursor(comments.data!.next_cursor!)}>
+            {t("agentWork.next")}
+          </Button>
+        </div>
       ) : null}
-
-    </>
-
+    </div>
   );
-
 }
 
 export function TaskPage() {
@@ -1535,135 +1425,100 @@ function TaskSelection({
 }
 
 function ManualActions({ account, comment }: { account: string; comment: Schema<"CommentOut"> }) {
-
   const { workspace, role } = useCurrentWorkspace();
-
   const { t } = useTranslation();
-
   const mutation = useManualModeration(workspace.id, account, comment.id);
-
   const [operationCursor, setOperationCursor] = useState<string>();
-
   const operations = useModerationOperations(workspace.id, account, comment.id, operationCursor);
-
   const [confirm, setConfirm] = useState<"hide" | "unhide" | "delete">();
-
   const [request, setRequest] = useState(newRequestId);
 
   return (
-
-    <>
-
-      <ul>
-
-        {operations.data?.items.map((op) => (
-
-          <li key={op.operation_id}>
-
-            <span>{t(`agentWork.manual.${op.effect}`)}: </span>
-
-            <WorkState state={op.status} />
-
-            {op.is_simulated ? <SimulatedBadge /> : null}
-
-          </li>
-
-        ))}
-
-      </ul>
-
-      {operations.data?.next_cursor ? (
-
-        <Button onClick={() => setOperationCursor(operations.data!.next_cursor!)}>
-
-          {t("agentWork.next")}
-
-        </Button>
-
+    <div className="flex flex-col gap-3 pt-1">
+      {operations.data?.items.length ? (
+        <div className="rounded-control bg-canvas p-3 border border-border-subtle flex flex-col gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
+            {t("agentWork.operationHistory")}
+          </span>
+          <ul className="flex flex-col gap-2">
+            {operations.data.items.map((op) => (
+              <li
+                key={op.operation_id}
+                className="flex flex-wrap items-center justify-between gap-2 text-xs"
+              >
+                <span className="font-medium text-primary">
+                  {t(`agentWork.manual.${op.effect}`)}:
+                </span>
+                <div className="flex items-center gap-2">
+                  <WorkState state={op.status} />
+                  {op.is_simulated ? <SimulatedBadge /> : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {operations.data?.next_cursor ? (
+            <div>
+              <Button
+                variant="ghost"
+                onClick={() => setOperationCursor(operations.data!.next_cursor!)}
+              >
+                {t("agentWork.next")}
+              </Button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {role !== "staff" && !comment.is_owner && ["visible", "hidden"].includes(comment.state) ? (
-
-        <div className="mt-2 flex flex-wrap gap-2">
-
+        <div className="flex flex-wrap gap-2">
           {(comment.state === "hidden" ? (["unhide"] as const) : (["hide", "delete"] as const)).map(
-
             (effect) => (
-
               <Button
-
                 key={effect}
-
-                variant="secondary"
-
+                variant={effect === "delete" ? "danger" : "secondary"}
                 disabled={mutation.isPending}
-
                 onClick={() => {
-
                   setConfirm(effect);
-
                   setRequest(newRequestId());
-
                 }}
-
               >
-
                 {t(`agentWork.manual.${effect}`)}
-
               </Button>
-
             ),
-
           )}
-
         </div>
-
       ) : null}
 
       {confirm ? (
-
-        <div className="my-2 rounded-lg bg-amber-50 p-3">
-
-          <p>{t("agentWork.manualConfirm")}</p>
-
-          <Button
-
-            disabled={mutation.isPending}
-
-            onClick={() =>
-
-              mutation.mutate(
-
-                { effect: confirm, expected_version: comment.version, client_request_id: request },
-
-                { onSuccess: () => setConfirm(undefined) },
-
-              )
-
-            }
-
-          >
-
-            {t("agentWork.confirmEffect")}
-
-          </Button>
-
-          <Button variant="ghost" onClick={() => setConfirm(undefined)}>
-
-            {t("agentWork.dismiss")}
-
-          </Button>
-
+        <div
+          role="alert"
+          className="rounded-panel border border-border bg-surface p-4 flex flex-col gap-3 shadow-xs"
+        >
+          <p className="text-sm font-medium text-primary leading-relaxed">
+            {t("agentWork.manualConfirm")}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={confirm === "delete" ? "danger" : "primary"}
+              disabled={mutation.isPending}
+              onClick={() =>
+                mutation.mutate(
+                  { effect: confirm, expected_version: comment.version, client_request_id: request },
+                  { onSuccess: () => setConfirm(undefined) },
+                )
+              }
+            >
+              {t("agentWork.confirmEffect")}
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirm(undefined)}>
+              {t("agentWork.dismiss")}
+            </Button>
+          </div>
         </div>
-
       ) : null}
 
       {mutation.error ? <ErrorMessage error={mutation.error} /> : null}
-
       {operations.error ? <ErrorMessage error={operations.error} /> : null}
-
-    </>
-
+    </div>
   );
-
 }

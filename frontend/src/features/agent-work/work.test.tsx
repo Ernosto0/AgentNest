@@ -169,6 +169,121 @@ describe("assistant work", () => {
     await waitFor(() => expect(screen.queryByText("Morning appointments")).not.toBeInTheDocument());
     expect(requests.filter((r) => r.method === "POST")).toHaveLength(1);
   });
+  it("memory correction submits expected_version and new body", async () => {
+    let currentBody = "Afternoon preferred";
+    const requests = setup("owner", {
+      [`GET ${AP}/customers/${CUSTOMER}/memory`]: () =>
+        json({
+          items: [
+            {
+              id: "m2",
+              topic: "preference",
+              kind: "preference",
+              body: currentBody,
+              version: 2,
+              expires_at: "2027-01-01T00:00:00Z",
+            },
+          ],
+          next_cursor: null,
+        }),
+      [`GET ${AP}/customers/${CUSTOMER}/sources`]: () => json({ items: [], next_cursor: null }),
+      [`POST ${AP}/customers/${CUSTOMER}/memory/m2/correct`]: () => {
+        currentBody = "Evening only";
+        return json({ changed: true });
+      },
+    });
+    await open(`memory/${CUSTOMER}`);
+    expect(await screen.findByText("Afternoon preferred")).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Correct" }));
+
+    const textarea = screen.getByLabelText("Corrected information");
+    expect(textarea).toHaveValue("Afternoon preferred");
+    await userEvent.clear(textarea);
+    await userEvent.type(textarea, "Evening only");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      const correctPost = requests.find((r) => r.method === "POST" && r.path.includes("/correct"));
+      expect(correctPost).toBeDefined();
+      expect(correctPost?.body).toMatchObject({
+        expected_version: 2,
+        body: "Evening only",
+      });
+    });
+  });
+  it("memory correction conflict retains input and displays error", async () => {
+    setup("owner", {
+      [`GET ${AP}/customers/${CUSTOMER}/memory`]: () =>
+        json({
+          items: [
+            {
+              id: "m2",
+              topic: "preference",
+              kind: "preference",
+              body: "Original text",
+              version: 2,
+              expires_at: "2027-01-01T00:00:00Z",
+            },
+          ],
+          next_cursor: null,
+        }),
+      [`GET ${AP}/customers/${CUSTOMER}/sources`]: () => json({ items: [], next_cursor: null }),
+      [`POST ${AP}/customers/${CUSTOMER}/memory/m2/correct`]: () =>
+        problem(409, "VERSION_CONFLICT"),
+    });
+    await open(`memory/${CUSTOMER}`);
+    expect(await screen.findByText("Original text")).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Correct" }));
+
+    const textarea = screen.getByLabelText("Corrected information");
+    await userEvent.clear(textarea);
+    await userEvent.type(textarea, "Conflicting edit");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByRole("alert")).toBeVisible();
+    expect(screen.getByLabelText("Corrected information")).toHaveValue("Conflicting edit");
+  });
+  it("memory sources list shows observed timestamps and removed states", async () => {
+    setup("owner", {
+      [`GET ${AP}/customers/${CUSTOMER}/memory`]: () =>
+        json({
+          items: [
+            {
+              id: "m1",
+              topic: "notes",
+              kind: "notes",
+              body: "Special equipment needed",
+              version: 1,
+              expires_at: "2027-01-01T00:00:00Z",
+            },
+          ],
+          next_cursor: null,
+        }),
+      [`GET ${AP}/customers/${CUSTOMER}/sources`]: () =>
+        json({
+          items: [
+            {
+              id: "s1",
+              memory_id: "m1",
+              removed: false,
+              observed_at: "2026-10-20T10:00:00Z",
+            },
+            {
+              id: "s2",
+              memory_id: "m1",
+              removed: true,
+              observed_at: "2026-10-18T10:00:00Z",
+            },
+          ],
+          next_cursor: null,
+        }),
+    });
+    await open(`memory/${CUSTOMER}`);
+    expect(await screen.findByText("Special equipment needed")).toBeVisible();
+    expect(screen.getByText("Inspect sources")).toBeVisible();
+    expect(screen.getByText("Customer private message")).toBeInTheDocument();
+    expect(screen.getByText("Source removed")).toBeInTheDocument();
+  });
   it("public thread loads no private memory or owner answers", async () => {
     const requests = setup("owner", {
       [`GET ${AP}/comments/threads/t1`]: () =>
@@ -242,6 +357,128 @@ describe("assistant work", () => {
         handling_mode: "human",
       }),
     );
+  });
+  it("comments list renders public notice, comment items, and links to thread", async () => {
+    setup("owner", {
+      [`GET ${AP}/comments`]: () =>
+        json({
+          items: [
+            {
+              id: "c-list-1",
+              text: "How much does a membership cost?",
+              state: "visible",
+              thread_id: "thread-cost",
+              media_id: "media-1",
+              is_owner: false,
+              is_simulated: true,
+            },
+          ],
+          next_cursor: null,
+        }),
+    });
+    await open("comments");
+    expect(
+      await screen.findByText(/Public surface. Private messages and customer memory are not loaded/),
+    ).toBeVisible();
+    const commentLink = await screen.findByRole("link", {
+      name: "How much does a membership cost?",
+    });
+    expect(commentLink).toBeVisible();
+    expect(commentLink.getAttribute("href")).toContain("/comments/thread-cost?account=");
+    expect(screen.getByText("Customer comment")).toBeVisible();
+    expect(screen.getByText("Visible")).toBeVisible();
+  });
+  it("manual moderation requires confirmation, sends expected_version and client_request_id", async () => {
+    const requests = setup("owner", {
+      [`GET ${AP}/comments/threads/t1`]: () =>
+        json({
+          items: [
+            {
+              id: "c1",
+              text: "Inappropriate comment text",
+              state: "visible",
+              thread_id: "t1",
+              media_id: "m1",
+              version: 5,
+              is_owner: false,
+              is_simulated: true,
+            },
+          ],
+          next_cursor: null,
+        }),
+      [`GET ${AP}/agent/threads`]: () => json({ items: [], next_cursor: null }),
+      [`GET ${AP}/comments/media/m1`]: () =>
+        json({
+          id: "m1",
+          caption: "Fitness workout session",
+          state: "visible",
+          ownership_state: "verified_synthetic",
+          version: 1,
+          is_simulated: true,
+        }),
+      [`POST ${AP}/comments/c1/moderate`]: () =>
+        json({
+          operation_id: "op-hide-1",
+          status: "queued",
+          effect: "hide",
+          is_simulated: true,
+        }),
+    });
+    await open("comments/t1");
+    expect(await screen.findByText("Inappropriate comment text")).toBeVisible();
+    expect(screen.getByText("Fitness workout session")).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: "Hide comment" }));
+    expect(
+      screen.getByText(/This explicitly requests an effect on this exact comment version/),
+    ).toBeVisible();
+
+    await userEvent.click(screen.getByRole("button", { name: "Request this effect" }));
+    await waitFor(() => {
+      const modPost = requests.find((r) => r.method === "POST" && r.path.includes("/moderate"));
+      expect(modPost).toBeDefined();
+      expect(modPost?.body).toMatchObject({
+        effect: "hide",
+        expected_version: 5,
+      });
+      expect((modPost?.body as { client_request_id: string }).client_request_id).toMatch(
+        /^[0-9a-f-]{36}$/,
+      );
+    });
+  });
+  it("staff members cannot moderate comments", async () => {
+    setup("staff", {
+      [`GET ${AP}/comments/threads/t1`]: () =>
+        json({
+          items: [
+            {
+              id: "c1",
+              text: "Public comment for staff view",
+              state: "visible",
+              thread_id: "t1",
+              media_id: "m1",
+              version: 1,
+              is_owner: false,
+              is_simulated: true,
+            },
+          ],
+          next_cursor: null,
+        }),
+      [`GET ${AP}/agent/threads`]: () => json({ items: [], next_cursor: null }),
+      [`GET ${AP}/comments/media/m1`]: () =>
+        json({
+          id: "m1",
+          caption: "Public post caption",
+          state: "visible",
+          ownership_state: "verified_synthetic",
+          version: 1,
+          is_simulated: true,
+        }),
+    });
+    await open("comments/t1");
+    expect(await screen.findByText("Public comment for staff view")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Hide comment" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete comment" })).not.toBeInTheDocument();
   });
   it("resumable task clarification remains information and displays scheduled honestly", async () => {
     const requests = setup("owner", {
