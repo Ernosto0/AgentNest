@@ -13,6 +13,7 @@ from app.approvals import service
 from app.approvals.models import Approval
 from app.core.clock import Clock
 from app.core.context import ActorRef, WorkspaceContext
+from app.core.db import set_tenant_context
 from app.core.logging import get_logger
 from app.identity.models import Workspace
 from app.jobs.queue import enqueue
@@ -30,10 +31,11 @@ class ExpireApprovalsPayload(BaseModel):
 @job_handler("expire_approvals", ExpireApprovalsPayload, max_attempts=1)
 def expire_approvals(ctx: JobContext) -> None:
     with ctx.session_factory() as session:
-        due_ids = repo.due_ids_all_workspaces(session, ctx.clock.now(), limit=BATCH)
-    for approval_id in due_ids:
+        due_items = repo.due_items_all_workspaces(session, ctx.clock.now(), limit=BATCH)
+    for approval_id, workspace_id in due_items:
         try:
             with ctx.session_factory() as session:
+                set_tenant_context(session, workspace_id)
                 _expire(session, ctx.clock, approval_id)
         except Exception:
             _log.exception("approval_expiry_failed", approval_id=str(approval_id))

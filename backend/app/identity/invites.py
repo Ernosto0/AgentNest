@@ -9,12 +9,13 @@ import uuid
 from dataclasses import dataclass
 from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.context import ActorRef, WorkspaceContext
+from app.core.db import set_tenant_context
 from app.core.errors import AppError
 from app.core.security import generate_token, hash_password, hash_token, password_policy_problems
 from app.identity import repository as repo
@@ -172,7 +173,20 @@ def accept_invite(
 ) -> AcceptResult:
     """Accept an invite: ``signed_in_user`` becomes a member, or a new user is created and
     signed in. Unknown, expired, used or revoked tokens all raise the one code INVITE_INVALID."""
-    invite = session.scalar(select(Invite).where(Invite.token_hash == hash_token(token)))
+    th = hash_token(token)
+    bind = session.get_bind()
+    if bind.dialect.name == "postgresql":
+        resolved = session.execute(
+            text("SELECT id, workspace_id FROM public.resolve_invite_by_token_hash(:th)"),
+            {"th": th},
+        ).first()
+        if resolved is not None:
+            set_tenant_context(session, resolved.workspace_id)
+            invite = session.get(Invite, resolved.id)
+        else:
+            invite = None
+    else:
+        invite = session.scalar(select(Invite).where(Invite.token_hash == th))
     now = clock.now()
     if (
         invite is None

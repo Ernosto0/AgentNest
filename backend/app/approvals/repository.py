@@ -5,7 +5,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.approvals.models import Approval
@@ -81,13 +81,29 @@ def due_pending(
     return session.scalars(statement).all()
 
 
-def due_ids_all_workspaces(session: Session, now: datetime, *, limit: int) -> list[uuid.UUID]:
-    """For the expiry sweep job only: ids of due approvals across workspaces."""
+def due_items_all_workspaces(
+    session: Session, now: datetime, *, limit: int
+) -> list[tuple[uuid.UUID, uuid.UUID]]:
+    """For the expiry sweep job only: (id, workspace_id) pairs of due approvals across
+    workspaces.
+    """
+    bind = session.get_bind()
+    if bind.dialect.name == "postgresql":
+        rows = session.execute(
+            text("SELECT id, workspace_id FROM public.discover_expired_approval_ids(:now, :limit)"),
+            {"now": now, "limit": limit},
+        ).all()
+        return [(row[0], row[1]) for row in rows]
     return list(
-        session.scalars(
-            select(Approval.id)
+        session.execute(
+            select(Approval.id, Approval.workspace_id)
             .where(Approval.status == "pending", Approval.expires_at <= now)
             .order_by(Approval.expires_at, Approval.id)
             .limit(limit)
-        )
+        ).all()
     )
+
+
+def due_ids_all_workspaces(session: Session, now: datetime, *, limit: int) -> list[uuid.UUID]:
+    """For the expiry sweep job only: ids of due approvals across workspaces."""
+    return [item[0] for item in due_items_all_workspaces(session, now, limit=limit)]

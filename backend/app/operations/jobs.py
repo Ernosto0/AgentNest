@@ -7,13 +7,14 @@ never retried but handed to ``reconcile_send`` (INV-05).
 import uuid
 from datetime import UTC, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.content.models import ContentItem
 from app.content.payload import PublishContentPayload
 from app.core.clock import Clock
 from app.core.config import get_settings
+from app.core.db import set_tenant_context
 from app.core.errors import RetryableError
 from app.inbox import drafts
 from app.inbox.ingest import ingest_webhook
@@ -381,15 +382,32 @@ def reconcile_stuck_operations(job: JobContext) -> None:
     (INV-05). A reply goes to ``reconcile_send``; a publish (G11) to ``reconcile_publish``."""
     cutoff = job.clock.now() - STUCK_AFTER
     with job.session_factory() as session:
-        stuck = session.execute(
-            select(Operation.id, Operation.workspace_id, Operation.operation_type).where(
-                Operation.status == "in_progress",
-                Operation.operation_type.in_(("send_reply", "publish_content")),
-                Operation.started_at < cutoff,
-            )
-        ).all()
+        bind = session.get_bind()
+        stuck: list[tuple[uuid.UUID, uuid.UUID, str]]
+        if bind.dialect.name == "postgresql":
+            stuck_rows = session.execute(
+                text(
+                    "SELECT id, workspace_id, subject_type "
+                    "FROM public.discover_stuck_operations(:cutoff, 100)"
+                ),
+                {"cutoff": cutoff},
+            ).all()
+            stuck = [
+                (row[0], row[1], "publish_content" if row[2] == "content" else "send_reply")
+                for row in stuck_rows
+            ]
+        else:
+            fallback_rows = session.execute(
+                select(Operation.id, Operation.workspace_id, Operation.operation_type).where(
+                    Operation.status == "in_progress",
+                    Operation.operation_type.in_(("send_reply", "publish_content")),
+                    Operation.started_at < cutoff,
+                )
+            ).all()
+            stuck = [(r[0], r[1], str(r[2])) for r in fallback_rows]
     for operation_id, workspace_id, operation_type in stuck:
         with job.session_factory() as session:
+            set_tenant_context(session, workspace_id)
             if operation_type == "publish_content":
                 _unstick_publish(session, job.clock, workspace_id, operation_id)
             else:

@@ -4,6 +4,7 @@ Services commit; repositories never do (ADR-003). Constraint names follow the na
 convention below (``pk_``, ``fk_``, ``uq_``, ``ck_``, ``ix_``).
 """
 
+import contextlib
 import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -15,7 +16,16 @@ from typing import Any
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import DateTime, ForeignKey, MetaData, UniqueConstraint, create_engine, func, text
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    MetaData,
+    UniqueConstraint,
+    create_engine,
+    event,
+    func,
+    text,
+)
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import (
@@ -112,6 +122,80 @@ def get_db() -> Iterator[Session]:
         raise
     finally:
         session.close()
+
+
+SESSION_TENANT_KEY = "tenant_workspace_id"
+
+
+def set_tenant_context(session: Session, workspace_id: uuid.UUID | str) -> None:
+    """Set transaction-local tenant context for RLS enforcement (P8-03 / ADR-025 §1.2).
+
+    Validates that ``workspace_id`` is a valid UUID, stores it in ``session.info``
+    for automatic re-application on subsequent transactions in this session, and executes
+    ``SELECT set_config('app.workspace_id', :ws_id, true)``.
+    """
+    valid_uuid = str(uuid.UUID(str(workspace_id)))
+    session.info[SESSION_TENANT_KEY] = valid_uuid
+    session.execute(
+        text("SELECT set_config('app.workspace_id', :ws_id, true)"),
+        {"ws_id": valid_uuid},
+    )
+
+
+def clear_tenant_context(session: Session) -> None:
+    """Clear transaction-local tenant context."""
+    session.info.pop(SESSION_TENANT_KEY, None)
+    session.execute(text("SELECT set_config('app.workspace_id', '', true)"))
+
+
+def get_current_tenant_guc(session: Session) -> str | None:
+    """Return the current transaction's ``app.workspace_id`` GUC setting, or ``None``."""
+    val = session.scalar(text("SELECT nullif(current_setting('app.workspace_id', true), '')"))
+    return str(val) if val is not None else None
+
+
+@contextlib.contextmanager
+def tenant_session(
+    workspace_id: uuid.UUID | str,
+    session_factory: sessionmaker[Session] | None = None,
+) -> Iterator[Session]:
+    """Scoped session context manager that guarantees tenant context is set and closed cleanly."""
+    factory = session_factory or get_session_factory()
+    session = factory()
+    try:
+        set_tenant_context(session, workspace_id)
+        yield session
+    except BaseException:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def make_tenant_session_factory(
+    base_factory: sessionmaker[Session],
+    workspace_id: uuid.UUID | str,
+) -> sessionmaker[Session]:
+    """Return a session factory callable that produces sessions bound to ``workspace_id``."""
+    valid_uuid = str(uuid.UUID(str(workspace_id)))
+
+    def _factory(**kwargs: Any) -> Session:
+        session = base_factory(**kwargs)
+        set_tenant_context(session, valid_uuid)
+        return session
+
+    return _factory  # type: ignore[return-value]
+
+
+@event.listens_for(Session, "after_begin")
+def _on_session_after_begin(session: Session, transaction: Any, connection: Any) -> None:
+    """Ensure newly begun transactions within a session inherit the active tenant context."""
+    ws_id = session.info.get(SESSION_TENANT_KEY)
+    if ws_id and connection.dialect.name == "postgresql":
+        connection.execute(
+            text("SELECT set_config('app.workspace_id', :ws_id, true)"),
+            {"ws_id": str(ws_id)},
+        )
 
 
 @dataclass(frozen=True)

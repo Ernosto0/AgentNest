@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
-from app.core.db import get_db
+from app.core.db import get_db, set_tenant_context
 from app.core.errors import AppError
 from app.core.security import constant_time_equal
 from app.identity import repository as identity_repo
@@ -150,6 +150,7 @@ def require_membership(permission: str | None = None) -> Callable[..., Workspace
         if permission is not None and not has_permission(member.role, permission):
             raise AppError("FORBIDDEN", permission=permission)
         request.state.workspace_id = str(workspace.id)
+        set_tenant_context(db, workspace.id)
         return identity_service.workspace_context(
             workspace, ActorRef.user(auth.user.id), member.role
         )

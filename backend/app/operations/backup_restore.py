@@ -381,6 +381,7 @@ def provision_database_roles(
             text(f"GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {role}")
         )
         session.execute(text(f"GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {role}"))
+        session.execute(text(f"GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO {role}"))
         session.execute(
             text(
                 f"ALTER DEFAULT PRIVILEGES FOR ROLE {mig} IN SCHEMA public "
@@ -391,6 +392,12 @@ def provision_database_roles(
             text(
                 f"ALTER DEFAULT PRIVILEGES FOR ROLE {mig} IN SCHEMA public "
                 f"GRANT USAGE, SELECT ON SEQUENCES TO {role}"
+            )
+        )
+        session.execute(
+            text(
+                f"ALTER DEFAULT PRIVILEGES FOR ROLE {mig} IN SCHEMA public "
+                f"GRANT EXECUTE ON FUNCTIONS TO {role}"
             )
         )
 

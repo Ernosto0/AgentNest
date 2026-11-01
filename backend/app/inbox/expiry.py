@@ -6,11 +6,12 @@ approval normally expires first, five minutes before the window ends; this is th
 ``needs_human`` and ``queued`` drafts, which have no approval clock of their own.)
 """
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.approvals import service as approvals
 from app.core.clock import Clock
+from app.core.db import set_tenant_context
 from app.inbox import attention, drafts
 from app.inbox.context import MESSAGING_WINDOW
 from app.inbox.models import Conversation, ReplyDraft
@@ -24,20 +25,31 @@ def expire_closed_window_drafts(session_factory: sessionmaker[Session], clock: C
     """Expire every waiting draft whose window has closed; one transaction per draft."""
     cutoff = clock.now() - MESSAGING_WINDOW
     with session_factory() as session:
-        due = session.execute(
-            select(ReplyDraft.id, ReplyDraft.workspace_id)
-            .join(
-                Conversation,
-                (Conversation.workspace_id == ReplyDraft.workspace_id)
-                & (Conversation.id == ReplyDraft.conversation_id),
-            )
-            .where(ReplyDraft.status.in_(EXPIRABLE), Conversation.last_inbound_at <= cutoff)
-            .order_by(ReplyDraft.created_at)
-            .limit(BATCH)
-        ).all()
+        bind = session.get_bind()
+        if bind.dialect.name == "postgresql":
+            due = session.execute(
+                text(
+                    "SELECT id, workspace_id "
+                    "FROM public.discover_expired_reply_draft_ids(:cutoff, :limit)"
+                ),
+                {"cutoff": cutoff, "limit": BATCH},
+            ).all()
+        else:
+            due = session.execute(
+                select(ReplyDraft.id, ReplyDraft.workspace_id)
+                .join(
+                    Conversation,
+                    (Conversation.workspace_id == ReplyDraft.workspace_id)
+                    & (Conversation.id == ReplyDraft.conversation_id),
+                )
+                .where(ReplyDraft.status.in_(EXPIRABLE), Conversation.last_inbound_at <= cutoff)
+                .order_by(ReplyDraft.created_at)
+                .limit(BATCH)
+            ).all()
     expired = 0
     for draft_id, workspace_id in due:
         with session_factory() as session:
+            set_tenant_context(session, workspace_id)
             ctx = system_context(session, workspace_id, "inbox.expiry")
             draft = drafts.get_draft(session, workspace_id, draft_id, lock=True)
             if ctx is None or draft is None or draft.status not in EXPIRABLE:

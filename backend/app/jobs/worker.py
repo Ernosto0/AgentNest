@@ -20,6 +20,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.clock import Clock
+from app.core.db import make_tenant_session_factory
 from app.core.errors import AppError, RetryableError
 from app.core.logging import bind_context, get_logger, unbind_context
 from app.jobs import queue
@@ -145,6 +146,12 @@ def _execute(
         if not queue.extend_lease(session_factory, job, clock, effective_lease):
             raise JobLeaseLost
 
+    effective_session_factory = (
+        make_tenant_session_factory(session_factory, job.workspace_id)
+        if job.workspace_id is not None
+        else session_factory
+    )
+
     ctx = JobContext(
         job_id=job.id,
         job_type=job.job_type,
@@ -153,7 +160,7 @@ def _execute(
         payload=payload,
         attempt=job.attempts,
         max_attempts=job.max_attempts,
-        session_factory=session_factory,
+        session_factory=effective_session_factory,
         clock=clock,
         _heartbeat=heartbeat,
     )

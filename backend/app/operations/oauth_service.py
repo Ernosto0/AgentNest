@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
+from app.core.db import set_tenant_context
 from app.core.errors import AppError
 from app.core.ids import new_id
 from app.core.security import TokenKeyRing, account_token_aad, generate_token, hash_token
@@ -111,10 +112,23 @@ def complete_callback(
 ) -> CallbackOutcome:
     if not state or len(state) > 512:
         raise AppError("OAUTH_STATE_INVALID")
+    sh = hash_token(state)
     with session_factory() as session:
-        row = session.scalars(
-            select(OAuthState).where(OAuthState.state_hash == hash_token(state)).with_for_update()
-        ).one_or_none()
+        bind = session.get_bind()
+        if bind.dialect.name == "postgresql":
+            resolved = session.execute(
+                text("SELECT id, workspace_id FROM public.resolve_oauth_state_by_hash(:sh)"),
+                {"sh": sh},
+            ).first()
+            if resolved is not None:
+                set_tenant_context(session, resolved.workspace_id)
+                row = session.get(OAuthState, resolved.id, with_for_update=True)
+            else:
+                row = None
+        else:
+            row = session.scalars(
+                select(OAuthState).where(OAuthState.state_hash == sh).with_for_update()
+            ).one_or_none()
         if (
             row is None
             or row.user_id != user_id

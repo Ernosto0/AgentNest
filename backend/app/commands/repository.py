@@ -5,11 +5,12 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.commands.models import OwnerCommand
 from app.core.context import WorkspaceContext
+from app.core.db import set_tenant_context
 
 
 def get_command(
@@ -53,6 +54,19 @@ def list_commands(
 
 def due_clarifications(session: Session, now: datetime, *, limit: int) -> Sequence[OwnerCommand]:
     """For the expiry job only: waiting-for-answer commands whose time is up, any workspace."""
+    bind = session.get_bind()
+    if bind.dialect.name == "postgresql":
+        rows = session.execute(
+            text("SELECT id, workspace_id FROM public.discover_expired_command_ids(:now, :limit)"),
+            {"now": now, "limit": limit},
+        ).all()
+        result: list[OwnerCommand] = []
+        for cmd_id, ws_id in rows:
+            set_tenant_context(session, ws_id)
+            cmd = session.get(OwnerCommand, cmd_id, with_for_update=True)
+            if cmd is not None:
+                result.append(cmd)
+        return result
     return session.scalars(
         select(OwnerCommand)
         .where(OwnerCommand.status == "needs_clarification", OwnerCommand.expires_at <= now)
