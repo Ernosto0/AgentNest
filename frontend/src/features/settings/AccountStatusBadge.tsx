@@ -3,19 +3,19 @@ import { AlertIcon, CheckIcon, CriticalIcon } from "@/components/icons";
 
 const TONES: Record<string, { box: string; Icon: typeof CheckIcon | null }> = {
   connected: {
-    box: "bg-green-50 text-green-900 ring-green-500",
+    box: "bg-success/10 text-success border-success/30",
     Icon: CheckIcon,
   },
   degraded: {
-    box: "bg-amber-50 text-amber-900 ring-amber-500",
+    box: "bg-warning/10 text-warning border-warning/30",
     Icon: AlertIcon,
   },
   needs_reauth: {
-    box: "bg-red-50 text-red-900 ring-red-400",
+    box: "bg-danger/10 text-danger border-danger/30",
     Icon: CriticalIcon,
   },
   disconnected: {
-    box: "bg-slate-100 text-slate-800 ring-slate-300",
+    box: "bg-surface-subtle text-secondary border-border",
     Icon: null,
   },
 };
@@ -28,9 +28,9 @@ export function AccountStatusBadge({ status }: { status: string }) {
     <span
       data-testid="account-status-badge"
       data-status={status}
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-semibold ring-1 ring-inset ${tone.box}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tone.box}`}
     >
-      {tone.Icon ? <tone.Icon className="text-base" /> : null}
+      {tone.Icon ? <tone.Icon className="text-sm" /> : null}
       {t(`automation.accountStatus.${status}`, { defaultValue: status })}
     </span>
   );

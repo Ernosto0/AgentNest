@@ -4,7 +4,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import type { SocialAccount } from "@/api/types";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
-import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { capabilityLabel } from "@/features/content/messages";
@@ -33,25 +32,35 @@ function OAuthBanner() {
   if (status !== "connected" && status !== "error") return null;
   const code = params.get("code") ?? "";
   const error = errorText(OAUTH_ERRORS.has(code) ? code : "UNKNOWN");
+  const isError = status === "error";
+
   return (
     <div
       data-testid="oauth-banner"
-      role={status === "error" ? "alert" : "status"}
-      className="rounded-lg bg-slate-100 p-3"
+      role={isError ? "alert" : "status"}
+      className={`flex flex-col gap-3 rounded-panel border p-4 ${
+        isError
+          ? "border-danger/30 bg-danger/10 text-danger-foreground"
+          : "border-success/30 bg-success/10 text-success-foreground"
+      }`}
     >
-      <p>{status === "connected" ? t("connections.oauthConnected") : error.what}</p>
-      {status === "error" ? <p>{error.next}</p> : null}
-      <Button
-        variant="secondary"
-        onClick={() => {
-          const next = new URLSearchParams(params);
-          next.delete("oauth");
-          next.delete("code");
-          setParams(next, { replace: true });
-        }}
-      >
-        {t("connections.dismiss")}
-      </Button>
+      <div className="flex flex-col gap-1">
+        <p className="font-medium">{status === "connected" ? t("connections.oauthConnected") : error.what}</p>
+        {isError && error.next ? <p className="text-sm opacity-90">{error.next}</p> : null}
+      </div>
+      <div>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            const next = new URLSearchParams(params);
+            next.delete("oauth");
+            next.delete("code");
+            setParams(next, { replace: true });
+          }}
+        >
+          {t("connections.dismiss")}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -74,16 +83,16 @@ export function Connections() {
   const account = accounts.data?.find((a) => a.status !== "disconnected") ?? null;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">{t("connections.title")}</h1>
-        <p className="mt-1 text-slate-600">{t("connections.intro")}</p>
+        <h1 className="text-2xl font-heading font-semibold text-primary">{t("connections.title")}</h1>
+        <p className="mt-1 text-sm text-secondary">{t("connections.intro")}</p>
       </div>
 
       <OAuthBanner />
       {meta.isError ? <ErrorMessage error={meta.error} /> : null}
       {accounts.isError ? <ErrorMessage error={accounts.error} /> : null}
-      {accounts.isPending ? <p>{t("common.loading")}</p> : null}
+      {accounts.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
 
       {accounts.data && account ? (
         <AccountCard
@@ -96,19 +105,24 @@ export function Connections() {
       ) : null}
 
       {accounts.data && !account ? (
-        <Card className="flex flex-col gap-3">
-          <p>{t("connections.none")}</p>
+        <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+          <p className="text-sm text-secondary">{t("connections.none")}</p>
           {owner ? (
             <div className="flex flex-wrap gap-2">
               {metaAllowed ? (
                 <Button
                   disabled={busy}
-                  onClick={() => instagram.mutate({ purpose: "connect" }, {
-                    onSuccess: ({ authorize_url }) => {
-                      setRedirecting(true);
-                      window.location.assign(authorize_url);
-                    },
-                  })}
+                  onClick={() =>
+                    instagram.mutate(
+                      { purpose: "connect" },
+                      {
+                        onSuccess: ({ authorize_url }) => {
+                          setRedirecting(true);
+                          window.location.assign(authorize_url);
+                        },
+                      },
+                    )
+                  }
                 >
                   {t("connections.connectInstagram")}
                 </Button>
@@ -118,21 +132,28 @@ export function Connections() {
                   {t("connections.connectMock")}
                 </Button>
               ) : null}
-              {meta.isPending ? <p>{t("common.loading")}</p> : null}
-              {meta.data && !mockAllowed && !metaAllowed ? <p>{t("connections.unavailable")}</p> : null}
+              {meta.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
+              {meta.data && !mockAllowed && !metaAllowed ? (
+                <p className="text-sm text-secondary">{t("connections.unavailable")}</p>
+              ) : null}
             </div>
           ) : (
-            <p className="text-sm text-slate-600">{t("connections.ownerOnly")}</p>
+            <p className="text-sm text-secondary">{t("connections.ownerOnly")}</p>
           )}
           {connect.error ? <ErrorMessage error={connect.error} /> : null}
           {instagram.error ? <ErrorMessage error={instagram.error} /> : null}
-        </Card>
+        </div>
       ) : null}
     </div>
   );
 }
 
-function AccountCard({ account, owner, mockAllowed, metaAllowed }: {
+function AccountCard({
+  account,
+  owner,
+  mockAllowed,
+  metaAllowed,
+}: {
   account: SocialAccount;
   owner: boolean;
   mockAllowed: boolean;
@@ -162,45 +183,55 @@ function AccountCard({ account, owner, mockAllowed, metaAllowed }: {
   const canReconnect = account.status === "needs_reauth";
 
   return (
-    <Card className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-semibold">@{account.username ?? account.id}</h2>
+        <h2 className="text-lg font-heading font-semibold text-primary">
+          @{account.username ?? account.id}
+        </h2>
         <AccountStatusBadge status={account.status} />
         {account.is_simulated ? <SimulatedBadge /> : null}
       </div>
 
       {account.status === "degraded" && account.degraded_until ? (
-        <p data-testid="degraded-until" className="text-sm text-amber-900">
+        <p data-testid="degraded-until" className="text-sm font-medium text-warning">
           {t("connections.degradedUntil", {
             time: localTime(account.degraded_until),
           })}
         </p>
       ) : null}
 
-      <div>
-        <h3 className="text-sm font-semibold text-slate-700">{t("connections.lastError")}</h3>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-secondary">
+          {t("connections.lastError")}
+        </h3>
         {account.last_error_code ? (
-          <div data-testid="account-last-error">
-            <p>{cause.what !== "" ? cause.what : t("connections.lastErrorUnknown")}</p>
-            {cause.next !== "" ? <p className="text-sm text-slate-600">{cause.next}</p> : null}
+          <div data-testid="account-last-error" className="text-sm">
+            <p className="font-medium text-primary">
+              {cause.what !== "" ? cause.what : t("connections.lastErrorUnknown")}
+            </p>
+            {cause.next !== "" ? <p className="text-secondary">{cause.next}</p> : null}
           </div>
         ) : (
-          <p className="text-slate-700" data-testid="account-last-error">
+          <p className="text-sm text-secondary" data-testid="account-last-error">
             {t("connections.noError")}
           </p>
         )}
       </div>
 
-      <div>
-        <h3 className="text-sm font-semibold text-slate-700">{t("connections.capabilities")}</h3>
-        <p data-testid="account-capabilities">{capabilities || "–"}</p>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-secondary">
+          {t("connections.capabilities")}
+        </h3>
+        <p data-testid="account-capabilities" className="text-sm text-primary">
+          {capabilities || "–"}
+        </p>
       </div>
 
       {canReconnect ? (
         owner ? (
           account.provider_kind === "mock" ? (
             <div className="flex flex-col gap-2">
-              <p className="text-sm text-slate-600">{t("connections.reconnectHint")}</p>
+              <p className="text-sm text-secondary">{t("connections.reconnectHint")}</p>
               <div>
                 <Button disabled={busy || !mockAllowed} onClick={() => reconnect.mutate(account.id)}>
                   {t("connections.reconnect")}
@@ -208,30 +239,34 @@ function AccountCard({ account, owner, mockAllowed, metaAllowed }: {
               </div>
             </div>
           ) : (
-            <Button
-              disabled={busy || !metaAllowed}
-              onClick={() => instagram.mutate(
-                { purpose: "reconnect", social_account_id: account.id },
-                {
-                  onSuccess: ({ authorize_url }) => {
-                    setRedirecting(true);
-                    window.location.assign(authorize_url);
-                  },
-                },
-              )}
-            >
-              {t("connections.reconnectInstagram")}
-            </Button>
+            <div>
+              <Button
+                disabled={busy || !metaAllowed}
+                onClick={() =>
+                  instagram.mutate(
+                    { purpose: "reconnect", social_account_id: account.id },
+                    {
+                      onSuccess: ({ authorize_url }) => {
+                        setRedirecting(true);
+                        window.location.assign(authorize_url);
+                      },
+                    },
+                  )
+                }
+              >
+                {t("connections.reconnectInstagram")}
+              </Button>
+            </div>
           )
         ) : (
-          <p className="text-sm text-slate-600">{t("connections.ownerOnly")}</p>
+          <p className="text-sm text-secondary">{t("connections.ownerOnly")}</p>
         )
       ) : null}
       {reconnect.error ? <ErrorMessage error={reconnect.error} /> : null}
       {instagram.error ? <ErrorMessage error={instagram.error} /> : null}
 
       {owner ? (
-        <div className="border-t border-slate-200 pt-3">
+        <div className="border-t border-border pt-4">
           <Button
             variant="secondary"
             disabled={busy}
@@ -250,7 +285,7 @@ function AccountCard({ account, owner, mockAllowed, metaAllowed }: {
       {role === "owner" || role === "manager" ? (
         <Link
           to={`/w/${workspace.id}/more/settings/system-health`}
-          className="text-sm font-semibold text-indigo-700 underline underline-offset-2"
+          className="text-sm font-medium text-brand hover:underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-focus"
         >
           {t("settings.openSystemHealth")}
         </Link>
@@ -268,9 +303,12 @@ function AccountCard({ account, owner, mockAllowed, metaAllowed }: {
                 variant="danger"
                 disabled={busy}
                 onClick={() =>
-                  disconnect.mutate({ accountId: account.id, deleteConversationData }, {
-                    onSuccess: close,
-                  })
+                  disconnect.mutate(
+                    { accountId: account.id, deleteConversationData },
+                    {
+                      onSuccess: close,
+                    },
+                  )
                 }
               >
                 {t("connections.disconnectConfirm")}
@@ -281,20 +319,27 @@ function AccountCard({ account, owner, mockAllowed, metaAllowed }: {
             </div>
           }
         >
-          <p>{t("connections.disconnectBody")}</p>
-          {disconnect.error ? <ErrorMessage error={disconnect.error} /> : null}
-          <label className="mt-4 flex items-start gap-2">
-            <input
-              type="checkbox"
-              checked={deleteConversationData}
-              disabled={disconnect.isPending}
-              onChange={(event) => setDeleteConversationData(event.target.checked)}
-            />
-            {t("connections.deleteConversationData")}
-          </label>
-          <p className="mt-2 text-sm text-slate-600">{t("connections.deleteConversationDataHint")}</p>
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-primary">{t("connections.disconnectBody")}</p>
+            {disconnect.error ? <ErrorMessage error={disconnect.error} /> : null}
+            <label className="mt-2 flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteConversationData}
+                disabled={disconnect.isPending}
+                onChange={(event) => setDeleteConversationData(event.target.checked)}
+                className="mt-0.5 rounded border-border text-brand focus:ring-focus"
+              />
+              <span className="text-sm font-medium text-primary">
+                {t("connections.deleteConversationData")}
+              </span>
+            </label>
+            <p className="text-xs text-secondary leading-relaxed">
+              {t("connections.deleteConversationDataHint")}
+            </p>
+          </div>
         </BottomSheet>
       ) : null}
-    </Card>
+    </div>
   );
 }

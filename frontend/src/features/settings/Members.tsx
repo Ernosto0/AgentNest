@@ -4,7 +4,6 @@ import QRCode from "qrcode";
 import type { Invite, Member, Role } from "@/api/types";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
-import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { useMe } from "@/features/auth/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -33,6 +32,10 @@ function InviteQr({ value }: { value: string }) {
       cancelled = true;
     };
   }, [value]);
+
+  if (!src) {
+    return <div data-testid="invite-qr" aria-hidden="true" className="mx-auto h-44 w-44" />;
+  }
   return <img data-testid="invite-qr" src={src} alt="" aria-hidden="true" className="mx-auto h-44 w-44" />;
 }
 
@@ -49,29 +52,31 @@ export function Members() {
   const [removing, setRemoving] = useState<Member | null>(null);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">{t("members.title")}</h1>
-        <p className="mt-1 text-slate-600">{t("members.intro")}</p>
+        <h1 className="text-2xl font-heading font-semibold text-primary">{t("members.title")}</h1>
+        <p className="mt-1 text-sm text-secondary">{t("members.intro")}</p>
       </div>
 
       {members.isError ? <ErrorMessage error={members.error} /> : null}
       {changeRole.isError ? <ErrorMessage error={changeRole.error} /> : null}
-      {members.isPending ? <p>{t("common.loading")}</p> : null}
+      {members.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
 
       {members.data ? (
-        <Card className="flex flex-col gap-1">
-          <ul className="flex flex-col divide-y divide-slate-200">
+        <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
+          <ul className="flex flex-col divide-y divide-border">
             {members.data.map((member) => (
-              <li key={member.user_id} className="flex items-center justify-between gap-3 py-2">
+              <li key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
-                  <p className="font-medium break-words">
+                  <p className="font-medium text-primary break-words">
                     {member.display_name}
                     {member.user_id === me.data?.user.id ? (
-                      <span className="ml-2 text-sm text-slate-500">{t("members.you")}</span>
+                      <span className="ml-2 rounded-full bg-surface-subtle px-2 py-0.5 text-xs text-secondary">
+                        {t("members.you")}
+                      </span>
                     ) : null}
                   </p>
-                  <p className="text-sm break-all text-slate-600">{member.email}</p>
+                  <p className="text-xs text-secondary break-all">{member.email}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {owner ? (
@@ -86,7 +91,7 @@ export function Members() {
                           role: event.target.value as Role,
                         })
                       }
-                      className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
+                      className="min-h-11 rounded-control border border-border bg-surface px-3 py-1.5 text-sm text-primary focus-visible:outline-2 focus-visible:outline-focus"
                     >
                       {ROLES.map((r) => (
                         <option key={r} value={r}>
@@ -95,7 +100,9 @@ export function Members() {
                       ))}
                     </select>
                   ) : (
-                    <span className="text-slate-700">{t(`workspaces.role.${member.role}`)}</span>
+                    <span className="text-sm font-medium text-secondary">
+                      {t(`workspaces.role.${member.role}`)}
+                    </span>
                   )}
                   {owner ? (
                     <Button variant="secondary" onClick={() => setRemoving(member)}>
@@ -106,19 +113,27 @@ export function Members() {
               </li>
             ))}
           </ul>
-        </Card>
+        </div>
       ) : null}
 
       {owner ? (
-        <Card className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
           <div>
             <Button onClick={() => setInviting(true)}>{t("members.invite")}</Button>
           </div>
-          <h2 className="text-lg font-semibold">{t("members.pending")}</h2>
-          {invites.isPending ? <p>{t("common.loading")}</p> : null}
-          {invites.data && invites.data.length === 0 ? <p>{t("members.pendingNone")}</p> : null}
-          {invites.data ? <PendingInvites invites={invites.data} /> : null}
-        </Card>
+          <div className="border-t border-border pt-3">
+            <h2 className="text-base font-heading font-semibold text-primary">{t("members.pending")}</h2>
+            {invites.isPending ? <p className="mt-2 text-sm text-secondary">{t("common.loading")}</p> : null}
+            {invites.data && invites.data.length === 0 ? (
+              <p className="mt-2 text-sm text-secondary">{t("members.pendingNone")}</p>
+            ) : null}
+            {invites.data && invites.data.length > 0 ? (
+              <div className="mt-3">
+                <PendingInvites invites={invites.data} />
+              </div>
+            ) : null}
+          </div>
+        </div>
       ) : null}
 
       {inviting ? <InviteSheet onClose={() => setInviting(false)} /> : null}
@@ -134,11 +149,17 @@ function PendingInvites({ invites }: { invites: { id: string; role: Role; expire
   return (
     <ul className="flex flex-col gap-2">
       {invites.map((invite) => (
-        <li key={invite.id} className="flex items-center justify-between gap-3" data-testid="pending-invite">
-          <span>
+        <li
+          key={invite.id}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-border bg-surface-subtle p-3"
+          data-testid="pending-invite"
+        >
+          <span className="text-sm font-medium text-primary">
             {t(`workspaces.role.${invite.role}`)}
             {" · "}
-            {t("members.expires", { time: new Date(invite.expires_at).toLocaleString() })}
+            <span className="text-secondary">
+              {t("members.expires", { time: new Date(invite.expires_at).toLocaleString() })}
+            </span>
           </span>
           <Button
             variant="secondary"
@@ -193,19 +214,19 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
       {invite ? (
         <div className="flex flex-col gap-4">
           <InviteQr value={url} />
-          <p data-testid="invite-url" className="text-center text-sm break-all text-slate-700">
+          <p data-testid="invite-url" className="text-center text-sm font-mono break-all text-primary bg-surface-subtle p-2 rounded-control border border-border">
             {url}
           </p>
-          <p className="text-center text-sm text-slate-600">{t("members.linkHint")}</p>
+          <p className="text-center text-xs text-secondary leading-relaxed">{t("members.linkHint")}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-800">{t("members.roleLabel")}</span>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-primary">{t("members.roleLabel")}</span>
             <select
               value={role}
               onChange={(event) => setRole(event.target.value as Role)}
-              className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-base"
+              className="min-h-11 rounded-control border border-border bg-surface px-3 py-1.5 text-sm text-primary focus-visible:outline-2 focus-visible:outline-focus"
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -250,8 +271,10 @@ function RemoveSheet({ member, onClose }: { member: Member; onClose: () => void 
         </div>
       }
     >
-      <p>{t("members.removeBody")}</p>
-      {remove.isError ? <ErrorMessage error={remove.error} /> : null}
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-primary">{t("members.removeBody")}</p>
+        {remove.isError ? <ErrorMessage error={remove.error} /> : null}
+      </div>
     </BottomSheet>
   );
 }
