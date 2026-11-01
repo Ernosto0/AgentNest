@@ -14,7 +14,6 @@ import type {
 } from "@/api/types";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
-import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -157,20 +156,22 @@ export function DevPanel() {
   const [confirmReset, setConfirmReset] = useState(false);
 
   return (
-    <div className="flex flex-col gap-5" data-testid="dev-panel">
-      <h1 className="text-2xl font-semibold">{t("devPanel.title")}</h1>
-      <p className="text-slate-600">{t("devPanel.intro")}</p>
+    <div className="flex flex-col gap-6" data-testid="dev-panel">
+      <div>
+        <h1 className="text-2xl font-heading font-semibold text-primary">{t("devPanel.title")}</h1>
+        <p className="mt-1 text-sm text-secondary">{t("devPanel.intro")}</p>
+      </div>
 
-      <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">{t("devPanel.customers")}</h2>
-        <ul className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+        <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.customers")}</h2>
+        <ul className="flex flex-col divide-y divide-border">
           {(dev.scripts.data ?? []).map((script) => (
-            <li key={script.id} className="flex flex-wrap items-center justify-between gap-2">
+            <li key={script.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <span className="min-w-0">
-                <span className="block font-medium">
+                <span className="block text-sm font-medium text-primary">
                   {script.label[i18n.language] ?? script.label.tr ?? script.id}
                 </span>
-                <span className="block text-sm break-words text-slate-600">
+                <span className="block text-xs break-words text-secondary">
                   {script.customer_alias}: {script.text ?? t("devPanel.photoOnly")}
                 </span>
               </span>
@@ -186,16 +187,16 @@ export function DevPanel() {
           ))}
         </ul>
         {dev.simulate.error ? <ErrorMessage error={dev.simulate.error} /> : null}
-      </Card>
+      </div>
 
-      <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">{t("devPanel.failures")}</h2>
+      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+        <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.failures")}</h2>
         <div className="flex flex-wrap gap-2">
           <select
             aria-label={t("devPanel.operation")}
             value={operation}
             onChange={(event) => setOperation(event.target.value as (typeof OPERATIONS)[number])}
-            className="min-h-11 rounded-lg border border-slate-300 bg-white px-3"
+            className="min-h-11 rounded-control border border-border bg-surface px-3 py-1.5 text-sm text-primary focus-visible:outline-2 focus-visible:outline-focus"
           >
             {OPERATIONS.map((name) => (
               <option key={name}>{name}</option>
@@ -205,7 +206,7 @@ export function DevPanel() {
             aria-label={t("devPanel.mode")}
             value={mode}
             onChange={(event) => setMode(event.target.value as (typeof MODES)[number])}
-            className="min-h-11 rounded-lg border border-slate-300 bg-white px-3"
+            className="min-h-11 rounded-control border border-border bg-surface px-3 py-1.5 text-sm text-primary focus-visible:outline-2 focus-visible:outline-focus"
           >
             {MODES.map((name) => (
               <option key={name}>{name}</option>
@@ -219,10 +220,10 @@ export function DevPanel() {
             {t("devPanel.addRule")}
           </Button>
         </div>
-        <ul>
+        <ul className="flex flex-col divide-y divide-border text-sm">
           {(dev.rules.data ?? []).map((rule) => (
-            <li key={rule.id} className="flex items-center justify-between gap-2">
-              <span>
+            <li key={rule.id} className="flex items-center justify-between gap-2 py-2">
+              <span className="text-primary">
                 {rule.operation} → {rule.mode} ({rule.remaining ?? "∞"})
               </span>
               <Button variant="ghost" onClick={() => dev.removeRule.mutate(rule.id)}>
@@ -231,11 +232,11 @@ export function DevPanel() {
             </li>
           ))}
         </ul>
-      </Card>
+      </div>
 
-      <Card className="flex flex-col gap-3" data-testid="sim-published">
+      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs" data-testid="sim-published">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">{t("devPanel.published")}</h2>
+          <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.published")}</h2>
           <Button
             variant="ghost"
             disabled={dev.published.isFetching}
@@ -244,16 +245,16 @@ export function DevPanel() {
             {t("devPanel.refresh")}
           </Button>
         </div>
-        <p className="text-sm text-slate-600">{t("devPanel.publishedHint")}</p>
+        <p className="text-xs text-secondary leading-relaxed">{t("devPanel.publishedHint")}</p>
         {dev.published.error ? <ErrorMessage error={dev.published.error} /> : null}
         {dev.published.data && dev.published.data.length === 0 ? (
-          <p className="text-sm">{t("devPanel.publishedNone")}</p>
+          <p className="text-sm text-secondary">{t("devPanel.publishedNone")}</p>
         ) : null}
-        <ul className="flex flex-col gap-2 text-sm">
+        <ul className="flex flex-col divide-y divide-border text-sm">
           {(dev.published.data ?? []).map((media) => (
-            <li key={media.media_id} data-testid="sim-published-item" className="flex flex-col gap-0.5">
-              <span className="flex flex-wrap items-center gap-2">
-                <span className="font-medium">
+            <li key={media.media_id} data-testid="sim-published-item" className="flex flex-col gap-1 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-primary">
                   {t("devPanel.publishedRow", {
                     type: media.media_type,
                     time: new Date(media.published_at).toLocaleString(i18n.language, {
@@ -264,32 +265,32 @@ export function DevPanel() {
                   })}
                 </span>
                 {media.is_simulated ? <SimulatedBadge /> : null}
-              </span>
-              <span className="break-words text-slate-700">{media.caption ?? t("devPanel.noCaption")}</span>
-              <span className="break-all text-xs text-slate-600">
+              </div>
+              <span className="break-words text-secondary">{media.caption ?? t("devPanel.noCaption")}</span>
+              <span className="break-all text-xs text-tertiary">
                 {media.media_id} · {media.permalink}
               </span>
             </li>
           ))}
         </ul>
-      </Card>
+      </div>
 
-      <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">{t("devPanel.jobs")}</h2>
+      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+        <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.jobs")}</h2>
         <div>
           <Button variant="secondary" disabled={dev.runDue.isPending} onClick={() => dev.runDue.mutate()}>
             {t("devPanel.runDue")}
           </Button>
         </div>
-        <div className="flex flex-col gap-2 border-t border-slate-200 pt-3">
-          <p className="text-sm text-slate-600">{t("devPanel.healthCheckHint")}</p>
+        <div className="flex flex-col gap-2 border-t border-border pt-4">
+          <p className="text-xs text-secondary leading-relaxed">{t("devPanel.healthCheckHint")}</p>
           <div>
             <Button variant="secondary" disabled={dev.healthCheck.isPending} onClick={() => dev.healthCheck.mutate()}>
               {t("devPanel.healthCheck")}
             </Button>
           </div>
           {dev.healthCheck.data ? (
-            <p role="status" data-testid="health-check-result" className="text-sm">
+            <p role="status" data-testid="health-check-result" className="text-sm text-success">
               {t("devPanel.healthCheckResult", {
                 checked: dev.healthCheck.data.checked,
                 recovered: dev.healthCheck.data.recovered,
@@ -298,25 +299,25 @@ export function DevPanel() {
           ) : null}
           {dev.healthCheck.error ? <ErrorMessage error={dev.healthCheck.error} /> : null}
         </div>
-        <ul className="text-sm">
+        <ul className="flex flex-col divide-y divide-border/50 text-xs text-secondary">
           {(dev.jobs.data ?? []).slice(0, 12).map((job) => (
-            <li key={job.id}>
-              {job.job_type} · {job.status}
+            <li key={job.id} className="py-1.5">
+              <span className="font-medium text-primary">{job.job_type}</span> · {job.status}
               {job.last_error_code ? ` · ${job.last_error_code}` : ""}
             </li>
           ))}
         </ul>
-      </Card>
+      </div>
 
-      <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">{t("devPanel.reset.title")}</h2>
-        <p className="text-sm text-slate-600">{t("devPanel.reset.hint")}</p>
+      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+        <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.reset.title")}</h2>
+        <p className="text-xs text-secondary leading-relaxed">{t("devPanel.reset.hint")}</p>
         <div>
           <Button variant="danger" data-testid="dev-reset" onClick={() => setConfirmReset(true)}>
             {t("devPanel.reset.button")}
           </Button>
         </div>
-      </Card>
+      </div>
 
       {confirmReset ? (
         <BottomSheet
@@ -338,8 +339,10 @@ export function DevPanel() {
             </div>
           }
         >
-          <p>{t("devPanel.reset.confirmBody")}</p>
-          {dev.reset.error ? <ErrorMessage error={dev.reset.error} /> : null}
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-primary">{t("devPanel.reset.confirmBody")}</p>
+            {dev.reset.error ? <ErrorMessage error={dev.reset.error} /> : null}
+          </div>
         </BottomSheet>
       ) : null}
     </div>

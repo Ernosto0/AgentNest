@@ -14,7 +14,7 @@ export function NotFoundPage() {
         action={
           <Link
             to="/"
-            className="inline-flex min-h-11 items-center rounded-lg px-4 font-medium text-indigo-800 underline"
+            className="inline-flex min-h-11 items-center rounded-button px-4 font-medium text-brand hover:underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-focus transition-colors"
           >
             {t("notFound.back")}
           </Link>
