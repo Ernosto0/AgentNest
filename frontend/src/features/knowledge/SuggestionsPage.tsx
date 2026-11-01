@@ -40,20 +40,20 @@ export function SuggestionsPage() {
       <div>
         <Link
           to={`/w/${workspace.id}/more/knowledge`}
-          className="inline-flex min-h-11 items-center text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600"
+          className="inline-flex min-h-11 items-center text-sm font-medium text-action hover:underline focus-visible:outline-2 focus-visible:outline-focus"
         >
           {t("knowledge.back")}
         </Link>
-        <h1 className="text-2xl font-semibold">{t("knowledge.suggestions.title")}</h1>
-        <p className="mt-1 text-slate-600">{t("knowledge.suggestions.intro")}</p>
+        <h1 className="text-2xl font-bold font-heading text-primary">{t("knowledge.suggestions.title")}</h1>
+        <p className="mt-1 text-secondary">{t("knowledge.suggestions.intro")}</p>
       </div>
 
       {!canVerify ? (
-        <p className="rounded-lg bg-slate-100 p-3 text-sm text-slate-800">{t("knowledge.suggestions.staffNote")}</p>
+        <p className="rounded-card bg-surface-elevated p-3.5 text-sm text-secondary border border-border">{t("knowledge.suggestions.staffNote")}</p>
       ) : null}
       {candidates.isError ? <ErrorMessage error={candidates.error} /> : null}
       {resolve.error ? <ErrorMessage error={resolve.error} /> : null}
-      {candidates.isPending ? <p>{t("common.loading")}</p> : null}
+      {candidates.isPending ? <p className="text-secondary">{t("common.loading")}</p> : null}
       {candidates.data?.length === 0 ? (
         <EmptyState
           title={t("knowledge.suggestions.empty")}
@@ -65,12 +65,12 @@ export function SuggestionsPage() {
         {candidates.data?.map((candidate) => (
           <li key={candidate.id}>
             <Card className="flex flex-col gap-2" data-testid={`candidate-${candidate.fact_key}`}>
-              <h2 className="text-base font-semibold break-words">
+              <h2 className="text-base font-semibold text-primary break-words">
                 {pickLabel(candidate.fact_label, i18n.language)}
               </h2>
-              <p className="text-base break-words">{explain(candidate)}</p>
+              <p className="text-base text-primary break-words">{explain(candidate)}</p>
               {candidate.source_excerpt ? (
-                <blockquote className="border-l-4 border-slate-300 pl-3 text-sm text-slate-700">
+                <blockquote className="border-l-4 border-border pl-3 text-sm text-secondary italic">
                   {candidate.source_excerpt}
                 </blockquote>
               ) : null}

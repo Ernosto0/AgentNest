@@ -78,19 +78,19 @@ export function MoneyEditor({ value, onChange, currency }: EditorProps) {
         error={parsed?.kind === "error" ? t(`knowledge.moneyError.${parsed.code}`) : undefined}
       />
       {parsed?.kind === "money" ? (
-        <p className="text-sm text-slate-700" aria-live="polite">
+        <p className="text-sm text-secondary" aria-live="polite">
           {t("knowledge.fields.money.preview", {
             amount: formatMoneyAmount(parsed.money.amount, parsed.money.currency, locale),
           })}
         </p>
       ) : null}
       {parsed?.kind === "ambiguous" ? (
-        <fieldset className="flex flex-col gap-2 rounded-lg bg-amber-50 p-3 ring-1 ring-amber-400">
-          <legend className="px-1 text-sm font-medium text-amber-900">
+        <fieldset className="flex flex-col gap-2 rounded-card bg-attention-subtle p-3.5 border border-border">
+          <legend className="px-1 text-sm font-medium text-attention">
             {t("knowledge.fields.money.ambiguous")}
           </legend>
           {parsed.alternatives.map((alternative, index) => (
-            <label key={alternative.amount} className="flex min-h-11 items-center gap-3 text-base">
+            <label key={alternative.amount} className="flex min-h-11 items-center gap-3 text-base text-primary">
               <input
                 type="radio"
                 name="money-reading"

@@ -27,25 +27,25 @@ export function HistorySheet({
 
   return (
     <BottomSheet title={t("knowledge.history.title", { name: pickLabel(fact.label, i18n.language) })} onClose={onClose}>
-      {versions.isPending ? <p>{t("common.loading")}</p> : null}
+      {versions.isPending ? <p className="text-secondary">{t("common.loading")}</p> : null}
       {versions.isError ? <ErrorMessage error={versions.error} /> : null}
       {versions.data ? (
         <ol className="flex flex-col gap-3">
           {versions.data.map((version) => (
-            <li key={version.version} className="rounded-xl p-3 ring-1 ring-slate-200">
+            <li key={version.version} className="rounded-card p-3.5 border border-border bg-surface shadow-xs">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="font-medium">{t("knowledge.history.version", { version: version.version })}</p>
-                <p className="text-sm text-slate-600">{when.format(new Date(version.created_at))}</p>
+                <p className="font-semibold text-primary">{t("knowledge.history.version", { version: version.version })}</p>
+                <p className="text-sm text-secondary">{when.format(new Date(version.created_at))}</p>
               </div>
-              <p className="mt-1 text-sm font-medium text-slate-800">
+              <p className="mt-1 text-sm font-medium text-primary">
                 {t(`knowledge.history.change.${version.change_kind}`)}
               </p>
-              <p className="mt-1 break-words">{version.display}</p>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-primary break-words">{version.display}</p>
+              <p className="mt-1 text-sm text-secondary">
                 {t(`knowledge.source.${version.source_type}`, { defaultValue: version.source_type })}
                 {version.actor_name ? ` · ${version.actor_name}` : ""}
               </p>
-              {version.reason ? <p className="mt-1 text-sm text-slate-700">{version.reason}</p> : null}
+              {version.reason ? <p className="mt-1 text-sm text-secondary italic">{version.reason}</p> : null}
             </li>
           ))}
         </ol>

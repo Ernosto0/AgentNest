@@ -14,9 +14,9 @@ import {
 } from "./hoursModel";
 
 const CHIP =
-  "min-h-11 min-w-12 rounded-full px-3 text-sm font-medium ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-indigo-600";
+  "min-h-11 min-w-12 rounded-pill px-3.5 text-sm font-medium border transition-colors focus-visible:outline-2 focus-visible:outline-focus";
 const TIME =
-  "min-h-11 w-28 rounded-lg border border-slate-300 bg-white px-2 text-base focus-visible:outline-2 focus-visible:outline-indigo-600";
+  "min-h-11 w-28 rounded-input border border-border bg-surface px-2.5 text-base text-primary transition-colors focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus";
 
 function RangeInputs({
   ranges,
@@ -88,10 +88,10 @@ export function HoursEditor({ value, onChange }: EditorProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-slate-600">{t("knowledge.fields.hours.closedHint")}</p>
+      <p className="text-sm text-secondary">{t("knowledge.fields.hours.closedHint")}</p>
       {rows.map((row, rowIndex) => (
-        <fieldset key={rowIndex} className="flex flex-col gap-3 rounded-xl p-3 ring-1 ring-slate-200">
-          <legend className="px-1 text-sm font-medium">
+        <fieldset key={rowIndex} className="flex flex-col gap-3 rounded-card p-3.5 border border-border bg-surface">
+          <legend className="px-1 text-sm font-medium text-primary">
             {t("knowledge.fields.hours.row", { n: rowIndex + 1 })}
           </legend>
           <div className="flex flex-wrap gap-2" role="group" aria-label={t("knowledge.fields.hours.days")}>
@@ -103,7 +103,7 @@ export function HoursEditor({ value, onChange }: EditorProps) {
                   type="button"
                   aria-pressed={on}
                   onClick={() => toggleDay(rowIndex, day)}
-                  className={`${CHIP} ${on ? "bg-indigo-700 text-white ring-indigo-700" : "bg-white text-slate-800 ring-slate-300"}`}
+                  className={`${CHIP} ${on ? "bg-action text-action-contrast border-action" : "bg-surface text-secondary border-border hover:text-primary hover:border-border-hover"}`}
                 >
                   {t(`knowledge.days.${day}`)}
                 </button>
@@ -131,9 +131,9 @@ export function HoursEditor({ value, onChange }: EditorProps) {
         </Button>
       </div>
 
-      <h3 className="text-base font-medium">{t("knowledge.fields.hours.exceptions")}</h3>
+      <h3 className="text-base font-semibold text-primary">{t("knowledge.fields.hours.exceptions")}</h3>
       {exceptions.map((exception, index) => (
-        <div key={index} className="flex flex-col gap-2 rounded-xl p-3 ring-1 ring-slate-200">
+        <div key={index} className="flex flex-col gap-2 rounded-card p-3.5 border border-border bg-surface">
           <div className="flex flex-wrap items-center gap-3">
             <input
               type="date"

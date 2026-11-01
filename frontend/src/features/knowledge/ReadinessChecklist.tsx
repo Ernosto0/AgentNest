@@ -24,29 +24,29 @@ export function ReadinessChecklist({
         const body = (
           <>
             {requirement.satisfied ? (
-              <CheckIcon className="shrink-0 text-xl text-green-700" />
+              <CheckIcon className="shrink-0 text-xl text-success" />
             ) : (
-              <AlertIcon className="shrink-0 text-xl text-orange-700" />
+              <AlertIcon className="shrink-0 text-xl text-attention" />
             )}
             <span className="min-w-0 flex-1">
-              <span className="block font-medium">{label}</span>
+              <span className="block font-medium text-primary">{label}</span>
               {requirement.satisfied ? null : (
-                <span className="block text-sm text-slate-600">
+                <span className="block text-sm text-secondary">
                   {t(`readiness.status.${requirement.status}`)}
                 </span>
               )}
             </span>
-            {path ? <ChevronRightIcon className="shrink-0 text-xl text-slate-400" /> : null}
+            {path ? <ChevronRightIcon className="shrink-0 text-xl text-muted" /> : null}
           </>
         );
         const className =
-          "flex min-h-11 items-center gap-3 rounded-lg px-1 py-1.5 text-left text-base text-slate-900";
+          "flex min-h-11 items-center gap-3 rounded-control px-2 py-2 text-left text-base text-primary";
         return (
           <li key={requirement.code} data-requirement={requirement.code} data-satisfied={requirement.satisfied}>
             {path ? (
               <Link
                 to={path}
-                className={`${className} hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-indigo-600`}
+                className={`${className} hover:bg-canvas transition-colors focus-visible:outline-2 focus-visible:outline-focus`}
               >
                 {body}
               </Link>

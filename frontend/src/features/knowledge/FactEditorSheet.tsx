@@ -160,14 +160,14 @@ export function FactEditorSheet({ workspaceId, currency, canVerify, target, onCl
       }
     >
       {sentAsSuggestion ? (
-        <p role="status" className="rounded-lg bg-amber-50 p-3 text-base text-amber-900 ring-1 ring-amber-400">
+        <p role="status" className="rounded-card bg-attention-subtle p-3.5 text-base text-attention border border-border">
           {t("knowledge.editor.sentAsSuggestion")}
         </p>
       ) : (
         <div className="flex flex-col gap-4">
-          {description ? <p className="text-sm text-slate-600">{description}</p> : null}
+          {description ? <p className="text-sm text-secondary">{description}</p> : null}
           {!canVerify ? (
-            <p className="rounded-lg bg-slate-100 p-3 text-sm text-slate-800">{t("knowledge.editor.staffNote")}</p>
+            <p className="rounded-card bg-surface-elevated p-3.5 text-sm text-secondary border border-border">{t("knowledge.editor.staffNote")}</p>
           ) : null}
 
           {isNamed ? (
@@ -225,8 +225,8 @@ export function FactEditorSheet({ workspaceId, currency, canVerify, target, onCl
           />
 
           {showWindow ? (
-            <fieldset className="flex flex-col gap-3 rounded-xl p-3 ring-1 ring-slate-200">
-              <legend className="px-1 text-sm font-medium">{t("knowledge.editor.validity")}</legend>
+            <fieldset className="flex flex-col gap-3 rounded-card p-3.5 border border-border bg-surface">
+              <legend className="px-1 text-sm font-medium text-primary">{t("knowledge.editor.validity")}</legend>
               <TextField
                 label={t("knowledge.editor.validFrom")}
                 type="date"
@@ -251,7 +251,7 @@ export function FactEditorSheet({ workspaceId, currency, canVerify, target, onCl
 
           {error ? <ErrorMessage error={error} /> : null}
           {error instanceof AppError && error.fieldErrors.length > 0 ? (
-            <ul className="list-disc pl-5 text-sm text-red-800">
+            <ul className="list-disc pl-5 text-sm text-danger">
               {error.fieldErrors.map((fieldError) => (
                 <li key={`${fieldError.field}-${fieldError.code}`}>
                   {t(`knowledge.fieldErrors.${fieldError.code}`, {

@@ -16,10 +16,10 @@ export type ChipState =
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 
 const TONES = {
-  green: "bg-green-50 text-green-900 ring-green-500",
-  amber: "bg-amber-50 text-amber-900 ring-amber-400",
-  orange: "bg-orange-50 text-orange-900 ring-orange-400",
-  grey: "bg-slate-100 text-slate-800 ring-slate-300",
+  green: "bg-success-subtle text-success border border-success-subtle",
+  amber: "bg-attention-subtle text-attention border border-attention-subtle",
+  orange: "bg-attention-subtle text-attention border border-attention-subtle",
+  grey: "bg-surface text-muted border border-border",
 } as const;
 
 const PRESENTATION: Record<ChipState, { tone: keyof typeof TONES; icon: Icon }> = {
@@ -40,7 +40,7 @@ export function FactStatusChip({ state }: { state: ChipState }) {
   return (
     <span
       data-state={state}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium whitespace-nowrap ring-1 ring-inset ${TONES[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-control px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${TONES[tone]}`}
     >
       <Icon />
       <span>{t(`knowledge.state.${state}`)}</span>

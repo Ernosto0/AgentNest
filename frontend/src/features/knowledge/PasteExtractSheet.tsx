@@ -84,7 +84,7 @@ export function PasteExtractSheet({ onClose }: { onClose: () => void }) {
               <Link
                 to={suggestions}
                 onClick={onClose}
-                className="inline-flex min-h-11 items-center rounded-lg bg-indigo-700 px-4 font-medium text-white"
+                className="inline-flex min-h-11 items-center rounded-button bg-action px-4 text-sm font-medium text-action-contrast shadow-xs hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-focus"
               >
                 {t("extract.goToSuggestions")}
               </Link>
@@ -107,9 +107,9 @@ export function PasteExtractSheet({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-slate-700">{t("extract.intro")}</p>
+        <p className="text-sm text-secondary">{t("extract.intro")}</p>
         <div className="flex flex-col gap-1">
-          <label htmlFor="extract-text" className="text-sm font-medium">
+          <label htmlFor="extract-text" className="text-sm font-medium text-primary">
             {t("extract.label")}
           </label>
           <textarea
@@ -120,38 +120,38 @@ export function PasteExtractSheet({ onClose }: { onClose: () => void }) {
             rows={7}
             readOnly={working || status === "succeeded"}
             placeholder={t("extract.placeholder")}
-            className="min-h-32 w-full rounded-lg border border-slate-300 bg-white p-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
+            className="min-h-32 w-full rounded-input border border-border bg-surface p-3 text-base text-primary placeholder:text-muted focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
           />
-          <span className="text-xs text-slate-600">
+          <span className="text-xs text-muted">
             {t("extract.counter", { count: text.length, max: MAX_CHARS })}
           </span>
         </div>
 
         {working ? (
-          <p role="status" className="inline-flex items-center gap-2 font-medium text-slate-700">
-            <SpinnerIcon className="animate-spin text-xl" />
+          <p role="status" className="inline-flex items-center gap-2 font-medium text-secondary">
+            <SpinnerIcon className="animate-spin text-xl text-primary" />
             {t("extract.working")}
           </p>
         ) : null}
         {start.error ? <ErrorMessage error={start.error} /> : null}
         {run.error ? <ErrorMessage error={run.error} /> : null}
         {status === "failed" ? (
-          <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-300">
-            <p className="font-medium">{t("extract.failed")}</p>
+          <div role="alert" className="rounded-card bg-danger-subtle p-3.5 text-sm text-danger border border-border">
+            <p className="font-semibold">{t("extract.failed")}</p>
             {run.data?.error_code ? (
               <p>{t(`errors.${run.data.error_code}.what`, { defaultValue: "" })}</p>
             ) : null}
           </div>
         ) : null}
         {status === "succeeded" ? (
-          <div className="flex flex-col gap-2" data-testid="extract-result">
-            <p className="font-medium">
+          <div className="flex flex-col gap-2 rounded-card bg-surface-elevated p-3.5 border border-border" data-testid="extract-result">
+            <p className="font-semibold text-primary">
               {run.data && run.data.candidates_created > 0
                 ? t("extract.done", { count: run.data.candidates_created })
                 : t("extract.none")}
             </p>
             {run.data?.injection_suspected ? (
-              <p className="text-sm text-slate-700">{t("extract.injection")}</p>
+              <p className="text-sm text-attention">{t("extract.injection")}</p>
             ) : null}
           </div>
         ) : null}

@@ -31,25 +31,25 @@ export function FactCard({ fact, timezone, canVerify, busy, onEdit, onHistory, o
       : null;
 
   return (
-    <Card className="flex flex-col gap-2" data-testid={`${archived ? "archived-fact" : "fact"}-${fact.key}`}>
+    <Card className="flex flex-col gap-3" data-testid={`${archived ? "archived-fact" : "fact"}-${fact.key}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="min-w-0 text-base font-semibold break-words">{pickLabel(fact.label, i18n.language)}</h3>
+        <h3 className="min-w-0 text-base font-semibold text-primary break-words">{pickLabel(fact.label, i18n.language)}</h3>
         <FactStatusChip state={fact.state} />
       </div>
-      <p className="text-base break-words whitespace-pre-line">{fact.display}</p>
-      {validity ? <p className="text-sm text-slate-600">{validity}</p> : null}
+      <p className="text-base text-primary break-words whitespace-pre-line font-medium leading-relaxed">{fact.display}</p>
+      {validity ? <p className="text-sm text-secondary">{validity}</p> : null}
       {fact.status === "verified" && fact.last_verified_at ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-secondary">
           {t("knowledge.verifiedOn", { date: date(fact.last_verified_at) })}
           {fact.source_type ? ` · ${t(`knowledge.source.${fact.source_type}`, { defaultValue: fact.source_type })}` : ""}
           {fact.last_verified_by_name ? ` · ${fact.last_verified_by_name}` : ""}
         </p>
       ) : null}
       {fact.state === "contested" ? (
-        <p className="text-sm text-orange-900">{t("knowledge.contestedNote")}</p>
+        <p className="text-sm text-attention font-medium">{t("knowledge.contestedNote")}</p>
       ) : null}
       {fact.state === "unverified" ? (
-        <p className="text-sm text-amber-900">{t("knowledge.unverifiedNote")}</p>
+        <p className="text-sm text-attention font-medium">{t("knowledge.unverifiedNote")}</p>
       ) : null}
       <div className="mt-1 flex flex-wrap gap-2">
         {archived ? (

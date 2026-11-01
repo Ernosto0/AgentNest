@@ -55,35 +55,37 @@ function CategoryScreen({ category }: { category: FactCategory }) {
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6 max-w-4xl">
       <div>
         <Link
           to={`/w/${workspace.id}/more/knowledge`}
-          className="inline-flex min-h-11 items-center text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600"
+          className="inline-flex min-h-11 items-center font-medium text-action hover:text-action-hover underline focus-visible:outline-2 focus-visible:outline-focus"
         >
-          {t("knowledge.back")}
+          ← {t("knowledge.back")}
         </Link>
-        <h1 className="text-2xl font-semibold">{t(`knowledge.category.${category}`)}</h1>
+        <h1 className="mt-2 text-2xl font-heading font-semibold text-primary">{t(`knowledge.category.${category}`)}</h1>
       </div>
 
       {template.error ?? facts.error ? <ErrorMessage error={template.error ?? facts.error} /> : null}
       {transition.error ? <ErrorMessage error={transition.error} /> : null}
-      {!loaded && !(template.error ?? facts.error) ? <p>{t("common.loading")}</p> : null}
+      {!loaded && !(template.error ?? facts.error) ? (
+        <p role="status" className="text-sm text-secondary">{t("common.loading")}</p>
+      ) : null}
 
       {loaded?.entries.map((entry) => {
         if (entry.kind === "fixed") {
           if (entry.fact) return card(entry.fact);
           return (
-            <Card key={entry.item.identifier} className="flex flex-col gap-2" data-testid={`missing-${entry.item.key}`}>
+            <Card key={entry.item.identifier} className="flex flex-col gap-3" data-testid={`missing-${entry.item.key}`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <h3 className="min-w-0 text-base font-semibold break-words">
+                <h3 className="min-w-0 text-base font-semibold text-primary break-words">
                   {pickLabel(entry.item.label, i18n.language)}
                 </h3>
                 <FactStatusChip state="missing" />
               </div>
-              <p className="text-sm text-slate-600">{pickLabel(entry.item.description, i18n.language)}</p>
+              <p className="text-sm text-secondary">{pickLabel(entry.item.description, i18n.language)}</p>
               {entry.item.required_for ? (
-                <p className="text-sm text-orange-900">
+                <p className="text-sm text-attention font-medium">
                   {t(`knowledge.required.${entry.item.required_for}`)}
                 </p>
               ) : null}
@@ -102,7 +104,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
           return (
             <section key={entry.item.identifier} className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-medium">{pickLabel(entry.item.label, i18n.language)}</h2>
+                <h2 className="text-lg font-heading font-semibold text-primary">{pickLabel(entry.item.label, i18n.language)}</h2>
                 {canVerify ? (
                   <Button
                     variant="secondary"
@@ -113,7 +115,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
                 ) : null}
               </div>
               {entry.facts.length === 0 ? (
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-secondary">
                   {pickLabel(entry.item.description, i18n.language)}
                   {entry.item.required_for ? ` ${t(`knowledge.required.${entry.item.required_for}`)}` : ""}
                 </p>
@@ -141,8 +143,8 @@ function CategoryScreen({ category }: { category: FactCategory }) {
       })}
 
       {loaded && loaded.archived.length > 0 ? (
-        <details className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
-          <summary className="min-h-11 cursor-pointer py-2 font-medium">
+        <details className="rounded-panel border border-border bg-surface p-4 shadow-xs">
+          <summary className="min-h-11 cursor-pointer py-1 font-medium text-primary select-none">
             {t("knowledge.archived", { count: loaded.archived.length })}
           </summary>
           <div className="mt-3 flex flex-col gap-3">{loaded.archived.map(card)}</div>

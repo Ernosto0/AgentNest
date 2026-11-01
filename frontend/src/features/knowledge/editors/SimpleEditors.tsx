@@ -50,10 +50,10 @@ export function LocalizedTextEditor({ value, onChange }: EditorProps) {
             aria-selected={tab === language}
             aria-controls="lt-panel"
             onClick={() => setTab(language)}
-            className={`min-h-11 rounded-lg px-4 text-base font-medium ring-1 ring-inset focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+            className={`min-h-11 rounded-pill px-4 text-sm font-medium transition-colors border focus-visible:outline-2 focus-visible:outline-focus ${
               tab === language
-                ? "bg-indigo-700 text-white ring-indigo-700"
-                : "bg-white text-slate-800 ring-slate-300"
+                ? "bg-action text-action-contrast border-action"
+                : "bg-surface text-secondary border-border hover:text-primary hover:border-border-hover"
             }`}
           >
             {t(`knowledge.fields.language.${language}`)}
@@ -183,9 +183,9 @@ export function BooleanEditor({ value, onChange }: EditorProps) {
   );
   return (
     <fieldset className="flex flex-col gap-1">
-      <legend className="text-sm font-medium text-slate-800">{t("knowledge.fields.boolean")}</legend>
+      <legend className="text-sm font-medium text-secondary">{t("knowledge.fields.boolean")}</legend>
       {([true, false] as const).map((option) => (
-        <label key={String(option)} className="flex min-h-11 items-center gap-3 text-base">
+        <label key={String(option)} className="flex min-h-11 items-center gap-3 text-base text-primary">
           <input
             type="radio"
             name="boolean-answer"
