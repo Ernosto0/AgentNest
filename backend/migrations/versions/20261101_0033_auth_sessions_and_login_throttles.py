@@ -76,3 +76,4 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_login_throttles_locked_until"), table_name="login_throttles")
     op.drop_table("login_throttles")
     op.drop_column("sessions", "ip_address")
+

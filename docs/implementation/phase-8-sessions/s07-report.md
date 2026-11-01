@@ -68,3 +68,4 @@
   - Session listing and revocation: `GET /api/v1/auth/sessions`, `DELETE /api/v1/auth/sessions/{session_id}`, `POST /api/v1/auth/sessions/revoke-all` with strict user ownership and token secrecy.
   - Password change: `POST /api/v1/auth/password` verifying current password, enforcing length ≥ 12 characters, denying common passwords, updating Argon2id hash, and revoking all other sessions in the same transaction.
   - Frontend security UI: TR/EN responsive controls in Settings for password changes and active sessions management.
+
