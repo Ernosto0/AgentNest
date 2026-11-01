@@ -2,8 +2,9 @@ import type { AppNotification } from "@/api/types";
 
 /** Where a notification leads, or null when there is nowhere to go. */
 export function notificationTarget(workspaceId: string, notification: AppNotification): string | null {
-  const base = `/w/${workspaceId}`;
-  const params = notification.params as Record<string, unknown>;
+  if (!workspaceId || !notification) return null;
+  const base = `/w/${encodeURIComponent(workspaceId)}`;
+  const params = (notification.params && typeof notification.params === "object" ? notification.params : {}) as Record<string, unknown>;
   if (notification.type.startsWith("owner_question.")) {
     const account = params.account_id;
     const question = params.question_id;

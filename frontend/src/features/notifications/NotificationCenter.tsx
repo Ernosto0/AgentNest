@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { AppNotification } from "@/api/types";
 import { Button } from "@/components/Button";
-import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { AlertIcon, CriticalIcon, InfoIcon } from "@/components/icons";
@@ -14,9 +13,9 @@ import { useMarkAllRead, useMarkRead, useNotifications } from "./hooks";
 import { notificationTarget } from "./target";
 
 const SEVERITY = {
-  info: { Icon: InfoIcon, tone: "text-slate-700" },
-  attention: { Icon: AlertIcon, tone: "text-amber-800" },
-  critical: { Icon: CriticalIcon, tone: "text-red-800" },
+  info: { Icon: InfoIcon, tone: "text-secondary" },
+  attention: { Icon: AlertIcon, tone: "text-warning" },
+  critical: { Icon: CriticalIcon, tone: "text-danger" },
 } as const;
 
 function severityOf(value: string): keyof typeof SEVERITY {
@@ -39,10 +38,10 @@ export function NotificationCenter() {
 
   // A notification is read when its link is followed, not when the screen is opened.
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">{t("notifications.title")}</h1>
-        <p className="mt-1 text-slate-600">{t("notifications.intro")}</p>
+        <h1 className="text-2xl font-heading font-semibold text-primary">{t("notifications.title")}</h1>
+        <p className="mt-1 text-sm text-secondary">{t("notifications.intro")}</p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -53,8 +52,10 @@ export function NotificationCenter() {
               type="button"
               aria-pressed={unreadOnly === only}
               onClick={() => setUnreadOnly(only)}
-              className={`min-h-11 rounded-lg px-4 font-medium focus-visible:outline-2 focus-visible:outline-indigo-600 ${
-                unreadOnly === only ? "bg-indigo-700 text-white" : "bg-white text-slate-800 ring-1 ring-slate-300"
+              className={`inline-flex min-h-11 items-center rounded-button px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-focus ${
+                unreadOnly === only
+                  ? "bg-brand text-white shadow-xs"
+                  : "border border-border bg-surface text-secondary hover:bg-surface-subtle hover:text-primary"
               }`}
             >
               {only ? t("notifications.filterUnread") : t("notifications.filterAll")}
@@ -70,7 +71,7 @@ export function NotificationCenter() {
 
       {list.isError ? <ErrorMessage error={list.error} /> : null}
       {markAll.isError ? <ErrorMessage error={markAll.error} /> : null}
-      {list.isPending ? <p>{t("common.loading")}</p> : null}
+      {list.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
       {list.data && items.length === 0 ? (
         <EmptyState
           title={unreadOnly ? t("notifications.empty") : t("notifications.emptyAll")}
@@ -78,8 +79,8 @@ export function NotificationCenter() {
         />
       ) : null}
       {items.length > 0 ? (
-        <Card className="p-0">
-          <ul className="divide-y divide-slate-200" aria-label={t("notifications.title")}>
+        <div className="overflow-hidden rounded-panel border border-border bg-surface shadow-xs">
+          <ul className="divide-y divide-border" aria-label={t("notifications.title")}>
             {items.map((item) => (
               <li key={item.id}>
                 <Row
@@ -90,7 +91,7 @@ export function NotificationCenter() {
               </li>
             ))}
           </ul>
-        </Card>
+        </div>
       ) : null}
     </div>
   );
@@ -110,27 +111,31 @@ function Row({
   const to = notificationTarget(workspaceId, item);
   const severity = severityOf(item.severity);
   const { Icon, tone } = SEVERITY[severity];
+  const isUnread = item.read_at === null;
+
   return (
     <div
-      data-unread={item.read_at === null}
+      data-unread={isUnread}
       data-severity={severity}
-      className={`flex flex-col gap-2 p-4 ${item.read_at === null ? "bg-indigo-50" : "bg-white"}`}
+      className={`flex flex-col gap-2 p-4 transition-colors ${
+        isUnread ? "border-l-4 border-l-brand bg-brand/5 dark:bg-brand/10" : "bg-surface"
+      }`}
     >
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className={`inline-flex items-center gap-1 font-semibold ${tone}`}>
-          <Icon className="text-lg" />
+        <span className={`inline-flex items-center gap-1.5 font-medium ${tone}`}>
+          <Icon className="text-base" />
           {t(`notifications.severity.${severity}`)}
         </span>
-        {item.read_at === null ? (
-          <span className="rounded-full bg-indigo-700 px-2 py-0.5 text-xs font-semibold text-white">
+        {isUnread ? (
+          <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-semibold text-white">
             {t("notifications.unreadBadge")}
           </span>
         ) : null}
         {item.is_simulated ? <SimulatedBadge /> : null}
       </div>
-      <p className="break-words">{describeNotification(t, item, i18n.language)}</p>
+      <p className="break-words text-sm text-primary">{describeNotification(t, item, i18n.language)}</p>
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-slate-600">
+        <span className="text-xs text-tertiary">
           {new Date(item.created_at).toLocaleString(i18n.language, {
             dateStyle: "short",
             timeStyle: "short",
@@ -141,7 +146,7 @@ function Row({
           <Link
             to={to}
             onClick={onFollow}
-            className="inline-flex min-h-11 items-center font-medium text-indigo-800 underline"
+            className="inline-flex min-h-11 items-center font-medium text-brand hover:underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-focus"
           >
             {t("notifications.open")}
           </Link>
