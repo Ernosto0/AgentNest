@@ -14,6 +14,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     DateTime,
+    ForeignKey,
     ForeignKeyConstraint,
     Index,
     Integer,
@@ -116,4 +117,31 @@ class DeletionTombstone(UUIDPrimaryKeyMixin, Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class DataDeletionRequest(UUIDPrimaryKeyMixin, Base):
+    """Meta data deletion request tracking record (ADR-025 §3.4)."""
+
+    __tablename__ = "data_deletion_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'in_progress', 'completed', 'not_found_or_already_erased')",
+            name="ck_data_deletion_requests_status",
+        ),
+        Index("ix_data_deletion_requests_provider_user", "provider", "provider_user_id"),
+    )
+
+    confirmation_code: Mapped[str] = mapped_column(Text, unique=True, index=True, nullable=False)
+    provider: Mapped[str] = mapped_column(Text, nullable=False, server_default="meta")
+    provider_user_id: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True
+    )
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    details: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+
 

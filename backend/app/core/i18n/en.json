@@ -330,5 +330,7 @@
   "activity.data_rights.customer_erased": "Customer data erased",
   "activity.workspace.deletion_requested": "Workspace deletion requested",
   "activity.workspace.deletion_cancelled": "Workspace deletion cancelled",
-  "activity.workspace.purged": "Workspace permanently purged"
+  "activity.workspace.purged": "Workspace permanently purged",
+  "activity.meta.deauthorized": "Meta connection deauthorized",
+  "activity.meta.data_deletion_requested": "Meta data deletion requested"
 }

@@ -330,5 +330,7 @@
   "activity.data_rights.customer_erased": "Müşteri verisi silindi",
   "activity.workspace.deletion_requested": "Çalışma alanı silme talebi alındı",
   "activity.workspace.deletion_cancelled": "Çalışma alanı silme talebi iptal edildi",
-  "activity.workspace.purged": "Çalışma alanı kalıcı olarak silindi"
+  "activity.workspace.purged": "Çalışma alanı kalıcı olarak silindi",
+  "activity.meta.deauthorized": "Meta bağlantı yetkisi kaldırıldı",
+  "activity.meta.data_deletion_requested": "Meta veri silme talebi alındı"
 }

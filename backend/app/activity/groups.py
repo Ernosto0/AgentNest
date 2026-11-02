@@ -139,6 +139,8 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "workspace.deletion_requested",
         "workspace.deletion_cancelled",
         "workspace.purged",
+        "meta.deauthorized",
+        "meta.data_deletion_requested",
         "operation.started",
         "operation.succeeded",
         "operation.failed",
