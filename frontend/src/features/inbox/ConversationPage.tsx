@@ -1,16 +1,17 @@
-import { ConversationAgentWork } from "@/features/agent-work/WorkPages";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ChevronLeftIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
+import { ConversationAgentWork } from "@/features/agent-work/WorkPages";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { DraftCard } from "./DraftCard";
 import { WindowTimer } from "./DraftParts";
 import {
   useConversation,
+  useEraseConversation,
   useExportConversation,
   useHandlingMode,
   useSaveAsAnswer,
@@ -30,6 +31,7 @@ function time(value: string, language: string, timezone: string): string {
 /** One conversation: the messages, the assistant's draft for the last question, and your reply. */
 export function ConversationPage() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const { workspace, role } = useCurrentWorkspace();
   const { conversationId = "" } = useParams();
   const detail = useConversation(workspace.id, conversationId);
@@ -37,6 +39,7 @@ export function ConversationPage() {
   const suggest = useSuggestReply(workspace.id, conversationId);
   const saveAnswer = useSaveAsAnswer(workspace.id);
   const exportConvo = useExportConversation(workspace.id, conversationId);
+  const eraseConvo = useEraseConversation(workspace.id, conversationId);
   const [seed, setSeed] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
 
@@ -54,6 +57,17 @@ export function ConversationPage() {
       URL.revokeObjectURL(url);
     } catch {
       // Handled via exportConvo.error display
+    }
+  };
+
+  const handleErase = async () => {
+    if (window.confirm(t("convo.eraseConfirm"))) {
+      try {
+        await eraseConvo.mutateAsync();
+        navigate(`/w/${workspace.id}/inbox`);
+      } catch {
+        // Handled via eraseConvo.error display
+      }
     }
   };
 
@@ -95,14 +109,25 @@ export function ConversationPage() {
               {t("convo.suggest")}
             </Button>
             {role === "owner" ? (
-              <Button
-                variant="ghost"
-                disabled={exportConvo.isPending}
-                onClick={handleExport}
-                title={t("convo.exportTooltip")}
-              >
-                {exportConvo.isPending ? t("common.loading") : t("convo.export")}
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  disabled={exportConvo.isPending}
+                  onClick={handleExport}
+                  title={t("convo.exportTooltip")}
+                >
+                  {exportConvo.isPending ? t("common.loading") : t("convo.export")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={eraseConvo.isPending}
+                  onClick={handleErase}
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                  title={t("convo.eraseTooltip")}
+                >
+                  {eraseConvo.isPending ? t("common.loading") : t("convo.erase")}
+                </Button>
+              </>
             ) : null}
           </div>
         </div>
@@ -110,6 +135,7 @@ export function ConversationPage() {
         {mode.error ? <ErrorMessage error={mode.error} /> : null}
         {suggest.error ? <ErrorMessage error={suggest.error} /> : null}
         {exportConvo.error ? <ErrorMessage error={exportConvo.error} /> : null}
+        {eraseConvo.error ? <ErrorMessage error={eraseConvo.error} /> : null}
       </div>
 
       {conversation.social_account_id ? (

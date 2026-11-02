@@ -325,5 +325,10 @@
   "activity.auth.password_reset_requested": "Password reset requested",
   "activity.auth.password_reset_completed": "Password reset completed",
   "activity.data_rights.conversation_exported": "Conversation exported",
-  "activity.data_rights.customer_exported": "Customer data exported"
+  "activity.data_rights.customer_exported": "Customer data exported",
+  "activity.data_rights.conversation_erased": "Conversation erased",
+  "activity.data_rights.customer_erased": "Customer data erased",
+  "activity.workspace.deletion_requested": "Workspace deletion requested",
+  "activity.workspace.deletion_cancelled": "Workspace deletion cancelled",
+  "activity.workspace.purged": "Workspace permanently purged"
 }

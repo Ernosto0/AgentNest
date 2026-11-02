@@ -14,8 +14,10 @@ const STAFF_ME = {
   ),
 };
 
+const BASE = `/api/v1/workspaces/${WS_GOLKENT}`;
+
 function routes(extra: Record<string, (request: RecordedRequest) => Response> = {}, me = ME) {
-  const base = `/api/v1/workspaces/${WS_GOLKENT}`;
+  const base = BASE;
   return {
     "GET /api/v1/meta": () =>
       json({
@@ -131,5 +133,45 @@ describe("SettingsPage", () => {
     await waitFor(() => expect(loggedOut).toBe(true));
     await waitFor(() => expect(requests.some((r) => r.path === "/api/v1/auth/logout")).toBe(true));
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
+  });
+
+  it("renders workspace deletion danger zone and allows owner to request deletion", async () => {
+    let requestCalled = false;
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    mockApi(
+      routes({
+        [`GET ${BASE}/deletion-status`]: () =>
+          json({
+            workspace_id: WS_GOLKENT,
+            status: "active",
+            is_deleting: false,
+            deletion_requested_at: null,
+            deletion_scheduled_at: null,
+            days_remaining: null,
+            can_cancel: false,
+          }),
+        [`POST ${BASE}/delete-request`]: () => {
+          requestCalled = true;
+          return json({
+            workspace_id: WS_GOLKENT,
+            status: "deleting",
+            is_deleting: true,
+            deletion_requested_at: "2026-11-03T00:00:00Z",
+            deletion_scheduled_at: "2026-11-10T00:00:00Z",
+            days_remaining: 7,
+            can_cancel: true,
+          });
+        },
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/more/settings`);
+    const user = userEvent.setup();
+
+    const deleteBtn = await screen.findByRole("button", { name: "Çalışma alanını sil…" });
+    expect(deleteBtn).toBeInTheDocument();
+    await user.click(deleteBtn);
+
+    await waitFor(() => expect(requestCalled).toBe(true));
   });
 });

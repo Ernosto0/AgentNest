@@ -325,5 +325,10 @@
   "activity.auth.password_reset_requested": "Şifre sıfırlama talep edildi",
   "activity.auth.password_reset_completed": "Şifre sıfırlama tamamlandı",
   "activity.data_rights.conversation_exported": "Sohbet dışa aktarıldı",
-  "activity.data_rights.customer_exported": "Müşteri verisi dışa aktarıldı"
+  "activity.data_rights.customer_exported": "Müşteri verisi dışa aktarıldı",
+  "activity.data_rights.conversation_erased": "Sohbet verisi silindi",
+  "activity.data_rights.customer_erased": "Müşteri verisi silindi",
+  "activity.workspace.deletion_requested": "Çalışma alanı silme talebi alındı",
+  "activity.workspace.deletion_cancelled": "Çalışma alanı silme talebi iptal edildi",
+  "activity.workspace.purged": "Çalışma alanı kalıcı olarak silindi"
 }

@@ -196,7 +196,16 @@
     "thisDevice": "Bu cihaz",
     "lastActive": "Son etkinlik",
     "revokeSession": "Oturumu kapat",
-    "noActiveSessions": "Aktif oturum bulunamadı."
+    "noActiveSessions": "Aktif oturum bulunamadı.",
+    "dangerZoneTitle": "Tehlikeli Bölge",
+    "dangerZoneDesc": "Geri alınamaz çalışma alanı eylemleri ve veri yaşam döngüsü.",
+    "deleteWorkspaceAction": "Bu çalışma alanını sil",
+    "deleteWorkspaceGraceNote": "Tüm otomasyonları durdurur. Çalışma alanı ve tüm veriler 7 günlük ek sürenin ardından kalıcı olarak silinir.",
+    "deleteWorkspaceBtn": "Çalışma alanını sil…",
+    "deleteWorkspaceConfirm": "Bu çalışma alanının silinmesini talep etmek istediğinizden emin misiniz? Tüm giden otomasyonlar derhal durdurulacak ve veriler 7 gün sonra silinecektir.",
+    "deletionScheduledTitle": "Çalışma alanı silinmek üzere planlandı",
+    "deletionScheduledDesc": "Bu çalışma alanı 7 günlük ek süre içerisindedir ({{date}} tarihine kadar {{days}} gün kaldı). Tüm otomasyon durduruldu.",
+    "cancelDeletionBtn": "Silme Talebini İptal Et"
   },
   "notFound": {
     "title": "Bulunamadı",

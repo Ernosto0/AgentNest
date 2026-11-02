@@ -444,4 +444,27 @@ describe("inbox", () => {
 
     await waitFor(() => expect(exported).toBe(true));
   });
+
+  it("allows owner to erase conversation data", async () => {
+    let erased = false;
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(detail(null)),
+        [`DELETE ${BASE}/conversations/${CONVERSATION_ID}`]: () => {
+          erased = true;
+          return json({ status: "erased", conversation_id: CONVERSATION_ID });
+        },
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const user = userEvent.setup();
+
+    const eraseBtn = await screen.findByRole("button", { name: "Veriyi sil" });
+    expect(eraseBtn).toBeInTheDocument();
+    await user.click(eraseBtn);
+
+    await waitFor(() => expect(erased).toBe(true));
+  });
 });

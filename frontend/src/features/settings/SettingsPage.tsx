@@ -7,6 +7,7 @@ import { ChevronRightIcon } from "@/components/icons";
 import { useLogout, useMe, useSaveLocale } from "@/features/auth/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { AccountSecurity } from "./AccountSecurity";
+import { WorkspaceDangerZone } from "./WorkspaceDangerZone";
 
 const LINK_ROW =
   "flex min-h-11 items-center justify-between rounded-control px-3 py-2 text-sm font-medium text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-focus transition-colors";
@@ -135,6 +136,9 @@ export function SettingsPage() {
         </h2>
         <p className="text-xs text-secondary leading-relaxed">{t("settings.privacyDesc")}</p>
       </div>
+
+      {/* Danger Zone: Workspace Deletion (Owner only) */}
+      {role === "owner" ? <WorkspaceDangerZone workspaceId={workspace.id} /> : null}
     </div>
   );
 }

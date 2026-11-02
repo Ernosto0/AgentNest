@@ -242,3 +242,78 @@ def send_password_reset_email(
         )
 
     send_email(settings, to_email, subject, text_body, html_body)
+
+
+def send_workspace_deletion_email(
+    settings: Settings,
+    to_email: str,
+    workspace_name: str,
+    scheduled_date_str: str,
+    cancel_url: str,
+    ui_locale: str = "tr",
+) -> None:
+    """Send a workspace deletion warning and cancellation option to workspace owners."""
+    product = settings.product_name
+
+    if ui_locale == "en":
+        subject = f"[{product}] Important: Deletion requested for '{workspace_name}'"
+        text_body = (
+            f"Hello,\n\n"
+            f"A request has been submitted to permanently delete the workspace '{workspace_name}' "
+            f"on {product}.\n\n"
+            f"Grace Period Notice:\n"
+            f"All outbound automation has been paused immediately. The workspace and all its data "
+            f"are scheduled for permanent purging on {scheduled_date_str}.\n\n"
+            f"If you wish to cancel this deletion and keep your workspace, you can cancel it at "
+            f"any time before {scheduled_date_str} by visiting the link below:\n"
+            f"{cancel_url}\n\n"
+            f"Best regards,\n"
+            f"The {product} Team"
+        )
+        html_body = (
+            "<div style='font-family: sans-serif; line-height: 1.5; color: #111;'>"
+            f"<h2>Workspace Deletion Requested</h2>"
+            f"<p>A request has been made to permanently delete the workspace "
+            f"<strong>{workspace_name}</strong> on {product}.</p>"
+            f"<p>All outbound automation has been paused. Permanent purging will occur on "
+            f"<strong>{scheduled_date_str}</strong> (7-day grace period).</p>"
+            f"<p><a href='{cancel_url}' style='display: inline-block; padding: 10px 20px; "
+            "background-color: #dc2626; color: #fff; text-decoration: none; border-radius: 6px;'>"
+            "Cancel Workspace Deletion</a></p>"
+            f"<p style='color: #666; font-size: 13px;'>Or copy and paste this link into your "
+            f"browser:<br/><a href='{cancel_url}'>{cancel_url}</a></p></div>"
+        )
+    else:
+        subject = f"[{product}] Önemli: '{workspace_name}' çalışma alanı için silme talebi"
+        text_body = (
+            f"Merhaba,\n\n"
+            f"{product} üzerindeki '{workspace_name}' çalışma alanı için kalıcı silme "
+            "talebi alındı.\n\n"
+            f"Ek Süre (Grace Period) Bilgilendirmesi:\n"
+            f"Tüm otomatik yanıtlar derhal durduruldu. Çalışma alanı ve tüm verileri "
+            f"{scheduled_date_str} tarihinde kalıcı olarak silinecektir.\n\n"
+            f"Bu silme talebini iptal etmek ve çalışma alanınızı korumak isterseniz, "
+            f"{scheduled_date_str} tarihine kadar bağlantı üzerinden iptal edebilirsiniz:\n"
+            f"{cancel_url}\n\n"
+            f"İyi çalışmalar,\n"
+            f"{product} Ekibi"
+        )
+        html_body = (
+            "<div style='font-family: sans-serif; line-height: 1.5; color: #111;'>"
+            f"<h2>Çalışma Alanı Silme Talebi</h2>"
+            f"<p><strong>{workspace_name}</strong> çalışma alanı için kalıcı silme "
+            "talebi alındı.</p>"
+            f"<p>Tüm otomatik eylemler durduruldu. 7 günlük ek süre sonunda ({scheduled_date_str}) "
+            "tüm veriler kalıcı olarak silinecektir.</p>"
+            f"<p><a href='{cancel_url}' style='display: inline-block; padding: 10px 20px; "
+            "background-color: #dc2626; color: #fff; text-decoration: none; border-radius: 6px;'>"
+            "Silme Talebini İptal Et</a></p>"
+            f"<p style='color: #666; font-size: 13px;'>Veya bu bağlantıyı tarayıcınıza yapıştırın:"
+            f"<br/><a href='{cancel_url}'>{cancel_url}</a></p></div>"
+        )
+
+    send_email(settings, to_email, subject, text_body, html_body)
+
+
+
+

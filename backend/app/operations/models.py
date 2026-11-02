@@ -19,6 +19,7 @@ from sqlalchemy import (
     Integer,
     Text,
     UniqueConstraint,
+    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -94,3 +95,25 @@ class Operation(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base)
     is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DeletionTombstone(UUIDPrimaryKeyMixin, Base):
+    """Durable record of purged workspaces, accounts, conversations, or customers (ADR-025 §3.3)."""
+
+    __tablename__ = "deletion_tombstones"
+    __table_args__ = (
+        Index("ix_deletion_tombstones_entity", "entity_type", "entity_id"),
+        Index("ix_deletion_tombstones_workspace_id", "workspace_id"),
+    )
+
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column()
+    entity_type: Mapped[str] = mapped_column(Text, nullable=False)
+    entity_id: Mapped[str] = mapped_column(Text, nullable=False)
+    purged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    details: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+

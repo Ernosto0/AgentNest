@@ -13444,6 +13444,52 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/cancel-deletion": {
+      "post": {
+        "description": "Cancel pending workspace deletion and restore active workspace status.",
+        "operationId": "cancel_workspace_deletion_endpoint_api_v1_workspaces__workspace_id__cancel_deletion_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Cancel Workspace Deletion Endpoint Api V1 Workspaces  Workspace Id  Cancel Deletion Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel workspace deletion during grace period (Owner only)",
+        "tags": [
+          "data-rights"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/commands": {
       "get": {
         "operationId": "list_commands_api_v1_workspaces__workspace_id__commands_get",
@@ -14345,6 +14391,60 @@
       }
     },
     "/api/v1/workspaces/{workspace_id}/conversations/{conversation_id}": {
+      "delete": {
+        "description": "Idempotently erase or redact conversation records and emit durable tombstone.",
+        "operationId": "erase_conversation_endpoint_api_v1_workspaces__workspace_id__conversations__conversation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Erase Conversation Endpoint Api V1 Workspaces  Workspace Id  Conversations  Conversation Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Erase conversation data subject records (Owner only)",
+        "tags": [
+          "data-rights"
+        ]
+      },
       "get": {
         "operationId": "get_conversation_api_v1_workspaces__workspace_id__conversations__conversation_id__get",
         "parameters": [
@@ -14673,6 +14773,62 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/customers/{customer_identity_id}": {
+      "delete": {
+        "description": "Idempotently erase customer records across all conversations and memories.",
+        "operationId": "erase_customer_endpoint_api_v1_workspaces__workspace_id__customers__customer_identity_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customer_identity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Customer Identity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Erase Customer Endpoint Api V1 Workspaces  Workspace Id  Customers  Customer Identity Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Erase customer data subject records (Owner only)",
+        "tags": [
+          "data-rights"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/customers/{customer_identity_id}/export": {
       "get": {
         "description": "Export all conversations, messages, memories, and public comments for a customer identity.",
@@ -14724,6 +14880,98 @@
           }
         },
         "summary": "Export customer data subject records (Owner only)",
+        "tags": [
+          "data-rights"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/delete-request": {
+      "post": {
+        "description": "Initiate workspace deletion grace period, pause automation, and dispatch owner email.",
+        "operationId": "request_workspace_deletion_endpoint_api_v1_workspaces__workspace_id__delete_request_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Request Workspace Deletion Endpoint Api V1 Workspaces  Workspace Id  Delete Request Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request workspace deletion with 7-day grace period (Owner only)",
+        "tags": [
+          "data-rights"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/deletion-status": {
+      "get": {
+        "description": "Get the current deletion status and remaining days in grace period.",
+        "operationId": "get_workspace_deletion_status_endpoint_api_v1_workspaces__workspace_id__deletion_status_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Workspace Deletion Status Endpoint Api V1 Workspaces  Workspace Id  Deletion Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get workspace deletion grace period status",
         "tags": [
           "data-rights"
         ]

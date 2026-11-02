@@ -338,3 +338,19 @@ export function useExportConversation(ws: string, conversationId: string) {
       ),
   });
 }
+
+export function useEraseConversation(ws: string, conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation<Record<string, unknown>, AppError>({
+    mutationFn: () =>
+      unwrap(
+        api.DELETE("/api/v1/workspaces/{workspace_id}/conversations/{conversation_id}", {
+          params: { path: { workspace_id: ws, conversation_id: conversationId } },
+        }),
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations", ws] });
+      queryClient.invalidateQueries({ queryKey: ["conversation", ws, conversationId] });
+    },
+  });
+}

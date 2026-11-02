@@ -183,3 +183,51 @@ export function useRemoveMember(ws: string) {
       Promise.all(MEMBER_QUERY_KEYS.map((name) => queryClient.invalidateQueries({ queryKey: [name, ws] }))),
   });
 }
+
+export interface WorkspaceDeletionStatus {
+  workspace_id: string;
+  status: string;
+  is_deleting: boolean;
+  deletion_requested_at: string | null;
+  deletion_scheduled_at: string | null;
+  days_remaining: number | null;
+  can_cancel: boolean;
+}
+
+export function useWorkspaceDeletionStatus(ws: string) {
+  return useQuery<WorkspaceDeletionStatus, AppError>({
+    queryKey: ["workspace-deletion-status", ws],
+    queryFn: async () =>
+      (await unwrap(
+        api.GET("/api/v1/workspaces/{workspace_id}/deletion-status", {
+          params: { path: { workspace_id: ws } },
+        }),
+      )) as unknown as WorkspaceDeletionStatus,
+  });
+}
+
+export function useRequestWorkspaceDeletion(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<WorkspaceDeletionStatus, AppError>({
+    mutationFn: async () =>
+      (await unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/delete-request", {
+          params: { path: { workspace_id: ws } },
+        }),
+      )) as unknown as WorkspaceDeletionStatus,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspace-deletion-status", ws] }),
+  });
+}
+
+export function useCancelWorkspaceDeletion(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<WorkspaceDeletionStatus, AppError>({
+    mutationFn: async () =>
+      (await unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/cancel-deletion", {
+          params: { path: { workspace_id: ws } },
+        }),
+      )) as unknown as WorkspaceDeletionStatus,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspace-deletion-status", ws] }),
+  });
+}

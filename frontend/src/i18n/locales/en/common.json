@@ -196,7 +196,16 @@
     "thisDevice": "This device",
     "lastActive": "Last active",
     "revokeSession": "Revoke",
-    "noActiveSessions": "No active sessions found."
+    "noActiveSessions": "No active sessions found.",
+    "dangerZoneTitle": "Danger Zone",
+    "dangerZoneDesc": "Irreversible workspace actions and data lifecycle.",
+    "deleteWorkspaceAction": "Delete this workspace",
+    "deleteWorkspaceGraceNote": "Pauses all automation. Workspace and data will be permanently purged after a 7-day grace period.",
+    "deleteWorkspaceBtn": "Delete workspace…",
+    "deleteWorkspaceConfirm": "Are you sure you want to request deletion of this workspace? All outbound automation will be paused immediately and data purged in 7 days.",
+    "deletionScheduledTitle": "Workspace scheduled for deletion",
+    "deletionScheduledDesc": "This workspace is in a 7-day grace period ({{days}} days remaining until {{date}}). All automation is paused.",
+    "cancelDeletionBtn": "Cancel Deletion"
   },
   "notFound": {
     "title": "Not found",

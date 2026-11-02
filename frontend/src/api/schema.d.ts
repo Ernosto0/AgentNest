@@ -1199,6 +1199,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/cancel-deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel workspace deletion during grace period (Owner only)
+         * @description Cancel pending workspace deletion and restore active workspace status.
+         */
+        post: operations["cancel_workspace_deletion_endpoint_api_v1_workspaces__workspace_id__cancel_deletion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/commands": {
         parameters: {
             query?: never;
@@ -1424,7 +1444,11 @@ export interface paths {
         get: operations["get_conversation_api_v1_workspaces__workspace_id__conversations__conversation_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Erase conversation data subject records (Owner only)
+         * @description Idempotently erase or redact conversation records and emit durable tombstone.
+         */
+        delete: operations["erase_conversation_endpoint_api_v1_workspaces__workspace_id__conversations__conversation_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1518,6 +1542,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/customers/{customer_identity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Erase customer data subject records (Owner only)
+         * @description Idempotently erase customer records across all conversations and memories.
+         */
+        delete: operations["erase_customer_endpoint_api_v1_workspaces__workspace_id__customers__customer_identity_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/customers/{customer_identity_id}/export": {
         parameters: {
             query?: never;
@@ -1530,6 +1574,46 @@ export interface paths {
          * @description Export all conversations, messages, memories, and public comments for a customer identity.
          */
         get: operations["export_customer_endpoint_api_v1_workspaces__workspace_id__customers__customer_identity_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/delete-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request workspace deletion with 7-day grace period (Owner only)
+         * @description Initiate workspace deletion grace period, pause automation, and dispatch owner email.
+         */
+        post: operations["request_workspace_deletion_endpoint_api_v1_workspaces__workspace_id__delete_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/deletion-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get workspace deletion grace period status
+         * @description Get the current deletion status and remaining days in grace period.
+         */
+        get: operations["get_workspace_deletion_status_endpoint_api_v1_workspaces__workspace_id__deletion_status_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7797,6 +7881,39 @@ export interface operations {
             };
         };
     };
+    cancel_workspace_deletion_endpoint_api_v1_workspaces__workspace_id__cancel_deletion_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_commands_api_v1_workspaces__workspace_id__commands_get: {
         parameters: {
             query?: {
@@ -8343,6 +8460,40 @@ export interface operations {
             };
         };
     };
+    erase_conversation_endpoint_api_v1_workspaces__workspace_id__conversations__conversation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_conversation_endpoint_api_v1_workspaces__workspace_id__conversations__conversation_id__export_get: {
         parameters: {
             query?: never;
@@ -8509,12 +8660,112 @@ export interface operations {
             };
         };
     };
+    erase_customer_endpoint_api_v1_workspaces__workspace_id__customers__customer_identity_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_identity_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_customer_endpoint_api_v1_workspaces__workspace_id__customers__customer_identity_id__export_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 customer_identity_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_workspace_deletion_endpoint_api_v1_workspaces__workspace_id__delete_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workspace_deletion_status_endpoint_api_v1_workspaces__workspace_id__deletion_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
                 workspace_id: string;
             };
             cookie?: never;
