@@ -14,8 +14,10 @@ from sqlalchemy.orm import Session
 
 from app.audit import service as audit
 from app.core.clock import Clock
+from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
 from app.core.db import set_tenant_context
+from app.core.email import send_invitation_email
 from app.core.errors import AppError
 from app.core.security import generate_token, hash_password, hash_token, password_policy_problems
 from app.identity import repository as repo
@@ -81,30 +83,63 @@ def _notify_owners(
 
 
 def create_invite(
-    session: Session, clock: Clock, ctx: WorkspaceContext, *, role: str
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    *,
+    role: str,
+    email: str | None = None,
+    settings: Settings | None = None,
 ) -> tuple[Invite, str]:
-    """Create a one-time invite. Returns the invite and the raw token (shown exactly once)."""
+    """Create a one-time invite. Returns the invite and the raw token (shown exactly once).
+
+    If an email is provided, an invitation email is sent while also returning the token/invite
+    for screen presentation (assisted onboarding).
+    """
     token = generate_token()
     created_by = uuid.UUID(ctx.actor.id) if ctx.actor.type == "user" and ctx.actor.id else None
+    normalized_email = email.lower().strip() if email and email.strip() else None
     invite = Invite(
         workspace_id=ctx.workspace_id,
         role=role,
+        email=normalized_email,
         token_hash=hash_token(token),
         created_by_user_id=created_by,
         expires_at=clock.now() + INVITE_TTL,
     )
     session.add(invite)
     session.flush()
+
+    audit_payload: dict[str, object] = {"role": role, "invite_id": invite.id}
+    if normalized_email:
+        audit_payload["email"] = normalized_email
+
     audit.record(
         session,
         ctx,
         "member.invited",
         "workspace",
         ctx.workspace_id,
-        {"role": role, "invite_id": invite.id},
+        audit_payload,
         clock=clock,
     )
     session.commit()
+
+    if normalized_email and settings:
+        workspace = session.get(Workspace, ctx.workspace_id)
+        ws_name = workspace.name if workspace else "AgentNest"
+        ui_locale = workspace.default_locale if workspace else "tr"
+        invite_path = f"/invite/{token}"
+        invite_url = settings.app_base_url.rstrip("/") + invite_path
+        send_invitation_email(
+            settings,
+            normalized_email,
+            ws_name,
+            role,
+            invite_url,
+            ui_locale=ui_locale,
+        )
+
     return invite, token
 
 

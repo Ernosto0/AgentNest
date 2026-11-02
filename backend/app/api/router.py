@@ -25,6 +25,7 @@ from app.knowledge.router import router as knowledge_router
 from app.memory.router import router as memory_router
 from app.notifications.router import router as notifications_router
 from app.operations.accounts_router import router as social_accounts_router
+from app.operations.data_rights_router import router as data_rights_router
 from app.operations.router import router as operations_router
 from app.operations.system_health_router import router as system_health_router
 from app.owner_requests.router import router as owner_requests_router
@@ -89,6 +90,7 @@ api_router.include_router(commands_router)
 api_router.include_router(notifications_router)
 api_router.include_router(social_accounts_router)
 api_router.include_router(operations_router)
+api_router.include_router(data_rights_router)
 api_router.include_router(system_health_router)
 api_router.include_router(policy_router)
 api_router.include_router(inbox_router)

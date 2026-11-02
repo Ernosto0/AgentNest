@@ -317,5 +317,13 @@
   "activity.auth.password_change_failed": "Şifre değiştirme başarısız",
   "activity.auth.password_changed": "Şifre değiştirildi",
   "activity.auth.session_revoked": "Oturum kapatıldı",
-  "activity.auth.sessions_revoked_all": "Diğer tüm oturumlar kapatıldı"
-}
+  "activity.auth.sessions_revoked_all": "Diğer tüm oturumlar kapatıldı",
+  "errors.PASSWORD_RESET_TOKEN_INVALID.what": "Bu şifre sıfırlama bağlantısı geçersiz ya da süresi dolmuş.",
+  "errors.PASSWORD_RESET_TOKEN_INVALID.next": "Yeni bir şifre sıfırlama bağlantısı talep edin.",
+  "errors.PASSWORD_TOO_WEAK.what": "Şifre güvenlik gereksinimlerini karşılamıyor.",
+  "errors.PASSWORD_TOO_WEAK.next": "En az 12 karakterden oluşan ve yaygın olmayan bir şifre belirleyin.",
+  "activity.auth.password_reset_requested": "Şifre sıfırlama talep edildi",
+  "activity.auth.password_reset_completed": "Şifre sıfırlama tamamlandı",
+  "activity.data_rights.conversation_exported": "Sohbet dışa aktarıldı",
+  "activity.data_rights.customer_exported": "Müşteri verisi dışa aktarıldı"
+}

@@ -14,6 +14,8 @@
     "takeover": "Take over",
     "release": "Hand back to the assistant",
     "suggest": "Suggest a reply",
+    "export": "Export (JSON)",
+    "exportTooltip": "Download machine-readable conversation history (Owner only)",
     "messages": "Messages",
     "attachment": "[attachment]",
     "sentInApp": "Sent in the Instagram app",

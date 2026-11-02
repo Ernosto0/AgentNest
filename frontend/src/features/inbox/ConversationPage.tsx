@@ -9,7 +9,13 @@ import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { DraftCard } from "./DraftCard";
 import { WindowTimer } from "./DraftParts";
-import { useConversation, useHandlingMode, useSaveAsAnswer, useSuggestReply } from "./hooks";
+import {
+  useConversation,
+  useExportConversation,
+  useHandlingMode,
+  useSaveAsAnswer,
+  useSuggestReply,
+} from "./hooks";
 import { customerLabel } from "./labels";
 import { ReplyComposer } from "./ReplyComposer";
 
@@ -30,8 +36,26 @@ export function ConversationPage() {
   const mode = useHandlingMode(workspace.id, conversationId);
   const suggest = useSuggestReply(workspace.id, conversationId);
   const saveAnswer = useSaveAsAnswer(workspace.id);
+  const exportConvo = useExportConversation(workspace.id, conversationId);
   const [seed, setSeed] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    try {
+      const data = await exportConvo.mutateAsync();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `conversation-${conversationId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // Handled via exportConvo.error display
+    }
+  };
 
   if (detail.isPending) return <p className="text-sm text-slate-500">{t("common.loading")}</p>;
   if (detail.isError) return <ErrorMessage error={detail.error} />;
@@ -70,11 +94,22 @@ export function ConversationPage() {
             <Button variant="ghost" disabled={suggest.isPending} onClick={() => suggest.mutate()}>
               {t("convo.suggest")}
             </Button>
+            {role === "owner" ? (
+              <Button
+                variant="ghost"
+                disabled={exportConvo.isPending}
+                onClick={handleExport}
+                title={t("convo.exportTooltip")}
+              >
+                {exportConvo.isPending ? t("common.loading") : t("convo.export")}
+              </Button>
+            ) : null}
           </div>
         </div>
         {human ? <p className="text-sm font-medium text-amber-900">{t("convo.humanMode")}</p> : null}
         {mode.error ? <ErrorMessage error={mode.error} /> : null}
         {suggest.error ? <ErrorMessage error={suggest.error} /> : null}
+        {exportConvo.error ? <ErrorMessage error={exportConvo.error} /> : null}
       </div>
 
       {conversation.social_account_id ? (

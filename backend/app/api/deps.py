@@ -23,7 +23,14 @@ UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 # Unsafe /api/v1 routes that need no session (CSRF applies to everything else, by default).
 # Webhooks live outside /api/v1 and are authenticated by signature instead. Accepting an invite
 # works both signed in and signed out (a new user is created), so it is exempt exactly like login.
-CSRF_EXEMPT_PATHS = frozenset({"/api/v1/auth/login", "/api/v1/invites/accept"})
+CSRF_EXEMPT_PATHS = frozenset(
+    {
+        "/api/v1/auth/login",
+        "/api/v1/auth/password-reset/request",
+        "/api/v1/auth/password-reset/confirm",
+        "/api/v1/invites/accept",
+    }
+)
 
 
 def get_app_settings(request: Request) -> Settings:

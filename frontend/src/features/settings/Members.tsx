@@ -179,6 +179,7 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
   const { workspace } = useCurrentWorkspace();
   const create = useCreateInvite(workspace.id);
   const [role, setRole] = useState<Role>("manager");
+  const [email, setEmail] = useState("");
   const [invite, setInvite] = useState<Invite | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -217,6 +218,11 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
           <p data-testid="invite-url" className="text-center text-sm font-mono break-all text-primary bg-surface-subtle p-2 rounded-control border border-border">
             {url}
           </p>
+          {invite.email ? (
+            <p className="text-center text-xs text-positive font-medium">
+              {t("members.emailDispatched", { email: invite.email })}
+            </p>
+          ) : null}
           <p className="text-center text-xs text-secondary leading-relaxed">{t("members.linkHint")}</p>
         </div>
       ) : (
@@ -235,10 +241,26 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
               ))}
             </select>
           </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-primary">{t("members.emailLabel")}</span>
+            <input
+              type="email"
+              placeholder={t("members.emailPlaceholder")}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="min-h-11 rounded-control border border-border bg-surface px-3 py-1.5 text-sm text-primary focus-visible:outline-2 focus-visible:outline-focus"
+            />
+            <span className="text-xs text-secondary">{t("members.emailHint")}</span>
+          </label>
           {create.isError ? <ErrorMessage error={create.error} /> : null}
           <Button
             disabled={create.isPending}
-            onClick={() => create.mutate(role, { onSuccess: setInvite })}
+            onClick={() =>
+              create.mutate(
+                { role, email: email.trim() || undefined },
+                { onSuccess: setInvite }
+              )
+            }
           >
             {t("members.create")}
           </Button>

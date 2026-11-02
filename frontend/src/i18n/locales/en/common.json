@@ -27,7 +27,24 @@
     "submit": "Sign in",
     "submitting": "Signing in…",
     "signOut": "Sign out",
-    "signingOut": "Signing out…"
+    "signingOut": "Signing out…",
+    "forgotPassword": "Forgot password?",
+    "resetPasswordTitle": "Reset password",
+    "resetPasswordSubtitle": "Enter your email to receive a password reset link.",
+    "sendResetLink": "Send reset link",
+    "resetEmailSentTitle": "Check your email",
+    "resetEmailSentDesc": "If an account exists with this email address, you will receive a single-use password reset link shortly.",
+    "setNewPasswordTitle": "Set new password",
+    "setNewPasswordSubtitle": "Enter your new password below.",
+    "submitNewPassword": "Update password",
+    "passwordResetSuccessTitle": "Password updated",
+    "passwordResetSuccessDesc": "Your password has been reset successfully. You can now log in with your new credentials.",
+    "goToLogin": "Go to sign in",
+    "backToLogin": "Back to sign in",
+    "passwordsDoNotMatch": "Passwords do not match.",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "passwordMinLengthHint": "At least 12 characters"
   },
   "workspaces": {
     "pickerTitle": "Choose a workspace",
@@ -537,5 +554,11 @@
     "keepEditing": "Keep editing",
     "leave": "Leave without saving",
     "checkAccount": "Check sign-in status"
+  },
+  "members": {
+    "emailLabel": "Email address (optional)",
+    "emailHint": "If provided, an invitation will be sent to this email.",
+    "emailDispatched": "Invitation email dispatched to {{email}}",
+    "emailPlaceholder": "name@example.com"
   }
 }

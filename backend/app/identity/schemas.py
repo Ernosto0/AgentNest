@@ -171,11 +171,13 @@ class MemberRolePatch(StrictModel):
 
 class InviteCreate(StrictModel):
     role: Role
+    email: str | None = Field(default=None, max_length=320)
 
 
 class InviteOut(BaseModel):
     id: uuid.UUID
     role: Role
+    email: str | None = None
     expires_at: datetime
     invite_path: str
     invite_url: str
@@ -185,6 +187,7 @@ class InviteOut(BaseModel):
 class PendingInviteOut(BaseModel):
     id: uuid.UUID
     role: Role
+    email: str | None = None
     expires_at: datetime
     created_at: datetime
 
@@ -200,3 +203,15 @@ class InviteAcceptOut(BaseModel):
     workspace_id: uuid.UUID
     workspace_name: str
     role: Role
+
+
+# --- password reset (Phase 8, S08) ----------------------------------------------------
+
+
+class PasswordResetRequest(StrictModel):
+    email: str = Field(min_length=3, max_length=320)
+
+
+class PasswordResetConfirm(StrictModel):
+    token: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=12, max_length=1000)

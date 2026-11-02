@@ -14,6 +14,8 @@
     "takeover": "Devral",
     "release": "Asistana geri ver",
     "suggest": "Yanıt öner",
+    "export": "Dışa aktar (JSON)",
+    "exportTooltip": "Makinece okunabilir konuşma geçmişini indir (Yalnızca sahip)",
     "messages": "Mesajlar",
     "attachment": "[ek]",
     "sentInApp": "Instagram uygulamasından gönderildi",

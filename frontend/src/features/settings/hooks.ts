@@ -128,14 +128,16 @@ export function usePendingInvites(ws: string) {
 /** Create an invite; the response carries the one-time link. */
 export function useCreateInvite(ws: string) {
   const queryClient = useQueryClient();
-  return useMutation<Invite, AppError, Role>({
-    mutationFn: (role) =>
-      unwrap(
+  return useMutation<Invite, AppError, Role | { role: Role; email?: string }>({
+    mutationFn: (param) => {
+      const body = typeof param === "string" ? { role: param } : { role: param.role, email: param.email };
+      return unwrap(
         api.POST("/api/v1/workspaces/{workspace_id}/invites", {
           params: { path: { workspace_id: ws } },
-          body: { role },
+          body,
         }),
-      ),
+      );
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["invites", ws] }),
   });
 }

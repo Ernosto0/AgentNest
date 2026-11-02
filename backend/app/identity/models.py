@@ -153,6 +153,7 @@ class Invite(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     )
 
     role: Mapped[str] = mapped_column(Text, nullable=False)
+    email: Mapped[str | None] = mapped_column(Text)
     token_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True, nullable=False)
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
@@ -163,6 +164,25 @@ class Invite(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     )
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class PasswordResetToken(UUIDPrimaryKeyMixin, Base):
+    """Global user-scoped password reset tokens (ADR-025 §1.3, Category A)."""
+
+    __tablename__ = "password_reset_tokens"
+    __table_args__ = (UniqueConstraint("token_hash"),)
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

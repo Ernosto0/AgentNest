@@ -37,6 +37,8 @@ from app.identity.schemas import (
     MeUpdate,
     Page,
     PasswordChangeRequest,
+    PasswordResetConfirm,
+    PasswordResetRequest,
     PendingInviteOut,
     RevokeAllSessionsRequest,
     SessionOut,
@@ -208,6 +210,25 @@ def change_password(
     )
 
 
+@auth_router.post("/password-reset/request", status_code=202)
+def request_password_reset(
+    body: PasswordResetRequest,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+    clock: Clock = Depends(get_clock),
+) -> None:
+    service.request_password_reset(db, clock, settings, email=body.email)
+
+
+@auth_router.post("/password-reset/confirm", status_code=204)
+def confirm_password_reset(
+    body: PasswordResetConfirm,
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> None:
+    service.confirm_password_reset(db, clock, token=body.token, new_password=body.new_password)
+
+
 # --- /workspaces ----------------------------------------------------------------------------
 
 
@@ -302,6 +323,7 @@ def _invite_out(invite: Invite, token: str, settings: Settings) -> InviteOut:
     return InviteOut(
         id=invite.id,
         role=invite.role,
+        email=invite.email,
         expires_at=invite.expires_at,
         invite_path=invite_path,
         invite_url=settings.app_base_url.rstrip("/") + invite_path,
@@ -317,7 +339,9 @@ def create_invite(
     clock: Clock = Depends(get_clock),
     settings: Settings = Depends(get_app_settings),
 ) -> InviteOut:
-    invite, token = invites_service.create_invite(db, clock, ctx, role=body.role)
+    invite, token = invites_service.create_invite(
+        db, clock, ctx, role=body.role, email=body.email, settings=settings
+    )
     return _invite_out(invite, token, settings)
 
 
@@ -332,6 +356,7 @@ def list_invites(
             PendingInviteOut(
                 id=invite.id,
                 role=invite.role,
+                email=invite.email,
                 expires_at=invite.expires_at,
                 created_at=invite.created_at,
             )

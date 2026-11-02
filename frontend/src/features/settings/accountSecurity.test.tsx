@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ME, READINESS, WS_GOLKENT, workspace } from "@/test/fixtures";
@@ -65,7 +65,7 @@ describe("AccountSecurity", () => {
 
     const revokeButtons = screen.getAllByRole("button", { name: "Oturumu kapat" });
     // Click revoke on the other session
-    await user.click(revokeButtons[revokeButtons.length - 1]);
+    await user.click(revokeButtons[revokeButtons.length - 1]!);
 
     await waitFor(() =>
       expect(

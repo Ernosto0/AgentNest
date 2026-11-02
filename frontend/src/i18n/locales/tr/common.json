@@ -27,7 +27,24 @@
     "submit": "Giriş yap",
     "submitting": "Giriş yapılıyor…",
     "signOut": "Çıkış yap",
-    "signingOut": "Çıkış yapılıyor…"
+    "signingOut": "Çıkış yapılıyor…",
+    "forgotPassword": "Şifremi unuttum",
+    "resetPasswordTitle": "Şifre sıfırlama",
+    "resetPasswordSubtitle": "Şifrenizi sıfırlamak için kayıtlı e-posta adresinizi girin.",
+    "sendResetLink": "Sıfırlama bağlantısı gönder",
+    "resetEmailSentTitle": "E-postanızı kontrol edin",
+    "resetEmailSentDesc": "Bu e-posta adresiyle ilişkili bir hesap varsa, kısa süre içinde tek kullanımlık bir şifre sıfırlama bağlantısı alacaksınız.",
+    "setNewPasswordTitle": "Yeni şifre belirleyin",
+    "setNewPasswordSubtitle": "Lütfen yeni şifrenizi girin.",
+    "submitNewPassword": "Şifreyi güncelle",
+    "passwordResetSuccessTitle": "Şifre güncellendi",
+    "passwordResetSuccessDesc": "Şifreniz başarıyla sıfırlandı. Yeni bilgilerinizle giriş yapabilirsiniz.",
+    "goToLogin": "Giriş yap",
+    "backToLogin": "Girişe dön",
+    "passwordsDoNotMatch": "Şifreler birbiriyle eşleşmiyor.",
+    "newPassword": "Yeni şifre",
+    "confirmNewPassword": "Yeni şifreyi onaylayın",
+    "passwordMinLengthHint": "En az 12 karakter"
   },
   "workspaces": {
     "pickerTitle": "Çalışma alanı seçin",
@@ -537,5 +554,11 @@
     "keepEditing": "Düzenlemeye devam et",
     "leave": "Kaydetmeden ayrıl",
     "checkAccount": "Giriş durumunu kontrol et"
+  },
+  "members": {
+    "emailLabel": "E-posta adresi (isteğe bağlı)",
+    "emailHint": "Belirtilirse bu e-posta adresine bir davet gönderilir.",
+    "emailDispatched": "Davet e-postası {{email}} adresine gönderildi",
+    "emailPlaceholder": "name@example.com"
   }
 }

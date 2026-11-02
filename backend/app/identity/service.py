@@ -17,7 +17,9 @@ from sqlalchemy.orm import Session
 
 from app.audit import service as audit
 from app.core.clock import Clock
+from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
+from app.core.email import send_password_reset_email
 from app.core.errors import AppError
 from app.core.security import (
     generate_token,
@@ -28,7 +30,7 @@ from app.core.security import (
     verify_password,
 )
 from app.identity import repository as repo
-from app.identity.models import AuthSession, User, Workspace, WorkspaceMember
+from app.identity.models import AuthSession, PasswordResetToken, User, Workspace, WorkspaceMember
 from app.identity.schemas import (
     SessionOut,
     WorkspaceCreate,
@@ -385,6 +387,134 @@ def change_password(
         session,
         None,
         "auth.password_changed",
+        "user",
+        user.id,
+        actor=ActorRef.user(user.id),
+        clock=clock,
+    )
+    session.commit()
+
+
+def request_password_reset(
+    session: Session,
+    clock: Clock,
+    settings: Settings,
+    *,
+    email: str,
+) -> None:
+    """Request a password reset link. Always returns successfully to prevent account enumeration
+    (ADR-025 §2.3).
+    """
+    normalized_email = email.lower().strip()
+    user = session.scalars(
+        select(User).where(User.email == normalized_email, User.is_active.is_(True))
+    ).first()
+
+    if user is not None:
+        now = clock.now()
+        # Invalidate any previously issued unused tokens for this user
+        session.execute(
+            update(PasswordResetToken)
+            .where(
+                PasswordResetToken.user_id == user.id,
+                PasswordResetToken.used_at.is_(None),
+            )
+            .values(used_at=now)
+        )
+
+        raw_token = generate_token()
+        token_hash = hash_token(raw_token)
+        reset_row = PasswordResetToken(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=now + timedelta(hours=1),
+        )
+        session.add(reset_row)
+        session.flush()
+
+        audit.record(
+            session,
+            None,
+            "auth.password_reset_requested",
+            "user",
+            user.id,
+            {"email_hash": hashlib.sha256(normalized_email.encode()).hexdigest()[:16]},
+            actor=ActorRef.system(),
+            clock=clock,
+        )
+        session.commit()
+
+        # Build reset link using trusted origin (prevent Host header injection)
+        base_url = (
+            settings.frontend_origin.rstrip("/")
+            if settings.frontend_origin
+            else settings.app_base_url.rstrip("/")
+        )
+        reset_url = f"{base_url}/reset-password/{raw_token}"
+        send_password_reset_email(settings, user.email, reset_url, ui_locale=user.ui_locale)
+    else:
+        # Constant-time dummy operation against user enumeration
+        _ = hash_token(generate_token())
+        session.commit()
+
+
+def confirm_password_reset(
+    session: Session,
+    clock: Clock,
+    *,
+    token: str,
+    new_password: str,
+) -> None:
+    """Consume single-use reset token, update password hash, and revoke all sessions."""
+    if len(new_password) < 12:
+        raise AppError(
+            "PASSWORD_TOO_WEAK",
+            errors=[{"field": "new_password", "code": "too_short", "params": {"min_length": 12}}],
+        )
+
+    policy_errs = password_policy_problems(new_password)
+    if policy_errs:
+        raise AppError(
+            "PASSWORD_TOO_WEAK",
+            errors=[{"field": "new_password", "code": err, "params": {}} for err in policy_errs],
+        )
+
+    now = clock.now()
+    token_hash = hash_token(token)
+    reset_row = session.scalars(
+        select(PasswordResetToken).where(
+            PasswordResetToken.token_hash == token_hash,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > now,
+        )
+    ).first()
+
+    if reset_row is None:
+        raise AppError("PASSWORD_RESET_TOKEN_INVALID")
+
+    user = session.get(User, reset_row.user_id)
+    if user is None or not user.is_active:
+        raise AppError("PASSWORD_RESET_TOKEN_INVALID")
+
+    # Mark token used
+    reset_row.used_at = now
+    user.password_hash = hash_password(new_password)
+
+    # Invalidate all active sessions for this user (ADR-025 §2.3)
+    session.execute(
+        update(AuthSession)
+        .where(
+            AuthSession.user_id == user.id,
+            AuthSession.revoked_at.is_(None),
+            AuthSession.expires_at > now,
+        )
+        .values(revoked_at=now)
+    )
+
+    audit.record(
+        session,
+        None,
+        "auth.password_reset_completed",
         "user",
         user.id,
         actor=ActorRef.user(user.id),

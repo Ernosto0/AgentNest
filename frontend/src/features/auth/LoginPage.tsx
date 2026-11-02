@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { PublicShell } from "@/app/layout/PublicShell";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
@@ -39,7 +39,14 @@ export function LoginPage() {
       {from ? <Notice title={t("entry.signInToContinue")} /> : null}
       <form onSubmit={submit} className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6" noValidate aria-busy={login.isPending}>
         <TextField ref={emailInput} label={t("auth.email")} type="email" name="email" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} required maxLength={320} value={email} error={invalidEmail ? t("entry.emailInvalid") : undefined} onChange={(event) => { setEmail(event.target.value); setInvalidEmail(false); }} />
-        <TextField label={t("auth.password")} type="password" name="password" autoComplete="current-password" required maxLength={1000} value={password} onChange={(event) => setPassword(event.target.value)} />
+        <div className="flex flex-col gap-1.5">
+          <TextField label={t("auth.password")} type="password" name="password" autoComplete="current-password" required maxLength={1000} value={password} onChange={(event) => setPassword(event.target.value)} />
+          <div className="text-right">
+            <Link to="/reset-password" className="text-xs text-secondary hover:underline">
+              {t("auth.forgotPassword")}
+            </Link>
+          </div>
+        </div>
         {login.isError ? <ErrorMessage error={login.error} /> : null}
         <Button type="submit" block pending={login.isPending} disabled={!email || !password} disabledReason={!email || !password ? t("entry.credentialsRequired") : undefined}>{login.isPending ? t("auth.submitting") : t("auth.submit")}</Button>
       </form>

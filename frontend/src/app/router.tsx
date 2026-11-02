@@ -5,6 +5,7 @@ import { NotificationCenter } from "@/features/notifications/NotificationCenter"
 import { ActivityFeed } from "@/features/activity/ActivityFeed";
 import { ApprovalsList } from "@/features/approvals/ApprovalsList";
 import { LoginPage } from "@/features/auth/LoginPage";
+import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { ContentDetailPage } from "@/features/content/ContentDetailPage";
 import { ContentPage } from "@/features/content/ContentPage";
@@ -32,6 +33,8 @@ import { NotFoundPage } from "./NotFoundPage";
 
 export const appRoutes: RouteObject[] = [
   { path: "/login", element: <LoginPage /> },
+  { path: "/reset-password", element: <ResetPasswordPage /> },
+  { path: "/reset-password/:token", element: <ResetPasswordPage /> },
   { path: "/invite/:token", element: <AcceptInvite /> },
   {
     element: <RequireAuth />,

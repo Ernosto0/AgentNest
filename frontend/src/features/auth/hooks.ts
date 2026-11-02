@@ -113,3 +113,17 @@ export function useChangePassword() {
     },
   });
 }
+
+export function useRequestPasswordReset() {
+  return useMutation<unknown, AppError, { email: string }>({
+    mutationFn: (body) =>
+      unwrap(api.POST("/api/v1/auth/password-reset/request", { body })),
+  });
+}
+
+export function useConfirmPasswordReset() {
+  return useMutation<void, AppError, { token: string; new_password: string }>({
+    mutationFn: (body) =>
+      unwrap<void>(api.POST("/api/v1/auth/password-reset/confirm", { body })),
+  });
+}

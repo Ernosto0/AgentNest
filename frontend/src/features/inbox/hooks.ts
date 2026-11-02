@@ -327,3 +327,14 @@ export function useSaveAsAnswer(ws: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["answers", ws] }),
   });
 }
+
+export function useExportConversation(ws: string, conversationId: string) {
+  return useMutation<Record<string, unknown>, AppError>({
+    mutationFn: () =>
+      unwrap(
+        api.GET("/api/v1/workspaces/{workspace_id}/conversations/{conversation_id}/export", {
+          params: { path: { workspace_id: ws, conversation_id: conversationId } },
+        }),
+      ),
+  });
+}

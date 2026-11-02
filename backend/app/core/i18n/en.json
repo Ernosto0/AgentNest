@@ -317,5 +317,13 @@
   "activity.auth.password_change_failed": "Password change failed",
   "activity.auth.password_changed": "Password changed",
   "activity.auth.session_revoked": "Session revoked",
-  "activity.auth.sessions_revoked_all": "All other sessions revoked"
-}
+  "activity.auth.sessions_revoked_all": "All other sessions revoked",
+  "errors.PASSWORD_RESET_TOKEN_INVALID.what": "This password reset link is invalid or has expired.",
+  "errors.PASSWORD_RESET_TOKEN_INVALID.next": "Request a new password reset link.",
+  "errors.PASSWORD_TOO_WEAK.what": "The password does not meet security requirements.",
+  "errors.PASSWORD_TOO_WEAK.next": "Choose a password with at least 12 characters that is not common.",
+  "activity.auth.password_reset_requested": "Password reset requested",
+  "activity.auth.password_reset_completed": "Password reset completed",
+  "activity.data_rights.conversation_exported": "Conversation exported",
+  "activity.data_rights.customer_exported": "Customer data exported"
+}

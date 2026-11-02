@@ -417,4 +417,31 @@ describe("inbox", () => {
     renderApp(`/w/${WS_GOLKENT}/inbox`);
     expect(await screen.findByText("Çok Uzun İsimli Müşteri Hesabı ve Özel Karakterler İle Birlikte")).toBeInTheDocument();
   });
+
+  it("allows owner to export conversation data", async () => {
+    let exported = false;
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(detail(null)),
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}/export`]: () => {
+          exported = true;
+          return json({
+            schema_version: "1.0",
+            exported_at: "2026-11-03T00:00:00Z",
+            conversation: { id: CONVERSATION_ID },
+            messages: [],
+          });
+        },
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const user = userEvent.setup();
+
+    const exportBtn = await screen.findByRole("button", { name: "Dışa aktar (JSON)" });
+    expect(exportBtn).toBeInTheDocument();
+    await user.click(exportBtn);
+
+    await waitFor(() => expect(exported).toBe(true));
+  });
 });
