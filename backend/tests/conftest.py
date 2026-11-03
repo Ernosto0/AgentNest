@@ -10,6 +10,7 @@ from collections.abc import Callable, Iterator
 
 # --- environment must be fixed before the app is imported -------------------------------
 os.environ["APP_ENV"] = "test"
+os.environ["COOKIE_SECURE"] = "false"
 os.environ.setdefault("LOG_LEVEL", "WARNING")
 
 from app.core.config import Settings, get_settings  # noqa: E402

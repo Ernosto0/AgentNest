@@ -36,6 +36,7 @@ function routes(ws: string, accounts: () => SocialAccount[], extra: Record<strin
     [`GET ${base}`]: () => json(workspace(ws)),
     [`GET ${base}/readiness`]: () => json(READINESS),
     [`GET ${base}/social-accounts`]: () => json({ items: accounts(), next_cursor: null }),
+    [`GET ${base}/channels/links`]: () => json([]),
     ...extra,
   };
 }

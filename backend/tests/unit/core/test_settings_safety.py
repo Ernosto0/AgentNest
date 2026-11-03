@@ -67,6 +67,9 @@ def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "MAIL_FROM",
         "OPERATOR_ALERT_EMAIL",
         "SENTRY_DSN",
+        "TELEGRAM_BOT_USERNAME",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_WEBHOOK_SECRET",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -495,6 +498,35 @@ def test_phase8_secrets_never_appear_in_public_dict() -> None:
     dumped = str(public)
     for secret in ("super-secret-mig", "super-secret-smtp", "super-secret-dsn"):
         assert secret not in dumped
+
+
+def test_telegram_production_settings_validation() -> None:
+    # Token without username
+    with pytest.raises(ConfigError, match="TELEGRAM_BOT_USERNAME must be set"):
+        prod(telegram_bot_token="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11")
+
+    # Username without token
+    with pytest.raises(
+        ConfigError, match="TELEGRAM_BOT_TOKEN must be set when TELEGRAM_BOT_USERNAME"
+    ):
+        prod(telegram_bot_username="AgentNestBot")
+
+    # Webhook secret without token/username
+    with pytest.raises(
+        ConfigError, match="TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_USERNAME must be set"
+    ):
+        prod(telegram_webhook_secret="secret_token_123")
+
+    # Both set is valid
+    s = prod(
+        telegram_bot_username="AgentNestBot",
+        telegram_bot_token="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
+        telegram_webhook_secret="secret_token_123",
+    )
+    assert s.telegram_bot_username == "AgentNestBot"
+    public = s.public_dict()
+    assert "telegram_bot_token" not in public
+    assert "telegram_webhook_secret" not in public
 
 
 def test_validate_production_settings_enforces_production_env() -> None:

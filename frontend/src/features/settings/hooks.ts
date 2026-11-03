@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
-import type { Invite, Member, PendingInvite, Role, SocialAccount, SystemHealth } from "@/api/types";
+import type { ChannelLink, ChannelLinkCode, Invite, Member, PendingInvite, Role, SocialAccount, SystemHealth } from "@/api/types";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 export const systemHealthKey = (ws: string) => ["system-health", ws] as const;
@@ -229,5 +229,54 @@ export function useCancelWorkspaceDeletion(ws: string) {
         }),
       )) as unknown as WorkspaceDeletionStatus,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspace-deletion-status", ws] }),
+  });
+}
+
+// --- Owner messaging channels (Phase 9, ADR-012, Session 02) ---
+
+export const channelLinksKey = (ws: string) => ["channel-links", ws] as const;
+
+export function useChannelLinks(ws: string) {
+  return useQuery<ChannelLink[], AppError>({
+    queryKey: channelLinksKey(ws),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/workspaces/{workspace_id}/channels/links", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ),
+    retry: false,
+  });
+}
+
+export function useGenerateChannelLinkCode(ws: string) {
+  return useMutation<ChannelLinkCode, AppError, { channel?: "telegram" } | void>({
+    mutationFn: (body) =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/channels/link-code", {
+          params: { path: { workspace_id: ws } },
+          body: { channel: body?.channel ?? "telegram" },
+        }),
+      ),
+  });
+}
+
+export function useUnlinkChannel(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<void, AppError, string>({
+    mutationFn: async (linkId) => {
+      const response = await api.DELETE(
+        "/api/v1/workspaces/{workspace_id}/channels/links/{link_id}",
+        {
+          params: { path: { workspace_id: ws, link_id: linkId } },
+        },
+      );
+      if (response.error) {
+        throw response.error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: channelLinksKey(ws) });
+    },
   });
 }

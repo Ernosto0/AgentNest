@@ -99,7 +99,13 @@ def cmd_generate_key(args: argparse.Namespace) -> int:
 
 def cmd_export_openapi(args: argparse.Namespace) -> int:
     # Quiet app startup: logs are not wanted in a generated artefact.
-    settings = get_settings().model_copy(update={"log_level": "ERROR"})
+    settings = get_settings().model_copy(
+        update={
+            "log_level": "ERROR",
+            "demo_tools_enabled": True,
+            "app_env": "development",
+        }
+    )
     spec = create_app(settings).openapi()
     text = json.dumps(spec, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     if args.output:

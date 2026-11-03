@@ -11,6 +11,7 @@ import { useMeta } from "@/features/auth/hooks";
 import { useConnectMock, useReconnectMock, useSocialAccounts } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { AccountStatusBadge } from "./AccountStatusBadge";
+import { Channels } from "./Channels";
 import { useConnectInstagram, useDisconnectAccount, useErrorText, useLocalTime } from "./hooks";
 
 // Only callback catalog codes can select text. Never reflect arbitrary provider/query strings.
@@ -144,6 +145,8 @@ export function Connections() {
           {instagram.error ? <ErrorMessage error={instagram.error} /> : null}
         </div>
       ) : null}
+
+      <Channels />
     </div>
   );
 }

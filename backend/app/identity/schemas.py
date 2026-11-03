@@ -215,3 +215,25 @@ class PasswordResetRequest(StrictModel):
 class PasswordResetConfirm(StrictModel):
     token: str = Field(min_length=1, max_length=200)
     new_password: str = Field(min_length=12, max_length=1000)
+
+
+# --- owner channels (Phase 9, ADR-012, S02) -------------------------------------------
+
+
+class ChannelLinkCodeRequest(StrictModel):
+    channel: Literal["telegram"] = "telegram"
+
+
+class ChannelLinkCodeOut(BaseModel):
+    code: str
+    expires_at: datetime
+    bot_username: str | None = None
+    deep_link_url: str | None = None
+
+
+class ChannelLinkOut(BaseModel):
+    id: uuid.UUID
+    channel: str
+    channel_username: str | None = None
+    linked_at: datetime
+    status: str

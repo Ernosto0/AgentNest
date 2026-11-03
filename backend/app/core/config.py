@@ -44,6 +44,8 @@ _SECRET_FIELDS = frozenset(
         "backup_s3_secret_access_key",
         "smtp_url",
         "sentry_dsn",
+        "telegram_bot_token",
+        "telegram_webhook_secret",
     }
 )
 
@@ -180,6 +182,11 @@ class Settings(BaseSettings):
     operator_alert_email: str = ""
     sentry_dsn: SecretStr = SecretStr("")
 
+    # --- Owner messaging channel: Telegram (Phase 9, ADR-012) ---
+    telegram_bot_username: str | None = None
+    telegram_bot_token: SecretStr | None = None
+    telegram_webhook_secret: SecretStr | None = None
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _upper_log_level(cls, value: Any) -> Any:
@@ -276,6 +283,29 @@ class Settings(BaseSettings):
             problems.append("OPENAI_API_KEY must be set when LLM_PROVIDER=openai.")
         if self.llm_provider == "openai" and not self.llm_model_default.strip():
             problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
+        # Telegram configuration checks in production (Phase 9, ADR-012)
+        tg_token = (
+            self.telegram_bot_token.get_secret_value().strip() if self.telegram_bot_token else ""
+        )
+        tg_user = self.telegram_bot_username.strip() if self.telegram_bot_username else ""
+        tg_wh = (
+            self.telegram_webhook_secret.get_secret_value().strip()
+            if self.telegram_webhook_secret
+            else ""
+        )
+        if tg_token and not tg_user:
+            problems.append(
+                "TELEGRAM_BOT_USERNAME must be set when TELEGRAM_BOT_TOKEN is configured."
+            )
+        if tg_user and not tg_token:
+            problems.append(
+                "TELEGRAM_BOT_TOKEN must be set when TELEGRAM_BOT_USERNAME is configured."
+            )
+        if tg_wh and (not tg_token or not tg_user):
+            problems.append(
+                "TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_USERNAME must be set when "
+                "TELEGRAM_WEBHOOK_SECRET is configured."
+            )
         return problems
 
     @property

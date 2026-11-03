@@ -76,3 +76,8 @@ export type SystemHealth = Schemas["SystemHealthOut"];
 export type AccountHealth = Schemas["AccountHealth"];
 export type HealthCheckResult = Schemas["HealthCheckOut"];
 export type ResetResult = Schemas["ResetOut"];
+
+// Phase 9: Owner messaging channels (ADR-012, Session 02)
+export type ChannelLink = Schemas["ChannelLinkOut"];
+export type ChannelLinkCode = Schemas["ChannelLinkCodeOut"];
+export type ChannelLinkCodeRequest = Schemas["ChannelLinkCodeRequest"];

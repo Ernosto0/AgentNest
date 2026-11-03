@@ -45,6 +45,7 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
     "reports.view_inbox_metrics": _ALL,
     "activity.view": _OWNER_MANAGER,
     "system_health.view": _OWNER_MANAGER,
+    "settings.view": _ALL,
     "data.export": _OWNER_ONLY,
     "data.delete": _OWNER_ONLY,
 }

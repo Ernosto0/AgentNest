@@ -11,6 +11,7 @@ from app.agent.owner_tasks_router import router as owner_tasks_router
 from app.agent.router import router as agent_router
 from app.agent.work_views import router as agent_work_router
 from app.api.deps import enforce_csrf, get_app_settings
+from app.api.v1.channels_router import router as channels_router
 from app.approvals.router import router as approvals_router
 from app.commands.router import router as commands_router
 from app.comments.manual import router as manual_comments_router
@@ -103,3 +104,4 @@ api_router.include_router(owner_tasks_router)
 api_router.include_router(agent_work_router)
 
 api_router.include_router(manual_comments_router)
+api_router.include_router(channels_router)

@@ -38,6 +38,7 @@ EXPECTED: dict[str, tuple[bool, bool, bool]] = {
     "reports.view_inbox_metrics": (True, True, True),
     "activity.view": (True, True, False),
     "system_health.view": (True, True, False),
+    "settings.view": (True, True, True),
     "data.export": (True, False, False),
     "data.delete": (True, False, False),
 }

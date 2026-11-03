@@ -460,6 +460,29 @@ class ChannelLinkService:
 
         return user, workspace, link
 
+    @staticmethod
+    def list_links_for_user(
+        db: Session,
+        ctx: WorkspaceContext,
+        channel: str | None = None,
+    ) -> list[ChannelLink]:
+        """List active channel links for the current user in this workspace."""
+        if ctx.actor.type != "user" or not ctx.actor.id:
+            return []
+        user_id = uuid.UUID(ctx.actor.id)
+        stmt = (
+            select(ChannelLink)
+            .where(
+                ChannelLink.workspace_id == ctx.workspace_id,
+                ChannelLink.user_id == user_id,
+                ChannelLink.status == "active",
+            )
+            .order_by(ChannelLink.linked_at.desc())
+        )
+        if channel is not None:
+            stmt = stmt.where(ChannelLink.channel == channel)
+        return list(db.scalars(stmt).all())
+
 
 # Module-level aliases
 generate_link_code = ChannelLinkService.generate_link_code
@@ -467,3 +490,4 @@ redeem_link_code = ChannelLinkService.redeem_link_code
 unlink_by_user = ChannelLinkService.unlink_by_user
 unlink_by_channel = ChannelLinkService.unlink_by_channel
 resolve_channel_user = ChannelLinkService.resolve_channel_user
+list_links_for_user = ChannelLinkService.list_links_for_user
