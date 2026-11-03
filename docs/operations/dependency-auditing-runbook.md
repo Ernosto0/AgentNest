@@ -75,3 +75,4 @@ uv run pip-audit
 cd frontend
 npm.cmd audit
 ```
+

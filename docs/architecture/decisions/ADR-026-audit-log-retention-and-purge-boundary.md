@@ -67,3 +67,4 @@ Before real customer data is onboarded (Gate 3), the architectural boundaries fo
   - Gate 3 remains explicitly open until legal counsel sign-off on `OQ-12`.
 - **Trade-offs:**
   - Disk storage for `audit_logs` grows monotonically until an out-of-band maintenance archive or purge procedure is authorized by counsel. At pilot scale, audit volume is small (< a few thousand rows per month) and well within single-VPS PostgreSQL capacity.
+

@@ -82,3 +82,4 @@
   - External `/readyz` uptime check runbook and Sentry-compatible error reporting with privacy scrubbing.
   - Alert on dead jobs, stale backups (> 26h), webhook signature failure bursts, accounts in `needs_reauth` > 24h, dead agent wakes, stuck recovery, and budget exhaustion.
   - Durable deduplication table `operator_alert_states` with recovery notices (`firing -> resolved`).
+

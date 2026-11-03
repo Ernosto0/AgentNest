@@ -117,3 +117,4 @@ An old key may only be removed from `TOKEN_ENCRYPTION_KEYS` when:
 2. Retained database backups taken prior to key rotation have passed the **35-day backup retention period** (`backup_retention_days = 35`).
    - If an old backup snapshot (e.g. from 20 days ago) is restored during disaster recovery, the post-restore worker reconciliation needs the historical key to decrypt tokens and perform orderly disconnect or re-encryption.
 3. Once 35 days have elapsed since key rotation completion, the retired key ID can safely be removed from `TOKEN_ENCRYPTION_KEYS` in `.env`.
+
