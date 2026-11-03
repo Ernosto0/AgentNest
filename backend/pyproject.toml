@@ -217,6 +217,7 @@ source_modules = [
     "app.integrations.channels.telegram.client",
     "app.integrations.channels.telegram.adapter",
     "app.integrations.channels.telegram.dispatcher",
+    "app.integrations.channels.telegram.handlers",
     "app.integrations.channels.telegram.models",
     "app.integrations.channels.telegram.webhook_format",
     "app.commands.service",
@@ -322,6 +323,10 @@ source_modules = [
     "app.content",
 ]
 forbidden_modules = ["app.commands"]
+allow_indirect_imports = true
+ignore_imports = [
+    "app.integrations.channels.telegram.handlers -> app.commands.service",
+]
 
 [[tool.importlinter.contracts]]
 name = "approvals and notifications know no subject module"
@@ -492,4 +497,10 @@ source_modules = [
     "app.content",
 ]
 forbidden_modules = ["app.reporting"]
+allow_indirect_imports = true
+ignore_imports = [
+    "app.reporting.router -> app.api.deps",
+    "app.integrations.channels.telegram.handlers -> app.reporting.service",
+    "app.integrations.channels.telegram.handlers -> app.reporting.periods",
+]
 

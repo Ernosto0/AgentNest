@@ -26,6 +26,7 @@ def submit(
     *,
     media_asset_id: uuid.UUID | None = None,
     content_id: uuid.UUID | None = None,
+    source_channel: str = "api",
 ) -> OwnerTask:
     if (
         ctx.actor.type != "user"
@@ -76,7 +77,7 @@ def submit(
         thread_id=thread.id,
         requester_user_id=user_id,
         requester_role=ctx.role or "",
-        source_channel="api",
+        source_channel=source_channel,
         client_request_id=client_request_id,
         request_text=request_text,
         read_refs=selection_refs(db, ctx, account_id, media_asset_id, content_id, intake=True),

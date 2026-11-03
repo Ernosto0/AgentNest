@@ -287,10 +287,26 @@ def known_keys(report: Report) -> list[str]:
     return [key for key in BY_KEY if key in report.metrics]
 
 
+def get_daily_summary(session: Session, clock: Clock, ctx: WorkspaceContext) -> dict[str, Any]:
+    """Retrieve today's live daily summary metrics for the workspace (AC-2)."""
+    today = local_date_of(clock.now(), ctx.timezone)
+    report = get_report(session, clock, ctx, today)
+    return {
+        "date": today.isoformat(),
+        "inbound_messages": int(report.value("inbound_messages") or 0),
+        "conversations": int(report.value("conversations_with_inbound") or 0),
+        "new_conversations": int(report.value("new_conversations") or 0),
+        "pending_approvals": int(report.value("pending_approvals_now") or 0),
+        "replies_sent": int(report.value("replies_sent") or 0),
+        "is_simulated": bool(report.has_simulated_data),
+    }
+
+
 __all__ = [
     "DEFINITIONS_VERSION",
     "Report",
     "generate_daily_report",
+    "get_daily_summary",
     "get_report",
     "known_keys",
 ]

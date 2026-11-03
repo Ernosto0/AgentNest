@@ -336,25 +336,30 @@ def process_update(
                 action="unlinked_prompt",
             )
 
-        # Linked user non-command message: execute hook for Session 5 routing
+        # Linked user non-command message: execute custom hook or Session 05 handlers
         user, workspace, link = resolved
+        action_name = "linked_message"
         if on_linked_message is not None:
             on_linked_message(session, clock, user, workspace, link, message, tg_client)
         else:
-            tg_client.send_message(
-                chat_id=chat_id,
-                text=(
-                    "💬 Message received. Natural language command execution will "
-                    "be available in Session 05."
-                ),
-                parse_mode="HTML",
+            from app.integrations.channels.telegram.handlers import handle_linked_message
+
+            action_name = handle_linked_message(
+                session,
+                clock,
+                user,
+                workspace,
+                link,
+                message,
+                tg_client,
+                update_id=update_id,
             )
 
         return ProcessResult(
             status="processed",
             update_id=update_id,
             channel_user_id=channel_user_id,
-            action="linked_message",
+            action=action_name or "linked_message",
         )
 
     except Exception as exc:
