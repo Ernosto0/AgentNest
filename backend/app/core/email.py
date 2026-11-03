@@ -8,11 +8,13 @@ credential-free operation, reproducible tests, and safe verification.
 import contextlib
 import smtplib
 import urllib.parse
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from threading import Lock
+from typing import Any
 
 from app.core.config import Settings
 from app.core.logging import get_logger
@@ -310,6 +312,124 @@ def send_workspace_deletion_email(
             "Silme Talebini İptal Et</a></p>"
             f"<p style='color: #666; font-size: 13px;'>Veya bu bağlantıyı tarayıcınıza yapıştırın:"
             f"<br/><a href='{cancel_url}'>{cancel_url}</a></p></div>"
+        )
+
+    send_email(settings, to_email, subject, text_body, html_body)
+
+
+def send_operator_alert_email(
+    settings: Settings,
+    to_email: str,
+    alert_key: str,
+    category: str,
+    severity: str,
+    summary: str,
+    details: Mapping[str, Any],
+    is_recovery: bool = False,
+    ui_locale: str = "tr",
+) -> None:
+    """Send an operator alert notification or recovery notice (P8-07, ADR-025 §4.3)."""
+    if not to_email or not to_email.strip():
+        _log.info("operator_alert_skipped_no_recipient", alert_key=alert_key)
+        return
+
+    product = settings.product_name
+    status_label = "RESOLVED" if is_recovery else "FIRING"
+    header_color = (
+        "#16a34a" if is_recovery else ("#dc2626" if severity == "critical" else "#d97706")
+    )
+
+    subject = (
+        f"[{product}] [RESOLVED] {summary}"
+        if is_recovery
+        else f"[{product}] [{severity.upper()}] {summary}"
+    )
+
+    details_text = "\n".join(f"  - {k}: {v}" for k, v in details.items()) if details else "  (none)"
+    details_rows = (
+        "".join(
+            f"<tr><td style='padding: 6px 12px; font-weight: 600; color: #4b5563; "
+            f"border-bottom: 1px solid #e5e7eb;'>{k}</td>"
+            f"<td style='padding: 6px 12px; font-family: monospace; color: #111827; "
+            f"border-bottom: 1px solid #e5e7eb;'>{v}</td></tr>"
+            for k, v in details.items()
+        )
+        if details
+        else "<tr><td colspan='2' style='padding: 8px 12px; color: #6b7280;'>"
+        "No additional details</td></tr>"
+    )
+
+    if ui_locale == "en":
+        action_text = (
+            "Condition has resolved. Normal operation restored."
+            if is_recovery
+            else "Please investigate the issue and follow the operational runbook."
+        )
+        text_body = (
+            f"[{product} Operator Alert - {status_label}]\n\n"
+            f"Summary:  {summary}\n"
+            f"Severity: {severity.upper()}\n"
+            f"Category: {category}\n"
+            f"Alert:    {alert_key}\n\n"
+            f"Details:\n{details_text}\n\n"
+            f"Action:   {action_text}\n\n"
+            f"--\n{product} Automated Monitoring"
+        )
+        html_body = (
+            "<div style='font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, "
+            "sans-serif; line-height: 1.5; color: #111827; max-width: 600px;'>"
+            f"<div style='padding: 12px 16px; background-color: {header_color}; color: #ffffff; "
+            f"font-weight: 700; font-size: 16px; border-radius: 6px 6px 0 0;'>"
+            f"[{product}] {status_label}: {severity.upper()}</div>"
+            "<div style='padding: 20px; border: 1px solid #e5e7eb; border-top: none; "
+            "border-radius: 0 0 6px 6px; background: #ffffff;'>"
+            f"<h3 style='margin: 0 0 12px 0; color: #111827;'>{summary}</h3>"
+            f"<p style='color: #4b5563; margin: 4px 0;'><strong>Alert Key:</strong> "
+            f"<code>{alert_key}</code></p>"
+            f"<p style='color: #4b5563; margin: 4px 0;'><strong>Category:</strong> {category} | "
+            f"<strong>Severity:</strong> {severity.upper()}</p>"
+            "<h4 style='margin: 16px 0 8px 0; color: #374151;'>Details</h4>"
+            f"<table style='width: 100%; border-collapse: collapse; font-size: 13px;'>"
+            f"{details_rows}</table>"
+            f"<p style='margin-top: 20px; padding: 12px; background: #f3f4f6; border-radius: 4px; "
+            f"font-size: 13px; color: #374151;'><strong>Guidance:</strong> {action_text}</p>"
+            "</div></div>"
+        )
+    else:
+        action_text = (
+            "Sorun çözüldü. Sistem normal işleyişine döndü."
+            if is_recovery
+            else "Lütfen durumu inceleyin ve operasyonel müdahale rehberini uygulayın."
+        )
+        text_body = (
+            f"[{product} Operatör Uyarısı - {status_label}]\n\n"
+            f"Özet:     {summary}\n"
+            f"Önem:     {severity.upper()}\n"
+            f"Kategori: {category}\n"
+            f"Uyarı:    {alert_key}\n\n"
+            f"Detaylar:\n{details_text}\n\n"
+            f"Eylem:    {action_text}\n\n"
+            f"--\n{product} Otomatik İzleme Sistemi"
+        )
+        html_body = (
+            "<div style='font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, "
+            "sans-serif; line-height: 1.5; color: #111827; max-width: 600px;'>"
+            f"<div style='padding: 12px 16px; background-color: {header_color}; color: #ffffff; "
+            f"font-weight: 700; font-size: 16px; border-radius: 6px 6px 0 0;'>"
+            f"[{product}] {status_label}: {severity.upper()}</div>"
+            "<div style='padding: 20px; border: 1px solid #e5e7eb; border-top: none; "
+            "border-radius: 0 0 6px 6px; background: #ffffff;'>"
+            f"<h3 style='margin: 0 0 12px 0; color: #111827;'>{summary}</h3>"
+            f"<p style='color: #4b5563; margin: 4px 0;'><strong>Uyarı Anahtarı:</strong> "
+            f"<code>{alert_key}</code></p>"
+            f"<p style='color: #4b5563; margin: 4px 0;'><strong>Kategori:</strong> {category} | "
+            f"<strong>Önem Derecesi:</strong> {severity.upper()}</p>"
+            "<h4 style='margin: 16px 0 8px 0; color: #374151;'>Detaylar</h4>"
+            f"<table style='width: 100%; border-collapse: collapse; font-size: 13px;'>"
+            f"{details_rows}</table>"
+            f"<p style='margin-top: 20px; padding: 12px; background: #f3f4f6; border-radius: 4px; "
+            f"font-size: 13px; color: #374151;'><strong>Yönerge:</strong> {action_text}</p>"
+            "</div></div>"
         )
 
     send_email(settings, to_email, subject, text_body, html_body)

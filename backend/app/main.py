@@ -9,6 +9,7 @@ from app.api.router import api_router, health_router
 from app.core.clock import Clock, SystemClock
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, get_logger
+from app.core.sentry import init_sentry
 from app.demo.dev_router import router as dev_router
 from app.handlers import load_handlers
 from app.inbox.webhooks_router import create_webhooks_router
@@ -20,6 +21,7 @@ from app.operations.oauth_router import router as oauth_router
 def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings)
+    init_sentry(settings)
     log = get_logger(__name__)
     log.info("startup", **settings.public_dict())
     validate_templates()  # a broken fact template fails the start, not a checklist screen

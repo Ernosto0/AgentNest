@@ -20,7 +20,6 @@ from sqlalchemy import (
     Integer,
     Text,
     UniqueConstraint,
-    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -114,9 +113,6 @@ class DeletionTombstone(UUIDPrimaryKeyMixin, Base):
     details: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'::jsonb")
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
 
 
 class DataDeletionRequest(UUIDPrimaryKeyMixin, Base):
@@ -142,4 +138,40 @@ class DataDeletionRequest(UUIDPrimaryKeyMixin, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     details: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+
+
+class OperatorAlertState(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Durable state tracking for operator alerts (ADR-025 §4.3, P8-07)."""
+
+    __tablename__ = "operator_alert_states"
+    __table_args__ = (
+        UniqueConstraint("alert_key", name="uq_operator_alert_states_alert_key"),
+        CheckConstraint("status IN ('firing', 'resolved')", name="ck_operator_alert_states_status"),
+        CheckConstraint(
+            "severity IN ('critical', 'warning', 'info')",
+            name="ck_operator_alert_states_severity",
+        ),
+        Index("ix_operator_alert_states_status", "status"),
+        Index("ix_operator_alert_states_category", "category"),
+        Index("ix_operator_alert_states_cooldown_until", "cooldown_until"),
+    )
+
+    alert_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    category: Mapped[str] = mapped_column(Text, nullable=False)
+    severity: Mapped[str] = mapped_column(Text, nullable=False, server_default="warning")
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="firing")
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    details: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    first_triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_notified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cooldown_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    notification_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1")
     )

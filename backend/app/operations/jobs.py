@@ -42,6 +42,7 @@ from app.operations.payloads import (
     AccountHealthCheckPayload,
     DeleteAccountConversationsPayload,
     EmitEchoPayload,
+    EvaluateOperatorAlertsPayload,
     ReconcilePublishPayload,
     ReconcileSendPayload,
     ReconcileStuckPayload,
@@ -479,3 +480,37 @@ def enqueue_stuck_check(session: Session, clock: Clock) -> int:
         clock=clock,
     )
     return 1
+
+
+@register_periodic
+def enqueue_operator_alert_evaluation(session: Session, clock: Clock) -> int:
+    now = clock.now()
+    enqueue(
+        session,
+        "evaluate_operator_alerts",
+        EvaluateOperatorAlertsPayload(),
+        workspace_id=None,
+        correlation_id=None,
+        dedup_key=f"evaluate_operator_alerts:{now:%Y-%m-%dT%H}:{now.minute // 5}",
+        clock=clock,
+    )
+    return 1
+
+
+@job_handler("evaluate_operator_alerts", EvaluateOperatorAlertsPayload, max_attempts=1)
+def evaluate_operator_alerts_job(job: JobContext) -> None:
+    from app.operations.operator_alerts import evaluate_operator_alerts
+
+    payload = (
+        job.payload
+        if isinstance(job.payload, EvaluateOperatorAlertsPayload)
+        else EvaluateOperatorAlertsPayload()
+    )
+    with job.session_factory() as session:
+        evaluate_operator_alerts(
+            session,
+            job.clock,
+            get_settings(),
+            auto_resolve=payload.auto_resolve,
+        )
+        session.commit()

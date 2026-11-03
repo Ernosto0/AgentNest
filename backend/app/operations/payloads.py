@@ -53,3 +53,9 @@ class RefreshTokenPayload(_Payload):
 
 class DeleteAccountConversationsPayload(_Payload):
     social_account_id: uuid.UUID
+
+
+class EvaluateOperatorAlertsPayload(_Payload):
+    """Evaluate system-wide and workspace operator alerts (ADR-025 §4.3, P8-07)."""
+
+    auto_resolve: bool = True

@@ -26,6 +26,7 @@ def load_handlers() -> None:
     import app.operations.jobs  # noqa: F401
     import app.operations.key_rotation  # noqa: F401
     import app.operations.manual_comments  # noqa: F401
+    import app.operations.operator_alerts  # noqa: F401
     import app.operations.private_reply  # noqa: F401
     import app.operations.public_comments  # noqa: F401
     import app.reporting.jobs  # noqa: F401
