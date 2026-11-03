@@ -80,9 +80,7 @@ def request_workspace_deletion(
 
     now = clock.now()
     scheduled_at = now + timedelta(days=GRACE_PERIOD_DAYS)
-    requested_by_id = (
-        uuid.UUID(ctx.actor.id) if ctx.actor.id and ctx.actor.type == "user" else None
-    )
+    requested_by_id = uuid.UUID(ctx.actor.id) if ctx.actor.id and ctx.actor.type == "user" else None
 
     workspace.status = "deleting"
     workspace.deletion_requested_at = now
@@ -127,9 +125,7 @@ def request_workspace_deletion(
     )
 
     # 5. Revoke active delegations
-    session.execute(
-        delete(AgentDelegation).where(AgentDelegation.workspace_id == ctx.workspace_id)
-    )
+    session.execute(delete(AgentDelegation).where(AgentDelegation.workspace_id == ctx.workspace_id))
 
     # 6. Disconnect social accounts to stop polling/token refreshes
     session.execute(
@@ -240,14 +236,10 @@ def get_workspace_deletion_status(
         "status": workspace.status,
         "is_deleting": is_deleting,
         "deletion_requested_at": (
-            workspace.deletion_requested_at.isoformat()
-            if workspace.deletion_requested_at
-            else None
+            workspace.deletion_requested_at.isoformat() if workspace.deletion_requested_at else None
         ),
         "deletion_scheduled_at": (
-            workspace.deletion_scheduled_at.isoformat()
-            if workspace.deletion_scheduled_at
-            else None
+            workspace.deletion_scheduled_at.isoformat() if workspace.deletion_scheduled_at else None
         ),
         "days_remaining": days_remaining,
         "can_cancel": can_cancel,

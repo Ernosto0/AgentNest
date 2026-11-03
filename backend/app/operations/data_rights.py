@@ -269,9 +269,7 @@ def export_conversation(
             "handling_mode": conversation.handling_mode,
             "created_at": conversation.created_at.isoformat(),
             "last_activity_at": (
-                conversation.last_message_at.isoformat()
-                if conversation.last_message_at
-                else None
+                conversation.last_message_at.isoformat() if conversation.last_message_at else None
             ),
         },
         "messages": [
@@ -1058,4 +1056,3 @@ def erase_customer(
     )
     session.commit()
     return {"status": "erased", "customer_identity_id": str(cust_id_row.id)}
-

@@ -60,6 +60,8 @@ jobs:
       - run: uv run mypy app
       - name: Import rules (component-design.md §3)
         run: uv run lint-imports
+      - name: Dependency audit (pip-audit)
+        run: uv run pip-audit
       - name: Tests (unit, integration, isolation, security, jobs)
         run: bash ../.github/scripts/offline-tests.sh uv run pytest --junitxml=var/ci/backend.xml
       # Deterministic fake provider: proves the pipeline (prompts, schemas, resolver, extraction
@@ -88,6 +90,9 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+        working-directory: frontend
+      - name: Dependency audit (npm audit)
+        run: npm audit --audit-level=moderate
         working-directory: frontend
       - run: npm run lint
         working-directory: frontend

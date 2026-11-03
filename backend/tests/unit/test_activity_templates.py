@@ -38,6 +38,7 @@ _PREFIXES = (
     "webhook",
     "report",
     "retention",
+    "security",
     "demo",
 )
 

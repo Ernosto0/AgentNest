@@ -313,7 +313,3 @@ def send_workspace_deletion_email(
         )
 
     send_email(settings, to_email, subject, text_body, html_body)
-
-
-
-

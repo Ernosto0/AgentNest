@@ -95,9 +95,7 @@ def parse_and_verify_signed_request(signed_request: str, secret: str) -> dict[st
     return payload
 
 
-def verify_signed_request_with_settings(
-    settings: Settings, signed_request: str
-) -> dict[str, Any]:
+def verify_signed_request_with_settings(settings: Settings, signed_request: str) -> dict[str, Any]:
     """Verifies a signed_request attempting configured secrets."""
     meta_secret = settings.meta_app_secret.get_secret_value()
     mock_secret = settings.mock_instagram_app_secret.get_secret_value()

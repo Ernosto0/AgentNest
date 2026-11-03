@@ -51,9 +51,7 @@ MOCK_SECRET = "test-meta-secret-32-chars-long-1234"
 def make_signed_request(payload: dict[str, Any], secret: str = MOCK_SECRET) -> str:
     """Helper to construct a valid base64url signed_request."""
     payload_json = json.dumps(payload, separators=(",", ":"))
-    payload_b64 = (
-        base64.urlsafe_b64encode(payload_json.encode("utf-8")).decode("utf-8").rstrip("=")
-    )
+    payload_b64 = base64.urlsafe_b64encode(payload_json.encode("utf-8")).decode("utf-8").rstrip("=")
     sig = hmac.new(secret.encode("utf-8"), payload_b64.encode("utf-8"), hashlib.sha256).digest()
     sig_b64 = base64.urlsafe_b64encode(sig).decode("utf-8").rstrip("=")
     return f"{sig_b64}.{payload_b64}"
@@ -203,7 +201,9 @@ def test_handle_data_deletion_page_owner_account() -> None:
     res = handle_data_deletion_request(session, clock, settings, signed_req)
 
     assert "confirmation_code" in res
-    assert res["url"].startswith("https://app.agentnest.test/api/v1/webhooks/meta/data-deletion/del_")
+    assert res["url"].startswith(
+        "https://app.agentnest.test/api/v1/webhooks/meta/data-deletion/del_"
+    )
     assert acc.status == "disconnected"
     assert session.add.called
     assert session.commit.called
@@ -312,9 +312,7 @@ def test_handle_data_deletion_unknown_identity_writes_tombstone() -> None:
     assert "confirmation_code" in res
     # Verifies anticipatory tombstone added to prevent future resurrection
     added_tombstone = [
-        arg[0][0]
-        for arg in session.add.call_args_list
-        if isinstance(arg[0][0], DeletionTombstone)
+        arg[0][0] for arg in session.add.call_args_list if isinstance(arg[0][0], DeletionTombstone)
     ][0]
     assert added_tombstone.entity_type == "meta_user"
     assert added_tombstone.entity_id == user_id
@@ -339,7 +337,10 @@ def test_handle_data_deletion_idempotent_replay() -> None:
     res = handle_data_deletion_request(session, clock, settings, signed_req)
 
     assert res["confirmation_code"] == "del_existing_code_123"
-    assert res["url"] == "https://app.agentnest.test/api/v1/webhooks/meta/data-deletion/del_existing_code_123"
+    assert (
+        res["url"]
+        == "https://app.agentnest.test/api/v1/webhooks/meta/data-deletion/del_existing_code_123"
+    )
     assert not session.add.called  # No new record added
 
 

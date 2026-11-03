@@ -30,12 +30,16 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.agent.models import AgentAction, AgentStep, OwnerTask
 from app.ai.models import AgentRun
 from app.core.clock import FrozenClock
 from app.core.config import Settings
+from app.core.db import set_tenant_context
+from app.identity.models import Workspace
 from app.inbox.models import InboundEvent, Message, ReplyDraft
 from app.jobs.models import Job
 from app.notifications.models import Notification
+from app.owner_requests.models import OwnerAnswer, OwnerQuestion
 from app.reporting.models import ReportSourceGap
 
 BATCH_SIZE = 1000
@@ -55,6 +59,11 @@ class RetentionCounts:
     jobs_dead_deleted: int = 0
     memories_nulled: int = 0
     public_sources_nulled: int = 0
+    # Phase 7.5 extensions (Session 12)
+    owner_questions_redacted: int = 0
+    owner_tasks_redacted: int = 0
+    agent_steps_scrubbed: int = 0
+    agent_actions_scrubbed: int = 0
 
     def as_dict(self) -> dict[str, int]:
         return asdict(self)
@@ -165,8 +174,29 @@ def run_retention(
     def cutoff(days: int) -> datetime:
         return now - timedelta(days=days)
 
+    with session_factory() as session:
+        try:
+            workspace_ids = list(session.scalars(select(Workspace.id)).all())
+        except Exception:
+            workspace_ids = []
+
     def run(statement_for: Callable[[int], Executable]) -> int:
         return _run_batches(session_factory, statement_for, batch_size)
+
+    def run_tenant(statement_for: Callable[[int], Executable]) -> int:
+        if not workspace_ids:
+            return _run_batches(session_factory, statement_for, batch_size)
+        total = 0
+        for ws_id in workspace_ids:
+            while True:
+                with session_factory() as session:
+                    set_tenant_context(session, ws_id)
+                    changed = int(session.execute(statement_for(batch_size)).rowcount)  # type: ignore[attr-defined]
+                    session.commit()
+                total += changed
+                if changed < batch_size:
+                    break
+        return total
 
     # Raw webhook payload: the whole row is gone at 90 days; a younger row loses its payload
     # at 30.
@@ -185,7 +215,7 @@ def run_retention(
     )
 
     # The redacted model input is only for reproducing a run; a run still in progress keeps it.
-    agent_inputs = run(
+    agent_inputs = run_tenant(
         _null_columns(
             AgentRun,
             ["input_snapshot"],
@@ -200,11 +230,11 @@ def run_retention(
     # Message and draft text: nulled at 365 days. The message age is its provider time, the
     # clock every report uses, so the day it belongs to never changes (INV-17, H17).
     text_cutoff = cutoff(settings.retention_message_text_days)
+    from app.comments.privacy import retention_batch as public_retention
     from app.memory.service import erase_source, retention_batch
     from app.owner_requests.service import recover_questions
 
     privacy_clock = FrozenClock(now)
-    from app.comments.privacy import retention_batch as public_retention
 
     public_count = 0
     while True:
@@ -229,7 +259,6 @@ def run_retention(
     while True:
         with session_factory() as session:
             from app.memory.models import MemorySource
-            from app.owner_requests.models import OwnerQuestion
 
             sources = list(
                 session.scalars(
@@ -254,14 +283,14 @@ def run_retention(
             session.commit()
         if len(sources) < batch_size:
             break
-    messages = run(
+    messages = run_tenant(
         _null_columns(
             Message,
             ["text"],
             and_(Message.provider_timestamp < text_cutoff, Message.text.is_not(None)),
         )
     )
-    drafts = run(
+    drafts = run_tenant(
         _null_columns(
             ReplyDraft,
             ["text", "template", "suggestion_text"],
@@ -275,7 +304,7 @@ def run_retention(
             ),
         )
     )
-    run(
+    run_tenant(
         lambda batch: (
             update(ReplyDraft)
             .where(
@@ -292,8 +321,93 @@ def run_retention(
         )
     )
 
+    # Phase 7.5: Owner questions and answers text redaction at text_cutoff
+    owner_questions_nulled = run_tenant(
+        lambda batch: (
+            update(OwnerQuestion)
+            .where(
+                OwnerQuestion.id.in_(
+                    _ids_of(
+                        OwnerQuestion,
+                        and_(
+                            OwnerQuestion.created_at < text_cutoff,
+                            OwnerQuestion.body.is_not(None),
+                        ),
+                        batch,
+                    )
+                )
+            )
+            .values(body=None, source_message_id=None, source_hash="")
+            .execution_options(synchronize_session=False)
+        )
+    )
+    owner_answers_nulled = run_tenant(
+        _null_columns(
+            OwnerAnswer,
+            ["body"],
+            and_(OwnerAnswer.created_at < text_cutoff, OwnerAnswer.body.is_not(None)),
+        )
+    )
+    owner_questions_redacted = owner_questions_nulled + owner_answers_nulled
+
+    # Phase 7.5: Agent owner tasks text redaction at text_cutoff
+    owner_tasks_redacted = run_tenant(
+        lambda batch: (
+            update(OwnerTask)
+            .where(
+                OwnerTask.id.in_(
+                    _ids_of(
+                        OwnerTask,
+                        and_(
+                            OwnerTask.created_at < text_cutoff,
+                            OwnerTask.request_text != "[REDACTED]",
+                        ),
+                        batch,
+                    )
+                )
+            )
+            .values(request_text="[REDACTED]", clarification=None, answers=[])
+            .execution_options(synchronize_session=False)
+        )
+    )
+
+    # Phase 7.5: Agent steps raw checkpoint / input / output ref scrubbing at agent_input_cutoff
+    agent_steps_scrubbed = run_tenant(
+        _null_columns(
+            AgentStep,
+            ["read_checkpoint", "input_ref", "output_ref"],
+            and_(
+                AgentStep.created_at < cutoff(settings.retention_agent_input_days),
+                or_(
+                    AgentStep.read_checkpoint.is_not(None),
+                    AgentStep.input_ref.is_not(None),
+                    AgentStep.output_ref.is_not(None),
+                ),
+            ),
+        )
+    )
+
+    # Phase 7.5: Agent actions content_intent / policy_grant scrubbing at agent_input_cutoff
+    # (only for non-active states: proposed, authorized, pending_execution, executing keep payloads)
+    agent_actions_scrubbed = run_tenant(
+        _null_columns(
+            AgentAction,
+            ["content_intent", "policy_grant"],
+            and_(
+                AgentAction.created_at < cutoff(settings.retention_agent_input_days),
+                AgentAction.status.not_in(
+                    ("proposed", "authorized", "pending_execution", "executing")
+                ),
+                or_(
+                    AgentAction.content_intent.is_not(None),
+                    AgentAction.policy_grant.is_not(None),
+                ),
+            ),
+        )
+    )
+
     # Notifications: 90 days after they were read. An unread one is never deleted.
-    notifications = run(
+    notifications = run_tenant(
         _delete_rows(
             Notification,
             and_(
@@ -332,4 +446,8 @@ def run_retention(
         jobs_dead_deleted=jobs_dead,
         memories_nulled=memory_count,
         public_sources_nulled=public_count,
+        owner_questions_redacted=owner_questions_redacted,
+        owner_tasks_redacted=owner_tasks_redacted,
+        agent_steps_scrubbed=agent_steps_scrubbed,
+        agent_actions_scrubbed=agent_actions_scrubbed,
     )

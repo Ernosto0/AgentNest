@@ -262,6 +262,8 @@
   "activity.webhook.signature_invalid": "İmzası geçersiz bir bildirim reddedildi",
   "activity.report.generated": "Günlük rapor oluşturuldu",
   "activity.retention.cleanup_ran": "Eski kayıtlar temizlendi",
+  "activity.security.token_key_rotated": "Belirteç şifreleme anahtarı yenilendi",
+  "activity.security.token_key_rotation_failed": "Belirteç şifreleme anahtarı yenileme başarısız",
   "activity.demo.reset": "Demo verileri sıfırlandı",
   "activity.demo.failure_rule_set": "Demo hata kuralı ayarlandı",
   "activity.unknown": "Kayıt",

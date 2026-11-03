@@ -143,5 +143,3 @@ class DataDeletionRequest(UUIDPrimaryKeyMixin, Base):
     details: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'::jsonb")
     )
-
-

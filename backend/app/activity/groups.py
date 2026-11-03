@@ -149,6 +149,8 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "webhook.signature_invalid",
         "report.generated",
         "retention.cleanup_ran",
+        "security.token_key_rotated",
+        "security.token_key_rotation_failed",
         "demo.reset",
         "demo.failure_rule_set",
         "agent.event_recorded",

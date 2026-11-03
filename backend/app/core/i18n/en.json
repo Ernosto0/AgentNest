@@ -262,6 +262,8 @@
   "activity.webhook.signature_invalid": "A notification with an invalid signature was rejected",
   "activity.report.generated": "Daily report generated",
   "activity.retention.cleanup_ran": "Old records cleaned up",
+  "activity.security.token_key_rotated": "Token encryption key rotated",
+  "activity.security.token_key_rotation_failed": "Token encryption key rotation failed",
   "activity.demo.reset": "Demo data reset",
   "activity.demo.failure_rule_set": "Demo failure rule set",
   "activity.unknown": "Entry",
