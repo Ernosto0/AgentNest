@@ -50,6 +50,15 @@ export function LoginPage() {
         {login.isError ? <ErrorMessage error={login.error} /> : null}
         <Button type="submit" block pending={login.isPending} disabled={!email || !password} disabledReason={!email || !password ? t("entry.credentialsRequired") : undefined}>{login.isPending ? t("auth.submitting") : t("auth.submit")}</Button>
       </form>
+      <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-secondary">
+        <Link to="/privacy" className="hover:underline">
+          {t("legal.privacyTitle")}
+        </Link>
+        <span>•</span>
+        <Link to="/data-deletion" className="hover:underline">
+          {t("legal.dataDeletionTitle")}
+        </Link>
+      </div>
     </>}
   </PublicShell>;
 }

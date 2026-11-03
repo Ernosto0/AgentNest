@@ -29,10 +29,14 @@ import { SettingsPage } from "@/features/settings/SettingsPage";
 import { SystemHealth } from "@/features/settings/SystemHealth";
 import { WorkspaceGate } from "@/features/workspaces/WorkspaceGate";
 import { WorkspacePickerPage } from "@/features/workspaces/WorkspacePickerPage";
+import { PrivacyPolicyPage } from "@/features/legal/PrivacyPolicyPage";
+import { DataDeletionInfoPage } from "@/features/legal/DataDeletionInfoPage";
 import { NotFoundPage } from "./NotFoundPage";
 
 export const appRoutes: RouteObject[] = [
   { path: "/login", element: <LoginPage /> },
+  { path: "/privacy", element: <PrivacyPolicyPage /> },
+  { path: "/data-deletion", element: <DataDeletionInfoPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
   { path: "/reset-password/:token", element: <ResetPasswordPage /> },
   { path: "/invite/:token", element: <AcceptInvite /> },
