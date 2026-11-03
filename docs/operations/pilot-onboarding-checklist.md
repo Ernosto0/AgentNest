@@ -174,3 +174,4 @@ The business owner must know how to pause, override, or immediately disconnect A
 - **Emergency Contact:** `ops@agentnest.io` / WhatsApp Destek Hattı: `+90 (5XX) XXX XX XX`
 - **SLA:** 15-minute response time for active pilot businesses during pilot hours (08:00 - 22:00 TRT).
 - **Incident Playbook:** Operator can run `python -m app.cli post-restore-reconcile` or freeze workspace tenant jobs remotely.
+

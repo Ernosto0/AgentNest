@@ -211,7 +211,7 @@ class OwnerTask(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base)
             ["workspace_id", "social_account_id", "thread_id"],
             ["agent_threads.workspace_id", "agent_threads.social_account_id", "agent_threads.id"],
         ),
-        CheckConstraint("source_channel IN ('api')", name="source_channel"),
+        CheckConstraint("source_channel IN ('api', 'telegram')", name="source_channel"),
         CheckConstraint("length(request_text) BETWEEN 1 AND 4000", name="request_text_length"),
     )
 

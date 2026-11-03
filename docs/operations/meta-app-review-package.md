@@ -169,3 +169,4 @@ Before clicking "Submit for Review" in the Meta Developer Portal, verify:
 - [ ] **Screencasts:** High-resolution MP4/WebM files recorded for all 4 scenarios with English annotations or subtitles.
 - [ ] **Test User Credentials:** Valid username, password, and two-factor bypass instructions provided in reviewer notes.
 - [ ] **Feature Flags:** Verify `META_STORIES_ENABLED=false` and unsupported capabilities remain disabled in the production configuration.
+

@@ -6,7 +6,7 @@
 Let owners receive notifications, issue commands, send images and decide approvals from a messenger, using the channel abstraction, with no business logic in the adapter and with replay-safe approval buttons.
 
 ## Read first
-[ADR-012](../../architecture/decisions/ADR-012-owner-channel-abstraction.md) · [integrations.md §5](../../architecture/integrations.md) · [platform-capabilities.md §2–3](../../research/platform-capabilities.md) · [ADR-014](../../architecture/decisions/ADR-014-approval-and-policy-model.md)
+[ADR-012](../../architecture/decisions/ADR-012-owner-channel-abstraction.md) · [integrations.md §5](../../architecture/integrations.md) · [platform-capabilities.md §2–3](../../research/platform-capabilities.md) · [ADR-014](../../architecture/decisions/ADR-014-approval-and-policy-model.md) · [Implementation sessions](../phase-9-sessions/phase-09-sessions.md)
 
 ## Scope and tasks (in order)
 

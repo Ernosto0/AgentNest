@@ -9,6 +9,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     String,
@@ -20,7 +21,13 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
+from app.core.db import (
+    Base,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+    WorkspaceScopedMixin,
+    workspace_unique_constraint,
+)
 
 ROLES = ("owner", "manager", "staff")
 LOCALES = ("tr", "en")
@@ -187,6 +194,70 @@ class PasswordResetToken(UUIDPrimaryKeyMixin, Base):
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, index=True
     )
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+CHANNEL_TYPES = ("telegram",)
+CHANNEL_LINK_STATUSES = ("active", "unlinked")
+
+
+class ChannelLink(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, TimestampMixin, Base):
+    """``channel_links``: owner messaging channel identity linking (ADR-012, Phase 9)."""
+
+    __tablename__ = "channel_links"
+    __table_args__ = (
+        workspace_unique_constraint(),
+        CheckConstraint(_in("channel", CHANNEL_TYPES), name="channel"),
+        CheckConstraint(_in("status", CHANNEL_LINK_STATUSES), name="status"),
+        Index(
+            "uq_channel_links_active_channel_user",
+            "channel",
+            "channel_user_id",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
+        Index(
+            "uq_channel_links_active_workspace_user_channel",
+            "workspace_id",
+            "user_id",
+            "channel",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    channel: Mapped[str] = mapped_column(Text, nullable=False)
+    channel_user_id: Mapped[str] = mapped_column(Text, nullable=False)
+    channel_chat_id: Mapped[str] = mapped_column(Text, nullable=False)
+    channel_username: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="active")
+    linked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    unlinked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ChannelLinkCode(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """``channel_link_codes``: one-time linking codes for owner channels (ADR-012, Phase 9)."""
+
+    __tablename__ = "channel_link_codes"
+    __table_args__ = (
+        workspace_unique_constraint(),
+        CheckConstraint(_in("channel", CHANNEL_TYPES), name="channel"),
+        Index("ix_channel_link_codes_code_hash", "code_hash"),
+        Index("ix_channel_link_codes_workspace_user", "workspace_id", "user_id"),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    channel: Mapped[str] = mapped_column(Text, nullable=False)
+    code_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
