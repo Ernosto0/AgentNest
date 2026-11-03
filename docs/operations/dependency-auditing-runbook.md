@@ -56,7 +56,7 @@ If a vulnerability cannot be immediately patched (e.g. upstream fix is not yet r
 
 | CVE / GHSA ID | Package & Version | Severity | Justification & Mitigations | Exception Owner | Expiry Date | Status |
 |---|---|---|---|---|---|---|
-| *(None currently active)* | — | — | All dependencies clean as of Phase 8 Session 12 baseline | Engineering Lead | 2026-12-03 | Active |
+| *(None currently active)* | — | — | All dependencies clean as of Phase 8 Session 15 baseline (minimatch ^11.0.4 override applied) | Engineering Lead | 2026-12-03 | Active |
 
 ---
 

@@ -88,3 +88,4 @@
   - Review production privileges/RLS, auth/reset, exports/deletion, security headers/CSP, secrets, dependencies, and operational access.
   - Review broker reference scope, public/private context separation, owner demotion, and uncertain-operation handling.
   - Perform authenticated security scan against an isolated instance and remediate findings.
+

@@ -131,3 +131,4 @@ For questions, comments, or data subject requests regarding this Privacy Policy:
 - **Email:** `privacy@agentnest.io`
 - **Data Protection Officer / Responsible Operator:** `dpo@agentnest.io`
 - **Postal Address:** AgentNest Operations Team, [Registered Entity Address Pending OQ-05], Istanbul, Türkiye
+

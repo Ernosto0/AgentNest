@@ -52,3 +52,4 @@ As soon as legal counsel and the founder resolve `OQ-02`:
    - Add `SECURITY.md` defining vulnerability reporting channels (`security@agentnest.io`) and disclosure SLAs.
    - Add `.github/ISSUE_TEMPLATE/` (bug reports, feature proposals) and `.github/PULL_REQUEST_TEMPLATE.md`.
 4. **Public Release:** Transition repository visibility from private to public.
+

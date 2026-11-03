@@ -95,3 +95,4 @@ Whenever a customer asks to speak with a human or expresses dissatisfaction:
 - **Status:** **Provisional default confirmed and implemented**.
 - **Default Position:** Disclosure suffix is enabled by default for all auto-sent replies (`— Otomatik yanıt` / `— Automated reply`).
 - **Counsel Sign-Off:** Pending formal counsel endorsement prior to Gate 3 pilot launch.
+

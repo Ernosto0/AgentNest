@@ -134,3 +134,4 @@ Yukarıda belirtilen haklarınızı kullanmak için taleplerinizi yazılı olara
 - **Posta / Elden Teslim:** `[İşletme Fiziki Adresi]` adresine kimliğinizi tevsik edici belgeler ile birlikte yazılı olarak,
 
 iletebilirsiniz. Başvurunuz, talebin niteliğine göre en kısa sürede ve en geç **otuz (30) gün** içinde ücretsiz olarak sonuçlandırılacaktır.
+

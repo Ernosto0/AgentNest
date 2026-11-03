@@ -54,3 +54,4 @@ In accordance with Section 4 of the DPA:
 > - It runs on standard Docker Compose with PostgreSQL, Redis, and S3-compatible storage.
 > - In self-hosted or dedicated Turkish deployments, the entire infrastructure stack (compute, database, storage) can be hosted inside Turkish borders (e.g., Turkcell, Vodafone, or Equinix Istanbul data centers) to satisfy local data residency preferences.
 > - Where foreign cloud providers (such as OpenAI for LLM inference) are utilized, transfers are safeguarded by Standard Contractual Clauses and KVKK Standard Undertakings (Taahhütname) submitted to the Turkish Personal Data Protection Board.
+
