@@ -100,4 +100,3 @@ class WebChannel:
     ) -> None:
         # Web command results are read via the existing owner_commands REST API
         return None
-

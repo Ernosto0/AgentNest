@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.errors import register_error_handlers
 from app.api.middleware import RequestIdMiddleware
 from app.api.router import api_router, health_router
+from app.api.v1.telegram_webhook_router import router as telegram_webhook_router
 from app.core.clock import Clock, SystemClock
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, get_logger
@@ -55,6 +56,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app.include_router(oauth_router)
     app.include_router(meta_callbacks_router)
     app.include_router(create_webhooks_router(settings))  # signature-authenticated, no /api/v1
+    app.include_router(telegram_webhook_router)  # Telegram bot webhook (secret token validated)
     if settings.demo_tools_enabled and not in_production:  # INV-20
         app.include_router(dev_router)
     return app

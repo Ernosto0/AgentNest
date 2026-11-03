@@ -25,4 +25,3 @@ __all__ = [
     "register_channel_factory",
     "reset_channel_registry",
 ]
-

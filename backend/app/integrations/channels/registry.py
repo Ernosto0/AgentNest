@@ -45,7 +45,7 @@ def get_channel(name: str) -> OwnerChannel:
     # Attempt lazy resolution for telegram if implemented in later session
     if name == "telegram":
         try:
-            from app.integrations.channels.telegram import TelegramChannel  # type: ignore[import-not-found]
+            from app.integrations.channels.telegram import TelegramChannel
 
             tg: OwnerChannel = cast(OwnerChannel, TelegramChannel())
             _REGISTRY["telegram"] = tg

@@ -31,6 +31,7 @@ CSRF_EXEMPT_PATHS = frozenset(
         "/api/v1/invites/accept",
         "/api/v1/webhooks/meta/deauthorize",
         "/api/v1/webhooks/meta/data-deletion",
+        "/api/v1/webhooks/telegram",
     }
 )
 

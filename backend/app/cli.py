@@ -15,8 +15,9 @@ import urllib.request
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
-from app.core.clock import SystemClock
+from app.core.clock import Clock, SystemClock
 from app.core.config import ConfigError, Settings, get_settings, validate_production_settings
 from app.core.db import check_readiness, get_session_factory, migration_head, migration_revisions
 from app.core.errors import AppError
@@ -26,6 +27,7 @@ from app.demo import simulator
 from app.demo.seed import SeedError, seed
 from app.identity import repository as identity_repo
 from app.identity import service
+from app.integrations.channels.telegram import TelegramClient, process_update
 from app.jobs.testing import run_due_jobs
 from app.main import create_app
 from app.operations.backup_restore import (
@@ -302,6 +304,73 @@ def cmd_verify_db_roles(args: argparse.Namespace) -> int:
     return 0 if report.verified else 1
 
 
+def run_telegram_polling(
+    session_factory: Any,
+    clock: Clock,
+    settings: Settings,
+    *,
+    client: TelegramClient | None = None,
+    timeout: int = 30,
+    limit: int = 100,
+    max_iterations: int | None = None,
+) -> int:
+    """Run long-polling loop for Telegram updates (ADR-012, Phase 9 Session 04)."""
+    tg_client = client or TelegramClient()
+    offset: int | None = None
+    iterations = 0
+
+    print(
+        f"Starting Telegram long-polling harness (timeout={timeout}s, limit={limit})...",
+        file=sys.stderr,
+    )
+    try:
+        while max_iterations is None or iterations < max_iterations:
+            iterations += 1
+            try:
+                updates = tg_client.get_updates(offset=offset, limit=limit, timeout=timeout)
+            except Exception as exc:
+                print(f"Error fetching Telegram updates: {exc}", file=sys.stderr)
+                if max_iterations is not None:
+                    break
+                continue
+
+            for raw_update in updates:
+                update_id = raw_update.get("update_id")
+                if update_id is not None:
+                    offset = update_id + 1
+                with session_factory() as session:
+                    res = process_update(session, clock, raw_update, client=tg_client)
+                    session.commit()
+                    print(
+                        f"Processed update {res.update_id}: "
+                        f"status={res.status} action={res.action}",
+                        file=sys.stderr,
+                    )
+    except KeyboardInterrupt:
+        print("\nStopping Telegram polling.", file=sys.stderr)
+    finally:
+        if client is None:
+            tg_client.close()
+    return 0
+
+
+def cmd_telegram_poll(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    session_factory = get_session_factory()
+    clock = SystemClock()
+    max_iter = getattr(args, "max_iterations", None)
+    timeout = getattr(args, "timeout", 30)
+    limit = getattr(args, "limit", 100)
+    return run_telegram_polling(
+        session_factory,
+        clock,
+        settings,
+        timeout=timeout,
+        limit=limit,
+        max_iterations=max_iter,
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli", description="AgentNest commands")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -420,6 +489,30 @@ def build_parser() -> argparse.ArgumentParser:
         "--worker-password", default=None, help="optional password when provisioning"
     )
     p_roles.set_defaults(func=cmd_verify_db_roles)
+
+    p_poll = sub.add_parser(
+        "telegram-poll",
+        help="run Telegram bot long-polling development harness",
+    )
+    p_poll.add_argument(
+        "--timeout",
+        type=int,
+        default=30,
+        help="long-polling server timeout in seconds (default: 30)",
+    )
+    p_poll.add_argument(
+        "--limit",
+        type=int,
+        default=100,
+        help="max updates to retrieve per poll (default: 100)",
+    )
+    p_poll.add_argument(
+        "--max-iterations",
+        type=int,
+        default=None,
+        help="optional maximum poll iterations before exit (for offline testing)",
+    )
+    p_poll.set_defaults(func=cmd_telegram_poll)
     return parser
 
 
