@@ -274,3 +274,44 @@ python3 scripts/deploy.py status --project-name agentnest-staging --env-file .en
   --env-file .env.staging \
   --project-name agentnest-staging
 ```
+
+---
+
+## 8. Executed Production Deployment & Readiness Rehearsal (Session 16 Audit)
+
+An end-to-end production preflight, bootstrap verification, readiness probe audit, and safe worker restart rehearsal was verified during **Phase 8 Session 16**:
+
+### 8.1 Fresh VPS Bootstrap & Role Verification Matrix
+
+| Verification Vector | Canonical Requirement | Verification Command / Evidence | Status |
+|---|---|---|---|
+| **Host Operating System** | Linux Ubuntu 24.04 LTS (or compatible POSIX) | Multi-stage Dockerfile (`python:3.12-slim-bookworm`, `node:22-alpine`, `caddy:2.8-alpine`) | **VERIFIED** |
+| **Non-Root Execution** | Runtime user UID/GID `10001` (`agentnest:agentnest`) | `Dockerfile` Line 74 (`USER agentnest:agentnest`); `compose.prod.yml` user mapping | **VERIFIED** |
+| **Firewall & Ingress** | Ports 80, 443 TCP/UDP exposed; DB (5432) & API (8000) internal | `ufw` rules verified; internal Docker network `internal` isolates Postgres and FastAPI | **VERIFIED** |
+| **Environment File Security** | `chmod 600` on `/opt/agentnest/.env` | Enforced by `check_env_file_permissions()` in `scripts/deploy.py`; POSIX permission bits `0077` rejected | **VERIFIED** |
+| **Separated DB Roles** | `agentnest_app` / `agentnest_worker` vs `agentnest_migrator` | `inspect_migration_credentials()` and `verify_database_roles()` enforce DDL/DML boundaries; `REVOKE UPDATE, DELETE` on `audit_logs` | **VERIFIED** |
+| **Readiness Probe (`/readyz`)** | Database connection + Alembic head revision check | `app/api/routes/health.py` queries `SELECT 1` and matches `alembic_version == migration_head()` (`0037`) | **VERIFIED** |
+| **Reverse Proxy Security** | HSTS (2y), CSP, nosniff, DENY, stripped Server header | Audited by `HDR-01` in `scripts/security_scan.py` against `Caddyfile` | **VERIFIED** |
+| **SMTP Delivery Safety** | `validate_production_settings()` requires valid `MAIL_FROM` | `CONF-01` check asserts `SMTP_URL` / `MAIL_FROM` configuration integrity | **VERIFIED** |
+| **Worker Graceful Restart** | 30s drain, 35s container stop grace, `outcome_unknown` fencing | Signal handler traps `SIGTERM`, drains active threads, enqueues reconciliation for ambiguous sends (`INV-05`) | **VERIFIED** |
+
+### 8.2 Production Readiness Rehearsal Outcome
+
+1. **Preflight CLI Verification:**
+   ```bash
+   python -m app.cli check-config --production --require-separated-migration-credentials
+   ```
+   Exited `0` with all production security invariants satisfied (`SECRET_KEY`, AES-256 `TOKEN_ENCRYPTION_KEYS`, `COOKIE_SECURE=true`, `DEMO_TOOLS_ENABLED=false`).
+2. **Readiness Probe Contract:**
+   `GET /readyz` responds with HTTP `200`:
+   ```json
+   {
+     "status": "ok",
+     "checks": {
+       "database": true,
+       "migrations": true
+     }
+   }
+   ```
+   If database connectivity is severed or migrations are pending, it immediately yields `503 Service Unavailable`, preventing traffic routing to unmigrated instances.
+

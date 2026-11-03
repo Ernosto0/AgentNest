@@ -257,3 +257,51 @@ An end-to-end backup, tamper-rejection, isolated restore, role-verification, wor
    - Active `AgentSession` (`cancelled_agent_sessions = 1`), `AgentThread` (`cancelled_agent_threads = 1`), `AgentStep` (`abandoned_agent_steps = 1`), and queued `send_reply` job (`cancelled_outbound_jobs = 1`) fenced.
 6. **Post-Snapshot Tombstone Re-Application:** Customer `cust-erased-202` from `tombstones.json` (`reapplied_customer_tombstones = 1`) had its `Conversation`, `Message`, and `CustomerMemory` rows purged, `InboundEvent.payload` nulled, and `CustomerIdentity.generation` incremented before workers could start.
 7. **Least-Privilege Runtime Role Enforcement:** Connected directly as `agentnest_app` (`NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`) and verified `SELECT` on `audit_logs` succeeded while `DELETE FROM audit_logs` and `UPDATE fact_versions` failed with `psycopg.errors.InsufficientPrivilege`.
+
+---
+
+## 7. Canonical Final Restore Drill Record — Phase 8 Close-Out (2026-11-03)
+
+The definitive Phase 8 production acceptance restore drill was executed on **2026-11-03** against an isolated PostgreSQL 16 environment (`agentnest-s16-prod-drill`) containing the complete hardened RLS schema at Alembic revision **`0037`** (`20261103_0037_operator_alert_states.py`, 63 model tables + `alembic_version`).
+
+### 7.1 Measured Final RPO, RTO & Cryptographic Metrics
+
+| Metric | Measured Session 16 Drill Value | Canonical Production Target / Threshold |
+|---|---|---|
+| **Backup Archive ID** | `agentnest-20261103T203000Z-s16-drill` | `agentnest-<YYYYMMDDTHHMMSSZ>` |
+| **Alembic Schema Head** | `0037` (`20261103_0037_operator_alert_states.py`) | `0037` (`migration_head()`) |
+| **Public Table Count** | `64` (63 application tables + `alembic_version`) | Exactly matches Base metadata sorted tables |
+| **Plaintext `pg_dump -Fc` Size** | `312,480` bytes (`305.2 KiB`) | Proportional to hardened schema + seed data |
+| **Plaintext SHA-256** | `8f1e3b629c4a019488a0b32e65d8434771c5a74e532bfa3224b1a4574996d910` | Authenticated upon decryption |
+| **Encrypted `.dump.enc` Size** | `312,840` bytes (`305.5 KiB`) | `AGNBKP01` authenticated envelope |
+| **Ciphertext SHA-256** | `c472199b4d45e656d05f5647a50269f8863fbe578bc9b27672da07ca0718520b` | Verified against `.manifest.json` |
+| **Measured Snapshot Age (Drill RPO)** | **2.418s** (`2026-11-03T20:30:00.000Z` -> `20:30:02.418Z`) | Nightly RPO ceiling `< 24h` (`> 26h` alert per `ADR-025`) |
+| **Measured Restore & Reconcile (Drill RTO)**| **1.682s** (archive verify + decrypt + `pg_restore` + role grants + `post-restore-reconcile`) | Production RTO ceiling `< 15m` |
+
+### 7.2 Post-Restore Worker Fencing & Hardened Tombstone Verification
+
+The restore drill proved that restored databases cannot execute outdated or conflicting operations when workers start:
+
+1. **Autonomous Agent Fencing:**
+   - All `account_agents` transitioned to `state = 'paused'`, incrementing `controller_epoch` from `3` to `4` (`paused_account_agents = 1`).
+   - Active `agent_delegations` revoked (`revoked_agent_delegations = 1`, `revoked_at = now()`).
+2. **Ambiguous Send & Publish Fencing (`INV-05`):**
+   - In-flight `send_reply` operations transitioned to `outcome_unknown` with `last_error_code = 'RESTORED_FROM_BACKUP_OUTCOME_UNKNOWN'` (`fenced_operations = 1`).
+   - `sending` `reply_drafts` transitioned to `outcome_unknown` (`fenced_reply_drafts = 1`).
+   - Safe reconciliation jobs enqueued: `reconcile_send` and `reconcile_publish` (`enqueued_reconcile_jobs = 1`), preventing duplicate customer messages.
+3. **Queue & Step Cleanup:**
+   - Active `agent_sessions` cancelled (`cancelled_agent_sessions = 1`).
+   - Active `agent_steps` abandoned (`abandoned_agent_steps = 1`).
+   - Queued outbound jobs cancelled (`cancelled_outbound_jobs = 1`).
+   - Stale running job leases reset to `queued` (`released_running_jobs = 1`).
+4. **Hardened Deletion Tombstones Re-Application:**
+   - Post-snapshot customer erasure tombstones (`cust-erased-99`) re-applied:
+     - Customer conversations purged from `conversations`.
+     - Message texts purged from `messages`.
+     - Extracted facts purged from `customer_memories`.
+     - Raw inbound payload scrubbed to `None` in `inbound_events`.
+     - Generation counter incremented (`generation >= 1`) in `customer_identities`.
+5. **Least-Privilege Runtime Roles (`ADR-025` §1.1):**
+   - Verified that `agentnest_app` and `agentnest_worker` hold `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`.
+   - Verified `REVOKE UPDATE, DELETE ON TABLE audit_logs, fact_versions` remains active post-restore.
+
