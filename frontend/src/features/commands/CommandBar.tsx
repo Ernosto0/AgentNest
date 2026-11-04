@@ -24,8 +24,8 @@ function CommandPanel({ commandId, onDismiss }: { commandId: string; onDismiss: 
     body = <ErrorMessage error={command.error} />;
   } else if (!data || data.status === "interpreting" || data.status === "executing") {
     body = (
-      <p role="status" className="inline-flex items-center gap-2 font-medium text-slate-700">
-        <SpinnerIcon className="animate-spin text-xl" />
+      <p role="status" className="inline-flex items-center gap-2 font-medium text-primary">
+        <SpinnerIcon className="animate-spin text-xl text-action" />
         {t("command.interpreting")}
       </p>
     );
@@ -43,14 +43,14 @@ function CommandPanel({ commandId, onDismiss }: { commandId: string; onDismiss: 
   return (
     <Card className="flex flex-col gap-3" data-testid="command-panel">
       <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 text-sm text-slate-600">
+        <p className="min-w-0 text-body text-secondary">
           {t("command.yourCommand")}:{" "}
-          <span className="font-medium break-words text-slate-900">{data?.raw_text ?? ""}</span>
+          <span className="font-semibold break-words text-primary">{data?.raw_text ?? ""}</span>
         </p>
         <button
           type="button"
           onClick={onDismiss}
-          className="min-h-11 shrink-0 rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-indigo-600"
+          className="min-h-11 shrink-0 rounded-control px-3 text-body font-medium text-secondary transition-colors hover:bg-surface-subtle hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           {t("command.dismiss")}
         </button>
@@ -89,32 +89,34 @@ export function CommandBar() {
     <>
       {activeId ? <CommandPanel key={activeId} commandId={activeId} onDismiss={() => setActiveId(null)} /> : null}
       {submit.error ? <ErrorMessage error={submit.error} /> : null}
-      {/* Fixed above the tab bar on phones (3.5rem tall); an ordinary block on desktop. */}
+      {/* Fixed above the tab bar on phones (3.5rem tall); an elevated card on desktop. */}
       <form
         onSubmit={onSubmit}
-        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 border-t border-slate-200 bg-white/95 px-4 py-2 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0"
+        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 border-t border-border bg-surface/95 px-4 py-2 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0"
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-1">
-          <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-2 rounded-2xl md:border md:border-border/80 md:bg-surface md:p-4 md:shadow-xs">
+          <div className="flex items-center gap-2.5">
             <label htmlFor="command-input" className="sr-only">
               {t("command.label")}
             </label>
-            <input
-              id="command-input"
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              maxLength={MAX_CHARS}
-              placeholder={t("command.placeholder")}
-              enterKeyHint="send"
-              autoComplete="off"
-              className="min-h-11 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
-            />
-            <Button type="submit" disabled={!text.trim() || submit.isPending} aria-label={t("command.send")}>
+            <div className="relative flex flex-1 items-center">
+              <input
+                id="command-input"
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                maxLength={MAX_CHARS}
+                placeholder={t("command.placeholder")}
+                enterKeyHint="send"
+                autoComplete="off"
+                className="min-h-12 min-w-0 flex-1 rounded-xl border border-border/80 bg-surface px-4 py-2.5 text-form text-primary placeholder:text-secondary/70 shadow-2xs transition-all focus:border-action focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              />
+            </div>
+            <Button type="submit" disabled={!text.trim() || submit.isPending} aria-label={t("command.send")} className="min-h-12 rounded-xl px-5 shadow-xs">
               <SendIcon className="text-xl" />
               <span className="hidden sm:inline">{t("command.send")}</span>
             </Button>
           </div>
-          <p className="text-xs text-slate-600">
+          <p className="px-1 text-metadata text-secondary">
             {t("command.hint")}
             {meta.data?.llm_mode === "fake" ? ` · ${t("aiMode.offline")}` : ""}
           </p>

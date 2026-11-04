@@ -30,7 +30,7 @@ export function ClarificationChips({ command }: { command: Command }) {
 
   return (
     <section aria-label={asked} className="flex flex-col gap-3" data-testid="clarification">
-      <p className="font-medium">{asked}</p>
+      <p className="font-semibold text-primary">{asked}</p>
       <ul className="flex flex-wrap gap-2">
         {clarification.options.map((option) => (
           <li key={option.id}>

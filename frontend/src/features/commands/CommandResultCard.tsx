@@ -8,7 +8,7 @@ import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { describeResult, linkPath, type ResultLink } from "./messages";
 
 const LINK =
-  "inline-flex min-h-11 items-center text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600";
+  "inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-colors";
 
 /** Why a post is on hold or failing, when the status question has an answer beyond its state. */
 function ContentStatusExtra({ params }: { params: Record<string, unknown> }) {
@@ -16,11 +16,11 @@ function ContentStatusExtra({ params }: { params: Record<string, unknown> }) {
   const hold = params.hold_reason;
   const code = params.error_code;
   if (params.status === "on_hold" && (hold === "FACT_CHANGED" || hold === "ACCOUNT_UNAVAILABLE")) {
-    return <p className="text-sm">{t(`content.hold.${hold}.what`)}</p>;
+    return <p className="text-body text-secondary">{t(`content.hold.${hold}.what`)}</p>;
   }
   if ((params.status === "failed" || params.status === "retry_scheduled") && typeof code === "string") {
     const what = t(`errors.${code}.what`, { defaultValue: "" });
-    return what ? <p className="text-sm">{what}</p> : null;
+    return what ? <p className="text-body text-secondary">{what}</p> : null;
   }
   return null;
 }
@@ -41,8 +41,8 @@ function ContentFailureResult({
   const retryAt = typeof params.retry_at === "string" && params.retry_at !== "" ? params.retry_at : null;
   const when = typeof params.when === "string" && params.when !== "" ? params.when : null;
   return (
-    <div className="flex flex-col gap-1" data-testid="command-result" data-status="completed" data-kind="content-failure">
-      <p className="font-medium">
+    <div className="flex flex-col gap-1.5" data-testid="command-result" data-status="completed" data-kind="content-failure">
+      <p className="font-semibold text-primary">
         {t("command.msg.content_failure_title", { title: String(params.title ?? "") })}
         {params.is_simulated === true ? (
           <>
@@ -51,15 +51,15 @@ function ContentFailureResult({
           </>
         ) : null}
       </p>
-      <p>{String(params.what ?? "")}</p>
-      <p>{String(params.next ?? "")}</p>
+      <p className="text-body text-primary">{String(params.what ?? "")}</p>
+      <p className="text-body text-secondary">{String(params.next ?? "")}</p>
       {status === "retry_scheduled" ? (
-        <p className="text-sm font-medium">
+        <p className="text-metadata font-medium text-attention">
           {retryAt ? t("command.msg.failureRetryAt", { time: retryAt }) : t("command.msg.failureRetryable")}
         </p>
       ) : null}
-      {status === "failed" ? <p className="text-sm font-medium">{t("command.msg.failureFinal")}</p> : null}
-      {when ? <p className="text-sm text-slate-600">{t("command.msg.failureWhen", { when })}</p> : null}
+      {status === "failed" ? <p className="text-metadata font-medium text-danger">{t("command.msg.failureFinal")}</p> : null}
+      {when ? <p className="text-metadata text-secondary">{t("command.msg.failureWhen", { when })}</p> : null}
       {linkList}
     </div>
   );
@@ -80,8 +80,8 @@ function ReplyFailureResult({
   const { t } = useTranslation();
   const when = typeof params.when === "string" && params.when !== "" ? params.when : null;
   return (
-    <div className="flex flex-col gap-1" data-testid="command-result" data-status="completed" data-kind="reply-failure">
-      <p className="font-medium">
+    <div className="flex flex-col gap-1.5" data-testid="command-result" data-status="completed" data-kind="reply-failure">
+      <p className="font-semibold text-primary">
         {t("command.msg.reply_failure_title")}
         {params.is_simulated === true ? (
           <>
@@ -90,10 +90,10 @@ function ReplyFailureResult({
           </>
         ) : null}
       </p>
-      <p>{String(params.what ?? "")}</p>
-      <p>{String(params.next ?? "")}</p>
-      {when ? <p className="text-sm text-slate-600">{t("command.msg.failureWhen", { when })}</p> : null}
-      <p className="text-sm font-medium">{t("command.msg.failureFinal")}</p>
+      <p className="text-body text-primary">{String(params.what ?? "")}</p>
+      <p className="text-body text-secondary">{String(params.next ?? "")}</p>
+      {when ? <p className="text-metadata text-secondary">{t("command.msg.failureWhen", { when })}</p> : null}
+      <p className="text-metadata font-medium text-danger">{t("command.msg.failureFinal")}</p>
       {linkList}
     </div>
   );
@@ -123,21 +123,31 @@ export function CommandResultCard({ command }: { command: Command }) {
   ) : null;
 
   if (command.status === "cancelled" || command.status === "expired") {
-    return <p data-testid="command-result">{t(`command.status.${command.status}`)}</p>;
+    return (
+      <p data-testid="command-result" className="text-body text-secondary">
+        {t(`command.status.${command.status}`)}
+      </p>
+    );
   }
 
   if (command.status === "unsupported" && result) {
     const params = result.params as { reason?: string; suggestions?: string[] };
     const reason = params.reason ?? "other";
     return (
-      <div className="flex flex-col gap-2" data-testid="command-result" data-status="unsupported">
-        <p className="font-medium">{t("command.unsupported.title")}</p>
-        <p>{t(`command.unsupported.reason.${reason}`, { defaultValue: t("command.unsupported.reason.other") })}</p>
+      <div
+        className="flex flex-col gap-2 rounded-control border border-attention/40 bg-attention-subtle p-3 text-primary"
+        data-testid="command-result"
+        data-status="unsupported"
+      >
+        <p className="font-semibold text-attention">{t("command.unsupported.title")}</p>
+        <p className="text-body">
+          {t(`command.unsupported.reason.${reason}`, { defaultValue: t("command.unsupported.reason.other") })}
+        </p>
         {linkList}
         {params.suggestions?.length ? (
-          <div>
-            <p className="text-sm text-slate-600">{t("command.unsupported.suggestionsTitle")}</p>
-            <ul className="list-disc pl-5 text-sm">
+          <div className="flex flex-col gap-1">
+            <p className="text-metadata font-medium text-secondary">{t("command.unsupported.suggestionsTitle")}</p>
+            <ul className="list-disc pl-5 text-body text-secondary">
               {params.suggestions.map((key) => (
                 <li key={key}>{t(`command.${key.replace(/^command\./, "")}`)}</li>
               ))}
@@ -151,13 +161,18 @@ export function CommandResultCard({ command }: { command: Command }) {
   if (command.status === "failed") {
     const code = command.error_code ?? "UNKNOWN";
     const { what, next } = localizeError(new AppError(code, 0), t);
-    const detail = result && result.message_key !== "command.failed"
-      ? describeResult(t, result.message_key, result.params)
-      : null;
+    const detail =
+      result && result.message_key !== "command.failed" ? describeResult(t, result.message_key, result.params) : null;
     return (
-      <div role="alert" className="flex flex-col gap-1" data-testid="command-result" data-status="failed" data-error={code}>
-        {detail ? <p className="font-medium">{detail}</p> : <p className="font-medium">{what}</p>}
-        {detail ? null : <p>{next}</p>}
+      <div
+        role="alert"
+        className="flex flex-col gap-1.5 rounded-control border border-danger/40 bg-danger-subtle p-3 text-primary"
+        data-testid="command-result"
+        data-status="failed"
+        data-error={code}
+      >
+        {detail ? <p className="font-semibold text-danger">{detail}</p> : <p className="font-semibold text-danger">{what}</p>}
+        {detail ? null : <p className="text-body">{next}</p>}
         {linkList}
       </div>
     );
@@ -175,7 +190,7 @@ export function CommandResultCard({ command }: { command: Command }) {
     const simulated = result.params.is_simulated === true;
     return (
       <div className="flex flex-col gap-2" data-testid="command-result" data-status={command.status}>
-        <p className="font-medium">
+        <p className="font-medium text-primary">
           {describeResult(t, result.message_key, result.params)}
           {simulated ? (
             <>

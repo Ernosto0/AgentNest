@@ -84,7 +84,7 @@ export function PasteExtractSheet({ onClose }: { onClose: () => void }) {
               <Link
                 to={suggestions}
                 onClick={onClose}
-                className="inline-flex min-h-11 items-center rounded-button bg-action px-4 text-sm font-medium text-action-contrast shadow-xs hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-focus"
+                className="inline-flex min-h-11 items-center rounded-control bg-action px-4 py-2 text-sm font-medium text-on-action shadow-xs hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-focus"
               >
                 {t("extract.goToSuggestions")}
               </Link>
@@ -107,8 +107,10 @@ export function PasteExtractSheet({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-secondary">{t("extract.intro")}</p>
-        <div className="flex flex-col gap-1">
+        <div className="rounded-panel bg-surface-subtle p-3.5 border border-border text-sm text-secondary">
+          {t("extract.intro")}
+        </div>
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="extract-text" className="text-sm font-medium text-primary">
             {t("extract.label")}
           </label>
@@ -120,38 +122,38 @@ export function PasteExtractSheet({ onClose }: { onClose: () => void }) {
             rows={7}
             readOnly={working || status === "succeeded"}
             placeholder={t("extract.placeholder")}
-            className="min-h-32 w-full rounded-input border border-border bg-surface p-3 text-base text-primary placeholder:text-muted focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
+            className="min-h-32 w-full rounded-control border border-border bg-surface p-3 text-base text-primary placeholder:text-secondary focus:border-control focus-visible:outline-2 focus-visible:outline-focus"
           />
-          <span className="text-xs text-muted">
+          <span className="text-xs text-secondary">
             {t("extract.counter", { count: text.length, max: MAX_CHARS })}
           </span>
         </div>
 
         {working ? (
-          <p role="status" className="inline-flex items-center gap-2 font-medium text-secondary">
-            <SpinnerIcon className="animate-spin text-xl text-primary" />
-            {t("extract.working")}
-          </p>
+          <div role="status" className="inline-flex items-center gap-2.5 rounded-control bg-surface-subtle p-3 font-medium text-secondary border border-border">
+            <SpinnerIcon className="animate-spin text-xl text-action" />
+            <span className="text-sm text-primary">{t("extract.working")}</span>
+          </div>
         ) : null}
         {start.error ? <ErrorMessage error={start.error} /> : null}
         {run.error ? <ErrorMessage error={run.error} /> : null}
         {status === "failed" ? (
-          <div role="alert" className="rounded-card bg-danger-subtle p-3.5 text-sm text-danger border border-border">
+          <div role="alert" className="rounded-panel bg-danger-subtle p-4 text-sm text-danger border border-border">
             <p className="font-semibold">{t("extract.failed")}</p>
             {run.data?.error_code ? (
-              <p>{t(`errors.${run.data.error_code}.what`, { defaultValue: "" })}</p>
+              <p className="mt-1">{t(`errors.${run.data.error_code}.what`, { defaultValue: "" })}</p>
             ) : null}
           </div>
         ) : null}
         {status === "succeeded" ? (
-          <div className="flex flex-col gap-2 rounded-card bg-surface-elevated p-3.5 border border-border" data-testid="extract-result">
+          <div className="flex flex-col gap-2 rounded-panel bg-surface-subtle p-4 border border-border shadow-xs" data-testid="extract-result">
             <p className="font-semibold text-primary">
               {run.data && run.data.candidates_created > 0
                 ? t("extract.done", { count: run.data.candidates_created })
                 : t("extract.none")}
             </p>
             {run.data?.injection_suspected ? (
-              <p className="text-sm text-attention">{t("extract.injection")}</p>
+              <p className="text-sm text-attention font-medium">{t("extract.injection")}</p>
             ) : null}
           </div>
         ) : null}

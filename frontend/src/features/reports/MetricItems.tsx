@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ChevronRightIcon, ClockIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { dayLabel, isLocalDay } from "./dates";
@@ -43,26 +44,34 @@ function MetricItemsScreen({ date, metricKey }: { date: string; metricKey: strin
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <Link
-        to={`/w/${workspace.id}/more/reports?date=${date}${pinned ? `&snapshot_id=${pinned}` : ""}`}
-        className="inline-flex min-h-11 items-center text-sm font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
-      >
-        <span aria-hidden="true">← </span>{t("reports.backToReport")}
-      </Link>
       <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{label}</h1>
-        <p className="mt-1 text-sm text-secondary">{dayLabel(date, i18n.language)}</p>
+        <Link
+          to={`/w/${workspace.id}/more/reports?date=${date}${pinned ? `&snapshot_id=${pinned}` : ""}`}
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          <span aria-hidden="true">← </span>{t("reports.backToReport")}
+        </Link>
+      </div>
+
+      <div className="rounded-panel border border-border bg-surface p-5 shadow-xs">
+        <h1 className="type-page text-primary">{label}</h1>
+        <p className="mt-1 text-sm font-medium text-secondary">{dayLabel(date, i18n.language)}</p>
         {value !== null ? (
-          <p className="mt-2 text-lg font-medium text-primary" data-testid="metric-count">
+          <p className="mt-3 type-metric text-primary" data-testid="metric-count">
             {isMedian
               ? t("reports.medianOf", { value: formatValue(value, i18n.language) })
               : t("reports.total", { total: formatValue(value, i18n.language) })}
           </p>
         ) : null}
         {screen ? (
-          <Link to={screen} className="mt-1 inline-block text-sm font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus">
-            {t("reports.openScreen")}
-          </Link>
+          <div className="mt-3">
+            <Link
+              to={screen}
+              className="inline-flex items-center rounded-control border border-border bg-surface-subtle px-3 py-1.5 text-xs font-semibold text-action hover:bg-surface hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus shadow-2xs transition-colors"
+            >
+              {t("reports.openScreen")}
+            </Link>
+          </div>
         ) : null}
       </div>
 
@@ -70,7 +79,7 @@ function MetricItemsScreen({ date, metricKey }: { date: string; metricKey: strin
       {items.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
       {items.data && rows.length === 0 ? <EmptyState title={t("reports.noItems")} /> : null}
       {rows.length > 0 ? (
-        <Card className="p-0 overflow-hidden">
+        <Card className="p-0 overflow-hidden shadow-xs">
           <ul className="divide-y divide-border" aria-label={label}>
             {rows.map((item) => (
               <li key={`${item.kind}-${item.id}`}>
@@ -94,28 +103,45 @@ function MetricItemsScreen({ date, metricKey }: { date: string; metricKey: strin
 function ItemRow({ item, when }: { item: MetricItem; when: string | null }) {
   const { t, i18n } = useTranslation();
   const route = item.link?.route;
+
   return (
-    <div className="flex flex-col gap-1 p-4" data-testid="metric-item">
-      <div className="flex flex-wrap items-center gap-2">
-        {route ? (
-          <Link to={route} className="font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus">
-            {item.label}
-          </Link>
-        ) : (
-          <span className="font-medium text-primary">{item.label}</span>
-        )}
-        {item.is_simulated ? <SimulatedBadge /> : null}
+    <div
+      className="group flex items-center justify-between gap-4 p-4 transition-colors hover:bg-surface-subtle/60"
+      data-testid="metric-item"
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          {route ? (
+            <Link
+              to={route}
+              className="font-heading font-semibold text-primary underline underline-offset-2 hover:text-action focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            >
+              {item.label}
+            </Link>
+          ) : (
+            <span className="font-heading font-semibold text-primary">{item.label}</span>
+          )}
+          {item.is_simulated ? <SimulatedBadge /> : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-secondary">
+          {when ? (
+            <span className="inline-flex items-center gap-1 rounded-control bg-surface-subtle border border-border px-2 py-0.5 font-medium">
+              <ClockIcon className="text-xs" />
+              {when}
+            </span>
+          ) : null}
+          {typeof item.measure === "number" ? (
+            <span className="rounded-control bg-assistant border border-border px-2 py-0.5 font-semibold text-primary">
+              {t("reports.minutes", { value: formatValue(item.measure, i18n.language) })}
+            </span>
+          ) : null}
+        </div>
       </div>
-      <p className="text-xs text-secondary">
-        {[
-          when,
-          typeof item.measure === "number"
-            ? t("reports.minutes", { value: formatValue(item.measure, i18n.language) })
-            : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </p>
+      {route ? (
+        <div className="flex shrink-0 items-center pl-2 text-secondary group-hover:translate-x-0.5 group-hover:text-primary transition-transform">
+          <ChevronRightIcon className="text-xl" />
+        </div>
+      ) : null}
     </div>
   );
 }

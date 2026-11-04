@@ -160,7 +160,7 @@ export function AccountSecurity() {
                     {s.user_agent || t("settings.unknownDevice")}
                   </span>
                   {s.is_current ? (
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="rounded-full bg-success-subtle px-2 py-0.5 text-[10px] font-semibold text-success border border-border">
                       {t("settings.thisDevice")}
                     </span>
                   ) : null}
@@ -177,7 +177,7 @@ export function AccountSecurity() {
               {!s.is_current ? (
                 <Button
                   variant="ghost"
-                  className="text-danger hover:bg-danger/10"
+                  className="text-danger hover:bg-danger-subtle"
                   pending={
                     revokeSession.isPending &&
                     revokeSession.variables === s.id

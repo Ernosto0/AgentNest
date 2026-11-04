@@ -6,6 +6,7 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
+import { AlertIcon } from "@/components/icons";
 import { useSocialAccounts } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { ContentPreview } from "./ContentPreview";
@@ -79,26 +80,34 @@ function SubmitProblems({
 
   if (part === "schedule") {
     return (
-      <ul role="alert" data-testid="schedule-errors" className="rounded-lg bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-300">
+      <ul
+        role="alert"
+        data-testid="schedule-errors"
+        className="flex flex-col gap-1 rounded-panel bg-danger-subtle p-3.5 text-sm text-danger border border-danger shadow-xs"
+      >
         {mine.map((item, index) => (
-          <li key={`${item.code}-${index}`} data-code={item.code}>
-            {checkMessage(item, t)}
+          <li key={`${item.code}-${index}`} data-code={item.code} className="flex items-start gap-2">
+            <AlertIcon className="text-base shrink-0 mt-0.5" />
+            <span>{checkMessage(item, t)}</span>
           </li>
         ))}
       </ul>
     );
   }
   return (
-    <div className="flex flex-col gap-2" data-testid="submit-problems">
+    <div className="flex flex-col gap-3" data-testid="submit-problems">
       {mine.length > 0 ? (
-        <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-300">
-          <p className="font-medium">{t("content.schedule.problemsTitle")}</p>
-          <ul className="mt-1 list-disc pl-5">
+        <div role="alert" className="rounded-panel bg-danger-subtle p-4 text-sm text-danger border border-danger shadow-xs">
+          <p className="font-semibold flex items-center gap-2">
+            <AlertIcon className="text-base shrink-0" />
+            <span>{t("content.schedule.problemsTitle")}</span>
+          </p>
+          <ul className="mt-2 list-disc pl-5 space-y-1">
             {mine.map((item, index) => (
               <li key={`${item.code}-${index}`} data-code={item.code}>
                 {checkMessage(item, t)}
                 {claimIssues(item).length > 0 ? (
-                  <ul className="list-disc pl-5">
+                  <ul className="list-disc pl-5 mt-1 space-y-0.5">
                     {claimIssues(item).map((issue, position) => (
                       <li key={position} data-testid="claim-issue">
                         {t("content.schedule.claimIssue", { text: issue.text })}
@@ -110,16 +119,21 @@ function SubmitProblems({
             ))}
           </ul>
           {mine.some((item) => item.code === "CLAIM_VALIDATION_FAILED") ? (
-            <Button variant="secondary" className="mt-2" onClick={onEditText}>
-              {t("content.schedule.editText")}
-            </Button>
+            <div className="mt-3">
+              <Button variant="secondary" className="shadow-xs" onClick={onEditText}>
+                {t("content.schedule.editText")}
+              </Button>
+            </div>
           ) : null}
         </div>
       ) : null}
       {warnings.length > 0 ? (
-        <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900" data-testid="submit-warnings">
-          <p className="font-medium">{t("content.schedule.warningsTitle")}</p>
-          <ul className="mt-1 list-disc pl-5">
+        <div className="rounded-panel bg-attention-subtle p-4 text-sm text-attention border border-attention shadow-xs" data-testid="submit-warnings">
+          <p className="font-semibold flex items-center gap-2">
+            <AlertIcon className="text-base shrink-0" />
+            <span>{t("content.schedule.warningsTitle")}</span>
+          </p>
+          <ul className="mt-2 list-disc pl-5 space-y-1">
             {warnings.map((item, index) => (
               <li key={`${item.code}-${index}`} data-code={item.code}>
                 {checkMessage(item, t)}
@@ -214,118 +228,127 @@ export function ScheduleSheet({ item, mode, onClose, onEditText }: ScheduleSheet
       title={mode === "reapprove" ? t("content.schedule.reapproveTitle") : t("content.schedule.title")}
       onClose={onClose}
       footer={
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={!canSend} onClick={send}>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button disabled={!canSend} onClick={send} className="shadow-xs">
             {action.isPending ? t("content.schedule.submitting") : label}
           </Button>
-          <Button variant="secondary" disabled={action.isPending} onClick={onClose}>
+          <Button variant="secondary" disabled={action.isPending} onClick={onClose} className="shadow-xs">
             {t("common.cancel")}
           </Button>
         </div>
       }
     >
-      <div className="flex flex-col gap-4" data-testid="schedule-sheet">
+      <div className="flex flex-col gap-5" data-testid="schedule-sheet">
         {canApprove ? (
-          <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium text-slate-800">{t("content.schedule.whenLabel")}</legend>
-            {(["later", "now"] as const).map((option) => (
-              <label key={option} className="flex min-h-11 items-center gap-3">
-                <input
-                  type="radio"
-                  name="schedule-when"
-                  value={option}
-                  checked={when === option}
-                  onChange={() => setWhen(option)}
-                  className="size-5"
-                />
-                <span>{option === "now" ? t("content.schedule.optNow") : t("content.schedule.optLater")}</span>
-              </label>
-            ))}
+          <fieldset className="flex flex-col gap-2.5">
+            <legend className="text-sm font-semibold text-primary">{t("content.schedule.whenLabel")}</legend>
+            <div className="flex flex-wrap gap-4">
+              {(["later", "now"] as const).map((option) => (
+                <label key={option} className="flex min-h-11 items-center gap-2.5 cursor-pointer text-sm font-medium text-primary">
+                  <input
+                    type="radio"
+                    name="schedule-when"
+                    value={option}
+                    checked={when === option}
+                    onChange={() => setWhen(option)}
+                    className="size-4 accent-action focus-visible:outline-2 focus-visible:outline-focus"
+                  />
+                  <span>{option === "now" ? t("content.schedule.optNow") : t("content.schedule.optLater")}</span>
+                </label>
+              ))}
+            </div>
           </fieldset>
         ) : null}
 
         {when === "later" ? (
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-3">
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-800">
+          <div className="flex flex-col gap-3 rounded-panel bg-surface-subtle border border-border p-4 shadow-xs">
+            <div className="flex flex-wrap gap-4">
+              <label className="flex flex-col gap-1.5 text-sm font-semibold text-primary">
                 {t("content.schedule.dateLabel")}
                 <input
                   type="date"
                   value={fields.date}
                   onChange={(event) => setFields((current) => ({ ...current, date: event.target.value }))}
-                  className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-base font-normal focus-visible:outline-2 focus-visible:outline-indigo-600"
+                  className="min-h-11 rounded-control border border-control bg-surface px-3 text-base font-normal text-primary shadow-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-800">
+              <label className="flex flex-col gap-1.5 text-sm font-semibold text-primary">
                 {t("content.schedule.timeLabel")}
                 <input
                   type="time"
                   value={fields.time}
                   onChange={(event) => setFields((current) => ({ ...current, time: event.target.value }))}
-                  className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-base font-normal focus-visible:outline-2 focus-visible:outline-indigo-600"
+                  className="min-h-11 rounded-control border border-control bg-surface px-3 text-base font-normal text-primary shadow-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 />
               </label>
             </div>
-            <p className="text-sm font-medium text-slate-800" data-testid="timezone-label">
-              {zone}
-            </p>
-            <p className="text-xs text-slate-600">{t("content.schedule.timezoneHint", { zone })}</p>
+            <div className="pt-1">
+              <p className="text-sm font-semibold text-primary" data-testid="timezone-label">
+                {zone}
+              </p>
+              <p className="text-xs text-secondary">{t("content.schedule.timezoneHint", { zone })}</p>
+            </div>
             {problem ? (
               <p
                 role="status"
                 data-testid="schedule-precheck"
                 data-code={problem}
-                className="rounded-lg bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-300"
+                className="flex items-start gap-2 rounded-panel bg-danger-subtle p-3.5 text-sm font-medium text-danger border border-danger shadow-xs"
               >
-                {checkMessage(
-                  {
-                    code: problem,
-                    params:
-                      problem === "SCHEDULE_TOO_SOON_FOR_APPROVAL"
-                        ? { minutes: APPROVAL_LEAD_MINUTES }
-                        : problem === "SCHEDULE_TIME_NONEXISTENT"
-                          ? { local_date: fields.date, local_time: fields.time, timezone: workspace.timezone }
-                          : {},
-                  },
-                  t,
-                )}
+                <AlertIcon className="text-base shrink-0 mt-0.5" />
+                <span>
+                  {checkMessage(
+                    {
+                      code: problem,
+                      params:
+                        problem === "SCHEDULE_TOO_SOON_FOR_APPROVAL"
+                          ? { minutes: APPROVAL_LEAD_MINUTES }
+                          : problem === "SCHEDULE_TIME_NONEXISTENT"
+                            ? { local_date: fields.date, local_time: fields.time, timezone: workspace.timezone }
+                            : {},
+                    },
+                    t,
+                  )}
+                </span>
               </p>
             ) : null}
             {error ? <SubmitProblems error={error} part="schedule" onEditText={onEditText} /> : null}
           </div>
         ) : null}
 
-        <section aria-label={t("content.schedule.summaryTitle")} data-testid="schedule-summary" className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
-          <h3 className="font-medium">{t("content.schedule.summaryTitle")}</h3>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
-            <dt className="text-slate-600">{t("content.schedule.summaryType")}</dt>
-            <dd>{t(`content.type.${item.content_type}`)}</dd>
-            <dt className="text-slate-600">{t("content.schedule.summaryAccount")}</dt>
-            <dd data-testid="summary-account">
+        <section aria-label={t("content.schedule.summaryTitle")} data-testid="schedule-summary" className="flex flex-col gap-3 rounded-panel bg-surface-subtle border border-border p-4 shadow-xs">
+          <h3 className="font-heading font-semibold text-primary text-sm">{t("content.schedule.summaryTitle")}</h3>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+            <dt className="text-secondary font-medium">{t("content.schedule.summaryType")}</dt>
+            <dd className="text-primary font-semibold">{t(`content.type.${item.content_type}`)}</dd>
+            <dt className="text-secondary font-medium">{t("content.schedule.summaryAccount")}</dt>
+            <dd data-testid="summary-account" className="text-primary">
               {account ? (
-                <span className="inline-flex flex-wrap items-center gap-2">
+                <span className="inline-flex flex-wrap items-center gap-2 font-medium">
                   @{account.username ?? account.id}
                   {account.is_simulated ? <SimulatedBadge /> : null}
                 </span>
               ) : (
-                t("content.schedule.noAccount")
+                <span className="text-secondary">{t("content.schedule.noAccount")}</span>
               )}
             </dd>
-            <dt className="text-slate-600">{t("content.schedule.summaryWhen")}</dt>
-            <dd data-testid="summary-when">{whenText}</dd>
+            <dt className="text-secondary font-medium">{t("content.schedule.summaryWhen")}</dt>
+            <dd data-testid="summary-when" className="text-primary font-medium">{whenText}</dd>
           </dl>
-          <ContentPreview
-            contentType={item.content_type}
-            caption={item.caption}
-            overlay={item.overlay_text_suggestions}
-            mediaId={item.media_asset_id}
-            mediaDeleted={item.media_deleted}
-            labels={SUMMARY_LABELS}
-          />
+          <div className="pt-2 border-t border-border/80">
+            <ContentPreview
+              contentType={item.content_type}
+              caption={item.caption}
+              overlay={item.overlay_text_suggestions}
+              mediaId={item.media_asset_id}
+              mediaDeleted={item.media_deleted}
+              labels={SUMMARY_LABELS}
+            />
+          </div>
         </section>
 
-        <p className="text-sm text-slate-700">{note}</p>
-        {mode === "reapprove" ? <p className="text-sm text-slate-700">{t("content.schedule.reapproveNote")}</p> : null}
+        <p className="text-xs text-secondary">{note}</p>
+        {mode === "reapprove" ? <p className="text-xs text-secondary">{t("content.schedule.reapproveNote")}</p> : null}
 
         {error ? <SubmitProblems error={error} part="other" onEditText={onEditText} /> : null}
       </div>

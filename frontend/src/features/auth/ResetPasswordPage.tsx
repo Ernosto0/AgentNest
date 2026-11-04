@@ -67,7 +67,7 @@ export function ResetPasswordPage() {
         description={t("auth.setNewPasswordSubtitle")}
       >
         {resetCompleted ? (
-          <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6">
+          <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6 shadow-xs">
             <Notice
               tone="success"
               title={t("auth.passwordResetSuccessTitle")}
@@ -79,7 +79,7 @@ export function ResetPasswordPage() {
         ) : (
           <form
             onSubmit={handleConfirmSubmit}
-            className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6"
+            className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6 shadow-xs"
             noValidate
             aria-busy={confirmReset.isPending}
           >
@@ -141,7 +141,7 @@ export function ResetPasswordPage() {
       description={t("auth.resetPasswordSubtitle")}
     >
       {requestSent ? (
-        <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6">
+        <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6 shadow-xs">
           <Notice
             tone="success"
             title={t("auth.resetEmailSentTitle")}
@@ -155,7 +155,7 @@ export function ResetPasswordPage() {
       ) : (
         <form
           onSubmit={handleRequestSubmit}
-          className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6"
+          className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6 shadow-xs"
           noValidate
           aria-busy={requestReset.isPending}
         >

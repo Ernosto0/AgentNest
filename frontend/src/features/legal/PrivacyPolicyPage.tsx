@@ -16,7 +16,7 @@ export function PrivacyPolicyPage() {
         </Link>
       }
     >
-      <div className="flex flex-col gap-6 rounded-panel border border-border bg-surface p-6 sm:p-8">
+      <div className="flex flex-col gap-6 rounded-panel border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <section className="flex flex-col gap-2">
           <p className="text-sm leading-relaxed text-secondary">{t("legal.privacySummary")}</p>
         </section>

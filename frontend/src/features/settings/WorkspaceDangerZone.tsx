@@ -31,7 +31,7 @@ export function WorkspaceDangerZone({ workspaceId }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-panel border border-danger/30 bg-surface p-5 shadow-xs">
+    <div className="flex flex-col gap-4 rounded-panel border border-border bg-danger-subtle/30 p-5 shadow-xs">
       <div>
         <h2 className="text-base font-heading font-semibold text-danger">
           {t("settings.dangerZoneTitle")}
@@ -42,7 +42,7 @@ export function WorkspaceDangerZone({ workspaceId }: Props) {
       </div>
 
       {status?.is_deleting ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+        <div className="flex flex-col gap-3 rounded-panel border border-border bg-attention-subtle p-4 text-sm text-attention">
           <div className="font-semibold">{t("settings.deletionScheduledTitle")}</div>
           <p>
             {t("settings.deletionScheduledDesc", {
@@ -57,7 +57,7 @@ export function WorkspaceDangerZone({ workspaceId }: Props) {
               variant="secondary"
               disabled={cancelDeletion.isPending}
               onClick={handleCancel}
-              className="border-amber-400 bg-white text-amber-900 hover:bg-amber-100"
+              className="border-border bg-surface text-attention hover:bg-surface-subtle"
             >
               {cancelDeletion.isPending ? t("common.loading") : t("settings.cancelDeletionBtn")}
             </Button>
@@ -75,7 +75,7 @@ export function WorkspaceDangerZone({ workspaceId }: Props) {
               variant="ghost"
               disabled={requestDeletion.isPending}
               onClick={handleRequest}
-              className="text-danger hover:bg-danger/10 border border-danger/30"
+              className="text-danger hover:bg-danger-subtle border border-border"
             >
               {requestDeletion.isPending ? t("common.loading") : t("settings.deleteWorkspaceBtn")}
             </Button>

@@ -49,7 +49,7 @@ export function SuggestionsPage() {
       </div>
 
       {!canVerify ? (
-        <p className="rounded-card bg-surface-elevated p-3.5 text-sm text-secondary border border-border">{t("knowledge.suggestions.staffNote")}</p>
+        <p className="rounded-panel bg-surface-subtle p-4 text-sm text-secondary border border-border">{t("knowledge.suggestions.staffNote")}</p>
       ) : null}
       {candidates.isError ? <ErrorMessage error={candidates.error} /> : null}
       {resolve.error ? <ErrorMessage error={resolve.error} /> : null}
@@ -64,18 +64,20 @@ export function SuggestionsPage() {
       <ul className="flex flex-col gap-3">
         {candidates.data?.map((candidate) => (
           <li key={candidate.id}>
-            <Card className="flex flex-col gap-2" data-testid={`candidate-${candidate.fact_key}`}>
-              <h2 className="text-base font-semibold text-primary break-words">
-                {pickLabel(candidate.fact_label, i18n.language)}
-              </h2>
-              <p className="text-base text-primary break-words">{explain(candidate)}</p>
+            <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs" data-testid={`candidate-${candidate.fact_key}`}>
+              <div className="border-b border-border/60 pb-2">
+                <h2 className="text-base font-semibold text-primary break-words">
+                  {pickLabel(candidate.fact_label, i18n.language)}
+                </h2>
+              </div>
+              <p className="text-base text-primary break-words font-medium">{explain(candidate)}</p>
               {candidate.source_excerpt ? (
-                <blockquote className="border-l-4 border-border pl-3 text-sm text-secondary italic">
+                <blockquote className="rounded-control border-l-4 border-action bg-surface-subtle p-3 text-sm text-secondary italic">
                   {candidate.source_excerpt}
                 </blockquote>
               ) : null}
               {canVerify ? (
-                <div className="mt-1 flex flex-wrap gap-2">
+                <div className="mt-1 flex flex-wrap gap-2 pt-2 border-t border-border/40">
                   <Button
                     disabled={busy(candidate.id)}
                     onClick={() => resolve.mutate({ candidateId: candidate.id, action: "accept" })}

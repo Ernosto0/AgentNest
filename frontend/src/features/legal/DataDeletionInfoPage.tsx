@@ -59,7 +59,7 @@ export function DataDeletionInfoPage() {
         </Link>
       }
     >
-      <div className="flex flex-col gap-6 rounded-panel border border-border bg-surface p-6 sm:p-8">
+      <div className="flex flex-col gap-6 rounded-panel border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <section className="flex flex-col gap-3">
           <p className="text-sm leading-relaxed text-secondary">{t("legal.dataDeletionOverview")}</p>
           <div className="flex flex-col gap-2 rounded-md bg-canvas/60 p-4 text-xs text-secondary">
@@ -91,13 +91,13 @@ export function DataDeletionInfoPage() {
           </form>
 
           {errorStatus ? (
-            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+            <div className="rounded-control border border-attention bg-attention-subtle p-3 text-xs text-attention">
               {errorStatus}
             </div>
           ) : null}
 
           {result ? (
-            <div className="flex flex-col gap-2 rounded-md border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <div className="flex flex-col gap-2 rounded-control border border-success bg-success-subtle p-4 text-xs text-success">
               <p className="font-semibold">
                 {result.status === "completed"
                   ? t("legal.dataDeletionStatusCompleted")

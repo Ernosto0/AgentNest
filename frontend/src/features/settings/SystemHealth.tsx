@@ -100,7 +100,7 @@ export function SystemHealth() {
                     </span>
                   ) : null}
                   {account.status === "degraded" && account.degraded_until ? (
-                    <span className="text-xs font-medium text-warning">
+                    <span className="text-xs font-medium text-attention">
                       {t("systemHealth.accounts.degradedUntil", {
                         time: localTime(account.degraded_until),
                       })}
@@ -119,7 +119,7 @@ export function SystemHealth() {
             <div>
               <Link
                 to={`/w/${workspace.id}/more/settings/connections`}
-                className="text-sm font-medium text-brand hover:underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-focus"
+                className="text-sm font-medium text-action hover:text-action-hover underline focus-visible:outline-2 focus-visible:outline-focus"
               >
                 {t("systemHealth.accounts.manage")}
               </Link>
@@ -177,7 +177,7 @@ export function SystemHealth() {
                       <span className="text-xs text-danger mt-1">
                         {reason(failure.last_error_code) ?? ""}
                       </span>
-                      <span className="text-xs text-tertiary mt-0.5">
+                      <span className="text-xs text-secondary mt-0.5">
                         {localTime(failure.occurred_at)}
                       </span>
                     </li>

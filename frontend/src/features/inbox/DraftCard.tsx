@@ -36,58 +36,64 @@ export function DraftCard({
 
   return (
     <Card
-      className="flex flex-col gap-3.5 border-indigo-200/80 bg-indigo-50/20 shadow-2xs"
+      className="flex flex-col gap-4 border border-border bg-assistant/60 shadow-xs rounded-panel p-4 md:p-5"
       data-testid="draft-card"
       data-draft-status={draft.status}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/80 pb-3">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-900">{t(`convo.status.${draft.status}`)}</span>
+          <span className="font-semibold text-primary">{t(`convo.status.${draft.status}`)}</span>
         </div>
         {draft.is_simulated ? <SimulatedBadge /> : null}
       </div>
 
       {draft.text !== null && !editing ? <DraftText draft={draft} /> : null}
       {draft.text === null && draft.suggestion_text ? (
-        <div className="rounded-lg bg-white p-3.5 ring-1 ring-slate-200 text-sm">
-          <p className="font-semibold text-slate-900">{t("convo.draft.suggestionTitle")}</p>
-          <p className="mt-1 break-words whitespace-pre-wrap text-slate-700">{draft.suggestion_text}</p>
+        <div className="rounded-control bg-surface p-4 border border-border text-body shadow-xs">
+          <p className="font-semibold text-primary">{t("convo.draft.suggestionTitle")}</p>
+          <p className="mt-1.5 break-words whitespace-pre-wrap text-secondary">{draft.suggestion_text}</p>
           {onUseSuggestion ? (
-            <Button variant="secondary" className="mt-2.5" onClick={() => onUseSuggestion(draft.suggestion_text ?? "")}>
+            <Button variant="secondary" className="mt-3" onClick={() => onUseSuggestion(draft.suggestion_text ?? "")}>
               {t("convo.draft.useSuggestion")}
             </Button>
           ) : null}
         </div>
       ) : null}
       {draft.status === "needs_human" ? (
-        <p className="text-sm font-semibold text-amber-900">{t("convo.draft.youMustReply")}</p>
+        <div className="rounded-control bg-attention-subtle p-3 text-body font-semibold text-attention border border-attention/20">
+          <p>{t("convo.draft.youMustReply")}</p>
+        </div>
       ) : null}
       {draft.status === "outcome_unknown" ? (
-        <p className="text-sm font-medium text-slate-700" role="status">
-          {t("convo.draft.checking")}
-        </p>
+        <div className="rounded-control bg-info-subtle p-3 text-body font-medium text-info border border-info/20" role="status">
+          <p>{t("convo.draft.checking")}</p>
+        </div>
       ) : null}
       {draft.status === "failed" || draft.status === "blocked" ? (
-        <p className="text-sm font-medium text-red-800" role="alert">
-          {draft.failure_code && draft.failure_code === "OUTCOME_UNCONFIRMED"
-            ? t("convo.draft.unconfirmed")
-            : t("convo.draft.failed")}
-        </p>
+        <div className="rounded-control bg-danger-subtle p-3 text-body font-medium text-danger border border-danger/20" role="alert">
+          <p>
+            {draft.failure_code && draft.failure_code === "OUTCOME_UNCONFIRMED"
+              ? t("convo.draft.unconfirmed")
+              : t("convo.draft.failed")}
+          </p>
+        </div>
       ) : null}
 
       <ReasonChips reasons={draft.decision_reasons} />
 
       {draft.validation.issues.length > 0 ? (
-        <ul className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-300">
+        <ul className="rounded-control bg-attention-subtle p-3 text-body text-attention border border-attention/30 flex flex-col gap-1">
           {draft.validation.issues.map((issue, index) => (
-            <li key={`${issue.code}-${index}`}>{t("convo.composer.warning", { text: issue.text || issue.code })}</li>
+            <li key={`${issue.code}-${index}`}>
+              {t("convo.composer.warning", { text: issue.text || issue.code })}
+            </li>
           ))}
         </ul>
       ) : null}
 
       {editing ? (
-        <div className="flex flex-col gap-2">
-          <label htmlFor={`edit-${draft.id}`} className="text-sm font-medium text-slate-900">
+        <div className="flex flex-col gap-2.5">
+          <label htmlFor={`edit-${draft.id}`} className="text-form font-medium text-primary">
             {t("convo.draft.editLabel")}
           </label>
           <textarea
@@ -95,9 +101,9 @@ export function DraftCard({
             value={editText}
             onChange={(event) => setEditText(event.target.value)}
             rows={4}
-            className="w-full rounded-lg border border-slate-300 p-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
+            className="w-full rounded-control border border-control bg-surface p-3 text-form text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           />
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pt-1">
             <Button
               disabled={busy || !editText.trim()}
               onClick={() =>
@@ -144,7 +150,7 @@ export function DraftCard({
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-slate-700">{t("convo.draft.waitingForOwner")}</p>
+          <p className="text-body text-secondary">{t("convo.draft.waitingForOwner")}</p>
         )
       ) : null}
       {draft.approval_state && !editing ? (

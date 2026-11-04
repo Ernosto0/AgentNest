@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { ContentItem } from "@/api/types";
 import { Button } from "@/components/Button";
+import { CriticalIcon, HourglassIcon } from "@/components/icons";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { AUTO_RETRY, failureCode, failureText } from "./failure";
 
@@ -32,31 +33,48 @@ export function FailureDetail({ item, onEdit }: { item: ContentItem; onEdit: () 
       aria-label={t("content.failure.title")}
       data-testid="failure-detail"
       data-code={code}
-      className={`flex flex-col gap-2 rounded-panel border p-4 text-body shadow-xs ${
+      className={`flex flex-col gap-3 rounded-panel border p-5 text-body shadow-xs ${
         failed
           ? "border-danger bg-danger-subtle text-danger"
           : "border-info bg-info-subtle text-info"
       }`}
     >
-      <h2 className="font-heading font-semibold">{t("content.failure.title")}</h2>
-      <p>{what}</p>
-      {/* A retryable code on a failed item means the retries ran out: its "we will try again" must not show. */}
-      <p>{failed && AUTO_RETRY.has(code) ? t("content.failure.exhausted") : next}</p>
+      <div className="flex items-center gap-2.5">
+        {failed ? (
+          <CriticalIcon className="text-xl shrink-0" />
+        ) : (
+          <HourglassIcon className="text-xl shrink-0 motion-safe:animate-pulse" />
+        )}
+        <h2 className="font-heading font-bold text-base">{t("content.failure.title")}</h2>
+      </div>
+
+      <div className="flex flex-col gap-1.5 pl-0.5">
+        <p className="font-medium">{what}</p>
+        {/* A retryable code on a failed item means the retries ran out: its "we will try again" must not show. */}
+        <p className="opacity-90">{failed && AUTO_RETRY.has(code) ? t("content.failure.exhausted") : next}</p>
+      </div>
+
       {retrying ? (
-        <p data-testid="failure-retry" className="font-semibold">
-          {time
-            ? t("content.failure.retryAt", { time, attempts: item.operation?.attempts ?? 0 })
-            : t("content.failure.retryAuto")}
-        </p>
+        <div className="flex items-center gap-2 pt-1">
+          <p data-testid="failure-retry" className="font-semibold text-sm">
+            {time
+              ? t("content.failure.retryAt", { time, attempts: item.operation?.attempts ?? 0 })
+              : t("content.failure.retryAuto")}
+          </p>
+        </div>
       ) : null}
+
       {failed ? (
-        <p data-testid="failure-final" className="font-semibold">
+        <p data-testid="failure-final" className="font-semibold text-sm pt-1">
           {t("content.failure.noRetry")}
         </p>
       ) : null}
+
       {failed ? (
-        <div className="pt-1">
-          <Button onClick={onEdit}>{t("content.actions.editResend")}</Button>
+        <div className="pt-2">
+          <Button onClick={onEdit} className="shadow-xs">
+            {t("content.actions.editResend")}
+          </Button>
         </div>
       ) : null}
     </section>

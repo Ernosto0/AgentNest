@@ -76,7 +76,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
         if (entry.kind === "fixed") {
           if (entry.fact) return card(entry.fact);
           return (
-            <Card key={entry.item.identifier} className="flex flex-col gap-3" data-testid={`missing-${entry.item.key}`}>
+            <Card key={entry.item.identifier} className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs" data-testid={`missing-${entry.item.key}`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <h3 className="min-w-0 text-base font-semibold text-primary break-words">
                   {pickLabel(entry.item.label, i18n.language)}
@@ -85,11 +85,11 @@ function CategoryScreen({ category }: { category: FactCategory }) {
               </div>
               <p className="text-sm text-secondary">{pickLabel(entry.item.description, i18n.language)}</p>
               {entry.item.required_for ? (
-                <p className="text-sm text-attention font-medium">
+                <p className="inline-flex items-center gap-1.5 text-xs text-attention font-medium bg-attention-subtle px-2.5 py-1 rounded-control border border-border w-fit">
                   {t(`knowledge.required.${entry.item.required_for}`)}
                 </p>
               ) : null}
-              <div>
+              <div className="pt-1">
                 <Button
                   variant="secondary"
                   onClick={() => setEditor({ mode: "create", category, item: entry.item })}
@@ -103,7 +103,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
         if (entry.kind === "pattern") {
           return (
             <section key={entry.item.identifier} className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
                 <h2 className="text-lg font-heading font-semibold text-primary">{pickLabel(entry.item.label, i18n.language)}</h2>
                 {canVerify ? (
                   <Button
@@ -143,11 +143,11 @@ function CategoryScreen({ category }: { category: FactCategory }) {
       })}
 
       {loaded && loaded.archived.length > 0 ? (
-        <details className="rounded-panel border border-border bg-surface p-4 shadow-xs">
-          <summary className="min-h-11 cursor-pointer py-1 font-medium text-primary select-none">
+        <details className="rounded-panel border border-border bg-surface p-4 shadow-xs group">
+          <summary className="min-h-11 cursor-pointer py-1 font-medium text-primary select-none group-hover:text-action transition-colors">
             {t("knowledge.archived", { count: loaded.archived.length })}
           </summary>
-          <div className="mt-3 flex flex-col gap-3">{loaded.archived.map(card)}</div>
+          <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3">{loaded.archived.map(card)}</div>
         </details>
       ) : null}
 

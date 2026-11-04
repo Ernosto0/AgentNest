@@ -6,7 +6,7 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
-import { SpinnerIcon } from "@/components/icons";
+import { AlertIcon, CheckIcon, PlusIcon, SparkIcon, SpinnerIcon } from "@/components/icons";
 import { TextField } from "@/components/TextField";
 import { newRequestId } from "@/features/commands/hooks";
 import { useSocialAccounts } from "@/features/inbox/hooks";
@@ -26,28 +26,32 @@ function GenerationProgress({ contentId, onOpen }: { contentId: string; onOpen: 
   const cause = code ? t(`errors.${code}.what`, { defaultValue: "" }) : "";
 
   return (
-    <div className="flex flex-col gap-3" data-testid="generation-progress" data-generation={status}>
+    <div className="flex flex-col gap-3.5 pt-1" data-testid="generation-progress" data-generation={status}>
       {status === "failed" ? (
-        <div role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-400">
-          <p className="font-medium">{t("content.generate.failedTitle")}</p>
-          {cause ? <p>{cause}</p> : null}
-          <p>{t("content.generate.failedHint")}</p>
+        <div role="alert" className="flex items-start gap-3 rounded-panel bg-attention-subtle p-4 text-sm text-attention border border-attention shadow-xs">
+          <AlertIcon className="text-base shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-0.5">
+            <p className="font-semibold">{t("content.generate.failedTitle")}</p>
+            {cause ? <p>{cause}</p> : null}
+            <p className="opacity-90">{t("content.generate.failedHint")}</p>
+          </div>
         </div>
       ) : status === "succeeded" ? (
-        <p role="status" className="font-medium text-green-800">
-          {t("content.generate.ready")}
-        </p>
+        <div role="status" className="flex items-center gap-2 rounded-panel bg-success-subtle p-4 text-sm font-semibold text-success border border-success/30 shadow-xs">
+          <CheckIcon className="text-base shrink-0" />
+          <p>{t("content.generate.ready")}</p>
+        </div>
       ) : (
-        <div role="status" className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900 ring-1 ring-blue-300">
-          <p className="inline-flex items-center gap-2 font-medium">
-            <SpinnerIcon className="animate-spin text-xl" />
-            {t("content.generate.running")}
-          </p>
-          <p>{t("content.generate.runningHint")}</p>
+        <div role="status" className="flex items-start gap-3 rounded-panel bg-info-subtle p-4 text-sm text-info border border-info shadow-xs">
+          <SpinnerIcon className="motion-safe:animate-spin text-lg shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-0.5">
+            <p className="font-semibold">{t("content.generate.running")}</p>
+            <p className="text-secondary">{t("content.generate.runningHint")}</p>
+          </div>
         </div>
       )}
-      <div>
-        <Button onClick={onOpen}>{t("content.generate.open")}</Button>
+      <div className="pt-1">
+        <Button onClick={onOpen} className="shadow-xs">{t("content.generate.open")}</Button>
       </div>
     </div>
   );
@@ -97,19 +101,19 @@ export function GenerateSheet({ initialMode, onClose }: { initialMode: NewConten
   };
 
   const typeChoice = (
-    <fieldset className="flex flex-col gap-2" disabled={createdId !== null}>
-      <legend className="text-sm font-medium text-slate-800">{t("content.generate.typeLabel")}</legend>
+    <fieldset className="flex flex-col gap-2.5" disabled={createdId !== null}>
+      <legend className="text-sm font-semibold text-primary">{t("content.generate.typeLabel")}</legend>
       <div className="flex flex-wrap gap-4">
         {(["feed_image", "story_image"] as const).map((option) => (
-          <label key={option} className="flex min-h-11 items-center gap-2">
+          <label key={option} className="flex min-h-11 items-center gap-2.5 cursor-pointer text-sm font-medium text-primary">
             <input
               type="radio"
               name="content-type"
               checked={type === option}
               onChange={() => setType(option)}
-              className="size-5"
+              className="size-4 accent-action focus-visible:outline-2 focus-visible:outline-focus"
             />
-            {t(`content.type.${option}`)}
+            <span>{t(`content.type.${option}`)}</span>
           </label>
         ))}
       </div>
@@ -118,8 +122,13 @@ export function GenerateSheet({ initialMode, onClose }: { initialMode: NewConten
 
   return (
     <BottomSheet title={t("content.generate.title")} onClose={onClose}>
-      <div className="flex flex-col gap-4" data-testid="generate-sheet">
-        <div role="tablist" aria-label={t("content.generate.modeLabel")} className="flex gap-2">
+      <div className="flex flex-col gap-5" data-testid="generate-sheet">
+        {/* Mode Selector Tabs */}
+        <div
+          role="tablist"
+          aria-label={t("content.generate.modeLabel")}
+          className="inline-flex rounded-control bg-surface-subtle p-1 border border-border shadow-xs"
+        >
           {(["ai", "blank"] as const).map((option) => (
             <button
               key={option}
@@ -128,11 +137,23 @@ export function GenerateSheet({ initialMode, onClose }: { initialMode: NewConten
               aria-selected={mode === option}
               disabled={createdId !== null}
               onClick={() => setMode(option)}
-              className={`min-h-11 rounded-lg px-4 font-medium focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-60 ${
-                mode === option ? "bg-indigo-700 text-white" : "bg-white text-slate-800 ring-1 ring-slate-300"
+              className={`inline-flex items-center gap-1.5 min-h-10 rounded-control px-4 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-60 ${
+                mode === option
+                  ? "bg-action text-on-action shadow-xs"
+                  : "text-secondary hover:text-primary hover:bg-surface/50"
               }`}
             >
-              {option === "ai" ? t("content.generate.modeAi") : t("content.generate.modeBlank")}
+              {option === "ai" ? (
+                <>
+                  <SparkIcon className="text-base" />
+                  <span>{t("content.generate.modeAi")}</span>
+                </>
+              ) : (
+                <>
+                  <PlusIcon className="text-base" />
+                  <span>{t("content.generate.modeBlank")}</span>
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -148,7 +169,7 @@ export function GenerateSheet({ initialMode, onClose }: { initialMode: NewConten
             }}
           >
             <div className="flex flex-col gap-1.5">
-              <label htmlFor={ids.objective} className="text-sm font-medium text-slate-800">
+              <label htmlFor={ids.objective} className="text-sm font-semibold text-primary">
                 {t("content.generate.objectiveLabel")}
               </label>
               <textarea
@@ -158,12 +179,12 @@ export function GenerateSheet({ initialMode, onClose }: { initialMode: NewConten
                 maxLength={OBJECTIVE_MAX}
                 disabled={createdId !== null}
                 onChange={(event) => setObjective(event.target.value)}
-                className="min-h-20 w-full rounded-lg border border-slate-300 p-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
+                className="min-h-24 w-full rounded-control border border-control bg-surface p-3.5 text-base text-primary shadow-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:bg-surface-subtle"
               />
-              <p className="text-xs text-slate-600">{t("content.generate.objectiveHint")}</p>
+              <p className="text-xs text-secondary">{t("content.generate.objectiveHint")}</p>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor={ids.notes} className="text-sm font-medium text-slate-800">
+              <label htmlFor={ids.notes} className="text-sm font-semibold text-primary">
                 {t("content.generate.notesLabel")}
               </label>
               <textarea
@@ -173,25 +194,25 @@ export function GenerateSheet({ initialMode, onClose }: { initialMode: NewConten
                 maxLength={NOTES_MAX}
                 disabled={createdId !== null}
                 onChange={(event) => setNotes(event.target.value)}
-                className="min-h-16 w-full rounded-lg border border-slate-300 p-3 text-base focus-visible:outline-2 focus-visible:outline-indigo-600"
+                className="min-h-16 w-full rounded-control border border-control bg-surface p-3.5 text-base text-primary shadow-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:bg-surface-subtle"
               />
             </div>
-            <div className="text-sm" data-testid="generate-account">
-              <p className="font-medium text-slate-800">{t("content.generate.accountLabel")}</p>
+            <div className="rounded-panel border border-border bg-surface-subtle p-3.5 text-sm" data-testid="generate-account">
+              <p className="font-semibold text-primary">{t("content.generate.accountLabel")}</p>
               {account ? (
-                <p className="inline-flex flex-wrap items-center gap-2">
-                  @{account.username ?? account.id}
+                <p className="mt-1 inline-flex flex-wrap items-center gap-2 font-medium text-primary">
+                  <span>@{account.username ?? account.id}</span>
                   {account.is_simulated ? <SimulatedBadge /> : null}
                 </p>
               ) : (
-                <p className="text-slate-700">{t("content.generate.accountNone")}</p>
+                <p className="mt-1 text-secondary">{t("content.generate.accountNone")}</p>
               )}
-              {account ? <p className="text-xs text-slate-600">{t("content.generate.accountHint")}</p> : null}
+              {account ? <p className="mt-1 text-xs text-secondary">{t("content.generate.accountHint")}</p> : null}
             </div>
             {generate.error ? <ErrorMessage error={generate.error} /> : null}
             {createdId === null ? (
-              <div>
-                <Button type="submit" disabled={busy || objective.trim() === ""}>
+              <div className="pt-2">
+                <Button type="submit" disabled={busy || objective.trim() === ""} className="shadow-xs">
                   {generate.isPending ? t("content.generate.submitting") : t("content.generate.submit")}
                 </Button>
               </div>
@@ -213,10 +234,10 @@ export function GenerateSheet({ initialMode, onClose }: { initialMode: NewConten
               maxLength={TITLE_MAX}
               onChange={(event) => setTitle(event.target.value)}
             />
-            <p className="-mt-2 text-xs text-slate-600">{t("content.generate.titleHint")}</p>
+            <p className="-mt-2 text-xs text-secondary">{t("content.generate.titleHint")}</p>
             {create.error ? <ErrorMessage error={create.error} /> : null}
-            <div>
-              <Button type="submit" disabled={busy || title.trim() === ""}>
+            <div className="pt-2">
+              <Button type="submit" disabled={busy || title.trim() === ""} className="shadow-xs">
                 {create.isPending ? t("content.generate.submitting") : t("content.generate.blankSubmit")}
               </Button>
             </div>

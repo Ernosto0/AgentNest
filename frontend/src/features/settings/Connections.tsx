@@ -39,15 +39,15 @@ function OAuthBanner() {
     <div
       data-testid="oauth-banner"
       role={isError ? "alert" : "status"}
-      className={`flex flex-col gap-3 rounded-panel border p-4 ${
+      className={`flex flex-col gap-3 rounded-panel border p-4 shadow-xs ${
         isError
-          ? "border-danger/30 bg-danger/10 text-danger-foreground"
-          : "border-success/30 bg-success/10 text-success-foreground"
+          ? "border-border bg-danger-subtle text-danger"
+          : "border-border bg-success-subtle text-success"
       }`}
     >
       <div className="flex flex-col gap-1">
-        <p className="font-medium">{status === "connected" ? t("connections.oauthConnected") : error.what}</p>
-        {isError && error.next ? <p className="text-sm opacity-90">{error.next}</p> : null}
+        <p className="font-semibold">{status === "connected" ? t("connections.oauthConnected") : error.what}</p>
+        {isError && error.next ? <p className="text-sm font-medium opacity-90">{error.next}</p> : null}
       </div>
       <div>
         <Button
@@ -196,23 +196,23 @@ function AccountCard({
       </div>
 
       {account.status === "degraded" && account.degraded_until ? (
-        <p data-testid="degraded-until" className="text-sm font-medium text-warning">
+        <p data-testid="degraded-until" className="text-sm font-medium text-attention bg-attention-subtle p-2.5 rounded-control border border-border w-fit">
           {t("connections.degradedUntil", {
             time: localTime(account.degraded_until),
           })}
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 rounded-control bg-surface-subtle p-3.5 border border-border">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-secondary">
           {t("connections.lastError")}
         </h3>
         {account.last_error_code ? (
           <div data-testid="account-last-error" className="text-sm">
-            <p className="font-medium text-primary">
+            <p className="font-semibold text-danger">
               {cause.what !== "" ? cause.what : t("connections.lastErrorUnknown")}
             </p>
-            {cause.next !== "" ? <p className="text-secondary">{cause.next}</p> : null}
+            {cause.next !== "" ? <p className="text-secondary mt-0.5">{cause.next}</p> : null}
           </div>
         ) : (
           <p className="text-sm text-secondary" data-testid="account-last-error">
@@ -221,11 +221,11 @@ function AccountCard({
         )}
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 rounded-control bg-surface-subtle p-3.5 border border-border">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-secondary">
           {t("connections.capabilities")}
         </h3>
-        <p data-testid="account-capabilities" className="text-sm text-primary">
+        <p data-testid="account-capabilities" className="text-sm font-medium text-primary">
           {capabilities || "–"}
         </p>
       </div>
@@ -288,7 +288,7 @@ function AccountCard({
       {role === "owner" || role === "manager" ? (
         <Link
           to={`/w/${workspace.id}/more/settings/system-health`}
-          className="text-sm font-medium text-brand hover:underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-focus"
+          className="text-sm font-medium text-action hover:text-action-hover underline focus-visible:outline-2 focus-visible:outline-focus"
         >
           {t("settings.openSystemHealth")}
         </Link>
@@ -331,7 +331,7 @@ function AccountCard({
                 checked={deleteConversationData}
                 disabled={disconnect.isPending}
                 onChange={(event) => setDeleteConversationData(event.target.checked)}
-                className="mt-0.5 rounded border-border text-brand focus:ring-focus"
+                className="mt-0.5 rounded-control border-border text-action focus-visible:outline-2 focus-visible:outline-focus"
               />
               <span className="text-sm font-medium text-primary">
                 {t("connections.deleteConversationData")}

@@ -6,7 +6,7 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { useSavePersonality, useAgentPersonality, type Schema } from "./hooks";
 
 export const FIELD =
-  "min-h-11 w-full min-w-0 rounded-control border border-border bg-surface px-3 py-2 text-base text-primary shadow-xs focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-60";
+  "min-h-11 w-full min-w-0 rounded-control border border-border bg-surface px-3 py-2 text-base text-primary shadow-xs focus-visible:outline-2 focus-visible:outline-focus focus:border-control disabled:opacity-60";
 
 const choices = {
   tone: ["warm", "neutral", "direct"],
@@ -37,13 +37,13 @@ export function PersonalityForm({
   const current = useAgentPersonality(ws, account);
 
   return (
-    <Card className="flex flex-col gap-4">
+    <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
       <div className="border-b border-border pb-3">
         <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.personality")}</h2>
       </div>
 
       <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-        <span>{t("agent.goals")}</span>
+        <span className="text-primary">{t("agent.goals")}</span>
         <textarea
           className={FIELD}
           rows={3}
@@ -58,34 +58,36 @@ export function PersonalityForm({
       </label>
       <p className="text-sm text-secondary">{t("agent.goalsHint")}</p>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {Object.entries(choices).map(([key, values]) => (
-          <label key={key} className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-            <span>{t(`agent.voice.${key}`)}</span>
-            <select
-              className={FIELD}
-              disabled={!editable || save.isPending}
-              value={draft[key as keyof typeof choices]}
-              onChange={(e) => {
-                save.reset();
-                setPreview(false);
-                setDraft({ ...draft, [key]: e.target.value });
-              }}
-            >
-              {values.map((v) => (
-                <option key={v} value={v}>
-                  {t(`agent.voice.${v}`)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div key={key} className="rounded-control border border-border bg-surface-subtle p-3 flex flex-col gap-1.5 shadow-xs">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
+              <span className="font-semibold text-primary">{t(`agent.voice.${key}`)}</span>
+              <select
+                className={FIELD}
+                disabled={!editable || save.isPending}
+                value={draft[key as keyof typeof choices]}
+                onChange={(e) => {
+                  save.reset();
+                  setPreview(false);
+                  setDraft({ ...draft, [key]: e.target.value });
+                }}
+              >
+                {values.map((v) => (
+                  <option key={v} value={v}>
+                    {t(`agent.voice.${v}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         ))}
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 pt-1">
         {(["tr", "en"] as const).map((lang) => (
           <label key={lang} className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-            <span>{t(`agent.examples_${lang}`)}</span>
+            <span className="text-primary">{t(`agent.examples_${lang}`)}</span>
             <textarea
               className={FIELD}
               rows={2}
@@ -110,7 +112,7 @@ export function PersonalityForm({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 pt-2">
+      <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border">
         {editable ? (
           <Button
             disabled={save.isPending}
@@ -133,7 +135,7 @@ export function PersonalityForm({
       </div>
 
       {save.error ? (
-        <div className="flex flex-col gap-2 rounded-control border border-danger bg-danger-subtle p-3">
+        <div className="flex flex-col gap-2 rounded-panel border border-border bg-danger-subtle p-4">
           <ErrorMessage error={save.error} />
           <p className="text-sm text-danger font-medium">{t("agent.reloadWarning")}</p>
           <div>
@@ -158,20 +160,23 @@ export function PersonalityForm({
       ) : null}
 
       {save.isSuccess ? (
-        <p role="status" className="text-sm font-medium text-success">
+        <p role="status" className="rounded-control bg-success-subtle p-2.5 text-sm font-medium text-success border border-border">
           {t("agent.saved")}
         </p>
       ) : null}
 
       {preview ? (
         <aside
-          className="flex flex-col gap-2 rounded-control border border-border bg-surface-subtle p-4 shadow-xs"
+          className="flex flex-col gap-2 rounded-panel border border-border bg-surface-subtle p-4 shadow-xs"
           aria-label={t("agent.previewVoice")}
         >
-          <p className="text-xs text-muted">{t("agent.previewDisclosure")}</p>
-          <div className="flex flex-col gap-1.5 pt-2 text-sm">
-            <p className="font-medium text-secondary">{t("agent.sampleCustomer")}</p>
-            <p className="font-semibold text-primary">
+          <div className="flex items-center justify-between border-b border-border/60 pb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-action">{t("agent.previewVoice")}</span>
+            <p className="text-xs text-secondary">{t("agent.previewDisclosure")}</p>
+          </div>
+          <div className="flex flex-col gap-1.5 pt-1 text-sm">
+            <p className="text-xs font-medium text-secondary">{t("agent.sampleCustomer")}</p>
+            <p className="rounded-control bg-surface p-3 font-semibold text-primary border border-border">
               {draft.examples?.[i18n.language === "en" ? "en" : "tr"]?.[0] ||
                 t(`agent.sample_${draft.tone}`)}
               {draft.emoji === "sparse" ? " " + String.fromCodePoint(0x1f642) : ""}

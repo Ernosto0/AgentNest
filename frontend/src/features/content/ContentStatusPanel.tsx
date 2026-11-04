@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ContentItem } from "@/api/types";
+import { LinkIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { timezoneLabel } from "./messages";
@@ -37,7 +38,7 @@ export function ContentStatusPanel({ item }: { item: ContentItem }) {
     case "pending_approval":
       if (item.approval) {
         lines.push(
-          <p key="pending">
+          <p key="pending" className="font-medium text-primary">
             {t("content.detail.pending", {
               time: new Date(item.approval.expires_at).toLocaleString(i18n.language, {
                 dateStyle: "short",
@@ -50,7 +51,9 @@ export function ContentStatusPanel({ item }: { item: ContentItem }) {
       }
       if (item.scheduled_at) {
         lines.push(
-          <p key="when">{t("content.detail.scheduledFor", { when: local(item.scheduled_at), zone })}</p>,
+          <p key="when" className="text-secondary">
+            {t("content.detail.scheduledFor", { when: local(item.scheduled_at), zone })}
+          </p>,
         );
       }
       break;
@@ -58,29 +61,40 @@ export function ContentStatusPanel({ item }: { item: ContentItem }) {
     case "retry_scheduled":
       if (item.scheduled_at) {
         lines.push(
-          <p key="when">{t("content.detail.scheduledFor", { when: local(item.scheduled_at), zone })}</p>,
+          <p key="when" className="font-medium text-primary">
+            {t("content.detail.scheduledFor", { when: local(item.scheduled_at), zone })}
+          </p>,
         );
       }
       break;
     case "publishing":
-      lines.push(<p key="publishing">{t("content.detail.publishing")}</p>);
+      lines.push(
+        <p key="publishing" className="font-medium text-info">
+          {t("content.detail.publishing")}
+        </p>,
+      );
       break;
     case "published": {
       const permalink = safeUrl(item.external_permalink);
       if (item.published_at) {
-        lines.push(<p key="at">{t("content.detail.publishedAt", { when: local(item.published_at), zone })}</p>);
+        lines.push(
+          <p key="at" className="font-medium text-primary">
+            {t("content.detail.publishedAt", { when: local(item.published_at), zone })}
+          </p>,
+        );
       }
       if (permalink) {
         lines.push(
-          <p key="link" className="flex flex-wrap items-center gap-2" data-testid="permalink">
-            <span>{t("content.detail.permalink")}:</span>
+          <p key="link" className="flex flex-wrap items-center gap-2 pt-0.5" data-testid="permalink">
+            <span className="text-secondary">{t("content.detail.permalink")}:</span>
             <a
               href={permalink}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
+              className="inline-flex items-center gap-1 font-semibold text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
-              {t("content.detail.permalinkOpen")}
+              <LinkIcon className="text-xs" />
+              <span>{t("content.detail.permalinkOpen")}</span>
             </a>
             {item.is_simulated ? <SimulatedBadge /> : null}
           </p>,
@@ -89,37 +103,56 @@ export function ContentStatusPanel({ item }: { item: ContentItem }) {
       break;
     }
     case "rejected":
-      lines.push(<p key="rejected">{t("content.detail.rejected")}</p>);
+      lines.push(
+        <p key="rejected" className="font-semibold text-danger">
+          {t("content.detail.rejected")}
+        </p>,
+      );
       if (item.approval?.decided_by_name) {
-        lines.push(<p key="by">{t("content.detail.rejectedBy", { name: item.approval.decided_by_name })}</p>);
+        lines.push(
+          <p key="by" className="text-secondary">
+            {t("content.detail.rejectedBy", { name: item.approval.decided_by_name })}
+          </p>,
+        );
       }
       if (item.rejection_note) {
         lines.push(
-          <p key="note" className="break-words whitespace-pre-wrap">
+          <p key="note" className="break-words whitespace-pre-wrap rounded-control bg-danger-subtle/50 p-2.5 text-danger border border-danger/30">
             {t("content.detail.rejectedNote", { note: item.rejection_note })}
           </p>,
         );
       }
-      lines.push(<p key="rejectedNext">{t("content.detail.rejectedNext")}</p>);
+      lines.push(
+        <p key="rejectedNext" className="text-secondary">
+          {t("content.detail.rejectedNext")}
+        </p>,
+      );
       break;
     case "draft":
       if (item.hold_reason && (item.hold_reason === "FACT_CHANGED" || item.hold_reason === "APPROVAL_EXPIRED")) {
         lines.push(
-          <p key="holdReason" data-testid="draft-hold">
+          <p key="holdReason" data-testid="draft-hold" className="font-medium text-attention">
             {t(`content.detail.draftHold.${item.hold_reason}`)}
           </p>,
         );
       }
       break;
     case "cancelled":
-      lines.push(<p key="cancelled">{t("content.detail.cancelled")}</p>);
+      lines.push(
+        <p key="cancelled" className="font-medium text-secondary">
+          {t("content.detail.cancelled")}
+        </p>,
+      );
       break;
   }
 
   if (lines.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-panel border border-border bg-surface p-4 text-sm text-secondary shadow-xs" data-testid="status-panel">
+    <div
+      className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-4 text-sm text-secondary shadow-xs"
+      data-testid="status-panel"
+    >
       {lines}
     </div>
   );

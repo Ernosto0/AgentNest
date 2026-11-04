@@ -37,7 +37,7 @@ export function ConfirmationCard({ command }: { command: Command }) {
       data-testid="confirmation-card"
       data-payload-hash={approval.payload_hash}
     >
-      <h3 className="font-medium">
+      <h3 className="type-section text-primary">
         {cancelContent ? t("command.confirm.cancelContent.title") : t("command.confirm.title")}
       </h3>
       {cancelContent ? (
@@ -53,9 +53,11 @@ export function ConfirmationCard({ command }: { command: Command }) {
         </>
       )}
       {role === "staff" && !cancelContent ? (
-        <p className="rounded-lg bg-slate-100 p-3 text-sm text-slate-800">{t("command.confirm.staffNote")}</p>
+        <p className="rounded-control bg-surface-subtle p-3 text-body text-primary border border-border">
+          {t("command.confirm.staffNote")}
+        </p>
       ) : null}
-      <p className="text-sm text-slate-600">{t("command.confirm.expires", { time: expires })}</p>
+      <p className="text-metadata text-secondary">{t("command.confirm.expires", { time: expires })}</p>
       {error ? <ErrorMessage error={error} /> : null}
       <div className="flex flex-wrap gap-2">
         <Button

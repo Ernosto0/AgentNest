@@ -25,13 +25,16 @@ export function CancelContentSummary({ summary }: { summary: Record<string, unkn
   const contentId = text(summary, "content_id");
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-control border border-border bg-surface-subtle p-3.5" data-testid="cancel-content-summary">
+    <div
+      className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-4 shadow-xs"
+      data-testid="cancel-content-summary"
+    >
       {label ? <p className="text-base font-heading font-semibold text-primary break-words">{label}</p> : null}
-      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5 text-sm">
+      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-sm rounded-control border border-border bg-surface-subtle p-3.5">
         {type === "feed_image" || type === "story_image" ? (
           <>
             <dt className="text-secondary font-medium">{t("command.confirm.cancelContent.type")}</dt>
-            <dd className="text-primary">{t(`content.type.${type}`)}</dd>
+            <dd className="text-primary font-medium">{t(`content.type.${type}`)}</dd>
           </>
         ) : null}
         {isContentStatus(status) ? (
@@ -52,14 +55,18 @@ export function CancelContentSummary({ summary }: { summary: Record<string, unkn
           </>
         ) : null}
       </dl>
-      <p className="text-sm text-secondary">{t("command.confirm.cancelContent.consequence")}</p>
+      <div className="rounded-control border border-danger/30 bg-danger-subtle p-3 text-sm text-danger">
+        <p>{t("command.confirm.cancelContent.consequence")}</p>
+      </div>
       {contentId ? (
-        <Link
-          to={`/w/${workspace.id}/content/${contentId}`}
-          className="inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
-        >
-          {t("command.confirm.cancelContent.open")}
-        </Link>
+        <div>
+          <Link
+            to={`/w/${workspace.id}/content/${contentId}`}
+            className="inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          >
+            {t("command.confirm.cancelContent.open")}
+          </Link>
+        </div>
       ) : null}
     </div>
   );

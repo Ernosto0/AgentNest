@@ -6,7 +6,7 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { PlusIcon, SparkIcon } from "@/components/icons";
+import { CalendarIcon, InboxIcon, PlusIcon, SparkIcon, SpinnerIcon } from "@/components/icons";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { AgendaView } from "./AgendaView";
 import { ContentCard } from "./ContentCard";
@@ -45,18 +45,19 @@ export function ContentPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Page Header & Action Controls */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{t("content.title")}</h1>
-          <p className="mt-1 text-sm text-slate-600">{t("content.intro")}</p>
+          <h1 className="type-page text-primary">{t("content.title")}</h1>
+          <p className="mt-1 text-sm text-secondary">{t("content.intro")}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button onClick={() => setStarting("ai")} className="gap-2">
-            <SparkIcon className="text-lg" />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={() => setStarting("ai")} className="gap-2 shadow-xs">
+            <SparkIcon className="text-lg text-on-action" />
             <span>{t("content.actions.newDraft")}</span>
           </Button>
-          <Button variant="secondary" onClick={() => setStarting("blank")} className="gap-2">
+          <Button variant="secondary" onClick={() => setStarting("blank")} className="gap-2 shadow-xs">
             <PlusIcon className="text-lg" />
             <span>{t("content.actions.blankDraft")}</span>
           </Button>
@@ -64,29 +65,39 @@ export function ContentPage() {
       </div>
 
       {/* View Switcher: Library vs Agenda */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-        <div role="tablist" aria-label={t("content.viewsLabel")} className="inline-flex rounded-lg bg-slate-100 p-1">
+      <div className="flex items-center justify-between">
+        <div
+          role="tablist"
+          aria-label={t("content.viewsLabel")}
+          className="inline-flex rounded-xl bg-surface-subtle/80 p-1 border border-border/80 shadow-2xs"
+        >
           <button
             type="button"
             role="tab"
             aria-selected={view === "library"}
             onClick={() => setView("library")}
-            className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-indigo-600 ${
-              view === "library" ? "bg-white text-slate-900 shadow-xs" : "text-slate-600 hover:text-slate-900"
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+              view === "library"
+                ? "bg-surface text-primary shadow-xs"
+                : "text-secondary hover:text-primary hover:bg-surface/50"
             }`}
           >
-            {t("content.viewLibrary")}
+            <InboxIcon className="text-sm" />
+            <span>{t("content.viewLibrary")}</span>
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={view === "agenda"}
             onClick={() => setView("agenda")}
-            className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-indigo-600 ${
-              view === "agenda" ? "bg-white text-slate-900 shadow-xs" : "text-slate-600 hover:text-slate-900"
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+              view === "agenda"
+                ? "bg-surface text-primary shadow-xs"
+                : "text-secondary hover:text-primary hover:bg-surface/50"
             }`}
           >
-            {t("content.viewAgenda")}
+            <CalendarIcon className="text-sm" />
+            <span>{t("content.viewAgenda")}</span>
           </button>
         </div>
       </div>
@@ -95,7 +106,12 @@ export function ContentPage() {
         <AgendaView />
       ) : (
         <>
-          <div role="tablist" aria-label={t("content.tabsLabel")} className="flex flex-wrap gap-1.5">
+          {/* Content Status Tabs */}
+          <div
+            role="tablist"
+            aria-label={t("content.tabsLabel")}
+            className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-surface-subtle/60 border border-border/80 shadow-2xs"
+          >
             {CONTENT_TABS.map((name) => {
               const isSelected = tab === name;
               return (
@@ -105,10 +121,10 @@ export function ContentPage() {
                   type="button"
                   aria-selected={isSelected}
                   onClick={() => setParams({ tab: name }, { replace: true })}
-                  className={`min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                  className={`min-h-10 rounded-xl px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                     isSelected
-                      ? "bg-indigo-700 text-white shadow-xs"
-                      : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+                      ? "bg-action text-on-action shadow-xs font-bold"
+                      : "bg-surface text-secondary border border-border/80 hover:bg-surface-subtle hover:text-primary"
                   }`}
                 >
                   {t(`content.tabs.${name}`)}
@@ -118,7 +134,12 @@ export function ContentPage() {
           </div>
 
           {items.isError ? <ErrorMessage error={items.error} /> : null}
-          {items.isPending ? <p className="text-sm text-slate-500">{t("common.loading")}</p> : null}
+          {items.isPending ? (
+            <div className="flex items-center gap-2 py-4 text-sm text-secondary">
+              <SpinnerIcon className="motion-safe:animate-spin text-base text-action" />
+              <p>{t("common.loading")}</p>
+            </div>
+          ) : null}
           {visible && visible.length === 0 ? (
             <EmptyState title={t(`content.empty.${tab}`)} description={t("content.empty.hint")} />
           ) : null}

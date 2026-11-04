@@ -55,11 +55,11 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("convo.title")}</h1>
-        <p className="mt-1 text-sm text-slate-600">{t("convo.intro")}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-primary">{t("convo.title")}</h1>
+        <p className="mt-1 text-body text-secondary">{t("convo.intro")}</p>
       </div>
 
-      <div role="tablist" aria-label={t("convo.filters.label")} className="flex flex-wrap gap-1.5">
+      <div role="tablist" aria-label={t("convo.filters.label")} className="flex flex-wrap gap-2">
         {FILTERS.map((name) => {
           const isSelected = filter === name;
           return (
@@ -69,10 +69,10 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
               type="button"
               aria-selected={isSelected}
               onClick={() => setFilter(name)}
-              className={`min-h-10 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+              className={`min-h-10 rounded-xl px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 isSelected
-                  ? "bg-indigo-700 text-white shadow-xs"
-                  : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+                  ? "bg-action text-on-action shadow-xs"
+                  : "bg-surface text-secondary border border-border/80 hover:bg-surface-subtle hover:text-primary"
               }`}
             >
               {t(`convo.filters.${name}`)}
@@ -82,7 +82,7 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
       </div>
 
       {conversations.isError ? <ErrorMessage error={conversations.error} /> : null}
-      {conversations.isPending ? <p className="text-sm text-slate-500">{t("common.loading")}</p> : null}
+      {conversations.isPending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
       {conversations.data && conversations.data.length === 0 ? (
         <EmptyState title={t("convo.empty")} description={t("convo.emptyHint")} />
       ) : null}
@@ -100,37 +100,39 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
                     to={`/w/${workspace.id}/inbox/${conversation.id}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
                     data-conversation-id={conversation.id}
                     aria-current={isSelected ? "true" : undefined}
-                    className={`flex min-h-16 items-center justify-between gap-3.5 rounded-xl p-3.5 ring-1 transition-all focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                    className={`flex min-h-16 items-center justify-between gap-3.5 rounded-2xl p-4 border transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                       isSelected
-                        ? "bg-indigo-50/90 ring-2 ring-indigo-600 shadow-xs"
-                        : "bg-white ring-slate-200 hover:bg-slate-50 hover:ring-slate-300"
+                        ? "bg-surface border-action/50 shadow-xs ring-1 ring-action/20 border-l-4 border-l-action"
+                        : "bg-surface border-border/80 shadow-2xs hover:bg-surface hover:border-border hover:shadow-xs"
                     }`}
                   >
                     <div className="flex items-start gap-3 min-w-0">
                       <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold tracking-tight ${
-                          isSelected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold tracking-tight transition-colors ${
+                          isSelected
+                            ? "bg-action text-on-action shadow-xs"
+                            : "bg-surface-subtle text-primary border border-border/80"
                         }`}
                         aria-hidden="true"
                       >
                         {initials}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="block font-semibold text-slate-900 truncate">{label}</span>
-                        <span className="block truncate text-sm text-slate-600">
+                        <span className="block font-semibold text-primary truncate">{label}</span>
+                        <span className="block truncate text-body text-secondary">
                           {conversation.last_message_preview ?? t("convo.noPreview")}
                         </span>
-                        <span className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                        <span className="mt-1.5 flex flex-wrap items-center gap-2 text-metadata">
                           {conversation.attention !== "none" ? (
                             <span
                               data-testid="attention-chip"
-                              className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900"
+                              className="inline-flex items-center rounded-full bg-attention-subtle px-2 py-0.5 text-metadata font-semibold text-attention border border-attention/20"
                             >
                               {t(`convo.attention.${conversation.attention}`)}
                             </span>
                           ) : null}
                           {conversation.handling_mode === "human" ? (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700 ring-1 ring-slate-200">
+                            <span className="inline-flex items-center rounded-full bg-surface-subtle px-2 py-0.5 text-metadata font-medium text-secondary border border-border">
                               {t("convo.handledByYou")}
                             </span>
                           ) : null}
@@ -139,7 +141,9 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
                         </span>
                       </div>
                     </div>
-                    <ChevronRightIcon className={`shrink-0 text-xl transition-colors ${isSelected ? "text-indigo-600" : "text-slate-400"}`} />
+                    <ChevronRightIcon
+                      className={`shrink-0 text-xl transition-colors ${isSelected ? "text-action" : "text-secondary/50"}`}
+                    />
                   </Link>
                 </li>
               );
@@ -150,4 +154,3 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
     </div>
   );
 }
-

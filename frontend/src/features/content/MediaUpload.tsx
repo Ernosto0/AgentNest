@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AppError } from "@/api/errors";
 import type { ContentCheckItem, ContentType, MediaAsset } from "@/api/types";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { AlertIcon, ImageIcon, SpinnerIcon } from "@/components/icons";
 import { useMediaPreview, useUploadMedia } from "./hooks";
 import { checkMessage } from "./messages";
 
@@ -74,46 +75,62 @@ export function MediaUpload({
   };
 
   return (
-    <div className="flex flex-col gap-2.5" data-testid="media-upload">
-      <span className="text-sm font-medium text-primary">{t("content.media.label")}</span>
-      <p className="text-sm text-secondary">
-        {contentType === "story_image" ? t("content.media.storyHint") : t("content.media.feedHint")}
-      </p>
+    <div className="flex flex-col gap-3" data-testid="media-upload">
+      <div>
+        <span className="text-sm font-semibold text-primary">{t("content.media.label")}</span>
+        <p className="mt-0.5 text-xs text-secondary">
+          {contentType === "story_image" ? t("content.media.storyHint") : t("content.media.feedHint")}
+        </p>
+      </div>
 
       {mediaId && deleted ? (
-        <p className="rounded-control border border-border bg-surface-subtle p-4 text-sm text-secondary" data-testid="media-deleted">
+        <p
+          className="rounded-control border border-attention bg-attention-subtle p-4 text-sm text-attention shadow-xs"
+          data-testid="media-deleted"
+        >
           {t("content.media.deleted")}
         </p>
       ) : mediaId ? (
-        <div className="overflow-hidden rounded-control border border-border bg-surface-subtle p-1">
+        <div className="overflow-hidden rounded-panel border border-border bg-surface-subtle p-2 shadow-xs">
           {preview.url ? (
-            <img
-              src={preview.url}
-              alt={t("content.media.previewAlt")}
-              className="mx-auto max-h-80 w-auto max-w-full rounded-control object-contain"
-            />
+            <div className="flex flex-col items-center gap-2">
+              <img
+                src={preview.url}
+                alt={t("content.media.previewAlt")}
+                className="max-h-80 w-auto max-w-full rounded-control object-contain border border-border/60"
+              />
+              {shown ? (
+                <p className="text-xs font-medium text-secondary">
+                  {t("content.media.size", { width: shown.width, height: shown.height })}
+                </p>
+              ) : null}
+            </div>
           ) : preview.error ? (
-            <p className="p-4 text-sm text-secondary">{t("content.media.previewFailed")}</p>
+            <p className="p-4 text-center text-sm text-secondary">{t("content.media.previewFailed")}</p>
           ) : (
-            <p className="p-4 text-sm text-secondary">{t("content.media.loadingPreview")}</p>
+            <div className="flex items-center justify-center gap-2 p-6 text-sm text-secondary">
+              <SpinnerIcon className="motion-safe:animate-spin text-base text-action" />
+              <span>{t("content.media.loadingPreview")}</span>
+            </div>
           )}
         </div>
       ) : null}
-      {shown ? (
-        <p className="text-xs text-secondary">
-          {t("content.media.size", { width: shown.width, height: shown.height })}
-        </p>
-      ) : null}
 
       {warnings.length > 0 ? (
-        <ul className="rounded-control border border-attention bg-attention-subtle p-3 text-sm text-attention shadow-xs" data-testid="media-warnings">
+        <ul
+          className="flex flex-col gap-1.5 rounded-panel border border-attention bg-attention-subtle p-3.5 text-sm text-attention shadow-xs"
+          data-testid="media-warnings"
+        >
           {warnings.map((warning, index) => (
-            <li key={`${warning.code}-${index}`}>{checkMessage(warning, t)}</li>
+            <li key={`${warning.code}-${index}`} className="flex items-start gap-2">
+              <AlertIcon className="mt-0.5 shrink-0 text-sm" />
+              <span>{checkMessage(warning, t)}</span>
+            </li>
           ))}
         </ul>
       ) : null}
 
-      <div>
+      <div className="flex items-center gap-3">
         <input
           id={inputId}
           type="file"
@@ -127,13 +144,20 @@ export function MediaUpload({
         />
         <label
           htmlFor={inputId}
-          className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-control border border-border bg-surface px-4 py-2 text-base font-medium text-primary shadow-xs hover:bg-surface-subtle peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus peer-disabled:cursor-not-allowed peer-disabled:text-muted"
+          className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-control border border-control bg-surface px-4 py-2 text-form font-medium text-primary shadow-xs transition-colors hover:bg-surface-subtle peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
         >
-          {upload.isPending
-            ? t("content.media.uploading")
-            : mediaId
-              ? t("content.media.replace")
-              : t("content.media.choose")}
+          {upload.isPending ? (
+            <SpinnerIcon className="motion-safe:animate-spin text-lg text-action" />
+          ) : (
+            <ImageIcon className="text-lg text-action" />
+          )}
+          <span>
+            {upload.isPending
+              ? t("content.media.uploading")
+              : mediaId
+                ? t("content.media.replace")
+                : t("content.media.choose")}
+          </span>
         </label>
       </div>
 

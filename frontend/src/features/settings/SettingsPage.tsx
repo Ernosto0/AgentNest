@@ -10,7 +10,7 @@ import { AccountSecurity } from "./AccountSecurity";
 import { WorkspaceDangerZone } from "./WorkspaceDangerZone";
 
 const LINK_ROW =
-  "flex min-h-11 items-center justify-between rounded-control px-3 py-2 text-sm font-medium text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-focus transition-colors";
+  "flex min-h-12 items-center justify-between rounded-control px-3 py-2.5 text-sm font-medium text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-colors";
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -27,25 +27,27 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-4xl">
       <div>
         <h1 className="text-2xl font-heading font-semibold text-primary">{t("settings.title")}</h1>
       </div>
 
       {/* Account Identity */}
       <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <h2 className="text-base font-heading font-semibold text-primary">{t("settings.account")}</h2>
+        <div className="border-b border-border pb-3">
+          <h2 className="text-base font-heading font-semibold text-primary">{t("settings.account")}</h2>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-medium text-secondary">{t("settings.signedInAs")}</p>
-            <p className="mt-0.5 text-sm font-medium text-primary break-words">
+          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.signedInAs")}</p>
+            <p className="mt-1 text-sm font-semibold text-primary break-words">
               {me.data?.user.display_name}
             </p>
             <p className="text-xs text-secondary break-all">{me.data?.user.email}</p>
           </div>
-          <div>
-            <p className="text-xs font-medium text-secondary">{t("settings.role")}</p>
-            <p className="mt-0.5 text-sm font-medium text-primary">
+          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.role")}</p>
+            <p className="mt-1 text-sm font-semibold text-primary">
               {role ? t(`workspaces.role.${role}`) : "—"}
             </p>
           </div>
@@ -55,7 +57,7 @@ export function SettingsPage() {
             variant="ghost"
             disabled={logout.isPending}
             onClick={handleLogout}
-            className="text-danger hover:bg-danger/10"
+            className="text-danger hover:bg-danger-subtle"
           >
             {logout.isPending ? t("auth.signingOut") : t("settings.signOut")}
           </Button>
@@ -64,7 +66,9 @@ export function SettingsPage() {
 
       {/* Language Preference */}
       <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <h2 className="text-base font-heading font-semibold text-primary">{t("settings.language")}</h2>
+        <div className="border-b border-border pb-3">
+          <h2 className="text-base font-heading font-semibold text-primary">{t("settings.language")}</h2>
+        </div>
         <p className="text-sm text-secondary">{t("settings.languageHint")}</p>
         <div>
           <LanguageSwitch onChange={(language) => saveLocale.mutate(language)} />
@@ -74,32 +78,36 @@ export function SettingsPage() {
 
       {/* Workspace Details (Read-only) */}
       <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <h2 className="text-base font-heading font-semibold text-primary">
-          {t("settings.workspaceDetails")}
-        </h2>
+        <div className="border-b border-border pb-3">
+          <h2 className="text-base font-heading font-semibold text-primary">
+            {t("settings.workspaceDetails")}
+          </h2>
+        </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <p className="text-xs font-medium text-secondary">{t("settings.workspaceName")}</p>
-            <p className="mt-0.5 text-sm font-medium text-primary">{workspace.name}</p>
+          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceName")}</p>
+            <p className="mt-1 text-sm font-semibold text-primary">{workspace.name}</p>
           </div>
-          <div>
-            <p className="text-xs font-medium text-secondary">{t("settings.workspaceMarket")}</p>
-            <p className="mt-0.5 text-sm font-medium text-primary">
+          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceMarket")}</p>
+            <p className="mt-1 text-sm font-semibold text-primary">
               {workspace.market} · {workspace.currency}
             </p>
           </div>
-          <div>
-            <p className="text-xs font-medium text-secondary">{t("settings.workspaceTimezone")}</p>
-            <p className="mt-0.5 text-sm font-medium text-primary">{workspace.timezone}</p>
+          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceTimezone")}</p>
+            <p className="mt-1 text-sm font-semibold text-primary">{workspace.timezone}</p>
           </div>
         </div>
       </div>
 
       {/* Management Navigation Links */}
       <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <h2 className="text-base font-heading font-semibold text-primary">
-          {t("settings.workspaceSection")}
-        </h2>
+        <div className="border-b border-border pb-3">
+          <h2 className="text-base font-heading font-semibold text-primary">
+            {t("settings.workspaceSection")}
+          </h2>
+        </div>
         <div className="flex flex-col divide-y divide-border">
           <Link to={`/w/${workspace.id}/more/settings/connections`} className={LINK_ROW}>
             <span>{t("settings.openConnections")}</span>

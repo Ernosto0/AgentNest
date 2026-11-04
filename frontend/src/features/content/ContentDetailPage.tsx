@@ -6,6 +6,7 @@ import type { ContentItem } from "@/api/types";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ChevronLeftIcon, SpinnerIcon } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { CancelAction } from "./CancelAction";
@@ -41,15 +42,25 @@ function GenerationNotice({ item }: { item: ContentItem }) {
 
   if (running) {
     return (
-      <div role="status" className="rounded-control border border-info bg-info-subtle p-3.5 text-sm text-info shadow-xs" data-testid="generation-running">
-        <p className="font-semibold">{t("content.generation.running")}</p>
-        <p className="mt-0.5">{slow ? t("content.generation.slow") : t("content.generation.hint")}</p>
+      <div
+        role="status"
+        className="flex items-start gap-3 rounded-panel border border-info bg-info-subtle p-4 text-sm text-info shadow-xs"
+        data-testid="generation-running"
+      >
+        <SpinnerIcon className="size-5 shrink-0 motion-safe:animate-spin mt-0.5" />
+        <div>
+          <p className="font-semibold">{t("content.generation.running")}</p>
+          <p className="mt-0.5 text-secondary">{slow ? t("content.generation.slow") : t("content.generation.hint")}</p>
+        </div>
       </div>
     );
   }
   if (item.generation?.status === "failed") {
     return (
-      <p className="rounded-control border border-attention bg-attention-subtle p-3.5 text-sm text-attention shadow-xs" data-testid="generation-failed">
+      <p
+        className="rounded-panel border border-attention bg-attention-subtle p-4 text-sm text-attention shadow-xs font-medium"
+        data-testid="generation-failed"
+      >
         {t("content.generation.failed")}
       </p>
     );
@@ -66,7 +77,7 @@ function ScheduleAction({ item, dirty }: { item: ContentItem; dirty: boolean }) 
   return (
     <div className="flex flex-col gap-1.5">
       <div>
-        <Button disabled={blocked} onClick={() => setOpen(true)}>
+        <Button disabled={blocked} onClick={() => setOpen(true)} className="shadow-xs">
           {t("content.actions.schedule")}
         </Button>
       </div>
@@ -97,18 +108,31 @@ export function ContentDetailPage() {
   const onDirtyChange = useCallback((value: boolean) => setDirty(value), []);
 
   const back = (
-    <Link to={`/w/${workspace.id}/content`} className="inline-flex items-center text-sm font-medium text-action hover:text-action-hover hover:underline">
-      {t("content.back")}
+    <Link
+      to={`/w/${workspace.id}/content`}
+      className="inline-flex items-center gap-1.5 text-sm font-semibold text-action hover:text-action-hover transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+    >
+      <ChevronLeftIcon className="text-base" />
+      <span>{t("content.back")}</span>
     </Link>
   );
 
-  if (query.isPending) return <p className="text-sm text-secondary">{t("common.loading")}</p>;
+  if (query.isPending) {
+    return (
+      <div className="flex items-center gap-2 py-6 text-sm text-secondary">
+        <SpinnerIcon className="motion-safe:animate-spin text-base text-action" />
+        <p>{t("common.loading")}</p>
+      </div>
+    );
+  }
   if (query.isError) {
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4 max-w-4xl">
         {back}
         {query.error instanceof AppError && query.error.status === 404 ? (
-          <p className="text-sm text-secondary">{t("content.notFound")}</p>
+          <div className="rounded-panel border border-border bg-surface p-6 text-center text-sm text-secondary shadow-xs">
+            {t("content.notFound")}
+          </div>
         ) : (
           <ErrorMessage error={query.error} />
         )}
@@ -120,13 +144,14 @@ export function ContentDetailPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div>
+      <div className="border-b border-border pb-5">
         {back}
-        <h1 className="mt-2 text-2xl font-heading font-semibold text-primary break-words">
+        <h1 className="mt-3 text-2xl sm:text-3xl font-heading font-bold text-primary break-words">
           {item.title || t("content.card.untitled")}
         </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-2.5 text-sm text-secondary">
-          <span className="font-medium">{t(`content.type.${item.content_type}`)}</span>
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-secondary">
+          <span className="font-semibold text-primary">{t(`content.type.${item.content_type}`)}</span>
+          <span className="text-secondary/40">·</span>
           <StatusBadge status={badge.status} params={badge.params} simulated={item.is_simulated} />
         </div>
       </div>
@@ -141,7 +166,7 @@ export function ContentDetailPage() {
           <CancelAction item={item} />
         </div>
       ) : null}
-      <Card id={EDITOR_ID}>
+      <Card id={EDITOR_ID} className="rounded-panel border border-border bg-surface p-6 shadow-xs">
         <ContentEditor item={item} onDirtyChange={onDirtyChange} />
       </Card>
     </div>

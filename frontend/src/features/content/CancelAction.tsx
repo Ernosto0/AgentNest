@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { ContentItem } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { AlertIcon } from "@/components/icons";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useCancelContent } from "./hooks";
 
@@ -21,16 +22,22 @@ export function CancelAction({ item }: { item: ContentItem }) {
 
   if (!asking) {
     return (
-      <Button variant="secondary" onClick={() => setAsking(true)}>
+      <Button variant="secondary" onClick={() => setAsking(true)} className="shadow-xs">
         {t("content.actions.cancel")}
       </Button>
     );
   }
   return (
-    <div className="flex flex-col gap-2 rounded-control border border-border bg-surface-subtle p-3.5 shadow-xs" data-testid="cancel-confirm">
-      <p className="text-sm font-medium text-primary">{t("content.actions.cancelAsk")}</p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="danger" disabled={cancel.isPending} onClick={() => cancel.mutate(undefined)}>
+    <div
+      className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-4 shadow-sm"
+      data-testid="cancel-confirm"
+    >
+      <div className="flex items-center gap-2 text-danger">
+        <AlertIcon className="text-base shrink-0" />
+        <p className="text-sm font-semibold text-primary">{t("content.actions.cancelAsk")}</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <Button variant="danger" disabled={cancel.isPending} onClick={() => cancel.mutate(undefined)} className="shadow-xs">
           {cancel.isPending ? t("content.actions.cancelling") : t("content.actions.cancelConfirm")}
         </Button>
         <Button variant="ghost" disabled={cancel.isPending} onClick={() => setAsking(false)}>

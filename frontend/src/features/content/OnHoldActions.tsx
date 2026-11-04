@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { ContentItem } from "@/api/types";
 import { Button } from "@/components/Button";
+import { PauseIcon } from "@/components/icons";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { CancelAction } from "./CancelAction";
 import { ScheduleSheet } from "./ScheduleSheet";
@@ -27,37 +28,53 @@ export function OnHoldActions({ item, onEdit }: { item: ContentItem; onEdit: () 
   const reason = isKnown(item.hold_reason) ? item.hold_reason : "unknown";
   const base = `/w/${workspace.id}`;
   const linkClass =
-    "inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus";
+    "inline-flex min-h-11 items-center font-semibold text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
   return (
     <section
       aria-label={t("content.hold.title")}
       data-testid="on-hold"
       data-reason={item.hold_reason ?? "unknown"}
-      className="flex flex-col gap-3 rounded-panel border border-attention bg-attention-subtle p-4 text-attention shadow-xs"
+      className="flex flex-col gap-3 rounded-panel border border-attention bg-attention-subtle p-5 text-attention shadow-xs"
     >
-      <h2 className="font-heading font-semibold">{t("content.hold.title")}</h2>
-      <p>{t(`content.hold.${reason}.what`)}</p>
-      <p>{t(`content.hold.${reason}.next`)}</p>
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-center size-7 rounded-control bg-attention/15 text-attention">
+          <PauseIcon className="text-base" />
+        </div>
+        <h2 className="font-heading font-bold text-base">{t("content.hold.title")}</h2>
+      </div>
+
+      <div className="flex flex-col gap-1.5 pl-0.5">
+        <p className="font-medium">{t(`content.hold.${reason}.what`)}</p>
+        <p className="opacity-90">{t(`content.hold.${reason}.next`)}</p>
+      </div>
 
       {reason === "FACT_CHANGED" ? (
-        <Link to={`${base}/more/knowledge`} className={linkClass}>
-          {t("content.hold.openKnowledge")}
-        </Link>
+        <div className="pt-0.5">
+          <Link to={`${base}/more/knowledge`} className={linkClass}>
+            {t("content.hold.openKnowledge")}
+          </Link>
+        </div>
       ) : null}
       {reason === "ACCOUNT_UNAVAILABLE" ? (
-        <Link to={`${base}/more/settings/connections`} className={linkClass}>
-          {t("content.hold.openConnection")}
-        </Link>
+        <div className="pt-0.5">
+          <Link to={`${base}/more/settings/connections`} className={linkClass}>
+            {t("content.hold.openConnection")}
+          </Link>
+        </div>
       ) : null}
 
       {!canApprove ? <p className="text-sm opacity-90">{t("content.hold.staffNote")}</p> : null}
 
-      <div className="flex flex-wrap items-start gap-2 pt-1">
-        <Button variant="secondary" onClick={onEdit}>
+      <div className="flex flex-wrap items-center gap-3 pt-2">
+        <Button variant="secondary" onClick={onEdit} className="shadow-xs">
           {t("content.actions.edit")}
         </Button>
-        {canApprove ? <Button onClick={() => setReapproving(true)}>{t("content.hold.reapprove")}</Button> : null}
+        {canApprove ? (
+          <Button onClick={() => setReapproving(true)} className="shadow-xs">
+            {t("content.hold.reapprove")}
+          </Button>
+        ) : null}
         <CancelAction item={item} />
       </div>
 

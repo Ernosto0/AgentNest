@@ -37,7 +37,7 @@ export function LoginPage() {
       <ErrorMessage error={me.error} /><Button variant="secondary" onClick={() => void me.refetch()}>{t("common.retry")}</Button>
     </> : <>
       {from ? <Notice title={t("entry.signInToContinue")} /> : null}
-      <form onSubmit={submit} className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6" noValidate aria-busy={login.isPending}>
+      <form onSubmit={submit} className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6 shadow-xs" noValidate aria-busy={login.isPending}>
         <TextField ref={emailInput} label={t("auth.email")} type="email" name="email" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} required maxLength={320} value={email} error={invalidEmail ? t("entry.emailInvalid") : undefined} onChange={(event) => { setEmail(event.target.value); setInvalidEmail(false); }} />
         <div className="flex flex-col gap-1.5">
           <TextField label={t("auth.password")} type="password" name="password" autoComplete="current-password" required maxLength={1000} value={password} onChange={(event) => setPassword(event.target.value)} />

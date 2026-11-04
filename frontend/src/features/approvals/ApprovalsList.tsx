@@ -34,27 +34,40 @@ function Row({ approval, onOpen }: { approval: Approval; onOpen: () => void }) {
         })
       : summary.when);
 
+  const isPending = approval.status === "pending";
+  const statusTone = isPending
+    ? "text-attention bg-attention-subtle border border-attention/30"
+    : approval.status === "approved"
+      ? "text-success bg-success-subtle border border-success/30"
+      : approval.status === "rejected"
+        ? "text-danger bg-danger-subtle border border-danger/30"
+        : "text-secondary bg-surface-subtle border border-border";
+
   return (
     <li>
       <button
         type="button"
         onClick={onOpen}
         data-approval-id={approval.id}
-        className="flex min-h-14 w-full items-center justify-between gap-3.5 rounded-control border border-border bg-surface px-4 py-3.5 text-left shadow-xs transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className="group flex min-h-14 w-full items-center justify-between gap-4 rounded-2xl border border-border/80 bg-surface p-4 text-left shadow-2xs transition-all duration-150 hover:border-action/40 hover:bg-surface hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
-        <span className="min-w-0">
-          <span className="block font-heading font-semibold text-primary">
-            {t(`approvals.action.${actionKey(approval.action)}`)}
-          </span>
-          <span className="mt-0.5 block text-sm break-words text-secondary">
-            {[name, detail].filter(Boolean).join(" → ")}
-          </span>
-          <span className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span className="font-medium text-secondary">{t(`approvals.status.${approval.status}`)}</span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-heading font-semibold text-primary">
+              {t(`approvals.action.${actionKey(approval.action)}`)}
+            </span>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-2xs ${statusTone}`}>
+              {t(`approvals.status.${approval.status}`)}
+            </span>
             {approval.is_simulated ? <SimulatedBadge /> : null}
-          </span>
-        </span>
-        <ChevronRightIcon className="shrink-0 text-xl text-muted" />
+          </div>
+          <div className="text-sm break-words text-secondary">
+            {[name, detail].filter(Boolean).join(" → ")}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center pl-2 text-secondary group-hover:translate-x-0.5 group-hover:text-primary transition-transform">
+          <ChevronRightIcon className="text-xl" />
+        </div>
       </button>
     </li>
   );
@@ -75,11 +88,15 @@ export function ApprovalsList() {
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("approvals.title")}</h1>
-        <p className="mt-1 text-secondary">{t("approvals.intro")}</p>
+        <h1 className="type-page text-primary">{t("approvals.title")}</h1>
+        <p className="mt-1 text-sm text-secondary">{t("approvals.intro")}</p>
       </div>
 
-      <div role="tablist" aria-label={t("approvals.tabs.label")} className="flex gap-2">
+      <div
+        role="tablist"
+        aria-label={t("approvals.tabs.label")}
+        className="flex gap-2 p-1.5 bg-surface-subtle/80 border border-border/80 rounded-xl shadow-2xs w-fit"
+      >
         {(["pending", "history"] as const).map((name) => (
           <button
             key={name}
@@ -87,10 +104,10 @@ export function ApprovalsList() {
             type="button"
             aria-selected={tab === name}
             onClick={() => setTab(name)}
-            className={`min-h-11 rounded-control px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-focus ${
+            className={`min-h-10 rounded-lg px-4 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
               tab === name
-                ? "bg-accent text-accent-contrast shadow-xs"
-                : "border border-border bg-surface text-secondary hover:bg-surface-subtle hover:text-primary"
+                ? "bg-action text-on-action shadow-xs font-bold"
+                : "text-secondary hover:bg-surface hover:text-primary"
             }`}
           >
             {t(`approvals.tabs.${name}`)}
@@ -107,7 +124,7 @@ export function ApprovalsList() {
         />
       ) : null}
       {shown.length > 0 ? (
-        <ul className="flex flex-col gap-2.5" aria-label={t("approvals.tabs.label")}>
+        <ul className="flex flex-col gap-3" aria-label={t("approvals.tabs.label")}>
           {shown.map((approval) => (
             <Row key={approval.id} approval={approval} onOpen={() => setOpenId(approval.id)} />
           ))}

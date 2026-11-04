@@ -70,7 +70,7 @@ function LinkCodeModal({
               href={deepLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-focus"
+              className="inline-flex min-h-11 items-center justify-center rounded-control bg-action px-4 py-2 text-sm font-medium text-on-action transition-colors hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-focus"
             >
               {t("channels.openInTelegram")}
             </a>
@@ -81,7 +81,7 @@ function LinkCodeModal({
       <div className="flex flex-col gap-5 py-2">
         {/* Code display & Copy */}
         <div className="flex flex-col items-center justify-center gap-3 rounded-panel border border-border bg-surface-subtle p-5">
-          <span className="text-xs font-medium text-secondary">
+          <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
             {t("channels.codeLabel")}
           </span>
           <span
@@ -103,7 +103,7 @@ function LinkCodeModal({
         <div className="flex items-center justify-center text-sm">
           {isExpired ? (
             <div className="flex flex-col items-center gap-2">
-              <span className="font-medium text-danger">
+              <span className="font-semibold text-danger">
                 {t("channels.codeExpired")}
               </span>
               <Button
@@ -117,7 +117,7 @@ function LinkCodeModal({
           ) : (
             <span
               data-testid="channel-link-timer"
-              className="font-mono text-secondary"
+              className="font-mono font-medium text-secondary"
             >
               {t("channels.expiresIn", { time: timeFormatted })}
             </span>
@@ -125,7 +125,7 @@ function LinkCodeModal({
         </div>
 
         {/* Step-by-step instructions */}
-        <div className="flex flex-col gap-2 rounded-panel border border-border/60 bg-surface p-4 text-sm text-secondary">
+        <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-4 text-sm text-secondary">
           <p className="font-medium text-primary">
             {t("channels.step1", { bot: botName })}
           </p>
@@ -185,7 +185,7 @@ export function Channels() {
               data-status={activeLink ? "connected" : "unlinked"}
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
                 activeLink
-                  ? "border-success/30 bg-success/10 text-success"
+                  ? "border-border bg-success-subtle text-success"
                   : "border-border bg-surface-subtle text-secondary"
               }`}
             >
@@ -206,26 +206,26 @@ export function Channels() {
       ) : activeLink ? (
         <div className="flex flex-col gap-4 pt-2">
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <p className="text-xs font-medium text-secondary">{t("channels.telegramLabel")}</p>
-              <p className="mt-0.5 text-sm font-medium text-primary">
+            <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("channels.telegramLabel")}</p>
+              <p className="mt-1 text-sm font-semibold text-primary">
                 {activeLink.channel_username
                   ? `@${activeLink.channel_username}`
                   : "—"}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-medium text-secondary">
+            <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 {t("channels.linkedAt", { time: "" }).split(":")[0]}
               </p>
-              <p className="mt-0.5 text-sm text-primary">{formatTime(activeLink.linked_at)}</p>
+              <p className="mt-1 text-sm font-medium text-primary">{formatTime(activeLink.linked_at)}</p>
             </div>
           </div>
           <div>
             <Button
               variant="secondary"
               onClick={() => setShowDisconnectDialog(true)}
-              className="text-danger hover:bg-danger/10"
+              className="text-danger hover:bg-danger-subtle"
             >
               {t("channels.disconnect")}
             </Button>

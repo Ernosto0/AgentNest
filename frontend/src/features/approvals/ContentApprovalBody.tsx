@@ -39,7 +39,7 @@ export function ContentApprovalBody({
   if (loading) return <p className="text-sm text-secondary">{t("common.loading")}</p>;
   if (failed || !item) {
     return (
-      <p role="alert" className="rounded-control border border-danger bg-danger-subtle p-3 text-sm text-danger shadow-xs">
+      <p role="alert" className="rounded-control border border-danger bg-danger-subtle p-3.5 text-sm text-danger shadow-xs">
         {t("content.approval.loadFailed")}
       </p>
     );
@@ -58,10 +58,21 @@ export function ContentApprovalBody({
   const stale = isStaleFor(approval, item);
 
   return (
-    <div className="flex flex-col gap-3 rounded-control border border-border bg-surface-subtle p-3.5 shadow-xs" data-testid="content-approval-body" data-stale={stale}>
-      <p className="font-heading font-semibold text-primary">{t("content.approval.heading")}</p>
+    <div
+      className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-4 shadow-xs"
+      data-testid="content-approval-body"
+      data-stale={stale}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-heading font-semibold text-primary">{t("content.approval.heading")}</p>
+        <span className="rounded-control border border-border bg-surface-subtle px-2.5 py-0.5 text-xs font-medium text-secondary">
+          {t(`content.type.${item.content_type}`)} · {t("content.approval.version", { version: approval.subject.version })}
+        </span>
+      </div>
+
       <p className="text-base font-semibold text-primary break-words">{item.title}</p>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
+
+      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-sm rounded-control border border-border bg-surface-subtle p-3.5">
         <dt className="text-secondary font-medium">{t("content.approval.type")}</dt>
         <dd className="text-primary font-medium">
           {t(`content.type.${item.content_type}`)} · {t("content.approval.version", { version: approval.subject.version })}
@@ -75,12 +86,17 @@ export function ContentApprovalBody({
           </>
         ) : null}
       </dl>
+
       {stale ? (
-        <p role="alert" data-testid="approval-stale" className="rounded-control border border-attention bg-attention-subtle p-3 text-sm text-attention shadow-xs">
+        <p
+          role="alert"
+          data-testid="approval-stale"
+          className="rounded-control border border-attention bg-attention-subtle p-3.5 text-sm text-attention shadow-xs"
+        >
           {t("content.approval.stale", { current: item.version, approved: approval.subject.version })}
         </p>
       ) : (
-        <div className="rounded-control border border-border bg-surface p-3">
+        <div className="overflow-hidden rounded-control border border-border bg-surface p-3.5 shadow-2xs">
           <ContentPreview
             contentType={item.content_type}
             caption={item.caption}
@@ -91,12 +107,15 @@ export function ContentApprovalBody({
           />
         </div>
       )}
-      <Link
-        to={`/w/${workspace.id}/content/${item.id}`}
-        className="inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
-      >
-        {t("content.approval.open")}
-      </Link>
+
+      <div>
+        <Link
+          to={`/w/${workspace.id}/content/${item.id}`}
+          className="inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          {t("content.approval.open")}
+        </Link>
+      </div>
     </div>
   );
 }

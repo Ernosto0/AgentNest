@@ -18,7 +18,7 @@ function renderTemplatePlaceholders(template: string) {
       return (
         <code
           key={index}
-          className="rounded bg-surface-elevated px-1.5 py-0.5 font-mono text-xs font-semibold text-action border border-border"
+          className="rounded-control bg-surface-subtle px-2 py-0.5 font-mono text-xs font-semibold text-action border border-border"
         >
           {part}
         </code>
@@ -59,7 +59,7 @@ export function ApprovedAnswers() {
       </div>
 
       {!canEdit ? (
-        <p className="rounded-card bg-surface-elevated p-3.5 text-sm text-secondary border border-border">
+        <p className="rounded-panel bg-surface-subtle p-4 text-sm text-secondary border border-border">
           {t("answers.staffNote")}
         </p>
       ) : null}
@@ -73,19 +73,19 @@ export function ApprovedAnswers() {
       <ul className="flex flex-col gap-3">
         {visible.map((answer) => (
           <li key={answer.id}>
-            <Card className="flex flex-col gap-3" data-testid="answer">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs" data-testid="answer">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold text-primary">{answer.title}</span>
-                  <span className="rounded-pill bg-surface-elevated px-2.5 py-0.5 text-xs font-medium text-secondary border border-border">
+                  <span className="rounded-control bg-surface-subtle px-2.5 py-0.5 text-xs font-medium text-secondary border border-border">
                     {t(`answers.intent.${answer.intent}`)}
                   </span>
-                  <span className="rounded-pill bg-surface-elevated px-2 py-0.5 text-xs font-mono font-medium text-secondary border border-border uppercase">
+                  <span className="rounded-control bg-surface-subtle px-2 py-0.5 text-xs font-mono font-medium text-secondary border border-border uppercase">
                     {answer.language}
                   </span>
                 </div>
                 {answer.status === "needs_review" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-pill bg-attention-subtle px-2.5 py-0.5 text-xs font-semibold text-attention border border-border">
+                  <span className="inline-flex items-center gap-1.5 rounded-control bg-attention-subtle px-2.5 py-0.5 text-xs font-semibold text-attention border border-border">
                     <AlertIcon className="text-xs" aria-hidden="true" />
                     <span>{t("answers.needsReview")}</span>
                   </span>
@@ -98,12 +98,12 @@ export function ApprovedAnswers() {
                 </p>
               ) : null}
 
-              <div className="rounded-card bg-surface-elevated p-3.5 text-sm text-primary break-words whitespace-pre-wrap border border-border">
+              <div className="rounded-panel bg-surface-subtle p-4 text-sm text-primary break-words whitespace-pre-wrap border border-border">
                 {renderTemplatePlaceholders(answer.answer_template)}
               </div>
 
               {canEdit ? (
-                <div>
+                <div className="pt-1">
                   <Button variant="ghost" disabled={archive.isPending} onClick={() => archive.mutate(answer)}>
                     {t("answers.archive")}
                   </Button>
@@ -115,8 +115,10 @@ export function ApprovedAnswers() {
       </ul>
 
       {canEdit ? (
-        <Card className="flex flex-col gap-4">
-          <h2 className="text-lg font-heading font-semibold text-primary">{t("answers.new")}</h2>
+        <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+          <div className="border-b border-border pb-3">
+            <h2 className="text-lg font-heading font-semibold text-primary">{t("answers.new")}</h2>
+          </div>
           <form
             className="flex flex-col gap-4"
             onSubmit={(event) => {
@@ -141,7 +143,7 @@ export function ApprovedAnswers() {
                 id="answer-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                className="min-h-11 rounded-input border border-border bg-surface px-3 text-base text-primary font-normal focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
+                className="min-h-11 rounded-control border border-border bg-surface px-3 text-base text-primary font-normal focus:border-control focus-visible:outline-2 focus-visible:outline-focus"
               />
             </div>
 
@@ -153,7 +155,7 @@ export function ApprovedAnswers() {
                 id="answer-question"
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
-                className="min-h-11 rounded-input border border-border bg-surface px-3 text-base text-primary font-normal focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
+                className="min-h-11 rounded-control border border-border bg-surface px-3 text-base text-primary font-normal focus:border-control focus-visible:outline-2 focus-visible:outline-focus"
               />
             </div>
 
@@ -167,21 +169,21 @@ export function ApprovedAnswers() {
                 value={template}
                 onChange={(event) => setTemplate(event.target.value)}
                 rows={4}
-                className="rounded-input border border-border bg-surface p-3 text-base text-primary font-normal focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
+                className="rounded-control border border-border bg-surface p-3 text-base text-primary font-normal focus:border-control focus-visible:outline-2 focus-visible:outline-focus"
               />
-              <span id="answer-template-hint" className="text-xs text-muted font-normal">
+              <span id="answer-template-hint" className="text-xs text-secondary font-normal">
                 {t("answers.templateHint", { example: "{{fact:contact.phone}}" })}
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-primary">
+            <div className="flex flex-wrap gap-4">
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-primary flex-1 min-w-44">
                 {t("answers.fieldIntent")}
                 <select
                   aria-label={t("answers.fieldIntent")}
                   value={intent}
                   onChange={(event) => setIntent(event.target.value)}
-                  className="min-h-11 rounded-input border border-border bg-surface px-3 text-base text-primary focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
+                  className="min-h-11 rounded-control border border-border bg-surface px-3 text-base text-primary focus:border-control focus-visible:outline-2 focus-visible:outline-focus"
                 >
                   {INTENTS.map((name) => (
                     <option key={name} value={name}>
@@ -191,13 +193,13 @@ export function ApprovedAnswers() {
                 </select>
               </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-primary">
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-primary flex-1 min-w-44">
                 {t("answers.fieldLanguage")}
                 <select
                   aria-label={t("answers.fieldLanguage")}
                   value={language}
                   onChange={(event) => setLanguage(event.target.value as "tr" | "en")}
-                  className="min-h-11 rounded-input border border-border bg-surface px-3 text-base text-primary focus:border-border-hover focus-visible:outline-2 focus-visible:outline-focus"
+                  className="min-h-11 rounded-control border border-border bg-surface px-3 text-base text-primary focus:border-control focus-visible:outline-2 focus-visible:outline-focus"
                 >
                   <option value="tr">{t("answers.lang.tr")}</option>
                   <option value="en">{t("answers.lang.en")}</option>
@@ -206,14 +208,14 @@ export function ApprovedAnswers() {
             </div>
 
             {literal ? (
-              <p role="alert" className="rounded-card bg-danger-subtle p-3.5 text-sm text-danger border border-border">
+              <p role="alert" className="rounded-panel bg-danger-subtle p-4 text-sm text-danger border border-border">
                 {t("answers.literalValue")}
               </p>
             ) : create.error ? (
               <ErrorMessage error={create.error} />
             ) : null}
 
-            <div>
+            <div className="pt-1">
               <Button type="submit" disabled={create.isPending || !title.trim() || !question.trim() || !template.trim()}>
                 {t("answers.save")}
               </Button>

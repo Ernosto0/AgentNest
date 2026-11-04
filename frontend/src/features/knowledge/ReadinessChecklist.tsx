@@ -24,29 +24,33 @@ export function ReadinessChecklist({
         const body = (
           <>
             {requirement.satisfied ? (
-              <CheckIcon className="shrink-0 text-xl text-success" />
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-control bg-success-subtle text-success">
+                <CheckIcon className="text-base" />
+              </span>
             ) : (
-              <AlertIcon className="shrink-0 text-xl text-attention" />
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-control bg-attention-subtle text-attention">
+                <AlertIcon className="text-base" />
+              </span>
             )}
             <span className="min-w-0 flex-1">
-              <span className="block font-medium text-primary">{label}</span>
+              <span className="block font-medium text-primary text-sm">{label}</span>
               {requirement.satisfied ? null : (
-                <span className="block text-sm text-secondary">
+                <span className="block text-xs text-secondary mt-0.5">
                   {t(`readiness.status.${requirement.status}`)}
                 </span>
               )}
             </span>
-            {path ? <ChevronRightIcon className="shrink-0 text-xl text-muted" /> : null}
+            {path ? <ChevronRightIcon className="shrink-0 text-xl text-secondary" /> : null}
           </>
         );
         const className =
-          "flex min-h-11 items-center gap-3 rounded-control px-2 py-2 text-left text-base text-primary";
+          "flex min-h-11 items-center gap-3 rounded-control px-3 py-2 text-left text-base text-primary";
         return (
           <li key={requirement.code} data-requirement={requirement.code} data-satisfied={requirement.satisfied}>
             {path ? (
               <Link
                 to={path}
-                className={`${className} hover:bg-canvas transition-colors focus-visible:outline-2 focus-visible:outline-focus`}
+                className={`${className} hover:bg-surface-subtle transition-colors focus-visible:outline-2 focus-visible:outline-focus`}
               >
                 {body}
               </Link>

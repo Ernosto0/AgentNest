@@ -26,7 +26,7 @@ export function WorkspaceSwitcher() {
         onChange={(event) =>
           void navigate(workspaceSwitchTarget(location.pathname, location.search, workspace.id, event.target.value))
         }
-        className="min-h-11 w-full max-w-40 min-[1200px]:max-w-64 min-w-0 truncate rounded-lg border border-control bg-surface px-3 text-base text-primary focus-visible:outline-2 focus-visible:outline-focus"
+        className="min-h-11 w-full max-w-40 min-[1200px]:max-w-64 min-w-0 truncate rounded-xl border border-border/80 bg-surface-subtle/60 px-3 text-sm font-semibold text-primary shadow-2xs hover:bg-surface hover:border-border transition-all focus-visible:outline-2 focus-visible:outline-focus cursor-pointer"
       >
         {memberships.map((m) => (
           <option key={m.workspace_id} value={m.workspace_id}>

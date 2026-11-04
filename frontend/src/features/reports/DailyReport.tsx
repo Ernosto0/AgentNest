@@ -5,6 +5,7 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ClockIcon, AlertIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { dayLabel, isLocalDay, shiftDay, todayIn } from "./dates";
@@ -12,7 +13,7 @@ import { formatValue } from "./format";
 import { useDailyReport, useGenerateReport } from "./hooks";
 
 const LINK =
-  "font-semibold text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus";
+  "type-metric font-semibold text-action underline underline-offset-4 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 function hasValue(metric: ReportMetric): metric is ReportMetric & { value: number } {
   return typeof metric.value === "number" && metric.value !== 0;
@@ -37,28 +38,38 @@ export function DailyReport() {
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("reports.title")}</h1>
+        <h1 className="type-page text-primary">{t("reports.title")}</h1>
         <p className="mt-1 text-sm text-secondary">{t("reports.intro")}</p>
       </div>
 
-      <div className="flex items-center justify-between gap-3 rounded-card bg-surface p-3 border border-border shadow-xs" role="group" aria-label={t("reports.dateLabel")}>
-        <Button variant="secondary" onClick={() => go(shiftDay(day, -1))} aria-label={t("reports.previousDay")}>
+      {/* Date Stepper */}
+      <div
+        className="flex items-center justify-between gap-3 rounded-panel bg-surface p-4 border border-border shadow-xs"
+        role="group"
+        aria-label={t("reports.dateLabel")}
+      >
+        <Button
+          variant="secondary"
+          onClick={() => go(shiftDay(day, -1))}
+          aria-label={t("reports.previousDay")}
+          className="h-10 w-10 min-w-10 p-0 text-lg font-bold"
+        >
           ‹
         </Button>
         <div className="flex flex-col items-center text-center">
-          <p className="font-heading font-semibold text-primary" data-testid="report-day">
+          <p className="font-heading font-bold text-lg text-primary" data-testid="report-day">
             {dayLabel(day, i18n.language)}
           </p>
           {day !== today ? (
             <button
               type="button"
               onClick={() => go(today)}
-              className="min-h-11 text-sm font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus"
+              className="mt-0.5 min-h-11 text-xs font-semibold uppercase tracking-wider text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
               {t("reports.backToToday")}
             </button>
           ) : (
-            <p className="text-sm text-secondary">{t("reports.today")}</p>
+            <p className="mt-0.5 text-xs font-medium text-secondary">{t("reports.today")}</p>
           )}
         </div>
         <Button
@@ -66,6 +77,7 @@ export function DailyReport() {
           disabled={day >= today}
           onClick={() => go(shiftDay(day, 1))}
           aria-label={t("reports.nextDay")}
+          className="h-10 w-10 min-w-10 p-0 text-lg font-bold"
         >
           ›
         </Button>
@@ -108,18 +120,28 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        {report.is_partial ? (
-          <p className="text-sm text-secondary" data-testid="report-as-of">
-            {t("reports.asOf", { time: asOf })}
-          </p>
-        ) : null}
-        {report.has_simulated_data ? <SimulatedBadge /> : null}
-      </div>
+      {report.is_partial || report.has_simulated_data ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {report.is_partial ? (
+            <p
+              className="inline-flex items-center gap-1.5 rounded-control bg-info-subtle border border-info/30 px-3 py-1 text-sm font-medium text-info"
+              data-testid="report-as-of"
+            >
+              <ClockIcon className="text-base shrink-0" />
+              {t("reports.asOf", { time: asOf })}
+            </p>
+          ) : null}
+          {report.has_simulated_data ? <SimulatedBadge /> : null}
+        </div>
+      ) : null}
 
       {!report.evidence_complete ? (
-        <p role="status" className="rounded-card bg-attention-subtle p-3 text-sm text-attention border border-border">
-          {t("reports.evidenceUnavailable")}
+        <p
+          role="status"
+          className="flex items-center gap-2.5 rounded-panel bg-attention-subtle p-3.5 text-sm text-attention border border-attention/30 shadow-xs"
+        >
+          <AlertIcon className="text-lg shrink-0" />
+          <span>{t("reports.evidenceUnavailable")}</span>
         </p>
       ) : null}
 
@@ -127,11 +149,11 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
         <EmptyState title={report.summary.text} description={t("reports.emptyHint")} />
       ) : (
         sections.map((section) => (
-          <Card key={section.section} aria-labelledby={`report-section-${section.section}`}>
-            <h2 id={`report-section-${section.section}`} className="text-lg font-heading font-semibold text-primary">
+          <Card key={section.section} aria-labelledby={`report-section-${section.section}`} className="p-5">
+            <h2 id={`report-section-${section.section}`} className="text-lg font-heading font-semibold text-primary pb-2 border-b border-border">
               {section.title}
             </h2>
-            <ul className="mt-2 divide-y divide-border">
+            <ul className="divide-y divide-border">
               {section.metrics.map((metric) => (
                 <MetricRow key={metric.key} metric={metric as ReportMetric & { value: number }} />
               ))}
@@ -150,23 +172,44 @@ function MetricRow({ metric }: { metric: ReportMetric & { value: number } }) {
   const shown = metric.key === "median_first_response_minutes" ? t("reports.minutes", { value: number }) : number;
   const drill = metric.link.route;
   const screen = metric.screen_link?.route;
+
+  // Comparison bar calculation
+  const barWidth = Math.min(100, Math.max(14, typeof metric.value === "number" ? Math.min(metric.value * 8, 100) : 25));
+  const isDanger = metric.key.includes("error") || metric.key.includes("failed");
+  const isAttention = metric.key.includes("pending");
+
   return (
-    <li className="flex min-h-12 items-center justify-between gap-3 py-2.5">
-      <span className="text-primary font-normal">{label}</span>
-      <span className="flex flex-wrap items-center justify-end gap-3">
-        {screen ? (
-          <Link to={screen} className="text-sm font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-focus">
-            {t("reports.openScreen")}
-          </Link>
-        ) : null}
-        {drill ? (
-          <Link to={drill} className={LINK} aria-label={`${label}: ${shown}`}>
-            {shown}
-          </Link>
-        ) : (
-          <span className="font-semibold text-primary">{shown}</span>
-        )}
-      </span>
+    <li className="flex flex-col gap-2 py-4">
+      <div className="flex min-h-12 items-center justify-between gap-4">
+        <div className="flex flex-col">
+          <span className="text-primary font-medium">{label}</span>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-3.5">
+          {screen ? (
+            <Link
+              to={screen}
+              className="rounded-control border border-border bg-surface px-3 py-1 text-xs font-semibold text-action hover:bg-surface-subtle hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus shadow-2xs transition-colors"
+            >
+              {t("reports.openScreen")}
+            </Link>
+          ) : null}
+          {drill ? (
+            <Link to={drill} className={LINK} aria-label={`${label}: ${shown}`}>
+              {shown}
+            </Link>
+          ) : (
+            <span className="type-metric font-semibold text-primary">{shown}</span>
+          )}
+        </div>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
+        <div
+          className={`h-full rounded-full transition-all ${
+            isDanger ? "bg-danger" : isAttention ? "bg-attention" : "bg-action"
+          }`}
+          style={{ width: `${barWidth}%` }}
+        />
+      </div>
     </li>
   );
 }

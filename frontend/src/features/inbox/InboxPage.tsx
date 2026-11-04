@@ -15,12 +15,15 @@ export function InboxPage() {
 
       {/* Right pane: Desktop placeholder when no conversation is selected */}
       <div className="hidden lg:flex flex-1 min-w-0 flex-col">
-        <Card className="flex flex-col items-center justify-center p-12 text-center h-[520px] bg-slate-50/50 border-dashed border-2 border-slate-200">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-4" aria-hidden="true">
+        <Card className="flex flex-col items-center justify-center p-12 text-center h-[520px] bg-surface-subtle/30 border-2 border-dashed border-border/80 rounded-2xl shadow-none">
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface text-action border border-border/80 shadow-xs mb-4"
+            aria-hidden="true"
+          >
             <InboxIcon className="text-3xl" />
           </div>
-          <h2 className="text-lg font-semibold text-slate-900">{t("convo.selectConversation")}</h2>
-          <p className="mt-1 max-w-sm text-sm text-slate-500">
+          <h2 className="text-section font-bold tracking-tight text-primary">{t("convo.selectConversation")}</h2>
+          <p className="mt-2 max-w-sm text-body text-secondary">
             {t("convo.selectHint")}
           </p>
         </Card>

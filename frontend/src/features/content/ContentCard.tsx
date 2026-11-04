@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { ContentItem } from "@/api/types";
-import { ChevronRightIcon, ImageIcon } from "@/components/icons";
+import { ChevronRightIcon, ImageIcon, SpinnerIcon } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { isGenerating, useMediaPreview } from "./hooks";
@@ -43,11 +43,11 @@ function ContentThumbnail({
   if (deleted) {
     return (
       <div
-        className={`${aspectClass} flex shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700 ring-1 ring-amber-200 text-xs text-center p-1`}
+        className={`${aspectClass} flex shrink-0 items-center justify-center rounded-control bg-attention-subtle text-attention border border-attention/30 text-xs text-center p-1`}
         title={t("content.media.deleted")}
         aria-hidden="true"
       >
-        <ImageIcon className="text-xl opacity-60" />
+        <ImageIcon className="text-xl opacity-75" />
       </div>
     );
   }
@@ -57,14 +57,14 @@ function ContentThumbnail({
       <img
         src={preview.url}
         alt=""
-        className={`${aspectClass} shrink-0 rounded-lg object-cover ring-1 ring-slate-200/80 shadow-2xs`}
+        className={`${aspectClass} shrink-0 rounded-control object-cover border border-border shadow-xs`}
       />
     );
   }
 
   return (
     <div
-      className={`${aspectClass} flex shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 ring-1 ring-slate-200/60`}
+      className={`${aspectClass} flex shrink-0 items-center justify-center rounded-control bg-surface-subtle text-secondary/60 border border-border`}
       aria-hidden="true"
     >
       <ImageIcon className="text-2xl" />
@@ -84,7 +84,7 @@ export function ContentCard({ item }: { item: ContentItem }) {
       to={`/w/${workspace.id}/content/${item.id}`}
       data-content-id={item.id}
       data-testid="content-card"
-      className="flex min-h-20 items-center justify-between gap-4 rounded-xl bg-white p-4 ring-1 ring-slate-200/90 hover:bg-slate-50/80 hover:ring-slate-300 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 shadow-2xs"
+      className="group flex min-h-20 items-center justify-between gap-4 rounded-panel bg-surface p-4 border border-border hover:bg-surface-subtle/60 hover:border-control/50 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus shadow-xs hover:shadow-sm"
     >
       <div className="flex items-center gap-3.5 min-w-0">
         <ContentThumbnail
@@ -94,22 +94,26 @@ export function ContentCard({ item }: { item: ContentItem }) {
           contentType={item.content_type}
         />
         <div className="flex flex-col min-w-0">
-          <span className="truncate font-semibold text-slate-900 text-base">{item.title || t("content.card.untitled")}</span>
-          <span className="mt-0.5 block text-xs sm:text-sm text-slate-500 truncate">
+          <span className="truncate font-semibold text-primary text-base">{item.title || t("content.card.untitled")}</span>
+          <span className="mt-0.5 block text-xs sm:text-sm text-secondary truncate">
             {t(`content.type.${item.content_type}`)}
             {when ? ` · ${when}` : ""}
           </span>
-          <span className="mt-1.5 flex flex-wrap items-center gap-2">
+          <span className="mt-2 flex flex-wrap items-center gap-2">
             <StatusBadge status={badge.status} params={badge.params} simulated={item.is_simulated} />
             {isGenerating(item) ? (
-              <span className="text-xs font-medium text-blue-700" data-testid="card-generating">
-                {t("content.card.generating")}
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full bg-info-subtle px-2 py-0.5 text-xs font-medium text-info"
+                data-testid="card-generating"
+              >
+                <SpinnerIcon className="size-3 motion-safe:animate-spin" />
+                <span>{t("content.card.generating")}</span>
               </span>
             ) : null}
           </span>
         </div>
       </div>
-      <ChevronRightIcon className="shrink-0 text-xl text-slate-400" />
+      <ChevronRightIcon className="shrink-0 text-xl text-secondary/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
     </Link>
   );
 }

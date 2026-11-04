@@ -30,22 +30,27 @@ export function HistorySheet({
       {versions.isPending ? <p className="text-secondary">{t("common.loading")}</p> : null}
       {versions.isError ? <ErrorMessage error={versions.error} /> : null}
       {versions.data ? (
-        <ol className="flex flex-col gap-3">
+        <ol className="relative flex flex-col gap-4 pl-4 before:absolute before:bottom-2 before:left-[7px] before:top-2 before:w-0.5 before:bg-border">
           {versions.data.map((version) => (
-            <li key={version.version} className="rounded-card p-3.5 border border-border bg-surface shadow-xs">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="font-semibold text-primary">{t("knowledge.history.version", { version: version.version })}</p>
-                <p className="text-sm text-secondary">{when.format(new Date(version.created_at))}</p>
+            <li key={version.version} className="relative flex flex-col gap-2 rounded-panel border border-border bg-surface p-4 shadow-xs">
+              <span className="absolute -left-[13px] top-4 h-2.5 w-2.5 rounded-full bg-action ring-4 ring-surface" />
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
+                <span className="inline-flex items-center rounded-control bg-surface-subtle px-2 py-0.5 text-xs font-semibold text-primary border border-border">
+                  {t("knowledge.history.version", { version: version.version })}
+                </span>
+                <p className="text-xs text-secondary">{when.format(new Date(version.created_at))}</p>
               </div>
-              <p className="mt-1 text-sm font-medium text-primary">
+              <p className="text-xs font-semibold text-action uppercase tracking-wide">
                 {t(`knowledge.history.change.${version.change_kind}`)}
               </p>
-              <p className="mt-1 text-primary break-words">{version.display}</p>
-              <p className="mt-1 text-sm text-secondary">
+              <div className="rounded-control bg-surface-subtle p-3 text-sm font-medium text-primary break-words border border-border/60">
+                {version.display}
+              </div>
+              <p className="text-xs text-secondary">
                 {t(`knowledge.source.${version.source_type}`, { defaultValue: version.source_type })}
                 {version.actor_name ? ` · ${version.actor_name}` : ""}
               </p>
-              {version.reason ? <p className="mt-1 text-sm text-secondary italic">{version.reason}</p> : null}
+              {version.reason ? <p className="text-xs text-secondary italic">"{version.reason}"</p> : null}
             </li>
           ))}
         </ol>

@@ -21,14 +21,14 @@ export function FactChip({ fact }: { fact: ChipFact }) {
         data-testid="fact-chip"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="rounded-md bg-emerald-50 px-1.5 font-semibold text-emerald-900 ring-1 ring-emerald-600 ring-inset focus-visible:outline-2 focus-visible:outline-indigo-600"
+        className="rounded-control bg-success-subtle px-1.5 py-0.5 font-semibold text-success border border-success/40 transition-colors hover:bg-success-subtle/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         {fact.display}
       </button>
       {open ? (
         <span
           role="status"
-          className="absolute top-full left-0 z-10 mt-1 w-56 rounded-lg bg-slate-900 p-2 text-sm font-normal text-white shadow-lg"
+          className="absolute top-full left-0 z-20 mt-1.5 w-60 rounded-control bg-navigation p-2.5 text-metadata font-normal text-navigation-text shadow-sm border border-navigation-selected/20"
         >
           {fact.version == null
             ? t("convo.draft.sourceUnversioned", { label: fact.label })
@@ -56,7 +56,7 @@ export function DraftText({ draft }: { draft: ReplyDraft }) {
     });
   parts.push(text.slice(cursor));
   return (
-    <p className="break-words whitespace-pre-wrap" data-testid="draft-text">
+    <p className="break-words whitespace-pre-wrap text-body text-primary leading-relaxed" data-testid="draft-text">
       {parts}
     </p>
   );
@@ -71,7 +71,7 @@ export function ReasonChips({ reasons }: { reasons: string[] }) {
       {reasons.map((code) => (
         <li
           key={code}
-          className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-800 ring-1 ring-slate-300 ring-inset"
+          className="inline-flex items-center rounded-full bg-surface-subtle px-2.5 py-1 text-metadata font-medium text-secondary border border-border shadow-2xs"
         >
           {i18n.exists(`convo.reason.${code}`) ? t(`convo.reason.${code}`) : code}
         </li>
@@ -90,13 +90,16 @@ export function WindowTimer({ endsAt }: { endsAt: string | null }) {
   }, []);
   if (!endsAt) return null;
   const minutes = Math.floor((new Date(endsAt).getTime() - now) / 60_000);
-  if (minutes <= 0) return <span className="text-sm text-red-700">{t("convo.window.closed")}</span>;
+  if (minutes <= 0) return <span className="text-metadata font-medium text-danger">{t("convo.window.closed")}</span>;
   const label =
     minutes >= 60
       ? t("convo.window.hours", { count: Math.floor(minutes / 60) })
       : t("convo.window.minutes", { count: minutes });
   return (
-    <span className={`text-sm ${minutes < 120 ? "text-amber-800" : "text-slate-600"}`} data-testid="window-timer">
+    <span
+      className={`text-metadata font-medium ${minutes < 120 ? "text-attention" : "text-secondary"}`}
+      data-testid="window-timer"
+    >
       {label}
     </span>
   );
@@ -127,10 +130,14 @@ export function ApprovalStateNote({ state, showPending }: { state: ApprovalState
   }
   if (line === null) return null;
   return (
-    <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700" data-testid="approval-state" data-approval-status={state.status}>
-      <p>{line}</p>
+    <div
+      className="rounded-control bg-surface-subtle border border-border p-3 text-body text-secondary"
+      data-testid="approval-state"
+      data-approval-status={state.status}
+    >
+      <p className="font-medium text-primary">{line}</p>
       {state.decision_note ? (
-        <p className="mt-1">{t("convo.draft.approvalState.note", { note: state.decision_note })}</p>
+        <p className="mt-1 text-secondary">{t("convo.draft.approvalState.note", { note: state.decision_note })}</p>
       ) : null}
     </div>
   );

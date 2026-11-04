@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-01T16:45:11.595Z",
+  "timestamp": "2026-11-04T15:35:04.683Z",
   "auditResults": [
     {
       "engine": "chromium",
@@ -99,9 +99,9 @@
     }
   ],
   "bundleMetrics": {
-    "totalJsBytes": 900043,
-    "totalJsGzip": 253837,
-    "totalCssBytes": 47277,
-    "totalCssGzip": 9711
+    "totalJsBytes": 970767,
+    "totalJsGzip": 267779,
+    "totalCssBytes": 55852,
+    "totalCssGzip": 10287
   }
 }

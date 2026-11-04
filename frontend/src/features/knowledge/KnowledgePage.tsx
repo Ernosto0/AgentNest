@@ -13,7 +13,7 @@ import { ReadinessChecklist } from "./ReadinessChecklist";
 import { summarize } from "./summary";
 
 const ROW =
-  "flex min-h-14 w-full items-center justify-between gap-3 rounded-panel bg-surface p-4 text-left text-base border border-border shadow-xs hover:border-border-hover transition-colors focus-visible:outline-2 focus-visible:outline-focus";
+  "group flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl bg-surface p-4 text-left border border-border/80 shadow-2xs hover:border-action/40 hover:bg-surface hover:shadow-xs transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 /** Business knowledge overview: readiness, suggestions, and one row per category. */
 export function KnowledgePage() {
@@ -32,9 +32,16 @@ export function KnowledgePage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("knowledge.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("knowledge.intro")}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-heading font-semibold text-primary">{t("knowledge.title")}</h1>
+          <p className="mt-1 text-sm text-secondary">{t("knowledge.intro")}</p>
+        </div>
+        <div>
+          <Button variant="secondary" onClick={() => setPasting(true)} data-testid="open-paste-extract">
+            {t("extract.open")}
+          </Button>
+        </div>
       </div>
 
       {loadError ? <ErrorMessage error={loadError} /> : null}
@@ -43,29 +50,35 @@ export function KnowledgePage() {
       ) : null}
 
       {readiness.data ? (
-        <Card className="flex flex-col gap-3">
-          <h2 className="text-lg font-heading font-semibold text-primary">{t("readiness.title")}</h2>
+        <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-heading font-semibold text-primary">{t("readiness.title")}</h2>
+          </div>
           <ReadinessChecklist workspaceId={workspace.id} readiness={readiness.data} />
         </Card>
       ) : null}
 
-      <div>
-        <Button variant="secondary" onClick={() => setPasting(true)} data-testid="open-paste-extract">
-          {t("extract.open")}
-        </Button>
-      </div>
       {pasting ? <PasteExtractSheet onClose={() => setPasting(false)} /> : null}
 
       <Link to={`${base}/suggestions`} className={ROW}>
         <span className="min-w-0">
-          <span className="block font-medium text-primary">{t("knowledge.suggestions.link")}</span>
+          <span className="block font-medium text-primary group-hover:text-action transition-colors">
+            {t("knowledge.suggestions.link")}
+          </span>
           <span className="block text-sm text-secondary">
             {pending > 0
               ? t("knowledge.suggestions.waiting", { count: pending })
               : t("knowledge.suggestions.none")}
           </span>
         </span>
-        <ChevronRightIcon className="shrink-0 text-xl text-muted" />
+        <div className="flex items-center gap-2">
+          {pending > 0 ? (
+            <span className="inline-flex items-center rounded-control bg-attention-subtle px-2 py-0.5 text-xs font-semibold text-attention border border-border">
+              {pending}
+            </span>
+          ) : null}
+          <ChevronRightIcon className="shrink-0 text-xl text-secondary group-hover:text-primary transition-colors" />
+        </div>
       </Link>
 
       <ul className="flex flex-col gap-3" aria-label={t("knowledge.categories")}>
@@ -73,29 +86,31 @@ export function KnowledgePage() {
           <li key={summary.category}>
             <Link to={`${base}/${summary.category}`} className={ROW} data-category={summary.category}>
               <span className="min-w-0 flex-1">
-                <span className="block font-medium text-primary">{t(`knowledge.category.${summary.category}`)}</span>
-                <span className="mt-1.5 flex flex-wrap gap-2">
+                <span className="block font-medium text-primary group-hover:text-action transition-colors">
+                  {t(`knowledge.category.${summary.category}`)}
+                </span>
+                <span className="mt-2 flex flex-wrap items-center gap-2">
                   {summary.verified > 0 ? (
                     <span className="inline-flex items-center gap-1.5 text-sm text-secondary">
                       <FactStatusChip state="verified" />
-                      <span>{summary.verified}</span>
+                      <span className="font-medium text-primary text-xs">{summary.verified}</span>
                     </span>
                   ) : null}
                   {summary.attention > 0 ? (
                     <span className="inline-flex items-center gap-1.5 text-sm text-secondary">
                       <FactStatusChip state="unverified" />
-                      <span>{summary.attention}</span>
+                      <span className="font-medium text-primary text-xs">{summary.attention}</span>
                     </span>
                   ) : null}
                   {summary.missing > 0 ? (
                     <span className="inline-flex items-center gap-1.5 text-sm text-secondary">
                       <FactStatusChip state="missing" />
-                      <span>{summary.missing}</span>
+                      <span className="font-medium text-primary text-xs">{summary.missing}</span>
                     </span>
                   ) : null}
                 </span>
               </span>
-              <ChevronRightIcon className="shrink-0 text-xl text-muted" />
+              <ChevronRightIcon className="shrink-0 text-xl text-secondary group-hover:text-primary transition-colors" />
             </Link>
           </li>
         ))}

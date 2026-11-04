@@ -219,7 +219,7 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
             {url}
           </p>
           {invite.email ? (
-            <p className="text-center text-xs text-positive font-medium">
+            <p className="text-center text-xs text-success font-medium">
               {t("members.emailDispatched", { email: invite.email })}
             </p>
           ) : null}

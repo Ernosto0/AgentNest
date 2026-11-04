@@ -15,12 +15,12 @@ import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useRecentFailures, useUpcomingPosts } from "./hooks";
 
 const LINK =
-  "inline-flex min-h-11 items-center font-medium text-indigo-800 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-indigo-600";
+  "inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-colors";
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <Card className="flex flex-col gap-4" aria-labelledby={id}>
-      <h2 id={id} className="text-lg font-semibold tracking-tight text-slate-900">
+    <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 shadow-xs" aria-labelledby={id}>
+      <h2 id={id} className="type-section font-bold tracking-tight text-primary">
         {title}
       </h2>
       {children}
@@ -47,9 +47,9 @@ export function Dashboard() {
 }
 
 const STATUS_ICON = {
-  connected: { Icon: CheckIcon, tone: "text-green-700" },
-  degraded: { Icon: AlertIcon, tone: "text-amber-700" },
-  needs_reauth: { Icon: CriticalIcon, tone: "text-red-700" },
+  connected: { Icon: CheckIcon, tone: "text-success" },
+  degraded: { Icon: AlertIcon, tone: "text-attention" },
+  needs_reauth: { Icon: CriticalIcon, tone: "text-danger" },
 } as const;
 
 // `accounts` is undefined until they are loaded: "no account" must not flash first.
@@ -59,10 +59,14 @@ function StatusStrip({ accounts }: { accounts: SocialAccount[] | undefined }) {
   const meta = useMeta();
   const simulated = workspace.is_demo || (accounts ?? []).some((a) => a.is_simulated);
   return (
-    <ul aria-label={t("home.statusLabel")} className="flex flex-wrap items-center gap-2 text-sm">
+    <ul aria-label={t("home.statusLabel")} className="flex flex-wrap items-center gap-2 text-metadata">
       {accounts === undefined ? null : accounts.length === 0 ? (
-        <li data-testid="home-connection" className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-800 ring-1 ring-slate-200">
-          {t("home.connection")}: {t("home.noAccount")}
+        <li
+          data-testid="home-connection"
+          className="inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-1 font-medium text-secondary border border-border/80 shadow-2xs"
+        >
+          <span className="h-2 w-2 rounded-full bg-secondary/40" />
+          <span>{t("home.connection")}: {t("home.noAccount")}</span>
         </li>
       ) : (
         accounts.map((account) => {
@@ -72,8 +76,9 @@ function StatusStrip({ accounts }: { accounts: SocialAccount[] | undefined }) {
               key={account.id}
               data-testid="home-connection"
               data-status={account.status}
-              className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-800 ring-1 ring-slate-200"
+              className="inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-1 font-medium text-primary border border-border/80 shadow-2xs"
             >
+              <span className={`h-2 w-2 rounded-full ${account.status === "connected" ? "bg-success" : account.status === "degraded" ? "bg-attention" : "bg-danger"}`} />
               {known ? <known.Icon className={`text-base ${known.tone}`} /> : null}
               <span>
                 {t("home.connection")}
@@ -90,7 +95,11 @@ function StatusStrip({ accounts }: { accounts: SocialAccount[] | undefined }) {
         </li>
       ) : null}
       {meta.data ? (
-        <li data-testid="home-ai-mode" className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-800 ring-1 ring-slate-200">
+        <li
+          data-testid="home-ai-mode"
+          className="inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-1 font-medium text-primary border border-border/80 shadow-2xs"
+        >
+          <span className="h-2 w-2 rounded-full bg-action" />
           {meta.data.llm_mode === "fake" ? t("aiMode.offline") : t("home.aiOnline")}
         </li>
       ) : null}
@@ -109,18 +118,18 @@ function Banners({ accounts, canReconnect }: { accounts: SocialAccount[]; canRec
         <div
           role="alert"
           data-testid="banner-needs-reauth"
-          className="flex flex-col gap-2 rounded-xl bg-red-50 p-4 text-red-950 ring-1 ring-red-400"
+          className="flex flex-col gap-2 rounded-panel border border-danger/40 bg-danger-subtle p-4 text-primary"
         >
-          <p className="flex items-start gap-2 font-medium">
-            <CriticalIcon className="mt-0.5 shrink-0 text-xl text-red-700" />
-            <span>{t("home.banner.needs_reauth")}</span>
+          <p className="flex items-start gap-2 font-medium text-danger">
+            <CriticalIcon className="mt-0.5 shrink-0 text-xl text-danger" />
+            <span className="text-primary">{t("home.banner.needs_reauth")}</span>
           </p>
           {canReconnect ? (
             <Link to={`/w/${workspace.id}/more/settings/connections`} className={LINK}>
               {t("home.banner.reconnect")}
             </Link>
           ) : (
-            <p className="text-sm text-red-900">{t("automation.ownerOnly")}</p>
+            <p className="text-metadata text-secondary">{t("automation.ownerOnly")}</p>
           )}
         </div>
       ) : null}
@@ -128,9 +137,9 @@ function Banners({ accounts, canReconnect }: { accounts: SocialAccount[]; canRec
         <div
           role="status"
           data-testid="banner-degraded"
-          className="flex items-start gap-2 rounded-xl bg-amber-50 p-4 font-medium text-amber-950 ring-1 ring-amber-400"
+          className="flex items-start gap-2 rounded-panel border border-attention/40 bg-attention-subtle p-4 font-medium text-primary"
         >
-          <AlertIcon className="mt-0.5 shrink-0 text-xl text-amber-700" />
+          <AlertIcon className="mt-0.5 shrink-0 text-xl text-attention" />
           <span>{t("home.banner.degraded")}</span>
         </div>
       ) : null}
@@ -164,26 +173,32 @@ function Attention({
   return (
     <Section id="home-attention" title={t("home.attention.title")}>
       {error ? <ErrorMessage error={error} /> : null}
-      {pending ? <p className="text-sm text-slate-600">{t("common.loading")}</p> : null}
+      {pending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
       {!pending && !error && nothing ? (
-        <p data-testid="attention-none" className="text-sm text-slate-700">
+        <p data-testid="attention-none" className="text-body text-secondary">
           {t("home.attention.none")}
         </p>
       ) : null}
       {!nothing ? (
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           {cards.map((card) => (
             <li key={card.key} data-testid={`attention-${card.key}`}>
               <Link
                 to={card.to}
-                className={`flex min-h-14 items-center justify-between gap-3 rounded-xl px-4 py-3 ring-1 transition-colors focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                className={`group flex min-h-16 items-center justify-between gap-4 rounded-xl px-4 py-3.5 border transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                   card.count > 0
-                    ? "bg-amber-50/80 text-amber-950 ring-amber-300 hover:bg-amber-100"
-                    : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
+                    ? "bg-attention-subtle/80 text-primary border-attention/50 shadow-xs hover:border-attention hover:shadow-sm hover:translate-y-[-1px]"
+                    : "bg-surface text-primary border-border hover:bg-surface-subtle hover:border-border"
                 }`}
               >
-                <span className="font-medium">{card.label}</span>
-                <span className="text-2xl font-bold tracking-tight">{card.count}</span>
+                <span className="font-semibold text-body">{card.label}</span>
+                <span
+                  className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2.5 text-xl font-bold tracking-tight transition-transform group-hover:scale-105 ${
+                    card.count > 0 ? "bg-attention text-white shadow-xs" : "bg-surface-subtle text-secondary border border-border/70"
+                  }`}
+                >
+                  {card.count}
+                </span>
               </Link>
             </li>
           ))}
@@ -205,7 +220,10 @@ function UpcomingThumbnail({
   const preview = useMediaPreview(workspaceId, deleted ? null : mediaId);
   if (!mediaId || deleted) {
     return (
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400" aria-hidden="true">
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-surface-subtle text-secondary border border-border"
+        aria-hidden="true"
+      >
         <ImageIcon className="text-lg" />
       </div>
     );
@@ -215,12 +233,15 @@ function UpcomingThumbnail({
       <img
         src={preview.url}
         alt=""
-        className="h-10 w-10 shrink-0 rounded-lg object-cover ring-1 ring-slate-200"
+        className="h-10 w-10 shrink-0 rounded-control object-cover border border-border"
       />
     );
   }
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400" aria-hidden="true">
+    <div
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-surface-subtle text-secondary border border-border"
+      aria-hidden="true"
+    >
       <ImageIcon className="text-lg" />
     </div>
   );
@@ -233,11 +254,11 @@ function Upcoming() {
   return (
     <Section id="home-upcoming" title={t("home.upcoming.title")}>
       {upcoming.isError ? <ErrorMessage error={upcoming.error} /> : null}
-      {upcoming.isPending ? <p className="text-sm text-slate-600">{t("common.loading")}</p> : null}
+      {upcoming.isPending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
       {upcoming.data && upcoming.data.length === 0 ? (
         <div data-testid="upcoming-empty" className="flex flex-col gap-1">
-          <p className="font-medium text-slate-900">{t("home.upcoming.empty")}</p>
-          <p className="text-sm text-slate-600">{t("home.upcoming.emptyHint")}</p>
+          <p className="font-medium text-primary">{t("home.upcoming.empty")}</p>
+          <p className="text-body text-secondary">{t("home.upcoming.emptyHint")}</p>
         </div>
       ) : null}
       {upcoming.data && upcoming.data.length > 0 ? (
@@ -245,18 +266,18 @@ function Upcoming() {
           {upcoming.data.slice(0, 3).map((item) => (
             <li
               key={item.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-slate-200/80 bg-white p-3 hover:bg-slate-50/70"
+              className="group flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-surface p-3.5 transition-all hover:bg-surface-subtle hover:border-border hover:shadow-2xs"
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-3.5 min-w-0">
                 <UpcomingThumbnail workspaceId={workspace.id} mediaId={item.media_asset_id} deleted={item.media_deleted} />
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 gap-0.5">
                   <Link
                     to={`/w/${workspace.id}/content/${item.id}`}
-                    className="font-medium text-slate-900 truncate hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-indigo-600"
+                    className="font-semibold text-primary truncate hover:text-action transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     {item.title}
                   </Link>
-                  <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span className="flex flex-wrap items-center gap-2 text-metadata text-secondary">
                     {item.scheduled_at
                       ? new Date(item.scheduled_at).toLocaleString(i18n.language, {
                           dateStyle: "short",
@@ -288,9 +309,9 @@ function Failures() {
   return (
     <Section id="home-failures" title={t("home.failures.title")}>
       {failures.isError ? <ErrorMessage error={failures.error} /> : null}
-      {failures.isPending ? <p className="text-sm text-slate-600">{t("common.loading")}</p> : null}
+      {failures.isPending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
       {failures.data && failures.data.length === 0 ? (
-        <p data-testid="failures-empty" className="text-sm text-slate-700">
+        <p data-testid="failures-empty" className="text-body text-secondary">
           {t("home.failures.empty")}
         </p>
       ) : null}
@@ -302,15 +323,15 @@ function Failures() {
             return (
               <li
                 key={item.id}
-                className="flex flex-col gap-1 rounded-lg border border-red-200/80 bg-red-50/50 p-3"
+                className="flex flex-col gap-1 rounded-control border border-danger/30 bg-danger-subtle p-3"
               >
                 <Link
                   to={`/w/${workspace.id}/content/${item.id}`}
-                  className="font-medium text-red-950 hover:underline focus-visible:outline-2 focus-visible:outline-indigo-600"
+                  className="font-medium text-danger hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 >
                   {item.title}
                 </Link>
-                <span className="text-sm text-red-900">
+                <span className="text-body text-primary">
                   {known !== "" ? known : t("content.failure.unknown.what")}
                 </span>
               </li>
@@ -347,30 +368,34 @@ function Numbers({
   return (
     <Section id="home-numbers" title={t("home.numbers.title")}>
       {report ? (
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+        <div className="flex flex-wrap items-center gap-2 text-metadata text-secondary">
           {report.is_partial ? <span>{t("home.numbers.asOf", { time: asOf })}</span> : null}
           {report.has_simulated_data ? <SimulatedBadge /> : null}
         </div>
       ) : null}
       {report && quiet ? (
-        <p data-testid="numbers-empty" className="text-sm text-slate-700">
+        <p data-testid="numbers-empty" className="text-body text-secondary">
           {t("home.numbers.empty")}
         </p>
       ) : null}
       {report && !quiet ? (
-        <dl className="grid grid-cols-2 gap-3">
+        <dl className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
           {shown.map((metric) => {
             const label = t(`reports.metrics.${metric.key}`);
             const value = formatValue(metric.value ?? 0, i18n.language);
             return (
-              <div key={metric.key} data-testid={`number-${metric.key}`} className="rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200/80">
-                <dt className="text-xs font-medium text-slate-600">{label}</dt>
-                <dd className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+              <div
+                key={metric.key}
+                data-testid={`number-${metric.key}`}
+                className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-subtle/80 p-4 border border-border/80 shadow-2xs transition-all hover:bg-surface hover:border-action/40 hover:shadow-xs"
+              >
+                <dt className="text-metadata font-medium text-secondary leading-tight">{label}</dt>
+                <dd className="mt-2 text-3xl font-extrabold tracking-tight text-primary">
                   {metric.link.route ? (
                     <Link
                       to={metric.link.route}
                       aria-label={`${label}: ${value}`}
-                      className="text-indigo-800 underline underline-offset-2 hover:text-indigo-900"
+                      className="text-action underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-colors"
                     >
                       {value}
                     </Link>

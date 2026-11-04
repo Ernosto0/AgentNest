@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ContentIssue, ContentItem, ContentValidation } from "@/api/types";
-import { AlertIcon } from "@/components/icons";
+import { AlertIcon, CheckIcon } from "@/components/icons";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { TextField } from "@/components/TextField";
@@ -44,20 +44,20 @@ function FieldIssues({ field, issues }: { field: string; issues: ContentIssue[] 
   const blocking = mine.filter((issue) => !issue.matches_verified);
 
   return (
-    <div className="flex flex-col gap-2" data-testid="field-issues">
+    <div className="flex flex-col gap-2 pt-1" data-testid="field-issues">
       {blocking.map((issue, index) => (
         <p
           key={`${issue.code}-${index}`}
           data-testid="blocking-issue"
           data-code={issue.code}
-          className="flex items-start gap-2 rounded-control bg-danger-subtle p-2.5 text-sm text-danger border border-danger shadow-xs"
+          className="flex items-start gap-2 rounded-control bg-danger-subtle p-3 text-sm text-danger border border-danger shadow-xs"
         >
-          <AlertIcon className="mt-0.5 shrink-0" />
+          <AlertIcon className="mt-0.5 shrink-0 text-base" />
           <span>{blockingIssueMessage(issue, t)}</span>
         </p>
       ))}
       {blocking.length > 0 ? (
-        <p className="text-xs text-secondary">{t("content.editor.issues.blockingHint")}</p>
+        <p className="text-xs text-secondary pl-0.5">{t("content.editor.issues.blockingHint")}</p>
       ) : null}
       {grounded.map((issue, index) => {
         const fact = facts.data?.find((candidate) => candidate.key === issue.fact_key);
@@ -86,13 +86,15 @@ function Counter({ id, count, max }: { id: string; count: number; max: number })
   const { t } = useTranslation();
   const over = count > max;
   return (
-    <span
-      id={id}
-      data-testid="caption-counter"
-      className={`text-sm ${over ? "font-semibold text-danger" : "text-secondary"}`}
-    >
-      {over ? t("content.editor.counterOver", { count, max }) : t("content.editor.counter", { count, max })}
-    </span>
+    <div className="flex justify-end pt-1">
+      <span
+        id={id}
+        data-testid="caption-counter"
+        className={`text-xs font-semibold tabular-nums ${over ? "text-danger" : "text-secondary"}`}
+      >
+        {over ? t("content.editor.counterOver", { count, max }) : t("content.editor.counter", { count, max })}
+      </span>
+    </div>
   );
 }
 
@@ -104,17 +106,21 @@ function Checks({ result }: { result: ContentValidation }) {
   const warnings = (result.warnings ?? []).filter((w) => w.field !== "media_asset_id");
   if (errors.length === 0 && warnings.length === 0) {
     return (
-      <p role="status" className="text-sm font-medium text-success" data-testid="check-clean">
-        {t("content.editor.checkClean")}
-      </p>
+      <div role="status" className="flex items-center gap-2 rounded-control bg-success-subtle p-3.5 text-sm font-semibold text-success border border-success/30 shadow-xs" data-testid="check-clean">
+        <CheckIcon className="text-base" />
+        <span>{t("content.editor.checkClean")}</span>
+      </div>
     );
   }
   return (
-    <div className="flex flex-col gap-2.5" data-testid="checks">
+    <div className="flex flex-col gap-3" data-testid="checks">
       {errors.length > 0 ? (
-        <div className="rounded-control bg-danger-subtle p-3.5 text-sm text-danger border border-danger shadow-xs">
-          <p className="font-semibold">{t("content.editor.checks.errorsLabel")}</p>
-          <ul className="mt-1 list-disc pl-5">
+        <div className="rounded-panel bg-danger-subtle p-4 text-sm text-danger border border-danger shadow-xs">
+          <p className="font-semibold flex items-center gap-2">
+            <AlertIcon className="text-base shrink-0" />
+            <span>{t("content.editor.checks.errorsLabel")}</span>
+          </p>
+          <ul className="mt-2 list-disc pl-5 space-y-1">
             {errors.map((item, index) => (
               <li key={`${item.code}-${index}`} data-code={item.code}>
                 {checkMessage(item, t)}
@@ -124,9 +130,12 @@ function Checks({ result }: { result: ContentValidation }) {
         </div>
       ) : null}
       {warnings.length > 0 ? (
-        <div className="rounded-control bg-attention-subtle p-3.5 text-sm text-attention border border-attention shadow-xs">
-          <p className="font-semibold">{t("content.editor.checks.warningsLabel")}</p>
-          <ul className="mt-1 list-disc pl-5">
+        <div className="rounded-panel bg-attention-subtle p-4 text-sm text-attention border border-attention shadow-xs">
+          <p className="font-semibold flex items-center gap-2">
+            <AlertIcon className="text-base shrink-0" />
+            <span>{t("content.editor.checks.warningsLabel")}</span>
+          </p>
+          <ul className="mt-2 list-disc pl-5 space-y-1">
             {warnings.map((item, index) => (
               <li key={`${item.code}-${index}`} data-code={item.code}>
                 {checkMessage(item, t)}
@@ -143,24 +152,28 @@ function Checks({ result }: { result: ContentValidation }) {
 function ReadOnlyText({ item }: { item: ContentItem }) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col gap-3" data-testid="content-readonly">
-      <p className="text-sm font-medium text-secondary">{t("content.editor.readOnly")}</p>
+    <div className="flex flex-col gap-4" data-testid="content-readonly">
+      <p className="text-sm font-semibold text-secondary">{t("content.editor.readOnly")}</p>
       {item.media_asset_id && item.media_deleted ? (
         <p className="rounded-control bg-surface-subtle p-4 text-sm text-secondary border border-border" data-testid="media-deleted">
           {t("content.media.deleted")}
         </p>
       ) : null}
       {item.content_type === "feed_image" && item.caption ? (
-        <p className="break-words whitespace-pre-wrap text-primary">{item.caption}</p>
+        <div className="rounded-panel border border-border bg-surface-subtle/50 p-4">
+          <p className="break-words whitespace-pre-wrap text-primary text-base leading-relaxed">{item.caption}</p>
+        </div>
       ) : null}
       {item.content_type === "story_image" && item.overlay_text_suggestions.length > 0 ? (
-        <ul className="list-disc pl-5 text-primary">
-          {item.overlay_text_suggestions.map((text, index) => (
-            <li key={index} className="break-words whitespace-pre-wrap">
-              {text}
-            </li>
-          ))}
-        </ul>
+        <div className="rounded-panel border border-border bg-surface-subtle/50 p-4">
+          <ul className="list-disc pl-5 text-primary space-y-1.5">
+            {item.overlay_text_suggestions.map((text, index) => (
+              <li key={index} className="break-words whitespace-pre-wrap">
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
     </div>
   );
@@ -271,16 +284,17 @@ export function ContentEditor({
 
   return (
     <form
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
       onSubmit={(event) => {
         event.preventDefault();
         if (anyDirty && title.trim() !== "") save();
       }}
     >
       {editVoidsApproval(item.status) ? (
-        <p className="rounded-control border border-attention bg-attention-subtle p-3 text-sm text-attention shadow-xs" data-testid="voids-approval">
-          {t("content.editor.editVoidsApproval")}
-        </p>
+        <div className="flex items-center gap-2 rounded-panel border border-attention bg-attention-subtle p-3.5 text-sm text-attention shadow-xs" data-testid="voids-approval">
+          <AlertIcon className="text-base shrink-0" />
+          <p>{t("content.editor.editVoidsApproval")}</p>
+        </div>
       ) : null}
 
       <TextField
@@ -301,9 +315,9 @@ export function ContentEditor({
       />
 
       {isStory ? (
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium text-primary">{t("content.editor.overlayLabel")}</legend>
-          <p className="text-sm text-secondary" data-testid="overlay-note">
+        <fieldset className="flex flex-col gap-2.5">
+          <legend className="text-sm font-semibold text-primary">{t("content.editor.overlayLabel")}</legend>
+          <p className="text-xs text-secondary" data-testid="overlay-note">
             {t("content.editor.overlayNote")}
           </p>
           {overlay.map((text, index) => (
@@ -315,12 +329,13 @@ export function ContentEditor({
                   rows={2}
                   maxLength={OVERLAY_ITEM_MAX}
                   onChange={(event) => updateOverlay(index, event.target.value)}
-                  className="min-h-16 w-full rounded-control border border-border bg-surface p-3 text-base text-primary focus-visible:outline-2 focus-visible:outline-focus"
+                  className="min-h-16 w-full rounded-control border border-control bg-surface p-3 text-base text-primary shadow-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 />
                 <Button
                   variant="ghost"
                   aria-label={t("content.editor.overlayRemove", { n: index + 1 })}
                   onClick={() => edit({ overlay: overlay.filter((_, i) => i !== index) })}
+                  className="shrink-0 text-lg hover:text-danger"
                 >
                   ×
                 </Button>
@@ -331,8 +346,8 @@ export function ContentEditor({
             </div>
           ))}
           {overlay.length < OVERLAY_ITEMS_MAX ? (
-            <div>
-              <Button variant="secondary" onClick={() => edit({ overlay: [...overlay, ""] })}>
+            <div className="pt-1">
+              <Button variant="secondary" onClick={() => edit({ overlay: [...overlay, ""] })} className="shadow-xs">
                 {t("content.editor.overlayAdd")}
               </Button>
             </div>
@@ -340,7 +355,7 @@ export function ContentEditor({
         </fieldset>
       ) : (
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={ids.caption} className="text-sm font-medium text-primary">
+          <label htmlFor={ids.caption} className="text-sm font-semibold text-primary">
             {t("content.editor.captionLabel")}
           </label>
           <textarea
@@ -349,7 +364,7 @@ export function ContentEditor({
             value={caption}
             rows={6}
             onChange={(event) => edit({ caption: event.target.value })}
-            className="min-h-32 w-full rounded-control border border-border bg-surface p-3 text-base text-primary focus-visible:outline-2 focus-visible:outline-focus"
+            className="min-h-32 w-full rounded-control border border-control bg-surface p-3.5 text-base text-primary shadow-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           />
           <Counter id={ids.counter} count={caption.length} max={CAPTION_MAX_CHARS} />
           {dirty.caption ? null : <FieldIssues field="caption" issues={issues} />}
@@ -363,7 +378,7 @@ export function ContentEditor({
       ) : null}
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={ids.notes} className="text-sm font-medium text-primary">
+        <label htmlFor={ids.notes} className="text-sm font-semibold text-primary">
           {t("content.editor.visualNotesLabel")}
         </label>
         <textarea
@@ -372,14 +387,15 @@ export function ContentEditor({
           rows={3}
           maxLength={NOTES_MAX}
           onChange={(event) => edit({ notes: event.target.value })}
-          className="min-h-20 w-full rounded-control border border-border bg-surface p-3 text-base text-primary focus-visible:outline-2 focus-visible:outline-focus"
+          className="min-h-20 w-full rounded-control border border-control bg-surface p-3.5 text-base text-primary shadow-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         />
       </div>
 
       {conflict ? (
-        <p role="alert" data-testid="version-conflict" className="rounded-control border border-attention bg-attention-subtle p-3 text-sm text-attention shadow-xs">
-          {t("content.editor.conflict")}
-        </p>
+        <div role="alert" data-testid="version-conflict" className="flex items-center gap-2 rounded-panel border border-attention bg-attention-subtle p-3.5 text-sm text-attention shadow-xs">
+          <AlertIcon className="text-base shrink-0" />
+          <p>{t("content.editor.conflict")}</p>
+        </div>
       ) : null}
       {patch.error && !(conflict && patch.error.code === "VERSION_CONFLICT") ? (
         <ErrorMessage error={patch.error} />
@@ -387,18 +403,19 @@ export function ContentEditor({
       {validate.error ? <ErrorMessage error={validate.error} /> : null}
       {checks ? <Checks result={checks} /> : null}
 
-      <div className="flex flex-wrap items-center gap-3 pt-2">
-        <Button type="submit" disabled={busy || !anyDirty || title.trim() === ""}>
+      <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border">
+        <Button type="submit" disabled={busy || !anyDirty || title.trim() === ""} className="shadow-xs">
           {busy ? t("content.editor.saving") : t("content.editor.save")}
         </Button>
-        <Button variant="secondary" disabled={busy || validate.isPending || anyDirty} onClick={runCheck}>
+        <Button variant="secondary" disabled={busy || validate.isPending || anyDirty} onClick={runCheck} className="shadow-xs">
           {validate.isPending ? t("content.editor.checking") : t("content.editor.check")}
         </Button>
         {anyDirty ? (
-          <span className="text-sm text-secondary">{t("content.editor.unsaved")}</span>
+          <span className="text-sm font-medium text-secondary">{t("content.editor.unsaved")}</span>
         ) : saved ? (
-          <span role="status" className="text-sm font-medium text-success">
-            {t("content.editor.saved")}
+          <span role="status" className="inline-flex items-center gap-1.5 text-sm font-semibold text-success">
+            <CheckIcon className="text-base" />
+            <span>{t("content.editor.saved")}</span>
           </span>
         ) : null}
       </div>

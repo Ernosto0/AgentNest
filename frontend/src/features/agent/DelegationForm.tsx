@@ -53,25 +53,25 @@ export function DelegationForm({
   }
 
   return (
-    <Card className="flex flex-col gap-4">
+    <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
       <div className="border-b border-border pb-3">
         <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.delegation")}</h2>
       </div>
       <p className="text-sm text-secondary">{t("agent.delegationHint")}</p>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3.5">
         {ACTIONS.map((action) => (
           <fieldset
             key={action}
-            className="min-w-0 rounded-control border border-border bg-surface-subtle p-3.5 shadow-xs flex flex-col gap-3"
+            className="min-w-0 rounded-panel border border-border bg-surface-subtle p-4 shadow-xs flex flex-col gap-3 hover:border-control/80 transition-colors"
             disabled={!owner || locked}
           >
-            <legend className="px-1 font-heading text-sm font-semibold text-primary">
+            <legend className="px-2 font-heading text-sm font-semibold text-primary">
               {t(actionLabelKey(action))}
             </legend>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-                <span>{t("agent.mode")}</span>
+                <span className="text-primary">{t("agent.mode")}</span>
                 <select
                   className={FIELD}
                   value={policy.actions[action]!.mode}
@@ -85,7 +85,7 @@ export function DelegationForm({
                 </select>
               </label>
               <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-                <span>{t("agent.dailyLimit")}</span>
+                <span className="text-primary">{t("agent.dailyLimit")}</span>
                 <input
                   className={FIELD}
                   type="number"
@@ -98,9 +98,9 @@ export function DelegationForm({
                 />
               </label>
             </div>
-            <div className="flex flex-wrap gap-4 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               {(["customer", "owner_task"] as const).map((source) => (
-                <label key={source} className="flex min-h-11 items-center gap-2 text-sm text-primary cursor-pointer">
+                <label key={source} className="flex min-h-11 items-center gap-2.5 rounded-control bg-surface px-3 py-1.5 text-sm text-primary border border-border/60 hover:border-control transition-colors cursor-pointer select-none">
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded-control border-border text-action focus-visible:outline-2 focus-visible:outline-focus"
@@ -121,7 +121,7 @@ export function DelegationForm({
         ))}
       </div>
 
-      <div className="pt-2">
+      <div className="pt-2 border-t border-border">
         {owner ? (
           <Button
             disabled={locked}
@@ -144,21 +144,21 @@ export function DelegationForm({
       </div>
 
       {preview.data && proposal ? (
-        <div role="status" className="flex flex-col gap-3 rounded-control border border-border bg-surface-subtle p-4 shadow-xs">
+        <div role="status" className="flex flex-col gap-3 rounded-panel border border-border bg-surface-subtle p-5 shadow-sm">
           <p className="font-heading font-semibold text-primary">
             {t("agent.versionPreview", { version: preview.data.next_version })}
           </p>
-          <ul className="flex flex-col gap-2 text-sm">
+          <ul className="flex flex-col gap-2.5 text-sm">
             {preview.data.changed_actions.map((a) => (
-              <li key={a} className="rounded-control border border-border bg-surface p-3 flex flex-col gap-1">
+              <li key={a} className="rounded-panel border border-border bg-surface p-3.5 flex flex-col gap-1 shadow-xs">
                 <span className="font-semibold text-primary">{t(actionLabelKey(a))}</span>
-                <span className="text-secondary">
+                <span className="text-secondary font-medium">
                   {t(`agent.modes.${data?.policy.actions[a]?.mode ?? "off"}`)} {" → "} {t(`agent.modes.${proposal.policy.actions[a]!.mode}`)}
                 </span>
-                <span className="text-xs text-muted">
+                <span className="text-xs text-secondary">
                   {t("agent.dailyLimit")}: {data?.policy.actions[a]?.max_per_day ?? t("agent.noAdditionalLimit")} {" → "} {proposal.policy.actions[a]!.max_per_day ?? t("agent.noAdditionalLimit")}
                 </span>
-                <span className="text-xs text-muted">
+                <span className="text-xs text-secondary">
                   {(data?.policy.actions[a]?.sources ?? ["customer", "owner_task"]).map((s) => t(`agent.sources.${s}`)).join(", ") || t("agent.noSources")}{" "}
                   {" → "}{" "}
                   {proposal.policy.actions[a]!.sources.map((s) => t(`agent.sources.${s}`)).join(", ") || t("agent.noSources")}
@@ -166,7 +166,7 @@ export function DelegationForm({
               </li>
             ))}
           </ul>
-          <p className="text-sm font-medium text-attention">{t("agent.changeWarning")}</p>
+          <p className="text-sm font-medium text-attention bg-attention-subtle p-2.5 rounded-control border border-border">{t("agent.changeWarning")}</p>
           <div>
             <Button
               disabled={locked}
@@ -188,7 +188,7 @@ export function DelegationForm({
       {preview.error ? <ErrorMessage error={preview.error} /> : null}
       {apply.error ? <ErrorMessage error={apply.error} /> : null}
       {apply.isSuccess ? (
-        <p role="status" className="text-sm font-medium text-success">
+        <p role="status" className="rounded-control bg-success-subtle p-2.5 text-sm font-medium text-success border border-border">
           {t("agent.saved")}
         </p>
       ) : null}

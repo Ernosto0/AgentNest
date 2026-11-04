@@ -23,22 +23,24 @@ export function HomePage() {
 
   return (
     <div className="flex flex-col gap-6 pb-28 md:pb-8">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            {t("home.welcome", { name: me.data?.user.display_name ?? "" })}
-          </h1>
-          <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-            <span>{formattedDate}</span>
-            <span>·</span>
-            <span className="font-medium text-slate-800">{workspace.name}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="type-page text-primary tracking-tight">
+              {t("home.welcome", { name: me.data?.user.display_name ?? "" })}
+            </h1>
             {workspace.is_demo ? <SimulatedBadge /> : null}
+          </div>
+          <p className="flex flex-wrap items-center gap-2 text-body text-secondary">
+            <span className="font-medium">{formattedDate}</span>
+            <span className="text-secondary/40">·</span>
+            <span className="font-semibold text-primary">{workspace.name}</span>
           </p>
         </div>
         <div>
           <Link
             to={`/w/${workspace.id}/content?tab=drafts`}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-action px-5 py-2.5 text-form font-semibold text-on-action shadow-xs transition-all hover:bg-action-hover hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus active:scale-[0.98]"
           >
             <PlusIcon className="text-lg" />
             <span>{t("home.createContent")}</span>
@@ -48,9 +50,14 @@ export function HomePage() {
 
       <CommandBar />
 
-      <Dashboard />
-
-      <ReadinessCard />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-8 flex flex-col gap-6">
+          <Dashboard />
+        </div>
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <ReadinessCard />
+        </div>
+      </div>
     </div>
   );
 }

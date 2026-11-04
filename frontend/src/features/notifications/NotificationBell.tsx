@@ -16,13 +16,13 @@ export function NotificationBell() {
       to={`/w/${workspace.id}/more/notifications`}
       // The badge reads "9+" from ten up; the accessible name must contain the visible text (WCAG 2.5.3).
       aria-label={`${t("notifications.bell")}${unread ? `, ${t("notifications.unread", { count: unread })}${unread > 9 ? " 9+" : ""}` : ""}`}
-      className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-button text-secondary hover:bg-surface-subtle hover:text-primary focus-visible:outline-2 focus-visible:outline-focus transition-colors"
+      className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-border/70 bg-surface-subtle/60 text-secondary hover:bg-surface-subtle hover:text-primary hover:border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-all shadow-2xs"
     >
-      <BellIcon className="text-2xl" />
+      <BellIcon className="text-xl" />
       {unread > 0 ? (
         <span
           data-testid="notification-count"
-          className="absolute top-1 right-1 min-w-5 rounded-full bg-danger px-1 text-center text-xs font-semibold text-white"
+          className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-center text-[11px] font-bold text-white shadow-xs"
         >
           {unread > 9 ? "9+" : unread}
         </span>

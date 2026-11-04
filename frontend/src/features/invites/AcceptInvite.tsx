@@ -49,12 +49,12 @@ export function AcceptInvite() {
       })}>{t("entry.checkAccount")}</Button>
     </> : <>
       {accept.isError && !emailTaken ? <ErrorMessage error={accept.error} /> : null}
-      {invalidInvite ? <Link to={me.data ? "/" : "/login"} className={LINK}>{me.data ? t("wizard.back") : t("invite.signIn")}</Link> : me.data ? <section className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6" aria-label={t("entry.inviteAccount")}>
+      {invalidInvite ? <Link to={me.data ? "/" : "/login"} className={LINK}>{me.data ? t("wizard.back") : t("invite.signIn")}</Link> : me.data ? <section className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6 shadow-xs" aria-label={t("entry.inviteAccount")}>
         <div><p className="text-body text-secondary">{t("entry.signedInAs")}</p><p className="mt-1 text-form font-semibold break-words">{me.data.user.display_name}</p><p className="text-body break-all text-secondary">{me.data.user.email}</p></div>
         <p className="text-form text-secondary">{t("invite.joinHint")}</p>
         <Button block pending={accept.isPending} disabled={logout.isPending} onClick={() => { if (token && !accept.isPending) accept.mutate({ token }, { onSuccess }); }}>{accept.isPending ? t("invite.joining") : t("invite.join")}</Button>
         <Button variant="secondary" pending={logout.isPending} disabled={accept.isPending} onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { state: loginState, replace: true }) })}>{t("entry.useAnotherAccount")}</Button>
-      </section> : <form onSubmit={submit} className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6" noValidate aria-busy={accept.isPending}>
+      </section> : <form onSubmit={submit} className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6 shadow-xs" noValidate aria-busy={accept.isPending}>
         <h2 className="type-section">{t("invite.newAccount")}</h2>
         <TextField label={t("invite.displayName")} name="display_name" autoComplete="name" required maxLength={100} value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
         <TextField ref={emailInput} label={t("invite.email")} type="email" name="email" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} required maxLength={320} value={email} error={invalidEmail ? t("entry.emailInvalid") : undefined} onChange={(event) => { setEmail(event.target.value); setInvalidEmail(false); }} />

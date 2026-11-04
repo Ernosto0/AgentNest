@@ -160,14 +160,14 @@ export function FactEditorSheet({ workspaceId, currency, canVerify, target, onCl
       }
     >
       {sentAsSuggestion ? (
-        <p role="status" className="rounded-card bg-attention-subtle p-3.5 text-base text-attention border border-border">
+        <p role="status" className="rounded-panel bg-attention-subtle p-4 text-base text-attention border border-border">
           {t("knowledge.editor.sentAsSuggestion")}
         </p>
       ) : (
         <div className="flex flex-col gap-4">
           {description ? <p className="text-sm text-secondary">{description}</p> : null}
           {!canVerify ? (
-            <p className="rounded-card bg-surface-elevated p-3.5 text-sm text-secondary border border-border">{t("knowledge.editor.staffNote")}</p>
+            <p className="rounded-panel bg-surface-subtle p-4 text-sm text-secondary border border-border">{t("knowledge.editor.staffNote")}</p>
           ) : null}
 
           {isNamed ? (
@@ -225,7 +225,7 @@ export function FactEditorSheet({ workspaceId, currency, canVerify, target, onCl
           />
 
           {showWindow ? (
-            <fieldset className="flex flex-col gap-3 rounded-card p-3.5 border border-border bg-surface">
+            <fieldset className="flex flex-col gap-3 rounded-panel p-4 border border-border bg-surface-subtle">
               <legend className="px-1 text-sm font-medium text-primary">{t("knowledge.editor.validity")}</legend>
               <TextField
                 label={t("knowledge.editor.validFrom")}

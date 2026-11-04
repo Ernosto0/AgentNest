@@ -31,27 +31,31 @@ export function FactCard({ fact, timezone, canVerify, busy, onEdit, onHistory, o
       : null;
 
   return (
-    <Card className="flex flex-col gap-3" data-testid={`${archived ? "archived-fact" : "fact"}-${fact.key}`}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
+    <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs hover:border-control/80 transition-colors" data-testid={`${archived ? "archived-fact" : "fact"}-${fact.key}`}>
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border/60 pb-3">
         <h3 className="min-w-0 text-base font-semibold text-primary break-words">{pickLabel(fact.label, i18n.language)}</h3>
         <FactStatusChip state={fact.state} />
       </div>
       <p className="text-base text-primary break-words whitespace-pre-line font-medium leading-relaxed">{fact.display}</p>
       {validity ? <p className="text-sm text-secondary">{validity}</p> : null}
       {fact.status === "verified" && fact.last_verified_at ? (
-        <p className="text-sm text-secondary">
+        <p className="text-xs text-secondary">
           {t("knowledge.verifiedOn", { date: date(fact.last_verified_at) })}
           {fact.source_type ? ` · ${t(`knowledge.source.${fact.source_type}`, { defaultValue: fact.source_type })}` : ""}
           {fact.last_verified_by_name ? ` · ${fact.last_verified_by_name}` : ""}
         </p>
       ) : null}
       {fact.state === "contested" ? (
-        <p className="text-sm text-attention font-medium">{t("knowledge.contestedNote")}</p>
+        <div className="rounded-control bg-attention-subtle p-3 text-sm text-attention font-medium border border-border">
+          {t("knowledge.contestedNote")}
+        </div>
       ) : null}
       {fact.state === "unverified" ? (
-        <p className="text-sm text-attention font-medium">{t("knowledge.unverifiedNote")}</p>
+        <div className="rounded-control bg-attention-subtle p-3 text-sm text-attention font-medium border border-border">
+          {t("knowledge.unverifiedNote")}
+        </div>
       ) : null}
-      <div className="mt-1 flex flex-wrap gap-2">
+      <div className="mt-1 flex flex-wrap gap-2 pt-2 border-t border-border/40">
         {archived ? (
           canVerify ? (
             <Button variant="secondary" disabled={busy} onClick={onRestore}>

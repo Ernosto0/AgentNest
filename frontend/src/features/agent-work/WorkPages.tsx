@@ -58,7 +58,7 @@ import {
 
 
 
-const INPUT = "mt-1 block w-full min-w-0 rounded-control border border-border bg-surface px-3 py-2 text-primary placeholder:text-muted focus-visible:outline-2 focus-visible:outline-focus";
+const INPUT = "mt-1 block w-full min-w-0 rounded-control border border-border bg-surface px-3 py-2 text-primary placeholder:text-secondary focus-visible:outline-2 focus-visible:outline-focus focus:border-control";
 
 const LINK = "text-action font-medium hover:text-action-hover underline";
 
@@ -93,14 +93,14 @@ export function WorkState({ state }: { state: string }) {
   return (
     <span
       data-status={state}
-      className={`inline-flex items-center rounded-control px-2.5 py-0.5 text-xs font-semibold ${
+      className={`inline-flex items-center rounded-control px-2.5 py-0.5 text-xs font-semibold border ${
         state === "answered" || state === "active" || state === "succeeded" || state === "visible"
-          ? "bg-success-subtle text-success"
+          ? "bg-success-subtle text-success border-border"
           : state === "expired" || state === "redacted" || state === "deleted"
-            ? "bg-surface text-muted border border-border"
+            ? "bg-surface text-secondary border-border"
             : state === "hidden"
-              ? "bg-canvas text-secondary border border-border-subtle"
-              : "bg-attention-subtle text-attention"
+              ? "bg-surface-subtle text-secondary border-border"
+              : "bg-attention-subtle text-attention border-border"
       }`}
     >
       {t(`agentWork.commentState.${state}`, {
@@ -262,7 +262,7 @@ function QuestionList({ account }: { account: string }) {
 
             key={q.id}
 
-            className="rounded-panel border border-border bg-surface p-4 shadow-xs flex flex-col gap-2.5 transition-colors hover:border-border-hover"
+            className="rounded-panel border border-border bg-surface p-4 shadow-xs flex flex-col gap-2.5 transition-colors hover:border-control"
 
           >
 
@@ -644,7 +644,7 @@ function QuestionDetail({ account }: { account: string }) {
 
               </p>
 
-              {a.candidate_id ? <p className="text-xs text-muted">{t("agentWork.candidate")}</p> : null}
+              {a.candidate_id ? <p className="text-xs text-secondary">{t("agentWork.candidate")}</p> : null}
 
             </li>
 
@@ -722,11 +722,11 @@ function MemoryDetail({ account }: { account: string }) {
             <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
               {t("agentWork.customerScope")}
             </span>
-            <span className="rounded-control bg-canvas px-2.5 py-0.5 text-xs font-mono font-medium text-primary border border-border-subtle">
+            <span className="rounded-control bg-surface-subtle px-2.5 py-0.5 text-xs font-mono font-medium text-primary border border-border">
               {customerId}
             </span>
           </div>
-          <span className="inline-flex items-center rounded-control bg-canvas px-2.5 py-0.5 text-xs font-medium text-secondary border border-border-subtle">
+          <span className="inline-flex items-center rounded-control bg-surface-subtle px-2.5 py-0.5 text-xs font-medium text-secondary border border-border">
             🔒 {t("agentWork.memory")}
           </span>
         </div>
@@ -749,18 +749,18 @@ function MemoryDetail({ account }: { account: string }) {
         {memories.data?.items.map((m) => (
           <li
             key={m.id}
-            className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-3.5 transition-colors hover:border-border-hover"
+            className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-3.5 transition-colors hover:border-control"
           >
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
                   {m.topic ?? m.kind ?? t("agentWork.memory")}
                 </span>
-                <span className="text-xs text-muted">
+                <span className="text-xs text-secondary">
                   · {t("agentWork.version")} {m.version}
                 </span>
               </div>
-              <span className="text-xs text-muted">
+              <span className="text-xs text-secondary">
                 {t("agentWork.expires")} <LocalTime value={m.expires_at} />
               </span>
             </div>
@@ -770,7 +770,7 @@ function MemoryDetail({ account }: { account: string }) {
             </p>
 
             {role !== "staff" && m.body ? (
-              <div className="flex flex-wrap gap-2 pt-1">
+              <div className="flex flex-wrap gap-2 pt-1 border-t border-border/40">
                 <Button
                   variant="secondary"
                   disabled={change.isPending}
@@ -793,7 +793,7 @@ function MemoryDetail({ account }: { account: string }) {
 
             {editing === m.id ? (
               <form
-                className="rounded-panel border border-border bg-canvas p-4 flex flex-col gap-3"
+                className="rounded-panel border border-border bg-surface-subtle p-4 flex flex-col gap-3 shadow-xs"
                 onSubmit={(e) => {
                   e.preventDefault();
                   change.mutate(
@@ -803,7 +803,7 @@ function MemoryDetail({ account }: { account: string }) {
                 }}
               >
                 <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-                  <span>{t("agentWork.correction")}</span>
+                  <span className="text-primary">{t("agentWork.correction")}</span>
                   <textarea
                     className={INPUT}
                     value={body}
@@ -824,7 +824,7 @@ function MemoryDetail({ account }: { account: string }) {
               </form>
             ) : null}
 
-            <details className="border-t border-border-subtle pt-3">
+            <details className="border-t border-border pt-3">
               <summary className="min-h-11 cursor-pointer py-1 text-sm font-medium text-action hover:text-action-hover select-none">
                 {t("agentWork.sources")}
               </summary>
@@ -834,7 +834,7 @@ function MemoryDetail({ account }: { account: string }) {
                   .map((s) => (
                     <div
                       key={s.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-canvas p-2.5 text-xs text-secondary border border-border-subtle"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-surface-subtle p-2.5 text-xs text-secondary border border-border"
                     >
                       <span className="font-medium text-primary">
                         {s.removed ? t("agentWork.sourceRemoved") : t("agentWork.sourceMessage")}
@@ -885,13 +885,13 @@ export function ThreadSummary({
       aria-label={t("agentWork.agentWork")}
       className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-3.5"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
         <div className="flex items-center gap-2">
           <strong className="font-heading font-semibold text-primary">{t("agentWork.agentWork")}</strong>
           {thread.is_simulated ? <SimulatedBadge /> : null}
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-control bg-canvas px-2.5 py-0.5 text-xs font-medium text-secondary border border-border-subtle">
+          <span className="inline-flex items-center rounded-control bg-surface-subtle px-2.5 py-0.5 text-xs font-medium text-secondary border border-border">
             {t(thread.handling_mode === "human" ? "agentWork.human" : "agentWork.agent")}
           </span>
           <WorkState state={thread.state} />
@@ -935,12 +935,12 @@ export function ThreadSummary({
       ) : null}
 
       {thread.actions.length > 0 ? (
-        <div className="border-t border-border-subtle pt-3 flex flex-col gap-2">
+        <div className="border-t border-border pt-3 flex flex-col gap-2">
           <ul className="flex flex-col gap-2">
             {thread.actions.map((a) => (
               <li
                 key={a.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-canvas px-3 py-2 text-sm border border-border-subtle"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-surface-subtle px-3 py-2 text-sm border border-border"
               >
                 <span className="font-medium text-primary">{t(actionLabelKey(a.action_type))}: </span>
                 <div className="flex items-center gap-2">
@@ -1033,7 +1033,7 @@ function CommentList({ account }: { account: string }) {
         {comments.data?.items.map((c) => (
           <li
             key={c.id}
-            className="rounded-panel border border-border bg-surface p-4 shadow-xs flex flex-col gap-2.5 transition-colors hover:border-border-hover"
+            className="rounded-panel border border-border bg-surface p-4 shadow-xs flex flex-col gap-2.5 transition-colors hover:border-control"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
@@ -1436,7 +1436,7 @@ function ManualActions({ account, comment }: { account: string; comment: Schema<
   return (
     <div className="flex flex-col gap-3 pt-1">
       {operations.data?.items.length ? (
-        <div className="rounded-control bg-canvas p-3 border border-border-subtle flex flex-col gap-2">
+        <div className="rounded-panel bg-surface-subtle p-3.5 border border-border flex flex-col gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
             {t("agentWork.operationHistory")}
           </span>

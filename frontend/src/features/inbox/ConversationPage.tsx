@@ -71,7 +71,7 @@ export function ConversationPage() {
     }
   };
 
-  if (detail.isPending) return <p className="text-sm text-slate-500">{t("common.loading")}</p>;
+  if (detail.isPending) return <p className="text-body text-secondary">{t("common.loading")}</p>;
   if (detail.isError) return <ErrorMessage error={detail.error} />;
   const { conversation, messages, open_draft: openDraft, recent_drafts: recent } = detail.data;
   const canManage = role === "owner" || role === "manager";
@@ -81,11 +81,11 @@ export function ConversationPage() {
   return (
     <div className="flex flex-col gap-5 max-w-4xl">
       {/* Header with back navigation, customer info, handling mode & window timer */}
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+      <div className="flex flex-col gap-3.5 rounded-panel border border-border bg-surface p-4 md:p-5 shadow-xs">
         <div>
           <Link
             to={`/w/${workspace.id}/inbox`}
-            className="inline-flex items-center gap-1 text-sm font-medium text-indigo-700 hover:text-indigo-800 underline focus-visible:outline-2 focus-visible:outline-indigo-600"
+            className="inline-flex items-center gap-1 text-body font-medium text-action hover:text-action-hover underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus rounded-control"
           >
             <ChevronLeftIcon className="text-base" />
             <span>{t("convo.back")}</span>
@@ -93,7 +93,7 @@ export function ConversationPage() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{customerLabel(conversation, t)}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-primary">{customerLabel(conversation, t)}</h1>
             {conversation.is_simulated ? <SimulatedBadge /> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -122,7 +122,7 @@ export function ConversationPage() {
                   variant="ghost"
                   disabled={eraseConvo.isPending}
                   onClick={handleErase}
-                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                  className="text-danger hover:bg-danger-subtle hover:text-danger-hover"
                   title={t("convo.eraseTooltip")}
                 >
                   {eraseConvo.isPending ? t("common.loading") : t("convo.erase")}
@@ -131,7 +131,11 @@ export function ConversationPage() {
             ) : null}
           </div>
         </div>
-        {human ? <p className="text-sm font-medium text-amber-900">{t("convo.humanMode")}</p> : null}
+        {human ? (
+          <div className="rounded-control bg-attention-subtle px-3 py-2 text-body font-medium text-attention border border-attention/20">
+            <p>{t("convo.humanMode")}</p>
+          </div>
+        ) : null}
         {mode.error ? <ErrorMessage error={mode.error} /> : null}
         {suggest.error ? <ErrorMessage error={suggest.error} /> : null}
         {exportConvo.error ? <ErrorMessage error={exportConvo.error} /> : null}
@@ -143,23 +147,27 @@ export function ConversationPage() {
       ) : null}
 
       {/* Message Stream */}
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-slate-50/60 p-4">
+      <div className="flex flex-col gap-4 rounded-panel border border-border bg-canvas p-4 md:p-5 shadow-xs">
         <ol className="flex flex-col gap-3" aria-label={t("convo.messages")} data-testid="messages">
           {messages.map((message) => {
             const mine = message.direction === "outbound";
             return (
               <li key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 break-words whitespace-pre-wrap shadow-2xs ${
+                  className={`max-w-[85%] rounded-panel px-4 py-3 break-words whitespace-pre-wrap shadow-xs ${
                     mine
-                      ? "bg-indigo-600 text-white rounded-br-xs"
-                      : "bg-white ring-1 ring-slate-200 text-slate-900 rounded-bl-xs"
+                      ? "bg-action text-on-action rounded-br-xs"
+                      : "bg-surface border border-border text-primary rounded-bl-xs"
                   }`}
                 >
-                  <p className="text-base leading-relaxed">
+                  <p className="text-form leading-relaxed">
                     {message.text ?? (message.attachments.length > 0 ? t("convo.attachment") : "")}
                   </p>
-                  <span className={`mt-1.5 flex flex-wrap items-center gap-1.5 text-xs ${mine ? "text-indigo-100" : "text-slate-500"}`}>
+                  <span
+                    className={`mt-1.5 flex flex-wrap items-center gap-1.5 text-metadata ${
+                      mine ? "text-on-action/80" : "text-secondary"
+                    }`}
+                  >
                     {mine && message.sender_kind === "business_native" ? <span>{t("convo.sentInApp")} · </span> : null}
                     <span>{time(message.provider_timestamp, i18n.language, workspace.timezone)}</span>
                     {message.is_simulated ? <span> · {t("badge.simulated")}</span> : null}
@@ -167,7 +175,7 @@ export function ConversationPage() {
                   {mine && canManage ? (
                     <button
                       type="button"
-                      className={`mt-2 block text-xs underline font-medium opacity-90 hover:opacity-100 focus-visible:outline-2 ${mine ? "text-primary-contrast focus-visible:outline-primary-contrast" : "text-action focus-visible:outline-focus"}`}
+                      className="mt-2.5 block text-metadata underline font-medium text-on-action/90 hover:text-on-action focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse"
                       disabled={saveAnswer.isPending}
                       onClick={() =>
                         saveAnswer.mutate(message.id, { onSuccess: () => setSaved(message.id) })

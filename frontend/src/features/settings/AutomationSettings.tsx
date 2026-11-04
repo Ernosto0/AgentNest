@@ -64,7 +64,7 @@ function LegacyAutomationSettings() {
         </Link>
       </div>
 
-      <Card className="flex flex-col gap-4">
+      <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
         <div className="border-b border-border pb-3">
           <h2 className="text-lg font-heading font-semibold text-primary">{t("automation.connection")}</h2>
         </div>
@@ -108,7 +108,7 @@ function LegacyAutomationSettings() {
         )}
       </Card>
 
-      <Card className="flex flex-col gap-4">
+      <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
         <div className="border-b border-border pb-3">
           <h2 className="text-lg font-heading font-semibold text-primary">{t("automation.policies")}</h2>
         </div>
@@ -119,7 +119,7 @@ function LegacyAutomationSettings() {
             {automation.data.items.map((item) => (
               <li
                 key={item.action_class}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-border bg-surface-subtle p-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-border bg-surface-subtle p-3.5 shadow-xs"
               >
                 <label htmlFor={`mode-${item.action_class}`} className="text-sm font-medium text-primary">
                   {t(`automation.class.${item.action_class.replace(".", "_")}`)}
@@ -131,7 +131,7 @@ function LegacyAutomationSettings() {
                   onChange={(event) =>
                     setEdits((current) => ({ ...current, [item.action_class]: event.target.value as Mode }))
                   }
-                  className="min-h-11 rounded-control border border-border bg-surface px-3 py-2 text-base text-primary shadow-xs focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-60"
+                  className="min-h-11 rounded-control border border-border bg-surface px-3 py-2 text-base text-primary shadow-xs focus-visible:outline-2 focus-visible:outline-focus focus:border-control disabled:opacity-60"
                 >
                   {MODES.map((mode) => (
                     <option key={mode} value={mode} disabled={mode === "auto" && !automation.data?.auto_allowed}>
@@ -144,13 +144,13 @@ function LegacyAutomationSettings() {
           </ul>
         ) : null}
         {automation.data && !automation.data.auto_allowed ? (
-          <p className="text-sm font-medium text-attention">{t("automation.autoNeedsReady")}</p>
+          <p className="text-sm font-medium text-attention bg-attention-subtle p-2.5 rounded-control border border-border">{t("automation.autoNeedsReady")}</p>
         ) : null}
         {automation.data?.reviewed_at ? (
-          <p className="text-sm font-medium text-secondary">{t("automation.reviewed")}</p>
+          <p className="text-sm font-medium text-secondary bg-surface-subtle p-2.5 rounded-control border border-border">{t("automation.reviewed")}</p>
         ) : null}
         {owner ? (
-          <div>
+          <div className="pt-2">
             <Button
               disabled={save.isPending || !automation.data}
               onClick={() =>
@@ -170,7 +170,7 @@ function LegacyAutomationSettings() {
           <p className="text-sm font-medium text-secondary">{t("automation.ownerOnly")}</p>
         )}
         {save.isSuccess ? (
-          <p role="status" className="text-sm font-medium text-success">
+          <p role="status" className="rounded-control bg-success-subtle p-2.5 text-sm font-medium text-success border border-border">
             {t("automation.saved")}
           </p>
         ) : null}

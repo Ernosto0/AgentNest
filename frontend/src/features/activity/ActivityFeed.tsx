@@ -5,6 +5,7 @@ import type { ActivityEntry } from "@/api/types";
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ClockIcon, SparkIcon, UsersIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { shiftDay, todayIn } from "@/features/reports/dates";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -62,9 +63,9 @@ export function ActivityFeed() {
   }, [entries, workspace.timezone, i18n.language, t]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("activity.title")}</h1>
+        <h1 className="type-page text-primary">{t("activity.title")}</h1>
         <p className="mt-1 text-sm text-secondary">{t("activity.intro")}</p>
       </div>
 
@@ -77,9 +78,9 @@ export function ActivityFeed() {
               type="button"
               aria-pressed={active}
               onClick={() => choose(name)}
-              className={`inline-flex min-h-11 items-center rounded-button px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-focus ${
+              className={`inline-flex min-h-11 items-center rounded-control px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 active
-                  ? "bg-brand text-white shadow-xs"
+                  ? "bg-action text-on-action shadow-xs"
                   : "border border-border bg-surface text-secondary hover:bg-surface-subtle hover:text-primary"
               }`}
             >
@@ -95,11 +96,11 @@ export function ActivityFeed() {
         <EmptyState title={t("activity.empty")} description={t("activity.emptyHint")} />
       ) : null}
       {entries.length > 0 ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
           {grouped.map((group) => (
             <div key={group.dayKey} className="overflow-hidden rounded-panel border border-border bg-surface shadow-xs">
-              <div className="border-b border-border bg-surface-subtle px-4 py-2">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-secondary">
+              <div className="border-b border-border bg-surface-subtle px-4 py-2.5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-secondary">
                   {group.label}
                 </h2>
               </div>
@@ -115,9 +116,11 @@ export function ActivityFeed() {
         </div>
       ) : null}
       {feed.hasNextPage ? (
-        <Button variant="secondary" disabled={feed.isFetchingNextPage} onClick={() => feed.fetchNextPage()}>
-          {feed.isFetchingNextPage ? t("common.loading") : t("activity.loadMore")}
-        </Button>
+        <div>
+          <Button variant="secondary" disabled={feed.isFetchingNextPage} onClick={() => feed.fetchNextPage()}>
+            {feed.isFetchingNextPage ? t("common.loading") : t("activity.loadMore")}
+          </Button>
+        </div>
       ) : null}
     </div>
   );
@@ -126,29 +129,42 @@ export function ActivityFeed() {
 function EntryRow({ entry, when }: { entry: ActivityEntry; when: string }) {
   const { t } = useTranslation();
   const { resource } = entry;
+  const isAgent = entry.actor.type === "agent" || entry.actor.type === "system";
+
   return (
-    <div className="flex flex-col gap-1.5 p-4" data-testid="activity-entry">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm font-medium text-primary">{entry.text}</p>
-        {entry.is_simulated ? <SimulatedBadge /> : null}
+    <div className="flex items-start gap-3.5 p-4 transition-colors hover:bg-surface-subtle/40" data-testid="activity-entry">
+      <div
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+          isAgent ? "bg-assistant text-action border border-action/20" : "bg-surface-subtle text-secondary border border-border"
+        }`}
+        aria-hidden="true"
+      >
+        {isAgent ? <SparkIcon className="text-base" /> : <UsersIcon className="text-base" />}
       </div>
-      {resource ? (
-        <p className="text-sm">
-          {resource.link ? (
-            <Link
-              to={resource.link}
-              className="font-medium text-brand hover:underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-focus"
-            >
-              {resource.label}
-            </Link>
-          ) : (
-            <span className="text-secondary">{resource.label}</span>
-          )}
-        </p>
-      ) : null}
-      <p className="text-xs text-tertiary">
-        {t("activity.byAt", { actor: entry.actor.label, time: when })}
-      </p>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-heading font-semibold text-primary text-sm">{entry.text}</p>
+          {entry.is_simulated ? <SimulatedBadge /> : null}
+        </div>
+        {resource ? (
+          <p className="text-sm">
+            {resource.link ? (
+              <Link
+                to={resource.link}
+                className="font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                {resource.label}
+              </Link>
+            ) : (
+              <span className="text-secondary">{resource.label}</span>
+            )}
+          </p>
+        ) : null}
+        <div className="flex items-center gap-1.5 text-xs text-secondary mt-0.5">
+          <ClockIcon className="text-xs shrink-0" />
+          <p>{t("activity.byAt", { actor: entry.actor.label, time: when })}</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -99,49 +99,60 @@ function AccountAgent({
       {overview.error ? <ErrorMessage error={overview.error} /> : null}
       {data ? (
         <>
-          <Card className="flex flex-col gap-4">
+          <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
-              <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.overview")}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.overview")}</h2>
+                <span className="inline-flex items-center rounded-control bg-surface-subtle px-2.5 py-0.5 text-xs font-semibold text-primary border border-border">
+                  {t(`agent.controller.${data.controller_mode}`)}
+                </span>
+                <span className={`inline-flex items-center rounded-control px-2.5 py-0.5 text-xs font-semibold border border-border ${data.state === "active" ? "bg-success-subtle text-success" : "bg-attention-subtle text-attention"}`}>
+                  {t(`agent.states.${data.state}`)}
+                </span>
+              </div>
               {data.is_simulated ? <SimulatedBadge /> : null}
             </div>
             <p role="status" className="text-sm font-medium text-secondary">
               {t(`agent.controller.${data.controller_mode}`)} | {t(`agent.states.${data.state}`)}
             </p>
-            <p className="text-sm text-primary">
-              {t("agent.waitingCounts", {
-                questions: data.pending_questions,
-                approvals: data.pending_approvals,
-              })}
-            </p>
-            <Link className="font-semibold text-action hover:text-action-hover underline" to={`/w/${ws}/approvals`}>
-              {t("agent.openApprovals")}
-            </Link>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <Link className="text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/questions?account=${accountId}`}>
-                {t("agent.openQuestions")}
-              </Link>
-              <Link className="text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/comments?account=${accountId}`}>
-                {t("agent.openComments")}
-              </Link>
+            <div className="rounded-panel border border-border bg-surface-subtle p-3.5">
+              <p className="text-sm font-medium text-primary">
+                {t("agent.waitingCounts", {
+                  questions: data.pending_questions,
+                  approvals: data.pending_approvals,
+                })}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                <Link className="font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/approvals`}>
+                  {t("agent.openApprovals")}
+                </Link>
+                <Link className="font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/questions?account=${accountId}`}>
+                  {t("agent.openQuestions")}
+                </Link>
+                <Link className="font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/comments?account=${accountId}`}>
+                  {t("agent.openComments")}
+                </Link>
+              </div>
             </div>
-            <ul className="rounded-control border border-border bg-surface-subtle p-3 text-sm text-secondary space-y-1">
+            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-panel border border-border bg-surface-subtle p-3 text-sm text-secondary">
               {Object.entries(data.session_counts).map(([state, count]) => (
-                <li key={state}>
-                  {t(`agent.states.${state}`)}: <span className="font-medium text-primary">{count}</span>
+                <li key={state} className="flex items-center justify-between gap-1 rounded-control bg-surface px-2.5 py-1.5 border border-border/50">
+                  <span>{t(`agent.states.${state}`)}:</span>
+                  <span className="font-semibold text-primary">{count}</span>
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-attention font-medium">{t("agent.pauseWarning")}</p>
+            <p className="text-xs text-attention font-medium bg-attention-subtle/50 p-2.5 rounded-control border border-border">{t("agent.pauseWarning")}</p>
             {!connected ? (
-              <p role="status" className="rounded-control border border-danger bg-danger-subtle p-3 text-sm font-medium text-danger">
+              <p role="status" className="rounded-panel border border-border bg-danger-subtle p-3.5 text-sm font-medium text-danger">
                 {t("agent.connectionRequired")}
               </p>
             ) : null}
-            <Link className="text-sm text-action hover:text-action-hover underline" to={`/w/${ws}/more/settings/connections`}>
+            <Link className="text-sm font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/more/settings/connections`}>
               {t("automation.manageConnection")}
             </Link>
             {owner ? (
-              <div className="flex flex-wrap gap-2.5 pt-1">
+              <div className="flex flex-wrap gap-2.5 pt-2 border-t border-border">
                 {data.controller_mode === "legacy" ? (
                   <Button disabled={!connected || change.isPending} onClick={() => setConfirm(true)}>
                     {t("agent.enable")}
@@ -170,7 +181,7 @@ function AccountAgent({
               <p className="text-sm text-secondary font-medium">{t("agent.ownerOnly")}</p>
             )}
             {confirm ? (
-              <div className="rounded-control border border-attention bg-attention-subtle p-4 flex flex-col gap-3 shadow-xs">
+              <div className="rounded-panel border border-border bg-attention-subtle p-4 flex flex-col gap-3 shadow-xs">
                 <p className="text-sm text-attention font-medium">{t("agent.migrationWarning")}</p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -198,12 +209,14 @@ function AccountAgent({
             {change.error ? <ErrorMessage error={change.error} /> : null}
           </Card>
 
-          <Card className="flex flex-col gap-3">
-            <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.capabilities")}</h2>
+          <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.capabilities")}</h2>
+            </div>
             <p className="text-sm text-secondary">{t("agent.capabilityHint")}</p>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm pt-1">
               {Object.entries(capabilities).map(([name, allowed]) => (
-                <li key={name} className="flex items-center justify-between rounded-control border border-border bg-surface-subtle px-3 py-2">
+                <li key={name} className="flex items-center justify-between rounded-control border border-border bg-surface-subtle px-3 py-2.5 shadow-xs">
                   <span className="text-primary font-medium">
                     {name === "comment_reply"
                       ? t("agent.actions.comment_reply")
@@ -213,7 +226,7 @@ function AccountAgent({
                           ? t("agent.moderateCapability")
                           : capabilityLabel(name, t)}
                   </span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-control ${allowed === true ? "text-success bg-success-subtle" : "text-muted bg-surface"}`}>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-control border border-border ${allowed === true ? "text-success bg-success-subtle" : "text-secondary bg-surface"}`}>
                     {t(allowed === true ? "agent.available" : "agent.unavailable")}
                   </span>
                 </li>
@@ -244,13 +257,15 @@ function AccountAgent({
           ) : null}
           {delegation.error ? <ErrorMessage error={delegation.error} /> : null}
 
-          <Card className="flex flex-col gap-4">
-            <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.tasks")}</h2>
+          <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.tasks")}</h2>
+            </div>
             <p className="text-sm text-secondary">{t("agent.taskHint")}</p>
             <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-              <span>{t("agent.taskText")}</span>
+              <span className="text-primary">{t("agent.taskText")}</span>
               <textarea
-                className="w-full rounded-control border border-border bg-surface p-3 text-base text-primary placeholder:text-muted focus-visible:outline-2 focus-visible:outline-focus"
+                className="w-full rounded-control border border-border bg-surface p-3 text-base text-primary placeholder:text-secondary focus-visible:outline-2 focus-visible:outline-focus focus:border-control"
                 rows={3}
                 value={text}
                 maxLength={4000}
@@ -287,17 +302,22 @@ function AccountAgent({
             </div>
             {submit.error ? <ErrorMessage error={submit.error} /> : null}
             {submit.isSuccess ? (
-              <p role="status" className="text-sm font-medium text-success">
+              <p role="status" className="rounded-control bg-success-subtle p-2.5 text-sm font-medium text-success border border-border">
                 {t("agent.taskAccepted")}
               </p>
             ) : null}
             {tasks.error ? <ErrorMessage error={tasks.error} /> : null}
-            <ul className="flex flex-col gap-2.5">
+            <ul className="flex flex-col gap-3">
               {tasks.data?.items.map((task) => (
-                <li key={task.id} className="rounded-control border border-border bg-surface-subtle p-3.5 shadow-xs flex flex-col gap-1.5">
-                  <Link className="font-semibold text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/tasks/${task.id}?account=${accountId}`}>
-                    {t("agent.taskProgress")}: {t(`agent.states.${task.status}`, { defaultValue: t("agent.pending") })}
-                  </Link>
+                <li key={task.id} className="rounded-panel border border-border bg-surface-subtle p-4 shadow-xs flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
+                    <Link className="font-semibold text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/tasks/${task.id}?account=${accountId}`}>
+                      {t("agent.taskProgress")}
+                    </Link>
+                    <span className="inline-flex items-center rounded-control bg-surface px-2.5 py-0.5 text-xs font-semibold text-primary border border-border">
+                      {t(`agent.states.${task.status}`, { defaultValue: t("agent.pending") })}
+                    </span>
+                  </div>
                   {task.actions.map((action) => (
                     <div key={action.action_id} className="flex flex-wrap items-center gap-2 text-sm text-secondary">
                       <span>{t(actionLabelKey(action.action_type))}:</span>
@@ -315,14 +335,18 @@ function AccountAgent({
             ) : null}
           </Card>
 
-          <Card className="flex flex-col gap-3">
-            <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.recentActions")}</h2>
+          <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.recentActions")}</h2>
+            </div>
             <p className="text-sm text-secondary">{t("agent.outcomeHint")}</p>
             <ul className="mt-1 flex flex-col gap-2">
               {data.recent_actions.map((action) => (
-                <li key={action.id} className="flex flex-wrap items-center justify-between rounded-control border border-border bg-surface-subtle px-3 py-2 text-sm">
+                <li key={action.id} className="flex flex-wrap items-center justify-between rounded-control border border-border bg-surface-subtle px-3 py-2.5 text-sm shadow-xs">
                   <span className="font-medium text-primary">{t(actionLabelKey(action.action_type))}</span>
-                  <span className="text-secondary">{t(`agent.states.${action.status}`, { defaultValue: t("agent.pending") })}</span>
+                  <span className="inline-flex items-center rounded-control bg-surface px-2 py-0.5 text-xs font-medium text-secondary border border-border">
+                    {t(`agent.states.${action.status}`, { defaultValue: t("agent.pending") })}
+                  </span>
                 </li>
               ))}
             </ul>
