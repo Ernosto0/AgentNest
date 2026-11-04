@@ -334,3 +334,12 @@ def assert_executable(
             raise AppError("CONFLICT_STATE", entity="approval", reason="already_consumed")
         approval.operation_id = operation_id
     return approval
+
+
+class ApprovalService:
+    """Service encapsulating approval management and decision workflows."""
+
+    decide = staticmethod(decide)
+    request = staticmethod(request)
+    cancel_for_subject = staticmethod(cancel_for_subject)
+    assert_executable = staticmethod(assert_executable)

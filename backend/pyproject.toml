@@ -74,6 +74,7 @@ markers = [
     "commits: test performs real commits (queue/concurrency); tables are truncated afterwards",
     "invariant(id): test proves the named invariant (INV-nn)",
     "meta_live: needs live Meta credentials (never run in CI)",
+    "telegram_live: needs live Telegram credentials (never run in CI)",
 ]
 
 [tool.importlinter]
@@ -503,4 +504,30 @@ ignore_imports = [
     "app.integrations.channels.telegram.handlers -> app.reporting.service",
     "app.integrations.channels.telegram.handlers -> app.reporting.periods",
 ]
+
+[[tool.importlinter.contracts]]
+name = "only channel registry and telegram webhook router import telegram channel adapter (AC-4)"
+type = "forbidden"
+source_modules = [
+    "app.commands",
+    "app.approvals",
+    "app.inbox",
+    "app.policy",
+    "app.identity",
+    "app.knowledge",
+    "app.core",
+    "app.audit",
+    "app.jobs",
+    "app.ai",
+    "app.notifications",
+    "app.operations",
+    "app.content",
+    "app.reporting",
+    "app.activity",
+    "app.retention",
+]
+forbidden_modules = ["app.integrations.channels.telegram"]
+allow_indirect_imports = true
+
+
 

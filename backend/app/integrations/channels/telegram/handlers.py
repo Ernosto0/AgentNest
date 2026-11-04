@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import html
 import io
 import re
@@ -17,6 +18,8 @@ from sqlalchemy.orm import Session
 
 from app.agent import owner_tasks
 from app.agent.models import AccountAgent
+from app.approvals.action_tokens import ActionTokenService
+from app.approvals.service import ApprovalService
 from app.audit import service as audit
 from app.commands import service as command_service
 from app.content import media
@@ -24,7 +27,7 @@ from app.content import service as content_service
 from app.content.service import ScheduleRequest
 from app.core.clock import Clock
 from app.core.config import get_settings
-from app.core.context import ActorRef
+from app.core.context import ActorRef, WorkspaceContext
 from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.identity.models import ChannelLink, User, Workspace, WorkspaceMember
@@ -35,6 +38,9 @@ from app.integrations.channels.telegram.webhook_format import (
     TelegramMessage,
 )
 from app.integrations.storage.registry import get_media_storage
+from app.owner_requests import service as owner_requests_service
+from app.owner_requests.models import OwnerQuestion
+from app.owner_requests.service import AnswerRequest
 from app.reporting import service as reporting_service
 from app.reporting.periods import local_date_of
 
@@ -176,6 +182,104 @@ def handle_linked_message(
             chat_id=chat_id,
             is_tr=is_tr,
         )
+
+    # -------------------------------------------------------------------------
+    # 2.5 Owner Question Reply (Phase 7.5 / ADR-024)
+    # -------------------------------------------------------------------------
+    matched_question: OwnerQuestion | None = None
+    if message.reply_to_message and message.reply_to_message.text:
+        reply_text = message.reply_to_message.text
+        if (
+            "Asistanınız Bilgi Bekliyor" in reply_text
+            or "Your Assistant Needs Information" in reply_text
+        ):
+            matched_question = session.scalar(
+                select(OwnerQuestion)
+                .where(
+                    OwnerQuestion.workspace_id == ctx.workspace_id,
+                    OwnerQuestion.state == "pending",
+                    OwnerQuestion.expires_at > now,
+                )
+                .order_by(OwnerQuestion.created_at.desc())
+            )
+            if matched_question is None:
+                matched_question = session.scalar(
+                    select(OwnerQuestion)
+                    .where(OwnerQuestion.workspace_id == ctx.workspace_id)
+                    .order_by(OwnerQuestion.created_at.desc())
+                )
+
+    prefix_match = re.match(
+        r"^(?:cevap|yanıt|answer|bilgi):\s*(.*)$", raw_text, re.IGNORECASE | re.DOTALL
+    )
+    if prefix_match:
+        if matched_question is None:
+            matched_question = session.scalar(
+                select(OwnerQuestion)
+                .where(
+                    OwnerQuestion.workspace_id == ctx.workspace_id,
+                    OwnerQuestion.state == "pending",
+                    OwnerQuestion.expires_at > now,
+                )
+                .order_by(OwnerQuestion.created_at.desc())
+            )
+            if matched_question is None:
+                matched_question = session.scalar(
+                    select(OwnerQuestion)
+                    .where(OwnerQuestion.workspace_id == ctx.workspace_id)
+                    .order_by(OwnerQuestion.created_at.desc())
+                )
+        if matched_question is not None:
+            answer_text = prefix_match.group(1).strip() or raw_text
+            return _handle_owner_question_answer(
+                session=session,
+                clock=clock,
+                ctx=ctx,
+                user=user,
+                raw_text=answer_text,
+                tg_client=tg_client,
+                chat_id=chat_id,
+                is_tr=is_tr,
+                question=matched_question,
+            )
+
+    if matched_question is not None:
+        return _handle_owner_question_answer(
+            session=session,
+            clock=clock,
+            ctx=ctx,
+            user=user,
+            raw_text=raw_text,
+            tg_client=tg_client,
+            chat_id=chat_id,
+            is_tr=is_tr,
+            question=matched_question,
+        )
+
+    # If workspace has an active pending owner question and text is not an agent task,
+    # route to owner question answer as informational input
+    if not is_agent_task(raw_text):
+        pending_q = session.scalar(
+            select(OwnerQuestion)
+            .where(
+                OwnerQuestion.workspace_id == ctx.workspace_id,
+                OwnerQuestion.state == "pending",
+                OwnerQuestion.expires_at > now,
+            )
+            .order_by(OwnerQuestion.created_at.desc())
+        )
+        if pending_q is not None:
+            return _handle_owner_question_answer(
+                session=session,
+                clock=clock,
+                ctx=ctx,
+                user=user,
+                raw_text=raw_text,
+                tg_client=tg_client,
+                chat_id=chat_id,
+                is_tr=is_tr,
+                question=pending_q,
+            )
 
     # -------------------------------------------------------------------------
     # 3. Account Agent Routing (ADR-024)
@@ -579,3 +683,255 @@ def _handle_general_command(
         )
     tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
     return "owner_command"
+
+
+def _handle_owner_question_answer(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    user: User,
+    raw_text: str,
+    tg_client: TelegramClient,
+    chat_id: str,
+    is_tr: bool,
+    question: OwnerQuestion,
+) -> str:
+    """Submit informational response to pending OwnerQuestion (ADR-024, Phase 7.5)."""
+    now = clock.now()
+    if question.state != "pending" or question.expires_at <= now:
+        state_desc = question.state if question.state != "pending" else "expired"
+        msg = (
+            f"⚠️ <b>Bu soru artık yanıt beklememektedir.</b>\n\n"
+            f"Mevcut durum: <code>{html.escape(state_desc)}</code>"
+            if is_tr
+            else (
+                f"⚠️ <b>This question is no longer awaiting an answer.</b>\n\n"
+                f"Current status: <code>{html.escape(state_desc)}</code>"
+            )
+        )
+        tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+        return "owner_question_stale"
+
+    request = AnswerRequest(
+        expected_version=question.version,
+        client_request_id=uuid.uuid4(),
+        body=raw_text,
+        kind="answer",
+    )
+
+    try:
+        owner_requests_service.decide(
+            db=session,
+            clock=clock,
+            ctx=ctx,
+            account=question.social_account_id,
+            question=question.id,
+            request=request,
+        )
+        session.commit()
+        msg = (
+            "✅ <b>Bilgi kaydedildi ve asistana iletildi.</b>\n\n"
+            "Müşteriye yanıt hazırlanırken bu bilgi dikkate alınacaktır."
+            if is_tr
+            else (
+                "✅ <b>Information recorded and forwarded to the assistant.</b>\n\n"
+                "This information will be used to generate a response for the customer."
+            )
+        )
+        tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+        return "owner_question_answered"
+    except AppError as exc:
+        if exc.code in ("OWNER_QUESTION_CLOSED", "VERSION_CONFLICT"):
+            session.rollback()
+            state_desc = question.state
+            msg = (
+                f"⚠️ <b>Bu soru artık yanıt beklememektedir.</b>\n\n"
+                f"Mevcut durum: <code>{html.escape(state_desc)}</code>"
+                if is_tr
+                else (
+                    f"⚠️ <b>This question is no longer awaiting an answer.</b>\n\n"
+                    f"Current status: <code>{html.escape(state_desc)}</code>"
+                )
+            )
+            tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+            return "owner_question_stale"
+        raise
+
+
+def handle_approval_callback(
+    session: Session,
+    clock: Clock,
+    callback_query: Any,
+    token_str: str,
+    tg_client: TelegramClient,
+) -> str:
+    """Consume single-use action token and invoke ApprovalService.decide."""
+    channel_user_id = str(callback_query.from_.id) if callback_query.from_ else ""
+    chat_id = str(callback_query.message.chat.id) if callback_query.message else None
+    message_id = callback_query.message.message_id if callback_query.message else None
+
+    try:
+        approval, token_record = ActionTokenService.consume_action_token(
+            db=session,
+            clock=clock,
+            token_str=token_str,
+            channel_user_id=channel_user_id,
+        )
+    except AppError as exc:
+        if exc.code == "APPROVAL_ALREADY_DECIDED":
+            tg_client.answer_callback_query(
+                callback_query.id,
+                text="Bu onay zaten karara bağlandı / Already decided",
+                show_alert=True,
+            )
+            if chat_id and message_id:
+                with contextlib.suppress(Exception):
+                    tg_client.edit_message_reply_markup(
+                        chat_id=chat_id,
+                        message_id=message_id,
+                        reply_markup={"inline_keyboard": []},
+                    )
+            return "approval_already_decided"
+        elif exc.code == "APPROVAL_EXPIRED":
+            tg_client.answer_callback_query(
+                callback_query.id,
+                text="Onay süresi doldu / Approval expired",
+                show_alert=True,
+            )
+            if chat_id and message_id:
+                with contextlib.suppress(Exception):
+                    tg_client.edit_message_reply_markup(
+                        chat_id=chat_id,
+                        message_id=message_id,
+                        reply_markup={"inline_keyboard": []},
+                    )
+            return "approval_expired"
+        elif exc.code == "FORBIDDEN":
+            tg_client.answer_callback_query(
+                callback_query.id,
+                text="Bu onay için yetkiniz yok / Unauthorized",
+                show_alert=True,
+            )
+            return "approval_unauthorized"
+        else:
+            tg_client.answer_callback_query(
+                callback_query.id,
+                text=f"Onay işlemi gerçekleştirilemedi: {exc.code}",
+                show_alert=True,
+            )
+            return "approval_failed"
+
+    # Resolve workspace, user and member context for ApprovalService.decide
+    user = session.get(User, token_record.user_id)
+    workspace = session.get(Workspace, token_record.workspace_id)
+    if user is None or workspace is None:
+        tg_client.answer_callback_query(
+            callback_query.id,
+            text="Kullanıcı veya çalışma alanı bulunamadı",
+            show_alert=True,
+        )
+        return "approval_failed"
+
+    member = session.scalar(
+        select(WorkspaceMember).where(
+            WorkspaceMember.workspace_id == workspace.id,
+            WorkspaceMember.user_id == user.id,
+        )
+    )
+    role = member.role if member else "owner"
+    ctx = workspace_context(workspace, ActorRef.user(user.id), role)
+
+    decision_val = "approve" if token_record.decision == "approved" else "reject"
+
+    try:
+        ApprovalService.decide(
+            session=session,
+            clock=clock,
+            ctx=ctx,
+            approval_id=approval.id,
+            decision=decision_val,
+            payload_hash=token_record.payload_hash,
+            channel="telegram",
+        )
+    except AppError as exc:
+        if exc.code == "APPROVAL_ALREADY_DECIDED":
+            tg_client.answer_callback_query(
+                callback_query.id,
+                text="Bu onay zaten karara bağlandı / Already decided",
+                show_alert=True,
+            )
+            if chat_id and message_id:
+                with contextlib.suppress(Exception):
+                    tg_client.edit_message_reply_markup(
+                        chat_id=chat_id,
+                        message_id=message_id,
+                        reply_markup={"inline_keyboard": []},
+                    )
+            return "approval_already_decided"
+        elif exc.code == "APPROVAL_EXPIRED":
+            tg_client.answer_callback_query(
+                callback_query.id,
+                text="Onay süresi doldu / Approval expired",
+                show_alert=True,
+            )
+            if chat_id and message_id:
+                with contextlib.suppress(Exception):
+                    tg_client.edit_message_reply_markup(
+                        chat_id=chat_id,
+                        message_id=message_id,
+                        reply_markup={"inline_keyboard": []},
+                    )
+            return "approval_expired"
+        elif exc.code == "APPROVAL_STALE":
+            tg_client.answer_callback_query(
+                callback_query.id,
+                text="Onay içeriği değişti / Approval stale",
+                show_alert=True,
+            )
+            if chat_id and message_id:
+                with contextlib.suppress(Exception):
+                    tg_client.edit_message_reply_markup(
+                        chat_id=chat_id,
+                        message_id=message_id,
+                        reply_markup={"inline_keyboard": []},
+                    )
+            return "approval_stale"
+        elif exc.code == "FORBIDDEN":
+            tg_client.answer_callback_query(
+                callback_query.id,
+                text="Bu onay için yetkiniz yok / Unauthorized",
+                show_alert=True,
+            )
+            return "approval_unauthorized"
+        raise
+
+    is_approved = token_record.decision == "approved"
+    decision_text = "Onaylandı" if is_approved else "Reddedildi"
+    badge_icon = "✅" if is_approved else "❌"
+
+    tg_client.answer_callback_query(
+        callback_query.id,
+        text=f"{badge_icon} {decision_text}",
+        show_alert=False,
+    )
+
+    if chat_id and message_id and callback_query.message:
+        orig_text = callback_query.message.text or ""
+        user_name = user.display_name or user.email or "Owner"
+        new_text = orig_text + f"\n\n{badge_icon} {decision_text} — {user_name}"
+        try:
+            tg_client.edit_message_text(
+                chat_id=chat_id,
+                message_id=message_id,
+                text=new_text,
+                reply_markup={"inline_keyboard": []},
+            )
+        except Exception:
+            with contextlib.suppress(Exception):
+                tg_client.edit_message_reply_markup(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    reply_markup={"inline_keyboard": []},
+                )
+
+    return "approval_decided"

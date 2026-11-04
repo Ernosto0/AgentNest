@@ -39,7 +39,7 @@ npx playwright install chromium webkit    # needed for the E2E checks, not for t
 
 Other CLI commands (from `backend/`): `uv run python -m app.cli create-user --email … --display-name …` (prompts for the password), `uv run python -m app.cli generate-key` (a `SECRET_KEY` value; `--kind token-encryption` prints a `TOKEN_ENCRYPTION_KEYS` entry).
 
-## 3. Running (four terminals)
+## 3. Running (four terminals, optional fifth for Telegram)
 
 | Terminal | Command (from repo root) |
 |---|---|
@@ -47,8 +47,22 @@ Other CLI commands (from `backend/`): `uv run python -m app.cli create-user --em
 | API | `cd backend; uv run uvicorn app.main:create_app --factory --reload --port 8000` |
 | Worker | `cd backend; uv run python -m app.worker` |
 | Frontend | `cd frontend; npm run dev` → http://localhost:5173 |
+| Telegram Bot (optional) | `cd backend; uv run python -m app.cli telegram-poll` |
 
 The worker is required for anything asynchronous: commands, drafts, sends, publishing and reports. If a status stays at *Anlıyorum…* or *Hazırlanıyor…*, check that the worker is running. Stop it with Ctrl+C; it finishes the running job first. Use a separate terminal for each command and leave all three running. If a port is occupied, use the existing server only if it belongs to this checkout; otherwise stop that server in its own terminal before starting this one.
+
+### Telegram Long Polling (Local Development)
+
+To test the Owner Messaging Channel locally with a live Telegram bot without exposing a public HTTPS tunnel or configuring webhook URLs:
+
+1. Create a bot via `@BotFather` on Telegram and obtain the bot token.
+2. Add `TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."` to your `.env` file (or set `$env:TELEGRAM_BOT_TOKEN` in PowerShell).
+3. Start the long-polling runner in its own terminal:
+   ```powershell
+   cd backend
+   uv run python -m app.cli telegram-poll
+   ```
+4. The runner invokes `getUpdates` with long-polling timeouts, tracks `update_id` offsets, deduplicates via `telegram_updates`, and routes updates through `process_update`. Optional CLI flags: `--timeout <seconds>` (default 30), `--limit <count>` (default 100). Stop cleanly with Ctrl+C.
 
 From Windows PowerShell 5.1 the same commands read, for example: `cd backend; uv run uvicorn app.main:create_app --factory --reload --port 8000`.
 

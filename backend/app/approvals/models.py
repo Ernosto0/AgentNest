@@ -104,3 +104,49 @@ class Approval(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
     operation_id: Mapped[uuid.UUID | None] = mapped_column()  # the one operation it authorised
     cancel_reason: Mapped[str | None] = mapped_column(Text)
     is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+
+
+class ActionToken(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """Single-use cryptographic action token for owner channel approvals (INV-16)."""
+
+    __tablename__ = "action_tokens"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id", name="uq_action_tokens_workspace_id_id"),
+        CheckConstraint("decision IN ('approved', 'rejected')", name="ck_action_tokens_decision"),
+        ForeignKeyConstraint(
+            ["workspace_id"],
+            ["workspaces.id"],
+            name="fk_action_tokens_workspace_id_workspaces",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["approval_id"],
+            ["approvals.id"],
+            name="fk_action_tokens_approval_id_approvals",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["user_id"],
+            ["users.id"],
+            name="fk_action_tokens_user_id_users",
+            ondelete="CASCADE",
+        ),
+        Index("ix_action_tokens_token_hash", "token_hash", unique=True),
+        Index("ix_action_tokens_workspace_id", "workspace_id"),
+        Index("ix_action_tokens_approval_id", "approval_id"),
+        Index("ix_action_tokens_user_id", "user_id"),
+        Index("ix_action_tokens_expires_at", "expires_at"),
+    )
+
+    token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    approval_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    decision: Mapped[str] = mapped_column(Text, nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    payload_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+    )

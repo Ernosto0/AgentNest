@@ -21,13 +21,15 @@ Deduplicate updates before writing a question answer, task or decision. Handle s
 question, takeover, role change and controller epoch by showing the current state rather
 than replaying an old response. Keep customer DMs outside this owner command channel.
 
-| ID | Task | Size |
-|---|---|---|
-| P9-01 | `channel_links` + linking flow (one-time code in web settings → `/link <code>` in the bot); unlink both ways; audit | S |
-| P9-02 | Formalise `OwnerChannel`; `notification_deliveries`; delivery policy (which notification types are pushed; quiet hours per user, default 22:00–08:00 local except critical) | M |
-| P9-03 | Telegram adapter: webhook with secret header, `update_id` dedup, long-polling mode for local dev, text → `CommandService.submit`, photo → `MediaService.ingest` (≤ 20 MB) + attach to the next command, command results rendered as messages | M |
-| P9-04 | Approval buttons: action tokens (16 random bytes, hashed, single use, bound to user, approval, decision and payload hash, expiring with the approval); approval messages carry the full summary and the simulated flag | M |
-| P9-05 | Tests: wrong user pressing a forwarded button; replayed button; expired approval; edited subject (stale); unlinked user; duplicate updates; media too large | M |
+| ID | Task | Size | Status | Implementation Sessions |
+|---|---|---|---|---|
+| P9-01 | `channel_links` + linking flow (one-time code in web settings → `/link <code>` in the bot); unlink both ways; audit | S | **Complete** | S01, S02 |
+| P9-02 | Formalise `OwnerChannel`; `notification_deliveries`; delivery policy (which notification types are pushed; quiet hours per user, default 22:00–08:00 local except critical) | M | **Complete** | S03 |
+| P9-03 | Telegram adapter: webhook with secret header, `update_id` dedup, long-polling mode for local dev, text → `CommandService.submit`, photo → `MediaService.ingest` (≤ 20 MB) + attach to the next command, command results rendered as messages | M | **Complete** | S04, S05 |
+| P9-04 | Approval buttons: action tokens (16 random bytes, hashed, single use, bound to user, approval, decision and payload hash, expiring with the approval); approval messages carry the full summary and the simulated flag | M | **Complete** | S06 |
+| P9-05 | Tests: wrong user pressing a forwarded button; replayed button; expired approval; edited subject (stale); unlinked user; duplicate updates; media too large | M | **Complete** | S07, S08 |
+
+All 4 canonical Acceptance Criteria are met and verified in `tests/e2e/test_owner_channel_acceptance.py`. Detailed close-out: [Phase 9 Summary](../phase-summaries/phase-09-summary.md) and [Session Reports](../phase-9-sessions/phase-09-sessions.md).
 
 ## Acceptance criteria
 1. A linked owner receives an `approval.requested` message for a reply draft with the exact text, approves with a button, and the reply is sent. A second press reports "already decided".

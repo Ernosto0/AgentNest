@@ -108,8 +108,27 @@ def process_update(
     session.add(record)
     session.flush()
 
-    # 3. Handle Callback Query acknowledgment
+    # 3. Handle Callback Query
     if update.callback_query:
+        cb_data = (update.callback_query.data or "").strip()
+        if cb_data.startswith("act:"):
+            token_str = cb_data[4:]
+            from app.integrations.channels.telegram.handlers import handle_approval_callback
+
+            action_name = handle_approval_callback(
+                session=session,
+                clock=clock,
+                callback_query=update.callback_query,
+                token_str=token_str,
+                tg_client=tg_client,
+            )
+            return ProcessResult(
+                status="processed",
+                update_id=update_id,
+                channel_user_id=channel_user_id,
+                action=action_name,
+            )
+
         try:
             tg_client.answer_callback_query(update.callback_query.id)
         except Exception as exc:

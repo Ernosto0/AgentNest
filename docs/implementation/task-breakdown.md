@@ -108,4 +108,9 @@ Phase 7 status (2026-10-23): offline Sessions 1-4 are complete and operator-acce
 | **Phase 7.5: Account agent (planned)** | [P7.5-01 through P7.5-18](phases/phase-7.5.md), [18 session briefs](phase-7.5-sessions/phase-7.5-sessions.md) | Phase 7 baseline; staged gates in phase plan | one scoped session per task |
 | **Phase 8: Hardening (gated)** | P8-01 … P8-12 | Phase 7 baseline + stable Phase 7.5 offline surfaces; live access may depend on Phase 8 | see phase doc |
 | **Phase 8.5: Complete UI redesign (planned)** | [P8.5-01 through P8.5-28](phases/phase-8.5-ui-redesign.md), [28 session briefs](phase-8.5-sessions/phase-8.5-sessions.md), [screen/design specification](../product/ui-redesign-specification.md) | Stable Phase 7.5 frontend; delivered Phase 8 UI contracts before final acceptance | one scoped session per task |
-| **Phase 9: Owner channel (gated)** | [P9-01 through P9-05](phases/phase-09-owner-channel.md), [8 session briefs](phase-9-sessions/phase-09-sessions.md) | Phase 8 + OQ-01; web presentation reuses Phase 8.5 | 8 sequential sessions |
+| **Phase 9: Owner channel (complete)** | [P9-01 through P9-05](phases/phase-09-owner-channel.md), [8 session briefs](phase-9-sessions/phase-09-sessions.md), [Phase 9 summary](phase-summaries/phase-09-summary.md) | Phase 8 + OQ-01; web presentation reuses Phase 8.5 | 8 sequential sessions complete |
+| P9-01 | `channel_links` + linking flow (one-time code in web settings → `/link <code>` in bot); unlink both ways; audit | Phase 8 | S (Complete, S01–S02) |
+| P9-02 | Formalise `OwnerChannel`; `notification_deliveries`; delivery policy (which types pushed; quiet hours per user) | P9-01 | M (Complete, S03) |
+| P9-03 | Telegram adapter: webhook with secret header, `update_id` dedup, long-polling, text → commands, photo ≤ 20 MB | P9-02 | M (Complete, S04–S05) |
+| P9-04 | Approval buttons: action tokens (16-byte base64url, hashed, single-use, replay-safe, expiring with approval) | P9-03 | M (Complete, S06) |
+| P9-05 | Resilience tests (wrong user, replay, expiry, stale, unlinked, duplicate updates, oversized media) + AC 1–4 E2E | P9-04 | M (Complete, S07–S08) |

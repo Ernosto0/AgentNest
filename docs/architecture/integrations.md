@@ -145,11 +145,23 @@ Contract and behaviour: [ADR-009](decisions/ADR-009-llm-provider-abstraction.md)
 ```python
 class OwnerChannel(Protocol):
     name: Literal["web", "telegram", "whatsapp"]
-    def deliver(self, notification: Notification, recipient: ChannelRecipient) -> DeliveryResult: ...
-    def render_command_result(self, command: OwnerCommand, recipient: ChannelRecipient) -> None: ...
-    # inbound is handled by channel-specific webhook routes that normalise into:
-    #   ChannelInbound{channel, external_user_id, chat_id, text?, attachments[], callback_token?, update_id}
+    def deliver_notification(
+        self,
+        db: Session,
+        clock: Clock,
+        delivery: NotificationDelivery,
+        recipient: ChannelRecipient,
+    ) -> ChannelDeliveryResult: ...
+    def render_command_result(
+        self,
+        db: Session,
+        clock: Clock,
+        command: OwnerCommand,
+        recipient: ChannelRecipient,
+    ) -> None: ...
 ```
+
+Channel adapters register in `app.integrations.channels.registry` via `register_channel(adapter)`. Delivery orchestration runs through `app.notifications.delivery.deliver_pending_notifications`, recording per-recipient attempts and statuses (`delivered`, `failed`, `skipped_quiet_hours`) in the `notification_deliveries` ledger (`migration 0039`).
 
 Flow through the core (identical for every channel):
 
@@ -174,18 +186,35 @@ sequenceDiagram
   N->>CH: deliver(notification with action tokens)
 ```
 
-**Action tokens** (for buttons): a random 16-byte token (base64url, 22 chars, within Telegram's 64-byte `callback_data` limit), stored hashed with `(approval_id, decision, user_id, payload_hash, expires_at, used_at)`. Single use; it must be pressed by the linked user; it expires with the approval.
+**Action tokens** (for buttons): a random 16-byte token (base64url, 22 chars, within Telegram's 64-byte `callback_data` limit), stored SHA-256 hashed in `action_tokens` (`migration 0041`) with `(workspace_id, approval_id, decision, user_id, payload_hash, expires_at, used_at)`.
+- **Single use (`INV-16`):** Tapping the button atomically consumes the token (`used_at = clock.now()`), invokes `ApprovalService.decide`, and triggers side-effects (e.g. enqueuing `send_reply` or `publish_content`).
+- **Replay safe (`INV-06`, `AC-1`):** A second press on the same token or its sister token returns an `"already decided"` modal alert (`show_alert=True`), removes keyboard buttons, and produces strictly zero duplicate jobs or external actions.
+- **Access control (`ADR-014`):** If a third party or different workspace member taps a forwarded button, the token consumption rejects with 403 Forbidden and displays an unauthorized alert.
+- **Staleness protection (`INV-16`):** If the subject entity (reply draft or content item) changed version on the web, `payload_hash` mismatches and decision is rejected as stale (`APPROVAL_STALE`).
 
-**Linking:** the user generates a one-time code in the web app (Settings → Channels) and sends `/link <code>` to the bot → `channel_links` row. Unlinking is available from both sides.
+**Quiet Hours Policy (`ADR-012`, Phase 9):**
+- Evaluated per user in their local timezone (`workspace.timezone`, default `Europe/Istanbul`).
+- Standard quiet window: 22:00 to 08:00 local time.
+- Non-critical notifications (`report.daily_ready`, general suggestions, operational warnings) are suppressed with status `skipped_quiet_hours`.
+- Critical alerts bypass quiet hours immediately (`bypassed_quiet_hours=True`):
+  - High/critical severity alerts (`system.integration_error`, security alerts)
+  - Account reauthorization warnings (`account.needs_reauth`)
+  - Urgent pending approvals expiring within 2 hours.
+
+**Linking:** the user generates an 8-character one-time alphanumeric code in the web app (`Settings -> Channels / Connections`), valid for 10 minutes, and sends `/link <code>` to the bot. The adapter validates the code and creates a `channel_links` row (`migration 0038`). Unlinking is available both from the web UI and via `/unlink` in chat.
 
 ### 5.2 Web channel (MVP)
 - Commands: `POST /commands`. Results: polled command resource. Notifications: `notifications` table + bell. Approvals: approval screens.
-- `deliver()` is a no-op beyond the stored notification.
+- `deliver_notification()` is a no-op beyond the stored notification.
 
-### 5.3 Telegram (Phase 9, provisional per OQ-01)
-- Inbound: `POST /webhooks/telegram`, verifying `X-Telegram-Bot-Api-Secret-Token == TELEGRAM_WEBHOOK_SECRET`. Dedup on `update_id`. Local development may use `getUpdates` long polling (`python -m app.cli telegram-poll`) instead of a public webhook.
-- Outbound: `sendMessage` with an inline keyboard. Photos ≤ 20 MB downloadable via `getFile`.
-- Approval messages include the full summary (text to be sent or published, schedule, account, simulated flag) and two buttons (Approve / Reject), plus an "Open in app" link.
+### 5.3 Telegram (Phase 9)
+- **Inbound Endpoint:** `POST /webhooks/telegram` router in `app.api.v1.webhooks`. Enforces `X-Telegram-Bot-Api-Secret-Token` matching `TELEGRAM_WEBHOOK_SECRET` (returns HTTP 401 on mismatch when configured).
+- **Update Deduplication (`INV-06`):** Durable ledger `telegram_updates` (`migration 0040`). Duplicate `update_id` deliveries return status `duplicate` without re-executing actions or dispatching duplicate outbound API calls.
+- **Local Development Polling:** CLI runner `python -m app.cli telegram-poll` uses `getUpdates` long-polling with identical routing and deduplication logic, eliminating the need for public webhooks or tunnels during development.
+- **Outbound Notifications:** Formatted using Telegram HTML parse mode (`<b>`, `<i>`, `<blockquote>`), simulation warning banner (`[SİMÜLASYON]` per `INV-09`), inline action buttons (`act:<token>`), and deep link (`/approvals`).
+- **Media Ingestion (`INV-11`, `AC-3`):** Photos downloaded via `getFile` up to a strict 20 MB ceiling. Files exceeding 20 MB are rejected immediately before storage intake, generating a user alert and an audit record (`media.rejected`). Ingested photos attach to subsequent commands or immediately create draft story items (`ContentItem`, type `story_image`). Free-text captions (e.g. *"bu story'yi 19:00'da paylaş"*) create drafts with schedule proposals that require explicit owner approval (`INV-04`); free text never auto-schedules or publishes directly.
+- **Domain Queries (`AC-2`):** Inbound natural language reporting questions (e.g., *"Bugün kaç DM geldi?"*, *"Bugünkü özet"*) route directly to `get_daily_summary`, returning identical counts and metrics to the web dashboard.
+- **Architectural Isolation (`AC-4`):** Strictly enforced via import linter. Only `app.integrations.channels.registry` and `app.api.v1.webhooks` import `app.integrations.channels.telegram`. Core modules (`app.commands`, `app.approvals`, `app.inbox`, `app.policy`, `app.identity`, etc.) have zero dependencies on the Telegram adapter.
 
 ### 5.4 WhatsApp (deferred, OQ-01)
 Same contract. Additional constraints: per-message pricing, free-form only within 24 h of the owner's last message (otherwise paid utility templates), template approval, business verification, and the AI-provider policy review ([platform-capabilities.md §2](../research/platform-capabilities.md)). It must never become a dependency of core flows.
