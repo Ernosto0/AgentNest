@@ -138,7 +138,7 @@ html,
 body {
   margin: 0;
   /* Retained while route-by-route overflow is verified during the migration. */
-  overflow-x: hidden;
+  overflow-x: clip;
   background: var(--an-canvas);
   color: var(--an-text-primary);
   font-family: var(--font-sans);
