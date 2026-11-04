@@ -36,13 +36,14 @@ export function DraftCard({
 
   return (
     <Card
-      className="flex flex-col gap-4 border border-border bg-assistant/60 shadow-xs rounded-panel p-4 md:p-5"
+      className="flex flex-col gap-4 border border-emerald-900/10 bg-gradient-to-br from-emerald-500/5 via-surface to-surface p-5 md:p-6 shadow-card-modern rounded-2xl"
       data-testid="draft-card"
       data-draft-status={draft.status}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/80 pb-3">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-primary">{t(`convo.status.${draft.status}`)}</span>
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="font-heading font-bold text-primary tracking-tight">{t(`convo.status.${draft.status}`)}</span>
         </div>
         {draft.is_simulated ? <SimulatedBadge /> : null}
       </div>

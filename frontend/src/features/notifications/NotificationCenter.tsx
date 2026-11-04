@@ -39,23 +39,24 @@ export function NotificationCenter() {
   // A notification is read when its link is followed, not when the screen is opened.
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div>
-        <h1 className="type-page text-primary">{t("notifications.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("notifications.intro")}</p>
+      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
+        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-blue-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
+        <h1 className="type-page text-primary font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">{t("notifications.title")}</h1>
+        <p className="mt-1 text-sm text-secondary max-w-xl">{t("notifications.intro")}</p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label={t("notifications.filterLabel")} className="flex gap-2">
+        <div role="group" aria-label={t("notifications.filterLabel")} className="flex gap-1.5 p-1 bg-surface-subtle/80 rounded-xl border border-border/70 shadow-2xs">
           {[true, false].map((only) => (
             <button
               key={String(only)}
               type="button"
               aria-pressed={unreadOnly === only}
               onClick={() => setUnreadOnly(only)}
-              className={`inline-flex min-h-11 items-center rounded-control px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+              className={`inline-flex min-h-9 items-center rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 unreadOnly === only
-                  ? "bg-action text-on-action shadow-xs"
-                  : "border border-border bg-surface text-secondary hover:bg-surface-subtle hover:text-primary"
+                  ? "bg-surface text-primary shadow-xs font-bold ring-1 ring-border/50"
+                  : "text-secondary hover:bg-surface/50 hover:text-primary"
               }`}
             >
               {only ? t("notifications.filterUnread") : t("notifications.filterAll")}
@@ -63,7 +64,7 @@ export function NotificationCenter() {
           ))}
         </div>
         {unread > 0 ? (
-          <Button variant="secondary" disabled={markAll.isPending} onClick={() => markAll.mutate()}>
+          <Button variant="secondary" disabled={markAll.isPending} onClick={() => markAll.mutate()} className="text-xs font-semibold">
             {t("notifications.markAll")}
           </Button>
         ) : null}
@@ -79,8 +80,8 @@ export function NotificationCenter() {
         />
       ) : null}
       {items.length > 0 ? (
-        <div className="overflow-hidden rounded-panel border border-border bg-surface shadow-xs">
-          <ul className="divide-y divide-border" aria-label={t("notifications.title")}>
+        <div className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-card-modern">
+          <ul className="divide-y divide-border/60" aria-label={t("notifications.title")}>
             {items.map((item) => (
               <li key={item.id}>
                 <Row

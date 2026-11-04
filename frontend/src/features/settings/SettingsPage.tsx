@@ -10,7 +10,7 @@ import { AccountSecurity } from "./AccountSecurity";
 import { WorkspaceDangerZone } from "./WorkspaceDangerZone";
 
 const LINK_ROW =
-  "flex min-h-12 items-center justify-between rounded-control px-3 py-2.5 text-sm font-medium text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-colors";
+  "flex min-h-12 items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-all duration-150";
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -28,36 +28,37 @@ export function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("settings.title")}</h1>
+      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
+        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-slate-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
+        <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-primary">{t("settings.title")}</h1>
       </div>
 
       {/* Account Identity */}
-      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <div className="border-b border-border pb-3">
-          <h2 className="text-base font-heading font-semibold text-primary">{t("settings.account")}</h2>
+      <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+        <div className="border-b border-border/60 pb-3">
+          <h2 className="text-base font-heading font-bold text-primary">{t("settings.account")}</h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.signedInAs")}</p>
-            <p className="mt-1 text-sm font-semibold text-primary break-words">
+            <p className="mt-1 text-sm font-bold text-primary break-words">
               {me.data?.user.display_name}
             </p>
-            <p className="text-xs text-secondary break-all">{me.data?.user.email}</p>
+            <p className="text-xs text-secondary break-all font-mono mt-0.5">{me.data?.user.email}</p>
           </div>
-          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.role")}</p>
-            <p className="mt-1 text-sm font-semibold text-primary">
+            <p className="mt-1 text-sm font-bold text-primary">
               {role ? t(`workspaces.role.${role}`) : "—"}
             </p>
           </div>
         </div>
-        <div>
+        <div className="pt-1">
           <Button
             variant="ghost"
             disabled={logout.isPending}
             onClick={handleLogout}
-            className="text-danger hover:bg-danger-subtle"
+            className="text-danger hover:bg-danger-subtle font-semibold"
           >
             {logout.isPending ? t("auth.signingOut") : t("settings.signOut")}
           </Button>
@@ -65,62 +66,62 @@ export function SettingsPage() {
       </div>
 
       {/* Language Preference */}
-      <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <div className="border-b border-border pb-3">
-          <h2 className="text-base font-heading font-semibold text-primary">{t("settings.language")}</h2>
+      <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+        <div className="border-b border-border/60 pb-3">
+          <h2 className="text-base font-heading font-bold text-primary">{t("settings.language")}</h2>
         </div>
-        <p className="text-sm text-secondary">{t("settings.languageHint")}</p>
-        <div>
+        <p className="text-sm text-secondary leading-relaxed">{t("settings.languageHint")}</p>
+        <div className="pt-1">
           <LanguageSwitch onChange={(language) => saveLocale.mutate(language)} />
         </div>
         {saveLocale.isError ? <ErrorMessage error={saveLocale.error} /> : null}
       </div>
 
       {/* Workspace Details (Read-only) */}
-      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <div className="border-b border-border pb-3">
-          <h2 className="text-base font-heading font-semibold text-primary">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+        <div className="border-b border-border/60 pb-3">
+          <h2 className="text-base font-heading font-bold text-primary">
             {t("settings.workspaceDetails")}
           </h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceName")}</p>
-            <p className="mt-1 text-sm font-semibold text-primary">{workspace.name}</p>
+            <p className="mt-1 text-sm font-bold text-primary">{workspace.name}</p>
           </div>
-          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceMarket")}</p>
-            <p className="mt-1 text-sm font-semibold text-primary">
+            <p className="mt-1 text-sm font-bold text-primary">
               {workspace.market} · {workspace.currency}
             </p>
           </div>
-          <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
             <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceTimezone")}</p>
-            <p className="mt-1 text-sm font-semibold text-primary">{workspace.timezone}</p>
+            <p className="mt-1 text-sm font-bold text-primary">{workspace.timezone}</p>
           </div>
         </div>
       </div>
 
       {/* Management Navigation Links */}
-      <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <div className="border-b border-border pb-3">
-          <h2 className="text-base font-heading font-semibold text-primary">
+      <div className="flex flex-col gap-2 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+        <div className="border-b border-border/60 pb-3">
+          <h2 className="text-base font-heading font-bold text-primary">
             {t("settings.workspaceSection")}
           </h2>
         </div>
-        <div className="flex flex-col divide-y divide-border">
+        <div className="flex flex-col divide-y divide-border/60">
           <Link to={`/w/${workspace.id}/more/settings/connections`} className={LINK_ROW}>
             <span>{t("settings.openConnections")}</span>
-            <ChevronRightIcon className="text-xl text-secondary" />
+            <ChevronRightIcon className="text-xl text-secondary/50" />
           </Link>
           <Link to={`/w/${workspace.id}/more/settings/members`} className={LINK_ROW}>
             <span>{t("settings.openMembers")}</span>
-            <ChevronRightIcon className="text-xl text-secondary" />
+            <ChevronRightIcon className="text-xl text-secondary/50" />
           </Link>
           {role === "owner" || role === "manager" ? (
             <Link to={`/w/${workspace.id}/more/settings/system-health`} className={LINK_ROW}>
               <span>{t("settings.openSystemHealth")}</span>
-              <ChevronRightIcon className="text-xl text-secondary" />
+              <ChevronRightIcon className="text-xl text-secondary/50" />
             </Link>
           ) : null}
         </div>

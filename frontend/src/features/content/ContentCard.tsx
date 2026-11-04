@@ -84,7 +84,7 @@ export function ContentCard({ item }: { item: ContentItem }) {
       to={`/w/${workspace.id}/content/${item.id}`}
       data-content-id={item.id}
       data-testid="content-card"
-      className="group flex min-h-20 items-center justify-between gap-4 rounded-panel bg-surface p-4 border border-border hover:bg-surface-subtle/60 hover:border-control/50 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus shadow-xs hover:shadow-sm"
+      className="group flex min-h-20 items-center justify-between gap-4 rounded-2xl bg-surface p-4 sm:p-5 border border-border/80 shadow-card-modern hover:border-action/40 hover:shadow-card-hover hover:translate-y-[-1px] transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       <div className="flex items-center gap-3.5 min-w-0">
         <ContentThumbnail

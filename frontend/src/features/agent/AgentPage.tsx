@@ -32,15 +32,16 @@ export function AgentPage() {
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("agent.title")}</h1>
+      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
+        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-emerald-500/10 via-teal-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
+        <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-primary">{t("agent.title")}</h1>
       </div>
       {accounts.error ? <ErrorMessage error={accounts.error} /> : null}
       {accounts.data?.length ? (
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
+        <label className="flex flex-col gap-1.5 text-sm font-semibold text-secondary">
           <span>{t("agent.account")}</span>
           <select
-            className="w-full sm:w-80 rounded-control border border-border bg-surface px-3 py-2 text-base text-primary shadow-xs focus-visible:outline-2 focus-visible:outline-focus"
+            className="w-full sm:w-80 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-base text-primary shadow-2xs focus-visible:outline-2 focus-visible:outline-focus font-medium"
             value={account?.id ?? ""}
             onChange={(e) => setParams({ account: e.target.value })}
           >
@@ -99,46 +100,46 @@ function AccountAgent({
       {overview.error ? <ErrorMessage error={overview.error} /> : null}
       {data ? (
         <>
-          <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+          <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.overview")}</h2>
-                <span className="inline-flex items-center rounded-control bg-surface-subtle px-2.5 py-0.5 text-xs font-semibold text-primary border border-border">
+                <h2 className="text-lg font-heading font-bold text-primary">{t("agent.overview")}</h2>
+                <span className="inline-flex items-center rounded-full bg-surface-subtle px-2.5 py-0.5 text-xs font-semibold text-primary border border-border">
                   {t(`agent.controller.${data.controller_mode}`)}
                 </span>
-                <span className={`inline-flex items-center rounded-control px-2.5 py-0.5 text-xs font-semibold border border-border ${data.state === "active" ? "bg-success-subtle text-success" : "bg-attention-subtle text-attention"}`}>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold border border-border ${data.state === "active" ? "bg-emerald-500/10 text-emerald-800" : "bg-amber-500/10 text-amber-800"}`}>
                   {t(`agent.states.${data.state}`)}
                 </span>
               </div>
               {data.is_simulated ? <SimulatedBadge /> : null}
             </div>
-            <p role="status" className="text-sm font-medium text-secondary">
+            <p role="status" className="text-sm font-semibold text-secondary">
               {t(`agent.controller.${data.controller_mode}`)} | {t(`agent.states.${data.state}`)}
             </p>
-            <div className="rounded-panel border border-border bg-surface-subtle p-3.5">
-              <p className="text-sm font-medium text-primary">
+            <div className="rounded-xl border border-border/70 bg-surface-subtle/70 p-4">
+              <p className="text-sm font-semibold text-primary">
                 {t("agent.waitingCounts", {
                   questions: data.pending_questions,
                   approvals: data.pending_approvals,
                 })}
               </p>
-              <div className="mt-2 flex flex-wrap gap-4 text-sm">
-                <Link className="font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/approvals`}>
+              <div className="mt-2.5 flex flex-wrap gap-4 text-sm font-semibold">
+                <Link className="text-action hover:text-action-hover underline underline-offset-2" to={`/w/${ws}/approvals`}>
                   {t("agent.openApprovals")}
                 </Link>
-                <Link className="font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/questions?account=${accountId}`}>
+                <Link className="text-action hover:text-action-hover underline underline-offset-2" to={`/w/${ws}/more/agent/questions?account=${accountId}`}>
                   {t("agent.openQuestions")}
                 </Link>
-                <Link className="font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/comments?account=${accountId}`}>
+                <Link className="text-action hover:text-action-hover underline underline-offset-2" to={`/w/${ws}/more/agent/comments?account=${accountId}`}>
                   {t("agent.openComments")}
                 </Link>
               </div>
             </div>
-            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-panel border border-border bg-surface-subtle p-3 text-sm text-secondary">
+            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 rounded-xl border border-border/70 bg-surface-subtle/50 p-3.5 text-sm text-secondary">
               {Object.entries(data.session_counts).map(([state, count]) => (
-                <li key={state} className="flex items-center justify-between gap-1 rounded-control bg-surface px-2.5 py-1.5 border border-border/50">
-                  <span>{t(`agent.states.${state}`)}:</span>
-                  <span className="font-semibold text-primary">{count}</span>
+                <li key={state} className="flex items-center justify-between gap-1 rounded-lg bg-surface px-3 py-2 border border-border/60 shadow-2xs">
+                  <span className="text-xs font-medium">{t(`agent.states.${state}`)}:</span>
+                  <span className="font-extrabold text-primary font-mono">{count}</span>
                 </li>
               ))}
             </ul>

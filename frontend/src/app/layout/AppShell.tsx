@@ -44,25 +44,31 @@ export function AppShell() {
 
   return <div className="flex min-h-dvh flex-col bg-canvas text-primary md:flex-row">
     <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-30 focus:rounded-control focus:bg-surface focus:p-3 focus:outline-2 focus:outline-focus">{t("app.skipToContent")}</a>
-    <aside data-testid="desktop-sidebar" className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-y-auto border-r border-[#263e32]/80 bg-[#192b23] px-3 py-6 text-navigation-text shadow-sm md:flex min-[1200px]:w-64 ${expanded ? "w-64" : "w-24"}`}>
+    <aside data-testid="desktop-sidebar" className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-y-auto border-r border-[#1a2b22] bg-[#0d1612] px-3 py-6 text-navigation-text shadow-sm md:flex min-[1200px]:w-64 ${expanded ? "w-64" : "w-24"}`}>
       <div className="mb-6 flex min-w-0 items-center gap-3 px-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-action text-white shadow-xs">
-          <span className="font-heading text-lg font-bold">A</span>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-[0_2px_10px_rgba(16,185,129,0.3)] ring-1 ring-white/20">
+          <span className="font-heading text-lg font-bold tracking-wider">A</span>
         </div>
-        <span title={productName} className="min-w-0 break-words font-heading text-xl font-bold tracking-tight text-white">
-          <span className={expanded ? "" : "sr-only min-[1200px]:not-sr-only"}>{productName}</span>
-          {!expanded ? <span aria-hidden="true" className="block text-center min-[1200px]:hidden">{t("shell.compactBrand")}</span> : null}
-        </span>
+        <div className={`min-w-0 flex flex-col ${expanded ? "" : "sr-only min-[1200px]:flex"}`}>
+          <span title={productName} className="truncate font-heading text-lg font-bold tracking-tight text-white">
+            {productName}
+          </span>
+          <span className="text-[11px] font-medium tracking-wide text-emerald-400/80">
+            {workspace.name}
+          </span>
+        </div>
+        {!expanded ? <span aria-hidden="true" className="sr-only text-center min-[1200px]:hidden">{t("shell.compactBrand")}</span> : null}
       </div>
-      <button type="button" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-controls="desktop-destinations" className="mb-3 flex min-h-11 items-center justify-center gap-2 rounded-control text-navigation-text hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-focus-inverse min-[1200px]:hidden"><MenuIcon className="text-xl" /><span className={expanded ? "" : "sr-only"}>{t("shell.expandNavigation")}</span></button>
-      <nav id="desktop-destinations" aria-label={t("nav.label")} className="flex flex-col gap-6">
+      <button type="button" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-controls="desktop-destinations" className="mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl text-navigation-text hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-focus-inverse min-[1200px]:hidden"><MenuIcon className="text-xl" /><span className={expanded ? "" : "sr-only"}>{t("shell.expandNavigation")}</span></button>
+      <nav id="desktop-destinations" aria-label={t("nav.label")} className="flex flex-col gap-6 flex-1">
         {groups.map(group => <div key={group.labelKey}>
-          <p className={`mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-[#8da394] ${expanded ? "" : "sr-only min-[1200px]:not-sr-only"}`}>{t(group.labelKey)}</p>
+          <p className={`mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-[#738d7b] ${expanded ? "" : "sr-only min-[1200px]:not-sr-only"}`}>{t(group.labelKey)}</p>
           <ul className="flex flex-col gap-1">{group.items.map(({ path: destination, labelKey, icon: Icon }) => {
             const active = selected === destination;
             return <li key={destination}>
-              <Link to={workspaceTarget(workspace.id, destination)} aria-current={active ? "page" : undefined} title={t(labelKey)} className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse ${expanded ? "" : "justify-center min-[1200px]:justify-start"} ${active ? "bg-action text-white shadow-xs font-semibold" : "text-[#c2d1c6] hover:bg-white/10 hover:text-white"}`}>
-                <Icon className={`shrink-0 text-xl transition-transform group-hover:scale-105 ${active ? "text-white" : "text-[#9cb5a4]"}`} />
+              <Link to={workspaceTarget(workspace.id, destination)} aria-current={active ? "page" : undefined} title={t(labelKey)} className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse ${expanded ? "" : "justify-center min-[1200px]:justify-start"} ${active ? "bg-[#183528] text-white shadow-xs font-semibold ring-1 ring-emerald-500/30" : "text-[#b4c7bb] hover:bg-white/5 hover:text-white"}`}>
+                {active ? <span className="absolute left-1 h-5 w-1 rounded-full bg-emerald-400" aria-hidden="true" /> : null}
+                <Icon className={`shrink-0 text-xl transition-transform group-hover:scale-105 ${active ? "text-emerald-300" : "text-[#829e8b]"}`} />
                 <span className={expanded ? "" : "sr-only min-[1200px]:not-sr-only"}>{t(labelKey)}</span>
               </Link>
             </li>;
@@ -73,9 +79,9 @@ export function AppShell() {
     <div className="flex min-w-0 flex-1 flex-col">
       <header className="sticky top-0 z-20 flex min-w-0 flex-wrap items-center gap-3 border-b border-border/80 bg-surface/90 px-4 py-3 backdrop-blur-md shadow-2xs md:px-6 min-[1200px]:px-8">
         <span className="w-full min-w-0 break-words font-heading text-base font-bold md:hidden">{productName}</span>
-        <div className="ml-auto flex w-full min-w-0 max-w-full items-center justify-between gap-2 md:w-auto md:justify-start">
+        <div className="ml-auto flex w-full min-w-0 max-w-full items-center justify-between gap-2.5 md:w-auto md:justify-start">
           <WorkspaceSwitcher />
-          <Button ref={trigger} variant="ghost" onClick={() => setLauncher("pointer")} aria-label={t("shell.openLauncher")} aria-haspopup="dialog" className="min-w-11 rounded-xl border border-border/70 bg-surface-subtle/60 px-3 hover:bg-surface-subtle hover:border-border"><MagnifierIcon className="text-xl text-secondary" /><span className="hidden min-[1200px]:inline text-secondary">{t("shell.openLauncher")}</span><kbd className="hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-mono text-secondary min-[1200px]:inline">{t("shell.shortcut")}</kbd></Button>
+          <Button ref={trigger} variant="ghost" onClick={() => setLauncher("pointer")} aria-label={t("shell.openLauncher")} aria-haspopup="dialog" className="min-w-11 rounded-xl border border-border/80 bg-surface-subtle/80 px-3 hover:bg-surface-subtle hover:border-border transition-all shadow-2xs"><MagnifierIcon className="text-xl text-secondary" /><span className="hidden min-[1200px]:inline text-secondary font-medium">{t("shell.openLauncher")}</span><kbd className="hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-mono text-secondary min-[1200px]:inline font-semibold">{t("shell.shortcut")}</kbd></Button>
           <NotificationBell />
         </div>
       </header>

@@ -4,10 +4,10 @@ import { SpinnerIcon } from "./icons";
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-action text-on-action enabled:hover:bg-action-hover shadow-xs active:scale-[0.98] font-semibold",
-  secondary: "border border-border/80 bg-surface text-primary enabled:hover:bg-surface-subtle enabled:hover:border-border shadow-2xs active:scale-[0.98] font-medium",
+  primary: "bg-action text-on-action enabled:hover:bg-action-hover shadow-xs enabled:hover:shadow-sm active:scale-[0.98] font-semibold tracking-tight border border-emerald-950/20",
+  secondary: "border border-border bg-surface text-primary enabled:hover:bg-surface-subtle enabled:hover:border-border shadow-2xs enabled:hover:shadow-xs active:scale-[0.98] font-medium",
   ghost: "bg-transparent text-primary enabled:hover:bg-surface-subtle active:scale-[0.98] font-medium",
-  danger: "bg-danger text-on-action enabled:hover:bg-danger-hover shadow-xs active:scale-[0.98] font-semibold",
+  danger: "bg-danger text-on-action enabled:hover:bg-danger-hover shadow-xs enabled:hover:shadow-sm active:scale-[0.98] font-semibold border border-rose-950/20",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

@@ -41,16 +41,16 @@ function CommandPanel({ commandId, onDismiss }: { commandId: string; onDismiss: 
   }
 
   return (
-    <Card className="flex flex-col gap-3" data-testid="command-panel">
-      <div className="flex items-start justify-between gap-3">
+    <Card className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern" data-testid="command-panel">
+      <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-3">
         <p className="min-w-0 text-body text-secondary">
           {t("command.yourCommand")}:{" "}
-          <span className="font-semibold break-words text-primary">{data?.raw_text ?? ""}</span>
+          <span className="font-bold break-words text-primary">{data?.raw_text ?? ""}</span>
         </p>
         <button
           type="button"
           onClick={onDismiss}
-          className="min-h-11 shrink-0 rounded-control px-3 text-body font-medium text-secondary transition-colors hover:bg-surface-subtle hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="min-h-9 shrink-0 rounded-xl px-3 text-xs font-semibold text-secondary transition-all hover:bg-surface-subtle hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus border border-border/60"
         >
           {t("command.dismiss")}
         </button>

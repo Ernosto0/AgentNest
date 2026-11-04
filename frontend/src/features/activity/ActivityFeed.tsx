@@ -64,12 +64,13 @@ export function ActivityFeed() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div>
-        <h1 className="type-page text-primary">{t("activity.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("activity.intro")}</p>
+      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
+        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-teal-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
+        <h1 className="type-page text-primary font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">{t("activity.title")}</h1>
+        <p className="mt-1 text-sm text-secondary max-w-xl">{t("activity.intro")}</p>
       </div>
 
-      <div role="group" aria-label={t("activity.filterLabel")} className="flex flex-wrap gap-2">
+      <div role="group" aria-label={t("activity.filterLabel")} className="flex flex-wrap gap-1.5 p-1 bg-surface-subtle/80 rounded-xl border border-border/70 shadow-2xs w-fit">
         {[null, ...ACTIVITY_GROUPS].map((name) => {
           const active = group === name;
           return (
@@ -78,10 +79,10 @@ export function ActivityFeed() {
               type="button"
               aria-pressed={active}
               onClick={() => choose(name)}
-              className={`inline-flex min-h-11 items-center rounded-control px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+              className={`inline-flex min-h-9 items-center rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 active
-                  ? "bg-action text-on-action shadow-xs"
-                  : "border border-border bg-surface text-secondary hover:bg-surface-subtle hover:text-primary"
+                  ? "bg-surface text-primary shadow-xs font-bold ring-1 ring-border/50"
+                  : "text-secondary hover:bg-surface/50 hover:text-primary"
               }`}
             >
               {name ? t(`activity.groups.${name}`) : t("activity.groups.all")}
@@ -98,13 +99,13 @@ export function ActivityFeed() {
       {entries.length > 0 ? (
         <div className="flex flex-col gap-5">
           {grouped.map((group) => (
-            <div key={group.dayKey} className="overflow-hidden rounded-panel border border-border bg-surface shadow-xs">
-              <div className="border-b border-border bg-surface-subtle px-4 py-2.5">
+            <div key={group.dayKey} className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-card-modern">
+              <div className="border-b border-border/60 bg-surface-subtle/60 px-5 py-3">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-secondary">
                   {group.label}
                 </h2>
               </div>
-              <ul className="divide-y divide-border" aria-label={group.label}>
+              <ul className="divide-y divide-border/60" aria-label={group.label}>
                 {group.items.map((entry) => (
                   <li key={entry.id}>
                     <EntryRow entry={entry} when={when(entry.occurred_at)} />

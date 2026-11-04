@@ -37,14 +37,15 @@ export function DailyReport() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
-      <div>
-        <h1 className="type-page text-primary">{t("reports.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("reports.intro")}</p>
+      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
+        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-emerald-500/10 via-teal-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
+        <h1 className="type-page text-primary font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">{t("reports.title")}</h1>
+        <p className="mt-1 text-sm text-secondary max-w-xl">{t("reports.intro")}</p>
       </div>
 
       {/* Date Stepper */}
       <div
-        className="flex items-center justify-between gap-3 rounded-panel bg-surface p-4 border border-border shadow-xs"
+        className="flex items-center justify-between gap-3 rounded-2xl bg-surface p-4 border border-border/80 shadow-card-modern"
         role="group"
         aria-label={t("reports.dateLabel")}
       >
@@ -52,24 +53,24 @@ export function DailyReport() {
           variant="secondary"
           onClick={() => go(shiftDay(day, -1))}
           aria-label={t("reports.previousDay")}
-          className="h-10 w-10 min-w-10 p-0 text-lg font-bold"
+          className="h-10 w-10 min-w-10 p-0 text-lg font-bold rounded-xl"
         >
           ‹
         </Button>
         <div className="flex flex-col items-center text-center">
-          <p className="font-heading font-bold text-lg text-primary" data-testid="report-day">
+          <p className="font-heading font-bold text-lg text-primary tracking-tight" data-testid="report-day">
             {dayLabel(day, i18n.language)}
           </p>
           {day !== today ? (
             <button
               type="button"
               onClick={() => go(today)}
-              className="mt-0.5 min-h-11 text-xs font-semibold uppercase tracking-wider text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              className="mt-0.5 min-h-11 text-xs font-bold uppercase tracking-wider text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
               {t("reports.backToToday")}
             </button>
           ) : (
-            <p className="mt-0.5 text-xs font-medium text-secondary">{t("reports.today")}</p>
+            <p className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-secondary">{t("reports.today")}</p>
           )}
         </div>
         <Button
@@ -77,7 +78,7 @@ export function DailyReport() {
           disabled={day >= today}
           onClick={() => go(shiftDay(day, 1))}
           aria-label={t("reports.nextDay")}
-          className="h-10 w-10 min-w-10 p-0 text-lg font-bold"
+          className="h-10 w-10 min-w-10 p-0 text-lg font-bold rounded-xl"
         >
           ›
         </Button>
@@ -149,11 +150,11 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
         <EmptyState title={report.summary.text} description={t("reports.emptyHint")} />
       ) : (
         sections.map((section) => (
-          <Card key={section.section} aria-labelledby={`report-section-${section.section}`} className="p-5">
-            <h2 id={`report-section-${section.section}`} className="text-lg font-heading font-semibold text-primary pb-2 border-b border-border">
+          <Card key={section.section} aria-labelledby={`report-section-${section.section}`} className="p-5 md:p-6 rounded-2xl shadow-card-modern border-border/80">
+            <h2 id={`report-section-${section.section}`} className="text-lg font-heading font-bold text-primary pb-3 border-b border-border/60">
               {section.title}
             </h2>
-            <ul className="divide-y divide-border">
+            <ul className="divide-y divide-border/60">
               {section.metrics.map((metric) => (
                 <MetricRow key={metric.key} metric={metric as ReportMetric & { value: number }} />
               ))}

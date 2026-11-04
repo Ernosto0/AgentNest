@@ -46,13 +46,14 @@ export function ContentPage() {
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
       {/* Page Header & Action Controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-5">
-        <div>
-          <h1 className="type-page text-primary">{t("content.title")}</h1>
-          <p className="mt-1 text-sm text-secondary">{t("content.intro")}</p>
+      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern sm:flex-row sm:items-center sm:justify-between flex flex-col gap-5">
+        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-emerald-500/10 via-teal-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
+        <div className="flex flex-col gap-1 relative z-10">
+          <h1 className="type-page text-primary font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">{t("content.title")}</h1>
+          <p className="text-body text-secondary max-w-xl">{t("content.intro")}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
           <Button onClick={() => setStarting("ai")} className="gap-2 shadow-xs">
             <SparkIcon className="text-lg text-on-action" />
             <span>{t("content.actions.newDraft")}</span>
@@ -78,7 +79,7 @@ export function ContentPage() {
             onClick={() => setView("library")}
             className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
               view === "library"
-                ? "bg-surface text-primary shadow-xs"
+                ? "bg-surface text-primary shadow-xs font-bold"
                 : "text-secondary hover:text-primary hover:bg-surface/50"
             }`}
           >
@@ -92,7 +93,7 @@ export function ContentPage() {
             onClick={() => setView("agenda")}
             className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
               view === "agenda"
-                ? "bg-surface text-primary shadow-xs"
+                ? "bg-surface text-primary shadow-xs font-bold"
                 : "text-secondary hover:text-primary hover:bg-surface/50"
             }`}
           >
@@ -110,7 +111,7 @@ export function ContentPage() {
           <div
             role="tablist"
             aria-label={t("content.tabsLabel")}
-            className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-surface-subtle/60 border border-border/80 shadow-2xs"
+            className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-surface-subtle/80 border border-border/80 shadow-2xs"
           >
             {CONTENT_TABS.map((name) => {
               const isSelected = tab === name;
@@ -121,10 +122,10 @@ export function ContentPage() {
                   type="button"
                   aria-selected={isSelected}
                   onClick={() => setParams({ tab: name }, { replace: true })}
-                  className={`min-h-10 rounded-xl px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                  className={`min-h-9 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                     isSelected
-                      ? "bg-action text-on-action shadow-xs font-bold"
-                      : "bg-surface text-secondary border border-border/80 hover:bg-surface-subtle hover:text-primary"
+                      ? "bg-surface text-primary shadow-xs font-bold ring-1 ring-border/50"
+                      : "text-secondary hover:text-primary hover:bg-surface/50"
                   }`}
                 >
                   {t(`content.tabs.${name}`)}

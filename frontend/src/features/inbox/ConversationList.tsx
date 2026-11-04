@@ -59,7 +59,7 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
         <p className="mt-1 text-body text-secondary">{t("convo.intro")}</p>
       </div>
 
-      <div role="tablist" aria-label={t("convo.filters.label")} className="flex flex-wrap gap-2">
+      <div role="tablist" aria-label={t("convo.filters.label")} className="flex flex-wrap gap-1.5 p-1 bg-surface-subtle/80 rounded-xl border border-border/70 shadow-2xs">
         {FILTERS.map((name) => {
           const isSelected = filter === name;
           return (
@@ -69,10 +69,10 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
               type="button"
               aria-selected={isSelected}
               onClick={() => setFilter(name)}
-              className={`min-h-10 rounded-xl px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+              className={`min-h-9 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 isSelected
-                  ? "bg-action text-on-action shadow-xs"
-                  : "bg-surface text-secondary border border-border/80 hover:bg-surface-subtle hover:text-primary"
+                  ? "bg-surface text-primary shadow-xs font-bold"
+                  : "text-secondary hover:text-primary hover:bg-surface/50"
               }`}
             >
               {t(`convo.filters.${name}`)}
@@ -102,37 +102,39 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
                     aria-current={isSelected ? "true" : undefined}
                     className={`flex min-h-16 items-center justify-between gap-3.5 rounded-2xl p-4 border transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                       isSelected
-                        ? "bg-surface border-action/50 shadow-xs ring-1 ring-action/20 border-l-4 border-l-action"
-                        : "bg-surface border-border/80 shadow-2xs hover:bg-surface hover:border-border hover:shadow-xs"
+                        ? "bg-surface border-action shadow-card-hover ring-1 ring-action/20 border-l-4 border-l-action"
+                        : "bg-surface border-border/80 shadow-2xs hover:bg-surface hover:border-action/40 hover:shadow-card-modern hover:translate-y-[-1px]"
                     }`}
                   >
-                    <div className="flex items-start gap-3 min-w-0">
+                    <div className="flex items-start gap-3.5 min-w-0">
                       <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold tracking-tight transition-colors ${
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold tracking-tight transition-colors shadow-2xs ${
                           isSelected
-                            ? "bg-action text-on-action shadow-xs"
-                            : "bg-surface-subtle text-primary border border-border/80"
+                            ? "bg-gradient-to-br from-action to-action-hover text-on-action shadow-xs ring-1 ring-emerald-500/30"
+                            : "bg-surface-subtle text-primary border border-border"
                         }`}
                         aria-hidden="true"
                       >
                         {initials}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="block font-semibold text-primary truncate">{label}</span>
-                        <span className="block truncate text-body text-secondary">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="block font-bold text-primary truncate text-sm">{label}</span>
+                        </div>
+                        <span className="block truncate text-body text-secondary mt-0.5">
                           {conversation.last_message_preview ?? t("convo.noPreview")}
                         </span>
-                        <span className="mt-1.5 flex flex-wrap items-center gap-2 text-metadata">
+                        <span className="mt-2 flex flex-wrap items-center gap-1.5 text-metadata">
                           {conversation.attention !== "none" ? (
                             <span
                               data-testid="attention-chip"
-                              className="inline-flex items-center rounded-full bg-attention-subtle px-2 py-0.5 text-metadata font-semibold text-attention border border-attention/20"
+                              className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-500/30 shadow-2xs"
                             >
                               {t(`convo.attention.${conversation.attention}`)}
                             </span>
                           ) : null}
                           {conversation.handling_mode === "human" ? (
-                            <span className="inline-flex items-center rounded-full bg-surface-subtle px-2 py-0.5 text-metadata font-medium text-secondary border border-border">
+                            <span className="inline-flex items-center rounded-full bg-surface-subtle px-2 py-0.5 text-xs font-semibold text-secondary border border-border">
                               {t("convo.handledByYou")}
                             </span>
                           ) : null}
@@ -142,7 +144,7 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
                       </div>
                     </div>
                     <ChevronRightIcon
-                      className={`shrink-0 text-xl transition-colors ${isSelected ? "text-action" : "text-secondary/50"}`}
+                      className={`shrink-0 text-xl transition-transform ${isSelected ? "text-action translate-x-0.5" : "text-secondary/40"}`}
                     />
                   </Link>
                 </li>

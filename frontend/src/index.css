@@ -39,34 +39,34 @@
 
 :root {
   color-scheme: light;
-  --an-canvas: #f7f8f3;
+  --an-canvas: #f8faf8;
   --an-surface: #ffffff;
-  --an-surface-subtle: #f1f4eb;
-  --an-assistant: #eaf0e3;
-  --an-navigation: #253b31;
-  --an-navigation-text: #e0e8dc;
-  --an-navigation-selected: #d1e4b7;
-  --an-navigation-selected-text: #253b31;
-  --an-text-primary: #293b32;
-  --an-text-secondary: #5d6b54;
-  --an-action: #31664c;
-  --an-action-hover: #24583e;
+  --an-surface-subtle: #f2f5f2;
+  --an-assistant: #eaf1ec;
+  --an-navigation: #0e1814;
+  --an-navigation-text: #e1ede5;
+  --an-navigation-selected: #1d3b2e;
+  --an-navigation-selected-text: #ffffff;
+  --an-text-primary: #121f18;
+  --an-text-secondary: #53665a;
+  --an-action: #175338;
+  --an-action-hover: #0f3d28;
   --an-on-action: #ffffff;
-  --an-border: #e1e6db;
-  --an-control: #7a886e;
-  --an-focus: #557344;
-  --an-focus-inverse: #d1e4b7;
-  --an-success: #315c3f;
-  --an-success-subtle: #edf4e9;
-  --an-attention: #75603a;
-  --an-attention-subtle: #f4ebd5;
-  --an-danger: #a13732;
-  --an-danger-hover: #872e2a;
-  --an-danger-subtle: #fcf0ee;
-  --an-info: #315f78;
-  --an-info-subtle: #eaf1f5;
-  --an-simulation: #69478c;
-  --an-simulation-subtle: #f4edf9;
+  --an-border: #e3e9e3;
+  --an-control: #6b7f73;
+  --an-focus: #175338;
+  --an-focus-inverse: #d2e8db;
+  --an-success: #19613c;
+  --an-success-subtle: #eaf5ee;
+  --an-attention: #85531b;
+  --an-attention-subtle: #fbf1e3;
+  --an-danger: #a82e2e;
+  --an-danger-hover: #8f2323;
+  --an-danger-subtle: #fdf0f0;
+  --an-info: #215c7a;
+  --an-info-subtle: #eaf3f8;
+  --an-simulation: #694096;
+  --an-simulation-subtle: #f5effc;
   --an-space-1: 0.25rem;
   --an-space-2: 0.5rem;
   --an-space-3: 0.75rem;
@@ -79,7 +79,7 @@
   --an-duration-fast: 120ms;
   --an-duration-normal: 160ms;
   --an-duration-slow: 200ms;
-  --an-ease: cubic-bezier(0.2, 0, 0, 1);
+  --an-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Semantic utilities coexist with legacy utilities during the staged migration. */
@@ -132,6 +132,20 @@
   --shadow-float: 0 12px 32px rgb(37 59 49 / 0.16);
   --default-transition-duration: var(--an-duration-normal);
   --default-transition-timing-function: var(--an-ease);
+}
+
+@utility shadow-card-modern {
+  box-shadow: 0 0 0 1px rgba(18, 31, 24, 0.06), 0 1px 3px rgba(18, 31, 24, 0.04), 0 6px 16px -4px rgba(18, 31, 24, 0.04);
+}
+
+@utility shadow-card-hover {
+  box-shadow: 0 0 0 1px rgba(23, 83, 56, 0.2), 0 4px 16px -2px rgba(18, 31, 24, 0.08), 0 12px 28px -4px rgba(18, 31, 24, 0.07);
+}
+
+@utility glass-panel {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 html,

@@ -19,8 +19,8 @@ const LINK =
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 shadow-xs" aria-labelledby={id}>
-      <h2 id={id} className="type-section font-bold tracking-tight text-primary">
+    <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern" aria-labelledby={id}>
+      <h2 id={id} className="type-section font-heading font-bold tracking-tight text-primary flex items-center justify-between text-base sm:text-lg">
         {title}
       </h2>
       {children}
@@ -175,9 +175,10 @@ function Attention({
       {error ? <ErrorMessage error={error} /> : null}
       {pending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
       {!pending && !error && nothing ? (
-        <p data-testid="attention-none" className="text-body text-secondary">
-          {t("home.attention.none")}
-        </p>
+        <div data-testid="attention-none" className="flex items-center gap-3 rounded-xl bg-success-subtle/70 border border-success/30 p-4 text-body text-success">
+          <CheckIcon className="text-xl text-success shrink-0" />
+          <span className="font-medium text-primary">{t("home.attention.none")}</span>
+        </div>
       ) : null}
       {!nothing ? (
         <ul className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
@@ -187,7 +188,7 @@ function Attention({
                 to={card.to}
                 className={`group flex min-h-16 items-center justify-between gap-4 rounded-xl px-4 py-3.5 border transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                   card.count > 0
-                    ? "bg-attention-subtle/80 text-primary border-attention/50 shadow-xs hover:border-attention hover:shadow-sm hover:translate-y-[-1px]"
+                    ? "bg-amber-500/10 text-primary border-amber-500/40 shadow-xs hover:border-amber-600 hover:shadow-card-hover hover:translate-y-[-1px]"
                     : "bg-surface text-primary border-border hover:bg-surface-subtle hover:border-border"
                 }`}
               >
@@ -266,7 +267,7 @@ function Upcoming() {
           {upcoming.data.slice(0, 3).map((item) => (
             <li
               key={item.id}
-              className="group flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-surface p-3.5 transition-all hover:bg-surface-subtle hover:border-border hover:shadow-2xs"
+              className="group flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-surface p-3.5 transition-all duration-150 hover:bg-surface-subtle/70 hover:border-action/30 hover:shadow-2xs"
             >
               <div className="flex items-center gap-3.5 min-w-0">
                 <UpcomingThumbnail workspaceId={workspace.id} mediaId={item.media_asset_id} deleted={item.media_deleted} />
@@ -323,15 +324,15 @@ function Failures() {
             return (
               <li
                 key={item.id}
-                className="flex flex-col gap-1 rounded-control border border-danger/30 bg-danger-subtle p-3"
+                className="flex flex-col gap-1.5 rounded-xl border border-danger/30 bg-danger-subtle/80 p-3.5 transition-all shadow-2xs"
               >
                 <Link
                   to={`/w/${workspace.id}/content/${item.id}`}
-                  className="font-medium text-danger hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                  className="font-semibold text-danger hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 >
                   {item.title}
                 </Link>
-                <span className="text-body text-primary">
+                <span className="text-body text-primary font-medium">
                   {known !== "" ? known : t("content.failure.unknown.what")}
                 </span>
               </li>
@@ -387,7 +388,7 @@ function Numbers({
               <div
                 key={metric.key}
                 data-testid={`number-${metric.key}`}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-subtle/80 p-4 border border-border/80 shadow-2xs transition-all hover:bg-surface hover:border-action/40 hover:shadow-xs"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-gradient-to-b from-surface to-surface-subtle/50 p-4 border border-border/80 shadow-2xs transition-all duration-150 hover:bg-surface hover:border-action/40 hover:shadow-card-hover hover:translate-y-[-1px]"
               >
                 <dt className="text-metadata font-medium text-secondary leading-tight">{label}</dt>
                 <dd className="mt-2 text-3xl font-extrabold tracking-tight text-primary">

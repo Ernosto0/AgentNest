@@ -85,9 +85,10 @@ export function Connections() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("connections.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("connections.intro")}</p>
+      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
+        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-pink-500/10 via-purple-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
+        <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-primary">{t("connections.title")}</h1>
+        <p className="mt-1 text-sm text-secondary max-w-xl">{t("connections.intro")}</p>
       </div>
 
       <OAuthBanner />
@@ -186,9 +187,9 @@ function AccountCard({
   const canReconnect = account.status === "needs_reauth";
 
   return (
-    <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-heading font-semibold text-primary">
+    <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
+        <h2 className="text-xl font-heading font-bold text-primary">
           @{account.username ?? account.id}
         </h2>
         <AccountStatusBadge status={account.status} />

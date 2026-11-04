@@ -8,6 +8,7 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { AgentPage } from "@/features/agent/AgentPage";
 import { useAgentOverview } from "@/features/agent/hooks";
+import { useMeta } from "@/features/auth/hooks";
 import {
   useAutomation,
   useConnectMock,
@@ -17,6 +18,7 @@ import {
 } from "@/features/inbox/hooks";
 import { capabilityLabel } from "@/features/content/messages";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { useConnectInstagram } from "./hooks";
 
 type Mode = PolicyItem["mode"];
 const MODES: Mode[] = ["approval", "auto", "off"];
@@ -47,6 +49,14 @@ function LegacyAutomationSettings() {
   const owner = role === "owner";
   const accounts = useSocialAccounts(workspace.id);
   const connect = useConnectMock(workspace.id);
+  const instagram = useConnectInstagram(workspace.id);
+  const meta = useMeta();
+  const mockAllowed =
+    (meta.data?.instagram_providers?.includes("mock") ?? true) &&
+    (!meta.data?.mock_requires_demo_workspace || workspace.is_demo);
+  const metaAllowed = meta.data?.instagram_providers?.includes("meta") === true;
+  const [redirecting, setRedirecting] = useState(false);
+  const busy = connect.isPending || instagram.isPending || redirecting;
   const automation = useAutomation(workspace.id);
   const save = useSaveAutomation(workspace.id);
   const review = useReviewAutomation(workspace.id);
@@ -95,15 +105,42 @@ function LegacyAutomationSettings() {
           <>
             <p className="text-sm text-secondary">{t("automation.notConnected")}</p>
             {owner ? (
-              <div>
-                <Button disabled={connect.isPending} onClick={() => connect.mutate()}>
-                  {t("automation.connectMock")}
-                </Button>
+              <div className="flex flex-wrap gap-2">
+                {metaAllowed ? (
+                  <Button
+                    disabled={busy}
+                    onClick={() =>
+                      instagram.mutate(
+                        { purpose: "connect" },
+                        {
+                          onSuccess: ({ authorize_url }) => {
+                            setRedirecting(true);
+                            window.location.assign(authorize_url);
+                          },
+                        },
+                      )
+                    }
+                  >
+                    {t("connections.connectInstagram")}
+                  </Button>
+                ) : null}
+                {mockAllowed ? (
+                  <Button disabled={busy} onClick={() => connect.mutate()}>
+                    {t("automation.connectMock")}
+                  </Button>
+                ) : null}
               </div>
             ) : (
               <p className="text-sm font-medium text-secondary">{t("automation.ownerOnly")}</p>
             )}
+            <Link
+              to={`/w/${workspace.id}/more/settings/connections`}
+              className="text-sm font-medium text-action hover:text-action-hover underline"
+            >
+              {t("automation.manageConnection")}
+            </Link>
             {connect.error ? <ErrorMessage error={connect.error} /> : null}
+            {instagram.error ? <ErrorMessage error={instagram.error} /> : null}
           </>
         )}
       </Card>

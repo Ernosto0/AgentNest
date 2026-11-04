@@ -81,22 +81,22 @@ export function ConversationPage() {
   return (
     <div className="flex flex-col gap-5 max-w-4xl">
       {/* Header with back navigation, customer info, handling mode & window timer */}
-      <div className="flex flex-col gap-3.5 rounded-panel border border-border bg-surface p-4 md:p-5 shadow-xs">
+      <div className="flex flex-col gap-3.5 rounded-2xl border border-border/80 bg-surface p-5 shadow-card-modern">
         <div>
           <Link
             to={`/w/${workspace.id}/inbox`}
-            className="inline-flex items-center gap-1 text-body font-medium text-action hover:text-action-hover underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus rounded-control"
+            className="inline-flex items-center gap-1.5 text-body font-semibold text-action hover:text-action-hover underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus rounded-control"
           >
             <ChevronLeftIcon className="text-base" />
             <span>{t("convo.back")}</span>
           </Link>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-primary">{customerLabel(conversation, t)}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">{customerLabel(conversation, t)}</h1>
             {conversation.is_simulated ? <SimulatedBadge /> : null}
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <WindowTimer endsAt={conversation.window_ends_at} />
             <Button
               variant="secondary"
@@ -132,7 +132,7 @@ export function ConversationPage() {
           </div>
         </div>
         {human ? (
-          <div className="rounded-control bg-attention-subtle px-3 py-2 text-body font-medium text-attention border border-attention/20">
+          <div className="rounded-xl bg-amber-500/10 px-4 py-2.5 text-body font-medium text-amber-800 border border-amber-500/30">
             <p>{t("convo.humanMode")}</p>
           </div>
         ) : null}
@@ -147,20 +147,20 @@ export function ConversationPage() {
       ) : null}
 
       {/* Message Stream */}
-      <div className="flex flex-col gap-4 rounded-panel border border-border bg-canvas p-4 md:p-5 shadow-xs">
-        <ol className="flex flex-col gap-3" aria-label={t("convo.messages")} data-testid="messages">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface-subtle/40 p-4 md:p-6 shadow-card-modern">
+        <ol className="flex flex-col gap-3.5" aria-label={t("convo.messages")} data-testid="messages">
           {messages.map((message) => {
             const mine = message.direction === "outbound";
             return (
               <li key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[85%] rounded-panel px-4 py-3 break-words whitespace-pre-wrap shadow-xs ${
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 break-words whitespace-pre-wrap shadow-xs ${
                     mine
                       ? "bg-action text-on-action rounded-br-xs"
-                      : "bg-surface border border-border text-primary rounded-bl-xs"
+                      : "bg-surface border border-border/90 text-primary rounded-bl-xs shadow-2xs"
                   }`}
                 >
-                  <p className="text-form leading-relaxed">
+                  <p className="text-form leading-relaxed font-normal">
                     {message.text ?? (message.attachments.length > 0 ? t("convo.attachment") : "")}
                   </p>
                   <span

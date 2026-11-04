@@ -31,9 +31,9 @@ export function FactCard({ fact, timezone, canVerify, busy, onEdit, onHistory, o
       : null;
 
   return (
-    <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs hover:border-control/80 transition-colors" data-testid={`${archived ? "archived-fact" : "fact"}-${fact.key}`}>
+    <Card className="flex flex-col gap-3.5 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern hover:border-action/30 hover:shadow-card-hover transition-all duration-150" data-testid={`${archived ? "archived-fact" : "fact"}-${fact.key}`}>
       <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border/60 pb-3">
-        <h3 className="min-w-0 text-base font-semibold text-primary break-words">{pickLabel(fact.label, i18n.language)}</h3>
+        <h3 className="min-w-0 font-heading text-base font-bold text-primary break-words">{pickLabel(fact.label, i18n.language)}</h3>
         <FactStatusChip state={fact.state} />
       </div>
       <p className="text-base text-primary break-words whitespace-pre-line font-medium leading-relaxed">{fact.display}</p>

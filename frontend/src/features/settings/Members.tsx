@@ -52,10 +52,11 @@ export function Members() {
   const [removing, setRemoving] = useState<Member | null>(null);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("members.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("members.intro")}</p>
+    <div className="flex flex-col gap-6 max-w-4xl">
+      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
+        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-blue-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
+        <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-primary">{t("members.title")}</h1>
+        <p className="mt-1 text-sm text-secondary max-w-xl">{t("members.intro")}</p>
       </div>
 
       {members.isError ? <ErrorMessage error={members.error} /> : null}
@@ -63,8 +64,8 @@ export function Members() {
       {members.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
 
       {members.data ? (
-        <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
-          <ul className="flex flex-col divide-y divide-border">
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+          <ul className="flex flex-col divide-y divide-border/60">
             {members.data.map((member) => (
               <li key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">

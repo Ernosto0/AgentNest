@@ -24,16 +24,16 @@ export function ReadinessCard() {
   const percentage = totalCount > 0 ? Math.round((satisfiedCount / totalCount) * 100) : 0;
 
   return (
-    <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 shadow-xs" aria-labelledby="readiness-title">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="readiness-title" className="type-section font-bold tracking-tight text-primary">
+    <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern" aria-labelledby="readiness-title">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+        <h2 id="readiness-title" className="type-section font-heading font-bold tracking-tight text-primary text-base sm:text-lg">
           {t("readiness.title")}
         </h2>
         {readiness.data ? (
           <span
             data-testid="readiness-level"
             data-level={readiness.data.level}
-            className={`inline-flex items-center rounded-full px-3 py-1 text-metadata font-bold shadow-2xs ${LEVEL_TONE[readiness.data.level]}`}
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold tracking-wide shadow-2xs ${LEVEL_TONE[readiness.data.level]}`}
           >
             {t(`readiness.level.${readiness.data.level}`)}
           </span>
@@ -43,15 +43,15 @@ export function ReadinessCard() {
       {readiness.isError ? <ErrorMessage error={readiness.error} /> : null}
       {readiness.data ? (
         <>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5 bg-surface-subtle/50 rounded-xl p-3.5 border border-border/60">
             <div className="flex items-center justify-between">
-              <p className="text-body text-secondary">
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 {t("readiness.progress", {
                   done: satisfiedCount,
                   total: totalCount,
                 })}
               </p>
-              <span className="text-metadata font-semibold text-primary">{percentage}%</span>
+              <span className="text-sm font-extrabold text-primary font-mono">{percentage}%</span>
             </div>
             <div
               role="progressbar"
@@ -59,11 +59,11 @@ export function ReadinessCard() {
               aria-valuemin={0}
               aria-valuemax={totalCount}
               aria-label={t("readiness.title")}
-              className="h-2 w-full overflow-hidden rounded-full bg-surface-subtle border border-border"
+              className="h-2.5 w-full overflow-hidden rounded-full bg-border/60"
             >
               <div
-                className={`h-full rounded-full transition-all duration-normal ${
-                  isReady ? "bg-success" : "bg-action"
+                className={`h-full rounded-full transition-all duration-normal shadow-xs ${
+                  isReady ? "bg-emerald-600" : "bg-action"
                 }`}
                 style={{ width: `${percentage}%` }}
               />
@@ -72,10 +72,10 @@ export function ReadinessCard() {
           {!isReady ? (
             <ReadinessChecklist workspaceId={workspace.id} readiness={readiness.data} onlyOpen />
           ) : null}
-          <div>
+          <div className="pt-1">
             <Link
               to={`/w/${workspace.id}/more/knowledge`}
-              className="inline-flex min-h-11 items-center font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-colors"
+              className="inline-flex min-h-11 items-center font-semibold text-action underline underline-offset-4 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-colors text-sm"
             >
               {t("readiness.openKnowledge")}
             </Link>
