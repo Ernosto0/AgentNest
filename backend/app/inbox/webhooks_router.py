@@ -17,7 +17,10 @@ from app.api.deps import get_app_settings, get_clock
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.db import get_db
+from app.core.logging import get_logger
 from app.inbox.ingest import ingest_webhook
+
+log = get_logger(__name__)
 
 
 def _post_handler(kind: str) -> Callable[..., Awaitable[Response]]:
@@ -30,6 +33,15 @@ def _post_handler(kind: str) -> Callable[..., Awaitable[Response]]:
         raw_body = await request.body()
         result = await run_in_threadpool(
             ingest_webhook, db, clock, settings, kind, raw_body, dict(request.headers)
+        )
+        log.info(
+            "webhook_received",
+            kind=kind,
+            body=raw_body.decode("utf-8", errors="replace"),
+            status=result.status,
+            received=result.received,
+            duplicates=result.duplicates,
+            ignored=result.ignored,
         )
         if result.status == "invalid_signature":
             return JSONResponse({"status": "invalid_signature"}, status_code=401)

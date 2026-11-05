@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "railway": {
+      "type": "http",
+      "url": "https://mcp.railway.com",
+      "headers": {
+        "Authorization": "Bearer 3d24268c-7354-4115-997b-df073369ffbe"
+      }
+    }
+  }
+}
+

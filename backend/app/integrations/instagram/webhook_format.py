@@ -175,10 +175,18 @@ def build_echo_payload(
 
 
 def _timestamp(value: Any) -> datetime | None:
-    if isinstance(value, bool) or not isinstance(value, int | float):
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, str):
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            return None
+    if not isinstance(value, int | float):
         return None
     try:
-        return datetime.fromtimestamp(value / 1000, tz=UTC)
+        sec = value if value < 100_000_000_000 else value / 1000
+        return datetime.fromtimestamp(sec, tz=UTC)
     except (OverflowError, OSError, ValueError):
         return None
 
@@ -287,8 +295,8 @@ def _normalize(item: dict[str, Any], entry_id: str | None) -> NormalizedInboundE
 
 
 def parse(payload: Any) -> list[NormalizedInboundEvent]:
-    """One normalised event per ``entry[].messaging[]`` item. Unknown shapes become ``other``
-    (stored and ignored); a payload that is not an Instagram event yields no events."""
+    """One normalised event per ``entry[].messaging[]`` or ``entry[].changes[]`` item. Unknown shapes
+    become ``other`` (stored and ignored); a payload that is not an Instagram event yields no events."""
     if not isinstance(payload, dict) or payload.get("object") != "instagram":
         return []
     events: list[NormalizedInboundEvent] = []
@@ -297,8 +305,17 @@ def parse(payload: Any) -> list[NormalizedInboundEvent]:
         if not isinstance(entry, dict):
             continue
         entry_id = _id(entry)
-        items = entry.get("messaging")
-        for item in items if isinstance(items, list) else []:
-            if isinstance(item, dict):
-                events.append(_normalize(item, entry_id))
+        items: list[dict[str, Any]] = []
+        raw_items = entry.get("messaging")
+        if isinstance(raw_items, list):
+            items.extend(item for item in raw_items if isinstance(item, dict))
+        changes = entry.get("changes")
+        if isinstance(changes, list):
+            for change in changes:
+                if isinstance(change, dict):
+                    val = change.get("value")
+                    if isinstance(val, dict):
+                        items.append(val)
+        for item in items:
+            events.append(_normalize(item, entry_id))
     return events
