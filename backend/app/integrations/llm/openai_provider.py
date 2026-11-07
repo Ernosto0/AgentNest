@@ -133,13 +133,21 @@ class OpenAIProvider:
         if len(request.tools) > 32 or len(request.observations) > 12:
             raise LLMConfigError("step tool or observation limit exceeded")
 
+        by_wire_name: dict[str, str] = {}
         tools: list[dict[str, Any]] = []
         for item in request.tools:
+            wire_name = _to_wire_tool_name(item.name)
+            by_wire_name[wire_name] = item.name
+            by_wire_name[item.name] = item.name
             tools.append(
                 {
                     "type": "function",
-                    "name": item.name,
-                    "description": item.description,
+                    "name": wire_name,
+                    "description": (
+                        f"({item.name}) {item.description}"
+                        if wire_name != item.name
+                        else item.description
+                    ),
                     "parameters": strict_tool_schema(item.arguments_schema),
                     "strict": True,
                 }
@@ -166,7 +174,7 @@ class OpenAIProvider:
                 [
                     {
                         "type": "function_call",
-                        "name": observation.name,
+                        "name": _to_wire_tool_name(observation.name),
                         "arguments": json.dumps(observation.arguments, ensure_ascii=False),
                         "call_id": observation.call_id,
                     },
@@ -259,22 +267,28 @@ class OpenAIProvider:
                 wait_for=decision.wait_for,
                 **common,
             )
+        canonical_name = by_wire_name.get(call.name, call.name.replace("__", "."))
         reason = arguments.get("reason")
         explanation = (
             reason[:500]
             if isinstance(reason, str)
             else next(
-                (item.description[:500] for item in request.tools if item.name == call.name),
-                f"Call {call.name}",
+                (item.description[:500] for item in request.tools if item.name == canonical_name),
+                f"Call {canonical_name}",
             )
         )
         return LLMStepResult(
             kind="tool",
-            tool_name=call.name,
+            tool_name=canonical_name,
             tool_arguments=arguments,
             explanation=explanation,
             **common,
         )
+
+
+def _to_wire_tool_name(name: str) -> str:
+    """OpenAI function tool names only allow ^[a-zA-Z0-9_-]+$ (no dots)."""
+    return name.replace(".", "__")
 
 
 def _retry_after(exc: openai.RateLimitError) -> float | None:

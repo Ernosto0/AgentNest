@@ -12,6 +12,7 @@ def load_handlers() -> None:
     import app.approvals.jobs  # noqa: F401
     import app.commands.jobs  # noqa: F401
     import app.commands.subject  # noqa: F401
+    import app.comments.models  # noqa: F401
     import app.content.impact_handlers  # noqa: F401
     import app.content.jobs  # noqa: F401
     import app.content.media_cleanup  # noqa: F401
@@ -22,6 +23,7 @@ def load_handlers() -> None:
     import app.knowledge.extraction  # noqa: F401
     import app.knowledge.impact_handlers  # noqa: F401
     import app.knowledge.promotion_notices  # noqa: F401
+    import app.memory.models  # noqa: F401
     import app.notifications.jobs  # noqa: F401
     import app.operations.content_ledger  # noqa: F401
     import app.operations.jobs  # noqa: F401
@@ -30,5 +32,6 @@ def load_handlers() -> None:
     import app.operations.operator_alerts  # noqa: F401
     import app.operations.private_reply  # noqa: F401
     import app.operations.public_comments  # noqa: F401
+    import app.owner_requests.models  # noqa: F401
     import app.reporting.jobs  # noqa: F401
     import app.retention.jobs  # noqa: F401

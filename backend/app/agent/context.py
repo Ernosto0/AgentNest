@@ -126,7 +126,20 @@ def assemble(db: Session, clock: Clock, context: BrokerContext) -> ModelContext:
         "goal_instructions": str(account.goals.get("instructions", ""))[:500],
         "event_cursor": thread.event_cursor,
         "turns": [
-            {"id": str(row.id), "direction": row.direction, "text": (row.text or "")[:500]}
+            {
+                "id": str(row.id),
+                "direction": row.direction,
+                "text": (
+                    (row.text or "")[:500]
+                    or (
+                        "[attachment: "
+                        + ", ".join(str(a.get("type", "file")) for a in row.attachments)
+                        + "]"
+                        if row.attachments
+                        else ""
+                    )
+                ),
+            }
             for row in reversed(turns)
         ],
         "knowledge": facts,

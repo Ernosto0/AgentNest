@@ -278,7 +278,16 @@ def _thread_read(
             {
                 "id": str(item.id),
                 "direction": item.direction,
-                "text": neutralise_untrusted((item.text or "")[:1000]),
+                "text": neutralise_untrusted(
+                    (item.text or "")[:1000]
+                    or (
+                        "[attachment: "
+                        + ", ".join(str(a.get("type", "file")) for a in item.attachments)
+                        + "]"
+                        if item.attachments
+                        else ""
+                    )
+                ),
             }
             for item in reversed(rows)
         ]

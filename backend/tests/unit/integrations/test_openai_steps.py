@@ -76,7 +76,7 @@ def _provider(body: dict[str, Any]) -> tuple[OpenAIProvider, list[httpx.Request]
 
 
 def test_tool_call_is_strict_unstored_bounded_and_observation_is_returned() -> None:
-    provider, seen = _provider(_body([_call("knowledge.read", '{"limit":1,"cursor":null}')]))
+    provider, seen = _provider(_body([_call("knowledge__read", '{"limit":1,"cursor":null}')]))
     result = provider.generate_step(_request(observe=True))
     assert result.kind == "tool"
     assert result.tool_name == "knowledge.read"
@@ -88,10 +88,12 @@ def test_tool_call_is_strict_unstored_bounded_and_observation_is_returned() -> N
     assert body["parallel_tool_calls"] is False
     assert body["tool_choice"] == "required"
     tool = body["tools"][0]
+    assert tool["name"] == "knowledge__read"
     assert tool["strict"] is True
     assert tool["parameters"]["additionalProperties"] is False
     assert set(tool["parameters"]["required"]) == {"limit", "cursor"}
     assert body["input"][-2]["type"] == "function_call"
+    assert body["input"][-2]["name"] == "knowledge__read"
     assert body["input"][-1] == {
         "type": "function_call_output",
         "call_id": "call_0",
