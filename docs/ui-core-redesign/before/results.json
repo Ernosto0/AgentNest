@@ -1,0 +1,18 @@
+[
+  {
+    "suite": "today",
+    "code": 0
+  },
+  {
+    "suite": "conversation",
+    "code": 0
+  },
+  {
+    "suite": "voice-delegation",
+    "code": 0
+  },
+  {
+    "suite": "content-detail",
+    "code": 0
+  }
+]

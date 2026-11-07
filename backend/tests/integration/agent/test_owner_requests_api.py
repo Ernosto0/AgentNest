@@ -2,18 +2,21 @@
 
 import uuid
 
+import pytest
+
 from app.agent.models import AgentEvent, AgentSession, AgentThread
 from app.agent.tools.broker import BrokerContext
 from app.inbox.models import Conversation, Message
 from app.owner_requests import service
+from app.owner_requests.models import OwnerQuestion
 from tests.helpers.env import build_env
 from tests.integration.agent.test_delegation import _account
 from tests.integration.agent.test_tools import _seed
 
 
-def question(env, *, customer="one"):
+def question(env, *, customer="one", account=None):
     db, clock = env.session, env.clock
-    social, agent = _account(env)
+    social, agent = account or _account(env)
     agent.controller_mode, agent.state = "agent", "active"
     conversation = Conversation(
         workspace_id=env.workspace.id,
@@ -78,6 +81,76 @@ def question(env, *, customer="one"):
     )
     db.commit()
     return social, uuid.UUID(out["question_id"])
+
+
+@pytest.mark.parametrize("role_name", ["owner", "manager", "staff"])
+def test_thread_filter_scopes_before_pagination_and_preserves_role_visibility(
+    db_session, make_client, clock, role_name
+):
+    env = build_env(db_session, make_client, clock)
+    social, qid = question(env)
+    original = db_session.get(OwnerQuestion, qid)
+    # Interleave another same-account thread among copies of the requested thread.
+    from sqlalchemy import select
+
+    from app.agent.models import AccountAgent
+
+    agent = db_session.scalar(
+        select(AccountAgent).where(AccountAgent.social_account_id == social.id)
+    )
+    _, other_qid = question(env, customer="other", account=(social, agent))
+    other = db_session.get(OwnerQuestion, other_qid)
+    other_thread_id = other.thread_id
+    other.id = uuid.UUID(int=200)
+    columns = {
+        column.name: getattr(original, column.name) for column in OwnerQuestion.__table__.columns
+    }
+    for number in (100, 300):
+        db_session.add(
+            OwnerQuestion(
+                **(
+                    columns
+                    | {
+                        "id": uuid.UUID(int=number),
+                        "continuation_key": f"copy-{number}",
+                    }
+                )
+            )
+        )
+    db_session.commit()
+    role = getattr(env, role_name)
+    base = f"/accounts/{social.id}/owner-questions"
+    target = f"{base}?thread_id={original.thread_id}&limit=1"
+    ids = []
+    cursor = None
+    for _ in range(3):
+        response = env.call(role, "GET", target + (f"&cursor={cursor}" if cursor else ""))
+        assert response.status_code == 200
+        page = response.json()
+        assert len(page["items"]) == 1
+        assert page["items"][0]["thread_id"] == str(original.thread_id)
+        ids.append(page["items"][0]["id"])
+        cursor = page["next_cursor"]
+    assert len(set(ids)) == 3
+    assert cursor is None
+    other_page = env.call(role, "GET", f"{base}?thread_id={other_thread_id}").json()
+    assert len(other_page["items"]) == 1
+    assert other_page["items"][0]["thread_id"] == str(other_thread_id)
+    # A persisted thread in another account, and a random thread, both fail closed.
+    social.status = "disconnected"
+    db_session.flush()
+    other_social, _ = question(env, customer="two")
+    assert (
+        env.call(
+            role,
+            "GET",
+            f"/accounts/{other_social.id}/owner-questions?thread_id={original.thread_id}",
+        ).status_code
+        == 404
+    )
+    assert env.call(role, "GET", f"{base}?thread_id={uuid.uuid4()}").status_code == 404
+    foreign = _seed(db_session)
+    assert env.call(role, "GET", f"{base}?thread_id={foreign.thread_id}").status_code == 404
 
 
 def test_questions_api_role_version_pagination_and_real_foreign_ids(db_session, make_client, clock):

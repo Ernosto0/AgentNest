@@ -38,7 +38,7 @@ function ContentThumbnail({
 }) {
   const { t } = useTranslation();
   const preview = useMediaPreview(workspaceId, deleted ? null : mediaId);
-  const aspectClass = contentType === "story_image" ? "aspect-9/16 w-12 sm:w-14" : "aspect-square w-14 sm:w-16";
+  const aspectClass = contentType === "story_image" ? "aspect-9/16 w-20 sm:w-24" : "aspect-square w-24 sm:w-28";
 
   if (deleted) {
     return (

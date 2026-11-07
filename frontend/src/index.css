@@ -39,14 +39,14 @@
 
 :root {
   color-scheme: light;
-  --an-canvas: #f8faf8;
+  --an-canvas: #f7f8f3;
   --an-surface: #ffffff;
-  --an-surface-subtle: #f2f5f2;
-  --an-assistant: #eaf1ec;
-  --an-navigation: #0e1814;
+  --an-surface-subtle: #f1f4eb;
+  --an-assistant: #eaf0e3;
+  --an-navigation: #253b31;
   --an-navigation-text: #e1ede5;
-  --an-navigation-selected: #1d3b2e;
-  --an-navigation-selected-text: #ffffff;
+  --an-navigation-selected: #d1e4b7;
+  --an-navigation-selected-text: #253b31;
   --an-text-primary: #121f18;
   --an-text-secondary: #53665a;
   --an-action: #175338;
@@ -114,9 +114,9 @@
   --color-simulation-subtle: var(--an-simulation-subtle);
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Manrope", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --text-page: clamp(1.5rem, 1.25rem + 0.7vw, 1.875rem);
+  --text-page: clamp(1.625rem, 1.4rem + 0.6vw, 1.875rem);
   --text-page--line-height: 1.3;
-  --text-section: 1.0625rem;
+  --text-section: 1.125rem;
   --text-section--line-height: 1.4;
   --text-body: 0.875rem;
   --text-body--line-height: 1.6;
@@ -134,13 +134,8 @@
   --default-transition-timing-function: var(--an-ease);
 }
 
-@utility shadow-card-modern {
-  box-shadow: 0 0 0 1px rgba(18, 31, 24, 0.06), 0 1px 3px rgba(18, 31, 24, 0.04), 0 6px 16px -4px rgba(18, 31, 24, 0.04);
-}
-
-@utility shadow-card-hover {
-  box-shadow: 0 0 0 1px rgba(23, 83, 56, 0.2), 0 4px 16px -2px rgba(18, 31, 24, 0.08), 0 12px 28px -4px rgba(18, 31, 24, 0.07);
-}
+@utility shadow-card-modern { box-shadow: none; }
+@utility shadow-card-hover { box-shadow: none; }
 
 @utility glass-panel {
   background: rgba(255, 255, 255, 0.88);
@@ -159,6 +154,9 @@ body {
   line-height: 1.55;
   -webkit-text-size-adjust: 100%;
 }
+
+html { scroll-padding-block: 6rem; }
+#main :where(a, button, input, select, textarea) { scroll-margin-block: 1rem; }
 
 h1,
 h2,
@@ -204,4 +202,18 @@ h4 {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Working surfaces use tone and dividers; elevation is reserved for overlays. */
+#main :where(.shadow-xs, .shadow-2xs, .shadow-sm) { box-shadow: none; }
+#main { font-size: var(--text-body); }
+#main :where(input, textarea, select) { font-size: var(--text-form); }
+
+/* Low specificity defaults allow a surface's explicit tone and spacing to win. */
+:where(.an-card) {
+  border: 1px solid var(--an-border);
+  border-radius: var(--radius-panel);
+  background: var(--an-surface);
+  padding: 1.25rem;
+  color: var(--an-text-primary);
 }

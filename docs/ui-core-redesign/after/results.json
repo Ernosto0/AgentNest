@@ -1,0 +1,1692 @@
+{
+  "complete": true,
+  "capturedAt": "2026-11-07T13:29:29.422Z",
+  "evidence": "intercepted fixtures, not live Instagram",
+  "node": "v24.13.0",
+  "browsers": {
+    "chromium": "156.0.8078.4",
+    "webkit": "27.2"
+  },
+  "results": [
+    {
+      "label": "chromium-en-390-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-360-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-390-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1024-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-768-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1920-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-1440-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-390-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-360-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-768-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1024-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1920-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-1440-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-schedule-review",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-approval",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-moderated-comment",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-short-keyboard-focus",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-expired-draft",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-zoom-reflow-proxy",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-unavailable-media",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-partial-failure",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-quiet-ready",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-en-account-publishing-failures",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-schedule-review",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-approval",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-moderated-comment",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-short-keyboard-focus",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-expired-draft",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-zoom-reflow-proxy",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-unavailable-media",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-partial-failure",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-quiet-ready",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-tr-account-publishing-failures",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-manager-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-manager-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-staff-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "chromium-staff-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-360-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-390-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-768-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1024-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1440-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-1920-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-390-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-360-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-768-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1024-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-today",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-inbox",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-comments",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-assistant",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-assistant-voice",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-assistant-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-assistant-history",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-approvals",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-content-library",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-content-edit",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1440-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-1920-content-preview",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-schedule-review",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-approval",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-moderated-comment",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-short-keyboard-focus",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-expired-draft",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-zoom-reflow-proxy",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-unavailable-media",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-partial-failure",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-quiet-ready",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-en-account-publishing-failures",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-schedule-review",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-approval",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-moderated-comment",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-short-keyboard-focus",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-expired-draft",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-zoom-reflow-proxy",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-unavailable-media",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-partial-failure",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-quiet-ready",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-tr-account-publishing-failures",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-manager-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-manager-question",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-staff-permissions",
+      "overflow": false,
+      "violations": 0
+    },
+    {
+      "label": "webkit-staff-question",
+      "overflow": false,
+      "violations": 0
+    }
+  ]
+}

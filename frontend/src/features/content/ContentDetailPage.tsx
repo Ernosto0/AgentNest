@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { AppError } from "@/api/errors";
 import type { ContentItem } from "@/api/types";
 import { Button } from "@/components/Button";
-import { Card } from "@/components/Card";
+import { useSocialAccounts } from "@/features/inbox/hooks";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ChevronLeftIcon, SpinnerIcon } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -25,7 +25,7 @@ const EDITOR_ID = "content-editor";
 function focusEditor() {
   const root = document.getElementById(EDITOR_ID);
   root?.scrollIntoView?.({ behavior: "smooth", block: "start" });
-  root?.querySelector<HTMLElement>("textarea, input:not([type=file])")?.focus();
+  root?.querySelector<HTMLElement>("textarea")?.focus();
 }
 
 /** The AI draft is prepared by a job: say so while it runs, and say what is left when it failed. */
@@ -100,12 +100,16 @@ function ScheduleAction({ item, dirty }: { item: ContentItem; dirty: boolean }) 
 
 /** One content item: where it stands and why, what can be done next, and the editor. */
 export function ContentDetailPage() {
+  const { id } = useParams();
+  return <ContentDetail key={id} />;
+}
+
+function ContentDetail() {
   const { t, i18n } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const { id = "" } = useParams();
   const query = useContentItem(workspace.id, id);
-  const [dirty, setDirty] = useState(false);
-  const onDirtyChange = useCallback((value: boolean) => setDirty(value), []);
+  const accounts = useSocialAccounts(workspace.id);
 
   const back = (
     <Link
@@ -140,13 +144,16 @@ export function ContentDetailPage() {
     );
   }
   const item = query.data;
+  const activeAccount = accounts.data?.find(a => a.status !== "disconnected");
+  const accountId = item.status === "draft" ? activeAccount?.id : item.social_account_id ?? activeAccount?.id;
+  const account = accounts.data?.find(a => a.id === accountId);
   const badge = contentBadge(item, t, i18n.language, workspace.timezone);
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <div className="border-b border-border pb-5">
         {back}
-        <h1 className="mt-3 text-2xl sm:text-3xl font-heading font-bold text-primary break-words">
+        <h1 className="mt-3 type-page text-primary break-words">
           {item.title || t("content.card.untitled")}
         </h1>
         <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-secondary">
@@ -157,22 +164,19 @@ export function ContentDetailPage() {
       </div>
 
       <GenerationNotice item={item} />
-      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-      <Card id={EDITOR_ID} className="min-w-0 p-4 sm:p-6">
-        <ContentEditor item={item} onDirtyChange={onDirtyChange} />
-      </Card>
-      <aside className="order-first flex min-w-0 flex-col gap-4 xl:order-last xl:sticky xl:top-24">
       <ContentStatusPanel item={item} />
       <FailureDetail item={item} onEdit={focusEditor} />
-      {item.status === "on_hold" ? <OnHoldActions item={item} onEdit={focusEditor} /> : null}
-      {item.status !== "on_hold" ? (
-        <div className="flex flex-wrap items-start gap-3">
-          {item.status === "draft" ? <ScheduleAction item={item} dirty={dirty} /> : null}
-          <CancelAction item={item} />
-        </div>
-      ) : null}
-      </aside>
+      <div className="flex min-w-0 flex-wrap items-end gap-4">
+        <div className="flex min-w-0 flex-col gap-2"><span className="font-medium">{t("agent.account")}</span><span className="min-h-11 break-all py-2.5 text-form">{account?.username ? `@${account.username}` : t("core.noAccount")}</span></div>
+        <div className="flex flex-col gap-2"><span className="font-medium">{t("core.typeLabel")}</span><span className="min-h-11 py-2.5">{t(`content.type.${item.content_type}`)}</span></div>
       </div>
+      {accounts.error ? <ErrorMessage error={accounts.error} /> : null}
+      <div id={EDITOR_ID} className="min-w-0">
+        <ContentEditor item={item} account={account?.username ?? undefined} actions={hasEdits => <>
+          {item.status === "draft" ? <ScheduleAction item={item} dirty={hasEdits} /> : null}
+        </>} />
+      </div>
+      {item.status === "on_hold" ? <OnHoldActions item={item} onEdit={focusEditor} /> : <CancelAction item={item} />}
     </div>
   );
 }

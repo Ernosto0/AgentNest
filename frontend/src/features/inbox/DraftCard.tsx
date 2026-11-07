@@ -1,3 +1,4 @@
+import { useDirtyForm } from "@/components/DirtyForms";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReplyDraft } from "@/api/types";
@@ -31,6 +32,7 @@ export function DraftCard({
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(draft.text ?? "");
 
+  useDirtyForm(editing && editText !== (draft.text ?? ""));
   const canDecide = approval.data?.can_decide === true;
   const busy = decide.isPending || edit.isPending || cancel.isPending;
 

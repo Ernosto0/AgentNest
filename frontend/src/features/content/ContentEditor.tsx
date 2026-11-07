@@ -1,4 +1,6 @@
-import { useEffect, useId, useState } from "react";
+import { useDirtyForm } from "@/components/DirtyForms";
+import { PostPreview } from "./PostPreview";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ContentIssue, ContentItem, ContentValidation } from "@/api/types";
 import { AlertIcon, CheckIcon } from "@/components/icons";
@@ -188,8 +190,12 @@ function ReadOnlyText({ item }: { item: ContentItem }) {
 export function ContentEditor({
   item,
   onDirtyChange,
+  actions,
+  account,
 }: {
   item: ContentItem;
+  actions?: (dirty: boolean) => ReactNode;
+  account?: string;
   /** Told whenever there are unsaved changes (the page holds back "schedule" until they are saved). */
   onDirtyChange?: (dirty: boolean) => void;
 }) {
@@ -198,6 +204,7 @@ export function ContentEditor({
   const ids = { caption: useId(), counter: useId(), notes: useId() };
   const patch = usePatchContent(workspace.id, item.id);
   const validate = useValidateContent(workspace.id, item.id);
+  const [panel, setPanel] = useState("edit");
   const [edits, setEdits] = useState<Edits>({});
   const [conflict, setConflict] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -216,12 +223,13 @@ export function ContentEditor({
     notes: edits.notes !== undefined && edits.notes !== (item.visual_notes ?? ""),
   };
   const anyDirty = dirty.title || dirty.caption || dirty.overlay || dirty.notes;
+  useDirtyForm(anyDirty);
   useEffect(() => {
-    onDirtyChange?.(anyDirty);
-  }, [anyDirty, onDirtyChange]);
+    onDirtyChange?.(anyDirty || patch.isPending);
+  }, [anyDirty, patch.isPending, onDirtyChange]);
 
   if (!isEditable(item.status)) {
-    return <ReadOnlyText item={item} />;
+    return <div className="grid min-w-0 gap-6 min-[1200px]:grid-cols-2"><ReadOnlyText item={item} /><PostPreview key={item.media_asset_id} item={item} caption={caption} overlay={overlay} account={account} /></div>;
   }
 
   const edit = (next: Edits) => {
@@ -283,8 +291,11 @@ export function ContentEditor({
   const busy = patch.isPending;
 
   return (
+    <div className="flex min-w-0 flex-col gap-4">
+    <div role="group" aria-label={t("core.preview")} className="flex gap-2 min-[1200px]:hidden">{["edit", "preview"].map(name => <Button key={name} variant={panel === name ? "primary" : "secondary"} aria-pressed={panel === name} onClick={() => setPanel(name)}>{t(`core.${name}`)}</Button>)}</div>
+    <div className="grid min-w-0 items-start gap-6 min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(280px,0.8fr)]">
     <form
-      className="flex flex-col gap-6"
+      className={`min-w-0 flex-col gap-6 rounded-panel border border-border bg-surface p-4 sm:p-6 ${panel === "edit" ? "flex" : "hidden min-[1200px]:flex"}`}
       onSubmit={(event) => {
         event.preventDefault();
         if (anyDirty && title.trim() !== "") save();
@@ -296,13 +307,6 @@ export function ContentEditor({
           <p>{t("content.editor.editVoidsApproval")}</p>
         </div>
       ) : null}
-
-      <TextField
-        label={t("content.editor.titleLabel")}
-        value={title}
-        maxLength={TITLE_MAX}
-        onChange={(event) => edit({ title: event.target.value })}
-      />
 
       <MediaUpload
         workspaceId={workspace.id}
@@ -377,6 +381,15 @@ export function ContentEditor({
         </p>
       ) : null}
 
+      <details><summary className="min-h-11 cursor-pointer py-2 font-semibold">{t("core.optionalNotes")}</summary>
+      <div className="mt-3 flex flex-col gap-4">
+      <TextField
+        label={t("content.editor.titleLabel")}
+        value={title}
+        maxLength={TITLE_MAX}
+        onChange={(event) => edit({ title: event.target.value })}
+      />
+
       <div className="flex flex-col gap-1.5">
         <label htmlFor={ids.notes} className="text-sm font-semibold text-primary">
           {t("content.editor.visualNotesLabel")}
@@ -390,6 +403,8 @@ export function ContentEditor({
           className="min-h-20 w-full rounded-control border border-control bg-surface p-3.5 text-base text-primary shadow-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         />
       </div>
+
+      </div></details>
 
       {conflict ? (
         <div role="alert" data-testid="version-conflict" className="flex items-center gap-2 rounded-panel border border-attention bg-attention-subtle p-3.5 text-sm text-attention shadow-xs">
@@ -410,6 +425,7 @@ export function ContentEditor({
         <Button variant="secondary" disabled={busy || validate.isPending || anyDirty} onClick={runCheck} className="shadow-xs">
           {validate.isPending ? t("content.editor.checking") : t("content.editor.check")}
         </Button>
+        {actions?.(anyDirty || busy)}
         {anyDirty ? (
           <span className="text-sm font-medium text-secondary">{t("content.editor.unsaved")}</span>
         ) : saved ? (
@@ -420,5 +436,7 @@ export function ContentEditor({
         ) : null}
       </div>
     </form>
+    <aside className={`min-w-0 min-[1200px]:sticky min-[1200px]:top-24 ${panel === "preview" ? "block" : "hidden min-[1200px]:block"}`}><PostPreview key={item.media_asset_id} item={item} caption={caption} overlay={overlay} account={account} /></aside>
+    </div></div>
   );
 }

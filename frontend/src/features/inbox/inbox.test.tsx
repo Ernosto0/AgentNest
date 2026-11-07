@@ -351,6 +351,7 @@ describe("inbox", () => {
     );
     renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
     const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Kendi yanıtını yaz" }));
     await user.type(await screen.findByLabelText("Yanıtınız"), "Aylık üyelik 5.000 ₺");
     await user.click(screen.getByRole("button", { name: "Yanıtı gönder" }));
     expect(await screen.findByTestId("reply-warnings")).toHaveTextContent("5.000 ₺");
@@ -391,9 +392,9 @@ describe("inbox", () => {
     const user = userEvent.setup();
 
     expect(await screen.findByText("Ayşe")).toBeInTheDocument();
-    const humanTab = screen.getByRole("tab", { name: "Size gerek var" });
+    const humanTab = screen.getByRole("button", { name: "Size gerek var" });
     await user.click(humanTab);
-    expect(humanTab).toHaveAttribute("aria-selected", "true");
+    expect(humanTab).toHaveAttribute("aria-pressed", "true");
     await waitFor(() =>
       expect(requests.some((r) => r.path.endsWith("/conversations") && r.search.includes("attention=needs_human"))).toBe(true),
     );
@@ -467,4 +468,35 @@ describe("inbox", () => {
 
     await waitFor(() => expect(erased).toBe(true));
   });
+  it("keeps the list mounted and restores the filter on Back", async () => {
+    mockApi(routes({ [`GET ${BASE}/conversations`]: () => json({ items: [conversation()], next_cursor: null }), [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(detail(null)) }));
+    const { router } = renderApp(`/w/${WS_GOLKENT}/inbox?attention=needs_approval`);
+    const list = await screen.findByTestId("inbox-list");
+    await userEvent.click(await screen.findByRole("link", { name: /Ayşe/ }));
+    expect(screen.getByTestId("inbox-list")).toBe(list);
+    expect(router.state.location.search).toBe("?attention=needs_approval");
+    await userEvent.click(screen.getByRole("link", { name: "← Gelen kutusu" }));
+    expect(router.state.location.search).toBe("?attention=needs_approval");
+  });
+
+  it("warns before tab navigation discards a manual reply and preserves cancelled navigation", async () => {
+    mockApi(routes({ [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(detail(null)) }));
+    const { router } = renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}?section=comments`);
+    await userEvent.click(await screen.findByRole("button", { name: "Kendi yanıtını yaz" }));
+    const input = screen.getByLabelText("Yanıtınız");
+    await userEvent.type(input, "Unsent reply");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      await userEvent.click(screen.getByRole("link", { name: "Yorumlar" }));
+      expect(confirm).toHaveBeenCalled();
+      expect(router.state.location.pathname).toContain(CONVERSATION_ID);
+      expect(input).toHaveValue("Unsent reply");
+      confirm.mockReturnValue(true);
+      await userEvent.click(screen.getByRole("link", { name: "Yorumlar" }));
+      await waitFor(() => expect(router.state.location.pathname).toBe(`/w/${WS_GOLKENT}/inbox`));
+      expect(router.state.location.search).toBe("?section=comments");
+      expect(screen.queryByLabelText("Yanıtınız")).toBeNull();
+    } finally { confirm.mockRestore(); }
+  });
+
 });

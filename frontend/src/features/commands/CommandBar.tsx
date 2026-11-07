@@ -1,3 +1,4 @@
+import { useDirtyForm } from "@/components/DirtyForms";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/Button";
@@ -61,8 +62,7 @@ function CommandPanel({ commandId, onDismiss }: { commandId: string; onDismiss: 
 }
 
 /**
- * The natural-language command bar on Home. On phones it sticks above the tab bar so it stays
- * in reach; the answer, question or confirmation appears above it.
+ * The natural-language command bar on Home. Request entry stays inline at every width; the result appears above it.
  */
 export function CommandBar() {
   const { t } = useTranslation();
@@ -70,6 +70,7 @@ export function CommandBar() {
   const meta = useMeta();
   const submit = useSubmitCommand(workspace.id);
   const [text, setText] = useState("");
+  useDirtyForm(text.trim().length > 0);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const onSubmit = async (event: FormEvent) => {
@@ -89,11 +90,11 @@ export function CommandBar() {
     <>
       {activeId ? <CommandPanel key={activeId} commandId={activeId} onDismiss={() => setActiveId(null)} /> : null}
       {submit.error ? <ErrorMessage error={submit.error} /> : null}
-      {/* Fixed above the tab bar on phones (3.5rem tall); an elevated card on desktop. */}
       <form
         onSubmit={onSubmit}
-        className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-border bg-surface/95 px-4 py-2 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0"
+        className="rounded-panel bg-assistant p-4 sm:p-5"
       >
+        <h2 className="type-section mb-3">{t("core.requestTitle")}</h2>
         <div className="flex w-full min-w-0 flex-col gap-2 rounded-panel md:border md:border-border md:bg-surface md:p-3">
           <div className="flex items-center gap-2.5">
             <label htmlFor="command-input" className="sr-only">

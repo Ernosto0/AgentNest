@@ -23,6 +23,8 @@ export function ReadinessCard() {
   const totalCount = readiness.data?.requirements.length ?? 0;
   const percentage = totalCount > 0 ? Math.round((satisfiedCount / totalCount) * 100) : 0;
 
+  if (isReady) return null;
+
   return (
     <Card className="flex flex-col gap-4 bg-surface p-5" aria-labelledby="readiness-title">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
@@ -72,6 +74,7 @@ export function ReadinessCard() {
           {!isReady ? (
             <ReadinessChecklist workspaceId={workspace.id} readiness={readiness.data} onlyOpen />
           ) : null}
+          {satisfiedCount > 0 ? <details><summary className="min-h-11 cursor-pointer py-2 text-body font-medium text-secondary">{t("core.completedRequirements", { count: satisfiedCount })}</summary><ReadinessChecklist workspaceId={workspace.id} readiness={{ ...readiness.data, requirements: readiness.data.requirements.filter(r => r.satisfied) }} /></details> : null}
           <div className="pt-1">
             <Link
               to={`/w/${workspace.id}/more/knowledge`}

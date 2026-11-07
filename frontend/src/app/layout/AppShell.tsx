@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { DirtyForms } from "@/components/DirtyForms";
 import { Button } from "@/components/Button";
 import { MagnifierIcon, MenuIcon } from "@/components/icons";
 import { useMeta } from "@/features/auth/hooks";
@@ -42,7 +43,7 @@ export function AppShell() {
     return () => document.removeEventListener("keydown", key);
   }, []);
 
-  return <div className="flex min-h-dvh flex-col bg-canvas text-primary md:flex-row">
+  return <DirtyForms><div className="flex min-h-dvh flex-col bg-canvas text-primary md:flex-row">
     <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-30 focus:rounded-control focus:bg-surface focus:p-3 focus:outline-2 focus:outline-focus">{t("app.skipToContent")}</a>
     <aside data-testid="desktop-sidebar" className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-y-auto border-r border-navigation-selected bg-navigation px-3 py-6 text-navigation-text shadow-sm md:flex min-[1200px]:w-60 ${expanded ? "w-60" : "w-24"}`}>
       <div className="mb-6 flex min-w-0 items-center gap-3 px-3">
@@ -77,11 +78,10 @@ export function AppShell() {
       </nav>
     </aside>
     <div className="flex min-w-0 flex-1 flex-col">
-      <header className="sticky top-0 z-20 flex min-w-0 flex-wrap items-center gap-3 border-b border-border/80 bg-surface/90 px-4 py-3 backdrop-blur-md shadow-2xs md:px-6 min-[1200px]:px-8">
-        <span className="w-full min-w-0 break-words font-heading text-base font-bold md:hidden">{productName}</span>
+      <header className="relative z-20 md:sticky md:top-0 flex min-w-0 flex-wrap items-center gap-3 border-b border-border/80 bg-surface/90 px-4 py-3 backdrop-blur-md shadow-2xs md:px-6 min-[1200px]:px-8">
         <div className="ml-auto flex w-full min-w-0 max-w-full items-center justify-between gap-2.5 md:w-auto md:justify-start">
           <WorkspaceSwitcher />
-          <Button ref={trigger} variant="ghost" onClick={() => setLauncher("pointer")} aria-label={t("shell.openLauncher")} aria-haspopup="dialog" className="min-w-11 rounded-xl border border-border/80 bg-surface-subtle/80 px-3 hover:bg-surface-subtle hover:border-border transition-all shadow-2xs"><MagnifierIcon className="text-xl text-secondary" /><span className="hidden min-[1200px]:inline text-secondary font-medium">{t("shell.openLauncher")}</span><kbd className="hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-mono text-secondary min-[1200px]:inline font-semibold">{t("shell.shortcut")}</kbd></Button>
+          <div className="hidden md:block"><Button ref={trigger} variant="ghost" onClick={() => setLauncher("pointer")} aria-label={t("shell.openLauncher")} aria-haspopup="dialog" className="min-w-11 rounded-xl border border-border/80 bg-surface-subtle/80 px-3 hover:bg-surface-subtle hover:border-border transition-all shadow-2xs"><MagnifierIcon className="text-xl text-secondary" /><span className="hidden min-[1200px]:inline text-secondary font-medium">{t("shell.openLauncher")}</span><kbd className="hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-mono text-secondary min-[1200px]:inline font-semibold">{t("shell.shortcut")}</kbd></Button></div>
           <NotificationBell />
         </div>
       </header>
@@ -90,7 +90,7 @@ export function AppShell() {
         <nav aria-label={t("shell.breadcrumb")} className="mb-5 text-metadata text-secondary">
           <ol className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <li className="min-w-0 max-w-full"><Link to={prefix} className="font-medium text-primary hover:text-action underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-focus">{workspace.name}</Link></li>
-            {parent ? <li className="flex items-center gap-2"><span aria-hidden="true" className="text-secondary/50">/</span><Link to={`${workspaceTarget(workspace.id, parent.path)}${parentSearch}`} className="hover:text-action underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-focus">{t(parent.labelKey)}</Link></li> : null}
+            {parent && parent.labelKey !== context.labelKey ? <li className="flex items-center gap-2"><span aria-hidden="true" className="text-secondary/50">/</span><Link to={`${workspaceTarget(workspace.id, parent.path)}${parentSearch}`} className="hover:text-action underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-focus">{t(parent.labelKey)}</Link></li> : null}
             <li className="flex items-center gap-2 min-w-0"><span aria-hidden="true" className="text-secondary/50">/</span><span className="font-semibold text-primary" aria-current="page">{t(context.labelKey)}</span></li>
           </ol>
         </nav>
@@ -99,10 +99,10 @@ export function AppShell() {
     </div>
     <nav aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
       {NAV_ITEMS.map(({ path: destination, labelKey, icon: Icon }) => {
-        const active = destination === "more" ? path === "more" || path.startsWith("more/") : selected === destination;
+        const active = destination === "more" ? path === "more" || path.startsWith("more/") && selected !== "inbox" : selected === destination;
         return <Link key={destination} to={workspaceTarget(workspace.id, destination)} aria-current={active ? "page" : undefined} className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 text-center text-xs leading-tight font-medium focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${active ? "bg-surface-subtle text-action font-semibold" : "text-secondary"}`}><Icon className="text-2xl" /><span className="max-w-full break-words">{t(labelKey)}</span></Link>;
       })}
     </nav>
     {launcher ? <DestinationLauncher workspaceId={workspace.id} role={role} demoTools={Boolean(meta.data?.demo_tools_enabled)} onClose={() => setLauncher(null)} returnFocusRef={launcher === "pointer" ? trigger : undefined} /> : null}
-  </div>;
+  </div></DirtyForms>;
 }

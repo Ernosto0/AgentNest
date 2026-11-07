@@ -1,3 +1,4 @@
+import { useDirtyForm } from "@/components/DirtyForms";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/Button";
@@ -35,6 +36,7 @@ export function PersonalityForm({
   const [preview, setPreview] = useState(false);
   const save = useSavePersonality(ws, account);
   const current = useAgentPersonality(ws, account);
+  useDirtyForm(goals !== (current.data?.goals ?? data.goals) || JSON.stringify(draft) !== JSON.stringify(current.data?.personality ?? data.personality));
 
   return (
     <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">

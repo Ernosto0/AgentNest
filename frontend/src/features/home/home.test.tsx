@@ -57,15 +57,13 @@ describe("Home: attention cards", () => {
     const approvals = await screen.findByTestId("attention-pending_approvals_now");
     expect(within(approvals).getByText("Onay bekleyen")).toBeInTheDocument();
     expect(within(approvals).getByRole("link")).toHaveAttribute("href", `/w/${WS_GOLKENT}/approvals`);
-    expect(within(approvals).getByRole("link")).toHaveTextContent("3");
+    expect(approvals).toHaveTextContent("3");
 
     const human = screen.getByTestId("attention-attention_now");
-    expect(within(human).getByRole("link")).toHaveAttribute("href", `/w/${WS_GOLKENT}/inbox`);
+    expect(within(human).getByRole("link")).toHaveAttribute("href", `/w/${WS_GOLKENT}/inbox?attention=needs_human`);
     expect(human).toHaveTextContent("2");
 
-    const failures = screen.getByTestId("attention-content_failed");
-    expect(within(failures).getByRole("link")).toHaveAttribute("href", `/w/${WS_GOLKENT}/content?tab=problems`);
-    expect(failures).toHaveTextContent("1");
+    expect(screen.queryByTestId("attention-content_failed")).toBeNull(); // period metrics are not outstanding totals
 
     const hold = screen.getByTestId("attention-content_on_hold_now");
     expect(within(hold).getByRole("link")).toHaveAttribute("href", `/w/${WS_GOLKENT}/content?tab=problems`);
@@ -232,10 +230,11 @@ describe("Home: upcoming posts and failures", () => {
       }),
     );
     renderApp(`/w/${WS_GOLKENT}`);
-    const link = await screen.findByRole("link", { name: "Hikaye A" });
+    await screen.findByText("Hikaye A");
+    const link = screen.getAllByRole("link", { name: "Gönderiyi düzelt" })[0]!;
     expect(link).toHaveAttribute("href", `/w/${WS_GOLKENT}/content/${failed[0]!.id}`);
-    expect(screen.getByRole("link", { name: "Hikaye B" })).toBeInTheDocument();
-    expect(screen.getByText("Yayınlanırken bir şeyler ters gitti.")).toBeInTheDocument(); // unknown code
+    expect(screen.getByText("Hikaye B")).toBeInTheDocument();
+    expect(screen.getByText("Son kayıtların önizlemesi; toplam değil")).toBeInTheDocument();
     expect(requests.some((r) => r.search.includes("status=failed") && r.search.includes("limit=3"))).toBe(true);
     expect(screen.queryByTestId("failures-empty")).toBeNull();
   });
@@ -243,7 +242,8 @@ describe("Home: upcoming posts and failures", () => {
   it("has an empty state for failures", async () => {
     mockApi(routes({ ...reportWith([]) }));
     renderApp(`/w/${WS_GOLKENT}`);
-    expect(await screen.findByTestId("failures-empty")).toHaveTextContent("Başarısız olan bir gönderi yok.");
+    await screen.findByTestId("home-attention");
+    expect(screen.queryByRole("link", { name: "Gönderiyi düzelt" })).toBeNull();
   });
 });
 

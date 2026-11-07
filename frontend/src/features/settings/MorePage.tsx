@@ -1,3 +1,5 @@
+import { useRef, useState } from "react";
+import { DestinationLauncher } from "@/app/layout/DestinationLauncher";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { MORE_GROUPS, allowedDestination, workspaceTarget } from "@/app/layout/navigation";
@@ -15,8 +17,12 @@ export function MorePage() {
   const { workspace, role } = useCurrentWorkspace();
   const logout = useLogout();
   const meta = useMeta();
+  const [launcher, setLauncher] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
   return <div className="flex flex-col gap-6 max-w-4xl">
     <PageHeader title={t("more.title")} description={t("shell.moreHint")} />
+    <Button ref={trigger} variant="secondary" onClick={() => setLauncher(true)} aria-haspopup="dialog">{t("shell.openLauncher")}</Button>
+    {launcher ? <DestinationLauncher workspaceId={workspace.id} role={role} demoTools={Boolean(meta.data?.demo_tools_enabled)} onClose={() => setLauncher(false)} returnFocusRef={trigger} /> : null}
     <div className="grid min-w-0 gap-6 min-[1000px]:grid-cols-2">
       {MORE_GROUPS.map(group => <section key={group.labelKey} aria-label={t(group.labelKey)} className="min-w-0 rounded-panel border border-border bg-surface p-5 shadow-xs">
         <h2 className="type-section px-2 pb-2 border-b border-border mb-2">{t(group.labelKey)}</h2>

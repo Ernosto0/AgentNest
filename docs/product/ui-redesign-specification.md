@@ -1,8 +1,8 @@
 # Application UI Redesign Specification
 
-**Status:** Planned target, 2026-10-30; implementation belongs to [Phase 8.5](../implementation/phases/phase-8.5-ui-redesign.md) and its [sessions](../implementation/phase-8.5-sessions/phase-8.5-sessions.md).
+**Status:** Core experience implemented, 2026-11-07; see [verification and before/after evidence](../ui-core-redesign/verification-report.md). The wider Phase 8.5 specification remains a reference for secondary workflows and historical scope. This core change does not assert whole-phase, live-platform, owner or actual-device acceptance.
 **Reference:** [Interactive concept](https://agentnest-style-preview.woollyhero2.chatgpt.site) and [local concept source](../../design-preview/agentnest-today/README.md).
-**Current behavior:** [User journeys](user-journeys.md). Implemented journey changes update that document in their implementation session. This planned target does not assert that the new navigation or controls already exist.
+**Current behavior:** [User journeys](user-journeys.md). The core navigation and workflows below are implemented and documented there. Wider secondary-screen targets remain reference scope rather than an assertion of whole-phase acceptance.
 
 ## 1. Design intent and reference boundary
 
@@ -54,8 +54,8 @@ Final values must meet measured contrast on each used background. A subtle panel
 ### 2.2 Type, rhythm and sizing
 
 - **Headings:** Manrope, with system sans-serif fallbacks. **UI/body:** Inter, with system fallbacks. Bundle required Latin and Turkish glyphs and font licenses locally; no runtime font CDN.
-- **Page heading:** desktop 30–36 px; phone 26–30 px; weight 600–700, restrained negative tracking, natural line wrapping.
-- **Section heading:** 18–22 px; label hierarchy must remain clear without uppercase everywhere.
+- **Page heading:** desktop 30 px; phone 26 px; weight 600–700, restrained negative tracking, natural line wrapping.
+- **Section heading:** 18 px; label hierarchy must remain clear without uppercase everywhere.
 - **Working body:** default 14 px on desktop; 16 px for mobile forms and substantial message/editor text. Short list metadata may be 12–13 px. Do not use the concept's 8–10 px metadata as the production standard.
 - **Numbers:** 28–36 px, tabular numerals for metrics/times where useful. Large counts are links only when their scope and destination are clear.
 - **Line height:** 1.45–1.65 for body, 1.3–1.4 for headings. Support text expansion and browser text sizing.
@@ -92,11 +92,11 @@ Avoid building a separate design system application or adopting a new UI framewo
 | Daily work | Inbox / Gelen kutusu | Inbox and active conversation |
 | Daily work | Content / İçerik | Library and calendar/agenda views |
 | Daily work | Approvals / Onaylar | Pending/history; permission-aware count |
-| Assistant | Assistant / Asistan | Overview, tasks, questions, comments, voice and permissions |
+| Assistant | Assistant / Asistan | Overview, Voice, Permissions, History; requests are in Overview |
 | Business | Business knowledge / İşletme bilgileri | Categories, suggestions and approved answers |
 | Business | Reports / Raporlar | Daily report and evidence; no new analytics metric implied |
 | Utility | Activity / Etkinlik | Existing activity feed |
-| Utility | Notifications / Bildirimler | Bell and notification center |
+| Header | Notifications / Bildirimler | Bell and retained notification-center route; no duplicate sidebar item |
 | Utility | Settings / Ayarlar | Account/workspace settings, connections, members and health; developer entry only when enabled |
 
 Use the retained brand identity; any new nesting mark remains a proposed asset until checked against existing product/landing branding. A fictional permanent assistant name from the concept is not required. Do not duplicate notifications, settings and account identity across several competing headers.
@@ -107,7 +107,7 @@ Use the retained brand identity; any new nesting mark remains a proposed asset u
 - **768–1199 px:** compact navigation with expanded labels available; use list/detail only when both panes stay usable. Prefer a list followed by detail at narrow tablet widths.
 - **1200 px and above:** expanded 224–248 px sidebar; fluid content with a suitable maximum working width around 1440 px. Do not impose the existing global `max-w-3xl` on dashboards, inboxes or editors.
 - **Readable forms:** keep prose/form columns approximately 560–760 px within a wider settings/editor layout. Wider does not mean every input spans the screen.
-- **Details:** desktop list and selected detail share a route-aware workspace. On phones, opening a record shows its own page with a back destination; return restores filter and position where possible.
+- **Details:** at 1200 px and above a 320 px list remains beside the selected detail. On phones, opening a record shows its own page with a back destination; return restores filter and position where possible.
 - **Phone overlays:** brief confirmations can use sheets; long fact editors, scheduling detail or permission forms use full-height layouts with reachable save/cancel controls.
 - **Keyboard:** input focus, mobile keyboard, safe areas and 200% text must not hide the composer or decision footer. Bottom navigation and command entry must not stack over the active task.
 
@@ -115,7 +115,7 @@ Session 01 confirms breakpoints against Turkish content and real data. Verify 36
 
 ### 3.3 Route and query compatibility
 
-`W` below means `/w/:workspaceId`. Preserve every current path. New visual groupings do not require route churn. Existing `account`, `tab`, `status`, report date/snapshot and notification-target parameters retain their meaning.
+`W` below means `/w/:workspaceId`. Preserve every current path. Inbox uses `section=messages|comments|questions` (Messages by default); old question/comment URLs select their matching tab. Assistant uses `panel=overview|voice|permissions|history` (Overview by default). Record IDs remain in paths. New visual groupings do not require route churn. Existing `account`, `tab`, `status`, report date/snapshot and notification-target parameters retain their meaning.
 
 | Screen ID | Existing route/surface | Target area | Session |
 |---|---|---|---|
@@ -174,18 +174,16 @@ Every section below inherits the state, role, privacy, responsive and verificati
 
 ### 4.2 Today and existing commands — R05
 
-- Header: business-aware greeting, local day and a content creation entry. Keep the main heading concise in Turkish; the concept's exact marketing sentence is optional.
-- Overview: a small set of meaningful authorized metrics from current reports. Separate period counts from current outstanding work. Zero is valid, missing is not zero, staff see only their allowed metrics.
-- Main workspace: decisions requiring attention, upcoming content with real thumbnails where available, and recent assistant work or legacy automation activity. Primary task blocks appear before setup metadata.
-- Critical connection/policy failures have explicit recovery notices. Consolidate repeated offline/demo explanations into the shell; retain per-record simulation provenance and critical notices.
-- Readiness is prominent for incomplete setups and compact when complete. Workspace role/timezone/currency move to their appropriate settings/context views.
-- Commands remain existing command intake, clarification chips, confirmations, result cards, extraction/fact changes and report answers. The navigation launcher is separate from an effectful command submission.
-- Command confirmations show old/new values and affected records before the decision. Free text cannot confirm an approval.
-- Only show trends, weekly shares or time-saving claims when their defined persisted inputs are available. Otherwise omit the entire unsupported visual rather than filling it with sample values.
+- Order: account-blocking notices, Needs your attention, inline request entry, next scheduled posts, incomplete readiness, compact daily summary. New content is a secondary header action.
+- Attention uses divider rows: connection recovery, recent failed posts, pending approvals, business questions, conversations needing a person, held content. Each row links to a concrete next action.
+- Current report counts remain distinct from period metrics. Failed and upcoming posts are labelled capped previews; their lengths are never totals. Missing or failed data never establishes a quiet state.
+- Business-question counts come from account-agent overviews. Staff see only server-authorized report metrics. Simulation remains visible on affected results.
+- Readiness disappears when complete. Open requirements come first; completed requirements are collapsed.
+- Request entry stays inline at every width. Existing command interpretation, clarification, confirmation and result semantics are retained.
 
 ### 4.3 Inbox and conversations — R06–R07
 
-- Desktop: conversation list with current filters beside the active conversation; an optional context region can show verified source links, current thread/task and authorized private memory. Narrow layouts progress list → detail → context.
+- Inbox has Messages, Comments and Questions navigation. Old public/comment/question routes stay valid and mount the matching workspace. Desktop: conversation list with current filters beside the active conversation; an optional context region can show verified source links, current thread/task and authorized private memory. Narrow layouts progress list → detail → context.
 - List rows: identity/initials with fallback, message preview, meaningful time, attention reason, handling mode, reply window and simulation marker. Never create unread semantics from an unrelated attention flag.
 - Preserve current filters (`any`, `needs_approval`, `needs_human`, `failed`) and sorting semantics. Add a search field only when its scope and data completeness are defined; label loaded-items search honestly if used.
 - Conversation header: customer identity, current handling mode, takeover/release, suggest reply and actionable window/connection state.
@@ -201,7 +199,7 @@ Every section below inherits the state, role, privacy, responsive and verificati
 - Preserve Drafts, Scheduled, Published and Problems membership from the existing status helpers, including `tab`/`status` links from reports. Cancelled items do not acquire a new tab membership accidentally.
 - Planning: desktop week/month or agenda views, phone agenda by default; show only API-backed scheduled items in the selected workspace timezone. Differentiate scheduling, publishing, retry, held and verified publication.
 - Calendar requires complete date-range data. Define pagination/range coverage in Session 01/10; no fabricated empty day or client-only reschedule. Drag-to-reschedule is excluded from this phase.
-- Editor: caption/structured controls beside a large actual preview on desktop. Phones expose Preview/Edit without losing form state. Existing content types remain image feed and image Story.
+- Editor: publishing account and fixed existing format, image, caption/structured controls, then optional internal title/image notes. At 1200 px and above a persistent approximate preview displays the authoritative account, stored image and current local caption. The existing submission contract chooses the workspace’s single active account; the UI does not offer an account choice it cannot apply. Phones expose Preview/Edit without losing form state. Existing content types remain image feed and image Story.
 - Media: file selection, image loading/upload/validation, replace/remove when supported, aspect guidance, failure/retry and missing/deleted media. Use authenticated preview access and cleanup of object URLs; no provider secrets in image URLs.
 - Keep Story overlay suggestions distinct from the image itself. Show that text is not baked into the uploaded bitmap and not sent as a caption. The preview cannot imply compositing or publishing behavior that does not exist.
 - Grounded facts, visual notes, caption length and pre-publication validation remain visible at the relevant field. Dirty edits, save failure, generation delay/failure and lost approval are explicit.
@@ -211,7 +209,7 @@ Every section below inherits the state, role, privacy, responsive and verificati
 ### 4.5 Approvals and decision history — R10
 
 - Queue rows identify action type, subject/person, key change, requested time and expiry, current state and provenance. Pending and History remain distinct views.
-- Desktop selection opens a detail region while preserving queue context; phone uses an accessible focused detail view or sufficiently large sheet. Direct subject links and refresh restore selection without guessing private IDs.
+- Selection retains the queue and opens the existing accessible decision sheet; pending/history and selected approval are stored in the URL. Contextual thread approvals reuse the same summary and decision sheet. Direct subject links and refresh restore selection without guessing private IDs.
 - All existing bodies are redesigned: reply send, content publish/schedule/cancel, business-fact change/impact and account-agent actions. Use exact backend summary/version/hash evidence.
 - Show proposed text/image, old/new values, affected records and relevant source/permission explanation before the primary decision. Critical content cannot hide behind a tooltip.
 - Distinguish human approval from an automatic policy grant in history. Approval accepted is followed by actual queued/sending/checking/sent or publishing outcomes, not an immediate success badge.
@@ -219,12 +217,12 @@ Every section below inherits the state, role, privacy, responsive and verificati
 
 ### 4.6 Assistant overview, tasks, voice and permissions — R11–R12, R18
 
-- Replace the long combined Agent form with distinct **Overview, Tasks, Voice, Permissions** sections. Questions and Comments are visible adjacent destinations; keep URL/account context stable.
+- The route-aware tabs are **Overview, Voice, Permissions, History**. Questions and Comments live inside Inbox. Account changes preserve the active panel.
 - Overview: current account, controller mode, actual active/paused/legacy state, waiting counts, current work and recent verified action outcomes. A connected account alone does not mean the assistant is running.
-- Tasks: existing authenticated owner-task composer and history, read-only progress, action status, linked content/approval, clarification and media/content selection. Keep existing pagination and requester authority.
+- Overview starts with existing authenticated owner-task composer and current requests, followed by account status and recent outcomes. History shows existing action records. Requests retain read-only progress, action status, linked content/approval, clarification and media/content selection. Keep existing pagination and requester authority.
 - Task detail separates requested goal, question awaiting an answer, pending external outcome and completed action. Choosing a media/content reference does not change permissions or approve publishing.
 - Voice: goals, tone, formality, length, emoji, DM/comment styles, TR/EN examples and sample preview. Clearly distinguish a static example from a real model run. Preserve expected-version saves and stale-form recovery.
-- Permissions: grouped action rows with off/ask/automatic modes, limits, authorized sources, capability availability and current-policy summary. Explain unavailable combinations before saving; show exact proposed changes for review.
+- Permissions: Messaging, Comments and Content groups retain an independent off/ask/automatic mode per action. Daily limits and request sources are initially collapsed under Advanced settings. Explain unavailable combinations before saving; show exact proposed changes for review.
 - Pause/resume and controller cutover are deliberate controls with consequences. Pause never claims to retract already sent work or settle unknown operations.
 - Legacy automation remains reachable and truthful for accounts still using it; do not show both controllers as independently active. A shell link can lead to the correct controller-specific view without inventing an automatic migration.
 
@@ -232,7 +230,9 @@ Every section below inherits the state, role, privacy, responsive and verificati
 
 - List pending and answered/expired states using actual list/query capabilities; rows show the question, why input is needed, visibility, account/thread context and deadline.
 - Detail puts the question and relevant safe context before the answer/proposal composer. The prominent explanation says this is information, not approval.
-- Owner/manager answers, staff proposals, reusable-knowledge opt-in/key validation, expected-version conflicts and answer history retain their existing contracts.
+- Owner/manager answers, staff proposals, reusable-knowledge opt-in, expected-version conflicts and answer history retain their existing contracts.
+- Use “Information needed” and “Save for future answers.” Generate `custom.owner_answer_<question UUID without hyphens>` internally. The candidate remains unverified until the existing knowledge review; the owner never enters a technical key.
+- Contextual private questions use the optional scoped `thread_id` API filter before pagination. Public comments never request private questions or memory.
 - Show removed content and expired/already-answered questions. Do not silently verify reusable business knowledge or dispatch an Instagram action after a free-text answer.
 
 ### 4.8 Public comments and moderation — R15–R16

@@ -56,7 +56,7 @@ export function DraftText({ draft }: { draft: ReplyDraft }) {
     });
   parts.push(text.slice(cursor));
   return (
-    <p className="break-words whitespace-pre-wrap text-body text-primary leading-relaxed" data-testid="draft-text">
+    <p className="break-words whitespace-pre-wrap text-form text-primary leading-relaxed" data-testid="draft-text">
       {parts}
     </p>
   );

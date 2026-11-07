@@ -1,3 +1,5 @@
+import { useDirtyForm } from "@/components/DirtyForms";
+import { WorkState } from "@/features/agent-work/WorkPages";
 import { PageHeader } from "@/components/Layout";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,6 +29,7 @@ export function AgentPage() {
   const { workspace } = useCurrentWorkspace();
   const accounts = useSocialAccounts(workspace.id);
   const [params, setParams] = useSearchParams();
+  const panel = ["voice", "permissions", "history"].includes(params.get("panel") ?? "") ? params.get("panel")! : "overview";
   const account =
     accounts.data?.find((a) => a.id === params.get("account")) ??
     accounts.data?.find((a) => a.status !== "disconnected");
@@ -41,7 +44,7 @@ export function AgentPage() {
           <select
             className="w-full sm:w-80 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-base text-primary shadow-2xs focus-visible:outline-2 focus-visible:outline-focus font-medium"
             value={account?.id ?? ""}
-            onChange={(e) => setParams({ account: e.target.value })}
+            onChange={(e) => { const next = new URLSearchParams(params); next.set("account", e.target.value); setParams(next); }}
           >
             {accounts.data.map((a) => (
               <option key={a.id} value={a.id}>
@@ -57,9 +60,13 @@ export function AgentPage() {
       ) : !accounts.error ? (
         <p className="text-sm text-secondary">{t("agent.noAccount")}</p>
       ) : null}
+      <nav aria-label={t("agent.title")} className="flex flex-wrap gap-1 border-b border-border">
+        {["overview", "voice", "permissions", "history"].map(name => { const next = new URLSearchParams(params); next.set("panel", name); return <Link key={name} to={`?${next}`} aria-current={panel === name ? "page" : undefined} className={`min-h-11 border-b-2 px-4 py-3 font-semibold focus-visible:outline-2 focus-visible:outline-focus ${panel === name ? "border-action text-action" : "border-transparent text-secondary hover:bg-surface-subtle"}`}>{t(`core.${name}`)}</Link>; })}
+      </nav>
       {account ? (
         <AccountAgent
-          key={`${workspace.id}:${account.id}`}
+          key={`${workspace.id}:${account.id}:${panel}`}
+          panel={panel}
           accountId={account.id}
           connected={account.status === "connected"}
           capabilities={account.capabilities}
@@ -70,10 +77,12 @@ export function AgentPage() {
 }
 
 function AccountAgent({
+  panel,
   accountId,
   connected,
   capabilities,
 }: {
+  panel: string;
   accountId: string;
   connected: boolean;
   capabilities: Record<string, unknown>;
@@ -88,6 +97,7 @@ function AccountAgent({
   const tasks = useAgentTasks(ws, accountId);
   const submit = useSubmitAgentTask(ws, accountId);
   const [text, setText] = useState("");
+  useDirtyForm(text.trim().length > 0);
   const [requestId, setRequestId] = useState(newRequestId);
   const [confirm, setConfirm] = useState(false);
   const owner = role === "owner";
@@ -98,6 +108,85 @@ function AccountAgent({
       {overview.error ? <ErrorMessage error={overview.error} /> : null}
       {data ? (
         <>
+          {panel === "overview" ? <>
+          <Card className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.tasks")}</h2>
+            </div>
+            <p className="text-sm text-secondary">{t("agent.taskHint")}</p>
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
+              <span className="text-primary">{t("agent.taskText")}</span>
+              <textarea
+                className="w-full rounded-control border border-border bg-surface p-3 text-base text-primary placeholder:text-secondary focus-visible:outline-2 focus-visible:outline-focus focus:border-control"
+                rows={3}
+                value={text}
+                maxLength={4000}
+                disabled={submit.isPending}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  setRequestId(newRequestId());
+                }}
+              />
+            </label>
+            <div>
+              <Button
+                disabled={
+                  submit.isPending ||
+                  !text.trim() ||
+                  !connected ||
+                  data.controller_mode !== "agent" ||
+                  data.state !== "active"
+                }
+                onClick={() =>
+                  submit.mutate(
+                    { text, client_request_id: requestId },
+                    {
+                      onSuccess: () => {
+                        setText("");
+                        setRequestId(newRequestId());
+                      },
+                    },
+                  )
+                }
+              >
+                {t("agent.submitTask")}
+              </Button>
+            </div>
+            {submit.error ? <ErrorMessage error={submit.error} /> : null}
+            {submit.isSuccess ? (
+              <p role="status" className="rounded-control bg-info-subtle p-2.5 text-sm font-medium text-info border border-border">
+                {t("agent.taskAccepted")}
+              </p>
+            ) : null}
+            {tasks.error ? <ErrorMessage error={tasks.error} /> : null}
+            <ul className="flex flex-col gap-3">
+              {tasks.data?.items.map((task) => (
+                <li key={task.id} className="rounded-panel border border-border bg-surface-subtle p-4 shadow-xs flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
+                    <Link className="font-semibold text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/tasks/${task.id}?account=${accountId}`}>
+                      {t("agent.taskProgress")}
+                    </Link>
+                    <span className="inline-flex items-center rounded-control bg-surface px-2.5 py-0.5 text-xs font-semibold text-primary border border-border">
+                      {t(`agent.states.${task.status}`, { defaultValue: t("agent.pending") })}
+                    </span>
+                  </div>
+                  {task.actions.map((action) => (
+                    <div key={action.action_id} className="flex flex-wrap items-center gap-2 text-sm text-secondary">
+                      <span>{t(actionLabelKey(action.action_type))}:</span>
+                      <span className="font-medium text-primary">
+                        <WorkState state={action.status} />
+                      </span>
+                      {action.is_simulated ? <SimulatedBadge /> : null}
+                    </div>
+                  ))}
+                </li>
+              ))}
+            </ul>
+            {tasks.data?.next_cursor ? (
+              <p className="text-xs text-secondary">{t("agent.recentTasksOnly")}</p>
+            ) : null}
+          </Card>
+
           <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <Card className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
@@ -171,9 +260,7 @@ function AccountAgent({
                     >
                       {t(data.state === "active" ? "agent.pause" : "agent.resume")}
                     </Button>
-                    <Button variant="secondary" disabled={change.isPending} onClick={() => setConfirm(true)}>
-                      {t("agent.returnLegacy")}
-                    </Button>
+                    <details><summary className="min-h-11 cursor-pointer p-2 font-medium">{t("core.advanced")}</summary><Button variant="secondary" disabled={change.isPending} onClick={() => setConfirm(true)}>{t("agent.returnLegacy")}</Button></details>
                   </>
                 )}
               </div>
@@ -236,6 +323,27 @@ function AccountAgent({
 
           </div>
 
+          <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.recentActions")}</h2>
+            </div>
+            <p className="text-sm text-secondary">{t("agent.outcomeHint")}</p>
+            <ul className="mt-1 flex flex-col gap-2">
+              {data.recent_actions.map((action) => (
+                <li key={action.id} className="flex flex-wrap items-center justify-between rounded-control border border-border bg-surface-subtle px-3 py-2.5 text-sm shadow-xs">
+                  <span className="font-medium text-primary">{t(actionLabelKey(action.action_type))}</span>
+                  <span className="inline-flex items-center rounded-control bg-surface px-2 py-0.5 text-xs font-medium text-secondary border border-border">
+                    <WorkState state={action.status} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {!data.recent_actions.length ? (
+              <p className="text-sm text-secondary">{t("agent.noActions")}</p>
+            ) : null}
+          </Card>
+          </> : null}
+          {panel === "voice" ? <>
           {personality.data ? (
             <PersonalityForm
               key={`persona:${accountId}`}
@@ -247,6 +355,8 @@ function AccountAgent({
           ) : null}
           {personality.error ? <ErrorMessage error={personality.error} /> : null}
 
+          </> : null}
+          {panel === "permissions" ? <>
           {delegation.isSuccess ? (
             <DelegationForm
               key={`policy:${data.config_version}:${delegation.data?.version ?? 0}`}
@@ -259,85 +369,14 @@ function AccountAgent({
           ) : null}
           {delegation.error ? <ErrorMessage error={delegation.error} /> : null}
 
-          <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <Card className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
-            <div className="border-b border-border pb-3">
-              <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.tasks")}</h2>
-            </div>
-            <p className="text-sm text-secondary">{t("agent.taskHint")}</p>
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-              <span className="text-primary">{t("agent.taskText")}</span>
-              <textarea
-                className="w-full rounded-control border border-border bg-surface p-3 text-base text-primary placeholder:text-secondary focus-visible:outline-2 focus-visible:outline-focus focus:border-control"
-                rows={3}
-                value={text}
-                maxLength={4000}
-                disabled={submit.isPending}
-                onChange={(e) => {
-                  setText(e.target.value);
-                  setRequestId(newRequestId());
-                }}
-              />
-            </label>
-            <div>
-              <Button
-                disabled={
-                  submit.isPending ||
-                  !text.trim() ||
-                  !connected ||
-                  data.controller_mode !== "agent" ||
-                  data.state !== "active"
-                }
-                onClick={() =>
-                  submit.mutate(
-                    { text, client_request_id: requestId },
-                    {
-                      onSuccess: () => {
-                        setText("");
-                        setRequestId(newRequestId());
-                      },
-                    },
-                  )
-                }
-              >
-                {t("agent.submitTask")}
-              </Button>
-            </div>
-            {submit.error ? <ErrorMessage error={submit.error} /> : null}
-            {submit.isSuccess ? (
-              <p role="status" className="rounded-control bg-success-subtle p-2.5 text-sm font-medium text-success border border-border">
-                {t("agent.taskAccepted")}
-              </p>
-            ) : null}
-            {tasks.error ? <ErrorMessage error={tasks.error} /> : null}
-            <ul className="flex flex-col gap-3">
-              {tasks.data?.items.map((task) => (
-                <li key={task.id} className="rounded-panel border border-border bg-surface-subtle p-4 shadow-xs flex flex-col gap-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
-                    <Link className="font-semibold text-action hover:text-action-hover underline" to={`/w/${ws}/more/agent/tasks/${task.id}?account=${accountId}`}>
-                      {t("agent.taskProgress")}
-                    </Link>
-                    <span className="inline-flex items-center rounded-control bg-surface px-2.5 py-0.5 text-xs font-semibold text-primary border border-border">
-                      {t(`agent.states.${task.status}`, { defaultValue: t("agent.pending") })}
-                    </span>
-                  </div>
-                  {task.actions.map((action) => (
-                    <div key={action.action_id} className="flex flex-wrap items-center gap-2 text-sm text-secondary">
-                      <span>{t(actionLabelKey(action.action_type))}:</span>
-                      <span className="font-medium text-primary">
-                        {t(`agent.states.${action.status}`, { defaultValue: t("agent.pending") })}
-                      </span>
-                      {action.is_simulated ? <SimulatedBadge /> : null}
-                    </div>
-                  ))}
-                </li>
-              ))}
-            </ul>
-            {tasks.data?.next_cursor ? (
-              <p className="text-xs text-secondary">{t("agent.recentTasksOnly")}</p>
-            ) : null}
-          </Card>
-
+          <details className="rounded-panel border border-border bg-surface p-5"><summary className="min-h-11 cursor-pointer font-semibold">{t("core.advanced")}</summary>
+          {data.controller_mode === "legacy" ? (
+            <Link className="text-sm font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/more/automation`}>
+              {t("agent.legacySettings")}
+            </Link>
+          ) : null}
+          </details></> : null}
+          {panel === "history" ? <>
           <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
             <div className="border-b border-border pb-3">
               <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.recentActions")}</h2>
@@ -348,7 +387,7 @@ function AccountAgent({
                 <li key={action.id} className="flex flex-wrap items-center justify-between rounded-control border border-border bg-surface-subtle px-3 py-2.5 text-sm shadow-xs">
                   <span className="font-medium text-primary">{t(actionLabelKey(action.action_type))}</span>
                   <span className="inline-flex items-center rounded-control bg-surface px-2 py-0.5 text-xs font-medium text-secondary border border-border">
-                    {t(`agent.states.${action.status}`, { defaultValue: t("agent.pending") })}
+                    <WorkState state={action.status} />
                   </span>
                 </li>
               ))}
@@ -357,12 +396,7 @@ function AccountAgent({
               <p className="text-sm text-secondary">{t("agent.noActions")}</p>
             ) : null}
           </Card>
-          </div>
-          {data.controller_mode === "legacy" ? (
-            <Link className="text-sm font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/more/automation`}>
-              {t("agent.legacySettings")}
-            </Link>
-          ) : null}
+          </> : null}
         </>
       ) : null}
     </>

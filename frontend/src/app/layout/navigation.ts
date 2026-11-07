@@ -30,9 +30,7 @@ export const DESTINATION_GROUPS: readonly { labelKey: string; items: readonly Na
   ] },
   { labelKey: "shell.workspace", items: [
     { path: "more/activity", labelKey: "more.activity", icon: ClockIcon, managementOnly: true },
-    { path: "more/notifications", labelKey: "more.notifications", icon: BellIcon },
     { path: "more/settings", labelKey: "more.settings", icon: SettingsIcon },
-    { path: "more", labelKey: "nav.more", icon: MenuIcon },
   ] },
 ];
 
@@ -43,7 +41,8 @@ export const MORE_GROUPS: readonly { labelKey: string; items: readonly NavItem[]
     { path: "more/automation", labelKey: "more.automation", icon: ShieldCheckIcon },
   ] },
   { labelKey: "shell.workspace", items: [
-    ...(DESTINATION_GROUPS[2]?.items.filter(item => item.path !== "more") ?? []),
+    ...(DESTINATION_GROUPS[2]?.items ?? []),
+    { path: "more/notifications", labelKey: "more.notifications", icon: BellIcon },
     { path: "more/settings/connections", labelKey: "more.connections", icon: LinkIcon },
     { path: "more/settings/members", labelKey: "more.members", icon: UsersIcon },
     { path: "more/settings/system-health", labelKey: "more.systemHealth", icon: InfoIcon, managementOnly: true },
@@ -58,6 +57,7 @@ export const workspaceTarget = (workspaceId: string, path: string) => `/w/${work
 /** One selected desktop area even for nested record and settings/category URLs. */
 export function selectedDestination(path: string): string {
   if (!path) return "";
+  if (/^more\/agent\/(questions|comments)(\/|$)/.test(path)) return "inbox";
   if (path === "inbox" || path.startsWith("inbox/")) return "inbox";
   if (path === "content" || path.startsWith("content/")) return "content";
   if (path === "approvals") return "approvals";
@@ -97,7 +97,7 @@ export function workspaceSwitchTarget(pathname: string, search: string, currentI
   else if (/^more\/knowledge\/(identity|contact|location|hours|service|pricing|promotion|booking|policy|schedule|faq|brand|escalation|custom)$/.test(path)) safe = path;
   const before = new URLSearchParams(search);
   const after = new URLSearchParams();
-  const filters: Record<string, readonly string[]> = { content: ["tab", "status", "view"], inbox: ["attention"], approvals: ["tab"], "more/notifications": ["filter"], "more/activity": ["group", "date"] };
+  const filters: Record<string, readonly string[]> = { content: ["tab", "status", "view"], inbox: ["attention", "section"], approvals: ["tab"], "more/notifications": ["filter"], "more/activity": ["group", "date"], "more/agent": ["panel"] };
   for (const key of filters[safe] ?? []) {
     const value = before.get(key);
     if (value !== null) after.set(key, value);

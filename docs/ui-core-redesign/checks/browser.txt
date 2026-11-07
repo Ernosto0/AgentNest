@@ -1,0 +1,5 @@
+PASS: 336 production fixture browser checks and captures.
+Chromium 156.0.8078.4; WebKit 27.2; Node v24.13.0.
+EN/TR: 360, 390, 768, 1024, 1440, 1920 px; short-screen keyboard and 200% zoom viewport proxy.
+Zero axe violations, horizontal overflow, clipped visible controls or browser runtime errors.
+Each capture filename is listed in ../after/results.json.

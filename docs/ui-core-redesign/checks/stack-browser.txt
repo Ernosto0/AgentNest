@@ -1,0 +1,4 @@
+PASS: 3 tests, no retries (1.3m).
+agent-settings.spec.ts against the actual API and worker, seeded disposable local database, fake models and mock Instagram.
+Projects: mobile-webkit, mobile-chromium, desktop-chromium.
+Screenshots: ../stack-browser/.

@@ -1,14 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/Card";
-import { PageHeader } from "@/components/Layout";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ChevronRightIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { WindowTimer } from "./DraftParts";
-import { useConversations, type AttentionFilter } from "./hooks";
+import { useConversations, useSocialAccounts, type AttentionFilter } from "./hooks";
 import { customerLabel } from "./labels";
 
 const FILTERS: AttentionFilter[] = ["any", "needs_approval", "needs_human", "failed"];
@@ -52,20 +51,25 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
   };
 
   const conversations = useConversations(workspace.id, filter);
+  const accounts = useSocialAccounts(workspace.id);
+  const navigate = useNavigate();
+  const account = searchParams.get("account");
+  const shown = conversations.data?.filter(c => !account || c.social_account_id === account);
 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
-      <PageHeader title={t("convo.title")} description={t("convo.intro")} />
+      <h2 className="type-section">{t("core.messages")}</h2>
+      {accounts.data && accounts.data.length > 1 ? <label className="flex flex-col gap-2 font-medium"><span>{t("agent.account")}</span><select value={account ?? ""} className="min-h-11 w-full rounded-control border border-control bg-surface p-2" onChange={e => { const next = new URLSearchParams(searchParams); if (e.target.value) next.set("account", e.target.value); else next.delete("account"); navigate(`/w/${workspace.id}/inbox?${next}`); }}><option value="">{t("core.allAccounts")}</option>{accounts.data.map(a => <option key={a.id} value={a.id}>@{a.username ?? t("agent.account")}</option>)}</select></label> : null}
+      <p className="text-metadata text-secondary">{t("core.previewOnly")}</p>
 
-      <div role="tablist" aria-label={t("convo.filters.label")} className="flex flex-wrap gap-1 border-b border-border">
+      <div role="group" aria-label={t("convo.filters.label")} className="flex flex-wrap gap-1 border-b border-border">
         {FILTERS.map((name) => {
           const isSelected = filter === name;
           return (
             <button
               key={name}
-              role="tab"
               type="button"
-              aria-selected={isSelected}
+              aria-pressed={isSelected}
               onClick={() => setFilter(name)}
               className={`min-h-11 border-b-2 px-3 py-2 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 isSelected
@@ -81,13 +85,13 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
 
       {conversations.isError ? <ErrorMessage error={conversations.error} /> : null}
       {conversations.isPending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
-      {conversations.data && conversations.data.length === 0 ? (
+      {shown && shown.length === 0 ? (
         <EmptyState title={t("convo.empty")} description={t("convo.emptyHint")} />
       ) : null}
-      {conversations.data && conversations.data.length > 0 ? (
+      {shown && shown.length > 0 ? (
         <Card className="overflow-hidden p-0">
           <ul className="flex flex-col divide-y divide-border" aria-label={t("convo.title")}>
-            {conversations.data.map((conversation) => {
+            {shown.map((conversation) => {
               const label = customerLabel(conversation, t);
               const initials = getInitials(label);
               const isSelected = activeId === conversation.id;

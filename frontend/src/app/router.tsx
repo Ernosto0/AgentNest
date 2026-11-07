@@ -1,4 +1,5 @@
-import { QuestionsPage, QuestionPage, MemoryPage, CommentsPage, CommentThreadPage, TaskPage } from "@/features/agent-work/WorkPages";
+import { InboxWorkspace } from "@/features/inbox/InboxWorkspace";
+import { QuestionPage, MemoryPage, CommentThreadPage, TaskPage } from "@/features/agent-work/WorkPages";
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router-dom";
 import { AgentPage } from "@/features/agent/AgentPage";
 import { NotificationCenter } from "@/features/notifications/NotificationCenter";
@@ -50,14 +51,16 @@ export const appRoutes: RouteObject[] = [
         element: <WorkspaceGate />,
         children: [
           { index: true, element: <HomePage /> },
-          { path: "more/agent/questions", element: <QuestionsPage /> },
-          { path: "more/agent/questions/:questionId", element: <QuestionPage /> },
+          { element: <InboxWorkspace />, children: [
+            { path: "inbox", element: <InboxPage /> },
+            { path: "inbox/:conversationId", element: <ConversationPage /> },
+            { path: "more/agent/questions", element: <InboxPage /> },
+            { path: "more/agent/questions/:questionId", element: <QuestionPage /> },
+            { path: "more/agent/comments", element: <InboxPage /> },
+            { path: "more/agent/comments/:threadId", element: <CommentThreadPage /> },
+          ] },
           { path: "more/agent/memory/:customerId", element: <MemoryPage /> },
-          { path: "more/agent/comments", element: <CommentsPage /> },
-          { path: "more/agent/comments/:threadId", element: <CommentThreadPage /> },
           { path: "more/agent/tasks/:taskId", element: <TaskPage /> },
-          { path: "inbox", element: <InboxPage /> },
-          { path: "inbox/:conversationId", element: <ConversationPage /> },
           { path: "content", element: <ContentPage /> },
           { path: "content/:id", element: <ContentDetailPage /> },
           { path: "approvals", element: <ApprovalsList /> },

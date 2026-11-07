@@ -1,49 +1,18 @@
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { ApprovalSummary } from "./ApprovalSummary";
 import { useTranslation } from "react-i18next";
 import type { Approval } from "@/api/types";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { PageHeader } from "@/components/Layout";
 import { ChevronRightIcon } from "@/components/icons";
-import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useApprovals } from "@/features/commands/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { ApprovalDetailSheet } from "./ApprovalDetailSheet";
-import { actionKey } from "./format";
 
 type Tab = "pending" | "history";
 
 function Row({ approval, onOpen }: { approval: Approval; onOpen: () => void }) {
-  const { t, i18n } = useTranslation();
-  const { workspace } = useCurrentWorkspace();
-  const summary = approval.summary as {
-    label?: string;
-    title?: string;
-    new_formatted?: string;
-    scheduled_at?: string;
-    when?: string | null;
-  };
-  // A fact change shows the new value; a content approval shows its title and the time.
-  const name = summary.label ?? summary.title;
-  const detail =
-    summary.new_formatted ??
-    (summary.scheduled_at
-      ? new Date(summary.scheduled_at).toLocaleString(i18n.language, {
-          dateStyle: "short",
-          timeStyle: "short",
-          timeZone: workspace.timezone,
-        })
-      : summary.when);
-
-  const isPending = approval.status === "pending";
-  const statusTone = isPending
-    ? "text-attention bg-attention-subtle border border-attention/30"
-    : approval.status === "approved"
-      ? "text-success bg-success-subtle border border-success/30"
-      : approval.status === "rejected"
-        ? "text-danger bg-danger-subtle border border-danger/30"
-        : "text-secondary bg-surface-subtle border border-border";
-
   return (
     <li>
       <button
@@ -52,20 +21,7 @@ function Row({ approval, onOpen }: { approval: Approval; onOpen: () => void }) {
         data-approval-id={approval.id}
         className="group flex min-h-16 w-full items-center justify-between gap-4 bg-surface p-4 sm:p-5 text-left transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
       >
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="font-heading font-bold text-primary text-base">
-              {t(`approvals.action.${actionKey(approval.action)}`)}
-            </span>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold shadow-2xs ${statusTone}`}>
-              {t(`approvals.status.${approval.status}`)}
-            </span>
-            {approval.is_simulated ? <SimulatedBadge /> : null}
-          </div>
-          <div className="text-sm break-words text-secondary font-medium">
-            {[name, detail].filter(Boolean).join(" → ")}
-          </div>
-        </div>
+        <ApprovalSummary approval={approval} />
         <div className="flex shrink-0 items-center pl-2 text-secondary/50 group-hover:translate-x-0.5 group-hover:text-primary transition-transform">
           <ChevronRightIcon className="text-xl" />
         </div>
@@ -79,8 +35,11 @@ export function ApprovalsList() {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const approvals = useApprovals(workspace.id);
-  const [tab, setTab] = useState<Tab>("pending");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  const tab: Tab = params.get("tab") === "history" ? "history" : "pending";
+  const openId = params.get("approval");
+  const setTab = (next: Tab) => { const query = new URLSearchParams(params); query.set("tab", next); query.delete("approval"); setParams(query); };
+  const setOpenId = (id: string | null) => { const query = new URLSearchParams(params); if (id) query.set("approval", id); else query.delete("approval"); setParams(query); };
 
   const all = approvals.data ?? [];
   const shown = all.filter((a) => (tab === "pending" ? a.status === "pending" : a.status !== "pending"));

@@ -1,3 +1,7 @@
+import { useQueries } from "@tanstack/react-query";
+import { api, unwrap } from "@/api/client";
+import { CommandBar } from "@/features/commands/CommandBar";
+import { ReadinessCard } from "./ReadinessCard";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -36,12 +40,11 @@ export function Dashboard() {
   return (
     <div className="flex flex-col gap-5">
       <Banners accounts={accounts.data ?? []} canReconnect={role === "owner"} />
-      <Attention metrics={metrics} pending={report.isPending} error={report.error} />
+      <Attention metrics={metrics} pending={report.isPending || accounts.isPending} error={report.error ?? accounts.error} accounts={accounts.data ?? []} />
+      <CommandBar />
+      <Upcoming />
+      <ReadinessCard />
       <Numbers report={report.data} metrics={metrics} />
-      <div className="grid min-w-0 gap-5 min-[1400px]:grid-cols-2">
-        <Upcoming />
-        <Failures />
-      </div>
     </div>
   );
 }
@@ -86,66 +89,41 @@ function Banners({ accounts, canReconnect }: { accounts: SocialAccount[]; canRec
   );
 }
 
-function Attention({
-  metrics,
-  pending,
-  error,
-}: {
-  metrics: Map<string, ReportMetric>;
-  pending: boolean;
-  error: Error | null;
+function Attention({ metrics, pending, error, accounts }: {
+  metrics: Map<string, ReportMetric>; pending: boolean; error: Error | null; accounts: SocialAccount[];
 }) {
   const { t } = useTranslation();
-  const { workspace } = useCurrentWorkspace();
+  const { workspace, role } = useCurrentWorkspace();
   const base = `/w/${workspace.id}`;
-  // The report decides what a person may see (staff: inbox numbers only), so a missing metric is no card.
-  const cards = [
-    { key: "pending_approvals_now", label: t("home.attention.approvals"), to: `${base}/approvals` },
-    { key: "attention_now", label: t("home.attention.needsHuman"), to: `${base}/inbox` },
-    { key: "content_failed", label: t("home.attention.failures"), to: `${base}/content?tab=problems` },
-    { key: "content_on_hold_now", label: t("home.attention.onHold"), to: `${base}/content?tab=problems` },
-  ]
-    .filter((card) => metrics.has(card.key))
-    .map((card) => ({ ...card, count: metrics.get(card.key)?.value ?? 0 }));
-  const nothing = cards.every((card) => card.count === 0);
-
-  return (
-    <Section id="home-attention" title={t("home.attention.title")}>
-      {error ? <ErrorMessage error={error} /> : null}
-      {pending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
-      {!pending && !error && nothing ? (
-        <div data-testid="attention-none" className="flex items-center gap-3 rounded-xl bg-success-subtle/70 border border-success/30 p-4 text-body text-success">
-          <CheckIcon className="text-xl text-success shrink-0" />
-          <span className="font-medium text-primary">{t("home.attention.none")}</span>
-        </div>
-      ) : null}
-      {!nothing ? (
-        <ul className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-          {cards.map((card) => (
-            <li key={card.key} data-testid={`attention-${card.key}`}>
-              <Link
-                to={card.to}
-                className={`group flex min-h-16 items-center justify-between gap-4 rounded-xl px-4 py-3.5 border transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                  card.count > 0
-                    ? "bg-attention-subtle text-primary border-attention/40 hover:border-attention"
-                    : "bg-surface text-primary border-border hover:bg-surface-subtle hover:border-border"
-                }`}
-              >
-                <span className="font-semibold text-body">{card.label}</span>
-                <span
-                  className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2.5 text-xl font-bold tracking-tight transition-transform group-hover:scale-105 ${
-                    card.count > 0 ? "bg-attention text-white shadow-xs" : "bg-surface-subtle text-secondary border border-border/70"
-                  }`}
-                >
-                  {card.count}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </Section>
-  );
+  const failures = useRecentFailures(workspace.id);
+  const overviews = useQueries({ queries: accounts.filter(a => a.status !== "disconnected").map(a => ({
+    queryKey: ["agent", workspace.id, a.id, "overview"],
+    queryFn: () => unwrap(api.GET("/api/v1/workspaces/{workspace_id}/accounts/{account_id}/agent", { params: { path: { workspace_id: workspace.id, account_id: a.id } } })),
+    retry: false, refetchInterval: 5000,
+  })) });
+  const questionsKnown = overviews.every(q => q.isSuccess);
+  const questionCount = questionsKnown ? overviews.reduce((sum, q) => sum + (q.data?.pending_questions ?? 0), 0) : null;
+  const rows = [
+    { key: "pending_approvals_now", label: t("home.attention.approvals"), verb: t("core.reviewReply"), to: `${base}/approvals` },
+    { key: "questions", label: t("core.questions"), verb: t("core.answerQuestion"), to: `${base}/more/agent/questions` },
+    { key: "attention_now", label: t("home.attention.needsHuman"), verb: t("core.reviewReply"), to: `${base}/inbox?attention=needs_human` },
+    { key: "content_on_hold_now", label: t("home.attention.onHold"), verb: t("core.reviewContent"), to: `${base}/content?tab=problems` },
+  ].filter(row => row.key === "questions" || metrics.has(row.key)).map(row => ({ ...row, count: row.key === "questions" ? questionCount : metrics.get(row.key)?.value ?? null }));
+  const hasFailure = (failures.data?.length ?? 0) > 0;
+  const nothing = metrics.has("attention_now") && (role === "staff" || ["pending_approvals_now", "content_on_hold_now"].every(key => metrics.has(key))) && !pending && !error && questionsKnown && failures.isSuccess && !hasFailure && rows.every(row => row.count === 0);
+  return <Section id="home-attention" title={t("home.attention.title")}>
+    {error ? <ErrorMessage error={error} /> : null}
+    {pending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
+    {nothing ? <p data-testid="attention-none" className="flex items-center gap-3 py-3 text-success"><CheckIcon />{t("home.attention.none")}</p> : null}
+    <ul className="divide-y divide-border">
+      {accounts.filter(a => a.status === "needs_reauth").map(a => <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><span>@{a.username} · {t("home.banner.needs_reauth")}</span>{role === "owner" ? <Link className={LINK} to={`${base}/more/settings/connections`}>{t("home.banner.reconnect")}</Link> : <span>{t("automation.ownerOnly")}</span>}</li>)}
+      {failures.data?.map(item => <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><span className="flex flex-wrap items-center gap-2 text-danger">{item.title}{item.is_simulated ? <SimulatedBadge /> : null}</span><Link className={LINK} to={`${base}/content/${item.id}`}>{t("core.fixPost")}</Link></li>)}
+      {rows.filter(row => row.count !== 0).map(row => <li key={row.key} data-testid={`attention-${row.key}`} className="flex flex-wrap items-center justify-between gap-3 py-3"><span className="flex items-center gap-3 font-medium">{row.label}<span className="rounded-control bg-attention-subtle px-2.5 py-1 text-attention">{row.count ?? t("core.unavailable")}</span></span><Link to={row.to} className={LINK}>{row.verb}</Link></li>)}
+    </ul>
+    {hasFailure ? <p className="text-metadata text-secondary">{t("core.previewList")}</p> : null}
+    {failures.error ? <ErrorMessage error={failures.error} /> : null}
+    {overviews.some(q => q.isError) ? <p role="status" className="text-secondary">{t("core.questions")}: {t("core.unavailable")}</p> : null}
+  </Section>;
 }
 
 function UpcomingThumbnail({
@@ -202,11 +180,11 @@ function Upcoming() {
         </div>
       ) : null}
       {upcoming.data && upcoming.data.length > 0 ? (
-        <ul className="flex flex-col gap-2.5">
+        <><p className="text-metadata text-secondary">{t("core.previewOnly")}</p><ul className="divide-y divide-border">
           {upcoming.data.slice(0, 3).map((item) => (
             <li
               key={item.id}
-              className="group flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-surface p-3.5 transition-all duration-150 hover:bg-surface-subtle/70 hover:border-action/30 hover:shadow-2xs"
+              className="group flex items-center justify-between gap-3 py-3.5"
             >
               <div className="flex items-center gap-3.5 min-w-0">
                 <UpcomingThumbnail workspaceId={workspace.id} mediaId={item.media_asset_id} deleted={item.media_deleted} />
@@ -231,54 +209,13 @@ function Upcoming() {
               </div>
             </li>
           ))}
-        </ul>
+        </ul></>
       ) : null}
       <div>
         <Link to={`/w/${workspace.id}/content?tab=scheduled`} className={LINK}>
           {t("home.upcoming.all")}
         </Link>
       </div>
-    </Section>
-  );
-}
-
-function Failures() {
-  const { t } = useTranslation();
-  const { workspace } = useCurrentWorkspace();
-  const failures = useRecentFailures(workspace.id);
-  return (
-    <Section id="home-failures" title={t("home.failures.title")}>
-      {failures.isError ? <ErrorMessage error={failures.error} /> : null}
-      {failures.isPending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
-      {failures.data && failures.data.length === 0 ? (
-        <p data-testid="failures-empty" className="text-body text-secondary">
-          {t("home.failures.empty")}
-        </p>
-      ) : null}
-      {failures.data && failures.data.length > 0 ? (
-        <ul className="flex flex-col gap-2.5">
-          {failures.data.slice(0, 3).map((item) => {
-            const code = item.last_error_code ?? "";
-            const known = code !== "" ? t(`errors.${code}.what`, { defaultValue: "" }) : "";
-            return (
-              <li
-                key={item.id}
-                className="flex flex-col gap-1.5 rounded-xl border border-danger/30 bg-danger-subtle/80 p-3.5 transition-all shadow-2xs"
-              >
-                <Link
-                  to={`/w/${workspace.id}/content/${item.id}`}
-                  className="font-semibold text-danger hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                >
-                  {item.title}
-                </Link>
-                <span className="text-body text-primary font-medium">
-                  {known !== "" ? known : t("content.failure.unknown.what")}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
     </Section>
   );
 }
@@ -322,7 +259,7 @@ function Numbers({
         <dl className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
           {shown.map((metric) => {
             const label = t(`reports.metrics.${metric.key}`);
-            const value = formatValue(metric.value ?? 0, i18n.language);
+            const value = metric.value === null ? t("core.unavailable") : formatValue(metric.value, i18n.language);
             return (
               <div
                 key={metric.key}

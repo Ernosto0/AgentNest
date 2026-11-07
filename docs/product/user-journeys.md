@@ -6,23 +6,23 @@ UI copy examples are in Turkish (the primary market) with English in brackets. F
 
 ## 1. Navigation and screen inventory
 
-> **Planned redesign:** [Phase 8.5](../implementation/phases/phase-8.5-ui-redesign.md) and the [UI specification](ui-redesign-specification.md) define the requested target design for every screen. The navigation and journeys below remain the implemented baseline; update each affected section with its implementation session rather than treating the target as already shipped.
+> **Core redesign implemented (2026-11-07):** The [UI specification](ui-redesign-specification.md) and [verification report](../ui-core-redesign/verification-report.md) describe the current core layout. Historical Phase 8.5 session evidence is preserved; this change does not assert whole-phase or live-platform acceptance.
 
-**Mobile (< 768 px):** bottom tab bar with five tabs plus a persistent command bar on Home.
+**Mobile (< 768 px):** bottom tab bar with five tabs and inline request entry on Today.
 
 | Tab | Screens |
 |---|---|
-| **Bugün (Today)** | Existing Home screen (heading remains Ana sayfa / Home until Session 06): status strip (account connection, **SİMÜLASYON** badge if applicable, AI mode), attention cards (approvals waiting, conversations needing a human, failures, on-hold content), upcoming posts (next 3), the 3 most recent failed posts, today's numbers (from the live report; staff see inbox numbers only), the `needs_reauth` (red) and `degraded` (amber) banners of J6 above them, **command bar** |
-| **Gelen kutusu (Inbox)** | Conversation list with filters: *Yanıt bekliyor* (needs reply), *Onay bekliyor* (needs approval), *Size devredildi* (needs human), *Tümü* (all). Conversation detail. |
+| **Bugün (Today)** | Account-blocking notices, actionable attention rows, inline request entry, next scheduled posts (labelled preview), incomplete setup, then a compact daily summary. Unknown counts remain unknown; staff see server-authorized metrics. |
+| **Gelen kutusu (Inbox)** | Messages, Comments and Questions. Messages filter by all, waiting for approval, needs you or problems. Each list retains its relevant detail context. |
 | **İçerik (Content)** | Tabs (G15): Drafts (`draft`, `pending_approval`), Scheduled (`scheduled`, `publishing`, `retry_scheduled`), Published, Problems (`on_hold`, `failed`, `rejected`). `cancelled` items are in no tab. Content editor. "Ask for a draft" sheet. |
 | **Onaylar (Approvals)** | Pending approvals list, approval detail sheet and recent decisions. No shell count is inferred from a bounded list. |
 | **Daha fazla (More)** | Grouped Assistant/business destinations (Assistant, Knowledge, Reports, Approved answers, legacy Automation), workspace destinations (Activity/Health for owner or manager, Notifications, Settings, connections, members, developer tools only when enabled), then workspace switching/creation and sign-out. Staff retain the report destination for their authorized inbox metrics. Suggestions remain reachable from Knowledge. |
 
-**Tablet (768–1199 px):** compact charcoal sidebar, with a button to expand its labels. **Desktop (≥1200 px):** expanded 240 px sidebar with daily work, Assistant, Business knowledge, Reports and role-aware utility destinations. Every destination retains its existing URL. Phone More remains usable on desktop. Forms use a readable column; other work areas can use up to 1440 px. Feature-specific split layouts and the Home command composition remain with their migration sessions.
+**Tablet (768–1199 px):** compact charcoal sidebar, with a button to expand its labels. **Desktop (≥1200 px):** expanded 240 px sidebar with daily work, Assistant, Business knowledge, Reports and role-aware utility destinations. Every destination retains its existing URL. Phone More remains usable on desktop. Forms use a readable column; other work areas can use up to 1440 px. Core list/detail and editor/preview layouts use the 1200 px breakpoint; Today request entry stays inline.
 
-**Global elements (Session 04):** workspace switcher, authoritative unread notification count, page context, and destination-only launcher (header button or Ctrl/Cmd+K). Launcher filtering is local navigation, with native links, arrow/Tab keyboard access, Escape and focus return; it never searches customer records or runs natural-language commands. One compact disclosure explains demo workspace/offline AI context, while per-result simulation badges and urgent connection notices remain. Demo membership never implies that a real connection cannot act on real Instagram.
+**Global elements (Session 04):** workspace switcher, authoritative unread notification count, page context, and destination-only launcher (desktop header, mobile More, or Ctrl/Cmd+K). Launcher filtering is local navigation, with native links, arrow/Tab keyboard access, Escape and focus return; it never searches customer records or runs natural-language commands. One compact disclosure explains demo workspace/offline AI context, while per-result simulation badges and urgent connection notices remain. Demo membership never implies that a real connection cannot act on real Instagram.
 
-Workspace switching preserves safe section/list context: inbox/content lists, approvals, supported knowledge categories and known utility pages. Record details fall back to their list/overview. Only section-specific `attention`, `tab`/`status`/`view`, activity `group`/`date` and notification `filter` values can carry across; account, customer, conversation, task, approval, cursor and saved-report snapshot IDs are dropped. Unknown routes fall back to the new workspace home. Same-workspace direct URLs, query state, refresh and Back/Forward retain existing behavior. Authorization remains enforced by existing guards and APIs.
+Workspace switching preserves safe section/list context: inbox/content lists, approvals, supported knowledge categories and known utility pages. Record details fall back to their list/overview. Only section-specific Inbox `section`/`attention`, Assistant `panel`, `tab`/`status`/`view`, activity `group`/`date` and notification `filter` values can carry across; account, customer, conversation, task, approval, cursor and saved-report snapshot IDs are dropped. Unknown routes fall back to the new workspace home. Same-workspace direct URLs, query state, refresh and Back/Forward retain existing behavior. Authorization remains enforced by existing guards and APIs.
 
 ### Status vocabulary (shared across screens; [INV-18](../invariants.md))
 | Internal state | Badge (tr / en) | Colour + icon (never colour alone) |
@@ -38,6 +38,22 @@ Workspace switching preserves safe section/list context: inbox/content lists, ap
 | Failed | Başarısız / Failed | red, alert |
 | Expired | Süresi doldu / Expired | grey, hourglass |
 | Simulated (modifier) | SİMÜLASYON / SIMULATED | purple outline badge appended to any of the above |
+
+### Core daily-work behavior (2026-11-07)
+
+Desktop navigation is Today, Inbox, Content, Approvals; Assistant, Business knowledge, Reports; Activity and Settings. Notifications use the header bell. Phones retain five tabs and a workspace/notifications header; More provides **Go to…** destination search. Keyboard destination search remains available with Ctrl/Cmd+K.
+
+Inbox contains **Messages, Comments, Questions**. `/inbox` defaults to Messages; `section` selects a tab. Existing `/more/agent/comments[/ID]` and `/more/agent/questions[/ID]` links retain their paths and select the corresponding Inbox view. At 1200 px and above a 320 px list stays beside the detail; narrower widths use list-to-detail navigation. Back retains route filters and mounted list position. Public comments mount no private message, customer-memory or owner-question views.
+
+A message draft is part of the reply workflow, with **Approve and send, Edit, Reject**. **Write your own reply** opens a separate manual composer. Owner export and erasure sit in **More actions**, with existing confirmations and permissions. Linked information requests use the authoritative agent-thread ID and approval cards use exact approval/action IDs. Names never join records.
+
+Questions say **Information needed**. Owner/manager answers and staff proposals retain their existing permissions. **Save for future answers** creates an unverified candidate with an internally generated stable `custom.owner_answer_<UUID without hyphens>` key. The owner reviews knowledge separately.
+
+Assistant defaults to **Overview**, starting with request entry and current tasks, then account status and recent outcomes. **Voice** contains goals, preferences, examples and a labelled illustrative preview. **Permissions** groups every independent action under Messaging, Comments or Content; Advanced settings contains limits and request sources. Changes still require preview and explicit application, and controller changes keep their confirmation. **History** shows queued, checking, failed and verified outcomes.
+
+Content editing puts account and format first, then image, caption and optional internal notes/title. The existing format and publishing account are read-only. Scheduling uses the workspace’s single active account; immutable previews use the recorded account. The approximate desktop preview uses the stored image and current local caption. Phones switch between Edit and Preview without losing typing. Actions are **Save draft → Review → Schedule**; unsaved text blocks scheduling immediately. Published content stays immutable.
+
+Unsent replies, draft edits, answers, assistant requests/settings and content text remain only in component memory. Navigation that would discard them asks for confirmation. Failed saves retain text and show the existing conflict or validation feedback. The verification report distinguishes fixture walkthroughs from real-account and owner/device acceptance.
 
 ## 2. Journeys
 
@@ -81,7 +97,7 @@ Workspace switching preserves safe section/list context: inbox/content lists, ap
 1. The owner types in the command bar: "Aylık üyelik artık 7.000 TL".
 2. Status "Anlıyorum…" (interpreting; ~1 s with fake, a few seconds with a real LLM).
 3. **Confirmation card:** "Aylık üyelik fiyatı: 6.000 ₺ → **7.000 ₺**. Bu değişiklik gelecekteki yanıtlarda kullanılacak." Below: **Etkilenenler (Affected):** "1 zamanlanmış gönderi beklemeye alınacak, 1 onaylı yanıt incelenmeli, 1 bekleyen taslak yeniden oluşturulacak." Buttons: **Onayla** (Confirm), **Vazgeç** (Cancel).
-4. After confirming: "Güncellendi". The affected items appear as attention cards with direct links. The scheduled post shows *Beklemede: fiyat değişti* (On hold: price changed) with actions "Düzenle" or "Olduğu gibi onayla" (approve as is) or "İptal et".
+4. After confirming: "Güncellendi". The affected items appear as attention rows with direct links. The scheduled post shows *Beklemede: fiyat değişti* (On hold: price changed) with actions "Düzenle" or "Olduğu gibi onayla" (approve as is) or "İptal et".
 5. Next customer price question → the draft uses 7.000 ₺.
 
 **Edge cases:** an ambiguous fact ("fiyat artık 7000", but the workspace has monthly, 3-month and student prices) → clarification chips listing the three price facts. "7.000" in an `en` workspace → the confirmation shows the formatted value explicitly. The same value as current → "Zaten 7.000 ₺" with no change. A staff member issues the command → the result is a **candidate** awaiting owner verification, and the fact becomes contested ([business-knowledge.md §5](../architecture/business-knowledge.md)). The confirmation is not answered within 30 minutes → expired, nothing changed.

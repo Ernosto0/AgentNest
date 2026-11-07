@@ -516,7 +516,7 @@ describe("on hold", () => {
     renderApp(ITEM_PAGE);
     const user = userEvent.setup();
     await user.click(within(await screen.findByTestId("on-hold")).getByRole("button", { name: "Düzenle" }));
-    expect(screen.getByLabelText("Başlık")).toHaveFocus();
+    expect(screen.getByLabelText("Açıklama")).toHaveFocus();
   });
 
   it("re-approval sends the schedule and the version, and the item comes back with the next version", async () => {
@@ -577,7 +577,7 @@ describe("on hold", () => {
     expect(await within(dialog).findByTestId("claim-issue")).toHaveTextContent("“6.000 ₺ / ay” doğrulanmış bir bilgi değil.");
     await user.click(within(dialog).getByRole("button", { name: "Metni düzenle" }));
     expect(screen.queryByRole("dialog")).toBeNull();
-    await waitFor(() => expect(screen.getByLabelText("Başlık")).toHaveFocus());
+    await waitFor(() => expect(screen.getByLabelText("Açıklama")).toHaveFocus());
   });
 
   it("a draft sent back by a fact change or an expired approval says so", async () => {
@@ -604,7 +604,7 @@ describe("failure detail", () => {
     expect(within(detail).getByTestId("failure-final")).toHaveTextContent("Otomatik olarak tekrar denenmeyecek.");
     expect(screen.getByText("Başarısız")).toBeInTheDocument();
     await user.click(within(detail).getByRole("button", { name: "Düzenle ve yeniden gönder" }));
-    expect(screen.getByLabelText("Başlık")).toHaveFocus();
+    expect(screen.getByLabelText("Açıklama")).toHaveFocus();
   });
 
   it.each(["failed", "rejected"] as const)(

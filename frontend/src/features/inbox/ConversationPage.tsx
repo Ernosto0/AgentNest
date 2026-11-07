@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ChevronLeftIcon } from "@/components/icons";
@@ -40,6 +40,8 @@ export function ConversationPage() {
   const saveAnswer = useSaveAsAnswer(workspace.id);
   const exportConvo = useExportConversation(workspace.id, conversationId);
   const eraseConvo = useEraseConversation(workspace.id, conversationId);
+  const [params] = useSearchParams();
+  const [composing, setComposing] = useState(false);
   const [seed, setSeed] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
 
@@ -84,7 +86,7 @@ export function ConversationPage() {
       <div className="flex flex-col gap-3.5 border-b border-border pb-4">
         <div>
           <Link
-            to={`/w/${workspace.id}/inbox`}
+            to={`/w/${workspace.id}/inbox${params.size ? `?${params}` : ""}`}
             className="inline-flex items-center gap-1.5 text-body font-semibold text-action hover:text-action-hover underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus rounded-control"
           >
             <ChevronLeftIcon className="text-base" />
@@ -93,7 +95,7 @@ export function ConversationPage() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="type-page text-primary">{customerLabel(conversation, t)}</h1>
+            <h2 className="type-section text-primary">{customerLabel(conversation, t)}</h2>
             {conversation.is_simulated ? <SimulatedBadge /> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -109,7 +111,7 @@ export function ConversationPage() {
               {t("convo.suggest")}
             </Button>
             {role === "owner" ? (
-              <>
+              <details className="relative"><summary className="min-h-11 cursor-pointer rounded-control border border-border px-3 py-2.5 font-medium focus-visible:outline-2 focus-visible:outline-focus">{t("core.moreActions")}</summary><div className="absolute right-0 z-10 flex w-56 flex-col rounded-panel border border-border bg-surface p-2 shadow-float">
                 <Button
                   variant="ghost"
                   disabled={exportConvo.isPending}
@@ -127,7 +129,7 @@ export function ConversationPage() {
                 >
                   {eraseConvo.isPending ? t("common.loading") : t("convo.erase")}
                 </Button>
-              </>
+              </div></details>
             ) : null}
           </div>
         </div>
@@ -142,7 +144,7 @@ export function ConversationPage() {
         {eraseConvo.error ? <ErrorMessage error={eraseConvo.error} /> : null}
       </div>
 
-      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="flex min-w-0 flex-col gap-5">
       <div className="flex min-w-0 flex-col gap-4">
       {/* Message Stream */}
       <div className="flex min-h-64 flex-col justify-end gap-4 rounded-panel border border-border bg-surface-subtle p-4 md:p-6">
@@ -191,23 +193,24 @@ export function ConversationPage() {
       {saveAnswer.error ? <ErrorMessage error={saveAnswer.error} /> : null}
 
       </div>
-      <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-24 xl:col-start-2 xl:row-start-1 xl:row-span-2">
-        {conversation.social_account_id ? (
-          <ConversationAgentWork account={conversation.social_account_id} conversation={conversationId} />
-        ) : null}
+      <aside className="flex min-w-0 flex-col gap-4">
         {lastDraft ? (
-          <DraftCard workspaceId={workspace.id} draft={lastDraft} onUseSuggestion={setSeed} />
+          <DraftCard workspaceId={workspace.id} draft={lastDraft} onUseSuggestion={text => { setSeed(text); setComposing(true); }} />
         ) : null}
       </aside>
-      <div className="min-w-0 xl:col-start-1">
-        <ReplyComposer
+      <div className="min-w-0">
+        {!composing ? <Button variant="secondary" onClick={() => setComposing(true)}>{t("core.manualReply")}</Button> : null}
+        {composing ? <ReplyComposer
           key={seed ?? "none"}
           workspaceId={workspace.id}
           conversationId={conversationId}
           seed={seed}
           fromDraftId={lastDraft?.status === "needs_human" ? lastDraft.id : undefined}
-        />
+        /> : null}
       </div>
+        {conversation.social_account_id ? (
+          <ConversationAgentWork account={conversation.social_account_id} conversation={conversationId} />
+        ) : null}
       </div>
     </div>
   );

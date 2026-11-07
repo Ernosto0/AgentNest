@@ -6,6 +6,7 @@ import { CONTENT_ID, MEDIA_ID, claimIssue, contentItem, mediaAsset } from "@/tes
 import { ME, READINESS, WS_GOLKENT, fact, workspace } from "@/test/fixtures";
 import { json, mockApi, problem, type RecordedRequest } from "@/test/mockApi";
 import { renderApp } from "@/test/renderApp";
+import { socialAccount } from "@/test/contentFixtures";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -172,6 +173,20 @@ describe("content list", () => {
     // Toggle back to library view
     await user.click(screen.getByRole("tab", { name: "Kütüphane" }));
     expect(await screen.findByText("Taslak 1")).toBeInTheDocument();
+  });
+});
+
+describe("publishing account presentation", () => {
+  it.each(["draft", "published"] as const)("shows the authoritative account for %s without offering an unapplied choice", async status => {
+    const oldId = "a1000000-0000-4000-8000-000000000099";
+    mockApi(routes({
+      [`GET ${ITEM_URL}`]: () => json(contentItem({ status, social_account_id: oldId })),
+      [`GET ${BASE}/social-accounts`]: () => json({ items: [socialAccount({ id: oldId, status: "disconnected", username: "previous_account" }), socialAccount({ username: "active_account" })], next_cursor: null }),
+    }));
+    renderApp(`/w/${WS_GOLKENT}/content/${CONTENT_ID}`);
+    const preview = await screen.findByTestId("post-preview");
+    await waitFor(() => expect(within(preview).getByText(status === "draft" ? "@active_account" : "@previous_account")).toBeInTheDocument());
+    expect(screen.queryByRole("combobox", { name: "Instagram hesabı" })).toBeNull();
   });
 });
 
@@ -635,7 +650,7 @@ describe("media upload", () => {
       }),
     );
     renderApp(`/w/${WS_GOLKENT}/content/${CONTENT_ID}`);
-    expect(await screen.findByText("Görsel gösterilemedi.")).toBeInTheDocument();
+    expect(await within(await screen.findByTestId("media-upload")).findByText("Görsel gösterilemedi.")).toBeInTheDocument();
   });
 
   it("says so in the editor too when the image of an editable item was deleted", async () => {

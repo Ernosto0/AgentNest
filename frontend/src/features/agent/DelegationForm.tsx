@@ -1,3 +1,4 @@
+import { useDirtyForm } from "@/components/DirtyForms";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/Button";
@@ -27,6 +28,7 @@ export function DelegationForm({
   owner: boolean;
 }) {
   const { t } = useTranslation();
+  const initial = data?.policy ?? { actions: Object.fromEntries(ACTIONS.map(a => [a, { mode: "off", sources: ["customer", "owner_task"], max_per_day: null }])) };
   const [policy, setPolicy] = useState<Schema<"DelegationPolicy">>(
     data?.policy ?? {
       actions: Object.fromEntries(
@@ -37,6 +39,7 @@ export function DelegationForm({
   const [proposal, setProposal] = useState<Schema<"DelegationChange"> | null>(null);
   const preview = usePreviewDelegation(ws, account);
   const apply = useApplyDelegation(ws, account);
+  useDirtyForm(!apply.isSuccess && JSON.stringify(policy) !== JSON.stringify(initial));
   const locked = preview.isPending || apply.isPending;
 
   function edit(action: string, change: Partial<Schema<"ActionRule">>) {
@@ -59,8 +62,8 @@ export function DelegationForm({
       </div>
       <p className="text-sm text-secondary">{t("agent.delegationHint")}</p>
 
-      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-        {ACTIONS.map((action) => (
+      <div className="flex min-w-0 flex-col gap-6">
+        {([{ key: "messaging", actions: ACTIONS.filter(a => a.startsWith("dm.")) }, { key: "comments", actions: ACTIONS.filter(a => a.startsWith("comment.")) }, { key: "content", actions: ACTIONS.filter(a => a.startsWith("content.")) }]).map(group => <section key={group.key} className="flex flex-col gap-3"><h3 className="type-section">{t(`core.${group.key}`)}</h3><div className="grid gap-4 min-[1400px]:grid-cols-2">{group.actions.map((action) => (
           <fieldset
             key={action}
             className="min-w-0 rounded-control border border-border p-4 flex flex-col gap-3"
@@ -69,7 +72,7 @@ export function DelegationForm({
             <legend className="px-2 font-heading text-sm font-semibold text-primary">
               {t(actionLabelKey(action))}
             </legend>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-3">
               <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
                 <span className="text-primary">{t("agent.mode")}</span>
                 <select
@@ -84,6 +87,7 @@ export function DelegationForm({
                   ))}
                 </select>
               </label>
+              <details><summary className="min-h-11 cursor-pointer py-2 font-medium text-secondary">{t("core.advanced")}</summary>
               <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
                 <span className="text-primary">{t("agent.dailyLimit")}</span>
                 <input
@@ -97,7 +101,6 @@ export function DelegationForm({
                   }
                 />
               </label>
-            </div>
             <div className="flex flex-wrap gap-2 pt-1">
               {(["customer", "owner_task"] as const).map((source) => (
                 <label key={source} className="flex min-h-11 items-center gap-2.5 rounded-control bg-surface px-3 py-1.5 text-sm text-primary border border-border/60 hover:border-control transition-colors cursor-pointer select-none">
@@ -117,8 +120,9 @@ export function DelegationForm({
                 </label>
               ))}
             </div>
+            </details></div>
           </fieldset>
-        ))}
+        ))}</div></section>)}
       </div>
 
       <div className="pt-2 border-t border-border">

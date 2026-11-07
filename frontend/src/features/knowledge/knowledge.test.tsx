@@ -77,7 +77,9 @@ describe("Home readiness card", () => {
     const account = open.getByRole("link", { name: /Instagram hesabı bağlı/ });
     expect(account).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/automation`);
     expect(open.getByText("Henüz bağlı değil")).toBeInTheDocument();
-    expect(open.queryByText("İşletme adı")).toBeNull(); // satisfied items are not repeated
+    expect(open.getByText("İşletme adı")).not.toBeVisible();
+    await userEvent.setup().click(open.getByText(/Tamamlanan gereksinimler/));
+    expect(open.getByText("İşletme adı")).toBeVisible();
   });
 });
 

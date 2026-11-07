@@ -9,13 +9,15 @@ test("owner configures goals and delegation then enables pauses and resumes assi
  await page.request.patch(`${API}/api/v1/auth/me`,{headers:{"X-CSRF-Token":csrf},data:{ui_locale:"tr"}});
  const initial=await (await page.request.get(`${API}/api/v1/workspaces/${ws}/accounts/${account.id}/agent`)).json();
  if(initial.controller_mode!=="legacy") await page.request.post(`${API}/api/v1/workspaces/${ws}/accounts/${account.id}/agent/activate`,{headers:{"X-CSRF-Token":csrf},data:{mode:"legacy",expected_config_version:initial.config_version,client_request_id:crypto.randomUUID()}});
- await page.goto(`/w/${ws}/more/agent?account=${account.id}`);
+ await page.goto(`/w/${ws}/more/agent?account=${account.id}&panel=voice`);
  const goals=page.getByLabel("İşletme hedefleri");await goals.fill("Müşterilere yardımcı ol");
  await page.getByRole("button",{name:"Hedef ve üslubu kaydet"}).click();
  await expect(page.getByText("Kaydedildi.",{exact:true})).toBeVisible();
+ await page.getByRole("link",{name:"Yetkiler",exact:true}).click();
  await page.getByRole("button",{name:"Yetki değişikliklerini önizle"}).click();
  await page.getByRole("button",{name:"Bu yetkileri uygula"}).click();
  await expect(page.getByRole("button",{name:"Bu yetkileri uygula"})).toHaveCount(0);
+ await page.getByRole("link",{name:"Genel bakış",exact:true}).click();
  await page.getByRole("button",{name:"Hesap asistanını etkinleştir"}).click();
  await page.getByRole("button",{name:"Kontrol değişikliğini onayla"}).click();
  await page.getByRole("button",{name:"Asistanı duraklat"}).click();
@@ -23,6 +25,7 @@ test("owner configures goals and delegation then enables pauses and resumes assi
  const paused=await (await page.request.get(`${API}/api/v1/workspaces/${ws}/accounts/${account.id}/agent`)).json();expect(paused.state).toBe("paused");
  await page.getByRole("button",{name:"Asistanı sürdür"}).click();
  await expect(page.getByRole("button",{name:"Asistanı duraklat"})).toBeVisible();
+ await page.getByRole("link",{name:"Üslup",exact:true}).click();
  await page.reload();await expect(goals).toHaveValue("Müşterilere yardımcı ol");
  expect(await hasHorizontalScroll(page)).toBe(false);
  expect((await new AxeBuilder({page}).include("main").analyze()).violations).toEqual([]);

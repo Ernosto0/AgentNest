@@ -93,7 +93,7 @@ describe("workspace shell", () => {
     expect(banner).toHaveTextContent("Gerçek Instagram bağlantıları gerçek hesabınızda işlem yapar.");
 
     for (const nav of screen.getAllByRole("navigation", { name: "Ana gezinme" })) {
-      for (const label of ["Bugün", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
+      for (const label of ["Bugün", "Gelen kutusu", "İçerik", "Onaylar"]) {
         expect(within(nav).getByRole("link", { name: label })).toBeInTheDocument();
       }
     }

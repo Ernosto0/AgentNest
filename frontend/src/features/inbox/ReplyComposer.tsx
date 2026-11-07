@@ -1,3 +1,4 @@
+import { useDirtyForm } from "@/components/DirtyForms";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ValidationIssue } from "@/api/types";
@@ -24,6 +25,7 @@ export function ReplyComposer({
 }) {
   const { t } = useTranslation();
   const [text, setText] = useState(seed ?? "");
+  useDirtyForm(text.trim().length > 0);
   const [warnings, setWarnings] = useState<ValidationIssue[]>([]);
   const submit = useSubmitReply(workspaceId, conversationId);
 

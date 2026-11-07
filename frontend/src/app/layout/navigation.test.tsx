@@ -67,7 +67,7 @@ describe("workspace navigation scope", () => {
     expect(main.queryByRole("link", { name: "Sistem durumu" }) !== null).toBe(role !== "staff");
     expect(main.queryByRole("link", { name: "Geliştirici araçları" })).toBeNull();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Gezinme hedeflerini aç" }));
+    await user.click(within(screen.getByRole("main")).getByRole("button", { name: "Git…" }));
     const dialog = within(screen.getByRole("dialog"));
     expect(dialog.getByRole("link", { name: "Günlük rapor" })).toBeInTheDocument();
     expect(dialog.queryByRole("link", { name: "Etkinlik" }) !== null).toBe(role !== "staff");
@@ -78,7 +78,7 @@ describe("workspace navigation scope", () => {
     const { router } = renderApp(`${base}/more`);
     await screen.findByRole("heading", { name: "Daha fazla" });
     const user = userEvent.setup();
-    const trigger = screen.getByRole("button", { name: "Gezinme hedeflerini aç" });
+    const trigger = within(screen.getByRole("main")).getByRole("button", { name: "Git…" });
     await user.click(trigger);
     const filter = screen.getByRole("textbox", { name: "Hedefleri filtrele" });
     expect(filter).toHaveFocus();

@@ -7649,6 +7649,7 @@ export interface operations {
                 limit?: number;
                 cursor?: string | null;
                 customer_id?: string | null;
+                thread_id?: string | null;
             };
             header?: never;
             path: {

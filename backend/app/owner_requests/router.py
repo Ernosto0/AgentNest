@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.agent.repository import AgentScopeError, scoped_account
+from app.agent.repository import AgentScopeError, scoped_account, scoped_thread
 from app.api.deps import get_clock, require_membership
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
@@ -96,18 +96,23 @@ def list_questions(
     limit: int = Query(20, ge=1, le=50),
     cursor: uuid.UUID | None = None,
     customer_id: uuid.UUID | None = None,
+    thread_id: uuid.UUID | None = None,
     ctx: WorkspaceContext = Depends(require_membership()),
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
 ) -> QuestionPage:
     try:
         scoped_account(db, ctx.workspace_id, account_id)
+        if thread_id is not None:
+            scoped_thread(db, ctx.workspace_id, account_id, thread_id)
     except AgentScopeError as exc:
         raise AppError("NOT_FOUND") from exc
     query = select(OwnerQuestion).where(
         OwnerQuestion.workspace_id == ctx.workspace_id,
         OwnerQuestion.social_account_id == account_id,
     )
+    if thread_id is not None:
+        query = query.where(OwnerQuestion.thread_id == thread_id)
     if customer_id:
         from app.memory.service import scoped_identity
 

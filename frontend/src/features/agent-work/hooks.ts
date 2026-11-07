@@ -20,15 +20,15 @@ export function useWorkThreads(ws: string, account: string, source?: string) {
       ),
   });
 }
-export function useQuestions(ws: string, account: string, cursor?: string) {
+export function useQuestions(ws: string, account: string, cursor?: string, thread?: string) {
   return useQuery({
-    queryKey: [...agentKey(ws, account), "questions", cursor],
+    queryKey: [...agentKey(ws, account), "questions", cursor, thread],
     enabled: !!account,
     refetchInterval: 4000,
     queryFn: () =>
       unwrap(
         api.GET("/api/v1/workspaces/{workspace_id}/accounts/{account_id}/owner-questions", {
-          params: { path: { workspace_id: ws, account_id: account }, query: { cursor, limit: 20 } },
+          params: { path: { workspace_id: ws, account_id: account }, query: { cursor, limit: 20, thread_id: thread } },
         }),
       ),
   });
