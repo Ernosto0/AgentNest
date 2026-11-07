@@ -341,16 +341,31 @@ def run_activation(
         with deps.session_factory() as db:
             from app.agent.models import AgentAction
 
-            latest_action = db.scalar(
-                select(AgentAction)
-                .where(
-                    AgentAction.thread_id == claimed.context.thread_id,
-                    AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
+            current = db.get(AgentStep, claimed.step_id)
+            latest_action = (
+                db.scalar(
+                    select(AgentAction)
+                    .where(
+                        AgentAction.thread_id == claimed.context.thread_id,
+                        AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
+                        (AgentAction.initiating_cursor == current.captured_cursor)
+                        | AgentAction.status.in_(
+                            (
+                                "waiting_approval",
+                                "authorized",
+                                "queued",
+                                "in_progress",
+                                "outcome_unknown",
+                            )
+                        ),
+                    )
+                    .order_by(AgentAction.created_at.desc())
+                    .limit(1)
                 )
-                .order_by(AgentAction.created_at.desc())
-                .limit(1)
+                if current is not None
+                else None
             )
-            if latest_action is not None:
+            if latest_action is not None and not observations:
                 observations = (
                     LLMToolObservation(
                         str(latest_action.id),
@@ -360,7 +375,6 @@ def run_activation(
                     ),
                 )
                 db.commit()
-            current = db.get(AgentStep, claimed.step_id)
             previous = (
                 db.scalar(
                     select(AgentStep)
