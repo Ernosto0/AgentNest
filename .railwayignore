@@ -1,0 +1,16 @@
+# Ignore temporary Docker test session folders
+backend/tmp-*
+backend/tmp-session*
+.venv
+backend/.venv
+node_modules
+frontend/node_modules
+landing/node_modules
+.git
+.mypy_cache
+.ruff_cache
+.pytest_cache
+var
+backend/var
+frontend/dist
+
