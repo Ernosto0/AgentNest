@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import type { ActivityEntry } from "@/api/types";
 import { Button } from "@/components/Button";
+import { PageHeader } from "@/components/Layout";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ClockIcon, SparkIcon, UsersIcon } from "@/components/icons";
@@ -63,12 +64,8 @@ export function ActivityFeed() {
   }, [entries, workspace.timezone, i18n.language, t]);
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
-        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-teal-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
-        <h1 className="type-page text-primary font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">{t("activity.title")}</h1>
-        <p className="mt-1 text-sm text-secondary max-w-xl">{t("activity.intro")}</p>
-      </div>
+    <div className="flex flex-col gap-6 w-full">
+      <PageHeader title={t("activity.title")} description={t("activity.intro")} />
 
       <div role="group" aria-label={t("activity.filterLabel")} className="flex flex-wrap gap-1.5 p-1 bg-surface-subtle/80 rounded-xl border border-border/70 shadow-2xs w-fit">
         {[null, ...ACTIVITY_GROUPS].map((name) => {
@@ -79,7 +76,7 @@ export function ActivityFeed() {
               type="button"
               aria-pressed={active}
               onClick={() => choose(name)}
-              className={`inline-flex min-h-9 items-center rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+              className={`inline-flex min-h-11 items-center rounded-control px-3 py-2 text-body font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 active
                   ? "bg-surface text-primary shadow-xs font-bold ring-1 ring-border/50"
                   : "text-secondary hover:bg-surface/50 hover:text-primary"
@@ -99,13 +96,13 @@ export function ActivityFeed() {
       {entries.length > 0 ? (
         <div className="flex flex-col gap-5">
           {grouped.map((group) => (
-            <div key={group.dayKey} className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-card-modern">
-              <div className="border-b border-border/60 bg-surface-subtle/60 px-5 py-3">
+            <div key={group.dayKey} className="grid min-w-0 gap-3 lg:grid-cols-[10rem_minmax(0,1fr)] lg:gap-6">
+              <div className="pt-4 lg:sticky lg:top-24 lg:self-start">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-secondary">
                   {group.label}
                 </h2>
               </div>
-              <ul className="divide-y divide-border/60" aria-label={group.label}>
+              <ul className="min-w-0 divide-y divide-border rounded-panel border border-border bg-surface" aria-label={group.label}>
                 {group.items.map((entry) => (
                   <li key={entry.id}>
                     <EntryRow entry={entry} when={when(entry.occurred_at)} />

@@ -60,7 +60,7 @@ export function PersonalityForm({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {Object.entries(choices).map(([key, values]) => (
-          <div key={key} className="rounded-control border border-border bg-surface-subtle p-3 flex flex-col gap-1.5 shadow-xs">
+          <div key={key} className="min-w-0 flex flex-col gap-1.5">
             <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
               <span className="font-semibold text-primary">{t(`agent.voice.${key}`)}</span>
               <select
@@ -84,7 +84,7 @@ export function PersonalityForm({
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 pt-1">
+      <div className="grid gap-4 pt-1 sm:grid-cols-2">
         {(["tr", "en"] as const).map((lang) => (
           <label key={lang} className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
             <span className="text-primary">{t(`agent.examples_${lang}`)}</span>

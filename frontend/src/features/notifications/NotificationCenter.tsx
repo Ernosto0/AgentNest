@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { AppNotification } from "@/api/types";
 import { Button } from "@/components/Button";
+import { PageHeader } from "@/components/Layout";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { AlertIcon, ClockIcon, CriticalIcon, InfoIcon } from "@/components/icons";
@@ -38,12 +39,8 @@ export function NotificationCenter() {
 
   // A notification is read when its link is followed, not when the screen is opened.
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
-        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-blue-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
-        <h1 className="type-page text-primary font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">{t("notifications.title")}</h1>
-        <p className="mt-1 text-sm text-secondary max-w-xl">{t("notifications.intro")}</p>
-      </div>
+    <div className="flex flex-col gap-6 w-full">
+      <PageHeader title={t("notifications.title")} description={t("notifications.intro")} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div role="group" aria-label={t("notifications.filterLabel")} className="flex gap-1.5 p-1 bg-surface-subtle/80 rounded-xl border border-border/70 shadow-2xs">
@@ -53,7 +50,7 @@ export function NotificationCenter() {
               type="button"
               aria-pressed={unreadOnly === only}
               onClick={() => setUnreadOnly(only)}
-              className={`inline-flex min-h-9 items-center rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+              className={`inline-flex min-h-11 items-center rounded-control px-3 py-2 text-body font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 unreadOnly === only
                   ? "bg-surface text-primary shadow-xs font-bold ring-1 ring-border/50"
                   : "text-secondary hover:bg-surface/50 hover:text-primary"
@@ -64,7 +61,7 @@ export function NotificationCenter() {
           ))}
         </div>
         {unread > 0 ? (
-          <Button variant="secondary" disabled={markAll.isPending} onClick={() => markAll.mutate()} className="text-xs font-semibold">
+          <Button variant="secondary" pending={markAll.isPending} onClick={() => markAll.mutate()} className="text-body font-medium">
             {t("notifications.markAll")}
           </Button>
         ) : null}
@@ -80,7 +77,7 @@ export function NotificationCenter() {
         />
       ) : null}
       {items.length > 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-card-modern">
+        <div className="overflow-hidden rounded-panel border border-border bg-surface">
           <ul className="divide-y divide-border/60" aria-label={t("notifications.title")}>
             {items.map((item) => (
               <li key={item.id}>
@@ -118,13 +115,13 @@ function Row({
     <div
       data-unread={isUnread}
       data-severity={severity}
-      className={`flex flex-col gap-2.5 p-4 transition-colors ${
+      className={`grid min-w-0 gap-2.5 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-6 sm:p-5 transition-colors ${
         isUnread
           ? "border-l-4 border-l-action bg-surface-subtle/80 hover:bg-surface-subtle"
           : "border-l-4 border-l-transparent bg-surface hover:bg-surface-subtle/40"
       }`}
     >
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      <div className="flex flex-wrap items-center gap-2 text-sm sm:col-span-2">
         <span className={`inline-flex items-center gap-1.5 rounded-control border px-2.5 py-0.5 text-xs font-semibold ${tone}`}>
           <Icon className="text-sm" />
           {t(`notifications.severity.${severity}`)}
@@ -136,10 +133,10 @@ function Row({
         ) : null}
         {item.is_simulated ? <SimulatedBadge /> : null}
       </div>
-      <p className="break-words text-sm font-medium text-primary leading-relaxed">
+      <p className="min-w-0 break-words text-body font-medium text-primary">
         {describeNotification(t, item, i18n.language)}
       </p>
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm sm:flex-col sm:items-end sm:justify-start">
         <span className="inline-flex items-center gap-1 text-xs text-secondary">
           <ClockIcon className="text-xs shrink-0" />
           {new Date(item.created_at).toLocaleString(i18n.language, {

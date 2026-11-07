@@ -37,12 +37,12 @@ export function LoginPage() {
       <ErrorMessage error={me.error} /><Button variant="secondary" onClick={() => void me.refetch()}>{t("common.retry")}</Button>
     </> : <>
       {from ? <Notice title={t("entry.signInToContinue")} /> : null}
-      <form onSubmit={submit} className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-surface p-6 sm:p-8 shadow-card-modern" noValidate aria-busy={login.isPending}>
+      <form onSubmit={submit} className="flex flex-col gap-5 rounded-panel border border-border bg-surface p-5 sm:p-6" noValidate aria-busy={login.isPending}>
         <TextField ref={emailInput} label={t("auth.email")} type="email" name="email" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} required maxLength={320} value={email} error={invalidEmail ? t("entry.emailInvalid") : undefined} onChange={(event) => { setEmail(event.target.value); setInvalidEmail(false); }} />
         <div className="flex flex-col gap-1.5">
           <TextField label={t("auth.password")} type="password" name="password" autoComplete="current-password" required maxLength={1000} value={password} onChange={(event) => setPassword(event.target.value)} />
           <div className="text-right">
-            <Link to="/reset-password" className="text-xs text-secondary hover:underline">
+            <Link to="/reset-password" className="inline-flex min-h-11 items-center rounded-control text-body text-secondary hover:text-action hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
               {t("auth.forgotPassword")}
             </Link>
           </div>
@@ -51,11 +51,11 @@ export function LoginPage() {
         <Button type="submit" block pending={login.isPending} disabled={!email || !password} disabledReason={!email || !password ? t("entry.credentialsRequired") : undefined}>{login.isPending ? t("auth.submitting") : t("auth.submit")}</Button>
       </form>
       <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-secondary">
-        <Link to="/privacy" className="hover:underline">
+        <Link to="/privacy" className="inline-flex min-h-11 items-center rounded-control hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
           {t("legal.privacyTitle")}
         </Link>
         <span>•</span>
-        <Link to="/data-deletion" className="hover:underline">
+        <Link to="/data-deletion" className="inline-flex min-h-11 items-center rounded-control hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
           {t("legal.dataDeletionTitle")}
         </Link>
       </div>

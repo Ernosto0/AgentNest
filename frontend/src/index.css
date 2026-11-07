@@ -114,9 +114,9 @@
   --color-simulation-subtle: var(--an-simulation-subtle);
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Manrope", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --text-page: clamp(1.75rem, 1.4rem + 1vw, 2.25rem);
+  --text-page: clamp(1.5rem, 1.25rem + 0.7vw, 1.875rem);
   --text-page--line-height: 1.3;
-  --text-section: 1.25rem;
+  --text-section: 1.0625rem;
   --text-section--line-height: 1.4;
   --text-body: 0.875rem;
   --text-body--line-height: 1.6;

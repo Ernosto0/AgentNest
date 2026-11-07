@@ -6,7 +6,6 @@ import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { AlertIcon, CheckIcon, CriticalIcon, ImageIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
-import { useMeta } from "@/features/auth/hooks";
 import { useMediaPreview } from "@/features/content/hooks";
 import { useSocialAccounts } from "@/features/inbox/hooks";
 import { formatValue } from "@/features/reports/format";
@@ -19,8 +18,8 @@ const LINK =
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern" aria-labelledby={id}>
-      <h2 id={id} className="type-section font-heading font-bold tracking-tight text-primary flex items-center justify-between text-base sm:text-lg">
+    <Card className="flex flex-col gap-4 bg-surface p-5" aria-labelledby={id} data-testid={id}>
+      <h2 id={id} className="type-section text-primary">
         {title}
       </h2>
       {children}
@@ -36,74 +35,14 @@ export function Dashboard() {
   const metrics = new Map<string, ReportMetric>((report.data?.metrics ?? []).map((m) => [m.key, m]));
   return (
     <div className="flex flex-col gap-5">
-      <StatusStrip accounts={accounts.data} />
       <Banners accounts={accounts.data ?? []} canReconnect={role === "owner"} />
       <Attention metrics={metrics} pending={report.isPending} error={report.error} />
-      <Upcoming />
-      <Failures />
       <Numbers report={report.data} metrics={metrics} />
+      <div className="grid min-w-0 gap-5 min-[1400px]:grid-cols-2">
+        <Upcoming />
+        <Failures />
+      </div>
     </div>
-  );
-}
-
-const STATUS_ICON = {
-  connected: { Icon: CheckIcon, tone: "text-success" },
-  degraded: { Icon: AlertIcon, tone: "text-attention" },
-  needs_reauth: { Icon: CriticalIcon, tone: "text-danger" },
-} as const;
-
-// `accounts` is undefined until they are loaded: "no account" must not flash first.
-function StatusStrip({ accounts }: { accounts: SocialAccount[] | undefined }) {
-  const { t } = useTranslation();
-  const { workspace } = useCurrentWorkspace();
-  const meta = useMeta();
-  const simulated = workspace.is_demo || (accounts ?? []).some((a) => a.is_simulated);
-  return (
-    <ul aria-label={t("home.statusLabel")} className="flex flex-wrap items-center gap-2 text-metadata">
-      {accounts === undefined ? null : accounts.length === 0 ? (
-        <li
-          data-testid="home-connection"
-          className="inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-1 font-medium text-secondary border border-border/80 shadow-2xs"
-        >
-          <span className="h-2 w-2 rounded-full bg-secondary/40" />
-          <span>{t("home.connection")}: {t("home.noAccount")}</span>
-        </li>
-      ) : (
-        accounts.map((account) => {
-          const known = STATUS_ICON[account.status as keyof typeof STATUS_ICON];
-          return (
-            <li
-              key={account.id}
-              data-testid="home-connection"
-              data-status={account.status}
-              className="inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-1 font-medium text-primary border border-border/80 shadow-2xs"
-            >
-              <span className={`h-2 w-2 rounded-full ${account.status === "connected" ? "bg-success" : account.status === "degraded" ? "bg-attention" : "bg-danger"}`} />
-              {known ? <known.Icon className={`text-base ${known.tone}`} /> : null}
-              <span>
-                {t("home.connection")}
-                {account.username ? ` @${account.username}` : ""}:{" "}
-                {t(`automation.accountStatus.${account.status}`, { defaultValue: account.status })}
-              </span>
-            </li>
-          );
-        })
-      )}
-      {simulated ? (
-        <li>
-          <SimulatedBadge />
-        </li>
-      ) : null}
-      {meta.data ? (
-        <li
-          data-testid="home-ai-mode"
-          className="inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-1 font-medium text-primary border border-border/80 shadow-2xs"
-        >
-          <span className="h-2 w-2 rounded-full bg-action" />
-          {meta.data.llm_mode === "fake" ? t("aiMode.offline") : t("home.aiOnline")}
-        </li>
-      ) : null}
-    </ul>
   );
 }
 
@@ -188,7 +127,7 @@ function Attention({
                 to={card.to}
                 className={`group flex min-h-16 items-center justify-between gap-4 rounded-xl px-4 py-3.5 border transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                   card.count > 0
-                    ? "bg-amber-500/10 text-primary border-amber-500/40 shadow-xs hover:border-amber-600 hover:shadow-card-hover hover:translate-y-[-1px]"
+                    ? "bg-attention-subtle text-primary border-attention/40 hover:border-attention"
                     : "bg-surface text-primary border-border hover:bg-surface-subtle hover:border-border"
                 }`}
               >
@@ -388,7 +327,7 @@ function Numbers({
               <div
                 key={metric.key}
                 data-testid={`number-${metric.key}`}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-gradient-to-b from-surface to-surface-subtle/50 p-4 border border-border/80 shadow-2xs transition-all duration-150 hover:bg-surface hover:border-action/40 hover:shadow-card-hover hover:translate-y-[-1px]"
+                className="flex min-w-0 flex-col justify-between rounded-control bg-surface-subtle p-3"
               >
                 <dt className="text-metadata font-medium text-secondary leading-tight">{label}</dt>
                 <dd className="mt-2 text-3xl font-extrabold tracking-tight text-primary">

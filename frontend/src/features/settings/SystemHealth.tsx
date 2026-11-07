@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -10,9 +11,9 @@ import { useErrorText, useLocalTime, useSystemHealth } from "./hooks";
 
 function Row({ label, value, testId }: { label: string; value: ReactNode; testId?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1">
-      <dt className="text-sm text-secondary">{label}</dt>
-      <dd className="text-right text-sm font-semibold text-primary" data-testid={testId}>
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 py-2">
+      <dt className="min-w-0 break-words text-sm text-secondary">{label}</dt>
+      <dd className="min-w-0 break-words text-right text-sm font-semibold text-primary" data-testid={testId}>
         {value}
       </dd>
     </div>
@@ -59,10 +60,7 @@ export function SystemHealth() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("systemHealth.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("systemHealth.intro")}</p>
-      </div>
+      <PageHeader title={t("systemHealth.title")} description={t("systemHealth.intro")} />
 
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="secondary" disabled={health.isFetching} onClick={() => void health.refetch()}>
@@ -81,7 +79,7 @@ export function SystemHealth() {
       {health.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
 
       {health.data ? (
-        <div className="flex flex-col gap-6">
+        <div className="grid min-w-0 items-start gap-6 xl:grid-cols-2">
           <Section id="health-accounts" title={t("systemHealth.accounts.title")}>
             {health.data.accounts.length === 0 ? (
               <p className="text-sm text-secondary">{t("systemHealth.accounts.none")}</p>

@@ -81,9 +81,9 @@ export function BottomSheet({ title, onClose, children, footer, description, dis
         aria-labelledby={titleId}
         aria-describedby={description ? `${titleId}-description` : undefined}
         tabIndex={-1}
-        className="relative flex max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] w-full min-w-0 max-w-lg flex-col rounded-t-dialog bg-surface text-primary shadow-float outline-none md:max-h-[calc(100dvh-3rem)] md:rounded-dialog"
+        className="relative flex max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] w-full min-w-0 max-w-xl flex-col rounded-t-dialog bg-surface text-primary shadow-float outline-none md:max-h-[calc(100dvh-3rem)] md:rounded-dialog"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
           <h2 id={titleId} className="min-w-0 text-lg font-semibold break-words">
             {title}
           </h2>
@@ -96,12 +96,12 @@ export function BottomSheet({ title, onClose, children, footer, description, dis
             {t("common.close")}
           </Button>
         </div>
-        <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 ${footer ? "" : "pb-[max(1rem,env(safe-area-inset-bottom))]"}`}>
+        <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 ${footer ? "" : "pb-[max(1rem,env(safe-area-inset-bottom))]"}`}>
           {description ? <p id={`${titleId}-description`} className="mb-4 text-body text-secondary">{description}</p> : null}
           {children}
         </div>
         {footer ? (
-          <div className="shrink-0 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="shrink-0 border-t border-border px-5 py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {footer}
           </div>
         ) : null}

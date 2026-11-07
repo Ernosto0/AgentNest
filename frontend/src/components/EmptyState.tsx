@@ -12,7 +12,7 @@ interface EmptyStateProps {
 /** Empty states explain and teach (user-journeys.md §3 rule 6); they are never blank. */
 export function EmptyState({ title, description, icon, action, titleAs: Title = "p" }: EmptyStateProps) {
   return (
-    <div className="flex min-w-0 flex-col items-center justify-center gap-3.5 rounded-2xl border border-dashed border-border/80 bg-surface/70 px-6 py-12 text-center shadow-2xs">
+    <div className="flex min-w-0 flex-col items-center justify-center gap-3 rounded-panel border border-border bg-surface px-5 py-10 text-center">
       {icon ? (
         <div aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-subtle text-action border border-border/70 shadow-2xs">
           {icon}

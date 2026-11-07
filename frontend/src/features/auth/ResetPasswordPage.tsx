@@ -125,7 +125,7 @@ export function ResetPasswordPage() {
               {confirmReset.isPending ? t("auth.submitting") : t("auth.submitNewPassword")}
             </Button>
             <div className="text-center">
-              <Link to="/login" className="text-xs text-secondary hover:underline">
+              <Link to="/login" className="inline-flex min-h-11 items-center rounded-control text-body text-secondary hover:text-action hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                 {t("auth.backToLogin")}
               </Link>
             </div>
@@ -187,7 +187,7 @@ export function ResetPasswordPage() {
             {requestReset.isPending ? t("auth.submitting") : t("auth.sendResetLink")}
           </Button>
           <div className="text-center">
-            <Link to="/login" className="text-xs text-secondary hover:underline">
+            <Link to="/login" className="inline-flex min-h-11 items-center rounded-control text-body text-secondary hover:text-action hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
               {t("auth.backToLogin")}
             </Link>
           </div>

@@ -79,9 +79,9 @@ export function ConversationPage() {
   const human = conversation.handling_mode === "human";
 
   return (
-    <div className="flex flex-col gap-5 max-w-4xl">
+    <div className="flex min-w-0 flex-col gap-5">
       {/* Header with back navigation, customer info, handling mode & window timer */}
-      <div className="flex flex-col gap-3.5 rounded-2xl border border-border/80 bg-surface p-5 shadow-card-modern">
+      <div className="flex flex-col gap-3.5 border-b border-border pb-4">
         <div>
           <Link
             to={`/w/${workspace.id}/inbox`}
@@ -91,9 +91,9 @@ export function ConversationPage() {
             <span>{t("convo.back")}</span>
           </Link>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-2xl font-heading font-extrabold tracking-tight text-primary">{customerLabel(conversation, t)}</h1>
+            <h1 className="type-page text-primary">{customerLabel(conversation, t)}</h1>
             {conversation.is_simulated ? <SimulatedBadge /> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -132,7 +132,7 @@ export function ConversationPage() {
           </div>
         </div>
         {human ? (
-          <div className="rounded-xl bg-amber-500/10 px-4 py-2.5 text-body font-medium text-amber-800 border border-amber-500/30">
+          <div className="rounded-control bg-attention-subtle px-4 py-2.5 text-body font-medium text-attention">
             <p>{t("convo.humanMode")}</p>
           </div>
         ) : null}
@@ -142,12 +142,10 @@ export function ConversationPage() {
         {eraseConvo.error ? <ErrorMessage error={eraseConvo.error} /> : null}
       </div>
 
-      {conversation.social_account_id ? (
-        <ConversationAgentWork account={conversation.social_account_id} conversation={conversationId} />
-      ) : null}
-
+      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="flex min-w-0 flex-col gap-4">
       {/* Message Stream */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface-subtle/40 p-4 md:p-6 shadow-card-modern">
+      <div className="flex min-h-64 flex-col justify-end gap-4 rounded-panel border border-border bg-surface-subtle p-4 md:p-6">
         <ol className="flex flex-col gap-3.5" aria-label={t("convo.messages")} data-testid="messages">
           {messages.map((message) => {
             const mine = message.direction === "outbound";
@@ -192,19 +190,25 @@ export function ConversationPage() {
       </div>
       {saveAnswer.error ? <ErrorMessage error={saveAnswer.error} /> : null}
 
-      {/* Grounded draft suggestion area */}
-      {lastDraft ? (
-        <DraftCard workspaceId={workspace.id} draft={lastDraft} onUseSuggestion={setSeed} />
-      ) : null}
-
-      {/* Manual reply composer */}
-      <ReplyComposer
-        key={seed ?? "none"}
-        workspaceId={workspace.id}
-        conversationId={conversationId}
-        seed={seed}
-        fromDraftId={lastDraft?.status === "needs_human" ? lastDraft.id : undefined}
-      />
+      </div>
+      <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-24 xl:col-start-2 xl:row-start-1 xl:row-span-2">
+        {conversation.social_account_id ? (
+          <ConversationAgentWork account={conversation.social_account_id} conversation={conversationId} />
+        ) : null}
+        {lastDraft ? (
+          <DraftCard workspaceId={workspace.id} draft={lastDraft} onUseSuggestion={setSeed} />
+        ) : null}
+      </aside>
+      <div className="min-w-0 xl:col-start-1">
+        <ReplyComposer
+          key={seed ?? "none"}
+          workspaceId={workspace.id}
+          conversationId={conversationId}
+          seed={seed}
+          fromDraftId={lastDraft?.status === "needs_human" ? lastDraft.id : undefined}
+        />
+      </div>
+      </div>
     </div>
   );
 }

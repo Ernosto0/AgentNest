@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Approval } from "@/api/types";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { PageHeader } from "@/components/Layout";
 import { ChevronRightIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useApprovals } from "@/features/commands/hooks";
@@ -49,7 +50,7 @@ function Row({ approval, onOpen }: { approval: Approval; onOpen: () => void }) {
         type="button"
         onClick={onOpen}
         data-approval-id={approval.id}
-        className="group flex min-h-16 w-full items-center justify-between gap-4 rounded-2xl border border-border/80 bg-surface p-4 sm:p-5 text-left shadow-card-modern transition-all duration-150 hover:border-action/40 hover:shadow-card-hover hover:translate-y-[-1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className="group flex min-h-16 w-full items-center justify-between gap-4 bg-surface p-4 sm:p-5 text-left transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
       >
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
@@ -86,17 +87,13 @@ export function ApprovalsList() {
   const open = all.find((a) => a.id === openId) ?? null;
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
-        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-amber-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
-        <h1 className="type-page text-primary font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">{t("approvals.title")}</h1>
-        <p className="mt-1 text-sm text-secondary max-w-xl">{t("approvals.intro")}</p>
-      </div>
+    <div className="flex min-w-0 flex-col gap-6">
+      <PageHeader title={t("approvals.title")} description={t("approvals.intro")} />
 
       <div
         role="tablist"
         aria-label={t("approvals.tabs.label")}
-        className="flex gap-1.5 p-1 bg-surface-subtle/80 border border-border/80 rounded-xl shadow-2xs w-fit"
+        className="flex gap-1 border-b border-border"
       >
         {(["pending", "history"] as const).map((name) => (
           <button
@@ -105,10 +102,10 @@ export function ApprovalsList() {
             type="button"
             aria-selected={tab === name}
             onClick={() => setTab(name)}
-            className={`min-h-9 rounded-lg px-4 text-xs font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+            className={`min-h-11 border-b-2 px-4 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
               tab === name
-                ? "bg-surface text-primary shadow-xs font-bold ring-1 ring-border/50"
-                : "text-secondary hover:bg-surface/50 hover:text-primary"
+                ? "border-action text-action"
+                : "border-transparent text-secondary hover:bg-surface-subtle hover:text-primary"
             }`}
           >
             {t(`approvals.tabs.${name}`)}
@@ -125,7 +122,7 @@ export function ApprovalsList() {
         />
       ) : null}
       {shown.length > 0 ? (
-        <ul className="flex flex-col gap-3" aria-label={t("approvals.tabs.label")}>
+        <ul className="overflow-hidden rounded-panel border border-border bg-surface divide-y divide-border" aria-label={t("approvals.tabs.label")}>
           {shown.map((approval) => (
             <Row key={approval.id} approval={approval} onOpen={() => setOpenId(approval.id)} />
           ))}

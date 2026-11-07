@@ -54,9 +54,7 @@ export function DataDeletionInfoPage() {
       title={t("legal.dataDeletionTitle")}
       description={t("legal.dataDeletionSubtitle")}
       action={
-        <Link to="/login">
-          <Button variant="secondary">{t("legal.backToLogin")}</Button>
-        </Link>
+        <Link to="/login" className="inline-flex min-h-11 items-center rounded-control border border-border bg-surface px-4 text-body font-medium text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t("legal.backToLogin")}</Link>
       }
     >
       <div className="flex flex-col gap-6 rounded-panel border border-border bg-surface p-6 sm:p-8 shadow-xs">
@@ -91,13 +89,13 @@ export function DataDeletionInfoPage() {
           </form>
 
           {errorStatus ? (
-            <div className="rounded-control border border-attention bg-attention-subtle p-3 text-xs text-attention">
+            <div role="status" className="rounded-control border border-attention bg-attention-subtle p-3 text-xs text-attention">
               {errorStatus}
             </div>
           ) : null}
 
           {result ? (
-            <div className="flex flex-col gap-2 rounded-control border border-success bg-success-subtle p-4 text-xs text-success">
+            <div role="status" className="flex min-w-0 flex-col gap-2 break-words rounded-control border border-success bg-success-subtle p-4 text-xs text-success">
               <p className="font-semibold">
                 {result.status === "completed"
                   ? t("legal.dataDeletionStatusCompleted")
@@ -121,10 +119,10 @@ export function DataDeletionInfoPage() {
         </section>
 
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 text-xs text-secondary">
-          <Link to="/privacy" className="hover:underline">
+          <Link to="/privacy" className="inline-flex min-h-11 items-center rounded-control hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
             {t("legal.privacyTitle")}
           </Link>
-          <Link to="/login" className="hover:underline">
+          <Link to="/login" className="inline-flex min-h-11 items-center rounded-control hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
             {t("legal.backToLogin")}
           </Link>
         </div>

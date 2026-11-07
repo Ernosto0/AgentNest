@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
@@ -31,11 +32,8 @@ export function AgentPage() {
     accounts.data?.find((a) => a.status !== "disconnected");
 
   return (
-    <div className="flex min-w-0 flex-col gap-6 max-w-4xl">
-      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
-        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-emerald-500/10 via-teal-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
-        <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-primary">{t("agent.title")}</h1>
-      </div>
+    <div className="flex min-w-0 flex-col gap-6">
+      <PageHeader title={t("agent.title")} />
       {accounts.error ? <ErrorMessage error={accounts.error} /> : null}
       {accounts.data?.length ? (
         <label className="flex flex-col gap-1.5 text-sm font-semibold text-secondary">
@@ -100,14 +98,15 @@ function AccountAgent({
       {overview.error ? <ErrorMessage error={overview.error} /> : null}
       {data ? (
         <>
-          <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+          <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <Card className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <h2 className="text-lg font-heading font-bold text-primary">{t("agent.overview")}</h2>
                 <span className="inline-flex items-center rounded-full bg-surface-subtle px-2.5 py-0.5 text-xs font-semibold text-primary border border-border">
                   {t(`agent.controller.${data.controller_mode}`)}
                 </span>
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold border border-border ${data.state === "active" ? "bg-emerald-500/10 text-emerald-800" : "bg-amber-500/10 text-amber-800"}`}>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold border border-border ${data.state === "active" ? "bg-success-subtle text-success" : "bg-attention-subtle text-attention"}`}>
                   {t(`agent.states.${data.state}`)}
                 </span>
               </div>
@@ -215,7 +214,7 @@ function AccountAgent({
               <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.capabilities")}</h2>
             </div>
             <p className="text-sm text-secondary">{t("agent.capabilityHint")}</p>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm pt-1">
+            <ul className="grid grid-cols-1 gap-2.5 text-sm pt-1">
               {Object.entries(capabilities).map(([name, allowed]) => (
                 <li key={name} className="flex items-center justify-between rounded-control border border-border bg-surface-subtle px-3 py-2.5 shadow-xs">
                   <span className="text-primary font-medium">
@@ -234,6 +233,8 @@ function AccountAgent({
               ))}
             </ul>
           </Card>
+
+          </div>
 
           {personality.data ? (
             <PersonalityForm
@@ -258,7 +259,8 @@ function AccountAgent({
           ) : null}
           {delegation.error ? <ErrorMessage error={delegation.error} /> : null}
 
-          <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+          <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <Card className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
             <div className="border-b border-border pb-3">
               <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.tasks")}</h2>
             </div>
@@ -355,6 +357,7 @@ function AccountAgent({
               <p className="text-sm text-secondary">{t("agent.noActions")}</p>
             ) : null}
           </Card>
+          </div>
           {data.controller_mode === "legacy" ? (
             <Link className="text-sm font-medium text-action hover:text-action-hover underline" to={`/w/${ws}/more/automation`}>
               {t("agent.legacySettings")}

@@ -1,9 +1,9 @@
 import type { HTMLAttributes, ReactNode, TableHTMLAttributes } from "react";
 
 export function PageHeader({ title, description, context, action }: { title: string; description?: string; context?: ReactNode; action?: ReactNode }) {
-  return <header className="flex min-w-0 flex-wrap items-start justify-between gap-4">
-    <div className="min-w-0 flex-1 basis-64">{context}<h1 className="type-page break-words text-primary">{title}</h1>{description ? <p className="mt-2 max-w-prose text-form text-secondary">{description}</p> : null}</div>
-    {action ? <div className="flex shrink-0 flex-wrap gap-2">{action}</div> : null}
+  return <header className="flex min-w-0 flex-wrap items-start justify-between gap-x-6 gap-y-4 border-b border-border pb-6">
+    <div className="min-w-0 flex-1 basis-64">{context}<h1 className="type-page break-words text-primary">{title}</h1>{description ? <p className="mt-2 max-w-prose text-body text-secondary">{description}</p> : null}</div>
+    {action ? <div className="flex max-w-full flex-wrap items-center gap-2">{action}</div> : null}
   </header>;
 }
 

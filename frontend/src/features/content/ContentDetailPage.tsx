@@ -143,7 +143,7 @@ export function ContentDetailPage() {
   const badge = contentBadge(item, t, i18n.language, workspace.timezone);
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="flex min-w-0 flex-col gap-6">
       <div className="border-b border-border pb-5">
         {back}
         <h1 className="mt-3 text-2xl sm:text-3xl font-heading font-bold text-primary break-words">
@@ -157,6 +157,11 @@ export function ContentDetailPage() {
       </div>
 
       <GenerationNotice item={item} />
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <Card id={EDITOR_ID} className="min-w-0 p-4 sm:p-6">
+        <ContentEditor item={item} onDirtyChange={onDirtyChange} />
+      </Card>
+      <aside className="order-first flex min-w-0 flex-col gap-4 xl:order-last xl:sticky xl:top-24">
       <ContentStatusPanel item={item} />
       <FailureDetail item={item} onEdit={focusEditor} />
       {item.status === "on_hold" ? <OnHoldActions item={item} onEdit={focusEditor} /> : null}
@@ -166,9 +171,8 @@ export function ContentDetailPage() {
           <CancelAction item={item} />
         </div>
       ) : null}
-      <Card id={EDITOR_ID} className="rounded-panel border border-border bg-surface p-6 shadow-xs">
-        <ContentEditor item={item} onDirtyChange={onDirtyChange} />
-      </Card>
+      </aside>
+      </div>
     </div>
   );
 }

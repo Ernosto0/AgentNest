@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-11-06T23:00:40.395Z",
+  "results": [
+    {
+      "engine": "chromium",
+      "scenario": "tr-phone",
+      "axeList": 0,
+      "axeThread": 0,
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "scenario": "en-phone",
+      "axeList": 0,
+      "axeThread": 0,
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "scenario": "tr-tablet",
+      "axeList": 0,
+      "axeThread": 0,
+      "overflow": false
+    },
+    {
+      "engine": "chromium",
+      "scenario": "en-desktop",
+      "axeList": 0,
+      "axeThread": 0,
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "scenario": "tr-phone",
+      "axeList": 0,
+      "axeThread": 0,
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "scenario": "en-phone",
+      "axeList": 0,
+      "axeThread": 0,
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "scenario": "tr-tablet",
+      "axeList": 0,
+      "axeThread": 0,
+      "overflow": false
+    },
+    {
+      "engine": "webkit",
+      "scenario": "en-desktop",
+      "axeList": 0,
+      "axeThread": 0,
+      "overflow": false
+    }
+  ]
+}

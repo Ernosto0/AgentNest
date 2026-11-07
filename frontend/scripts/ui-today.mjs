@@ -271,9 +271,9 @@ try {
         await page.evaluate(() => document.fonts.ready);
 
         // Verification assertions:
-        const connectionBadge = page.getByTestId("home-connection");
-        await connectionBadge.waitFor({ timeout: 5000 });
-        assert.ok(await connectionBadge.isVisible());
+        const attentionSection = page.getByTestId("home-attention");
+        await attentionSection.waitFor({ timeout: 5000 });
+        assert.ok(await attentionSection.isVisible());
 
         // Overview / attention checks:
         if (isOwner) {

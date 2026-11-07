@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import QRCode from "qrcode";
@@ -52,19 +53,16 @@ export function Members() {
   const [removing, setRemoving] = useState<Member | null>(null);
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
-        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-blue-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
-        <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-primary">{t("members.title")}</h1>
-        <p className="mt-1 text-sm text-secondary max-w-xl">{t("members.intro")}</p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title={t("members.title")} description={t("members.intro")} action={owner ? <Button onClick={() => setInviting(true)}>{t("members.invite")}</Button> : undefined} />
 
       {members.isError ? <ErrorMessage error={members.error} /> : null}
       {changeRole.isError ? <ErrorMessage error={changeRole.error} /> : null}
       {members.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
 
+      <div className={`grid min-w-0 items-start gap-6 ${owner ? "xl:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}>
       {members.data ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+        <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 sm:p-6">
           <ul className="flex flex-col divide-y divide-border/60">
             {members.data.map((member) => (
               <li key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -79,7 +77,7 @@ export function Members() {
                   </p>
                   <p className="text-xs text-secondary break-all">{member.email}</p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   {owner ? (
                     <select
                       aria-label={t("members.changeRole")}
@@ -120,9 +118,6 @@ export function Members() {
       {owner ? (
         <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
           <div>
-            <Button onClick={() => setInviting(true)}>{t("members.invite")}</Button>
-          </div>
-          <div className="border-t border-border pt-3">
             <h2 className="text-base font-heading font-semibold text-primary">{t("members.pending")}</h2>
             {invites.isPending ? <p className="mt-2 text-sm text-secondary">{t("common.loading")}</p> : null}
             {invites.data && invites.data.length === 0 ? (
@@ -136,6 +131,8 @@ export function Members() {
           </div>
         </div>
       ) : null}
+
+      </div>
 
       {inviting ? <InviteSheet onClose={() => setInviting(false)} /> : null}
       {removing ? <RemoveSheet member={removing} onClose={() => setRemoving(null)} /> : null}

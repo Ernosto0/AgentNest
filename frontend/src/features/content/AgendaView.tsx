@@ -71,7 +71,7 @@ export function AgendaView() {
   return (
     <div className="flex flex-col gap-6" data-testid="agenda-view">
       {/* Timezone Notice Banner */}
-      <div className="flex items-center justify-between text-xs text-secondary bg-surface-subtle rounded-control p-3.5 border border-border shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-body text-secondary bg-surface-subtle rounded-control p-3 border border-border">
         <span className="flex items-center gap-1.5">
           <ClockIcon className="text-sm text-secondary" />
           <span>{t("content.agendaNotice")}</span>
@@ -97,7 +97,7 @@ export function AgendaView() {
                 {group.items.length}
               </span>
             </div>
-            <ul className="flex flex-col gap-3 pl-1 sm:pl-3 border-l-2 border-border/60">
+            <ul className="overflow-hidden rounded-panel border border-border bg-surface divide-y divide-border">
               {group.items.map((item) => (
                 <li key={item.id}>
                   <ContentCard item={item} />

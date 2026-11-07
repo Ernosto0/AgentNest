@@ -59,11 +59,11 @@ export function DelegationForm({
       </div>
       <p className="text-sm text-secondary">{t("agent.delegationHint")}</p>
 
-      <div className="flex flex-col gap-3.5">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         {ACTIONS.map((action) => (
           <fieldset
             key={action}
-            className="min-w-0 rounded-panel border border-border bg-surface-subtle p-4 shadow-xs flex flex-col gap-3 hover:border-control/80 transition-colors"
+            className="min-w-0 rounded-control border border-border p-4 flex flex-col gap-3"
             disabled={!owner || locked}
           >
             <legend className="px-2 font-heading text-sm font-semibold text-primary">

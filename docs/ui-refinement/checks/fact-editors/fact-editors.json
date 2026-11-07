@@ -1,0 +1,50 @@
+[
+  {
+    "engine": "chromium",
+    "scenario": "tr-phone-360",
+    "passed": true,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-phone-390",
+    "passed": true,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "scenario": "tr-tablet-768",
+    "passed": true,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-desktop-1440",
+    "passed": true,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-phone-360",
+    "passed": true,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-phone-390",
+    "passed": true,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-tablet-768",
+    "passed": true,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-desktop-1440",
+    "passed": true,
+    "violations": 0
+  }
+]

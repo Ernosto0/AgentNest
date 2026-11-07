@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { PublicShell } from "@/app/layout/PublicShell";
-import { Button } from "@/components/Button";
 
 export function PrivacyPolicyPage() {
   const { t } = useTranslation();
@@ -11,9 +10,7 @@ export function PrivacyPolicyPage() {
       title={t("legal.privacyTitle")}
       description={t("legal.privacySubtitle")}
       action={
-        <Link to="/login">
-          <Button variant="secondary">{t("legal.backToLogin")}</Button>
-        </Link>
+        <Link to="/login" className="inline-flex min-h-11 items-center rounded-control border border-border bg-surface px-4 text-body font-medium text-primary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t("legal.backToLogin")}</Link>
       }
     >
       <div className="flex flex-col gap-6 rounded-panel border border-border bg-surface p-6 sm:p-8 shadow-xs">
@@ -50,10 +47,10 @@ export function PrivacyPolicyPage() {
         </section>
 
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 text-xs text-secondary">
-          <Link to="/data-deletion" className="hover:underline">
+          <Link to="/data-deletion" className="inline-flex min-h-11 items-center rounded-control hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
             {t("legal.dataDeletionTitle")}
           </Link>
-          <Link to="/login" className="hover:underline">
+          <Link to="/login" className="inline-flex min-h-11 items-center rounded-control hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
             {t("legal.backToLogin")}
           </Link>
         </div>

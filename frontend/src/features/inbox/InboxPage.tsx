@@ -7,23 +7,23 @@ export function InboxPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
       {/* Left pane: Conversation list with filters */}
-      <div className="w-full lg:w-[380px] xl:w-[420px] lg:shrink-0">
+      <div className="min-w-0">
         <ConversationList />
       </div>
 
       {/* Right pane: Desktop placeholder when no conversation is selected */}
-      <div className="hidden lg:flex flex-1 min-w-0 flex-col">
-        <Card className="flex flex-col items-center justify-center p-12 text-center h-[520px] bg-surface-subtle/30 border-2 border-dashed border-border/80 rounded-2xl shadow-none">
+      <div className="hidden min-w-0 flex-col pt-28 lg:flex">
+        <Card className="flex flex-col items-start justify-center gap-2 p-5 bg-surface-subtle border-0 shadow-none">
           <div
-            className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface text-action border border-border/80 shadow-xs mb-4"
+            className="mb-2 flex h-11 w-11 items-center justify-center rounded-control bg-surface text-action border border-border"
             aria-hidden="true"
           >
-            <InboxIcon className="text-3xl" />
+            <InboxIcon className="text-xl" />
           </div>
           <h2 className="text-section font-bold tracking-tight text-primary">{t("convo.selectConversation")}</h2>
-          <p className="mt-2 max-w-sm text-body text-secondary">
+          <p className="text-body text-secondary">
             {t("convo.selectHint")}
           </p>
         </Card>

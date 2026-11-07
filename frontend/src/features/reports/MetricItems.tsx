@@ -4,6 +4,7 @@ import type { MetricItem } from "@/api/types";
 import { NotFoundPage } from "@/app/NotFoundPage";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { PageHeader } from "@/components/Layout";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ChevronRightIcon, ClockIcon } from "@/components/icons";
@@ -16,7 +17,7 @@ import { useDailyReport, useMetricItems } from "./hooks";
 /** The records behind one number of the report. Their count is the number (AC-E3). */
 export function MetricItems() {
   const params = useParams();
-  if (!isLocalDay(params.date) || !params.key) return <NotFoundPage />;
+  if (!isLocalDay(params.date) || !params.key) return <NotFoundPage embedded />;
   return <MetricItemsScreen date={params.date} metricKey={params.key} />;
 }
 
@@ -43,7 +44,7 @@ function MetricItemsScreen({ date, metricKey }: { date: string; metricKey: strin
     });
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="flex flex-col gap-6 w-full">
       <div>
         <Link
           to={`/w/${workspace.id}/more/reports?date=${date}${pinned ? `&snapshot_id=${pinned}` : ""}`}
@@ -53,21 +54,20 @@ function MetricItemsScreen({ date, metricKey }: { date: string; metricKey: strin
         </Link>
       </div>
 
-      <div className="rounded-panel border border-border bg-surface p-5 shadow-xs">
-        <h1 className="type-page text-primary">{label}</h1>
-        <p className="mt-1 text-sm font-medium text-secondary">{dayLabel(date, i18n.language)}</p>
+      <PageHeader title={label} description={dayLabel(date, i18n.language)} />
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
         {value !== null ? (
-          <p className="mt-3 type-metric text-primary" data-testid="metric-count">
+          <p className="text-section font-semibold tabular-nums text-primary" data-testid="metric-count">
             {isMedian
               ? t("reports.medianOf", { value: formatValue(value, i18n.language) })
               : t("reports.total", { total: formatValue(value, i18n.language) })}
           </p>
         ) : null}
         {screen ? (
-          <div className="mt-3">
+          <div className="shrink-0">
             <Link
               to={screen}
-              className="inline-flex items-center rounded-control border border-border bg-surface-subtle px-3 py-1.5 text-xs font-semibold text-action hover:bg-surface hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus shadow-2xs transition-colors"
+              className="inline-flex min-h-11 items-center rounded-control border border-border bg-surface-subtle px-3 py-1.5 text-xs font-semibold text-action hover:bg-surface hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus shadow-2xs transition-colors"
             >
               {t("reports.openScreen")}
             </Link>

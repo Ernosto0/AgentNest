@@ -1,0 +1,322 @@
+[
+  {
+    "engine": "chromium",
+    "route": "/privacy",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/data-deletion",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/reset-password",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/reset-password/fixture-token",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/unknown-page",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/privacy",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/data-deletion",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/reset-password",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/reset-password/fixture-token",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/unknown-page",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/privacy",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/data-deletion",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/reset-password",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/reset-password/fixture-token",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/unknown-page",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/privacy",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/data-deletion",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/reset-password",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/reset-password/fixture-token",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "chromium",
+    "route": "/unknown-page",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/privacy",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/data-deletion",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/reset-password",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/reset-password/fixture-token",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/unknown-page",
+    "width": 390,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/privacy",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/data-deletion",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/reset-password",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/reset-password/fixture-token",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/unknown-page",
+    "width": 768,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/privacy",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/data-deletion",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/reset-password",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/reset-password/fixture-token",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/unknown-page",
+    "width": 1024,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/privacy",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/data-deletion",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/reset-password",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/reset-password/fixture-token",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  },
+  {
+    "engine": "webkit",
+    "route": "/unknown-page",
+    "width": 1440,
+    "errors": [],
+    "overflow": 0,
+    "violations": 0
+  }
+]

@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -66,14 +67,9 @@ function LegacyAutomationSettings() {
   const account = accounts.data?.find((a) => a.status !== "disconnected") ?? null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-6 max-w-4xl">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("automation.title")}</h1>
-        <Link className="text-sm font-medium text-action hover:text-action-hover underline" to={`/w/${workspace.id}/more/agent`}>
-          {t("agent.title")}
-        </Link>
-      </div>
-
+    <div className="flex min-w-0 flex-col gap-6">
+      <PageHeader title={t("automation.title")} action={<Link className="inline-flex min-h-11 items-center text-body font-medium text-action hover:underline" to={`/w/${workspace.id}/more/agent`}>{t("agent.title")}</Link>} />
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
       <Card className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
         <div className="border-b border-border pb-3">
           <h2 className="text-lg font-heading font-semibold text-primary">{t("automation.connection")}</h2>
@@ -224,6 +220,7 @@ function LegacyAutomationSettings() {
           </div>
         ) : null}
       </Card>
+      </div>
     </div>
   );
 }

@@ -48,8 +48,8 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   await simulateMessage(request, env.csrf, env.workspaceId, "price");
 
   await signInToWorkspace(page, OWNER, GYM);
-  // Healthy so far (wait for the account to be shown first: a count of 0 alone is true before load).
-  await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "connected", {
+  // Healthy so far: verify home dashboard has loaded and no reauth banner is present.
+  await expect(page.getByTestId("home-attention")).toBeVisible({
     timeout: 15_000,
   });
   await expect(page.getByTestId("banner-needs-reauth")).toHaveCount(0);
@@ -77,7 +77,6 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   const banner = page.getByTestId("banner-needs-reauth");
   await expect(banner).toBeVisible();
   await expect(banner).toContainText("Instagram bağlantınız yenilenmeli.");
-  await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "needs_reauth");
   await expectNoHorizontalScroll(page, "home with the reauth banner");
 
   // ...and the critical notification.
@@ -118,7 +117,7 @@ test("G1: a revoked token turns Home red and the post waits; reconnecting sends 
   await expectNoHorizontalScroll(page, "connections");
 
   await navLink(page, "Bug\u00fcn").click();
-  await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "connected");
+  await expect(page.getByTestId("home-attention")).toBeVisible();
   await expect(page.getByTestId("banner-needs-reauth")).toHaveCount(0);
 
   await runDueJobs(request, env.csrf); // the reconnect queued the waiting reply; this just hurries it
@@ -188,7 +187,6 @@ test("G3: five failed sends make the account unstable (amber banner); a health c
   const banner = page.getByTestId("banner-degraded");
   await expect(banner).toBeVisible({ timeout: 15_000 });
   await expect(banner).toContainText("Instagram'a şu an ulaşılamıyor");
-  await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "degraded");
   await expect(page.getByTestId("banner-needs-reauth")).toHaveCount(0); // not the red kind
   await expectNoHorizontalScroll(page, "home with the degraded banner");
 
@@ -219,7 +217,7 @@ test("G3: five failed sends make the account unstable (amber banner); a health c
   // after the health check sometimes did not render in WebKit for several seconds.
   await page.goto(`/w/${env.workspaceId}`);
   await expect(page.getByRole("heading", { name: "Ana sayfa", level: 1 })).toBeVisible();
-  await expect(page.getByTestId("home-connection")).toHaveAttribute("data-status", "connected", {
+  await expect(page.getByTestId("home-attention")).toBeVisible({
     timeout: 15_000,
   });
   await expect(page.getByTestId("banner-degraded")).toHaveCount(0);

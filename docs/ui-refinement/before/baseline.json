@@ -1,0 +1,685 @@
+{
+  "fixtureOnly": true,
+  "origin": "http://127.0.0.1:5185",
+  "node": "v24.13.0",
+  "platform": "win32",
+  "assets": [
+    {
+      "name": "index-BJ6xbLba.css",
+      "bytes": 70199,
+      "gzipBytes": 12031
+    },
+    {
+      "name": "index-DwMGwGoo.js",
+      "bytes": 978218,
+      "gzipBytes": 269685
+    },
+    {
+      "name": "inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+      "bytes": 85068,
+      "gzipBytes": 85116
+    },
+    {
+      "name": "inter-latin-wght-normal-Dx4kXJAl.woff2",
+      "bytes": 48256,
+      "gzipBytes": 48254
+    },
+    {
+      "name": "manrope-latin-ext-wght-normal-Ch3YOpNY.woff2",
+      "bytes": 15120,
+      "gzipBytes": 15143
+    },
+    {
+      "name": "manrope-latin-wght-normal-DHIcAJRg.woff2",
+      "bytes": 24836,
+      "gzipBytes": 24864
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "login-tr-phone",
+      "path": "/login",
+      "locale": "tr",
+      "width": 390,
+      "signedIn": false,
+      "browser": "156.0.8078.4",
+      "settledMs": 1096,
+      "title": "Giriş yap",
+      "scrollWidth": 390,
+      "viewportWidth": 390,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-DwMGwGoo.js",
+          "encodedBytes": 269685,
+          "decodedBytes": 978218,
+          "durationMs": 87
+        },
+        {
+          "name": "/assets/index-BJ6xbLba.css",
+          "encodedBytes": 12031,
+          "decodedBytes": 70199,
+          "durationMs": 26
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 49,
+          "decodedBytes": 49,
+          "durationMs": 15
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 15
+        },
+        {
+          "name": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+          "encodedBytes": 48256,
+          "decodedBytes": 48256,
+          "durationMs": 106
+        },
+        {
+          "name": "/assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+          "encodedBytes": 24836,
+          "decodedBytes": 24836,
+          "durationMs": 94
+        },
+        {
+          "name": "/assets/manrope-latin-ext-wght-normal-Ch3YOpNY.woff2",
+          "encodedBytes": 15120,
+          "decodedBytes": 15120,
+          "durationMs": 45
+        },
+        {
+          "name": "/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+          "encodedBytes": 85068,
+          "decodedBytes": 85068,
+          "durationMs": 45
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 401,
+          "bytes": 49
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": null
+    },
+    {
+      "id": "login-en-desktop",
+      "path": "/login",
+      "locale": "en",
+      "width": 1440,
+      "signedIn": false,
+      "browser": "156.0.8078.4",
+      "settledMs": 946,
+      "title": "Sign in",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-DwMGwGoo.js",
+          "encodedBytes": 269685,
+          "decodedBytes": 978218,
+          "durationMs": 83
+        },
+        {
+          "name": "/assets/index-BJ6xbLba.css",
+          "encodedBytes": 12031,
+          "decodedBytes": 70199,
+          "durationMs": 23
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 49,
+          "decodedBytes": 49,
+          "durationMs": 6
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 6
+        },
+        {
+          "name": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+          "encodedBytes": 48256,
+          "decodedBytes": 48256,
+          "durationMs": 84
+        },
+        {
+          "name": "/assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+          "encodedBytes": 24836,
+          "decodedBytes": 24836,
+          "durationMs": 79
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 401,
+          "bytes": 49
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": null
+    },
+    {
+      "id": "today-tr-desktop",
+      "path": "/w/11111111-1111-4111-8111-111111111111",
+      "locale": "tr",
+      "width": 1440,
+      "signedIn": true,
+      "browser": "156.0.8078.4",
+      "settledMs": 1094,
+      "title": "Merhaba, Örnek Kullanıcı",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-DwMGwGoo.js",
+          "encodedBytes": 269685,
+          "decodedBytes": 978218,
+          "durationMs": 74
+        },
+        {
+          "name": "/assets/index-BJ6xbLba.css",
+          "encodedBytes": 12031,
+          "decodedBytes": 70199,
+          "durationMs": 19
+        },
+        {
+          "name": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+          "encodedBytes": 48256,
+          "decodedBytes": 48256,
+          "durationMs": 26
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 327,
+          "decodedBytes": 327,
+          "durationMs": 5
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "encodedBytes": 477,
+          "decodedBytes": 477,
+          "durationMs": 4
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications",
+          "encodedBytes": 48,
+          "decodedBytes": 48,
+          "durationMs": 10
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 10
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 11
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 12
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/social-accounts",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 12
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/reports/daily",
+          "encodedBytes": 300,
+          "decodedBytes": 300,
+          "durationMs": 12
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/readiness",
+          "encodedBytes": 211,
+          "decodedBytes": 211,
+          "durationMs": 12
+        },
+        {
+          "name": "/assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+          "encodedBytes": 24836,
+          "decodedBytes": 24836,
+          "durationMs": 151
+        },
+        {
+          "name": "/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+          "encodedBytes": 85068,
+          "decodedBytes": 85068,
+          "durationMs": 144
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 200,
+          "bytes": 327
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "status": 200,
+          "bytes": 477
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications?limit=30",
+          "status": 200,
+          "bytes": 48
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items?tab=scheduled&limit=3",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items?status=failed&limit=3",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/social-accounts",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/reports/daily",
+          "status": 200,
+          "bytes": 300
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/readiness",
+          "status": 200,
+          "bytes": 211
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": {
+        "path": "/w/11111111-1111-4111-8111-111111111111/more",
+        "settledMs": 145,
+        "addedApiRequests": 0
+      }
+    },
+    {
+      "id": "today-en-phone",
+      "path": "/w/11111111-1111-4111-8111-111111111111",
+      "locale": "en",
+      "width": 390,
+      "signedIn": true,
+      "browser": "156.0.8078.4",
+      "settledMs": 1051,
+      "title": "Hello, Örnek Kullanıcı",
+      "scrollWidth": 390,
+      "viewportWidth": 390,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-DwMGwGoo.js",
+          "encodedBytes": 269685,
+          "decodedBytes": 978218,
+          "durationMs": 103
+        },
+        {
+          "name": "/assets/index-BJ6xbLba.css",
+          "encodedBytes": 12031,
+          "decodedBytes": 70199,
+          "durationMs": 30
+        },
+        {
+          "name": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+          "encodedBytes": 48256,
+          "decodedBytes": 48256,
+          "durationMs": 26
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 327,
+          "decodedBytes": 327,
+          "durationMs": 5
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "encodedBytes": 477,
+          "decodedBytes": 477,
+          "durationMs": 4
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications",
+          "encodedBytes": 48,
+          "decodedBytes": 48,
+          "durationMs": 13
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 14
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 14
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 14
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/social-accounts",
+          "encodedBytes": 31,
+          "decodedBytes": 31,
+          "durationMs": 15
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/reports/daily",
+          "encodedBytes": 300,
+          "decodedBytes": 300,
+          "durationMs": 15
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/readiness",
+          "encodedBytes": 211,
+          "decodedBytes": 211,
+          "durationMs": 15
+        },
+        {
+          "name": "/assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+          "encodedBytes": 24836,
+          "decodedBytes": 24836,
+          "durationMs": 83
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 200,
+          "bytes": 327
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "status": 200,
+          "bytes": 477
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications?limit=30",
+          "status": 200,
+          "bytes": 48
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items?tab=scheduled&limit=3",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/content-items?status=failed&limit=3",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/social-accounts",
+          "status": 200,
+          "bytes": 31
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/reports/daily",
+          "status": 200,
+          "bytes": 300
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/readiness",
+          "status": 200,
+          "bytes": 211
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": {
+        "path": "/w/11111111-1111-4111-8111-111111111111/more",
+        "settledMs": 115,
+        "addedApiRequests": 0
+      }
+    },
+    {
+      "id": "more-staff-tr-phone",
+      "path": "/w/11111111-1111-4111-8111-111111111111/more",
+      "locale": "tr",
+      "width": 360,
+      "signedIn": true,
+      "role": "staff",
+      "browser": "156.0.8078.4",
+      "settledMs": 974,
+      "title": "Daha fazla",
+      "scrollWidth": 360,
+      "viewportWidth": 360,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-DwMGwGoo.js",
+          "encodedBytes": 269685,
+          "decodedBytes": 978218,
+          "durationMs": 76
+        },
+        {
+          "name": "/assets/index-BJ6xbLba.css",
+          "encodedBytes": 12031,
+          "decodedBytes": 70199,
+          "durationMs": 20
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 327,
+          "decodedBytes": 327,
+          "durationMs": 4
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "encodedBytes": 477,
+          "decodedBytes": 477,
+          "durationMs": 6
+        },
+        {
+          "name": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+          "encodedBytes": 48256,
+          "decodedBytes": 48256,
+          "durationMs": 31
+        },
+        {
+          "name": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications",
+          "encodedBytes": 48,
+          "decodedBytes": 48,
+          "durationMs": 6
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 6
+        },
+        {
+          "name": "/assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+          "encodedBytes": 24836,
+          "decodedBytes": 24836,
+          "durationMs": 64
+        },
+        {
+          "name": "/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+          "encodedBytes": 85068,
+          "decodedBytes": 85068,
+          "durationMs": 51
+        },
+        {
+          "name": "/assets/manrope-latin-ext-wght-normal-Ch3YOpNY.woff2",
+          "encodedBytes": 15120,
+          "decodedBytes": 15120,
+          "durationMs": 33
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 200,
+          "bytes": 327
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111",
+          "status": 200,
+          "bytes": 477
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/workspaces/11111111-1111-4111-8111-111111111111/notifications?limit=30",
+          "status": 200,
+          "bytes": 48
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": null
+    },
+    {
+      "id": "picker-en-desktop",
+      "path": "/",
+      "locale": "en",
+      "width": 1440,
+      "signedIn": true,
+      "browser": "156.0.8078.4",
+      "settledMs": 896,
+      "title": "Choose a workspace",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "resources": [
+        {
+          "name": "/assets/index-DwMGwGoo.js",
+          "encodedBytes": 269685,
+          "decodedBytes": 978218,
+          "durationMs": 75
+        },
+        {
+          "name": "/assets/index-BJ6xbLba.css",
+          "encodedBytes": 12031,
+          "decodedBytes": 70199,
+          "durationMs": 19
+        },
+        {
+          "name": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+          "encodedBytes": 48256,
+          "decodedBytes": 48256,
+          "durationMs": 31
+        },
+        {
+          "name": "/api/v1/auth/me",
+          "encodedBytes": 327,
+          "decodedBytes": 327,
+          "durationMs": 6
+        },
+        {
+          "name": "/api/v1/meta",
+          "encodedBytes": 108,
+          "decodedBytes": 108,
+          "durationMs": 4
+        },
+        {
+          "name": "/assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+          "encodedBytes": 24836,
+          "decodedBytes": 24836,
+          "durationMs": 57
+        }
+      ],
+      "cls": null,
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "status": 200,
+          "bytes": 327
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/meta",
+          "status": 200,
+          "bytes": 108
+        }
+      ],
+      "blockedExternalOrigins": [],
+      "errors": [],
+      "subsequent": null
+    }
+  ]
+}

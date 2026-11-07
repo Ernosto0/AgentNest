@@ -32,7 +32,7 @@ export function ReadinessChecklist({
                 <AlertIcon className="text-base" />
               </span>
             )}
-            <span className="min-w-0 flex-1">
+            <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
               <span className="block font-medium text-primary text-sm">{label}</span>
               {requirement.satisfied ? null : (
                 <span className="block text-xs text-secondary mt-0.5">

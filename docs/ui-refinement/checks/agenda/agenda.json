@@ -1,0 +1,82 @@
+[
+  {
+    "engine": "chromium",
+    "scenario": "tr-phone",
+    "width": 1024,
+    "locale": "tr",
+    "axe_violations": 0,
+    "errors": 0,
+    "blocked_requests": 0,
+    "overflow": false
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-phone",
+    "width": 390,
+    "locale": "en",
+    "axe_violations": 0,
+    "errors": 0,
+    "blocked_requests": 0,
+    "overflow": false
+  },
+  {
+    "engine": "chromium",
+    "scenario": "tr-tablet",
+    "width": 768,
+    "locale": "tr",
+    "axe_violations": 0,
+    "errors": 0,
+    "blocked_requests": 0,
+    "overflow": false
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-desktop",
+    "width": 1440,
+    "locale": "en",
+    "axe_violations": 0,
+    "errors": 0,
+    "blocked_requests": 0,
+    "overflow": false
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-phone",
+    "width": 1024,
+    "locale": "tr",
+    "axe_violations": 0,
+    "errors": 0,
+    "blocked_requests": 0,
+    "overflow": false
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-phone",
+    "width": 390,
+    "locale": "en",
+    "axe_violations": 0,
+    "errors": 0,
+    "blocked_requests": 0,
+    "overflow": false
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-tablet",
+    "width": 768,
+    "locale": "tr",
+    "axe_violations": 0,
+    "errors": 0,
+    "blocked_requests": 0,
+    "overflow": false
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-desktop",
+    "width": 1440,
+    "locale": "en",
+    "axe_violations": 0,
+    "errors": 0,
+    "blocked_requests": 0,
+    "overflow": false
+  }
+]

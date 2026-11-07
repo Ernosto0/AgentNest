@@ -7,6 +7,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/Button";
 
 import { Card } from "@/components/Card";
+import { PageHeader } from "@/components/Layout";
 
 import { ErrorMessage } from "@/components/ErrorMessage";
 
@@ -58,7 +59,7 @@ import {
 
 
 
-const INPUT = "mt-1 block w-full min-w-0 rounded-control border border-border bg-surface px-3 py-2 text-primary placeholder:text-secondary focus-visible:outline-2 focus-visible:outline-focus focus:border-control";
+const INPUT = "mt-1 block min-h-11 w-full min-w-0 rounded-control border border-border bg-surface px-3 py-2 text-primary placeholder:text-secondary focus-visible:outline-2 focus-visible:outline-focus focus:border-control";
 
 const LINK = "text-action font-medium hover:text-action-hover underline";
 
@@ -93,7 +94,7 @@ export function WorkState({ state }: { state: string }) {
   return (
     <span
       data-status={state}
-      className={`inline-flex items-center rounded-control px-2.5 py-0.5 text-xs font-semibold border ${
+      className={`inline-flex self-start items-center rounded-control px-2.5 py-0.5 text-xs font-semibold border ${
         state === "answered" || state === "active" || state === "succeeded" || state === "visible"
           ? "bg-success-subtle text-success border-border"
           : state === "expired" || state === "redacted" || state === "deleted"
@@ -112,105 +113,28 @@ export function WorkState({ state }: { state: string }) {
 
 
 
-function WorkFrame({
-
-  children,
-
-  titleKey,
-
-}: {
-
-  children: (account: string) => ReactNode;
-
-  titleKey: string;
-
-}) {
-
+function WorkFrame({ children, titleKey }: { children: (account: string) => ReactNode; titleKey: string }) {
   const { t } = useTranslation();
-
   const { workspace } = useCurrentWorkspace();
-
   const [params, setParams] = useSearchParams();
-
   const accounts = useSocialAccounts(workspace.id);
-
   const account = params.get("account") ?? accounts.data?.[0]?.id ?? "";
-
-  return (
-
-    <div className="flex min-w-0 flex-col gap-6 max-w-4xl">
-
-      <div>
-
-        <Link className={LINK} to={`/w/${workspace.id}/more/agent?account=${account}`}>
-
-          ← {t("agentWork.back")}
-
-        </Link>
-
-      </div>
-
-      <div>
-
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t(titleKey)}</h1>
-
-      </div>
-
-      {accounts.error ? <ErrorMessage error={accounts.error} /> : null}
-
-      {accounts.data?.length ? (
-
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
-
-          <span>{t("agentWork.account")}</span>
-
-          <select
-
-            className="w-full sm:w-80 rounded-control border border-border bg-surface px-3 py-2 text-base text-primary shadow-xs focus-visible:outline-2 focus-visible:outline-focus"
-
-            value={account}
-
-            onChange={(e) => setParams({ account: e.target.value })}
-
-          >
-
-            {accounts.data.map((a) => (
-
-              <option key={a.id} value={a.id}>
-
-                @{a.username ?? t("agentWork.account")}
-
-              </option>
-
-            ))}
-
-          </select>
-
-        </label>
-
-      ) : accounts.isPending ? (
-
-        <p role="status" className="text-sm text-secondary">
-
-          {t("common.loading")}
-
-        </p>
-
-      ) : !accounts.error ? (
-
-        <p className="text-sm text-secondary">{t("agentWork.noAccount")}</p>
-
-      ) : null}
-
-      {account ? children(account) : null}
-
-    </div>
-
-  );
-
+  return <div className="flex min-w-0 flex-col gap-6">
+    <PageHeader title={t(titleKey)} context={
+      <Link className={`mb-3 inline-flex min-h-11 items-center ${LINK}`} to={`/w/${workspace.id}/more/agent?account=${account}`}>
+        ← {t("agentWork.back")}
+      </Link>
+    } action={accounts.data?.length ? <label className="flex min-w-0 flex-col gap-1.5 text-body font-medium text-secondary">
+      <span>{t("agentWork.account")}</span>
+      <select className="min-h-11 w-full max-w-full rounded-control border border-control bg-surface px-3 py-2 text-form text-primary focus-visible:outline-2 focus-visible:outline-focus sm:w-64" value={account} onChange={(e) => setParams({ account: e.target.value })}>
+        {accounts.data.map(a => <option key={a.id} value={a.id}>@{a.username ?? t("agentWork.account")}</option>)}
+      </select>
+    </label> : undefined} />
+    {accounts.error ? <ErrorMessage error={accounts.error} /> : null}
+    {accounts.isPending ? <p role="status" className="text-body text-secondary">{t("common.loading")}</p> : !accounts.error && !accounts.data?.length ? <p className="text-body text-secondary">{t("agentWork.noAccount")}</p> : null}
+    {account ? children(account) : null}
+  </div>;
 }
-
-
 
 export function QuestionsPage() {
 
@@ -254,7 +178,7 @@ function QuestionList({ account }: { account: string }) {
 
       {questions.error ? <ErrorMessage error={questions.error} /> : null}
 
-      <ul className="flex flex-col gap-3">
+      <ul className="overflow-hidden rounded-panel border border-border bg-surface">
 
         {questions.data?.items.map((q) => (
 
@@ -262,7 +186,7 @@ function QuestionList({ account }: { account: string }) {
 
             key={q.id}
 
-            className="rounded-panel border border-border bg-surface p-4 shadow-xs flex flex-col gap-2.5 transition-colors hover:border-control"
+            className="border-b border-border bg-surface p-4 flex flex-col gap-2.5 last:border-b-0 hover:bg-surface-subtle"
 
           >
 
@@ -390,9 +314,9 @@ function QuestionDetail({ account }: { account: string }) {
 
   return (
 
-    <div className="flex flex-col gap-6">
+    <div className="grid min-w-0 items-start gap-6 lg:grid-cols-2">
 
-      <div className="rounded-control border border-attention bg-attention-subtle p-3.5 text-sm font-medium text-attention shadow-xs">
+      <div className="lg:col-span-2 rounded-control border border-attention bg-attention-subtle p-3.5 text-sm font-medium text-attention shadow-xs">
 
         {t("agentWork.informationOnly")}
 
@@ -458,7 +382,7 @@ function QuestionDetail({ account }: { account: string }) {
 
         <form
 
-          className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-4 shadow-xs"
+          className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-4 sm:p-5"
 
           onSubmit={(e) => {
 
@@ -718,11 +642,11 @@ function MemoryDetail({ account }: { account: string }) {
     <div className="flex flex-col gap-5">
       <div className="rounded-panel border border-border bg-surface p-4 sm:p-5 shadow-xs flex flex-col gap-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
               {t("agentWork.customerScope")}
             </span>
-            <span className="rounded-control bg-surface-subtle px-2.5 py-0.5 text-xs font-mono font-medium text-primary border border-border">
+            <span className="rounded-control bg-surface-subtle px-2.5 py-0.5 text-xs font-mono font-medium text-primary border border-border break-all">
               {customerId}
             </span>
           </div>
@@ -1029,11 +953,11 @@ function CommentList({ account }: { account: string }) {
 
       {comments.error ? <ErrorMessage error={comments.error} /> : null}
 
-      <ul className="flex flex-col gap-3">
+      <ul className="overflow-hidden rounded-panel border border-border bg-surface">
         {comments.data?.items.map((c) => (
           <li
             key={c.id}
-            className="rounded-panel border border-border bg-surface p-4 shadow-xs flex flex-col gap-2.5 transition-colors hover:border-control"
+            className="border-b border-border bg-surface p-4 flex flex-col gap-2.5 last:border-b-0 hover:bg-surface-subtle"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
@@ -1214,7 +1138,7 @@ function TaskDetail({ account }: { account: string }) {
 
         <form
 
-          className="flex flex-col gap-3.5 rounded-control border border-border bg-surface p-4 shadow-xs"
+          className="flex w-full max-w-3xl flex-col gap-4 rounded-panel border border-border bg-surface p-5"
 
           onSubmit={(e) => {
 
@@ -1298,7 +1222,7 @@ function TaskDetail({ account }: { account: string }) {
 
           </label>
 
-          <Button disabled={answer.isPending || !body.trim()} type="submit">
+          <Button className="self-start" disabled={answer.isPending || !body.trim()} type="submit">
 
             {t("agentWork.sendClarification")}
 

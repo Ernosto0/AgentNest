@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
@@ -27,27 +28,26 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
-      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
-        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-slate-500/10 via-emerald-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
-        <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-primary">{t("settings.title")}</h1>
-      </div>
+    <div className="flex flex-col gap-8">
+      <PageHeader title={t("settings.title")} />
 
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-6">
       {/* Account Identity */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6">
         <div className="border-b border-border/60 pb-3">
           <h2 className="text-base font-heading font-bold text-primary">{t("settings.account")}</h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
-            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.signedInAs")}</p>
+          <div className="min-w-0 py-1">
+            <p className="text-xs font-semibold tracking-wide text-secondary">{t("settings.signedInAs")}</p>
             <p className="mt-1 text-sm font-bold text-primary break-words">
               {me.data?.user.display_name}
             </p>
-            <p className="text-xs text-secondary break-all font-mono mt-0.5">{me.data?.user.email}</p>
+            <p className="text-body text-secondary break-all mt-0.5">{me.data?.user.email}</p>
           </div>
-          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
-            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.role")}</p>
+          <div className="min-w-0 py-1">
+            <p className="text-xs font-semibold tracking-wide text-secondary">{t("settings.role")}</p>
             <p className="mt-1 text-sm font-bold text-primary">
               {role ? t(`workspaces.role.${role}`) : "—"}
             </p>
@@ -66,7 +66,7 @@ export function SettingsPage() {
       </div>
 
       {/* Language Preference */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+      <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 sm:p-6">
         <div className="border-b border-border/60 pb-3">
           <h2 className="text-base font-heading font-bold text-primary">{t("settings.language")}</h2>
         </div>
@@ -77,33 +77,46 @@ export function SettingsPage() {
         {saveLocale.isError ? <ErrorMessage error={saveLocale.error} /> : null}
       </div>
 
+      {/* Security & Sessions */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-heading font-semibold text-primary">
+            {t("settings.security")}
+          </h2>
+          <p className="mt-0.5 text-xs text-secondary leading-relaxed">{t("settings.securityDesc")}</p>
+        </div>
+        <AccountSecurity />
+      </div>
+
+        </div>
+        <div className="flex min-w-0 flex-col gap-6">
       {/* Workspace Details (Read-only) */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6">
         <div className="border-b border-border/60 pb-3">
           <h2 className="text-base font-heading font-bold text-primary">
             {t("settings.workspaceDetails")}
           </h2>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
-            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceName")}</p>
+        <div className="grid gap-4">
+          <div className="min-w-0 py-1">
+            <p className="text-xs font-semibold tracking-wide text-secondary">{t("settings.workspaceName")}</p>
             <p className="mt-1 text-sm font-bold text-primary">{workspace.name}</p>
           </div>
-          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
-            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceMarket")}</p>
+          <div className="min-w-0 py-1">
+            <p className="text-xs font-semibold tracking-wide text-secondary">{t("settings.workspaceMarket")}</p>
             <p className="mt-1 text-sm font-bold text-primary">
               {workspace.market} · {workspace.currency}
             </p>
           </div>
-          <div className="rounded-xl bg-surface-subtle/70 p-4 border border-border/60">
-            <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("settings.workspaceTimezone")}</p>
+          <div className="min-w-0 py-1">
+            <p className="text-xs font-semibold tracking-wide text-secondary">{t("settings.workspaceTimezone")}</p>
             <p className="mt-1 text-sm font-bold text-primary">{workspace.timezone}</p>
           </div>
         </div>
       </div>
 
       {/* Management Navigation Links */}
-      <div className="flex flex-col gap-2 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+      <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-5 sm:p-6">
         <div className="border-b border-border/60 pb-3">
           <h2 className="text-base font-heading font-bold text-primary">
             {t("settings.workspaceSection")}
@@ -127,17 +140,6 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* Security & Sessions */}
-      <div className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-base font-heading font-semibold text-primary">
-            {t("settings.security")}
-          </h2>
-          <p className="mt-0.5 text-xs text-secondary leading-relaxed">{t("settings.securityDesc")}</p>
-        </div>
-        <AccountSecurity />
-      </div>
-
       {/* Privacy Surface */}
       <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-5 shadow-xs">
         <h2 className="text-sm font-heading font-semibold text-primary">
@@ -146,6 +148,8 @@ export function SettingsPage() {
         <p className="text-xs text-secondary leading-relaxed">{t("settings.privacyDesc")}</p>
       </div>
 
+        </div>
+      </div>
       {/* Danger Zone: Workspace Deletion (Owner only) */}
       {role === "owner" ? <WorkspaceDangerZone workspaceId={workspace.id} /> : null}
     </div>

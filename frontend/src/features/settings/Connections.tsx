@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
@@ -85,17 +86,15 @@ export function Connections() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern">
-        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-pink-500/10 via-purple-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
-        <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-primary">{t("connections.title")}</h1>
-        <p className="mt-1 text-sm text-secondary max-w-xl">{t("connections.intro")}</p>
-      </div>
+      <PageHeader title={t("connections.title")} description={t("connections.intro")} />
 
       <OAuthBanner />
       {meta.isError ? <ErrorMessage error={meta.error} /> : null}
       {accounts.isError ? <ErrorMessage error={accounts.error} /> : null}
       {accounts.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
 
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="min-w-0">
       {accounts.data && account ? (
         <AccountCard
           key={account.id}
@@ -147,7 +146,9 @@ export function Connections() {
         </div>
       ) : null}
 
-      <Channels />
+      </div>
+      <div className="min-w-0"><Channels /></div>
+      </div>
     </div>
   );
 }
@@ -187,7 +188,7 @@ function AccountCard({
   const canReconnect = account.status === "needs_reauth";
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern">
+    <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6">
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
         <h2 className="text-xl font-heading font-bold text-primary">
           @{account.username ?? account.id}

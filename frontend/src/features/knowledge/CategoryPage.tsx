@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
@@ -18,7 +19,7 @@ import { categoryEntries } from "./summary";
 /** The facts of one category, the missing template items, and the editor sheets. */
 export function CategoryPage() {
   const params = useParams();
-  if (!isCategory(params.category)) return <NotFoundPage />;
+  if (!isCategory(params.category)) return <NotFoundPage embedded />;
   return <CategoryScreen category={params.category} />;
 }
 
@@ -55,7 +56,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
   );
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="flex flex-col gap-6">
       <div>
         <Link
           to={`/w/${workspace.id}/more/knowledge`}
@@ -63,7 +64,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
         >
           ← {t("knowledge.back")}
         </Link>
-        <h1 className="mt-2 text-2xl font-heading font-semibold text-primary">{t(`knowledge.category.${category}`)}</h1>
+        <PageHeader title={t(`knowledge.category.${category}`)} />
       </div>
 
       {template.error ?? facts.error ? <ErrorMessage error={template.error ?? facts.error} /> : null}
@@ -72,6 +73,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
         <p role="status" className="text-sm text-secondary">{t("common.loading")}</p>
       ) : null}
 
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-2">
       {loaded?.entries.map((entry) => {
         if (entry.kind === "fixed") {
           if (entry.fact) return card(entry.fact);
@@ -102,7 +104,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
         }
         if (entry.kind === "pattern") {
           return (
-            <section key={entry.item.identifier} className="flex flex-col gap-3">
+            <section key={entry.item.identifier} className="flex min-w-0 flex-col gap-3 xl:col-span-2">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
                 <h2 className="text-lg font-heading font-semibold text-primary">{pickLabel(entry.item.label, i18n.language)}</h2>
                 {canVerify ? (
@@ -126,7 +128,7 @@ function CategoryScreen({ category }: { category: FactCategory }) {
           );
         }
         return (
-          <section key="other" className="flex flex-col gap-3">
+          <section key="other" className="flex min-w-0 flex-col gap-3 xl:col-span-2">
             {entry.facts.map(card)}
             {category === "custom" && canVerify ? (
               <div>
@@ -141,6 +143,8 @@ function CategoryScreen({ category }: { category: FactCategory }) {
           </section>
         );
       })}
+
+      </div>
 
       {loaded && loaded.archived.length > 0 ? (
         <details className="rounded-panel border border-border bg-surface p-4 shadow-xs group">

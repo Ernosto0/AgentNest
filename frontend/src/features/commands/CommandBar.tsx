@@ -50,7 +50,7 @@ function CommandPanel({ commandId, onDismiss }: { commandId: string; onDismiss: 
         <button
           type="button"
           onClick={onDismiss}
-          className="min-h-9 shrink-0 rounded-xl px-3 text-xs font-semibold text-secondary transition-all hover:bg-surface-subtle hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus border border-border/60"
+          className="min-h-11 shrink-0 rounded-control px-3 text-xs font-semibold text-secondary transition-all hover:bg-surface-subtle hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus border border-border/60"
         >
           {t("command.dismiss")}
         </button>
@@ -92,14 +92,14 @@ export function CommandBar() {
       {/* Fixed above the tab bar on phones (3.5rem tall); an elevated card on desktop. */}
       <form
         onSubmit={onSubmit}
-        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 border-t border-border bg-surface/95 px-4 py-2 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0"
+        className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-border bg-surface/95 px-4 py-2 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0"
       >
-        <div className="flex w-full flex-col gap-2 rounded-2xl md:border md:border-border/80 md:bg-surface md:p-4 md:shadow-xs">
+        <div className="flex w-full min-w-0 flex-col gap-2 rounded-panel md:border md:border-border md:bg-surface md:p-3">
           <div className="flex items-center gap-2.5">
             <label htmlFor="command-input" className="sr-only">
               {t("command.label")}
             </label>
-            <div className="relative flex flex-1 items-center">
+            <div className="relative flex min-w-0 flex-1 items-center">
               <input
                 id="command-input"
                 value={text}
@@ -108,7 +108,7 @@ export function CommandBar() {
                 placeholder={t("command.placeholder")}
                 enterKeyHint="send"
                 autoComplete="off"
-                className="min-h-12 min-w-0 flex-1 rounded-xl border border-border/80 bg-surface px-4 py-2.5 text-form text-primary placeholder:text-secondary/70 shadow-2xs transition-all focus:border-action focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                className="min-h-12 min-w-0 flex-1 rounded-xl border border-border/80 bg-surface px-4 py-2.5 text-form text-primary placeholder:text-secondary shadow-2xs transition-all focus:border-action focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               />
             </div>
             <Button type="submit" disabled={!text.trim() || submit.isPending} aria-label={t("command.send")} className="min-h-12 rounded-xl px-5 shadow-xs">

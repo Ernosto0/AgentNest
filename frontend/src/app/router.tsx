@@ -77,7 +77,7 @@ export const appRoutes: RouteObject[] = [
           { path: "more/notifications", element: <NotificationCenter /> },
           { path: "more/dev", element: <DevPanel /> },
           { path: "more/knowledge/:category", element: <CategoryPage /> },
-          { path: "*", element: <NotFoundPage /> },
+          { path: "*", element: <NotFoundPage embedded /> },
         ],
       },
     ],

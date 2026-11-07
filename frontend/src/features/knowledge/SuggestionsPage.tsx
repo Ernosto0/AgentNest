@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { FactCandidate } from "@/api/types";
@@ -44,8 +45,7 @@ export function SuggestionsPage() {
         >
           {t("knowledge.back")}
         </Link>
-        <h1 className="text-2xl font-bold font-heading text-primary">{t("knowledge.suggestions.title")}</h1>
-        <p className="mt-1 text-secondary">{t("knowledge.suggestions.intro")}</p>
+        <PageHeader title={t("knowledge.suggestions.title")} description={t("knowledge.suggestions.intro")} />
       </div>
 
       {!canVerify ? (
@@ -61,7 +61,7 @@ export function SuggestionsPage() {
         />
       ) : null}
 
-      <ul className="flex flex-col gap-3">
+      <ul className="grid min-w-0 items-start gap-4 xl:grid-cols-2">
         {candidates.data?.map((candidate) => (
           <li key={candidate.id}>
             <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs" data-testid={`candidate-${candidate.fact_key}`}>

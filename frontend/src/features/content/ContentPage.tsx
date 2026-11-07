@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import type { ContentTab } from "@/api/types";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { PageHeader } from "@/components/Layout";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { CalendarIcon, InboxIcon, PlusIcon, SparkIcon, SpinnerIcon } from "@/components/icons";
@@ -44,16 +45,10 @@ export function ContentPage() {
   const [starting, setStarting] = useState<NewContentMode | null>(null);
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
+    <div className="flex min-w-0 flex-col gap-6">
       {/* Page Header & Action Controls */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/90 bg-gradient-to-r from-surface via-surface to-surface-subtle/50 p-6 shadow-card-modern sm:flex-row sm:items-center sm:justify-between flex flex-col gap-5">
-        <div className="absolute top-0 right-0 h-32 w-64 bg-gradient-to-bl from-emerald-500/10 via-teal-500/5 to-transparent pointer-events-none rounded-tr-2xl" />
-        <div className="flex flex-col gap-1 relative z-10">
-          <h1 className="type-page text-primary font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">{t("content.title")}</h1>
-          <p className="text-body text-secondary max-w-xl">{t("content.intro")}</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
+      <PageHeader title={t("content.title")} description={t("content.intro")} action={
+        <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => setStarting("ai")} className="gap-2 shadow-xs">
             <SparkIcon className="text-lg text-on-action" />
             <span>{t("content.actions.newDraft")}</span>
@@ -63,10 +58,10 @@ export function ContentPage() {
             <span>{t("content.actions.blankDraft")}</span>
           </Button>
         </div>
-      </div>
+      } />
 
       {/* View Switcher: Library vs Agenda */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <div
           role="tablist"
           aria-label={t("content.viewsLabel")}
@@ -77,7 +72,7 @@ export function ContentPage() {
             role="tab"
             aria-selected={view === "library"}
             onClick={() => setView("library")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+            className={`inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
               view === "library"
                 ? "bg-surface text-primary shadow-xs font-bold"
                 : "text-secondary hover:text-primary hover:bg-surface/50"
@@ -91,7 +86,7 @@ export function ContentPage() {
             role="tab"
             aria-selected={view === "agenda"}
             onClick={() => setView("agenda")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+            className={`inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
               view === "agenda"
                 ? "bg-surface text-primary shadow-xs font-bold"
                 : "text-secondary hover:text-primary hover:bg-surface/50"
@@ -111,7 +106,7 @@ export function ContentPage() {
           <div
             role="tablist"
             aria-label={t("content.tabsLabel")}
-            className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-surface-subtle/80 border border-border/80 shadow-2xs"
+            className="flex flex-wrap items-center gap-1 border-b border-border"
           >
             {CONTENT_TABS.map((name) => {
               const isSelected = tab === name;
@@ -122,10 +117,10 @@ export function ContentPage() {
                   type="button"
                   aria-selected={isSelected}
                   onClick={() => setParams({ tab: name }, { replace: true })}
-                  className={`min-h-9 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                  className={`min-h-11 border-b-2 px-4 py-2 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                     isSelected
-                      ? "bg-surface text-primary shadow-xs font-bold ring-1 ring-border/50"
-                      : "text-secondary hover:text-primary hover:bg-surface/50"
+                      ? "border-action text-action"
+                      : "border-transparent text-secondary hover:text-primary hover:bg-surface-subtle"
                   }`}
                 >
                   {t(`content.tabs.${name}`)}
@@ -145,8 +140,8 @@ export function ContentPage() {
             <EmptyState title={t(`content.empty.${tab}`)} description={t("content.empty.hint")} />
           ) : null}
           {visible && visible.length > 0 ? (
-            <Card className="p-0 border-0 bg-transparent shadow-none ring-0">
-              <ul className="flex flex-col gap-3" aria-label={t(`content.tabs.${tab}`)}>
+            <Card className="overflow-hidden p-0">
+              <ul className="flex flex-col divide-y divide-border" aria-label={t(`content.tabs.${tab}`)}>
                 {visible.map((item) => (
                   <li key={item.id}>
                     <ContentCard item={item} />

@@ -1,0 +1,74 @@
+[
+  {
+    "engine": "chromium",
+    "scenario": "tr-phone",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/chromium-tr-phone-overview.png",
+    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/chromium-tr-phone-task.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-phone",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/chromium-en-phone-overview.png",
+    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/chromium-en-phone-task.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "tr-tablet",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/chromium-tr-tablet-overview.png",
+    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/chromium-tr-tablet-task.png"
+  },
+  {
+    "engine": "chromium",
+    "scenario": "en-desktop",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/chromium-en-desktop-overview.png",
+    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/chromium-en-desktop-task.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-phone",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/webkit-tr-phone-overview.png",
+    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/webkit-tr-phone-task.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-phone",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/webkit-en-phone-overview.png",
+    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/webkit-en-phone-task.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "tr-tablet",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/webkit-tr-tablet-overview.png",
+    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/webkit-tr-tablet-task.png"
+  },
+  {
+    "engine": "webkit",
+    "scenario": "en-desktop",
+    "violations": 0,
+    "errors": 0,
+    "overflow": false,
+    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/webkit-en-desktop-overview.png",
+    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\ui-refinement\\checks\\agent-tasks\\/webkit-en-desktop-task.png"
+  }
+]

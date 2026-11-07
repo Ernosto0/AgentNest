@@ -44,16 +44,16 @@ export function AppShell() {
 
   return <div className="flex min-h-dvh flex-col bg-canvas text-primary md:flex-row">
     <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-30 focus:rounded-control focus:bg-surface focus:p-3 focus:outline-2 focus:outline-focus">{t("app.skipToContent")}</a>
-    <aside data-testid="desktop-sidebar" className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-y-auto border-r border-[#1a2b22] bg-[#0d1612] px-3 py-6 text-navigation-text shadow-sm md:flex min-[1200px]:w-64 ${expanded ? "w-64" : "w-24"}`}>
+    <aside data-testid="desktop-sidebar" className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-y-auto border-r border-navigation-selected bg-navigation px-3 py-6 text-navigation-text shadow-sm md:flex min-[1200px]:w-60 ${expanded ? "w-60" : "w-24"}`}>
       <div className="mb-6 flex min-w-0 items-center gap-3 px-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-[0_2px_10px_rgba(16,185,129,0.3)] ring-1 ring-white/20">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navigation-selected text-navigation-selected-text">
           <span className="font-heading text-lg font-bold tracking-wider">A</span>
         </div>
-        <div className={`min-w-0 flex flex-col ${expanded ? "" : "sr-only min-[1200px]:flex"}`}>
+        <div className={`min-w-0 flex flex-col ${expanded ? "" : "hidden min-[1200px]:flex"}`}>
           <span title={productName} className="truncate font-heading text-lg font-bold tracking-tight text-white">
             {productName}
           </span>
-          <span className="text-[11px] font-medium tracking-wide text-emerald-400/80">
+          <span className="text-[11px] font-medium tracking-wide text-navigation-text">
             {workspace.name}
           </span>
         </div>
@@ -62,13 +62,13 @@ export function AppShell() {
       <button type="button" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-controls="desktop-destinations" className="mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl text-navigation-text hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-focus-inverse min-[1200px]:hidden"><MenuIcon className="text-xl" /><span className={expanded ? "" : "sr-only"}>{t("shell.expandNavigation")}</span></button>
       <nav id="desktop-destinations" aria-label={t("nav.label")} className="flex flex-col gap-6 flex-1">
         {groups.map(group => <div key={group.labelKey}>
-          <p className={`mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-[#738d7b] ${expanded ? "" : "sr-only min-[1200px]:not-sr-only"}`}>{t(group.labelKey)}</p>
+          <p className={`mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-navigation-text/70 ${expanded ? "" : "sr-only min-[1200px]:not-sr-only"}`}>{t(group.labelKey)}</p>
           <ul className="flex flex-col gap-1">{group.items.map(({ path: destination, labelKey, icon: Icon }) => {
             const active = selected === destination;
             return <li key={destination}>
-              <Link to={workspaceTarget(workspace.id, destination)} aria-current={active ? "page" : undefined} title={t(labelKey)} className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse ${expanded ? "" : "justify-center min-[1200px]:justify-start"} ${active ? "bg-[#183528] text-white shadow-xs font-semibold ring-1 ring-emerald-500/30" : "text-[#b4c7bb] hover:bg-white/5 hover:text-white"}`}>
-                {active ? <span className="absolute left-1 h-5 w-1 rounded-full bg-emerald-400" aria-hidden="true" /> : null}
-                <Icon className={`shrink-0 text-xl transition-transform group-hover:scale-105 ${active ? "text-emerald-300" : "text-[#829e8b]"}`} />
+              <Link to={workspaceTarget(workspace.id, destination)} aria-current={active ? "page" : undefined} title={t(labelKey)} className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-inverse ${expanded ? "" : "justify-center min-[1200px]:justify-start"} ${active ? "bg-navigation-selected text-navigation-selected-text font-semibold" : "text-navigation-text hover:bg-white/5 hover:text-white"}`}>
+                {active ? <span className="absolute left-1 h-5 w-1 rounded-full bg-focus-inverse" aria-hidden="true" /> : null}
+                <Icon className={`shrink-0 text-xl transition-transform group-hover:scale-105 ${active ? "text-navigation-selected-text" : "text-navigation-text/70"}`} />
                 <span className={expanded ? "" : "sr-only min-[1200px]:not-sr-only"}>{t(labelKey)}</span>
               </Link>
             </li>;
@@ -86,8 +86,8 @@ export function AppShell() {
         </div>
       </header>
       <SimulationBanner offline={meta.data?.llm_mode === "fake"} />
-      <main id="main" tabIndex={-1} data-content-width={context.width} className={`mx-auto w-full min-w-0 flex-1 px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none md:px-6 md:pb-10 min-[1200px]:px-8 ${context.width === "reading" ? "max-w-3xl" : "max-w-[1440px]"}`}>
-        <nav aria-label={t("shell.breadcrumb")} className="mb-6 text-metadata text-secondary">
+      <main id="main" tabIndex={-1} data-content-width={context.width} className={`mx-auto w-full min-w-0 flex-1 px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none md:px-6 md:pb-10 min-[1200px]:px-8 ${context.width === "reading" ? "max-w-6xl" : "max-w-[1440px]"}`}>
+        <nav aria-label={t("shell.breadcrumb")} className="mb-5 text-metadata text-secondary">
           <ol className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <li className="min-w-0 max-w-full"><Link to={prefix} className="font-medium text-primary hover:text-action underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-focus">{workspace.name}</Link></li>
             {parent ? <li className="flex items-center gap-2"><span aria-hidden="true" className="text-secondary/50">/</span><Link to={`${workspaceTarget(workspace.id, parent.path)}${parentSearch}`} className="hover:text-action underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-focus">{t(parent.labelKey)}</Link></li> : null}

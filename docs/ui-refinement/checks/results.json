@@ -1,0 +1,112 @@
+[
+  {
+    "suite": "entry",
+    "code": 0,
+    "durationMs": 108807
+  },
+  {
+    "suite": "shell",
+    "code": 0,
+    "durationMs": 99699
+  },
+  {
+    "suite": "today",
+    "code": 0,
+    "durationMs": 30409
+  },
+  {
+    "suite": "inbox",
+    "code": 0,
+    "durationMs": 29590
+  },
+  {
+    "suite": "conversation",
+    "code": 0,
+    "durationMs": 31626
+  },
+  {
+    "suite": "content",
+    "code": 0,
+    "durationMs": 29118
+  },
+  {
+    "suite": "agenda",
+    "code": 0,
+    "durationMs": 31613
+  },
+  {
+    "suite": "content-detail",
+    "code": 0,
+    "durationMs": 31360
+  },
+  {
+    "suite": "approvals",
+    "code": 0,
+    "durationMs": 28804
+  },
+  {
+    "suite": "agent-tasks",
+    "code": 0,
+    "durationMs": 58747
+  },
+  {
+    "suite": "questions",
+    "code": 0,
+    "durationMs": 49620
+  },
+  {
+    "suite": "memory",
+    "code": 0,
+    "durationMs": 37047
+  },
+  {
+    "suite": "comments",
+    "code": 0,
+    "durationMs": 55442
+  },
+  {
+    "suite": "knowledge",
+    "code": 0,
+    "durationMs": 49755
+  },
+  {
+    "suite": "fact-editors",
+    "code": 0,
+    "durationMs": 59572
+  },
+  {
+    "suite": "approved-answers",
+    "code": 0,
+    "durationMs": 29899
+  },
+  {
+    "suite": "voice-delegation",
+    "code": 0,
+    "durationMs": 61938
+  },
+  {
+    "suite": "reports",
+    "code": 0,
+    "durationMs": 48510
+  },
+  {
+    "suite": "activity",
+    "code": 0,
+    "durationMs": 46281
+  },
+  {
+    "suite": "settings",
+    "code": 0,
+    "durationMs": 30582
+  },
+  {
+    "suite": "connections",
+    "code": 0,
+    "durationMs": 45736
+  },
+  {
+    "suite": "health-dev",
+    "code": 0,
+    "durationMs": 66491
+  }
+]

@@ -14,6 +14,7 @@ import type {
 } from "@/api/types";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
+import { PageHeader } from "@/components/Layout";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -156,13 +157,10 @@ export function DevPanel() {
   const [confirmReset, setConfirmReset] = useState(false);
 
   return (
-    <div className="flex flex-col gap-6" data-testid="dev-panel">
-      <div>
-        <h1 className="text-2xl font-heading font-semibold text-primary">{t("devPanel.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("devPanel.intro")}</p>
-      </div>
+    <div className="grid min-w-0 items-start gap-6 xl:grid-cols-2" data-testid="dev-panel">
+      <div className="xl:col-span-2"><PageHeader title={t("devPanel.title")} description={t("devPanel.intro")} /></div>
 
-      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+      <div className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
         <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.customers")}</h2>
         <ul className="flex flex-col divide-y divide-border">
           {(dev.scripts.data ?? []).map((script) => (
@@ -189,7 +187,7 @@ export function DevPanel() {
         {dev.simulate.error ? <ErrorMessage error={dev.simulate.error} /> : null}
       </div>
 
-      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+      <div className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
         <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.failures")}</h2>
         <div className="flex flex-wrap gap-2">
           <select
@@ -234,7 +232,7 @@ export function DevPanel() {
         </ul>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs" data-testid="sim-published">
+      <div className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs" data-testid="sim-published">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.published")}</h2>
           <Button
@@ -267,7 +265,7 @@ export function DevPanel() {
                 {media.is_simulated ? <SimulatedBadge /> : null}
               </div>
               <span className="break-words text-secondary">{media.caption ?? t("devPanel.noCaption")}</span>
-              <span className="break-all text-xs text-tertiary">
+              <span className="break-all text-xs text-secondary">
                 {media.media_id} · {media.permalink}
               </span>
             </li>
@@ -275,7 +273,7 @@ export function DevPanel() {
         </ul>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+      <div className="flex min-w-0 flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
         <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.jobs")}</h2>
         <div>
           <Button variant="secondary" disabled={dev.runDue.isPending} onClick={() => dev.runDue.mutate()}>
@@ -309,7 +307,7 @@ export function DevPanel() {
         </ul>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+      <div className="flex min-w-0 flex-col gap-4 border-t border-border pt-6 xl:col-span-2">
         <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.reset.title")}</h2>
         <p className="text-xs text-secondary leading-relaxed">{t("devPanel.reset.hint")}</p>
         <div>

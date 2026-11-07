@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/Layout";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -46,7 +47,7 @@ export function ApprovedAnswers() {
   const literal = create.error?.fieldErrors.find((e) => e.code === "LITERAL_VALUE");
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="flex flex-col gap-6">
       <div>
         <Link
           to={`/w/${workspace.id}/more/knowledge`}
@@ -54,8 +55,7 @@ export function ApprovedAnswers() {
         >
           ← {t("answers.back")}
         </Link>
-        <h1 className="mt-2 text-2xl font-heading font-semibold text-primary">{t("answers.title")}</h1>
-        <p className="mt-1 text-sm text-secondary">{t("answers.intro")}</p>
+        <PageHeader title={t("answers.title")} description={t("answers.intro")} />
       </div>
 
       {!canEdit ? (
@@ -70,7 +70,8 @@ export function ApprovedAnswers() {
         <EmptyState title={t("answers.empty")} />
       ) : null}
 
-      <ul className="flex flex-col gap-3">
+      <div className={`grid min-w-0 items-start gap-6 ${canEdit && visible.length > 0 ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
+      <ul className="flex min-w-0 flex-col gap-3">
         {visible.map((answer) => (
           <li key={answer.id}>
             <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs" data-testid="answer">
@@ -177,7 +178,7 @@ export function ApprovedAnswers() {
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-primary flex-1 min-w-44">
+              <label className="flex flex-col gap-1.5 min-w-0 text-sm font-medium text-primary flex-1 basis-40">
                 {t("answers.fieldIntent")}
                 <select
                   aria-label={t("answers.fieldIntent")}
@@ -193,7 +194,7 @@ export function ApprovedAnswers() {
                 </select>
               </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-primary flex-1 min-w-44">
+              <label className="flex flex-col gap-1.5 min-w-0 text-sm font-medium text-primary flex-1 basis-40">
                 {t("answers.fieldLanguage")}
                 <select
                   aria-label={t("answers.fieldLanguage")}
@@ -223,6 +224,7 @@ export function ApprovedAnswers() {
           </form>
         </Card>
       ) : null}
+      </div>
     </div>
   );
 }

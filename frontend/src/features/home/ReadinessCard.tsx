@@ -24,9 +24,9 @@ export function ReadinessCard() {
   const percentage = totalCount > 0 ? Math.round((satisfiedCount / totalCount) * 100) : 0;
 
   return (
-    <Card className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-surface p-5 md:p-6 shadow-card-modern" aria-labelledby="readiness-title">
+    <Card className="flex flex-col gap-4 bg-surface p-5" aria-labelledby="readiness-title">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
-        <h2 id="readiness-title" className="type-section font-heading font-bold tracking-tight text-primary text-base sm:text-lg">
+        <h2 id="readiness-title" className="type-section text-primary">
           {t("readiness.title")}
         </h2>
         {readiness.data ? (
@@ -63,7 +63,7 @@ export function ReadinessCard() {
             >
               <div
                 className={`h-full rounded-full transition-all duration-normal shadow-xs ${
-                  isReady ? "bg-emerald-600" : "bg-action"
+                  isReady ? "bg-success" : "bg-action"
                 }`}
                 style={{ width: `${percentage}%` }}
               />
