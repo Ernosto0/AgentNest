@@ -43,4 +43,13 @@ def execute(ec: ExecContext, resolution: dict[str, Any]) -> CommandResult:
     # "Raporu aç": a past period opens its day; the others open today's report.
     report_date = local_date_of(start if period == "yesterday" else now, ec.ctx.timezone)
     link = {"target": "report", "date": report_date.isoformat()}
-    return CommandResult("command.activity_summary", params, [link])
+
+    from app.commands.narrator import narrate_fallback
+
+    reply_text = narrate_fallback(
+        message_key="command.activity_summary",
+        params=params,
+        user_locale=ec.user_locale,
+        user_query=getattr(ec.command, "raw_text", ""),
+    )
+    return CommandResult("command.activity_summary", params, [link], reply_text=reply_text)
