@@ -454,6 +454,25 @@
     "openInTelegram": "Telegram'da aç",
     "close": "Kapat"
   },
+  "calendar": {
+    "title": "Google Takvim bağlantısı",
+    "intro": "Asistanın müsaitlik kontrolü yapabilmesi ve randevu oluşturup düzenleyebilmesi için işletme takviminizi bağlayın.",
+    "none": "Henüz bağlı bir takvim yok.",
+    "connectGoogle": "Google Takvim'i bağla",
+    "reconnectGoogle": "Google Takvim bağlantısını yenile",
+    "connectMock": "Demo takvimi bağla (simülasyon)",
+    "disconnect": "Takvim bağlantısını kes",
+    "oauthConnected": "Google Takvim bağlandı.",
+    "accountLabel": "Takvim hesabı",
+    "timezoneLabel": "Takvim saat dilimi",
+    "slotDurationLabel": "Varsayılan randevu süresi",
+    "slotDurationMinutes": "{{minutes}} dakika",
+    "customerName": "Müşteri",
+    "customerContact": "İletişim",
+    "startAt": "Başlangıç saati",
+    "endAt": "Bitiş saati",
+    "reason": "Neden"
+  },
   "systemHealth": {
     "title": "Sistem durumu",
     "intro": "Son 24 saatte arka planda neler oldu. Yalnızca sayılar ve hata kodları gösterilir; mesaj metni yoktur.",
@@ -647,6 +666,7 @@
     "advanced": "Gelişmiş ayarlar",
     "messaging": "Mesajlaşma",
     "content": "İçerik",
+    "calendar": "Takvim ve randevular",
     "moreActions": "Diğer işlemler",
     "manualReply": "Kendi yanıtını yaz",
     "edit": "Düzenle",

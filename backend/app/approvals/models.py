@@ -38,8 +38,17 @@ APPROVAL_ACTIONS = (
     "content.prepare",
     "content.schedule",
     "content.cancel",
+    "calendar.book",
+    "calendar.reschedule",
+    "calendar.cancel",
 )
-APPROVAL_SUBJECT_TYPES = ("owner_command", "reply_draft", "content_item", "agent_action")
+APPROVAL_SUBJECT_TYPES = (
+    "owner_command",
+    "reply_draft",
+    "content_item",
+    "agent_action",
+    "calendar_appointment",
+)
 DECISION_CHANNELS = ("web", "telegram", "policy")
 
 

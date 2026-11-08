@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.agent import transitions
 from app.agent.content import CONTENT_ACTIONS
-from app.agent.delegation import current_delegation
+from app.agent.delegation import CALENDAR_ACTIONS, current_delegation
 from app.agent.models import (
     ACTIVE_RUN_STATES,
     AccountAgent,
@@ -48,6 +48,10 @@ def effect_result(db: Session, action: "AgentAction") -> dict[str, object]:
         from app.agent.content import result
 
         return result(db, action)
+    if action.action_type in CALENDAR_ACTIONS:
+        from app.agent.calendar import result as cal_result
+
+        return cal_result(db, action)
     if action.action_type == "comment.private_reply":
         from app.comments.private_reply import result
 
@@ -347,7 +351,9 @@ def run_activation(
                     select(AgentAction)
                     .where(
                         AgentAction.thread_id == claimed.context.thread_id,
-                        AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
+                        AgentAction.action_type.in_(
+                            ("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS, *CALENDAR_ACTIONS)
+                        ),
                         (AgentAction.initiating_cursor == current.captured_cursor)
                         | AgentAction.status.in_(
                             (
@@ -410,11 +416,15 @@ def run_activation(
             from app.agent.context import assemble
 
             model_context = assemble(db, deps.clock, claimed.context)
+            from app.integrations.calendar.queries import has_connected_calendar
             from app.integrations.instagram.models import SocialAccount
 
             provider_account = db.get(SocialAccount, claimed.context.account_id)
             capabilities = (
                 dict(provider_account.capabilities) if provider_account is not None else {}
+            )
+            capabilities["calendar_connected"] = has_connected_calendar(
+                db, claimed.context.workspace.workspace_id
             )
             current_policy = current_delegation(
                 db, claimed.context.workspace.workspace_id, claimed.context.account_id
@@ -672,7 +682,10 @@ def run_activation(
                         "comment.reply",
                         "comment.moderate",
                         "comment.private_reply",
+                        "calendar.book",
+                        "calendar.modify",
                         *CONTENT_ACTIONS,
+                        *CALENDAR_ACTIONS,
                     }
                     and tool.ok
                     and tool.data.get("action_id")
@@ -719,7 +732,9 @@ def run_activation(
                     select(AgentAction)
                     .where(
                         AgentAction.thread_id == thread.id,
-                        AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
+                        AgentAction.action_type.in_(
+                            ("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS, *CALENDAR_ACTIONS)
+                        ),
                         AgentAction.status.in_(
                             (
                                 "waiting_approval",
@@ -816,7 +831,9 @@ def valid_wait(db: Session, goal: AgentSession, thread: AgentThread, result: LLM
                 AgentAction.id == ref,
                 AgentAction.workspace_id == goal.workspace_id,
                 AgentAction.thread_id == thread.id,
-                AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
+                AgentAction.action_type.in_(
+                    ("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS, *CALENDAR_ACTIONS)
+                ),
                 AgentAction.status.in_(("authorized", "queued", "in_progress", "outcome_unknown")),
             )
         )
@@ -901,6 +918,7 @@ def wait_resolved(db: Session, deps: RunnerDeps, goal: AgentSession, thread: Age
                 "dm.send",
                 *PUBLIC_ACTIONS,
                 *CONTENT_ACTIONS,
+                *CALENDAR_ACTIONS,
             ):
                 effect_result(db, action)
                 if action.status not in {"succeeded", "failed", "cancelled"}:
@@ -921,7 +939,9 @@ def wait_resolved(db: Session, deps: RunnerDeps, goal: AgentSession, thread: Age
                 AgentAction.id == ref,
                 AgentAction.workspace_id == goal.workspace_id,
                 AgentAction.thread_id == thread.id,
-                AgentAction.action_type.in_(("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS)),
+                AgentAction.action_type.in_(
+                    ("dm.send", *PUBLIC_ACTIONS, *CONTENT_ACTIONS, *CALENDAR_ACTIONS)
+                ),
             )
         )
         if action is not None:

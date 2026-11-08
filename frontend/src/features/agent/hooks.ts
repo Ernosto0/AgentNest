@@ -4,7 +4,7 @@ import type { AppError } from "@/api/errors";
 import type { components } from "@/api/schema";
 export type Schema<K extends keyof components["schemas"]> = components["schemas"][K];
 export const agentKey = (ws: string, account: string) => ["agent", ws, account] as const;
-export const ACTIONS = ["dm.send", "comment.reply", "comment.private_reply", "comment.hide", "comment.unhide", "comment.delete", "content.prepare", "content.schedule", "content.publish", "content.cancel"] as const;
+export const ACTIONS = ["dm.send", "comment.reply", "comment.private_reply", "comment.hide", "comment.unhide", "comment.delete", "content.prepare", "content.schedule", "content.publish", "content.cancel", "calendar.book", "calendar.reschedule", "calendar.cancel"] as const;
 export const actionLabelKey = (action: string) => `agent.actions.${action.replaceAll(".", "_")}`;
 export function useAgentOverview(ws: string, account: string) {
     return useQuery<Schema<"AgentOverview">, AppError>({ queryKey: [...agentKey(ws, account), "overview"], enabled: !!account, retry: false, refetchInterval: 5000,

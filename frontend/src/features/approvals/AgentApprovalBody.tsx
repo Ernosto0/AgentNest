@@ -46,8 +46,22 @@ export function AgentApprovalBody({ approval }: { approval: Approval }) {
           {Object.entries(a.content)
             .filter(
               ([k, v]) =>
-                ["caption", "content_type", "scheduled_at", "execute_before"].includes(k) &&
-                v !== null,
+                [
+                  "caption",
+                  "content_type",
+                  "scheduled_at",
+                  "execute_before",
+                  "title",
+                  "customer_name",
+                  "customer_contact",
+                  "start_at_local",
+                  "end_at_local",
+                  "new_start_at_local",
+                  "new_end_at_local",
+                  "reason",
+                ].includes(k) &&
+                v !== null &&
+                v !== "",
             )
             .map(([k, v]) => (
               <div key={k} className="contents">
@@ -59,7 +73,19 @@ export function AgentApprovalBody({ approval }: { approval: Approval }) {
                         ? "content.typeLabel"
                         : k === "scheduled_at"
                           ? "content.schedule.title"
-                          : "agentWork.expires",
+                          : k === "execute_before"
+                            ? "agentWork.expires"
+                            : k === "title"
+                              ? "content.editor.titleLabel"
+                              : k === "customer_name"
+                                ? "calendar.customerName"
+                                : k === "customer_contact"
+                                  ? "calendar.customerContact"
+                                  : k === "start_at_local" || k === "new_start_at_local"
+                                    ? "calendar.startAt"
+                                    : k === "end_at_local" || k === "new_end_at_local"
+                                      ? "calendar.endAt"
+                                      : "calendar.reason",
                   )}
                 </dt>
                 <dd className="font-medium text-primary">{String(v)}</dd>

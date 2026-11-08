@@ -454,6 +454,25 @@
     "openInTelegram": "Open in Telegram",
     "close": "Close"
   },
+  "calendar": {
+    "title": "Google Calendar connection",
+    "intro": "Connect your business calendar so the assistant can check availability and book, reschedule, or cancel appointments.",
+    "none": "No calendar is connected yet.",
+    "connectGoogle": "Connect Google Calendar",
+    "reconnectGoogle": "Reconnect Google Calendar",
+    "connectMock": "Connect demo calendar (simulation)",
+    "disconnect": "Disconnect calendar",
+    "oauthConnected": "Google Calendar connected.",
+    "accountLabel": "Calendar account",
+    "timezoneLabel": "Calendar timezone",
+    "slotDurationLabel": "Default appointment duration",
+    "slotDurationMinutes": "{{minutes}} minutes",
+    "customerName": "Customer",
+    "customerContact": "Contact",
+    "startAt": "Start time",
+    "endAt": "End time",
+    "reason": "Reason"
+  },
   "systemHealth": {
     "title": "System health",
     "intro": "What happened in the background over the last 24 hours. Only numbers and error codes are shown, never message text.",
@@ -647,6 +666,7 @@
     "advanced": "Advanced settings",
     "messaging": "Messaging",
     "content": "Content",
+    "calendar": "Calendar & appointments",
     "moreActions": "More actions",
     "manualReply": "Write your own reply",
     "edit": "Edit",

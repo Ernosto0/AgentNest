@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
-import type { ChannelLink, ChannelLinkCode, Invite, Member, PendingInvite, Role, SocialAccount, SystemHealth } from "@/api/types";
+import type { CalendarAppointment, CalendarConnection, ChannelLink, ChannelLinkCode, Invite, Member, PendingInvite, Role, SocialAccount, SystemHealth } from "@/api/types";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 export const systemHealthKey = (ws: string) => ["system-health", ws] as const;
@@ -278,5 +278,122 @@ export function useUnlinkChannel(ws: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: channelLinksKey(ws) });
     },
+  });
+}
+
+// --- Google Calendar & appointments integration ---
+
+export const calendarConnectionsKey = (ws: string) => ["calendar-connections", ws] as const;
+export const calendarAppointmentsKey = (ws: string) => ["calendar-appointments", ws] as const;
+
+export function useCalendarConnections(ws: string) {
+  return useQuery<CalendarConnection[], AppError>({
+    queryKey: calendarConnectionsKey(ws),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/workspaces/{workspace_id}/calendar", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ).then((page) => page.items),
+    retry: false,
+  });
+}
+
+export function useCalendarAppointments(ws: string) {
+  return useQuery<CalendarAppointment[], AppError>({
+    queryKey: calendarAppointmentsKey(ws),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/workspaces/{workspace_id}/calendar/appointments", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ).then((page) => page.items),
+    retry: false,
+  });
+}
+
+export function useConnectGoogleCalendar(ws: string) {
+  return useMutation<{ authorize_url: string }, AppError>({
+    mutationFn: () =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/calendar/connect/google", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ),
+  });
+}
+
+export function useReconnectGoogleCalendar(ws: string) {
+  return useMutation<{ authorize_url: string }, AppError, string>({
+    mutationFn: (connectionId) =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/calendar/{connection_id}/reconnect/google", {
+          params: { path: { workspace_id: ws, connection_id: connectionId } },
+        }),
+      ),
+  });
+}
+
+export function useConnectMockCalendar(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CalendarConnection,
+    AppError,
+    { account_email?: string; calendar_summary?: string; default_slot_duration_minutes?: number } | void
+  >({
+    mutationFn: (body) =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/calendar/connect-mock", {
+          params: { path: { workspace_id: ws } },
+          body: {
+            account_email: body?.account_email ?? null,
+            calendar_summary: body?.calendar_summary ?? null,
+            default_slot_duration_minutes: body?.default_slot_duration_minutes ?? 30,
+          },
+        }),
+      ),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: calendarConnectionsKey(ws) }),
+        queryClient.invalidateQueries({ queryKey: ["agent", ws] }),
+        queryClient.invalidateQueries({ queryKey: ["activity", ws] }),
+      ]),
+  });
+}
+
+export function useUpdateCalendarConnection(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CalendarConnection,
+    AppError,
+    { connectionId: string; default_slot_duration_minutes: number }
+  >({
+    mutationFn: ({ connectionId, default_slot_duration_minutes }) =>
+      unwrap(
+        api.PATCH("/api/v1/workspaces/{workspace_id}/calendar/{connection_id}", {
+          params: { path: { workspace_id: ws, connection_id: connectionId } },
+          body: { default_slot_duration_minutes },
+        }),
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: calendarConnectionsKey(ws) }),
+  });
+}
+
+export function useDisconnectCalendar(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<CalendarConnection, AppError, string>({
+    mutationFn: (connectionId) =>
+      unwrap(
+        api.POST("/api/v1/workspaces/{workspace_id}/calendar/{connection_id}/disconnect", {
+          params: { path: { workspace_id: ws, connection_id: connectionId } },
+        }),
+      ),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: calendarConnectionsKey(ws) }),
+        queryClient.invalidateQueries({ queryKey: ["agent", ws] }),
+        queryClient.invalidateQueries({ queryKey: ["activity", ws] }),
+      ]),
   });
 }

@@ -134,7 +134,7 @@ def action_detail(
     if action is None:
         raise AppError("NOT_FOUND")
     preview = None
-    if action.content_intent is not None:
+    if action.content_intent is not None and action.action_type.startswith("content."):
         from app.agent.content import result
 
         result(db, action)
@@ -162,6 +162,10 @@ def action_detail(
                 for source in (request.get("caption") or {}).get("fact_sources", [])
             ],
         )
+    if action.action_type.startswith("calendar."):
+        from app.agent.calendar import result as cal_result
+
+        cal_result(db, action)
     if action.action_type.startswith("comment."):
         from app.comments.actions import result
 

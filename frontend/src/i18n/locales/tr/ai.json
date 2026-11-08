@@ -135,7 +135,10 @@
       "comments_approve": "Yorum işlemini inceleme",
       "content_prepare": "İçerik hazırlama",
       "content_schedule": "İçerik zamanlama",
-      "content_cancel": "İçeriği iptal etme"
+      "content_cancel": "İçeriği iptal etme",
+      "calendar_book": "Randevu oluşturma",
+      "calendar_reschedule": "Randevu saatini değiştirme",
+      "calendar_cancel": "Randevuyu iptal etme"
     },
     "status": {
       "pending": "Bekliyor",

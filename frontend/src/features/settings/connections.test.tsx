@@ -31,11 +31,12 @@ function routes(ws: string, accounts: () => SocialAccount[], extra: Record<strin
   const base = `/api/v1/workspaces/${ws}`;
   return {
     "GET /api/v1/meta": () =>
-      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
+      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], calendar_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json(ME),
     [`GET ${base}`]: () => json(workspace(ws)),
     [`GET ${base}/readiness`]: () => json(READINESS),
     [`GET ${base}/social-accounts`]: () => json({ items: accounts(), next_cursor: null }),
+    [`GET ${base}/calendar`]: () => json({ items: [] }),
     [`GET ${base}/channels/links`]: () => json([]),
     ...extra,
   };
@@ -289,6 +290,62 @@ describe("the connections screen", () => {
     renderApp(PAGE(WS_GOLKENT));
     expect(await screen.findByText("Bağlı bir Instagram hesabı yok.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Demo hesabı bağla (simülasyon)" })).toBeInTheDocument();
+  });
+  it("renders CalendarSection and connects/disconnects a simulated calendar", async () => {
+    let calItems: Array<{
+      id: string;
+      provider_kind: string;
+      external_account_id: string;
+      account_email: string;
+      calendar_id: string;
+      calendar_summary: string;
+      calendar_timezone: string;
+      status: string;
+      capabilities: Record<string, boolean>;
+      default_slot_duration_minutes: number;
+      last_error_code: string | null;
+      is_simulated: boolean;
+      connected_at: string;
+      disconnected_at: string | null;
+      created_at: string;
+    }> = [];
+    mockApi(
+      routes(WS_GOLKENT, () => [account()], {
+        [`GET /api/v1/workspaces/${WS_GOLKENT}/calendar`]: () => json({ items: calItems }),
+        [`POST /api/v1/workspaces/${WS_GOLKENT}/calendar/connect-mock`]: () => {
+          const created = {
+            id: "c9000000-0000-4000-8000-000000000001",
+            provider_kind: "mock",
+            external_account_id: "sim_cal_1",
+            account_email: "studio@golkent.test",
+            calendar_id: "primary",
+            calendar_summary: "Golkent Calendar",
+            calendar_timezone: "Europe/Istanbul",
+            status: "connected",
+            capabilities: { calendar_read: true, calendar_write: true },
+            default_slot_duration_minutes: 30,
+            last_error_code: null,
+            is_simulated: true,
+            connected_at: "2026-11-08T10:00:00Z",
+            disconnected_at: null,
+            created_at: "2026-11-08T10:00:00Z",
+          };
+          calItems = [created];
+          return json(created);
+        },
+        [`POST /api/v1/workspaces/${WS_GOLKENT}/calendar/c9000000-0000-4000-8000-000000000001/disconnect`]: () => {
+          calItems = [];
+          return json({ ...calItems[0], status: "disconnected" });
+        },
+      }),
+    );
+    renderApp(PAGE(WS_GOLKENT));
+    const calSection = await screen.findByTestId("calendar-section");
+    expect(await within(calSection).findByText("Henüz bağlı bir takvim yok.")).toBeInTheDocument();
+    await userEvent.click(within(calSection).getByRole("button", { name: "Demo takvimi bağla (simülasyon)" }));
+    expect(await within(calSection).findByText("studio@golkent.test")).toBeInTheDocument();
+    await userEvent.click(within(calSection).getByRole("button", { name: "Takvim bağlantısını kes" }));
+    expect(await within(calSection).findByText("Henüz bağlı bir takvim yok.")).toBeInTheDocument();
   });
 });
 

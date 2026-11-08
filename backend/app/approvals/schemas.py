@@ -18,6 +18,9 @@ ApprovalAction = Literal[
     "content.prepare",
     "content.schedule",
     "content.cancel",
+    "calendar.book",
+    "calendar.reschedule",
+    "calendar.cancel",
 ]
 
 

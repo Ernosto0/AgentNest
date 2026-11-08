@@ -40,6 +40,7 @@ _PREFIXES = (
     "retention",
     "security",
     "demo",
+    "calendar",
 )
 
 

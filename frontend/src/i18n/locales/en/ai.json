@@ -135,7 +135,10 @@
       "comments_approve": "Review comment action",
       "content_prepare": "Prepare content",
       "content_schedule": "Schedule content",
-      "content_cancel": "Cancel content"
+      "content_cancel": "Cancel content",
+      "calendar_book": "Book appointment",
+      "calendar_reschedule": "Reschedule appointment",
+      "calendar_cancel": "Cancel appointment"
     },
     "status": {
       "pending": "Pending",

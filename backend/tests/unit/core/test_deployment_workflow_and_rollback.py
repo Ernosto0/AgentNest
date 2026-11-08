@@ -118,12 +118,13 @@ def test_cli_migration_status_head_only_and_check_config(
     rc = cli.main(["migration-status", "--head-only"])
     assert rc == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["head_revision"] == migration_head() == "0037"
+    assert out["head_revision"] == migration_head() == "0042"
     assert out["known_revisions"] == list(migration_revisions())
     assert len(out["known_revisions"]) >= 32
 
     # check-config --production --require-separated-migration-credentials
     monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("COOKIE_SECURE", "true")
     monkeypatch.setenv("SECRET_KEY", "k" * 48)
     monkeypatch.setenv(
         "DATABASE_URL", "postgresql+psycopg://agentnest_app:app_secret@db.internal:5432/agentnest"

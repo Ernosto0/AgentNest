@@ -45,6 +45,17 @@ class OwnerAnswerEvidence(BaseModel):
     version: int = Field(ge=1)
 
 
+class CalendarEvidence(BaseModel):
+    """A server-verified appointment or availability slot reference."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["available_slot", "booked", "rescheduled", "cancelled", "pending_approval"]
+    appointment_id: uuid.UUID | None = None
+    appointment_version: int | None = Field(default=None, ge=1)
+    local_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    local_start_time: str | None = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
 class ReplyValidationArgs(BaseModel):
     model_config = ConfigDict(extra="forbid")
     template: str = Field(max_length=900)
@@ -52,6 +63,7 @@ class ReplyValidationArgs(BaseModel):
     fact_sources: list[FactEvidence] = Field(default_factory=list, max_length=20)
     customer_clarification: CustomerClarification | None = None
     owner_answer: OwnerAnswerEvidence | None = None
+    calendar_evidence: CalendarEvidence | None = None
 
 
 @dataclass(frozen=True)
@@ -88,6 +100,19 @@ def validate_reply(
 
     if assemble(db, clock, context).language != proposal.language:
         return GroundedReply(errors=("REPLY_LANGUAGE_MISMATCH",))
+    if proposal.calendar_evidence is not None:
+        from app.agent.calendar import render_calendar_reply
+
+        if (
+            proposal.template.strip()
+            or proposal.fact_sources
+            or proposal.customer_clarification
+            or proposal.owner_answer
+        ):
+            return GroundedReply(errors=("CALENDAR_ATTRIBUTION_INVALID",))
+        return render_calendar_reply(
+            db, clock, context, thread, proposal.calendar_evidence, proposal.language
+        )
     if proposal.owner_answer is not None:
         from app.owner_requests.service import evidence as owner_evidence
 

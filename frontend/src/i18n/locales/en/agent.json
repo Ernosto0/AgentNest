@@ -70,7 +70,10 @@
       "content_prepare": "Prepare image content",
       "content_schedule": "Schedule content",
       "content_publish": "Publish content",
-      "content_cancel": "Cancel content"
+      "content_cancel": "Cancel content",
+      "calendar_book": "Book calendar appointments",
+      "calendar_reschedule": "Reschedule calendar appointments",
+      "calendar_cancel": "Cancel calendar appointments"
     },
     "states": {
       "inactive": "Inactive",

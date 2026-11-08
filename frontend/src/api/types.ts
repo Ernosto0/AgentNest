@@ -81,3 +81,7 @@ export type ResetResult = Schemas["ResetOut"];
 export type ChannelLink = Schemas["ChannelLinkOut"];
 export type ChannelLinkCode = Schemas["ChannelLinkCodeOut"];
 export type ChannelLinkCodeRequest = Schemas["ChannelLinkCodeRequest"];
+
+// Google Calendar & appointments integration
+export type CalendarConnection = Schemas["CalendarConnectionOut"];
+export type CalendarAppointment = Schemas["CalendarAppointmentOut"];

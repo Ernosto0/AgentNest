@@ -297,6 +297,16 @@ def exact_action(
         target = db.get(PublicComment, subject.comment_id) if subject else None
         if target is not None and target.workspace_id == ctx.workspace_id:
             target_text, target_version = target.text, subject.comment_version if subject else None
+    elif action.action_type.startswith("calendar.") and action.content_intent:
+        intent = action.content_intent
+        title = intent.get("title") or "Appointment"
+        d_str = intent.get("local_date") or ""
+        t_str = intent.get("local_time") or ""
+        customer = intent.get("customer_name")
+        parts = [f"{title} ({d_str} {t_str})".strip()]
+        if customer:
+            parts.append(str(customer))
+        text = " — ".join(parts)
     projected = action_detail(action.social_account_id, action.id, ctx, db)
     return ExactActionPreview(
         id=action.id,

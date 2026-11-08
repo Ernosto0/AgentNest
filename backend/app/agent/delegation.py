@@ -24,6 +24,7 @@ from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity.models import User, WorkspaceMember
 from app.identity.permissions import has_permission
+from app.integrations.calendar import queries as calendar_queries
 from app.integrations.instagram import queries
 
 ActionName = Literal[
@@ -37,11 +38,19 @@ ActionName = Literal[
     "content.schedule",
     "content.publish",
     "content.cancel",
+    "calendar.book",
+    "calendar.reschedule",
+    "calendar.cancel",
 ]
 Mode = Literal["automatic", "ask", "off"]
 Source = Literal["customer", "owner_task"]
 DecisionKind = Literal["automatic", "ask", "off", "unavailable", "blocked"]
 
+CALENDAR_ACTIONS: tuple[ActionName, ...] = (
+    "calendar.book",
+    "calendar.reschedule",
+    "calendar.cancel",
+)
 ACTIONS: tuple[ActionName, ...] = (
     "dm.send",
     "comment.reply",
@@ -53,6 +62,9 @@ ACTIONS: tuple[ActionName, ...] = (
     "content.schedule",
     "content.publish",
     "content.cancel",
+    "calendar.book",
+    "calendar.reschedule",
+    "calendar.cancel",
 )
 CAPABILITIES: dict[str, str | None] = {
     "dm.send": "messaging",
@@ -65,6 +77,14 @@ CAPABILITIES: dict[str, str | None] = {
     "content.schedule": None,
     "content.publish": "publish_feed_image",
     "content.cancel": None,
+    "calendar.book": None,
+    "calendar.reschedule": None,
+    "calendar.cancel": None,
+}
+CALENDAR_CAPABILITIES: dict[str, str] = {
+    "calendar.book": "event_create",
+    "calendar.reschedule": "event_update",
+    "calendar.cancel": "event_cancel",
 }
 APPROVALS: dict[str, tuple[str, str]] = {
     "dm.send": ("reply.send", "reply.approve"),
@@ -77,6 +97,9 @@ APPROVALS: dict[str, tuple[str, str]] = {
     "content.schedule": ("content.schedule", "content.approve"),
     "content.publish": ("content.publish", "content.approve"),
     "content.cancel": ("content.cancel", "content.approve"),
+    "calendar.book": ("calendar.book", "reply.approve"),
+    "calendar.reschedule": ("calendar.reschedule", "reply.approve"),
+    "calendar.cancel": ("calendar.cancel", "reply.approve"),
 }
 REQUESTER_PERMISSIONS: dict[str, str] = {
     "dm.send": "reply.write",
@@ -89,6 +112,9 @@ REQUESTER_PERMISSIONS: dict[str, str] = {
     "content.schedule": "content.approve",
     "content.publish": "content.approve",
     "content.cancel": "content.approve",
+    "calendar.book": "reply.write",
+    "calendar.reschedule": "reply.write",
+    "calendar.cancel": "reply.write",
 }
 
 
@@ -110,6 +136,11 @@ class DelegationPolicy(BaseModel):
     def all_actions_present(
         cls, actions: dict[ActionName, ActionRule]
     ) -> dict[ActionName, ActionRule]:
+        core_actions = set(ACTIONS) - set(CALENDAR_ACTIONS)
+        if core_actions.issubset(set(actions)):
+            actions = dict(actions)
+            for cal_action in CALENDAR_ACTIONS:
+                actions.setdefault(cal_action, ActionRule(mode="off"))
         if set(actions) != set(ACTIONS):
             raise ValueError("all action modes must be specified")
         return actions
@@ -380,11 +411,9 @@ def fence_action(
         )
     ):
         raise AppError("APPROVAL_STALE")
-    if action.content_intent is not None:
+    if action.content_intent is not None and thread.surface == "owner_task":
         from app.agent.owner_tasks import current_context, for_thread
 
-        if thread is None:
-            raise AppError("APPROVAL_STALE")
         requester_context = current_context(session, for_thread(session, thread))
         if requester_context is None or not has_permission(
             requester_context.role, REQUESTER_PERMISSIONS[action.action_type]
@@ -480,6 +509,19 @@ def authorize_action(
             AgentThread.id == action.thread_id,
         )
     )
+    cap_ok = (
+        provider_account is not None
+        and provider_account.status in ("connected", "degraded")
+        and (capability is None or provider_account.capabilities.get(capability) is True)
+    )
+    if cap_ok and action.action_type in CALENDAR_CAPABILITIES:
+        cal_conn = calendar_queries.get_active_connection_for_workspace(session, ctx.workspace_id)
+        cal_cap = CALENDAR_CAPABILITIES[action.action_type]
+        cap_ok = (
+            cal_conn is not None
+            and cal_conn.status in ("connected", "degraded")
+            and cal_conn.capabilities.get(cal_cap) is True
+        )
     decision = decide(
         rule=rule,
         source=source,
@@ -489,9 +531,7 @@ def authorize_action(
         and thread is not None
         and thread.handling_mode == "agent"
         and thread.controller_epoch == account.controller_epoch,
-        capability_available=provider_account is not None
-        and provider_account.status in ("connected", "degraded")
-        and (capability is None or provider_account.capabilities.get(capability) is True),
+        capability_available=cap_ok,
         target_owned=target_owned,
         visibility_allowed=visibility_allowed,
         claims_valid=claims_valid,

@@ -70,6 +70,10 @@ def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "TELEGRAM_BOT_USERNAME",
         "TELEGRAM_BOT_TOKEN",
         "TELEGRAM_WEBHOOK_SECRET",
+        "CALENDAR_ENABLED_PROVIDERS",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "GOOGLE_OAUTH_REDIRECT_URI",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -527,6 +531,37 @@ def test_telegram_production_settings_validation() -> None:
     public = s.public_dict()
     assert "telegram_bot_token" not in public
     assert "telegram_webhook_secret" not in public
+
+
+def test_google_calendar_production_settings_validation() -> None:
+    # Default in production with no google_client_id has no calendar providers enabled
+    s_default = prod()
+    assert s_default.calendar_providers == set()
+
+    # Enabling google without credentials fails
+    with pytest.raises(ConfigError, match="GOOGLE_CLIENT_ID"):
+        prod(calendar_enabled_providers="google", google_client_id="")
+    with pytest.raises(ConfigError, match="GOOGLE_CLIENT_SECRET"):
+        prod(
+            calendar_enabled_providers="google",
+            google_client_id="client-id.apps.googleusercontent.com",
+            google_client_secret="",
+        )
+
+    # Enabling mock in production without allow_simulated_workspaces fails
+    with pytest.raises(ConfigError, match="ALLOW_SIMULATED_WORKSPACES"):
+        prod(calendar_enabled_providers="mock", allow_simulated_workspaces=False)
+
+    # Valid google calendar config in production
+    s_google = prod(
+        calendar_enabled_providers="google",
+        google_client_id="client-id.apps.googleusercontent.com",
+        google_client_secret="super-secret-google-secret",
+    )
+    assert s_google.calendar_providers == {"google"}
+    public = s_google.public_dict()
+    assert "google_client_secret" not in public
+    assert "super-secret-google-secret" not in str(public)
 
 
 def test_validate_production_settings_enforces_production_env() -> None:

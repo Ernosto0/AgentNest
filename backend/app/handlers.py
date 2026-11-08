@@ -25,6 +25,7 @@ def load_handlers() -> None:
     import app.knowledge.promotion_notices  # noqa: F401
     import app.memory.models  # noqa: F401
     import app.notifications.jobs  # noqa: F401
+    import app.operations.calendar  # noqa: F401
     import app.operations.content_ledger  # noqa: F401
     import app.operations.jobs  # noqa: F401
     import app.operations.key_rotation  # noqa: F401

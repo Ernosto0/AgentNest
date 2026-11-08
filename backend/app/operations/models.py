@@ -36,6 +36,9 @@ OPERATION_TYPES = (
     "comment_unhide",
     "comment_delete",
     "comment_private_reply",
+    "calendar_create_event",
+    "calendar_update_event",
+    "calendar_cancel_event",
 )
 OPERATION_STATUSES = (
     "pending",
@@ -64,7 +67,7 @@ class Operation(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base)
         ),
         CheckConstraint(_in("operation_type", OPERATION_TYPES), name="operation_type"),
         CheckConstraint(_in("status", OPERATION_STATUSES), name="status"),
-        CheckConstraint(_in("provider_kind", ("mock", "meta")), name="provider_kind"),
+        CheckConstraint(_in("provider_kind", ("mock", "meta", "google")), name="provider_kind"),
         CheckConstraint("attempts >= 0", name="attempts"),
         Index("ix_operations_status", "status", "started_at"),
         Index("ix_operations_subject", "subject_type", "subject_id"),

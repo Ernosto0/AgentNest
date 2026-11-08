@@ -63,7 +63,7 @@ export function DelegationForm({
       <p className="text-sm text-secondary">{t("agent.delegationHint")}</p>
 
       <div className="flex min-w-0 flex-col gap-6">
-        {([{ key: "messaging", actions: ACTIONS.filter(a => a.startsWith("dm.")) }, { key: "comments", actions: ACTIONS.filter(a => a.startsWith("comment.")) }, { key: "content", actions: ACTIONS.filter(a => a.startsWith("content.")) }]).map(group => <section key={group.key} className="flex flex-col gap-3"><h3 className="type-section">{t(`core.${group.key}`)}</h3><div className="grid gap-4 min-[1400px]:grid-cols-2">{group.actions.map((action) => (
+        {([{ key: "messaging", actions: ACTIONS.filter(a => a.startsWith("dm.")) }, { key: "comments", actions: ACTIONS.filter(a => a.startsWith("comment.")) }, { key: "content", actions: ACTIONS.filter(a => a.startsWith("content.")) }, { key: "calendar", actions: ACTIONS.filter(a => a.startsWith("calendar.")) }]).map(group => <section key={group.key} className="flex flex-col gap-3"><h3 className="type-section">{t(`core.${group.key}`)}</h3><div className="grid gap-4 min-[1400px]:grid-cols-2">{group.actions.map((action) => (
           <fieldset
             key={action}
             className="min-w-0 rounded-control border border-border p-4 flex flex-col gap-3"

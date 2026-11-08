@@ -26,6 +26,7 @@ from app.knowledge.router import router as knowledge_router
 from app.memory.router import router as memory_router
 from app.notifications.router import router as notifications_router
 from app.operations.accounts_router import router as social_accounts_router
+from app.operations.calendar_router import router as calendar_router
 from app.operations.data_rights_router import router as data_rights_router
 from app.operations.router import router as operations_router
 from app.operations.system_health_router import router as system_health_router
@@ -47,6 +48,7 @@ class MetaResponse(BaseModel):
     llm_mode: str
     supported_locales: list[str]
     instagram_providers: list[Literal["mock", "meta"]]
+    calendar_providers: list[Literal["mock", "google"]] = []
     mock_requires_demo_workspace: bool
 
 
@@ -78,6 +80,9 @@ def meta(settings: Settings = Depends(get_app_settings)) -> MetaResponse:
         instagram_providers=[
             provider for provider in ("mock", "meta") if provider in settings.instagram_providers
         ],
+        calendar_providers=[
+            provider for provider in ("mock", "google") if provider in settings.calendar_providers
+        ],
         mock_requires_demo_workspace=settings.app_env == "production",
     )
 
@@ -90,6 +95,7 @@ api_router.include_router(approvals_router)
 api_router.include_router(commands_router)
 api_router.include_router(notifications_router)
 api_router.include_router(social_accounts_router)
+api_router.include_router(calendar_router)
 api_router.include_router(operations_router)
 api_router.include_router(data_rights_router)
 api_router.include_router(system_health_router)

@@ -46,6 +46,7 @@ _SECRET_FIELDS = frozenset(
         "sentry_dsn",
         "telegram_bot_token",
         "telegram_webhook_secret",
+        "google_client_secret",
     }
 )
 
@@ -187,6 +188,12 @@ class Settings(BaseSettings):
     telegram_bot_token: SecretStr | None = None
     telegram_webhook_secret: SecretStr | None = None
 
+    # --- Google Calendar Integration ---
+    calendar_enabled_providers: str = "mock"
+    google_client_id: str = ""
+    google_client_secret: SecretStr = SecretStr("")
+    google_oauth_redirect_uri: str = "http://localhost:8000/oauth/google-calendar/callback"
+
     @field_validator("log_level", mode="before")
     @classmethod
     def _upper_log_level(cls, value: Any) -> Any:
@@ -207,6 +214,8 @@ class Settings(BaseSettings):
                 self.allow_simulated_workspaces = False
             if "instagram_enabled_providers" not in explicit:
                 self.instagram_enabled_providers = "meta"
+            if "calendar_enabled_providers" not in explicit:
+                self.calendar_enabled_providers = "google" if self.google_client_id.strip() else ""
         problems = self.safety_problems()
         if problems:
             raise ConfigError(problems)
@@ -214,9 +223,14 @@ class Settings(BaseSettings):
 
     def safety_problems(self) -> list[str]:
         """Provider/storage safety applies everywhere; production has extra deployment checks."""
-        problems = self._instagram_problems()
+        problems = self._instagram_problems() + self._calendar_problems()
         keys = self.token_encryption_keys.get_secret_value()
-        if keys or self.token_encryption_active_key_id or "meta" in self.instagram_providers:
+        if (
+            keys
+            or self.token_encryption_active_key_id
+            or "meta" in self.instagram_providers
+            or "google" in self.calendar_providers
+        ):
             try:
                 TokenKeyRing(keys, self.token_encryption_active_key_id)
             except TokenCryptoError as exc:
@@ -380,6 +394,33 @@ class Settings(BaseSettings):
                 problems.append("META_WEBHOOK_VERIFY_TOKEN must be set when 'meta' is enabled.")
             if not self.meta_oauth_redirect_uri.strip():
                 problems.append("META_OAUTH_REDIRECT_URI must be set when 'meta' is enabled.")
+        return problems
+
+    @property
+    def calendar_providers(self) -> frozenset[str]:
+        """The enabled calendar provider kinds (``mock``, ``google``)."""
+        return frozenset(
+            p.strip().lower() for p in self.calendar_enabled_providers.split(",") if p.strip()
+        )
+
+    def _calendar_problems(self) -> list[str]:
+        problems: list[str] = []
+        kinds = self.calendar_providers
+        unknown = kinds - {"mock", "google"}
+        if unknown:
+            problems.append(f"CALENDAR_ENABLED_PROVIDERS has unknown kinds: {sorted(unknown)}.")
+        if "mock" in kinds and self.app_env == "production" and not self.allow_simulated_workspaces:
+            problems.append(
+                "CALENDAR_ENABLED_PROVIDERS contains 'mock' in production, which requires "
+                "ALLOW_SIMULATED_WORKSPACES=true."
+            )
+        if "google" in kinds:
+            if not self.google_client_id.strip():
+                problems.append("GOOGLE_CLIENT_ID must be set when 'google' is enabled.")
+            if not self.google_client_secret.get_secret_value().strip():
+                problems.append("GOOGLE_CLIENT_SECRET must be set when 'google' is enabled.")
+            if not self.google_oauth_redirect_uri.strip():
+                problems.append("GOOGLE_OAUTH_REDIRECT_URI must be set when 'google' is enabled.")
         return problems
 
     def llm_model_for(self, task: str) -> str:

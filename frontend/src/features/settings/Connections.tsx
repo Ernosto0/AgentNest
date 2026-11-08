@@ -13,7 +13,18 @@ import { useConnectMock, useReconnectMock, useSocialAccounts } from "@/features/
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { AccountStatusBadge } from "./AccountStatusBadge";
 import { Channels } from "./Channels";
-import { useConnectInstagram, useDisconnectAccount, useErrorText, useLocalTime } from "./hooks";
+import {
+  useCalendarConnections,
+  useConnectGoogleCalendar,
+  useConnectInstagram,
+  useConnectMockCalendar,
+  useDisconnectAccount,
+  useDisconnectCalendar,
+  useErrorText,
+  useLocalTime,
+  useReconnectGoogleCalendar,
+  useUpdateCalendarConnection,
+} from "./hooks";
 
 // Only callback catalog codes can select text. Never reflect arbitrary provider/query strings.
 const OAUTH_ERRORS = new Set([
@@ -31,7 +42,7 @@ function OAuthBanner() {
   const [params, setParams] = useSearchParams();
   const errorText = useErrorText();
   const status = params.get("oauth");
-  if (status !== "connected" && status !== "error") return null;
+  if (status !== "connected" && status !== "calendar_connected" && status !== "error") return null;
   const code = params.get("code") ?? "";
   const error = errorText(OAUTH_ERRORS.has(code) ? code : "UNKNOWN");
   const isError = status === "error";
@@ -47,7 +58,13 @@ function OAuthBanner() {
       }`}
     >
       <div className="flex flex-col gap-1">
-        <p className="font-semibold">{status === "connected" ? t("connections.oauthConnected") : error.what}</p>
+        <p className="font-semibold">
+          {status === "connected"
+            ? t("connections.oauthConnected")
+            : status === "calendar_connected"
+              ? t("calendar.oauthConnected")
+              : error.what}
+        </p>
         {isError && error.next ? <p className="text-sm font-medium opacity-90">{error.next}</p> : null}
       </div>
       <div>
@@ -147,8 +164,169 @@ export function Connections() {
       ) : null}
 
       </div>
-      <div className="min-w-0"><Channels /></div>
+      <div className="min-w-0 flex flex-col gap-6">
+        <CalendarSection owner={owner} />
+        <Channels />
       </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarSection({ owner }: { owner: boolean }) {
+  const { t } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
+  const meta = useMeta();
+  const connections = useCalendarConnections(workspace.id);
+  const connectGoogle = useConnectGoogleCalendar(workspace.id);
+  const reconnectGoogle = useReconnectGoogleCalendar(workspace.id);
+  const connectMock = useConnectMockCalendar(workspace.id);
+  const updateSettings = useUpdateCalendarConnection(workspace.id);
+  const disconnect = useDisconnectCalendar(workspace.id);
+  const [redirecting, setRedirecting] = useState(false);
+
+  const mockAllowed =
+    meta.data?.calendar_providers?.includes("mock") === true &&
+    (!meta.data.mock_requires_demo_workspace || workspace.is_demo);
+  const googleAllowed = meta.data?.calendar_providers?.includes("google") === true;
+  const active = connections.data?.find((c) => c.status !== "disconnected") ?? null;
+  const busy =
+    connectGoogle.isPending ||
+    reconnectGoogle.isPending ||
+    connectMock.isPending ||
+    updateSettings.isPending ||
+    disconnect.isPending ||
+    redirecting;
+
+  return (
+    <div
+      data-testid="calendar-section"
+      className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-heading font-semibold text-primary">
+              {t("calendar.title")}
+            </h2>
+            {active ? (
+              <>
+                <AccountStatusBadge status={active.status} />
+                {active.is_simulated ? <SimulatedBadge /> : null}
+              </>
+            ) : null}
+          </div>
+          <p className="mt-1 text-sm text-secondary">{t("calendar.intro")}</p>
+        </div>
+      </div>
+
+      {connections.isError ? <ErrorMessage error={connections.error} /> : null}
+      {connectGoogle.isError ? <ErrorMessage error={connectGoogle.error} /> : null}
+      {reconnectGoogle.isError ? <ErrorMessage error={reconnectGoogle.error} /> : null}
+      {connectMock.isError ? <ErrorMessage error={connectMock.error} /> : null}
+      {updateSettings.isError ? <ErrorMessage error={updateSettings.error} /> : null}
+      {disconnect.isError ? <ErrorMessage error={disconnect.error} /> : null}
+
+      {connections.isPending ? (
+        <p className="text-sm text-secondary">{t("common.loading")}</p>
+      ) : active ? (
+        <div className="flex flex-col gap-4 pt-1">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                {t("calendar.accountLabel")}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-primary">
+                {active.account_email ?? active.calendar_summary ?? active.calendar_id}
+              </p>
+            </div>
+            <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                {t("calendar.timezoneLabel")}
+              </p>
+              <p className="mt-1 text-sm font-medium text-primary">
+                {active.calendar_timezone ?? workspace.timezone}
+              </p>
+            </div>
+          </div>
+
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-secondary">
+            <span className="text-primary">{t("calendar.slotDurationLabel")}</span>
+            <select
+              className="min-h-11 rounded-control border border-border bg-surface px-3 py-2 text-sm text-primary"
+              disabled={!owner || busy}
+              value={active.default_slot_duration_minutes}
+              onChange={(e) =>
+                updateSettings.mutate({
+                  connectionId: active.id,
+                  default_slot_duration_minutes: Number(e.target.value),
+                })
+              }
+            >
+              {[15, 30, 45, 60, 90, 120].map((mins) => (
+                <option key={mins} value={mins}>
+                  {t("calendar.slotDurationMinutes", { minutes: mins })}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {owner ? (
+            <div className="flex flex-wrap gap-2">
+              {active.status === "needs_reauth" && active.provider_kind === "google" ? (
+                <Button
+                  disabled={busy || !googleAllowed}
+                  onClick={() =>
+                    reconnectGoogle.mutate(active.id, {
+                      onSuccess: ({ authorize_url }) => {
+                        setRedirecting(true);
+                        window.location.assign(authorize_url);
+                      },
+                    })
+                  }
+                >
+                  {t("calendar.reconnectGoogle")}
+                </Button>
+              ) : null}
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => disconnect.mutate(active.id)}
+              >
+                {t("calendar.disconnect")}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 pt-1">
+          <p className="text-sm text-secondary">{t("calendar.none")}</p>
+          {owner ? (
+            <div className="flex flex-wrap gap-2">
+              {googleAllowed ? (
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    connectGoogle.mutate(undefined, {
+                      onSuccess: ({ authorize_url }) => {
+                        setRedirecting(true);
+                        window.location.assign(authorize_url);
+                      },
+                    })
+                  }
+                >
+                  {t("calendar.connectGoogle")}
+                </Button>
+              ) : null}
+              {mockAllowed ? (
+                <Button disabled={busy} onClick={() => connectMock.mutate()}>
+                  {t("calendar.connectMock")}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

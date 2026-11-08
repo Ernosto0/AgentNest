@@ -70,7 +70,10 @@
       "content_prepare": "Görsel içerik hazırlama",
       "content_schedule": "İçerik zamanlama",
       "content_publish": "İçerik yayınlama",
-      "content_cancel": "İçeriği iptal etme"
+      "content_cancel": "İçeriği iptal etme",
+      "calendar_book": "Takvim randevusu oluşturma",
+      "calendar_reschedule": "Takvim randevusunu yeniden planlama",
+      "calendar_cancel": "Takvim randevusunu iptal etme"
     },
     "states": {
       "inactive": "Etkin değil",

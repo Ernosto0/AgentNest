@@ -97,6 +97,10 @@ def on_decided(session: Session, clock: Clock, ctx: WorkspaceContext, approval: 
             from app.agent.content import execute
 
             execute(session, clock, action)
+        if action.action_type in delegation.CALENDAR_ACTIONS:
+            from app.agent.calendar import queue_calendar_action
+
+            queue_calendar_action(session, clock, action)
         if action.action_type == "comment.private_reply":
             from app.comments.private_reply import eligibility, queue
 

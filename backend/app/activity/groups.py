@@ -111,6 +111,13 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "social_account.disconnected",
         "social_account.token_refreshed",
         "account.reconnected",
+        "calendar.connected",
+        "calendar.degraded",
+        "calendar.needs_reauth",
+        "calendar.disconnected",
+        "calendar.appointment_booked",
+        "calendar.appointment_rescheduled",
+        "calendar.appointment_cancelled",
     ),
     "members": (
         "member.invited",

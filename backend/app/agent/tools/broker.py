@@ -97,6 +97,11 @@ class ToolBroker:
                 or spec.name != "comment.private_reply"
                 or capabilities.get("comment_private_reply") is True
             )
+            and (
+                capabilities is None
+                or not spec.name.startswith("calendar.")
+                or capabilities.get("calendar_connected") is True
+            )
         )
 
     def dispatch(
@@ -503,4 +508,57 @@ def build_default_broker() -> ToolBroker:
             _thread_read,
         )
     )
+    from app.agent.calendar import (
+        CalendarAvailabilityArgs,
+        CalendarBookArgs,
+        CalendarListAppointmentsArgs,
+        CalendarModifyArgs,
+        availability,
+        book,
+        list_appointments,
+        modify,
+    )
+
+    for cal_name, cal_desc, cal_cap, cal_schema, cal_handler in (
+        (
+            "calendar.availability",
+            "Check available appointment slots on the workspace calendar.",
+            "public_read",
+            CalendarAvailabilityArgs,
+            availability,
+        ),
+        (
+            "calendar.list_appointments",
+            "List scheduled appointments (scoped to the customer in DM).",
+            "public_read",
+            CalendarListAppointmentsArgs,
+            list_appointments,
+        ),
+        (
+            "calendar.book",
+            "Book an appointment slot on the workspace calendar.",
+            "external_effect",
+            CalendarBookArgs,
+            book,
+        ),
+        (
+            "calendar.modify",
+            "Reschedule or cancel an existing scheduled appointment.",
+            "external_effect",
+            CalendarModifyArgs,
+            modify,
+        ),
+    ):
+        broker.register(
+            ToolSpec(
+                cal_name,
+                "v1",
+                cal_desc,
+                cal_cap,  # type: ignore[arg-type]
+                frozenset({"dm", "owner_task"}),
+                frozenset({"customer", "owner_task"}),
+                cal_schema,
+                cal_handler,
+            )
+        )
     return broker

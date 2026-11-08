@@ -11,6 +11,7 @@ from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.db import get_db, get_session_factory
 from app.identity.service import AuthenticatedSession
+from app.operations import calendar as calendar_service
 from app.operations import oauth_service
 
 router = APIRouter(tags=["integrations"])
@@ -36,6 +37,37 @@ def callback(
         {"oauth": "error", "code": result.error_code}
         if result.error_code
         else {"oauth": "connected"}
+    )
+    redirect = RedirectResponse(
+        f"{settings.frontend_origin}/w/{result.workspace_id}/more/settings/connections?{urlencode(query)}",
+        status_code=303,
+    )
+    for name, value in response.raw_headers:
+        if name.lower() == b"set-cookie":
+            redirect.raw_headers.append((name, value))
+    return redirect
+
+
+@router.get("/oauth/google-calendar/callback", status_code=303, response_class=RedirectResponse)
+def google_calendar_callback(
+    response: Response,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    auth: AuthenticatedSession = Depends(current_auth),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> RedirectResponse:
+    user_id = auth.user.id
+    db.commit()  # request authentication itself opened a transaction; finish it BEFORE HTTP.
+    result = calendar_service.complete_google_callback(
+        get_session_factory(), clock, settings, user_id, code=code, state=state, error=error
+    )
+    query = (
+        {"oauth": "error", "code": result.error_code}
+        if result.error_code
+        else {"oauth": "calendar_connected"}
     )
     redirect = RedirectResponse(
         f"{settings.frontend_origin}/w/{result.workspace_id}/more/settings/connections?{urlencode(query)}",

@@ -41,6 +41,7 @@ function routes(
     [`GET ${base}`]: () => json(workspace(ws)),
     [`GET ${base}/readiness`]: () => json(READINESS),
     [`GET ${base}/social-accounts`]: () => json({ items: [], next_cursor: null }),
+    [`GET ${base}/calendar`]: () => json({ items: [] }),
     [`GET ${base}/channels/links`]: () => json(links()),
     ...extra,
   };
