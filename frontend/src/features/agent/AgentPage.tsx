@@ -7,6 +7,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { CalendarIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useSocialAccounts } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -296,6 +297,30 @@ function AccountAgent({
             {change.error ? <ErrorMessage error={change.error} /> : null}
           </Card>
 
+          <div className="flex flex-col gap-6">
+          <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
+            <div className="flex items-center gap-2 border-b border-border pb-3">
+              <CalendarIcon className="text-xl text-action" />
+              <h2 className="text-lg font-heading font-semibold text-primary">{t("calendar.title")}</h2>
+            </div>
+            <p className="text-sm text-secondary">{t("calendar.intro")}</p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Link
+                to={`/w/${ws}/more/settings/connections#calendar`}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-action px-4 py-2 text-sm font-semibold text-action-text hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                <CalendarIcon className="text-base" />
+                <span>{t("calendar.openConnection")}</span>
+              </Link>
+              <Link
+                to="?panel=permissions"
+                className="text-sm font-semibold text-action hover:text-action-hover underline underline-offset-2"
+              >
+                {t("calendar.configurePermissions")}
+              </Link>
+            </div>
+          </Card>
+
           <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5 shadow-xs">
             <div className="border-b border-border pb-3">
               <h2 className="text-lg font-heading font-semibold text-primary">{t("agent.capabilities")}</h2>
@@ -320,6 +345,7 @@ function AccountAgent({
               ))}
             </ul>
           </Card>
+          </div>
 
           </div>
 

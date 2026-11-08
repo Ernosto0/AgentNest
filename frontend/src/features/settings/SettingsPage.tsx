@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
-import { ChevronRightIcon } from "@/components/icons";
+import { CalendarIcon, ChevronRightIcon } from "@/components/icons";
 import { useLogout, useMe, useSaveLocale } from "@/features/auth/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { AccountSecurity } from "./AccountSecurity";
@@ -125,6 +125,13 @@ export function SettingsPage() {
         <div className="flex flex-col divide-y divide-border/60">
           <Link to={`/w/${workspace.id}/more/settings/connections`} className={LINK_ROW}>
             <span>{t("settings.openConnections")}</span>
+            <ChevronRightIcon className="text-xl text-secondary/50" />
+          </Link>
+          <Link to={`/w/${workspace.id}/more/settings/connections#calendar`} className={LINK_ROW}>
+            <span className="flex items-center gap-2">
+              <CalendarIcon className="text-lg text-action" />
+              <span>{t("settings.openCalendar")}</span>
+            </span>
             <ChevronRightIcon className="text-xl text-secondary/50" />
           </Link>
           <Link to={`/w/${workspace.id}/more/settings/members`} className={LINK_ROW}>

@@ -29,6 +29,7 @@ export const DESTINATION_GROUPS: readonly { labelKey: string; items: readonly Na
     { path: "more/reports", labelKey: "more.reports", icon: ChartIcon },
   ] },
   { labelKey: "shell.workspace", items: [
+    { path: "more/settings/connections", labelKey: "more.connections", icon: LinkIcon },
     { path: "more/activity", labelKey: "more.activity", icon: ClockIcon, managementOnly: true },
     { path: "more/settings", labelKey: "more.settings", icon: SettingsIcon },
   ] },
@@ -43,7 +44,6 @@ export const MORE_GROUPS: readonly { labelKey: string; items: readonly NavItem[]
   { labelKey: "shell.workspace", items: [
     ...(DESTINATION_GROUPS[2]?.items ?? []),
     { path: "more/notifications", labelKey: "more.notifications", icon: BellIcon },
-    { path: "more/settings/connections", labelKey: "more.connections", icon: LinkIcon },
     { path: "more/settings/members", labelKey: "more.members", icon: UsersIcon },
     { path: "more/settings/system-health", labelKey: "more.systemHealth", icon: InfoIcon, managementOnly: true },
     { path: "more/dev", labelKey: "more.devPanel", icon: SettingsIcon, demoOnly: true },
@@ -61,7 +61,7 @@ export function selectedDestination(path: string): string {
   if (path === "inbox" || path.startsWith("inbox/")) return "inbox";
   if (path === "content" || path.startsWith("content/")) return "content";
   if (path === "approvals") return "approvals";
-  for (const candidate of ["more/agent", "more/knowledge", "more/reports", "more/settings", "more/activity", "more/notifications"]) {
+  for (const candidate of ["more/agent", "more/knowledge", "more/reports", "more/settings/connections", "more/settings", "more/activity", "more/notifications"]) {
     if (path === candidate || path.startsWith(`${candidate}/`)) return candidate;
   }
   return "more";

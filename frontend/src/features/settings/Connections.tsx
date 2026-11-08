@@ -6,6 +6,7 @@ import type { SocialAccount } from "@/api/types";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { CalendarIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { capabilityLabel } from "@/features/content/messages";
 import { useMeta } from "@/features/auth/hooks";
@@ -200,13 +201,15 @@ function CalendarSection({ owner }: { owner: boolean }) {
 
   return (
     <div
+      id="calendar"
       data-testid="calendar-section"
-      className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs"
+      className="flex flex-col gap-4 rounded-panel border-2 border-action/30 bg-surface p-5 shadow-xs"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-base font-heading font-semibold text-primary">
+            <CalendarIcon className="text-xl text-action" />
+            <h2 className="text-lg font-heading font-bold text-primary">
               {t("calendar.title")}
             </h2>
             {active ? (
@@ -302,10 +305,10 @@ function CalendarSection({ owner }: { owner: boolean }) {
         <div className="flex flex-col gap-3 pt-1">
           <p className="text-sm text-secondary">{t("calendar.none")}</p>
           {owner ? (
-            <div className="flex flex-wrap gap-2">
-              {googleAllowed ? (
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  disabled={busy}
+                  disabled={busy || !googleAllowed}
                   onClick={() =>
                     connectGoogle.mutate(undefined, {
                       onSuccess: ({ authorize_url }) => {
@@ -317,11 +320,16 @@ function CalendarSection({ owner }: { owner: boolean }) {
                 >
                   {t("calendar.connectGoogle")}
                 </Button>
-              ) : null}
-              {mockAllowed ? (
-                <Button disabled={busy} onClick={() => connectMock.mutate()}>
-                  {t("calendar.connectMock")}
-                </Button>
+                {mockAllowed ? (
+                  <Button variant="secondary" disabled={busy} onClick={() => connectMock.mutate()}>
+                    {t("calendar.connectMock")}
+                  </Button>
+                ) : null}
+              </div>
+              {meta.data && !googleAllowed ? (
+                <p className="text-xs text-secondary leading-relaxed">
+                  {t("calendar.googleConfigHint")}
+                </p>
               ) : null}
             </div>
           ) : null}

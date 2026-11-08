@@ -353,11 +353,12 @@ describe("the menus", () => {
   it("lists the connection for everyone and the system health for the owner and manager", async () => {
     mockApi(routes(WS_GOLKENT, () => [account()]));
     renderApp(`/w/${WS_GOLKENT}/more`);
-    expect(await screen.findByRole("link", { name: "Instagram bağlantısı" })).toHaveAttribute(
+    const main = within(await screen.findByRole("main"));
+    expect(await main.findByRole("link", { name: "Instagram bağlantısı" })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/more/settings/connections`,
     );
-    expect(screen.getByRole("link", { name: "Sistem durumu" })).toHaveAttribute(
+    expect(main.getByRole("link", { name: "Sistem durumu" })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/more/settings/system-health`,
     );
