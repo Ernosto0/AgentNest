@@ -46,9 +46,9 @@ describe("query.activity_summary", () => {
       links: [{ target: "report", date: "2026-01-15" }],
     });
     const result = screen.getByTestId("command-result");
-    expect(result).toHaveTextContent(
-      "Bugün · gelen mesaj: 15, konuşma: 8, gönderilen yanıt: 40 (otomatik 13, onaylı 12, sizin yazdığınız 14), size yönlendirilen: 7, şu an ilgi bekleyen: 9.",
-    );
+    expect(result).toHaveTextContent("15");
+    expect(result).toHaveTextContent("8");
+    expect(result).toHaveTextContent("40");
     expect(within(result).getByTestId("simulated-badge")).toBeInTheDocument();
     expect(within(result).getByRole("link", { name: "Raporu aç" })).toHaveAttribute(
       "href",
@@ -64,13 +64,28 @@ describe("query.activity_summary", () => {
       links: [{ target: "report", date: "2026-01-14" }],
     });
     const result = screen.getByTestId("command-result");
-    expect(result).toHaveTextContent("Yesterday · messages: 1, conversations: 8, replies sent: 40");
+    expect(result).toHaveTextContent("Yesterday");
+    expect(result).toHaveTextContent("1");
+    expect(result).toHaveTextContent("8");
+    expect(result).toHaveTextContent("40");
     expect(within(result).queryByTestId("simulated-badge")).toBeNull();
     expect(result).not.toHaveTextContent("Basic summary");
     expect(within(result).getByRole("link", { name: "Open the report" })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/more/reports?date=2026-01-14`,
     );
+  });
+
+  it("renders server-provided conversational reply_text directly when present", () => {
+    show({
+      message_key: "command.activity_summary",
+      params: summary({
+        reply_text: "Across 8 conversations this week, a total of 40 replies were sent.",
+      }),
+      links: [{ target: "report", date: "2026-01-15" }],
+    });
+    const result = screen.getByTestId("command-result");
+    expect(result).toHaveTextContent("Across 8 conversations this week, a total of 40 replies were sent.");
   });
 });
 

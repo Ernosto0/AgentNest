@@ -473,11 +473,13 @@ class TelegramChannel(OwnerChannel):
         if not chat_id:
             return
 
-        summary = (
-            getattr(command, "result_summary", None)
-            or getattr(command, "text", None)
-            or str(command)
-        )
-        text = f"🤖 {html.escape(str(summary))}"
+        from app.integrations.channels.formatting import format_command_for_telegram
+
+        text, reply_markup = format_command_for_telegram(command, recipient)
         with contextlib.suppress(Exception):
-            self.client.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+            self.client.send_message(
+                chat_id=chat_id,
+                text=text,
+                parse_mode="HTML",
+                reply_markup=reply_markup,
+            )

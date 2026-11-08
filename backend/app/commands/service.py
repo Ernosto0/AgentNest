@@ -360,6 +360,24 @@ def finish_interpretation(
     command.interpreted = interpretation.model_dump(mode="json")
     command.command_type = interpretation.type
     _apply_outcome(session, clock, ctx, command, outcome, identity_service_locale(user))
+
+    # Narrate the result naturally (INV-08)
+    if command.result:
+        from app.commands.narrator import narrate_fallback
+
+        res = command.result
+        natural = narrate_fallback(
+            message_key=res.get("message_key", ""),
+            params=res.get("params", {}),
+            user_locale=identity_service_locale(user),
+            user_query=command.raw_text,
+        )
+        if natural:
+            res["reply_text"] = natural
+            if "params" in res and isinstance(res["params"], dict):
+                res["params"]["reply_text"] = natural
+            command.result = dict(res)
+
     session.commit()
 
 
@@ -732,3 +750,19 @@ def on_approval_decided(
         _fail(session, clock, ctx, command, result.error_code, result)
     else:
         _complete(session, clock, ctx, command, result)
+
+    if command.result:
+        from app.commands.narrator import narrate_fallback
+
+        res = command.result
+        natural = narrate_fallback(
+            message_key=res.get("message_key", ""),
+            params=res.get("params", {}),
+            user_locale=locale,
+            user_query=command.raw_text,
+        )
+        if natural:
+            res["reply_text"] = natural
+            if "params" in res and isinstance(res["params"], dict):
+                res["params"]["reply_text"] = natural
+            command.result = dict(res)

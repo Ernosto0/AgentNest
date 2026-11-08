@@ -295,8 +295,9 @@ def _normalize(item: dict[str, Any], entry_id: str | None) -> NormalizedInboundE
 
 
 def parse(payload: Any) -> list[NormalizedInboundEvent]:
-    """One normalised event per ``entry[].messaging[]`` or ``entry[].changes[]`` item. Unknown shapes
-    become ``other`` (stored and ignored); a payload that is not an Instagram event yields no events."""
+    """One normalised event per ``entry[].messaging[]`` or ``entry[].changes[]`` item. Unknown
+    shapes become ``other`` (stored and ignored); a payload that is not an Instagram event yields no
+    events."""
     if not isinstance(payload, dict) or payload.get("object") != "instagram":
         return []
     events: list[NormalizedInboundEvent] = []

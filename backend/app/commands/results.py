@@ -22,9 +22,18 @@ class CommandResult:
     links: list[dict[str, Any]] = field(default_factory=list)
     # Set when the outcome is a failure rather than a completion (e.g. FACT_CHANGED_MEANWHILE).
     error_code: str | None = None
+    reply_text: str | None = None
 
     def to_json(self) -> dict[str, Any]:
-        return {"message_key": self.message_key, "params": self.params, "links": self.links}
+        payload: dict[str, Any] = {
+            "message_key": self.message_key,
+            "params": dict(self.params),
+            "links": self.links,
+        }
+        if self.reply_text:
+            payload["reply_text"] = self.reply_text
+            payload["params"]["reply_text"] = self.reply_text
+        return payload
 
 
 @dataclass(frozen=True)

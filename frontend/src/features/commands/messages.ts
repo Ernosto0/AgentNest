@@ -108,6 +108,11 @@ export function describeResult(
   messageKey: string,
   params: Record<string, unknown>,
 ): string {
+  // If the server provided a natural conversational assistant reply, use it directly
+  if (typeof params.reply_text === "string" && params.reply_text.trim() !== "") {
+    return params.reply_text;
+  }
+
   const suffix = messageSuffix(messageKey);
   const known = (RESULT_MESSAGE_KEYS as readonly string[]).includes(suffix);
   const values: Record<string, unknown> = { ...params };

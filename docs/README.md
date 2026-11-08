@@ -36,6 +36,7 @@ docs/
 │   ├── user-journeys.md          screens, journeys, edge cases, failure states, UX rules
 │   ├── mvp-scope.md              stages, inclusions, exclusions, deferrals with triggers
 │   ├── pricing-and-unit-economics.md COGS, unit economics, Türkiye (TRY) and Global (USD) pricing plans
+│   ├── turkiye-30-gun-ilk-musteri-plani.md 30-day Türkiye customer acquisition & field sales plan (TR)
 │   └── acceptance-criteria.md    AC-A…G, AC-X, local MVP Definition of Done
 ├── architecture/
 │   ├── system-overview.md        context, processes, stack, canonical flow

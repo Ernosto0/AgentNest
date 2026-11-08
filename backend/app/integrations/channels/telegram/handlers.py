@@ -173,6 +173,21 @@ def handle_linked_message(
     # 2. Reporting Queries (AC-2)
     # -------------------------------------------------------------------------
     if is_reporting_query(raw_text):
+        # Queries specifying other periods like 'dün' or 'son 7 gün' go through CommandService
+        cleaned = raw_text.lower()
+        if any(
+            term in cleaned for term in ("dün", "yesterday", "son 7", "last 7", "hafta", "week")
+        ):
+            return _handle_general_command(
+                session=session,
+                clock=clock,
+                ctx=ctx,
+                raw_text=raw_text,
+                tg_client=tg_client,
+                chat_id=chat_id,
+                is_tr=is_tr,
+                update_id=update_id,
+            )
         return _handle_reporting_query(
             session=session,
             clock=clock,
@@ -555,11 +570,31 @@ def _handle_reporting_query(
         or re.search(r"how\s+many\s+(?:dms|messages|dm)", raw_text.lower())
     )
 
+    from app.commands.narrator import narrate_fallback
+
+    natural_sentence = narrate_fallback(
+        message_key="command.activity_summary",
+        params={
+            "period": "today",
+            "inbound_messages": inbound,
+            "conversations": conversations,
+            "replies_sent": summary.get("replies_sent", 0),
+            "replies_auto": summary.get("replies_auto", 0),
+            "replies_approved": summary.get("replies_approved", 0),
+            "replies_by_owner": summary.get("replies_by_owner", 0),
+            "escalations": summary.get("escalations", 0),
+            "attention_now": summary.get("attention_now", 0),
+        },
+        user_locale="tr" if is_tr else "en",
+        user_query=raw_text,
+    )
+
     if is_tr:
         if is_dm_count_question:
             text = (
                 "📬 <b>Gelen Mesajlar</b>\n\n"
-                f"Bugün toplam <b>{inbound}</b> DM / mesaj geldi.\n\n"
+                f"{html.escape(natural_sentence)}\n\n"
+                f"• <b>Toplam Gelen:</b> {inbound}\n"
                 f"• <b>Yeni Konuşma:</b> {new_convs}\n"
                 f"• <b>Aktif Konuşmalar:</b> {conversations}\n"
                 f"• <b>Bekleyen Onaylar:</b> {approvals}"
@@ -567,6 +602,7 @@ def _handle_reporting_query(
         else:
             text = (
                 "📊 <b>Bugünkü Özet</b>\n\n"
+                f"{html.escape(natural_sentence)}\n\n"
                 f"• <b>Gelen DM / Mesaj:</b> {inbound}\n"
                 f"• <b>Yeni Konuşma:</b> {new_convs}\n"
                 f"• <b>Aktif Konuşmalar:</b> {conversations}\n"
@@ -576,7 +612,8 @@ def _handle_reporting_query(
         if is_dm_count_question:
             text = (
                 "📬 <b>Inbound Messages</b>\n\n"
-                f"Today you received <b>{inbound}</b> DM(s).\n\n"
+                f"{html.escape(natural_sentence)}\n\n"
+                f"• <b>Total Inbound:</b> {inbound}\n"
                 f"• <b>New Conversations:</b> {new_convs}\n"
                 f"• <b>Active Conversations:</b> {conversations}\n"
                 f"• <b>Pending Approvals:</b> {approvals}"
@@ -584,6 +621,7 @@ def _handle_reporting_query(
         else:
             text = (
                 "📊 <b>Today's Summary</b>\n\n"
+                f"{html.escape(natural_sentence)}\n\n"
                 f"• <b>Inbound DMs / Messages:</b> {inbound}\n"
                 f"• <b>New Conversations:</b> {new_convs}\n"
                 f"• <b>Active Conversations:</b> {conversations}\n"
@@ -661,27 +699,19 @@ def _handle_general_command(
         channel="telegram",
     )
 
-    if cmd.status == "needs_clarification" and cmd.clarification:
-        question = cmd.clarification.get("question") or "Detay vermeniz gerekiyor."
-        msg = f"❓ <b>Açıklama Gerekiyor</b>\n\n{html.escape(str(question))}"
-    elif cmd.status == "awaiting_confirmation" and cmd.resolution:
-        summary = cmd.resolution.get("summary") or "Onayınız bekleniyor."
-        msg = f"⚠️ <b>Onay Gerekiyor</b>\n\n{html.escape(str(summary))}"
-    elif cmd.status == "completed" and cmd.resolution:
-        msg = f"✅ <b>İşlem Tamamlandı</b>\n\n{html.escape(str(cmd.resolution))}"
-    else:
-        msg = (
-            f"⚡ <b>Komut Alındı</b>\n\n"
-            f'<i>"{html.escape(raw_text)}"</i>\n\n'
-            "Komutunuz sıraya alındı ve işleniyor."
-            if is_tr
-            else (
-                f"⚡ <b>Command Received</b>\n\n"
-                f'<i>"{html.escape(raw_text)}"</i>\n\n'
-                "Command queued for processing."
-            )
-        )
-    tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+    from app.integrations.channels.base import ChannelRecipient
+    from app.integrations.channels.formatting import format_command_for_telegram
+
+    recipient = ChannelRecipient(
+        user_id=uuid.UUID(str(ctx.actor.id)),
+        workspace_id=ctx.workspace_id,
+        channel="telegram",
+        channel_chat_id=chat_id,
+        ui_locale="tr" if is_tr else "en",
+        timezone=ctx.timezone,
+    )
+    msg, reply_markup = format_command_for_telegram(cmd, recipient)
+    tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML", reply_markup=reply_markup)
     return "owner_command"
 
 
