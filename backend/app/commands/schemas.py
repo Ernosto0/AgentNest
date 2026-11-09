@@ -51,6 +51,7 @@ class CommandResultOut(BaseModel):
     message_key: str
     params: dict[str, Any]
     links: list[dict[str, Any]]
+    reply_text: str | None = None
 
 
 class CommandOut(BaseModel):

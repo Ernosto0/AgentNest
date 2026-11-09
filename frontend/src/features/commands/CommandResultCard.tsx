@@ -209,7 +209,9 @@ export function CommandResultCard({ command }: { command: Command }) {
   if (result) {
     // Content answers describe one item; a simulated one says so (INV-09).
     const simulated = result.params.is_simulated === true;
-    const directReply = (result as { reply_text?: string }).reply_text;
+    const directReply =
+      (result as { reply_text?: string }).reply_text ||
+      (result.params as { reply_text?: string })?.reply_text;
     return (
       <div className="flex flex-col gap-2" data-testid="command-result" data-status={command.status}>
         <p className="font-medium text-primary">

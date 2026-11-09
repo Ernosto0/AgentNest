@@ -31,6 +31,7 @@ AGENT_TASKS = (
     "draft_content",
     "extract_fact_candidates",
     "account_agent_step",
+    "narrate_command_result",
 )
 AGENT_RUN_STATUSES = ("queued", "running", "succeeded", "failed")
 
