@@ -118,6 +118,26 @@ class TokenInfo:
     access_token: str | None = field(default=None, repr=False)
 
 
+@dataclass(frozen=True)
+class AccountInsightsMetric:
+    metric: str
+    value: int
+    date: str  # YYYY-MM-DD
+
+
+@dataclass(frozen=True)
+class MediaInsightsData:
+    ig_media_id: str
+    metrics: dict[str, int]
+
+
+@dataclass(frozen=True)
+class AudienceData:
+    follower_count: int | None
+    online_followers: dict[str, int] | None  # hour of day -> count
+    demographics: dict[str, Any] | None
+
+
 class InstagramProvider(Protocol):
     kind: ProviderKind
 
@@ -170,3 +190,13 @@ class InstagramProvider(Protocol):
     def publish_container(self, account: AccountRef, container_id: str) -> str: ...
 
     def refresh_token(self, account: AccountRef) -> TokenInfo: ...
+
+    def get_account_insights(
+        self, account: AccountRef, metrics: list[str], since: datetime, until: datetime
+    ) -> list[AccountInsightsMetric]: ...
+
+    def get_media_insights(
+        self, account: AccountRef, media_id: str, media_type: str
+    ) -> MediaInsightsData: ...
+
+    def get_audience(self, account: AccountRef) -> AudienceData: ...

@@ -58,6 +58,11 @@ export const PauseIcon = (p: IconProps) => (
     <path d="M9 5v14M15 5v14" />
   </Svg>
 );
+export const PlayIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <polygon points="5 3 19 12 5 21 5 3" />
+  </Svg>
+);
 export const SpinnerIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M21 12a9 9 0 1 1-6.2-8.55" />

@@ -62,7 +62,15 @@ function GenerationProgress({ contentId, onOpen }: { contentId: string; onOpen: 
  * yourself. Both are drafts (nothing is published): the AI is never the only way in, and an AI
  * failure simply leaves the manual draft behind.
  */
-export function GenerateSheet({ initialMode, onClose }: { initialMode: NewContentMode; onClose: () => void }) {
+export function GenerateSheet({
+  initialMode,
+  initialType,
+  onClose,
+}: {
+  initialMode: NewContentMode;
+  initialType?: ContentType;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const navigate = useNavigate();
@@ -74,7 +82,7 @@ export function GenerateSheet({ initialMode, onClose }: { initialMode: NewConten
   const [blankRequestId] = useState(newRequestId);
 
   const [mode, setMode] = useState<NewContentMode>(initialMode);
-  const [type, setType] = useState<ContentType>("feed_image");
+  const [type, setType] = useState<ContentType>(initialType ?? "feed_image");
   const [objective, setObjective] = useState("");
   const [notes, setNotes] = useState("");
   const [title, setTitle] = useState("");

@@ -27,6 +27,7 @@ import app.notifications.models  # noqa: F401  # isort: skip
 import app.operations.models  # noqa: F401  # isort: skip
 import app.policy.models  # noqa: F401  # isort: skip
 import app.reporting.models  # noqa: F401  # isort: skip
+import app.insights.models  # noqa: F401  # isort: skip
 
 config = context.config
 target_metadata = Base.metadata

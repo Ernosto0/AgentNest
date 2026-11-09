@@ -23,11 +23,14 @@ from app.core.clock import Clock
 from app.integrations.instagram import webhook_format
 from app.integrations.instagram.base import (
     MOCK_PRIVATE_REPLY_WINDOW,
+    AccountInsightsMetric,
     AccountProfile,
     AccountRef,
+    AudienceData,
     ContainerSpec,
     ContainerStatus,
     MediaInfo,
+    MediaInsightsData,
     NormalizedInboundEvent,
     OutboundMessageInfo,
     PrivateReplyResult,
@@ -668,3 +671,81 @@ class MockInstagramProvider:
 
     def refresh_token(self, account: AccountRef) -> TokenInfo:
         raise NotImplementedError("the mock has no token to refresh")
+
+    def get_account_insights(
+        self, account: AccountRef, metrics: list[str], since: datetime, until: datetime
+    ) -> list[AccountInsightsMetric]:
+        seed = int(account.social_account_id.int % 1000)
+        results: list[AccountInsightsMetric] = []
+        cur = since.date()
+        end = until.date()
+        step = timedelta(days=1)
+        base_vals = {
+            "reach": 240,
+            "views": 580,
+            "total_interactions": 32,
+            "accounts_engaged": 45,
+            "follower_count": 1420,
+            "profile_links_taps": 12,
+        }
+        while cur <= end:
+            day_offset = (cur.toordinal() + seed) % 31
+            d_str = cur.isoformat()
+            for m in metrics:
+                base = base_vals.get(m, 50)
+                # Deterministic variance +/- 25%
+                variance = int(base * 0.25 * ((day_offset % 7) - 3) / 3)
+                results.append(
+                    AccountInsightsMetric(metric=m, value=max(0, base + variance), date=d_str)
+                )
+            cur += step
+        return results
+
+    def get_media_insights(
+        self, account: AccountRef, media_id: str, media_type: str
+    ) -> MediaInsightsData:
+        h = hash(media_id) % 100
+        if media_type == "story_image" or media_type == "story":
+            return MediaInsightsData(
+                ig_media_id=media_id,
+                metrics={
+                    "reach": 180 + h,
+                    "views": 220 + h * 2,
+                    "replies": max(1, h % 8),
+                    "shares": max(0, h % 5),
+                    "navigation": 15 + (h % 10),
+                    "total_interactions": max(1, (h % 8) + (h % 5)),
+                },
+            )
+        return MediaInsightsData(
+            ig_media_id=media_id,
+            metrics={
+                "reach": 420 + h * 3,
+                "views": 850 + h * 6,
+                "likes": 45 + h,
+                "comments": max(2, h % 15),
+                "shares": max(1, h % 10),
+                "saved": max(1, h % 12),
+                "total_interactions": 50 + h + (h % 15) + (h % 10) + (h % 12),
+            },
+        )
+
+    def get_audience(self, account: AccountRef) -> AudienceData:
+        # Deterministic 24h distribution peaking 19:00 - 21:00
+        online = {
+            f"{h:02d}": 120 + (500 if 18 <= h <= 21 else 250 if 12 <= h <= 17 else 40)
+            for h in range(24)
+        }
+        demographics = {
+            "top_cities": {"Istanbul": 0.65, "Ankara": 0.15, "Izmir": 0.10, "Bursa": 0.05},
+            "age_gender": {
+                "25-34": {"F": 0.42, "M": 0.18},
+                "18-24": {"F": 0.22, "M": 0.08},
+                "35-44": {"F": 0.07, "M": 0.03},
+            },
+        }
+        return AudienceData(
+            follower_count=1420,
+            online_followers=online,
+            demographics=demographics,
+        )

@@ -30,6 +30,7 @@ from app.ai.schemas import (
     QueryContentStatus,
     QueryExplainFailure,
     QueryFact,
+    QueryInsightsSummary,
     QueryPendingApprovals,
     Unsupported,
     UpdateBrandVoice,
@@ -713,6 +714,8 @@ def resolve(
             return Execute("query.pending_approvals", {})
         case QueryActivitySummary():
             return Execute("query.activity_summary", {"period": interpretation.period})
+        case QueryInsightsSummary():
+            return Execute("query.insights_summary", {"range": interpretation.range})
         case QueryFact():
             fact = _by_key(facts, interpretation.fact_key)
             if fact is None:

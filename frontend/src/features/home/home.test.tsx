@@ -5,7 +5,8 @@ import type { DailyReport } from "@/api/types";
 import { BASE } from "@/test/aiFixtures";
 import { contentItem, socialAccount } from "@/test/contentFixtures";
 import { ME, READINESS, WS_GOLKENT, WS_HARBOR, workspace } from "@/test/fixtures";
-import { json, mockApi, type RecordedRequest } from "@/test/mockApi";
+import { json, mockApi, problem, type RecordedRequest } from "@/test/mockApi";
+import tr from "@/i18n/locales/tr/common.json";
 import { REPORT_BASE, metric, report } from "@/test/reportFixtures";
 import { renderApp } from "@/test/renderApp";
 
@@ -13,12 +14,17 @@ afterEach(() => vi.unstubAllGlobals());
 
 const DAY = "2026-10-15";
 
+const HEALTHY_AGENT = {
+  state: "active", controller_mode: "agent", config_version: 3, controller_epoch: 2,
+  is_simulated: true, session_counts: {}, pending_questions: 0, pending_approvals: 0, recent_actions: [],
+};
+
 const STAFF_ME = {
   ...ME,
   memberships: ME.memberships.map((m) => (m.workspace_id === WS_GOLKENT ? { ...m, role: "staff" as const } : m)),
 };
 
-type Handler = (request: RecordedRequest) => Response;
+type Handler = (request: RecordedRequest) => Response | Promise<Response>;
 
 function routes(extra: Record<string, Handler> = {}, me = ME, llmMode = "fake") {
   return {
@@ -308,5 +314,381 @@ describe("Home: staff", () => {
     expect(screen.getByTestId("number-replies_sent")).toHaveTextContent("2");
     expect(screen.queryByTestId("number-content_published")).toBeNull();
     expect(screen.queryByTestId("number-integration_errors")).toBeNull();
+  });
+});
+
+describe("Home: agent status card", () => {
+  const account = socialAccount({ id: "a1000000-0000-4000-8000-000000000001", username: "studio_ist" });
+  const agentUrl = `/api/v1/workspaces/${WS_GOLKENT}/accounts/${account.id}/agent`;
+
+  it("renders assistant row with active state, mode and pause control for owner", async () => {
+    const requests = mockApi(
+      routes({
+        ...reportWith([]),
+        [`GET ${BASE}/social-accounts`]: () => json({ items: [account], next_cursor: null }),
+        [`GET ${agentUrl}`]: () =>
+          json({
+            state: "active",
+            controller_mode: "autonomous",
+            config_version: 3,
+            controller_epoch: 2,
+            is_simulated: true,
+            session_counts: { active: 3 },
+            pending_questions: 0,
+            pending_approvals: 0,
+            recent_actions: [],
+          }),
+        [`POST ${agentUrl}/pause`]: () =>
+          json({ state: "paused", controller_mode: "autonomous", config_version: 4, controller_epoch: 2 }),
+      }),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}`);
+    const rows = await screen.findAllByTestId(`agent-row-${account.id}`);
+    expect(rows[0]).toHaveTextContent("@studio_ist");
+    expect(rows[0]).toHaveTextContent("Aktif");
+
+    // Click pause button (shows confirmation then executes)
+    const pauseBtn = within(rows[0]!).getByRole("button", { name: "Asistanı duraklat" });
+    await userEvent.setup().click(pauseBtn);
+
+    // Confirm pause
+    const confirmBtn = within(rows[0]!).getAllByRole("button", { name: "Asistanı duraklat" }).pop()!;
+    await userEvent.setup().click(confirmBtn);
+
+    await waitFor(() =>
+      expect(requests.some((r) => r.path.endsWith("/pause"))).toBe(true),
+    );
+  });
+
+  it("does not offer pause controls to staff", async () => {
+    mockApi(
+      routes(
+        {
+          ...reportWith([]),
+          [`GET ${BASE}/social-accounts`]: () => json({ items: [account], next_cursor: null }),
+          [`GET ${agentUrl}`]: () =>
+            json({
+              state: "active",
+              controller_mode: "autonomous",
+              config_version: 3,
+              controller_epoch: 2,
+              is_simulated: true,
+              session_counts: {},
+              pending_questions: 0,
+              pending_approvals: 0,
+              recent_actions: [],
+            }),
+        },
+        STAFF_ME,
+      ),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}`);
+    const rows = await screen.findAllByTestId(`agent-row-${account.id}`);
+    expect(within(rows[0]!).queryByRole("button", { name: "Asistanı duraklat" })).toBeNull();
+  });
+});
+
+describe("Home: upcoming stories and week strip", () => {
+  it("renders scheduled stories rail and 7-day strip with story gap detection", async () => {
+    const story = contentItem({
+      id: "c5000000-0000-4000-8000-000000000501",
+      content_type: "story_image",
+      status: "scheduled",
+      title: "Sabah Hikayesi",
+      scheduled_at: "2026-10-15T07:00:00Z",
+    });
+
+    mockApi(
+      routes({
+        ...reportWith([]),
+        [`GET ${BASE}/content-items`]: () => json({ items: [story], next_cursor: null }),
+      }),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}`);
+    const storiesRail = await screen.findByTestId("stories-rail");
+    expect(within(storiesRail).getByText("Sabah Hikayesi")).toBeInTheDocument();
+
+    const weekStrip = screen.getByTestId("week-strip");
+    expect(weekStrip).toBeInTheDocument();
+    // Week strip identifies gap on days with no story
+    expect(within(weekStrip).getAllByText("+Hikaye yok").length).toBeGreaterThan(0);
+  });
+
+  it("shows empty state when no stories are scheduled", async () => {
+    mockApi(
+      routes({
+        ...reportWith([]),
+        [`GET ${BASE}/content-items`]: () => json({ items: [], next_cursor: null }),
+      }),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}`);
+    expect(await screen.findByTestId("stories-rail-empty")).toBeInTheDocument();
+    expect(screen.getByText("Planlanmış hikaye yok.")).toBeInTheDocument();
+  });
+});
+
+describe("Home: appointments card", () => {
+  it("renders upcoming appointments without exposing customer contact", async () => {
+    const appt = {
+      id: "c6000000-0000-4000-8000-000000000001",
+      calendar_connection_id: "c7000000-0000-4000-8000-000000000001",
+      conversation_id: "c8000000-0000-4000-8000-000000000001",
+      customer_identity_id: null,
+      external_event_id: null,
+      title: "Pilates Dersi",
+      description: null,
+      customer_name: "Ayşe Kaya",
+      customer_contact: "+905551234567", // MUST NOT appear on Today card
+      start_at: new Date().toISOString(),
+      end_at: new Date(Date.now() + 3600_000).toISOString(),
+      timezone: "Europe/Istanbul",
+      status: "confirmed",
+      created_by_source: "agent",
+    };
+
+    mockApi(
+      routes({
+        ...reportWith([]),
+        [`GET ${BASE}/calendar`]: () =>
+          json({
+            items: [
+              {
+                id: "c7000000-0000-4000-8000-000000000001",
+                provider_kind: "google",
+                external_account_id: "ext",
+                account_email: "test@example.com",
+                calendar_id: "primary",
+                calendar_summary: "Main",
+                calendar_timezone: "Europe/Istanbul",
+                connected_at: "2026-10-01T00:00:00Z",
+                disconnected_at: null,
+                created_at: "2026-10-01T00:00:00Z",
+              },
+            ],
+          }),
+        [`GET ${BASE}/calendar/appointments`]: () => json({ items: [appt] }),
+      }),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}`);
+    const card = await screen.findByTestId("appointments-card");
+    expect(await within(card).findByText("Ayşe Kaya")).toBeInTheDocument();
+    expect(within(card).getByText("Pilates Dersi")).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: /Konuşmayı aç/i })).toHaveAttribute(
+      "href",
+      `/w/${WS_GOLKENT}/inbox/${appt.conversation_id}`,
+    );
+    // Never expose customer phone or contact on Today
+    expect(within(card).queryByText("+905551234567")).toBeNull();
+  });
+});
+
+describe("Home: instagram insights card", () => {
+  it("renders reach, views, and interactions with sparkline when status is ok", async () => {
+    const acc = socialAccount({
+      id: "a1000000-0000-4000-8000-000000000001",
+      username: "kadikoy_yoga",
+      status: "connected",
+      is_simulated: true,
+    });
+
+    mockApi(
+      routes({
+        ...reportWith([]),
+        ...accounts(acc),
+        [`GET ${BASE}/accounts/${acc.id}/insights/summary`]: (req) => {
+          const range = req.search.includes("range=28d") ? "28d" : "7d";
+          return json({
+            account_id: acc.id,
+            range,
+            status: "ok",
+            updated_at: "2026-11-10T12:00:00Z",
+            reach: range === "28d" ? 4800 : 1200,
+            reach_delta_pct: 15,
+            views: range === "28d" ? 9600 : 2400,
+            views_delta_pct: 22,
+            interactions: range === "28d" ? 720 : 180,
+            interactions_delta_pct: 8,
+            follower_count: 1420,
+            follower_delta: 14,
+            sparkline: [
+              { date: "2026-11-04", reach: 140, views: 280 },
+              { date: "2026-11-05", reach: 180, views: 320 },
+            ],
+            is_simulated: true,
+          });
+        },
+      }),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}`);
+    const card = await screen.findByTestId("insights-performance-card");
+    expect(within(card).getByText("Instagram Performansı")).toBeInTheDocument();
+    expect(within(card).getByText("1.200")).toBeInTheDocument();
+    expect(within(card).getByText("2.400")).toBeInTheDocument();
+    expect(within(card).getByText("180")).toBeInTheDocument();
+    expect(within(card).getByText("+15%")).toBeInTheDocument();
+
+    // Toggle to 28d
+    await userEvent.setup().click(within(card).getByRole("button", { name: "28 Gün" }));
+    expect(await within(card).findByText("4.800")).toBeInTheDocument();
+  });
+
+  it("shows permission reconnect warning when status is not_granted", async () => {
+    const acc = socialAccount({
+      id: "a1000000-0000-4000-8000-000000000001",
+      username: "kadikoy_yoga",
+      status: "connected",
+      is_simulated: false,
+    });
+
+    mockApi(
+      routes({
+        ...reportWith([]),
+        ...accounts(acc),
+        [`GET ${BASE}/accounts/${acc.id}/insights/summary`]: () =>
+          json({
+            account_id: acc.id,
+            range: "7d",
+            status: "not_granted",
+            updated_at: null,
+            reach: 0,
+            reach_delta_pct: null,
+            views: 0,
+            views_delta_pct: null,
+            interactions: 0,
+            interactions_delta_pct: null,
+            follower_count: null,
+            follower_delta: null,
+            sparkline: [],
+            is_simulated: false,
+          }),
+      }),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}`);
+    const card = await screen.findByTestId("insights-performance-card");
+    expect(within(card).getByText("Instagram Insights İzni Eksik")).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: /Hesabı Yeniden Bağla/i })).toHaveAttribute(
+      "href",
+      `/w/${WS_GOLKENT}/more/settings/connections`,
+    );
+  });
+});
+
+describe("Home: production failure regressions", () => {
+  const account = socialAccount({ id: "a1000000-0000-4000-8000-000000000001" });
+  const agentUrl = `${BASE}/accounts/${account.id}/agent`;
+  const zeroReport = () => reportWith(FULL_METRICS.map((m) => ({ ...m, value: 0 })));
+
+  it("uses exact attention totals without fetching capped comment previews", async () => {
+    const requests = mockApi(routes({
+      ...zeroReport(), ...accounts(account),
+      [`GET ${agentUrl}`]: () => json(HEALTHY_AGENT),
+      [`GET ${BASE}/home/attention`]: () => json({ drafts: 61, unanswered_comments: 32 }),
+    }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    await waitFor(() => expect(screen.getByTestId("attention-drafts")).toHaveTextContent("61"));
+    expect(screen.getByTestId("attention-comments")).toHaveTextContent("32");
+    expect(requests.some((r) => r.path.endsWith("/comments"))).toBe(false);
+    expect(screen.queryByTestId("attention-none")).toBeNull();
+  });
+
+  it("never shows all-clear when attention counts fail", async () => {
+    mockApi(routes({ ...zeroReport(), [`GET ${BASE}/home/attention`]: () => problem(503, "INTERNAL_ERROR") }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const card = await screen.findByTestId("home-attention");
+    expect(await within(card).findByRole("alert")).toBeInTheDocument();
+    expect(within(card).getByTestId("attention-comments")).toHaveTextContent(tr.core.unavailable);
+    expect(screen.queryByTestId("attention-none")).toBeNull();
+  });
+
+  it("keeps pending counts unknown", async () => {
+    mockApi(routes({ ...zeroReport(), [`GET ${BASE}/home/attention`]: () => new Promise<Response>(() => {}) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const row = await screen.findByTestId("attention-comments");
+    expect(row).toHaveTextContent(tr.core.unavailable);
+    expect(screen.queryByTestId("attention-none")).toBeNull();
+  });
+
+  it.each(["inactive", "paused"])("shows the actual %s assistant state", async (state) => {
+    mockApi(routes({ ...zeroReport(), ...accounts(account), [`GET ${agentUrl}`]: () => json({ ...HEALTHY_AGENT, state }) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const rows = await screen.findAllByTestId(`agent-row-${account.id}`);
+    const row = rows[0]!;
+    await waitFor(() => expect(row).toHaveTextContent(state === "inactive" ? tr.home.agentStatus.inactive : tr.home.agentStatus.paused));
+    expect(within(row).queryByText(tr.home.agentStatus.active)).toBeNull();
+    if (state === "inactive") expect(within(row).queryByRole("button")).toBeNull();
+  });
+
+  it("does not mark an assistant active after its overview fails", async () => {
+    mockApi(routes({ ...zeroReport(), ...accounts(account), [`GET ${agentUrl}`]: () => problem(503, "INTERNAL_ERROR") }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const row = (await screen.findAllByTestId(`agent-row-${account.id}`))[0]!;
+    await waitFor(() => expect(row).toHaveTextContent(tr.core.unavailable));
+    expect(within(row).queryByText(tr.home.agentStatus.active)).toBeNull();
+    expect(within(row).queryByRole("button")).toBeNull();
+  });
+
+  it("shows loading rather than active before the overview arrives", async () => {
+    mockApi(routes({ ...zeroReport(), ...accounts(account), [`GET ${agentUrl}`]: () => new Promise<Response>(() => {}) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const row = (await screen.findAllByTestId(`agent-row-${account.id}`))[0]!;
+    expect(row).toHaveTextContent(tr.common.loading);
+    expect(within(row).queryByText(tr.home.agentStatus.active)).toBeNull();
+  });
+
+  it.each(["pause", "resume"] as const)("keeps failed %s visible and retryable", async (command) => {
+    mockApi(routes({ ...zeroReport(), ...accounts(account),
+      [`GET ${agentUrl}`]: () => json({ ...HEALTHY_AGENT, state: command === "pause" ? "active" : "paused" }),
+      [`POST ${agentUrl}/${command}`]: () => problem(409, "VERSION_CONFLICT"),
+    }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const row = (await screen.findAllByTestId(`agent-row-${account.id}`))[0]!;
+    const user = userEvent.setup();
+    await user.click(await within(row).findByRole("button", { name: tr.home.agentStatus[command] }));
+    await user.click(within(row).getByRole("button", { name: tr.home.agentStatus[command] }));
+    expect(await within(row).findByRole("alert")).toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: tr.home.agentStatus[command] })).toBeEnabled();
+  });
+
+  it.each(["calendar", "calendar/appointments", "activity"])("displays %s failures without an empty-state claim", async (endpoint) => {
+    mockApi(routes({ ...zeroReport(), [`GET ${BASE}/${endpoint}`]: () => problem(403, "FORBIDDEN") }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const card = await screen.findByTestId(endpoint === "activity" ? "activity-feed-card" : "appointments-card");
+    expect(await within(card).findByRole("alert")).toBeInTheDocument();
+    expect(within(card).queryByTestId("activity-empty")).toBeNull();
+    expect(within(card).queryByTestId("appointments-empty")).toBeNull();
+    if (endpoint !== "activity") expect(screen.queryByTestId("appointments-card-unconnected")).toBeNull();
+  });
+
+  it("does not fabricate scheduling gaps after content fails", async () => {
+    mockApi(routes({ ...zeroReport(), [`GET ${BASE}/content-items`]: () => problem(403, "FORBIDDEN") }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const card = await screen.findByTestId("home-upcoming");
+    expect((await within(card).findAllByRole("alert")).length).toBeGreaterThan(0);
+    expect(within(card).queryByTestId("week-strip")).toBeNull();
+    expect(within(card).queryByTestId("stories-rail-empty")).toBeNull();
+    expect(within(card).queryByTestId("upcoming-empty")).toBeNull();
+  });
+
+  it("labels partial insights and leaves missing totals unavailable", async () => {
+    mockApi(routes({ ...zeroReport(), ...accounts(account), [`GET ${agentUrl}`]: () => json(HEALTHY_AGENT),
+      [`GET ${BASE}/accounts/${account.id}/insights/summary`]: () => json({ account_id: account.id,
+        range: "7d", status: "partial", current_days_covered: 2, previous_days_covered: 0,
+        updated_at: null, reach: null, views: null, interactions: null, reach_delta_pct: null,
+        views_delta_pct: null, interactions_delta_pct: null, follower_count: null,
+        follower_delta: null, sparkline: [{date:"2026-11-08",reach:null,views:null},{date:"2026-11-09",reach:10,views:20}], is_simulated: false }),
+    }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const card = await screen.findByTestId("insights-performance-card");
+    expect(await within(card).findByTestId("insights-partial")).toBeInTheDocument();
+    expect(within(card).getAllByText(tr.core.unavailable)).toHaveLength(3);
+    expect(within(card).queryByText("+100%")).toBeNull();
+    expect(within(card).queryByText("0")).toBeNull();
   });
 });

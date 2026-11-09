@@ -71,6 +71,27 @@ def narrate_fallback(
 
     if key == "activity_summary":
         return _narrate_activity_summary(params, locale, user_query)
+    if key == "insights_summary":
+        if params.get("status") in {"partial", "syncing", "not_granted"}:
+            return (
+                "Instagram performans verileri henüz tam değil. Eksik günler sıfır olarak sayılmaz."
+                if locale == "tr"
+                else "Instagram performance history is incomplete or unavailable. "
+                "Missing days are not counted as zero."
+            )
+        reach = int(params.get("reach") or 0)
+        views = int(params.get("views") or 0)
+        interactions = int(params.get("interactions") or 0)
+        days = int(params.get("days") or 7)
+        if locale == "tr":
+            return (
+                f"Son {days} günde içerikleriniz toplam {reach} kişiye ulaştı, "
+                f"{views} görüntülenme ve {interactions} etkileşim aldı."
+            )
+        return (
+            f"Over the last {days} days, your content reached {reach} accounts, "
+            f"with {views} views and {interactions} interactions."
+        )
     if key == "pending_approvals":
         count = int(params.get("count") or 0)
         if count == 0:

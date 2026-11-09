@@ -20,6 +20,7 @@ from app.ai.schemas import (
     QueryContentStatus,
     QueryExplainFailure,
     QueryFact,
+    QueryInsightsSummary,
     QueryPendingApprovals,
     RegistryEntry,
     Unsupported,
@@ -33,6 +34,7 @@ from app.commands.executors import (
     query_content_status,
     query_explain_failure,
     query_fact,
+    query_insights_summary,
     query_pending_approvals,
     unsupported,
     update_fact,
@@ -106,6 +108,18 @@ REGISTRY: dict[str, CommandSpec] = {
             confirmation_summary_builder=None,
             description="The daily report's numbers (messages, replies, escalations) for a period.",
             parameters={"period": "today | yesterday | last_7_days"},
+        ),
+        CommandSpec(
+            type="query.insights_summary",
+            mutating=False,
+            required_permission="commands.use",
+            params_model=QueryInsightsSummary,
+            executor=query_insights_summary.execute,
+            confirmation_summary_builder=None,
+            description=(
+                "Recent Instagram performance (reach, views, interactions) for the account."
+            ),
+            parameters={"range": "7d | 28d"},
         ),
         CommandSpec(
             type="knowledge.update_fact",

@@ -14,6 +14,7 @@ SCOPES = (
     "instagram_business_basic",
     "instagram_business_manage_messages",
     "instagram_business_content_publish",
+    "instagram_business_manage_insights",
 )
 
 # R75-01..06: requesting or receiving manage_comments does not establish support.

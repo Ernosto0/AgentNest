@@ -80,6 +80,7 @@ def test_the_interpretation_is_a_union_of_closed_types() -> None:
     tags = {d["properties"]["type"]["const"] for d in defs.values() if "type" in d["properties"]}
     assert tags == {
         "query.activity_summary",
+        "query.insights_summary",
         "query.pending_approvals",
         "query.fact",
         "knowledge.update_fact",

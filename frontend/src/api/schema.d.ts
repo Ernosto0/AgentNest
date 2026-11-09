@@ -2656,6 +2656,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/insights/audience": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Insights Audience */
+        get: operations["get_insights_audience_api_v1_workspaces__workspace_id__accounts__account_id__insights_audience_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/insights/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Insights Content */
+        get: operations["get_insights_content_api_v1_workspaces__workspace_id__accounts__account_id__insights_content_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/insights/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Insights Summary */
+        get: operations["get_insights_summary_api_v1_workspaces__workspace_id__accounts__account_id__insights_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/home/attention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Home Attention */
+        get: operations["get_home_attention_api_v1_workspaces__workspace_id__home_attention_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3348,6 +3416,8 @@ export interface components {
             links: {
                 [key: string]: unknown;
             }[];
+            /** Reply Text */
+            reply_text?: string | null;
         };
         /** CommentEvent */
         CommentEvent: {
@@ -5935,6 +6005,122 @@ export interface components {
             daily_report_hour?: number | null;
             /** Publish Max Delay Minutes */
             publish_max_delay_minutes?: number | null;
+        };
+        /** HomeAttentionOut */
+        HomeAttentionOut: {
+            /** Drafts */
+            drafts: number | null;
+            /** Unanswered Comments */
+            unanswered_comments: number;
+        };
+        /** InsightsContentItemOut */
+        InsightsContentItemOut: {
+            /** Content Item Id */
+            content_item_id: string | null;
+            /** Ig Media Id */
+            ig_media_id: string;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /** Media Kind */
+            media_kind: string;
+            /** Metrics */
+            metrics: {
+                [key: string]: number;
+            };
+            /** Published At */
+            published_at: string | null;
+            /** Reach */
+            reach: number;
+            /** Title */
+            title: string | null;
+            /** Total Interactions */
+            total_interactions: number;
+            /** Views */
+            views: number;
+        };
+        /** AudienceOut */
+        AudienceOut: {
+            /** Best Posting Window */
+            best_posting_window: string | null;
+            /** Demographics */
+            demographics: {
+                [key: string]: unknown;
+            } | null;
+            /** Follower Count */
+            follower_count: number | null;
+            /** Online Hours */
+            online_hours: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "below_threshold" | "not_granted";
+        };
+        /** InsightsSummaryOut */
+        InsightsSummaryOut: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Current Days Covered
+             * @default 0
+             */
+            current_days_covered: number;
+            /** Follower Count */
+            follower_count: number | null;
+            /** Follower Delta */
+            follower_delta: number | null;
+            /** Interactions */
+            interactions: number | null;
+            /** Interactions Delta Pct */
+            interactions_delta_pct: number | null;
+            /** Is Simulated */
+            is_simulated: boolean;
+            /**
+             * Previous Days Covered
+             * @default 0
+             */
+            previous_days_covered: number;
+            /**
+             * Range
+             * @enum {string}
+             */
+            range: "7d" | "28d";
+            /** Reach */
+            reach: number | null;
+            /** Reach Delta Pct */
+            reach_delta_pct: number | null;
+            /** Sparkline */
+            sparkline: components["schemas"]["SparklinePoint"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "partial" | "not_granted" | "below_threshold" | "syncing";
+            /** Updated At */
+            updated_at: string | null;
+            /** Views */
+            views: number | null;
+            /** Views Delta Pct */
+            views_delta_pct: number | null;
+        };
+        /** SparklinePoint */
+        SparklinePoint: {
+            /** Date */
+            date: string;
+            /** Reach */
+            reach: number | null;
+            /** Views */
+            views: number | null;
+        };
+        /** InsightsContentListOut */
+        InsightsContentListOut: {
+            /** Items */
+            items: components["schemas"]["InsightsContentItemOut"][];
         };
     };
     responses: never;
@@ -11299,6 +11485,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_insights_audience_api_v1_workspaces__workspace_id__accounts__account_id__insights_audience_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudienceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_insights_content_api_v1_workspaces__workspace_id__accounts__account_id__insights_content_get: {
+        parameters: {
+            query?: {
+                kind?: ("story" | "feed") | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InsightsContentListOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_insights_summary_api_v1_workspaces__workspace_id__accounts__account_id__insights_summary_get: {
+        parameters: {
+            query?: {
+                range?: "7d" | "28d";
+            };
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InsightsSummaryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_home_attention_api_v1_workspaces__workspace_id__home_attention_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAttentionOut"];
                 };
             };
             /** @description Validation Error */

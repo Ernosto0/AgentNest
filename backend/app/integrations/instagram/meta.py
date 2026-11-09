@@ -18,11 +18,14 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationErro
 from app.core.clock import Clock
 from app.core.logging import get_logger
 from app.integrations.instagram.base import (
+    AccountInsightsMetric,
     AccountProfile,
     AccountRef,
+    AudienceData,
     ContainerSpec,
     ContainerStatus,
     MediaInfo,
+    MediaInsightsData,
     NormalizedInboundEvent,
     OutboundMessageInfo,
     PrivateReplyResult,
@@ -462,3 +465,96 @@ class MetaInstagramProvider:
         return TokenInfo(
             self._clock.now() + timedelta(seconds=value.expires_in), value.access_token
         )
+
+    @_logged("get_account_insights")
+    def get_account_insights(
+        self, account: AccountRef, metrics: list[str], since: datetime, until: datetime
+    ) -> list[AccountInsightsMetric]:
+        params = {
+            "metric": ",".join(metrics),
+            "period": "day",
+            "since": str(int(since.timestamp())),
+            "until": str(int(until.timestamp())),
+        }
+        res = self._request(
+            account,
+            f"{_identifier(account.external_account_id)}/insights",
+            params=params,
+        )
+        items: list[AccountInsightsMetric] = []
+        data = res.get("data") if isinstance(res, dict) else []
+        if isinstance(data, list):
+            for entry in data:
+                if not isinstance(entry, dict):
+                    continue
+                name = str(entry.get("name", ""))
+                values = entry.get("values")
+                if isinstance(values, list):
+                    for v in values:
+                        if isinstance(v, dict) and "end_time" in v:
+                            # Format date as YYYY-MM-DD
+                            d = str(v["end_time"])[:10]
+                            val = int(v.get("value", 0))
+                            items.append(AccountInsightsMetric(metric=name, value=val, date=d))
+                elif "total_value" in entry and isinstance(entry["total_value"], dict):
+                    val = int(entry["total_value"].get("value", 0))
+                    d = until.date().isoformat()
+                    items.append(AccountInsightsMetric(metric=name, value=val, date=d))
+        return items
+
+    @_logged("get_media_insights")
+    def get_media_insights(
+        self, account: AccountRef, media_id: str, media_type: str
+    ) -> MediaInsightsData:
+        is_story = media_type in ("story_image", "story")
+        metrics = (
+            ["reach", "views", "replies", "shares", "navigation", "total_interactions"]
+            if is_story
+            else ["reach", "views", "likes", "comments", "shares", "saved", "total_interactions"]
+        )
+        res = self._request(
+            account,
+            f"{_identifier(media_id)}/insights",
+            params={"metric": ",".join(metrics)},
+        )
+        parsed: dict[str, int] = {}
+        data = res.get("data") if isinstance(res, dict) else []
+        if isinstance(data, list):
+            for entry in data:
+                if isinstance(entry, dict):
+                    name = str(entry.get("name", ""))
+                    values = entry.get("values")
+                    if isinstance(values, list) and values and isinstance(values[0], dict):
+                        parsed[name] = int(values[0].get("value", 0))
+                    elif "total_value" in entry and isinstance(entry["total_value"], dict):
+                        parsed[name] = int(entry["total_value"].get("value", 0))
+        return MediaInsightsData(ig_media_id=media_id, metrics=parsed)
+
+    @_logged("get_audience")
+    def get_audience(self, account: AccountRef) -> AudienceData:
+        profile_res = self._request(
+            account,
+            _identifier(account.external_account_id),
+            params={"fields": "followers_count"},
+        )
+        followers = profile_res.get("followers_count") if isinstance(profile_res, dict) else None
+        if followers is None or followers < 100:
+            return AudienceData(follower_count=followers, online_followers=None, demographics=None)
+
+        try:
+            insights_res = self._request(
+                account,
+                f"{_identifier(account.external_account_id)}/insights",
+                params={"metric": "online_followers", "period": "lifetime"},
+            )
+            online: dict[str, int] = {}
+            data = insights_res.get("data") if isinstance(insights_res, dict) else []
+            if isinstance(data, list) and data:
+                val = data[0].get("values", [{}])[0].get("value", {})
+                if isinstance(val, dict):
+                    online = {str(k): int(v) for k, v in val.items()}
+            return AudienceData(
+                follower_count=followers, online_followers=online, demographics=None
+            )
+        except Exception:
+            return AudienceData(follower_count=followers, online_followers=None, demographics=None)

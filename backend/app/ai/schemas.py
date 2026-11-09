@@ -93,6 +93,11 @@ class QueryActivitySummary(BaseModel):
     period: Literal["today", "yesterday", "last_7_days"]
 
 
+class QueryInsightsSummary(BaseModel):
+    type: Literal["query.insights_summary"]
+    range: Literal["7d", "28d"]
+
+
 class QueryPendingApprovals(BaseModel):
     type: Literal["query.pending_approvals"]
 
@@ -175,6 +180,7 @@ class Unsupported(BaseModel):
 
 CommandInterpretation = (
     QueryActivitySummary
+    | QueryInsightsSummary
     | QueryPendingApprovals
     | QueryFact
     | UpdateFact
@@ -190,6 +196,7 @@ CommandInterpretation = (
 INTERPRETATION_TYPES = frozenset(
     {
         "query.activity_summary",
+        "query.insights_summary",
         "query.pending_approvals",
         "query.fact",
         "knowledge.update_fact",

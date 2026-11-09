@@ -51,8 +51,9 @@ NAMING_CONVENTION = {
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
-# Canonical 49 strictly workspace-scoped Category C tables (ADR-025 §1.3, P8-03).
+# Canonical strictly workspace-scoped Category C tables (ADR-025 §1.3, P8-03).
 CATEGORY_C_TABLES: tuple[str, ...] = (
+    "account_insight_daily",
     "account_agents",
     "agent_actions",
     "agent_delegations",
@@ -65,6 +66,7 @@ CATEGORY_C_TABLES: tuple[str, ...] = (
     "approvals",
     "approved_answers",
     "automation_policies",
+    "audience_snapshots",
     "business_facts",
     "content_items",
     "conversations",
@@ -79,6 +81,7 @@ CATEGORY_C_TABLES: tuple[str, ...] = (
     "fact_references",
     "fact_versions",
     "media_assets",
+    "media_insight_snapshots",
     "messages",
     "notifications",
     "operations",

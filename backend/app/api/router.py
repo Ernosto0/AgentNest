@@ -22,6 +22,7 @@ from app.core.db import check_readiness
 from app.core.i18n import SUPPORTED_LOCALES
 from app.identity.router import auth_router, invites_router, workspaces_router
 from app.inbox.router import router as inbox_router
+from app.insights.router import router as insights_router
 from app.knowledge.router import router as knowledge_router
 from app.memory.router import router as memory_router
 from app.notifications.router import router as notifications_router
@@ -32,6 +33,7 @@ from app.operations.router import router as operations_router
 from app.operations.system_health_router import router as system_health_router
 from app.owner_requests.router import router as owner_requests_router
 from app.policy.router import router as policy_router
+from app.reporting.home_router import router as home_router
 from app.reporting.router import router as reports_router
 
 health_router = APIRouter(tags=["health"])
@@ -108,6 +110,9 @@ api_router.include_router(agent_router)
 api_router.include_router(owner_tasks_router)
 
 api_router.include_router(agent_work_router)
+
+api_router.include_router(insights_router)
+api_router.include_router(home_router)
 
 api_router.include_router(manual_comments_router)
 api_router.include_router(channels_router)

@@ -9,6 +9,9 @@
 *.dump.enc
 *.manifest.json
 
+# Local test databases, browser captures, and review scratch
+/.tmp/
+
 # Python
 __pycache__/
 *.py[cod]

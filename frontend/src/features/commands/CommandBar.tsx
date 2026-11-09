@@ -153,7 +153,7 @@ export function CommandBar() {
             </div>
           </div>
           <span className="hidden sm:inline-flex items-center gap-1 rounded-md border border-border/80 bg-surface-subtle px-2 py-0.5 text-2xs font-medium text-secondary">
-            <span>↵ Enter</span>
+            <span>{t("common.enter")}</span>
           </span>
         </div>
 
@@ -182,7 +182,7 @@ export function CommandBar() {
                   inputRef.current?.focus();
                 }}
                 className="p-1.5 text-secondary hover:text-primary transition-colors rounded-md mr-1.5 cursor-pointer"
-                aria-label="Clear input"
+                aria-label={t("common.clear")}
               >
                 <XIcon className="text-sm" />
               </button>

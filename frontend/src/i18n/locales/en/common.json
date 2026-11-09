@@ -17,7 +17,10 @@
     "language": "Language",
     "close": "Close",
     "cancel": "Cancel",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "settings": "Settings",
+    "clear": "Clear",
+    "enter": "↵ Enter"
   },
   "auth": {
     "title": "Sign in",
@@ -106,6 +109,74 @@
       "degraded": "Instagram cannot be reached right now; we will try again automatically.",
       "reconnect": "Renew the connection"
     },
+    "quick": {
+      "newPost": "New post",
+      "newStory": "New story",
+      "generate": "Generate",
+      "addKnowledge": "Add business fact",
+      "openReports": "Daily report"
+    },
+    "agentStatus": {
+      "title": "Assistant",
+      "empty": "No connected account",
+      "active": "Active",
+      "paused": "Paused",
+      "pause": "Pause assistant",
+      "resume": "Resume assistant",
+      "sessions": "{{count}} live chats",
+      "confirmPause": "Pause assistant? Incoming messages won't be replied to automatically.",
+      "confirmResume": "Resume assistant?",
+      "inactive": "Inactive"
+    },
+    "upNext": {
+      "title": "Up next",
+      "stories": "Stories",
+      "posts": "Posts",
+      "noStories": "No stories scheduled.",
+      "noStoriesHint": "Keep your audience engaged with daily stories.",
+      "draftStory": "Draft a story",
+      "aspectWarning": "Aspect ratio is not 9:16"
+    },
+    "week": {
+      "title": "Next 7 days",
+      "gap": "No story",
+      "viewDay": "View agenda",
+      "today": "Today",
+      "tomorrow": "Tomorrow"
+    },
+    "activity": {
+      "title": "Agent activity",
+      "empty": "No recent assistant activity.",
+      "all": "All activity"
+    },
+    "appointments": {
+      "title": "Upcoming appointments",
+      "empty": "No appointments scheduled for today or tomorrow.",
+      "connectCalendar": "Connect Google Calendar to automate bookings.",
+      "viewConversation": "Open chat"
+    },
+    "insights": {
+      "title": "Instagram Performance",
+      "range7d": "7 Days",
+      "range28d": "28 Days",
+      "loading": "Loading performance metrics...",
+      "errorLoading": "Could not load performance metrics.",
+      "scopeNotGrantedTitle": "Instagram Insights Scope Missing",
+      "scopeNotGrantedDesc": "To view reach and views metrics, reconnect your account with the 'instagram_business_manage_insights' permission.",
+      "reconnectCta": "Reconnect Account",
+      "belowThresholdDesc": "Meta restricts demographic and audience insights for accounts with fewer than 100 followers.",
+      "syncingTitle": "Data Is Syncing",
+      "syncingDesc": "Initial performance metrics are being gathered, please check back in a few hours.",
+      "reach": "Reach",
+      "views": "Views",
+      "interactions": "Interactions",
+      "trendTitle": "Daily Trend",
+      "vsPrevPeriod": "vs. previous {{days}} days",
+      "followersTotal": "total followers",
+      "fullReportsLink": "View full reports",
+      "account": "Instagram account",
+      "partial": "Incomplete history: {{current}} of {{days}} days available; previous period {{previous}} of {{days}} days. Totals and comparisons appear when their history is complete."
+    },
     "attention": {
       "title": "Waiting for you",
       "none": "Nothing is waiting for you right now.",
@@ -113,6 +184,10 @@
       "needsHuman": "Conversations waiting for you",
       "failures": "Posts that failed today",
       "onHold": "Posts on hold",
+      "drafts": "Drafts ready to review",
+      "comments": "Unanswered comments",
+      "reviewDrafts": "Review drafts",
+      "reviewComments": "Review comments",
       "open": "Open"
     },
     "upcoming": {
@@ -129,7 +204,12 @@
       "title": "Today",
       "empty": "Nothing has happened today yet.",
       "asOf": "As of {{time}}",
-      "openReport": "Open the daily report"
+      "openReport": "Open the daily report",
+      "vsYesterday": "vs. yesterday",
+      "partialNote": "so far today vs. full day yesterday",
+      "same": "Same",
+      "more": "+{{pct}}%",
+      "less": "-{{pct}}%"
     },
     "loadFailed": "This section could not be loaded right now."
   },

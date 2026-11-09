@@ -8464,7 +8464,7 @@
           "meta-callbacks"
         ],
         "summary": "Meta Deauthorize",
-        "description": "Meta Deauthorization Callback endpoint (ADR-025 \u00a73.4).",
+        "description": "Meta Deauthorization Callback endpoint (ADR-025 §3.4).",
         "operationId": "meta_deauthorize_webhooks_meta_deauthorize_post",
         "requestBody": {
           "content": {
@@ -8509,7 +8509,7 @@
           "meta-callbacks"
         ],
         "summary": "Meta Deauthorize",
-        "description": "Meta Deauthorization Callback endpoint (ADR-025 \u00a73.4).",
+        "description": "Meta Deauthorization Callback endpoint (ADR-025 §3.4).",
         "operationId": "meta_deauthorize_api_v1_webhooks_meta_deauthorize_post",
         "requestBody": {
           "content": {
@@ -8554,7 +8554,7 @@
           "meta-callbacks"
         ],
         "summary": "Meta Data Deletion",
-        "description": "Meta Data Deletion Callback endpoint (ADR-025 \u00a73.4).\n\nReturns {\"url\": \"<status_url>\", \"confirmation_code\": \"<code>\"}.",
+        "description": "Meta Data Deletion Callback endpoint (ADR-025 §3.4).\n\nReturns {\"url\": \"<status_url>\", \"confirmation_code\": \"<code>\"}.",
         "operationId": "meta_data_deletion_webhooks_meta_data_deletion_post",
         "requestBody": {
           "content": {
@@ -8599,7 +8599,7 @@
           "meta-callbacks"
         ],
         "summary": "Meta Data Deletion",
-        "description": "Meta Data Deletion Callback endpoint (ADR-025 \u00a73.4).\n\nReturns {\"url\": \"<status_url>\", \"confirmation_code\": \"<code>\"}.",
+        "description": "Meta Data Deletion Callback endpoint (ADR-025 §3.4).\n\nReturns {\"url\": \"<status_url>\", \"confirmation_code\": \"<code>\"}.",
         "operationId": "meta_data_deletion_api_v1_webhooks_meta_data_deletion_post",
         "requestBody": {
           "content": {
@@ -8644,7 +8644,7 @@
           "meta-callbacks"
         ],
         "summary": "Meta Data Deletion Status",
-        "description": "Privacy-safe Meta Data Deletion Status query endpoint (ADR-025 \u00a73.4).",
+        "description": "Privacy-safe Meta Data Deletion Status query endpoint (ADR-025 §3.4).",
         "operationId": "meta_data_deletion_status_webhooks_meta_data_deletion__confirmation_code__get",
         "parameters": [
           {
@@ -8701,7 +8701,7 @@
           "meta-callbacks"
         ],
         "summary": "Meta Data Deletion Status",
-        "description": "Privacy-safe Meta Data Deletion Status query endpoint (ADR-025 \u00a73.4).",
+        "description": "Privacy-safe Meta Data Deletion Status query endpoint (ADR-025 §3.4).",
         "operationId": "meta_data_deletion_status_api_v1_webhooks_meta_data_deletion__confirmation_code__get",
         "parameters": [
           {
@@ -9337,6 +9337,254 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/insights/audience": {
+      "get": {
+        "operationId": "get_insights_audience_api_v1_workspaces__workspace_id__accounts__account_id__insights_audience_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudienceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Insights Audience",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/insights/content": {
+      "get": {
+        "operationId": "get_insights_content_api_v1_workspaces__workspace_id__accounts__account_id__insights_content_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "story",
+                    "feed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InsightsContentListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Insights Content",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/insights/summary": {
+      "get": {
+        "operationId": "get_insights_summary_api_v1_workspaces__workspace_id__accounts__account_id__insights_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "default": "7d",
+              "enum": [
+                "7d",
+                "28d"
+              ],
+              "title": "Range",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InsightsSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Insights Summary",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/home/attention": {
+      "get": {
+        "operationId": "get_home_attention_api_v1_workspaces__workspace_id__home_attention_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeAttentionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Home Attention",
+        "tags": [
+          "reports"
+        ]
       }
     }
   },
@@ -11318,6 +11566,17 @@
             },
             "type": "array",
             "title": "Links"
+          },
+          "reply_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reply Text"
           }
         },
         "type": "object",
@@ -18780,7 +19039,7 @@
         "additionalProperties": false,
         "type": "object",
         "title": "WorkspaceSettings",
-        "description": "Validates ``workspaces.settings`` (data-model.md \u00a73.1)."
+        "description": "Validates ``workspaces.settings`` (data-model.md §3.1)."
       },
       "WorkspaceSettingsPatch": {
         "properties": {
@@ -18836,6 +19095,405 @@
         "type": "object",
         "title": "WorkspaceSettingsPatch",
         "description": "Partial update of the settings: only the given top-level keys change."
+      },
+      "HomeAttentionOut": {
+        "properties": {
+          "drafts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafts"
+          },
+          "unanswered_comments": {
+            "title": "Unanswered Comments",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "drafts",
+          "unanswered_comments"
+        ],
+        "title": "HomeAttentionOut",
+        "type": "object"
+      },
+      "InsightsContentItemOut": {
+        "properties": {
+          "content_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Item Id"
+          },
+          "ig_media_id": {
+            "title": "Ig Media Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "media_kind": {
+            "title": "Media Kind",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "reach": {
+            "title": "Reach",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "total_interactions": {
+            "title": "Total Interactions",
+            "type": "integer"
+          },
+          "views": {
+            "title": "Views",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "content_item_id",
+          "ig_media_id",
+          "media_kind",
+          "title",
+          "published_at",
+          "reach",
+          "views",
+          "total_interactions",
+          "metrics",
+          "is_simulated"
+        ],
+        "title": "InsightsContentItemOut",
+        "type": "object"
+      },
+      "AudienceOut": {
+        "properties": {
+          "best_posting_window": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Posting Window"
+          },
+          "demographics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demographics"
+          },
+          "follower_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follower Count"
+          },
+          "online_hours": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Online Hours"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "below_threshold",
+              "not_granted"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "follower_count",
+          "online_hours",
+          "best_posting_window",
+          "demographics"
+        ],
+        "title": "AudienceOut",
+        "type": "object"
+      },
+      "InsightsSummaryOut": {
+        "properties": {
+          "account_id": {
+            "format": "uuid",
+            "title": "Account Id",
+            "type": "string"
+          },
+          "current_days_covered": {
+            "default": 0,
+            "title": "Current Days Covered",
+            "type": "integer"
+          },
+          "follower_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follower Count"
+          },
+          "follower_delta": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follower Delta"
+          },
+          "interactions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interactions"
+          },
+          "interactions_delta_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interactions Delta Pct"
+          },
+          "is_simulated": {
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "previous_days_covered": {
+            "default": 0,
+            "title": "Previous Days Covered",
+            "type": "integer"
+          },
+          "range": {
+            "enum": [
+              "7d",
+              "28d"
+            ],
+            "title": "Range",
+            "type": "string"
+          },
+          "reach": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach"
+          },
+          "reach_delta_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Delta Pct"
+          },
+          "sparkline": {
+            "items": {
+              "$ref": "#/components/schemas/SparklinePoint"
+            },
+            "title": "Sparkline",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "not_granted",
+              "below_threshold",
+              "syncing"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "views": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Views"
+          },
+          "views_delta_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Views Delta Pct"
+          }
+        },
+        "required": [
+          "account_id",
+          "range",
+          "status",
+          "updated_at",
+          "reach",
+          "reach_delta_pct",
+          "views",
+          "views_delta_pct",
+          "interactions",
+          "interactions_delta_pct",
+          "follower_count",
+          "follower_delta",
+          "sparkline",
+          "is_simulated"
+        ],
+        "title": "InsightsSummaryOut",
+        "type": "object"
+      },
+      "SparklinePoint": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "reach": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach"
+          },
+          "views": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Views"
+          }
+        },
+        "required": [
+          "date",
+          "reach",
+          "views"
+        ],
+        "title": "SparklinePoint",
+        "type": "object"
+      },
+      "InsightsContentListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InsightsContentItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "InsightsContentListOut",
+        "type": "object"
       }
     }
   }

@@ -123,6 +123,7 @@ class Settings(BaseSettings):
     meta_graph_api_version: str = "v25.0"
     meta_oauth_redirect_uri: str = "http://localhost:8000/oauth/instagram/callback"
     meta_stories_enabled: bool = True
+    insights_enabled: bool = Field(default=True)
     token_encryption_keys: SecretStr = SecretStr("")
     token_encryption_active_key_id: str = ""
     token_refresh_days_before_expiry: int = Field(default=20, ge=1)

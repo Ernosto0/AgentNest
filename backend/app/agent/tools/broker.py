@@ -561,4 +561,43 @@ def build_default_broker() -> ToolBroker:
                 cal_handler,
             )
         )
+
+    class InsightsSummaryArgs(BaseModel):
+        range: Literal["7d", "28d"] = "7d"
+
+    def _insights_summary(
+        session: Session, clock: Clock, context: BrokerContext, args: BaseModel
+    ) -> dict[str, Any]:
+        from app.insights import service
+
+        range_days = 28 if getattr(args, "range", "7d") == "28d" else 7
+        summary = service.get_summary(
+            session,
+            context.workspace.workspace_id,
+            context.account_id,
+            range_days=range_days,
+            clock=clock,
+        )
+        return {
+            "reach": summary.reach,
+            "views": summary.views,
+            "interactions": summary.interactions,
+            "follower_count": summary.follower_count,
+            "status": summary.status,
+            "is_simulated": summary.is_simulated,
+        }
+
+    broker.register(
+        ToolSpec(
+            "insights.summary",
+            "v1",
+            "Read recent performance metrics (reach, views, interactions) for the account.",
+            "public_read",
+            frozenset({"dm", "comment", "owner_task"}),
+            frozenset({"owner_task"}),
+            InsightsSummaryArgs,
+            _insights_summary,
+        )
+    )
+
     return broker

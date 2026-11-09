@@ -17,7 +17,10 @@
     "language": "Dil",
     "close": "Kapat",
     "cancel": "Vazgeç",
-    "saving": "Kaydediliyor…"
+    "saving": "Kaydediliyor…",
+    "settings": "Ayarlar",
+    "clear": "Temizle",
+    "enter": "↵ Giriş"
   },
   "auth": {
     "title": "Giriş yap",
@@ -106,6 +109,74 @@
       "degraded": "Instagram'a şu an ulaşılamıyor, otomatik olarak tekrar denenecek.",
       "reconnect": "Bağlantıyı yenile"
     },
+    "quick": {
+      "newPost": "Yeni gönderi",
+      "newStory": "Yeni hikaye",
+      "generate": "Üret",
+      "addKnowledge": "İşletme bilgisi ekle",
+      "openReports": "Günlük rapor"
+    },
+    "agentStatus": {
+      "title": "Asistan",
+      "empty": "Bağlı hesap yok",
+      "active": "Aktif",
+      "paused": "Duraklatıldı",
+      "pause": "Asistanı duraklat",
+      "resume": "Asistanı devam ettir",
+      "sessions": "{{count}} aktif konuşma",
+      "confirmPause": "Asistan duraklatılsın mı? Devam ettirilene kadar mesajlar otomatik yanıtlanmaz.",
+      "confirmResume": "Asistan devam ettirilsin mi?",
+      "inactive": "Aktif değil"
+    },
+    "upNext": {
+      "title": "Sıradaki içerikler",
+      "stories": "Hikayeler",
+      "posts": "Gönderiler",
+      "noStories": "Planlanmış hikaye yok.",
+      "noStoriesHint": "Takipçilerinizle etkileşimi artırmak için günlük hikayeler paylaşın.",
+      "draftStory": "Hikaye hazırla",
+      "aspectWarning": "En-boy oranı 9:16 değil"
+    },
+    "week": {
+      "title": "Gelecek 7 gün",
+      "gap": "Hikaye yok",
+      "viewDay": "Ajandayı gör",
+      "today": "Bugün",
+      "tomorrow": "Yarın"
+    },
+    "activity": {
+      "title": "Asistan hareketleri",
+      "empty": "Yakın zamanda asistan hareketi yok.",
+      "all": "Tüm hareketler"
+    },
+    "appointments": {
+      "title": "Yaklaşan randevular",
+      "empty": "Bugün veya yarın için planlanmış randevu yok.",
+      "connectCalendar": "Randevuları otomatikleştirmek için Google Takvim bağlayın.",
+      "viewConversation": "Konuşmayı aç"
+    },
+    "insights": {
+      "title": "Instagram Performansı",
+      "range7d": "7 Gün",
+      "range28d": "28 Gün",
+      "loading": "Performans verileri yükleniyor...",
+      "errorLoading": "Performans verileri alınamadı.",
+      "scopeNotGrantedTitle": "Instagram Insights İzni Eksik",
+      "scopeNotGrantedDesc": "Erişim ve görüntülenme metriklerini görmek için hesabınızı 'instagram_business_manage_insights' izniyle yeniden bağlayın.",
+      "reconnectCta": "Hesabı Yeniden Bağla",
+      "belowThresholdDesc": "Takipçi sayısı 100'ün altında olduğunda Meta kitle ve ayrıntılı analiz verilerini gizler.",
+      "syncingTitle": "Veriler Senkronize Ediliyor",
+      "syncingDesc": "İlk performans analizleriniz toplanıyor, lütfen birkaç saat sonra tekrar kontrol edin.",
+      "reach": "Erişim",
+      "views": "Görüntülenme",
+      "interactions": "Etkileşim",
+      "trendTitle": "Günlük Eğilim",
+      "vsPrevPeriod": "Önceki {{days}} güne göre",
+      "followersTotal": "toplam takipçi",
+      "fullReportsLink": "Tüm raporları gör",
+      "account": "Instagram hesabı",
+      "partial": "Eksik geçmiş: {{days}} günün {{current}} günü mevcut; önceki dönemde {{days}} günün {{previous}} günü mevcut. Toplamlar ve karşılaştırmalar, geçmişleri tamamlandığında gösterilir."
+    },
     "attention": {
       "title": "Sizi bekleyenler",
       "none": "Şu an sizi bekleyen bir şey yok.",
@@ -113,6 +184,10 @@
       "needsHuman": "Sizi bekleyen konuşma",
       "failures": "Bugün yayınlanamayan gönderi",
       "onHold": "Beklemede olan gönderi",
+      "drafts": "İnceleme bekleyen taslaklar",
+      "comments": "Yanıt bekleyen yorumlar",
+      "reviewDrafts": "Taslakları incele",
+      "reviewComments": "Yorumları incele",
       "open": "Aç"
     },
     "upcoming": {
@@ -129,7 +204,12 @@
       "title": "Bugün",
       "empty": "Bugün henüz bir şey olmadı.",
       "asOf": "{{time}} itibarıyla",
-      "openReport": "Günlük raporu aç"
+      "openReport": "Günlük raporu aç",
+      "vsYesterday": "düne göre",
+      "partialNote": "bugün şimdiye kadar vs. dünün tamamı",
+      "same": "Aynı",
+      "more": "+%{{pct}}",
+      "less": "-%{{pct}}"
     },
     "loadFailed": "Bu bölüm şu an yüklenemedi."
   },
