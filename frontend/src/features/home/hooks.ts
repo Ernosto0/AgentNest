@@ -10,7 +10,9 @@ import type {
   DailyReport,
   SocialAccount,
 } from "@/api/types";
+import { useReadiness } from "@/features/knowledge/hooks";
 import { shiftDay, todayIn } from "@/features/reports/dates";
+import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 export type AgentOverview = components["schemas"]["AgentOverview"];
 export type InsightsSummary = components["schemas"]["InsightsSummaryOut"];
@@ -18,22 +20,8 @@ export type InsightsContentList = components["schemas"]["InsightsContentListOut"
 export type AudienceData = components["schemas"]["AudienceOut"];
 
 const HOME_LIST = 3;
-
-/** The next scheduled posts, soonest first (the scheduled list is already sorted that way). */
-export function useUpcomingPosts(ws: string) {
-  return useQuery<ContentItem[], AppError>({
-    queryKey: ["content-items", ws, "home-upcoming"],
-    queryFn: async () =>
-      (
-        await unwrap(
-          api.GET("/api/v1/workspaces/{workspace_id}/content-items", {
-            params: { path: { workspace_id: ws }, query: { tab: "scheduled", limit: HOME_LIST } },
-          }),
-        )
-      ).items,
-    refetchInterval: 60_000,
-  });
-}
+/** Scheduled items fetched for the week view; a full page means there may be more. */
+export const SCHEDULED_WEEK_LIMIT = 50;
 
 /** The most recent posts that failed for good, newest first. */
 export function useRecentFailures(ws: string) {
@@ -87,7 +75,7 @@ export function useScheduledWeek(ws: string, timezone: string) {
       (
         await unwrap(
           api.GET("/api/v1/workspaces/{workspace_id}/content-items", {
-            params: { path: { workspace_id: ws }, query: { tab: "scheduled", limit: 50 } },
+            params: { path: { workspace_id: ws }, query: { tab: "scheduled", limit: SCHEDULED_WEEK_LIMIT } },
           }),
         )
       ).items,
@@ -135,7 +123,7 @@ export function useScheduledWeek(ws: string, timezone: string) {
   };
 }
 
-/** Agent audit activity feed (agent actions only, top 8 entries). */
+/** Agent audit activity feed (agent actions only, newest first, at most 8 entries). */
 export function useRecentAgentActivity(ws: string, enabled = true) {
   return useQuery<ActivityEntry[], AppError>({
     queryKey: ["activity", ws, "home-agent"],
@@ -272,4 +260,17 @@ export function useInsightsAudience(ws: string, accountId: string | undefined) {
     enabled: Boolean(accountId),
     refetchInterval: 15 * 60_000,
   });
+}
+
+/** Whether the appointments panel renders: it hides for non-owners without a connected calendar. */
+export function useAppointmentsVisible() {
+  const { workspace, role } = useCurrentWorkspace();
+  const info = useAppointmentsInfo(workspace.id, workspace.timezone);
+  return info.isPending || Boolean(info.error) || info.hasConnectedCalendar || role === "owner";
+}
+
+/** Whether readiness still has something to say (the card disappears once complete). */
+export function useReadinessVisible() {
+  const { workspace } = useCurrentWorkspace();
+  return useReadiness(workspace.id).data?.level !== "ready";
 }

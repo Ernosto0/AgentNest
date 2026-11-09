@@ -67,6 +67,9 @@
   --an-info-subtle: #eaf3f8;
   --an-simulation: #694096;
   --an-simulation-subtle: #f5effc;
+  /* Two-series chart pair; validated for CVD separation and 3:1 contrast on white. */
+  --an-chart-1: #1f7a52;
+  --an-chart-2: #c9822b;
   --an-space-1: 0.25rem;
   --an-space-2: 0.5rem;
   --an-space-3: 0.75rem;
@@ -112,6 +115,8 @@
   --color-info-subtle: var(--an-info-subtle);
   --color-simulation: var(--an-simulation);
   --color-simulation-subtle: var(--an-simulation-subtle);
+  --color-chart-1: var(--an-chart-1);
+  --color-chart-2: var(--an-chart-2);
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Manrope", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --text-page: clamp(1.625rem, 1.4rem + 0.6vw, 1.875rem);

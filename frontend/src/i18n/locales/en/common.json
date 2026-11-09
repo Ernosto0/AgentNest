@@ -126,23 +126,33 @@
       "sessions": "{{count}} live chats",
       "confirmPause": "Pause assistant? Incoming messages won't be replied to automatically.",
       "confirmResume": "Resume assistant?",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "mode": {
+        "agent": "Account assistant",
+        "legacy": "Previous automation"
+      }
     },
     "upNext": {
       "title": "Up next",
       "stories": "Stories",
       "posts": "Posts",
-      "noStories": "No stories scheduled.",
-      "noStoriesHint": "Keep your audience engaged with daily stories.",
       "draftStory": "Draft a story",
-      "aspectWarning": "Aspect ratio is not 9:16"
+      "aspectWarning": "Aspect ratio is not 9:16",
+      "weekSummary": "Next 7 days: {{posts}} posts · {{stories}} stories",
+      "empty": "No content is scheduled.",
+      "next": "Coming up",
+      "typeStory": "Story",
+      "typePost": "Post",
+      "noImage": "No image"
     },
     "week": {
       "title": "Next 7 days",
-      "gap": "No story",
       "viewDay": "View agenda",
       "today": "Today",
-      "tomorrow": "Tomorrow"
+      "tomorrow": "Tomorrow",
+      "dayCounts": "{{posts}} posts, {{stories}} stories",
+      "gapAction": "No story: draft one",
+      "gapLegend": "No story yet"
     },
     "activity": {
       "title": "Agent activity",
@@ -153,7 +163,9 @@
       "title": "Upcoming appointments",
       "empty": "No appointments scheduled for today or tomorrow.",
       "connectCalendar": "Connect Google Calendar to automate bookings.",
-      "viewConversation": "Open chat"
+      "viewConversation": "Open chat",
+      "connect": "Connect Google Calendar",
+      "window": "Today and tomorrow"
     },
     "insights": {
       "title": "Instagram Performance",
@@ -175,7 +187,8 @@
       "followersTotal": "total followers",
       "fullReportsLink": "View full reports",
       "account": "Instagram account",
-      "partial": "Incomplete history: {{current}} of {{days}} days available; previous period {{previous}} of {{days}} days. Totals and comparisons appear when their history is complete."
+      "partial": "Incomplete history: {{current}} of {{days}} days available; previous period {{previous}} of {{days}} days. Totals and comparisons appear when their history is complete.",
+      "date": "Date"
     },
     "attention": {
       "title": "Waiting for you",
@@ -188,11 +201,14 @@
       "comments": "Unanswered comments",
       "reviewDrafts": "Review drafts",
       "reviewComments": "Review comments",
-      "open": "Open"
+      "open": "Open",
+      "summary_one": "{{count}} item needs you",
+      "summary_other": "{{count}} items need you",
+      "noneHint": "New approvals, questions and conversations that need a person will appear here.",
+      "reauthShort": "Connection must be renewed",
+      "failedDetail": "Could not be published"
     },
     "upcoming": {
-      "title": "Next posts",
-      "empty": "No scheduled posts.",
       "emptyHint": "A draft you prepare and schedule shows up here.",
       "all": "All content"
     },
@@ -209,9 +225,18 @@
       "partialNote": "so far today vs. full day yesterday",
       "same": "Same",
       "more": "+{{pct}}%",
-      "less": "-{{pct}}%"
+      "less": "-{{pct}}%",
+      "yesterdayValue": "Yesterday: {{value}}"
     },
-    "loadFailed": "This section could not be loaded right now."
+    "loadFailed": "This section could not be loaded right now.",
+    "subtitle": "What your assistant is doing, what needs you and what is coming up.",
+    "assistant": {
+      "subtitle": "Works on your Instagram messages, comments and content",
+      "connect": "Connect Instagram"
+    },
+    "readiness": {
+      "subtitle": "What your assistant still needs to answer customers"
+    }
   },
   "inbox": {
     "title": "Inbox"

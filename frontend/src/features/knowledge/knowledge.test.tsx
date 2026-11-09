@@ -70,7 +70,7 @@ describe("Home readiness card", () => {
     renderApp(`/w/${WS_GOLKENT}`);
 
     expect(await screen.findByTestId("readiness-level")).toHaveTextContent("Taslaklar için hazır");
-    const open = within(screen.getByRole("heading", { name: "Hazırlık durumu" }).closest("div")!.parentElement!);
+    const open = within(screen.getByRole("region", { name: "Hazırlık durumu" }));
     const booking = open.getByRole("link", { name: /Rezervasyon talimatı/ });
     expect(booking).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/knowledge/booking`);
     // The account step and the automation review share one screen (Phase 4).

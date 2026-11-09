@@ -77,6 +77,15 @@ describe("Home: attention cards", () => {
     expect(screen.queryByTestId("attention-none")).toBeNull();
   });
 
+  it("sums the outstanding items once every count is known", async () => {
+    mockApi(routes({ ...reportWith(FULL_METRICS), [`GET ${BASE}/home/attention`]: () => json({ drafts: 1, unanswered_comments: 0 }) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const panel = await screen.findByTestId("home-attention");
+    // approvals 3 + needs human 2 + on hold 4 + drafts 1; questions are 0 without accounts.
+    expect(await within(panel).findByText("10 iş sizi bekliyor")).toBeInTheDocument();
+    expect(within(panel).queryByTestId("attention-comments")).toBeNull();
+  });
+
   it("says so when nothing waits (empty state)", async () => {
     mockApi(
       routes({
@@ -188,8 +197,8 @@ describe("Home: banners", () => {
   });
 });
 
-describe("Home: upcoming posts and failures", () => {
-  it("lists the next three scheduled posts on the workspace clock", async () => {
+describe("Home: upcoming content and failures", () => {
+  it("previews the next scheduled items on the workspace clock, from one capped list", async () => {
     const scheduled = [1, 2, 3].map((n) =>
       contentItem({
         id: `c5000000-0000-4000-8000-00000000010${n}`,
@@ -206,21 +215,31 @@ describe("Home: upcoming posts and failures", () => {
       }),
     );
     renderApp(`/w/${WS_GOLKENT}`);
-    const card = (await screen.findByText("Gönderi 1")).closest("section, div[aria-labelledby]") as HTMLElement;
-    expect(within(card).getAllByRole("listitem")).toHaveLength(3);
-    expect(within(card).getByRole("link", { name: "Gönderi 1" })).toHaveAttribute(
+    const list = await screen.findByTestId("upcoming-list");
+    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(list).getByRole("link", { name: /Gönderi 1/ })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/content/${scheduled[0]!.id}`,
     );
-    expect(card).toHaveTextContent("14:00"); // 11:00 UTC in Istanbul
-    expect(within(card).getAllByTestId("simulated-badge")).toHaveLength(3);
-    expect(requests.some((r) => r.search.includes("tab=scheduled") && r.search.includes("limit=3"))).toBe(true);
+    expect(list).toHaveTextContent("14:00"); // 11:00 UTC in Istanbul
+    expect(within(list).getAllByTestId("simulated-badge")).toHaveLength(3);
+    expect(within(list).getAllByText("Görsel yok")).toHaveLength(3); // placeholders say there is no image
+    const card = screen.getByTestId("home-upcoming");
+    expect(card).toHaveTextContent("Son kayıtların önizlemesi gösteriliyor."); // a preview, never a total
+    expect(within(card).getByRole("link", { name: "Tüm içerik" })).toHaveAttribute("href", `/w/${WS_GOLKENT}/content?tab=scheduled`);
+    expect(requests.some((r) => r.search.includes("tab=scheduled") && r.search.includes("limit=50"))).toBe(true);
+    expect(requests.some((r) => r.search.includes("tab=scheduled") && r.search.includes("limit=3"))).toBe(false);
   });
 
-  it("has an empty state for the upcoming posts", async () => {
-    mockApi(routes({ ...reportWith([]) }));
+  it("has one empty state for upcoming content, with ways to create some", async () => {
+    mockApi(routes({ ...reportWith([]), [`GET ${BASE}/content-items`]: () => json({ items: [], next_cursor: null }) }));
     renderApp(`/w/${WS_GOLKENT}`);
-    expect(await screen.findByTestId("upcoming-empty")).toHaveTextContent("Planlanmış gönderi yok.");
+    const empty = await screen.findByTestId("upcoming-empty");
+    expect(empty).toHaveTextContent("Planlanmış içerik yok.");
+    expect(within(empty).getByRole("button", { name: "Üret" })).toBeInTheDocument();
+    expect(screen.getByTestId("week-summary")).toHaveTextContent("Gelecek 7 gün: 0 gönderi · 0 hikaye");
+    await userEvent.setup().click(within(empty).getByRole("button", { name: "Hikaye hazırla" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
   it("lists the three most recent failures with what happened", async () => {
@@ -288,6 +307,24 @@ describe("Home: today's numbers", () => {
     );
     renderApp(`/w/${WS_GOLKENT}`);
     expect(await screen.findByTestId("numbers-empty")).toHaveTextContent("Bugün henüz bir şey olmadı.");
+  });
+
+  it("compares with yesterday without inventing a percentage from zero", async () => {
+    const today = [metric("inbound_messages", 12, "messages", DAY), metric("replies_sent", 5, "messages", DAY), metric("integration_errors", 2, "problems", DAY)];
+    const before = [metric("inbound_messages", 0, "messages", DAY), metric("replies_sent", 4, "messages", DAY), metric("integration_errors", 1, "problems", DAY)];
+    mockApi(
+      routes({
+        [`GET ${REPORT_BASE}`]: (request) => json(report(DAY, { metrics: request.search.includes("date=") ? before : today })),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}`);
+    const inbound = await screen.findByTestId("number-inbound_messages");
+    await waitFor(() => expect(inbound).toHaveTextContent("Dün: 0"));
+    expect(inbound).not.toHaveTextContent("%");
+    expect(screen.getByTestId("number-replies_sent")).toHaveTextContent("+%25 düne göre");
+    const errors = screen.getByTestId("number-integration_errors");
+    expect(errors).toHaveTextContent("+%100 düne göre");
+    expect(within(errors).getByText(/\+%100 düne göre/)).toHaveClass("text-danger"); // more errors is bad news
   });
 });
 
@@ -390,44 +427,34 @@ describe("Home: agent status card", () => {
   });
 });
 
-describe("Home: upcoming stories and week strip", () => {
-  it("renders scheduled stories rail and 7-day strip with story gap detection", async () => {
+describe("Home: week calendar", () => {
+  it("counts the week's posts and stories and offers a story on days without one", async () => {
+    const soon = new Date(Date.now() + 60_000).toISOString();
     const story = contentItem({
       id: "c5000000-0000-4000-8000-000000000501",
       content_type: "story_image",
       status: "scheduled",
       title: "Sabah Hikayesi",
-      scheduled_at: "2026-10-15T07:00:00Z",
+      scheduled_at: soon,
     });
+    const post = contentItem({ id: "c5000000-0000-4000-8000-000000000502", status: "scheduled", title: "Kampanya", scheduled_at: soon });
 
-    mockApi(
-      routes({
-        ...reportWith([]),
-        [`GET ${BASE}/content-items`]: () => json({ items: [story], next_cursor: null }),
-      }),
-    );
-
+    mockApi(routes({ ...reportWith([]), [`GET ${BASE}/content-items`]: () => json({ items: [story, post], next_cursor: null }) }));
     renderApp(`/w/${WS_GOLKENT}`);
-    const storiesRail = await screen.findByTestId("stories-rail");
-    expect(within(storiesRail).getByText("Sabah Hikayesi")).toBeInTheDocument();
 
-    const weekStrip = screen.getByTestId("week-strip");
-    expect(weekStrip).toBeInTheDocument();
-    // Week strip identifies gap on days with no story
-    expect(within(weekStrip).getAllByText("+Hikaye yok").length).toBeGreaterThan(0);
-  });
+    const week = await screen.findByTestId("week-strip");
+    expect(within(week).getAllByRole("listitem")).toHaveLength(7);
+    expect(screen.getByTestId("week-summary")).toHaveTextContent("Gelecek 7 gün: 1 gönderi · 1 hikaye");
+    // Six days have no story; the day with one does not offer another.
+    const gaps = within(week).getAllByRole("button", { name: /Hikaye yok: hikaye hazırla/ });
+    expect(gaps).toHaveLength(6);
+    expect(within(week).getByText(/1 gönderi, 1 hikaye/)).toBeInTheDocument();
+    const list = screen.getByTestId("upcoming-list");
+    expect(within(list).getByText("Sabah Hikayesi")).toBeInTheDocument();
+    expect(within(list).getAllByText("Hikaye").length).toBeGreaterThan(0);
 
-  it("shows empty state when no stories are scheduled", async () => {
-    mockApi(
-      routes({
-        ...reportWith([]),
-        [`GET ${BASE}/content-items`]: () => json({ items: [], next_cursor: null }),
-      }),
-    );
-
-    renderApp(`/w/${WS_GOLKENT}`);
-    expect(await screen.findByTestId("stories-rail-empty")).toBeInTheDocument();
-    expect(screen.getByText("Planlanmış hikaye yok.")).toBeInTheDocument();
+    await userEvent.setup().click(gaps[0]!);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 });
 
@@ -528,14 +555,17 @@ describe("Home: instagram insights card", () => {
     renderApp(`/w/${WS_GOLKENT}`);
     const card = await screen.findByTestId("insights-performance-card");
     expect(within(card).getByText("Instagram Performansı")).toBeInTheDocument();
-    expect(within(card).getByText("1.200")).toBeInTheDocument();
-    expect(within(card).getByText("2.400")).toBeInTheDocument();
-    expect(within(card).getByText("180")).toBeInTheDocument();
-    expect(within(card).getByText("+15%")).toBeInTheDocument();
+    const kpis = within(card).getByTestId("insights-kpis");
+    expect(within(kpis).getByText("1.200")).toBeInTheDocument();
+    expect(within(kpis).getByText("2.400")).toBeInTheDocument();
+    expect(within(kpis).getByText("180")).toBeInTheDocument();
+    expect(within(kpis).getByText("+15%")).toBeInTheDocument();
+    // The trend has a table equivalent for assistive technology.
+    expect(within(card).getByRole("table", { name: "Günlük Eğilim" })).toBeInTheDocument();
 
     // Toggle to 28d
     await userEvent.setup().click(within(card).getByRole("button", { name: "28 Gün" }));
-    expect(await within(card).findByText("4.800")).toBeInTheDocument();
+    expect(await within(within(card).getByTestId("insights-kpis")).findByText("4.800")).toBeInTheDocument();
   });
 
   it("shows permission reconnect warning when status is not_granted", async () => {
@@ -672,7 +702,7 @@ describe("Home: production failure regressions", () => {
     const card = await screen.findByTestId("home-upcoming");
     expect((await within(card).findAllByRole("alert")).length).toBeGreaterThan(0);
     expect(within(card).queryByTestId("week-strip")).toBeNull();
-    expect(within(card).queryByTestId("stories-rail-empty")).toBeNull();
+    expect(within(card).queryByTestId("week-summary")).toBeNull();
     expect(within(card).queryByTestId("upcoming-empty")).toBeNull();
   });
 
@@ -687,7 +717,7 @@ describe("Home: production failure regressions", () => {
     renderApp(`/w/${WS_GOLKENT}`);
     const card = await screen.findByTestId("insights-performance-card");
     expect(await within(card).findByTestId("insights-partial")).toBeInTheDocument();
-    expect(within(card).getAllByText(tr.core.unavailable)).toHaveLength(3);
+    expect(within(within(card).getByTestId("insights-kpis")).getAllByText(tr.core.unavailable)).toHaveLength(3);
     expect(within(card).queryByText("+100%")).toBeNull();
     expect(within(card).queryByText("0")).toBeNull();
   });

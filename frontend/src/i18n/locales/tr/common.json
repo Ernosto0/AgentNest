@@ -126,23 +126,33 @@
       "sessions": "{{count}} aktif konuşma",
       "confirmPause": "Asistan duraklatılsın mı? Devam ettirilene kadar mesajlar otomatik yanıtlanmaz.",
       "confirmResume": "Asistan devam ettirilsin mi?",
-      "inactive": "Aktif değil"
+      "inactive": "Aktif değil",
+      "mode": {
+        "agent": "Hesap asistanı",
+        "legacy": "Önceki otomasyon"
+      }
     },
     "upNext": {
       "title": "Sıradaki içerikler",
       "stories": "Hikayeler",
       "posts": "Gönderiler",
-      "noStories": "Planlanmış hikaye yok.",
-      "noStoriesHint": "Takipçilerinizle etkileşimi artırmak için günlük hikayeler paylaşın.",
       "draftStory": "Hikaye hazırla",
-      "aspectWarning": "En-boy oranı 9:16 değil"
+      "aspectWarning": "En-boy oranı 9:16 değil",
+      "weekSummary": "Gelecek 7 gün: {{posts}} gönderi · {{stories}} hikaye",
+      "empty": "Planlanmış içerik yok.",
+      "next": "Sıradakiler",
+      "typeStory": "Hikaye",
+      "typePost": "Gönderi",
+      "noImage": "Görsel yok"
     },
     "week": {
       "title": "Gelecek 7 gün",
-      "gap": "Hikaye yok",
       "viewDay": "Ajandayı gör",
       "today": "Bugün",
-      "tomorrow": "Yarın"
+      "tomorrow": "Yarın",
+      "dayCounts": "{{posts}} gönderi, {{stories}} hikaye",
+      "gapAction": "Hikaye yok: hikaye hazırla",
+      "gapLegend": "Henüz hikaye yok"
     },
     "activity": {
       "title": "Asistan hareketleri",
@@ -153,7 +163,9 @@
       "title": "Yaklaşan randevular",
       "empty": "Bugün veya yarın için planlanmış randevu yok.",
       "connectCalendar": "Randevuları otomatikleştirmek için Google Takvim bağlayın.",
-      "viewConversation": "Konuşmayı aç"
+      "viewConversation": "Konuşmayı aç",
+      "connect": "Google Takvim'i bağla",
+      "window": "Bugün ve yarın"
     },
     "insights": {
       "title": "Instagram Performansı",
@@ -175,7 +187,8 @@
       "followersTotal": "toplam takipçi",
       "fullReportsLink": "Tüm raporları gör",
       "account": "Instagram hesabı",
-      "partial": "Eksik geçmiş: {{days}} günün {{current}} günü mevcut; önceki dönemde {{days}} günün {{previous}} günü mevcut. Toplamlar ve karşılaştırmalar, geçmişleri tamamlandığında gösterilir."
+      "partial": "Eksik geçmiş: {{days}} günün {{current}} günü mevcut; önceki dönemde {{days}} günün {{previous}} günü mevcut. Toplamlar ve karşılaştırmalar, geçmişleri tamamlandığında gösterilir.",
+      "date": "Tarih"
     },
     "attention": {
       "title": "Sizi bekleyenler",
@@ -188,11 +201,14 @@
       "comments": "Yanıt bekleyen yorumlar",
       "reviewDrafts": "Taslakları incele",
       "reviewComments": "Yorumları incele",
-      "open": "Aç"
+      "open": "Aç",
+      "summary_one": "{{count}} iş sizi bekliyor",
+      "summary_other": "{{count}} iş sizi bekliyor",
+      "noneHint": "Yeni onaylar, sorular ve bir kişinin ilgilenmesi gereken konuşmalar burada görünür.",
+      "reauthShort": "Bağlantı yenilenmeli",
+      "failedDetail": "Yayınlanamadı"
     },
     "upcoming": {
-      "title": "Sıradaki gönderiler",
-      "empty": "Planlanmış gönderi yok.",
       "emptyHint": "Bir taslak hazırlayıp zamanladığınızda burada görünür.",
       "all": "Tüm içerik"
     },
@@ -209,9 +225,18 @@
       "partialNote": "bugün şimdiye kadar vs. dünün tamamı",
       "same": "Aynı",
       "more": "+%{{pct}}",
-      "less": "-%{{pct}}"
+      "less": "-%{{pct}}",
+      "yesterdayValue": "Dün: {{value}}"
     },
-    "loadFailed": "Bu bölüm şu an yüklenemedi."
+    "loadFailed": "Bu bölüm şu an yüklenemedi.",
+    "subtitle": "Asistanınızın yaptıkları, sizi bekleyenler ve sıradaki içerikler.",
+    "assistant": {
+      "subtitle": "Instagram mesajlarınız, yorumlarınız ve içerikleriniz üzerinde çalışır",
+      "connect": "Instagram'ı bağla"
+    },
+    "readiness": {
+      "subtitle": "Asistanınızın müşterilere yanıt vermek için ihtiyaç duydukları"
+    }
   },
   "inbox": {
     "title": "Gelen kutusu"

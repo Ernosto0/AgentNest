@@ -174,8 +174,9 @@ Every section below inherits the state, role, privacy, responsive and verificati
 
 ### 4.2 Today and existing commands — R05
 
-- Order: account-blocking notices, Needs your attention, inline request entry, next scheduled posts, incomplete readiness, compact daily summary. New content is a secondary header action.
-- Attention uses divider rows: connection recovery, recent failed posts, pending approvals, business questions, conversations needing a person, held content. Each row links to a concrete next action.
+- Desktop order: account-blocking notices; a compact strip of today's period numbers (each a link to its evidence, compared with yesterday without percentages from a zero base); the assistant panel (per-account state and pause/resume, inline request entry, the latest agent activity) beside Needs your attention; upcoming content (seven-day calendar plus a capped visual preview of the next scheduled items) beside appointments and incomplete readiness; Instagram performance. Phones show Needs your attention first, then the numbers, then the assistant. New content actions stay in the page header.
+- Attention rows are whole-row targets whose accessible name is the concrete next action: connection recovery, recent failed posts, pending approvals, business questions, conversations needing a person, held content, drafts and unanswered comments, most urgent first. The total appears only when every count is known.
+- Upcoming content has one empty state for the whole plan. A day without a story offers to draft one; scheduled counts derive from the fetched scheduled page and show "+" when that page is full.
 - Current report counts remain distinct from period metrics. Failed and upcoming posts are labelled capped previews; their lengths are never totals. Missing or failed data never establishes a quiet state.
 - Business-question counts come from account-agent overviews. Staff see only server-authorized report metrics. Simulation remains visible on affected results.
 - Readiness disappears when complete. Open requirements come first; completed requirements are collapsed.

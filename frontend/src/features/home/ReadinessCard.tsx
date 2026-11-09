@@ -1,18 +1,18 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { BookIcon } from "@/components/icons";
 import { ReadinessChecklist } from "@/features/knowledge/ReadinessChecklist";
 import { useReadiness } from "@/features/knowledge/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { Panel, PanelHeading, PanelLink, SkeletonRows } from "./DashboardPanel";
 
 const LEVEL_TONE = {
-  not_ready: "bg-danger-subtle text-danger border border-danger/40",
-  ready_for_drafts: "bg-attention-subtle text-attention border border-attention/40",
-  ready: "bg-success-subtle text-success border border-success/40",
+  not_ready: "bg-danger-subtle text-danger",
+  ready_for_drafts: "bg-attention-subtle text-attention",
+  ready: "bg-success-subtle text-success",
 } as const;
 
-/** Readiness level plus what is still open, with deep links (AC-A1). */
+/** Readiness level plus what is still open, with deep links (AC-A1). Hidden when complete. */
 export function ReadinessCard() {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
@@ -26,65 +26,64 @@ export function ReadinessCard() {
   if (isReady) return null;
 
   return (
-    <Card className="flex flex-col gap-4 bg-surface p-5" aria-labelledby="readiness-title">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
-        <h2 id="readiness-title" className="type-section text-primary">
-          {t("readiness.title")}
-        </h2>
-        {readiness.data ? (
-          <span
-            data-testid="readiness-level"
-            data-level={readiness.data.level}
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold tracking-wide shadow-2xs ${LEVEL_TONE[readiness.data.level]}`}
-          >
-            {t(`readiness.level.${readiness.data.level}`)}
-          </span>
-        ) : null}
-      </div>
-      {readiness.isPending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
+    <Panel aria-labelledby="readiness-title" className="gap-4">
+      <PanelHeading
+        id="readiness-title"
+        icon={<BookIcon />}
+        title={t("readiness.title")}
+        meta={t("home.readiness.subtitle")}
+        action={
+          readiness.data ? (
+            <span
+              data-testid="readiness-level"
+              data-level={readiness.data.level}
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${LEVEL_TONE[readiness.data.level]}`}
+            >
+              {t(`readiness.level.${readiness.data.level}`)}
+            </span>
+          ) : undefined
+        }
+      />
+      {readiness.isPending ? <SkeletonRows label={t("common.loading")} rows={2} /> : null}
       {readiness.isError ? <ErrorMessage error={readiness.error} /> : null}
       {readiness.data ? (
         <>
-          <div className="flex flex-col gap-2.5 bg-surface-subtle/50 rounded-xl p-3.5 border border-border/60">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                {t("readiness.progress", {
-                  done: satisfiedCount,
-                  total: totalCount,
-                })}
-              </p>
-              <span className="text-sm font-extrabold text-primary font-mono">{percentage}%</span>
-            </div>
+          <div className="flex items-center gap-3">
             <div
               role="progressbar"
               aria-valuenow={satisfiedCount}
               aria-valuemin={0}
               aria-valuemax={totalCount}
               aria-label={t("readiness.title")}
-              className="h-2.5 w-full overflow-hidden rounded-full bg-border/60"
+              className="h-2 flex-1 overflow-hidden rounded-full bg-surface-subtle"
             >
-              <div
-                className={`h-full rounded-full transition-all duration-normal shadow-xs ${
-                  isReady ? "bg-success" : "bg-action"
-                }`}
-                style={{ width: `${percentage}%` }}
-              />
+              <div className="h-full rounded-full bg-action transition-[width] duration-normal" style={{ width: `${percentage}%` }} />
             </div>
+            <p className="shrink-0 text-metadata font-semibold text-secondary tabular-nums">
+              {t("readiness.progress", { done: satisfiedCount, total: totalCount })}
+            </p>
           </div>
-          {!isReady ? (
+          <div className="-mx-3">
             <ReadinessChecklist workspaceId={workspace.id} readiness={readiness.data} onlyOpen />
-          ) : null}
-          {satisfiedCount > 0 ? <details><summary className="min-h-11 cursor-pointer py-2 text-body font-medium text-secondary">{t("core.completedRequirements", { count: satisfiedCount })}</summary><ReadinessChecklist workspaceId={workspace.id} readiness={{ ...readiness.data, requirements: readiness.data.requirements.filter(r => r.satisfied) }} /></details> : null}
-          <div className="pt-1">
-            <Link
-              to={`/w/${workspace.id}/more/knowledge`}
-              className="inline-flex min-h-11 items-center font-semibold text-action underline underline-offset-4 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-colors text-sm"
-            >
-              {t("readiness.openKnowledge")}
-            </Link>
           </div>
+          {satisfiedCount > 0 ? (
+            <details className="group -mt-1">
+              <summary className="min-h-11 cursor-pointer py-2 text-metadata font-medium text-secondary hover:text-primary">
+                {t("core.completedRequirements", { count: satisfiedCount })}
+              </summary>
+              <div className="-mx-3">
+                <ReadinessChecklist
+                  workspaceId={workspace.id}
+                  readiness={{ ...readiness.data, requirements: readiness.data.requirements.filter((r) => r.satisfied) }}
+                />
+              </div>
+            </details>
+          ) : null}
+          <PanelLink to={`/w/${workspace.id}/more/knowledge`} className="self-start">
+            {t("readiness.openKnowledge")}
+          </PanelLink>
         </>
       ) : null}
-    </Card>
+    </Panel>
   );
 }
