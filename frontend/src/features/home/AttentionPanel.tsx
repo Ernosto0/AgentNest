@@ -54,33 +54,33 @@ function AttentionRow({
   return (
     <li
       data-testid={testId}
-      className={`relative flex min-w-0 items-center gap-3 rounded-xl px-2 py-2.5 transition-colors ${
+      className={`group/row relative flex min-w-0 items-center gap-3 rounded-xl px-2 py-2 transition-colors ${
         to ? "hover:bg-surface-subtle has-[a:focus-visible]:bg-surface-subtle has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-focus" : ""
       }`}
     >
-      <span aria-hidden="true" className={`flex size-9 shrink-0 items-center justify-center rounded-lg text-lg ${TONE[tone].icon}`}>
+      <span aria-hidden="true" className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-base ${TONE[tone].icon}`}>
         {icon}
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 font-medium leading-snug text-primary">{label}</span>
-        {detail ? <span className="text-metadata text-secondary">{detail}</span> : null}
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-body leading-snug font-medium text-primary">{label}</span>
+        {detail ? <span className="text-xs text-secondary">{detail}</span> : null}
         {to ? (
           <Link
             to={to}
-            className="w-fit text-metadata font-semibold text-action outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']"
+            className="w-fit text-xs font-semibold text-action outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']"
           >
             {verb}
           </Link>
         ) : (
-          <span className="text-metadata text-secondary">{verb}</span>
+          <span className="text-xs text-secondary">{verb}</span>
         )}
       </div>
       {count !== undefined ? (
-        <span className={`min-w-9 shrink-0 rounded-lg px-2 py-1 text-center text-body font-bold tabular-nums ${TONE[tone].count}`}>
+        <span className={`min-w-8 shrink-0 rounded-md px-2 py-0.5 text-center text-body font-bold tabular-nums ${TONE[tone].count}`}>
           {count}
         </span>
       ) : null}
-      {to ? <ChevronRightIcon aria-hidden="true" className="shrink-0 text-lg text-secondary" /> : null}
+      {to ? <ChevronRightIcon aria-hidden="true" className="shrink-0 text-base text-secondary/70 transition-transform group-hover/row:translate-x-0.5" /> : null}
     </li>
   );
 }
@@ -154,13 +154,16 @@ export function AttentionPanel({
     !hasFailure &&
     counted.every((row) => row.count === 0);
 
+  // Urgent items (connection, failures, decisions, people) come first; review work follows a divider.
+  const review = open.filter((row) => row.tone === "neutral");
+  const urgentCount = reauthAccounts.length + failed.length + open.length - review.length;
   const total =
     open.every((row) => row.count !== null) && !loading
       ? open.reduce((sum, row) => sum + (row.count ?? 0), 0) + failed.length + reauthAccounts.length
       : null;
 
   return (
-    <Panel aria-labelledby="home-attention-title" data-testid="home-attention" className={`gap-3 ${className}`}>
+    <Panel aria-labelledby="home-attention-title" data-testid="home-attention" className={`gap-2.5 ${className}`}>
       <PanelHeading
         id="home-attention-title"
         title={t("home.attention.title")}
@@ -178,21 +181,21 @@ export function AttentionPanel({
       {nothing ? (
         <div
           data-testid="attention-none-state"
-          className="flex flex-1 items-center gap-4 py-1 lg:flex-col lg:justify-center lg:gap-3 lg:px-4 lg:py-8 lg:text-center"
+          className="flex items-center gap-3 rounded-xl bg-success-subtle/60 px-3 py-3"
         >
-          <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-full bg-success-subtle text-xl text-success lg:size-12 lg:text-2xl">
+          <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success text-base text-on-action">
             <CheckIcon />
           </span>
           <div>
-            <p data-testid="attention-none" className="font-heading text-base font-semibold text-primary">
+            <p data-testid="attention-none" className="text-body font-semibold text-primary">
               {t("home.attention.none")}
             </p>
-            <p className="mt-1 text-metadata text-secondary">{t("home.attention.noneHint")}</p>
+            <p className="text-xs text-secondary">{t("home.attention.noneHint")}</p>
           </div>
         </div>
       ) : null}
 
-      <ul className="-mx-2 flex flex-col">
+      <ul className="-mx-2 flex flex-col empty:hidden">
         {reauthAccounts.map((a) => (
           <AttentionRow
             key={a.id}
@@ -220,7 +223,7 @@ export function AttentionPanel({
             to={`${base}/content/${item.id}`}
           />
         ))}
-        {open.map((row) => (
+        {open.filter((row) => row.tone !== "neutral").map((row) => (
           <AttentionRow
             key={row.key}
             testId={`attention-${row.key}`}
@@ -233,6 +236,22 @@ export function AttentionPanel({
           />
         ))}
       </ul>
+      {review.length > 0 ? (
+        <ul className={`-mx-2 flex flex-col ${urgentCount > 0 ? "border-t border-border pt-2" : ""}`}>
+          {review.map((row) => (
+            <AttentionRow
+              key={row.key}
+              testId={`attention-${row.key}`}
+              tone={row.tone}
+              icon={row.icon}
+              label={<span>{row.label}</span>}
+              verb={row.verb}
+              to={row.to}
+              count={row.count ?? t("core.unavailable")}
+            />
+          ))}
+        </ul>
+      ) : null}
       {hasFailure ? <p className="text-metadata text-secondary">{t("core.previewList")}</p> : null}
       {overviews.some((q) => q.isError) ? (
         <p role="status" className="text-metadata text-secondary">

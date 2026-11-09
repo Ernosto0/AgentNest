@@ -19,7 +19,7 @@ export function Panel({
 }: HTMLAttributes<HTMLElement> & { tone?: Tone }) {
   const toneClass = tone === "assistant" ? "bg-assistant" : "border border-border bg-surface";
   return (
-    <section {...props} className={`flex min-w-0 flex-col rounded-2xl p-5 sm:p-6 ${toneClass} ${className}`}>
+    <section {...props} className={`flex min-w-0 flex-col rounded-2xl p-4 sm:p-5 ${toneClass} ${className}`}>
       {children}
     </section>
   );
@@ -50,7 +50,7 @@ export function PanelHeading({
         {icon ? (
           <span
             aria-hidden="true"
-            className={`flex size-9 shrink-0 items-center justify-center rounded-xl text-lg ${
+            className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-base ${
               iconTone === "assistant" ? "bg-action text-on-action" : "bg-surface-subtle text-action"
             }`}
           >
@@ -58,10 +58,10 @@ export function PanelHeading({
           </span>
         ) : null}
         <div className="min-w-0">
-          <h2 id={id} className="font-heading text-[1.0625rem] font-semibold leading-snug tracking-tight text-primary">
+          <h2 id={id} className="font-heading text-base leading-snug font-semibold tracking-tight text-primary">
             {title}
           </h2>
-          {meta ? <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-metadata text-secondary">{meta}</div> : null}
+          {meta ? <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-5 text-secondary">{meta}</div> : null}
         </div>
       </div>
       {action ? <div className={`flex shrink-0 items-center ${wrap ? "" : "-mt-1"}`}>{action}</div> : null}

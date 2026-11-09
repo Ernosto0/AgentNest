@@ -8,6 +8,20 @@ import { FOCUS, InlineNotice, Panel, PanelHeading, PanelLink, SkeletonRows } fro
 import { useInsightsSummary, type InsightsSummary } from "./hooks";
 
 type Range = "7d" | "28d";
+type Series = "reach" | "views";
+
+const SERIES: { key: Series; swatch: string; dot: string; dashed: boolean }[] = [
+  { key: "reach", swatch: "h-0.5 w-4 rounded-full bg-chart-1", dot: "bg-chart-1", dashed: false },
+  { key: "views", swatch: "h-0 w-4 border-t-2 border-dashed border-chart-2", dot: "bg-chart-2", dashed: true },
+];
+
+/** The smallest 1/2/5 × 10ⁿ step at or above `value`, so axis labels are round numbers. */
+function niceCeiling(value: number): number {
+  if (value <= 1) return 1;
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const step = [1, 2, 5, 10].find((f) => f * magnitude >= value)!;
+  return step * magnitude;
+}
 
 function DeltaPill({ delta, range }: { delta: number | null | undefined; range: Range }) {
   const { t } = useTranslation();
@@ -15,10 +29,10 @@ function DeltaPill({ delta, range }: { delta: number | null | undefined; range: 
   const tone = delta > 0 ? "bg-success-subtle text-success" : delta < 0 ? "bg-danger-subtle text-danger" : "bg-surface-subtle text-secondary";
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${tone}`}
+      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[11px] font-semibold tabular-nums ${tone}`}
       title={t("home.insights.vsPrevPeriod", { days: range === "7d" ? 7 : 28 })}
     >
-      {delta !== 0 ? <span aria-hidden="true" className="text-[0.625rem]">{delta > 0 ? "▲" : "▼"}</span> : null}
+      {delta !== 0 ? <span aria-hidden="true" className="text-[0.5625rem]">{delta > 0 ? "▲" : "▼"}</span> : null}
       <span>{delta > 0 ? `+${delta}%` : `${delta}%`}</span>
     </span>
   );
@@ -27,19 +41,22 @@ function DeltaPill({ delta, range }: { delta: number | null | undefined; range: 
 /**
  * Daily reach and views on one shared count axis (same unit). Hover or touch shows a crosshair
  * with both values; a visually hidden table carries the same numbers for assistive technology.
+ * Series without any data are neither drawn nor listed in the legend.
  */
 function TrendChart({ points }: { points: InsightsSummary["sparkline"] }) {
   const { t, i18n } = useTranslation();
   const [active, setActive] = useState<number | null>(null);
   if (points.length < 2) return null;
 
-  const fmt = new Intl.NumberFormat(i18n.language);
+  const fmt = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 });
   const dateLabel = (date: string) =>
     new Date(`${date}T12:00:00Z`).toLocaleDateString(i18n.language, { day: "numeric", month: "short", timeZone: "UTC" });
-  const max = Math.max(...points.map((p) => Math.max(p.reach ?? 0, p.views ?? 0)), 1);
+  const series = SERIES.filter((s) => points.some((p) => p[s.key] !== null));
+  const max = niceCeiling(Math.max(...points.map((p) => Math.max(p.reach ?? 0, p.views ?? 0))));
+  const ticks = Number.isInteger(max / 2) ? [max, max / 2, 0] : [max, 0];
   const x = (i: number) => (i / (points.length - 1)) * 100;
-  const y = (v: number) => 6 + (1 - v / max) * 88;
-  const path = (key: "reach" | "views") =>
+  const y = (v: number) => 4 + (1 - v / max) * 92;
+  const path = (key: Series) =>
     points
       .map((p, i) => {
         const value = p[key];
@@ -55,68 +72,80 @@ function TrendChart({ points }: { points: InsightsSummary["sparkline"] }) {
     setActive(Math.round(ratio * (points.length - 1)));
   };
   const point = active === null ? null : points[active]!;
+  const flip = active !== null && active > (points.length - 1) / 2;
 
   return (
     <figure className="flex min-w-0 flex-col gap-2">
       <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-secondary">
-        <span className="font-semibold">{t("home.insights.trendTitle")}</span>
+        <span className="font-semibold text-primary">{t("home.insights.trendTitle")}</span>
         <span className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="h-0.5 w-4 rounded-full bg-chart-1" />
-            {t("home.insights.reach")}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="h-0 w-4 border-t-2 border-dashed border-chart-2" />
-            {t("home.insights.views")}
-          </span>
+          {series.map((s) => (
+            <span key={s.key} className="inline-flex items-center gap-1.5">
+              <span aria-hidden="true" className={s.swatch} />
+              {t(`home.insights.${s.key}`)}
+            </span>
+          ))}
         </span>
       </figcaption>
-      <div
-        className="relative h-36 touch-pan-y"
-        onPointerMove={onPointer}
-        onPointerDown={onPointer}
-        onPointerLeave={() => setActive(null)}
-        aria-hidden="true"
-      >
-        <span className="absolute top-0 left-0 text-[0.6875rem] text-secondary tabular-nums">{fmt.format(max)}</span>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
-          <line x1="0" x2="100" y1="94" y2="94" stroke="var(--an-border)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <line x1="0" x2="100" y1="50" y2="50" stroke="var(--an-border)" strokeWidth="1" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
-          <path d={path("views")} fill="none" stroke="var(--an-chart-2)" strokeWidth="2" strokeDasharray="5 4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          <path d={path("reach")} fill="none" stroke="var(--an-chart-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          {active !== null ? (
-            <line x1={x(active)} x2={x(active)} y1="0" y2="94" stroke="var(--an-text-secondary)" strokeOpacity="0.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          ) : null}
-        </svg>
-        {point
-          ? (["reach", "views"] as const).map((key) =>
-              point[key] === null ? null : (
-                <span
-                  key={key}
-                  className={`pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${key === "reach" ? "bg-chart-1" : "bg-chart-2"}`}
-                  style={{ left: `${x(active!)}%`, top: `${y(point[key]!)}%` }}
-                />
-              ),
-            )
-          : null}
-        {point ? (
-          <div
-            className="pointer-events-none absolute top-5 z-10 min-w-32 rounded-lg bg-navigation px-3 py-2 text-xs text-navigation-text shadow-float"
-            style={{ left: `${x(active!)}%`, transform: `translateX(${active! > (points.length - 1) / 2 ? "calc(-100% - 0.5rem)" : "0.5rem"})` }}
-          >
-            <p className="mb-1 font-semibold text-white">{dateLabel(point.date)}</p>
-            <p className="flex justify-between gap-4">
-              <span>{t("home.insights.reach")}</span>
-              <span className="font-semibold text-white tabular-nums">{point.reach === null ? "—" : fmt.format(point.reach)}</span>
-            </p>
-            <p className="flex justify-between gap-4">
-              <span>{t("home.insights.views")}</span>
-              <span className="font-semibold text-white tabular-nums">{point.views === null ? "—" : fmt.format(point.views)}</span>
-            </p>
+      <div aria-hidden="true" className="relative h-32">
+        {ticks.map((tick) => (
+          <div key={tick} className="absolute inset-x-0 flex items-center gap-2" style={{ top: `${y(tick)}%`, transform: "translateY(-50%)" }}>
+            <span className="w-7 shrink-0 text-right text-[0.6875rem] text-secondary tabular-nums">{fmt.format(tick)}</span>
+            <span className={`h-px flex-1 ${tick === 0 ? "bg-border" : "border-t border-dashed border-border"}`} />
           </div>
-        ) : null}
+        ))}
+        <div
+          className="absolute inset-y-0 right-0 left-9 touch-pan-y"
+          onPointerMove={onPointer}
+          onPointerDown={onPointer}
+          onPointerLeave={() => setActive(null)}
+        >
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
+            {series.map((s) => (
+              <path
+                key={s.key}
+                d={path(s.key)}
+                fill="none"
+                stroke={s.key === "reach" ? "var(--an-chart-1)" : "var(--an-chart-2)"}
+                strokeWidth="2"
+                strokeDasharray={s.dashed ? "5 4" : undefined}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+            {active !== null ? (
+              <line x1={x(active)} x2={x(active)} y1="0" y2="96" stroke="var(--an-text-secondary)" strokeOpacity="0.35" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            ) : null}
+          </svg>
+          {point
+            ? series.map((s) =>
+                point[s.key] === null ? null : (
+                  <span
+                    key={s.key}
+                    className={`pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${s.dot}`}
+                    style={{ left: `${x(active!)}%`, top: `${y(point[s.key]!)}%` }}
+                  />
+                ),
+              )
+            : null}
+          {point ? (
+            <div
+              className="pointer-events-none absolute top-1 z-10 min-w-32 rounded-lg bg-navigation px-3 py-2 text-xs text-navigation-text shadow-float"
+              style={{ left: `${x(active!)}%`, transform: `translateX(${flip ? "calc(-100% - 0.5rem)" : "0.5rem"})` }}
+            >
+              <p className="mb-1 font-semibold text-white">{dateLabel(point.date)}</p>
+              {SERIES.map((s) => (
+                <p key={s.key} className="flex justify-between gap-4">
+                  <span>{t(`home.insights.${s.key}`)}</span>
+                  <span className="font-semibold text-white tabular-nums">{point[s.key] === null ? "—" : fmt.format(point[s.key]!)}</span>
+                </p>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
-      <div aria-hidden="true" className="flex justify-between text-[0.6875rem] text-secondary">
+      <div aria-hidden="true" className="flex justify-between pl-9 text-[0.6875rem] text-secondary">
         <span>{dateLabel(points[0]!.date)}</span>
         <span>{dateLabel(points[points.length - 1]!.date)}</span>
       </div>
@@ -143,19 +172,29 @@ function TrendChart({ points }: { points: InsightsSummary["sparkline"] }) {
   );
 }
 
-function Kpi({ label, value, extra }: { label: string; value: ReactNode; extra?: ReactNode }) {
+function Kpi({ label, value, missing, delta }: { label: string; value: ReactNode; missing: boolean; delta?: ReactNode }) {
   return (
-    <div className="flex min-w-0 items-end justify-between gap-3 py-3 first:pt-0 last:pb-0">
+    <div className="min-w-0 @2xl:flex @2xl:items-end @2xl:justify-between @2xl:gap-3 @2xl:py-3 @2xl:first:pt-0 @2xl:last:pb-0">
       <div className="min-w-0">
-        <p className="text-metadata text-secondary">{label}</p>
-        <p className="font-heading text-2xl leading-8 font-bold tracking-tight text-primary tabular-nums">{value}</p>
+        <p className="truncate text-xs text-secondary">{label}</p>
+        <p
+          className={`font-heading leading-8 font-bold tracking-tight tabular-nums ${
+            missing ? "text-xl text-secondary/60" : "text-2xl text-primary"
+          }`}
+        >
+          {value}
+        </p>
       </div>
-      {extra}
+      {delta ? <div className="mt-0.5 @2xl:mt-0 @2xl:mb-1">{delta}</div> : null}
     </div>
   );
 }
 
-/** Instagram performance for one account: reach, views and interactions against the previous period. */
+/**
+ * Instagram performance for one account: reach, views and interactions against the previous
+ * period. It sits in the side column or in a full-width band, so its layout follows its own
+ * width (container queries) rather than the viewport.
+ */
 export function InsightsPerformanceCard({
   workspaceId,
   accounts,
@@ -190,7 +229,7 @@ export function InsightsPerformanceCard({
       type="button"
       onClick={() => setRange(value)}
       aria-pressed={range === value}
-      className={`min-h-9 rounded-md px-3 text-xs font-semibold transition-colors ${FOCUS} ${
+      className={`min-h-8 rounded-md px-2.5 text-xs font-semibold transition-colors ${FOCUS} ${
         range === value ? "bg-surface text-primary ring-1 ring-border" : "text-secondary hover:text-primary"
       }`}
     >
@@ -213,7 +252,7 @@ export function InsightsPerformanceCard({
           isOwner ? (
             <Link
               to={`/w/${workspaceId}/more/settings/connections`}
-              className={`inline-flex min-h-11 items-center gap-2 rounded-control bg-action px-4 text-metadata font-semibold text-on-action hover:bg-action-hover ${FOCUS}`}
+              className={`inline-flex min-h-10 items-center gap-2 rounded-control bg-action px-4 text-metadata font-semibold text-on-action hover:bg-action-hover ${FOCUS}`}
             >
               <LinkIcon aria-hidden="true" />
               {t("home.insights.reconnectCta")}
@@ -233,24 +272,34 @@ export function InsightsPerformanceCard({
       </InlineNotice>
     );
   } else {
+    const kpis = [
+      { key: "reach", label: t("home.insights.reach"), value: summary?.reach, delta: summary?.reach_delta_pct },
+      { key: "views", label: t("home.insights.views"), value: summary?.views, delta: summary?.views_delta_pct },
+      { key: "interactions", label: t("home.insights.interactions"), value: summary?.interactions, delta: summary?.interactions_delta_pct },
+    ];
     body = (
       <div className="flex flex-col gap-4">
         {summary?.status === "partial" ? (
-          <p role="status" className="rounded-xl bg-surface-subtle px-4 py-2.5 text-metadata text-secondary" data-testid="insights-partial">
-            {t("home.insights.partial", { current: summary.current_days_covered, previous: summary.previous_days_covered, days })}
+          <p role="status" data-testid="insights-partial" className="flex items-start gap-2 text-xs leading-5 text-secondary">
+            <InfoIcon aria-hidden="true" className="mt-0.5 shrink-0 text-sm text-info" />
+            <span>{t("home.insights.partial", { current: summary.current_days_covered, previous: summary.previous_days_covered, days })}</span>
           </p>
         ) : null}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] lg:gap-10">
-          <div data-testid="insights-kpis" className="flex flex-col divide-y divide-border">
-            <Kpi label={t("home.insights.reach")} value={formatNumber(summary?.reach)} extra={<DeltaPill delta={summary?.reach_delta_pct} range={range} />} />
-            <Kpi label={t("home.insights.views")} value={formatNumber(summary?.views)} extra={<DeltaPill delta={summary?.views_delta_pct} range={range} />} />
-            <Kpi
-              label={t("home.insights.interactions")}
-              value={formatNumber(summary?.interactions)}
-              extra={<DeltaPill delta={summary?.interactions_delta_pct} range={range} />}
-            />
+        <div className="grid gap-5 @2xl:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] @2xl:gap-10">
+          <div className="flex flex-col gap-3">
+            <div data-testid="insights-kpis" className="grid grid-cols-3 gap-3 @2xl:flex @2xl:flex-col @2xl:gap-0 @2xl:divide-y @2xl:divide-border">
+              {kpis.map((kpi) => (
+                <Kpi
+                  key={kpi.key}
+                  label={kpi.label}
+                  value={formatNumber(kpi.value)}
+                  missing={kpi.value == null}
+                  delta={<DeltaPill delta={kpi.delta} range={range} />}
+                />
+              ))}
+            </div>
             {summary?.follower_count !== null && summary?.follower_count !== undefined ? (
-              <p className="pt-3 text-metadata text-secondary">
+              <p className="text-xs text-secondary">
                 <span className="font-semibold text-primary tabular-nums">{formatNumber(summary.follower_count)}</span>{" "}
                 {t("home.insights.followersTotal")}
                 {summary.follower_delta !== null && summary.follower_delta !== undefined ? (
@@ -260,16 +309,18 @@ export function InsightsPerformanceCard({
                 ) : null}
               </p>
             ) : null}
+            {kpis.some((kpi) => kpi.delta !== null && kpi.delta !== undefined) ? (
+              <p className="text-[0.6875rem] text-secondary">{t("home.insights.vsPrevPeriod", { days })}</p>
+            ) : null}
           </div>
           {summary?.sparkline && summary.sparkline.length > 1 ? <TrendChart points={summary.sparkline} /> : null}
         </div>
-        <p className="text-xs text-secondary">{t("home.insights.vsPrevPeriod", { days })}</p>
       </div>
     );
   }
 
   return (
-    <Panel aria-labelledby="home-insights-title" data-testid="insights-performance-card" className="gap-5">
+    <Panel aria-labelledby="home-insights-title" data-testid="insights-performance-card" className="@container gap-4">
       <PanelHeading
         id="home-insights-title"
         icon={<ChartIcon />}
@@ -283,7 +334,7 @@ export function InsightsPerformanceCard({
                 aria-label={t("home.insights.account")}
                 value={activeAccount?.id}
                 onChange={(e) => setSelectedId(e.target.value)}
-                className={`min-h-9 rounded-lg border border-border bg-surface px-2 text-xs! font-medium text-primary ${FOCUS}`}
+                className={`min-h-8 rounded-lg border border-border bg-surface px-2 text-xs! font-medium text-primary ${FOCUS}`}
               >
                 {activeAccounts.map((a) => (
                   <option key={a.id} value={a.id}>

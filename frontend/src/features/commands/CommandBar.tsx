@@ -114,12 +114,12 @@ export function CommandBar() {
 
   return (
     <div className="flex flex-col gap-3" data-testid="assistant-module">
-      <form onSubmit={onSubmit} className="flex flex-col gap-2.5">
-        <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1.5 pl-2 transition-[border-color,box-shadow] duration-150 hover:border-action/40 focus-within:border-action focus-within:ring-4 focus-within:ring-action/10">
+      <form onSubmit={onSubmit} className="flex flex-col gap-2">
+        <div className="flex items-center gap-1 rounded-2xl border border-action/15 bg-surface p-1.5 pl-2.5 shadow-[0_1px_2px_rgb(18_31_24/0.05),0_4px_16px_-8px_rgb(23_83_56/0.18)] transition-[border-color,box-shadow] duration-150 hover:border-action/35 focus-within:border-action focus-within:ring-4 focus-within:ring-action/10">
           <label htmlFor="command-input" className="sr-only">
             {t("command.label")}
           </label>
-          <SparkIcon aria-hidden="true" className="ml-1 shrink-0 text-lg text-action" />
+          <SparkIcon aria-hidden="true" className="shrink-0 text-lg text-action" />
           <input
             ref={inputRef}
             id="command-input"
@@ -129,6 +129,7 @@ export function CommandBar() {
             placeholder={t("command.placeholder")}
             enterKeyHint="send"
             autoComplete="off"
+            aria-describedby="command-hint"
             className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-form text-primary placeholder:text-secondary/70 focus:outline-none"
           />
           {text ? (
@@ -146,9 +147,10 @@ export function CommandBar() {
           ) : null}
           <Button
             type="submit"
+            variant={text.trim() ? "primary" : "secondary"}
             disabled={!text.trim() || submit.isPending}
             aria-label={t("command.send")}
-            className="shrink-0 rounded-lg px-3 sm:px-4"
+            className="shrink-0 rounded-xl px-3 sm:px-4"
           >
             {submit.isPending ? <SpinnerIcon className="motion-safe:animate-spin" /> : <SendIcon className="text-base" />}
             <span className="hidden sm:inline">{t("command.send")}</span>
@@ -156,13 +158,13 @@ export function CommandBar() {
         </div>
 
         {suggestions.length > 0 ? (
-          <div role="group" aria-label={t("command.unsupported.suggestionsTitle")} className="flex flex-wrap items-center gap-1.5">
+          <div role="group" aria-label={t("command.unsupported.suggestionsTitle")} className="flex flex-wrap items-center gap-1.5 px-0.5">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="inline-flex min-h-11 items-center rounded-full border border-action/15 sm:min-h-9 bg-surface/70 px-3 text-metadata font-medium text-primary transition-colors hover:border-action/40 hover:bg-surface hover:text-action focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus active:scale-[0.98]"
+                className="inline-flex min-h-10 items-center rounded-full bg-surface/55 px-3 text-xs font-medium text-primary/85 ring-1 ring-action/10 transition-colors ring-inset hover:bg-surface hover:text-action hover:ring-action/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus active:scale-[0.98] sm:min-h-8"
               >
                 {suggestion}
               </button>
@@ -170,7 +172,9 @@ export function CommandBar() {
           </div>
         ) : null}
 
-        <p className="text-metadata text-secondary">{t("command.hint")}</p>
+        <p id="command-hint" className="sr-only">
+          {t("command.hint")}
+        </p>
       </form>
 
       {submit.error ? <ErrorMessage error={submit.error} /> : null}

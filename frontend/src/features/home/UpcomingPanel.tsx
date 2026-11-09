@@ -33,7 +33,7 @@ export function UpcomingPanel({ onCreate, className = "" }: { onCreate: CreateCo
   const draftStory = () => onCreate("blank", "story_image");
 
   return (
-    <Panel aria-labelledby="home-upcoming-title" data-testid="home-upcoming" className={`gap-5 ${className}`}>
+    <Panel aria-labelledby="home-upcoming-title" data-testid="home-upcoming" className={`gap-4 ${className}`}>
       <PanelHeading
         id="home-upcoming-title"
         icon={<CalendarIcon />}
@@ -61,14 +61,14 @@ export function UpcomingPanel({ onCreate, className = "" }: { onCreate: CreateCo
           {next.length === 0 ? (
             <div
               data-testid="upcoming-empty"
-              className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-dashed border-border px-4 py-4"
+              className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl bg-surface-subtle/60 px-4 py-3"
             >
-              <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-xl text-action">
+              <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-lg text-action">
                 <ImageIcon />
               </span>
               <div className="min-w-0 flex-1 basis-52">
-                <p className="font-semibold text-primary">{t("home.upNext.empty")}</p>
-                <p className="text-metadata text-secondary">{t("home.upcoming.emptyHint")}</p>
+                <p className="text-body font-semibold text-primary">{t("home.upNext.empty")}</p>
+                <p className="text-xs text-secondary">{t("home.upcoming.emptyHint")}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => onCreate("ai")} className="px-3.5">

@@ -16,12 +16,21 @@ export function AppointmentsCard() {
   if (!info.isPending && !info.error && !info.hasConnectedCalendar) {
     if (role !== "owner") return null;
     return (
-      <Panel aria-labelledby="home-appointments-title" data-testid="appointments-card-unconnected" className="gap-3">
-        <PanelHeading id="home-appointments-title" icon={<CalendarIcon />} title={t("home.appointments.title")} />
-        <p className="text-body text-secondary">{t("home.appointments.connectCalendar")}</p>
-        <PanelLink to={`/w/${workspace.id}/more/settings/connections`} className="self-start">
-          {t("home.appointments.connect")}
-        </PanelLink>
+      <Panel aria-labelledby="home-appointments-title" data-testid="appointments-card-unconnected" className="py-3 sm:py-3.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-base text-action">
+            <CalendarIcon />
+          </span>
+          <div className="min-w-0 flex-1 basis-48">
+            <h2 id="home-appointments-title" className="font-heading text-body font-semibold text-primary">
+              {t("home.appointments.title")}
+            </h2>
+            <p className="text-xs text-secondary">{t("home.appointments.connectCalendar")}</p>
+          </div>
+          <PanelLink to={`/w/${workspace.id}/more/settings/connections`} className="ml-auto">
+            {t("home.appointments.connect")}
+          </PanelLink>
+        </div>
       </Panel>
     );
   }

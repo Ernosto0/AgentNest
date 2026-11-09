@@ -309,6 +309,18 @@ describe("Home: today's numbers", () => {
     expect(await screen.findByTestId("numbers-empty")).toHaveTextContent("Bugün henüz bir şey olmadı.");
   });
 
+  it("keeps unchanged numbers quiet: no comparison line when today equals yesterday", async () => {
+    const same = [metric("inbound_messages", 0, "messages", DAY), metric("replies_sent", 3, "messages", DAY)];
+    const requests = mockApi(routes({ [`GET ${REPORT_BASE}`]: () => json(report(DAY, { is_partial: true, metrics: same })) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const strip = await screen.findByTestId("home-numbers");
+    await waitFor(() => expect(requests.some((r) => r.search.includes("date="))).toBe(true));
+    expect(within(strip).getByTestId("number-inbound_messages")).toHaveTextContent("0");
+    expect(strip).not.toHaveTextContent("düne göre");
+    expect(strip).not.toHaveTextContent("Aynı");
+    expect(strip).not.toHaveTextContent("bugün şimdiye kadar vs. dünün tamamı"); // the note only explains shown comparisons
+  });
+
   it("compares with yesterday without inventing a percentage from zero", async () => {
     const today = [metric("inbound_messages", 12, "messages", DAY), metric("replies_sent", 5, "messages", DAY), metric("integration_errors", 2, "problems", DAY)];
     const before = [metric("inbound_messages", 0, "messages", DAY), metric("replies_sent", 4, "messages", DAY), metric("integration_errors", 1, "problems", DAY)];
@@ -719,6 +731,6 @@ describe("Home: production failure regressions", () => {
     expect(await within(card).findByTestId("insights-partial")).toBeInTheDocument();
     expect(within(within(card).getByTestId("insights-kpis")).getAllByText(tr.core.unavailable)).toHaveLength(3);
     expect(within(card).queryByText("+100%")).toBeNull();
-    expect(within(card).queryByText("0")).toBeNull();
+    expect(within(within(card).getByTestId("insights-kpis")).queryByText("0")).toBeNull();
   });
 });

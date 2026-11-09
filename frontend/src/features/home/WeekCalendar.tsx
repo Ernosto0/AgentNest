@@ -11,8 +11,8 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
   const { t, i18n } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-2.5">
-      <ol data-testid="week-strip" className="grid grid-cols-7 gap-1 sm:gap-2">
+    <div className="flex flex-col gap-2">
+      <ol data-testid="week-strip" className="grid grid-cols-7 gap-1 sm:gap-1.5">
         {days.map((day) => {
           const date = new Date(`${day.dayStr}T12:00:00Z`);
           const weekday = date.toLocaleDateString(i18n.language, { weekday: "short", timeZone: "UTC" });
@@ -25,8 +25,12 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
               key={day.dayStr}
               data-testid={`week-day-${day.dayStr}`}
               aria-current={day.isToday ? "date" : undefined}
-              className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-0.5 pt-2 pb-1.5 text-center transition-colors ${
-                day.isToday ? "bg-action text-on-action" : empty ? "bg-surface-subtle/60" : "bg-surface-subtle"
+              className={`flex min-w-0 flex-col items-center gap-0.5 rounded-xl border px-0.5 pt-1.5 pb-1 text-center transition-colors ${
+                day.isToday
+                  ? "border-action bg-action text-on-action"
+                  : empty
+                    ? "border-dashed border-border bg-transparent"
+                    : "border-transparent bg-surface-subtle"
               }`}
             >
               {/* The full date is announced below; these visible labels are for sighted readers. */}
@@ -45,14 +49,19 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
                   weekday
                 )}
               </span>
-              <span aria-hidden="true" className={`font-heading text-lg leading-6 font-bold tabular-nums ${day.isToday ? "text-on-action" : "text-primary"}`}>
+              <span
+                aria-hidden="true"
+                className={`font-heading text-lg leading-6 font-bold tabular-nums ${
+                  day.isToday ? "text-on-action" : empty ? "text-secondary/80" : "text-primary"
+                }`}
+              >
                 {dayNumber}
               </span>
               <span className="sr-only">
                 {day.isToday ? `${t("home.week.today")}, ` : ""}
                 {fullDate}: {t("home.week.dayCounts", { posts: day.posts.length, stories: day.stories.length })}
               </span>
-              <span aria-hidden="true" className="flex h-5 items-center justify-center gap-1">
+              <span aria-hidden="true" className="flex h-5 items-center justify-center gap-0.5">
                 {day.posts.length > 0 ? (
                   <Count value={day.posts.length} className={day.isToday ? "bg-on-action text-action" : "bg-action text-on-action"} />
                 ) : null}
@@ -64,7 +73,7 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
                   onClick={onDraftStory}
                   title={t("home.week.gapAction")}
                   aria-label={`${fullDate}: ${t("home.week.gapAction")}`}
-                  className={`group flex size-8 items-center justify-center rounded-full transition-colors sm:size-9 ${FOCUS} ${
+                  className={`group flex size-8 items-center justify-center rounded-full transition-colors ${FOCUS} ${
                     day.isToday
                       ? "text-on-action/80 hover:bg-on-action/15 hover:text-on-action"
                       : "text-secondary/70 hover:bg-surface hover:text-action"
@@ -73,7 +82,7 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
                   <PlusIcon className="text-base transition-transform group-hover:scale-110" />
                 </button>
               ) : (
-                <span aria-hidden="true" className="size-8 sm:size-9" />
+                <span aria-hidden="true" className="size-8" />
               )}
             </li>
           );

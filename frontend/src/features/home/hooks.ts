@@ -262,15 +262,14 @@ export function useInsightsAudience(ws: string, accountId: string | undefined) {
   });
 }
 
-/** Whether the appointments panel renders: it hides for non-owners without a connected calendar. */
-export function useAppointmentsVisible() {
-  const { workspace, role } = useCurrentWorkspace();
-  const info = useAppointmentsInfo(workspace.id, workspace.timezone);
-  return info.isPending || Boolean(info.error) || info.hasConnectedCalendar || role === "owner";
-}
-
-/** Whether readiness still has something to say (the card disappears once complete). */
-export function useReadinessVisible() {
+/**
+ * Readiness as the layout needs it: "open" while requirements remain (the card shows),
+ * "ready" once complete (the card disappears), otherwise still loading or failed.
+ */
+export function useReadinessState(): "pending" | "open" | "ready" | "error" {
   const { workspace } = useCurrentWorkspace();
-  return useReadiness(workspace.id).data?.level !== "ready";
+  const readiness = useReadiness(workspace.id);
+  if (readiness.isError) return "error";
+  if (!readiness.data) return "pending";
+  return readiness.data.level === "ready" ? "ready" : "open";
 }
