@@ -45,7 +45,9 @@ def post_validate(
     task_input: NarrateCommandResultInput, output: NarrateCommandResultOutput
 ) -> list[str]:
     """Ensure output never invents numbers outside params (INV-08)."""
-    return validate_metrics_grounding(output.reply_text, task_input.params)
+    return validate_metrics_grounding(
+        output.reply_text, task_input.params, user_query=task_input.user_query
+    )
 
 
 def snapshot(task_input: NarrateCommandResultInput) -> dict[str, Any]:

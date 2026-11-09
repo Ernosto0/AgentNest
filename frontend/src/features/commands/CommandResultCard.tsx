@@ -131,8 +131,29 @@ export function CommandResultCard({ command }: { command: Command }) {
   }
 
   if (command.status === "unsupported" && result) {
-    const params = result.params as { reason?: string; suggestions?: string[] };
+    const params = result.params as { reason?: string; suggestions?: string[]; reply_text?: string };
+    const replyText = (result as { reply_text?: string }).reply_text || params.reply_text;
     const reason = params.reason ?? "other";
+
+    if (replyText) {
+      return (
+        <div className="flex flex-col gap-2" data-testid="command-result" data-status="unsupported">
+          <p className="font-medium text-primary">{replyText}</p>
+          {linkList}
+          {params.suggestions?.length ? (
+            <div className="flex flex-col gap-1 mt-1">
+              <p className="text-metadata font-medium text-secondary">{t("command.unsupported.suggestionsTitle")}</p>
+              <ul className="list-disc pl-5 text-body text-secondary">
+                {params.suggestions.map((key) => (
+                  <li key={key}>{t(`command.${key.replace(/^command\./, "")}`)}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
     return (
       <div
         className="flex flex-col gap-2 rounded-control border border-attention/40 bg-attention-subtle p-3 text-primary"
@@ -188,10 +209,11 @@ export function CommandResultCard({ command }: { command: Command }) {
   if (result) {
     // Content answers describe one item; a simulated one says so (INV-09).
     const simulated = result.params.is_simulated === true;
+    const directReply = (result as { reply_text?: string }).reply_text;
     return (
       <div className="flex flex-col gap-2" data-testid="command-result" data-status={command.status}>
         <p className="font-medium text-primary">
-          {describeResult(t, result.message_key, result.params)}
+          {directReply || describeResult(t, result.message_key, result.params)}
           {simulated ? (
             <>
               {" "}

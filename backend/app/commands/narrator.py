@@ -15,13 +15,16 @@ def _extract_numbers(text: str) -> list[int]:
     return [int(m) for m in re.findall(r"\b\d+\b", text)]
 
 
-def validate_metrics_grounding(narrated_text: str, params: dict[str, Any]) -> list[str]:
+def validate_metrics_grounding(
+    narrated_text: str, params: dict[str, Any], user_query: str = ""
+) -> list[str]:
     """Verify INV-08: the narrated text never invents numbers outside the computed params.
 
     Allowed numbers include:
     - Any numeric values directly in `params` (inbound_messages, replies_sent, etc.)
     - Any derived totals: e.g. (replies_auto + replies_approved) for assistant replies.
     - Dates / times / versions formatted in params.
+    - Numbers present in the user query (e.g. asking "is it 7000?").
     """
     allowed_numbers = set()
     for v in params.values():
@@ -35,6 +38,10 @@ def validate_metrics_grounding(narrated_text: str, params: dict[str, Any]) -> li
     auto = int(params.get("replies_auto") or 0)
     approved = int(params.get("replies_approved") or 0)
     allowed_numbers.add(auto + approved)  # total assistant replies
+
+    # Numbers in user query
+    for n in _extract_numbers(user_query):
+        allowed_numbers.add(n)
 
     found_numbers = _extract_numbers(narrated_text)
     problems = []

@@ -43,6 +43,7 @@ from app.core.canonical import payload_hash
 from app.core.clock import Clock
 from app.core.context import ActorRef, WorkspaceContext
 from app.core.errors import AppError
+from app.core.logging import get_logger
 from app.identity import repository as identity_repo
 from app.identity import service as identity_service
 from app.identity.models import User, Workspace
@@ -54,10 +55,24 @@ from app.knowledge.formatting import format_value
 from app.knowledge.models import BusinessFact
 from app.knowledge.templates import load_template
 
+_log = get_logger("app.commands.service")
+
 CONFIRMATION_TTL = timedelta(minutes=30)
 CLARIFICATION_TTL = timedelta(minutes=30)
 SUBJECT_VERSION = 1  # a command is never edited: its confirmation binds version 1
 MAX_REQUEST_ID_CHARS = 100
+
+
+@dataclass(frozen=True)
+class InterpretationResolution:
+    command_id: uuid.UUID
+    workspace_id: uuid.UUID
+    user_query: str
+    user_locale: str
+    message_key: str
+    params: dict[str, Any]
+    correlation_id: uuid.UUID
+    target_event: str  # "complete" or "unsupported"
 
 
 def _validation(field: str, code: str, **params: Any) -> AppError:
@@ -325,7 +340,8 @@ def finish_interpretation(
     error_code: str | None,
     agent_run_id: uuid.UUID | None,
     content_aliases: Mapping[str, uuid.UUID] | None = None,
-) -> None:
+    defer_terminal: bool = True,
+) -> InterpretationResolution | None:
     """Apply the task outcome to the command. Commits.
 
     The command is re-read under a lock: if it was cancelled while the model was running, the
@@ -334,18 +350,18 @@ def finish_interpretation(
     command = session.get(OwnerCommand, command_id, with_for_update=True)
     if command is None or command.workspace_id != workspace_id or command.status != "interpreting":
         session.rollback()
-        return
+        return None
     found = _requester_context(session, command)
     if found is None:
         _fail(session, clock, None, command, "FORBIDDEN")
         session.commit()
-        return
+        return None
     ctx, workspace, user = found
     command.agent_run_id = agent_run_id
     if output is None:
         _fail(session, clock, ctx, command, error_code or "LLM_UNAVAILABLE")
         session.commit()
-        return
+        return None
     interpretation = output.interpretation
     outcome = resolver.resolve(
         interpretation,
@@ -359,13 +375,21 @@ def finish_interpretation(
     )
     command.interpreted = interpretation.model_dump(mode="json")
     command.command_type = interpretation.type
-    _apply_outcome(session, clock, ctx, command, outcome, identity_service_locale(user))
+    _apply_outcome(
+        session,
+        clock,
+        ctx,
+        command,
+        outcome,
+        identity_service_locale(user),
+        defer_terminal=defer_terminal,
+    )
 
-    # Narrate the result naturally (INV-08)
-    if command.result:
+    resolution: InterpretationResolution | None = None
+    if command.result and command.status in ("interpreting", "executing"):
         from app.commands.narrator import narrate_fallback
 
-        res = command.result
+        res = dict(command.result)
         natural = narrate_fallback(
             message_key=res.get("message_key", ""),
             params=res.get("params", {}),
@@ -378,7 +402,118 @@ def finish_interpretation(
                 res["params"]["reply_text"] = natural
             command.result = dict(res)
 
+        target_event = (
+            "unsupported" if isinstance(outcome, resolver.UnsupportedOutcome) else "complete"
+        )
+        resolution = InterpretationResolution(
+            command_id=command.id,
+            workspace_id=command.workspace_id,
+            user_query=command.raw_text,
+            user_locale=identity_service_locale(user),
+            message_key=res.get("message_key", ""),
+            params=res.get("params", {}),
+            correlation_id=command.correlation_id,
+            target_event=target_event,
+        )
+
     session.commit()
+    return resolution
+
+
+def finalize_interpretation(
+    session: Session,
+    clock: Clock,
+    workspace_id: uuid.UUID,
+    command_id: uuid.UUID,
+    *,
+    target_event: str,
+    reply_text: str | None = None,
+) -> None:
+    """Transition command to terminal state with LLM narration (INV-08). Commits."""
+    command = session.get(OwnerCommand, command_id, with_for_update=True)
+    if (
+        command is None
+        or command.workspace_id != workspace_id
+        or command.status not in ("interpreting", "executing")
+    ):
+        session.rollback()
+        return
+
+    if reply_text and command.result:
+        res = dict(command.result)
+        res["reply_text"] = reply_text
+        if "params" in res and isinstance(res["params"], dict):
+            params = dict(res["params"])
+            params["reply_text"] = reply_text
+            res["params"] = params
+        command.result = res
+
+    command.status = apply_command_event(command.status, target_event)
+    command.completed_at = clock.now()
+
+    found = _requester_context(session, command)
+    if found is not None:
+        ctx, _, _ = found
+        audit_name = "command.executed" if target_event == "complete" else "command.interpreted"
+        audit.record(
+            session,
+            ctx,
+            audit_name,
+            "owner_command",
+            command.id,
+            {"command_type": command.command_type, "status": command.status},
+            correlation_id=command.correlation_id,
+            clock=clock,
+        )
+
+        if command.channel == "telegram":
+            _notify_telegram_completion(session, ctx, command)
+
+    session.commit()
+
+
+def _notify_telegram_completion(
+    session: Session,
+    ctx: WorkspaceContext,
+    command: OwnerCommand,
+) -> None:
+    try:
+        from sqlalchemy import select
+
+        from app.identity.models import ChannelLink
+        from app.integrations.channels.base import ChannelRecipient
+        from app.integrations.channels.formatting import format_command_for_telegram
+        from app.integrations.channels.telegram.client import TelegramClient
+
+        link = session.scalar(
+            select(ChannelLink).where(
+                ChannelLink.workspace_id == command.workspace_id,
+                ChannelLink.user_id == command.user_id,
+                ChannelLink.channel == "telegram",
+                ChannelLink.status == "active",
+            )
+        )
+        if link is None:
+            return
+
+        recipient = ChannelRecipient(
+            user_id=command.user_id,
+            workspace_id=command.workspace_id,
+            channel="telegram",
+            channel_chat_id=link.channel_user_id,
+            ui_locale=ctx.locale or "tr",
+            timezone=ctx.timezone,
+        )
+        msg, reply_markup = format_command_for_telegram(command, recipient)
+        tg_client = TelegramClient()
+        tg_client.send_message(
+            chat_id=link.channel_user_id,
+            text=msg,
+            parse_mode="HTML",
+            reply_markup=reply_markup,
+        )
+    except Exception as exc:
+        _log.warning("telegram_command_notify_failed", error=str(exc))
 
 
 def fail_after_dead_job(
@@ -482,17 +617,20 @@ def _apply_outcome(
     command: OwnerCommand,
     outcome: resolver.Outcome,
     user_locale: str,
+    *,
+    defer_terminal: bool = False,
 ) -> None:
     exec_ctx = ExecContext(session, clock, ctx, command, user_locale)
 
     if isinstance(outcome, resolver.UnsupportedOutcome):
-        command.status = apply_command_event(command.status, "unsupported")
         command.command_type = "unsupported"
         command.resolution = {"reason": outcome.reason}
         result = REGISTRY["unsupported"].executor(exec_ctx, command.resolution)
         command.result = result.to_json()
-        command.completed_at = clock.now()
-        _audit_interpreted(session, clock, ctx, command, "unsupported")
+        if not defer_terminal:
+            command.status = apply_command_event(command.status, "unsupported")
+            command.completed_at = clock.now()
+            _audit_interpreted(session, clock, ctx, command, "unsupported")
     elif isinstance(outcome, resolver.NeedsClarification):
         command.status = apply_command_event(command.status, "clarify")
         command.clarification = {
@@ -508,8 +646,11 @@ def _apply_outcome(
         _audit_interpreted(session, clock, ctx, command, "rejected")
         _fail(session, clock, ctx, command, outcome.error_code, outcome.result)
     elif isinstance(outcome, resolver.Completed):
-        _audit_interpreted(session, clock, ctx, command, "completed")
-        _complete(session, clock, ctx, command, outcome.result)
+        if not defer_terminal:
+            _audit_interpreted(session, clock, ctx, command, "completed")
+            _complete(session, clock, ctx, command, outcome.result)
+        else:
+            command.result = outcome.result.to_json()
     elif isinstance(outcome, resolver.Execute):
         spec = REGISTRY[outcome.command_type]
         command.command_type = outcome.command_type
@@ -539,7 +680,10 @@ def _apply_outcome(
         if result.error_code:
             _fail(session, clock, ctx, command, result.error_code, result)
         else:
-            _complete(session, clock, ctx, command, result)
+            if not defer_terminal:
+                _complete(session, clock, ctx, command, result)
+            else:
+                command.result = result.to_json()
     elif isinstance(outcome, resolver.Confirm):
         _request_confirmation(session, clock, ctx, command, outcome)
 

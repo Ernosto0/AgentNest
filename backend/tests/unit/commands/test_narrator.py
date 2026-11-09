@@ -107,3 +107,38 @@ def test_format_command_for_telegram_and_whatsapp():
     wa_text = format_command_for_whatsapp(DummyCmd(), recipient)
     assert wa_text.startswith("💬 ")
     assert "11" in wa_text
+
+
+def test_format_command_unsupported_with_reply_text():
+    class DummyUnsupportedCmd:
+        status = "unsupported"
+        raw_text = "Merhaba"
+        result = {
+            "message_key": "command.unsupported",
+            "reply_text": "Merhaba! Size nasıl yardımcı olabilirim?",
+            "params": {"reason": "other"},
+            "links": [],
+        }
+
+    recipient = ChannelRecipient(
+        user_id="u1",  # type: ignore
+        workspace_id="w1",  # type: ignore
+        channel="telegram",
+        channel_chat_id="12345",
+        ui_locale="tr",
+    )
+
+    tg_text, _ = format_command_for_telegram(DummyUnsupportedCmd(), recipient)
+    assert tg_text == "💬 Merhaba! Size nasıl yardımcı olabilirim?"
+
+    wa_text = format_command_for_whatsapp(DummyUnsupportedCmd(), recipient)
+    assert wa_text == "💬 Merhaba! Size nasıl yardımcı olabilirim?"
+
+
+def test_validate_metrics_grounding_allows_user_query_numbers():
+    params = {"monthly_membership": "5000 TL"}
+    query = "Aylık üyelik 7000 TL mi?"
+    # Model repeats the user's question or addresses 7000
+    narrated = "Aylık üyelik ücreti 7000 TL değil, 5000 TL."
+    problems = validate_metrics_grounding(narrated, params, user_query=query)
+    assert problems == []

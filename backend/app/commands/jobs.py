@@ -17,9 +17,12 @@ from app.ai.tasks.interpret_command import INTERPRET_COMMAND
 from app.commands import service
 from app.commands.payloads import ExpireCommandsPayload, InterpretCommandPayload
 from app.core.clock import Clock
+from app.core.logging import get_logger
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, job_handler
 from app.jobs.scheduler import register_periodic
+
+_log = get_logger("app.commands.jobs")
 
 # Two model calls (the call and one repair) at 30 s each, plus the database work.
 INTERPRET_TIMEOUT_SECONDS = 90
@@ -63,7 +66,7 @@ def interpret_command(job: JobContext) -> None:
         job_id=job.job_id,
     )
     with job.session_factory() as session:  # [T2]
-        service.finish_interpretation(
+        resolution = service.finish_interpretation(
             session,
             job.clock,
             job.workspace_id,
@@ -72,7 +75,44 @@ def interpret_command(job: JobContext) -> None:
             error_code=outcome.error_code,
             agent_run_id=outcome.agent_run_id,
             content_aliases=prepared.content_aliases,
+            defer_terminal=True,
         )
+
+    if resolution is not None:
+        llm_reply_text = None
+        try:
+            from app.ai.tasks.narrate_command_result import (
+                NARRATE_COMMAND_RESULT,
+                NarrateCommandResultInput,
+            )
+
+            narration_outcome = run_task(
+                runner_deps(job.session_factory, job.clock),
+                prepared.ctx,
+                NARRATE_COMMAND_RESULT,
+                NarrateCommandResultInput(
+                    user_query=resolution.user_query,
+                    user_locale=resolution.user_locale,
+                    message_key=resolution.message_key,
+                    params=resolution.params,
+                ),
+                resolution.correlation_id,
+                job_id=job.job_id,
+            )
+            if narration_outcome.output and narration_outcome.output.reply_text:
+                llm_reply_text = narration_outcome.output.reply_text
+        except Exception as exc:
+            _log.warning("command_narration_failed", error=str(exc))
+        finally:
+            with job.session_factory() as session:  # [T3]
+                service.finalize_interpretation(
+                    session,
+                    job.clock,
+                    job.workspace_id,
+                    payload.command_id,
+                    target_event=resolution.target_event,
+                    reply_text=llm_reply_text,
+                )
 
 
 @job_handler("expire_commands", ExpireCommandsPayload, max_attempts=1)

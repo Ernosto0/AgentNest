@@ -65,6 +65,12 @@ def format_command_for_telegram(
             reply_markup = {"inline_keyboard": [[{"text": btn_text, "url": web_url}]]}
         return text, reply_markup
 
+    if status == "unsupported":
+        content = reply_text or (
+            "Bu işlemi şu anda gerçekleştiremiyorum." if is_tr else "I cannot do that right now."
+        )
+        return f"💬 {html.escape(content)}", None
+
     if status == "failed":
         err_msg = (
             "Komut işlenirken bir sorun oluştu."
@@ -104,6 +110,12 @@ def format_command_for_whatsapp(command: Any, recipient: ChannelRecipient) -> st
 
     if status == "completed":
         content = reply_text or ("İşlem tamamlandı." if is_tr else "Operation completed.")
+        return f"💬 {content}"
+
+    if status == "unsupported":
+        content = reply_text or (
+            "Bu işlemi şu anda gerçekleştiremiyorum." if is_tr else "I cannot do that right now."
+        )
         return f"💬 {content}"
 
     if status == "needs_clarification":
