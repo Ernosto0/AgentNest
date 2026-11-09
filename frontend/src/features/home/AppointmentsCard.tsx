@@ -7,6 +7,9 @@ import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { FOCUS, Panel, PanelHeading, PanelLink, SkeletonRows } from "./DashboardPanel";
 import { useAppointmentsInfo } from "./hooks";
 
+/** At most this many rows; the header count and a "more" line keep the total honest. */
+const APPOINTMENTS_SHOWN = 3;
+
 /** Today's and tomorrow's bookings. Customer contact details never appear on Today. */
 export function AppointmentsCard() {
   const { t, i18n } = useTranslation();
@@ -64,38 +67,47 @@ export function AppointmentsCard() {
           {t("home.appointments.empty")}
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {appointments.map((appt) => {
+        <ul className="-mx-1 flex flex-col">
+          {appointments.slice(0, APPOINTMENTS_SHOWN).map((appt) => {
             const start = new Date(appt.start_at);
             const time = start.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit", timeZone: workspace.timezone });
             const day = todayIn(workspace.timezone, start);
             const dayText = day === today ? t("home.week.today") : day === tomorrow ? t("home.week.tomorrow") : "";
             return (
-              <li key={appt.id} className="flex min-w-0 items-start gap-3 rounded-xl bg-surface-subtle/70 p-3">
-                <div className="flex min-w-14 shrink-0 flex-col items-center rounded-lg bg-surface px-2 py-1.5 text-center whitespace-nowrap">
+              <li key={appt.id} className="flex min-w-0 items-center gap-3 border-b border-border px-1 py-2 last:border-b-0">
+                <div className="flex w-16 shrink-0 flex-col whitespace-nowrap">
                   <span className="font-heading text-sm font-bold text-primary tabular-nums">{time}</span>
                   {dayText ? <span className="text-[0.6875rem] font-medium text-secondary">{dayText}</span> : null}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate font-semibold text-primary">{appt.customer_name || appt.title}</span>
+                  <span className="truncate text-body font-semibold text-primary" title={appt.customer_name || appt.title}>
+                    {appt.customer_name || appt.title}
+                  </span>
                   {appt.customer_name && appt.title !== appt.customer_name ? (
-                    <span className="truncate text-metadata text-secondary">{appt.title}</span>
-                  ) : null}
-                  {appt.conversation_id ? (
-                    <Link
-                      to={`/w/${workspace.id}/inbox/${appt.conversation_id}`}
-                      className={`mt-0.5 inline-flex min-h-8 w-fit items-center gap-1 rounded-control text-metadata font-semibold text-action hover:underline underline-offset-4 ${FOCUS}`}
-                    >
-                      <InboxIcon aria-hidden="true" />
-                      <span>{t("home.appointments.viewConversation")}</span>
-                    </Link>
+                    <span className="truncate text-xs text-secondary" title={appt.title}>
+                      {appt.title}
+                    </span>
                   ) : null}
                 </div>
+                {appt.conversation_id ? (
+                  <Link
+                    to={`/w/${workspace.id}/inbox/${appt.conversation_id}`}
+                    className={`inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-action transition-colors hover:bg-surface-subtle ${FOCUS}`}
+                  >
+                    <InboxIcon aria-hidden="true" />
+                    <span>{t("home.appointments.viewConversation")}</span>
+                  </Link>
+                ) : null}
               </li>
             );
           })}
         </ul>
       )}
+      {appointments.length > APPOINTMENTS_SHOWN ? (
+        <p data-testid="appointments-more" className="text-xs text-secondary">
+          {t("home.appointments.more", { count: appointments.length - APPOINTMENTS_SHOWN })}
+        </p>
+      ) : null}
     </Panel>
   );
 }

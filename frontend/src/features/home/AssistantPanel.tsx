@@ -184,7 +184,9 @@ function AccountAgentRow({
           {isActive ? <span className={`absolute inline-flex size-full rounded-full ${dot} opacity-60 motion-safe:animate-ping`} /> : null}
           <span className={`relative inline-flex size-2 rounded-full ${dot}`} />
         </span>
-        <span className="min-w-0 truncate text-body font-semibold text-primary">@{account.username}</span>
+        <span title={`@${account.username}`} className="max-w-[60vw] min-w-0 truncate text-body font-semibold text-primary sm:max-w-[15rem]">
+          @{account.username}
+        </span>
         <span className={`inline-flex items-center rounded-full px-2 py-px text-[11px] font-semibold ${pill}`}>{stateLabel}</span>
         {overview?.is_simulated || account.is_simulated ? <SimulatedBadge compact /> : null}
         {overview && KNOWN_MODES.has(overview.controller_mode) ? (

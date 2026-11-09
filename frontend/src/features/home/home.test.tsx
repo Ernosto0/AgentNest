@@ -524,6 +524,34 @@ describe("Home: appointments card", () => {
     // Never expose customer phone or contact on Today
     expect(within(card).queryByText("+905551234567")).toBeNull();
   });
+
+  it("shows the first three and says how many more there are, keeping the total in the header", async () => {
+    const connection = {
+      id: "c7000000-0000-4000-8000-000000000001", provider_kind: "google", external_account_id: "ext",
+      account_email: "test@example.com", calendar_id: "primary", calendar_summary: "Main",
+      calendar_timezone: "Europe/Istanbul", connected_at: "2026-10-01T00:00:00Z", disconnected_at: null,
+      created_at: "2026-10-01T00:00:00Z",
+    };
+    const appointments = [1, 2, 3, 4, 5].map((n) => ({
+      id: `c6000000-0000-4000-8000-00000000000${n}`, calendar_connection_id: connection.id, conversation_id: null,
+      customer_identity_id: null, external_event_id: null, title: "Grup dersi", description: null,
+      customer_name: `Müşteri ${n}`, customer_contact: null,
+      start_at: new Date(Date.now() + n * 60_000).toISOString(), end_at: new Date(Date.now() + n * 60_000 + 3600_000).toISOString(),
+      timezone: "Europe/Istanbul", status: "confirmed", created_by_source: "agent",
+    }));
+    mockApi(routes({
+      ...reportWith([]),
+      [`GET ${BASE}/calendar`]: () => json({ items: [connection] }),
+      [`GET ${BASE}/calendar/appointments`]: () => json({ items: appointments }),
+    }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    const card = await screen.findByTestId("appointments-card");
+    expect(await within(card).findByText("Müşteri 1")).toBeInTheDocument();
+    expect(within(card).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(card).queryByText("Müşteri 4")).toBeNull();
+    expect(within(card).getByTestId("appointments-more")).toHaveTextContent("+2 randevu daha");
+    expect(within(card).getByText("5")).toBeInTheDocument();
+  });
 });
 
 describe("Home: instagram insights card", () => {

@@ -74,7 +74,7 @@ export function TodayPulse({
       data-testid="home-numbers"
       className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface lg:flex-row"
     >
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-1 px-5 pt-3 pb-2.5 lg:w-64 lg:shrink-0 lg:flex-col lg:flex-nowrap lg:justify-center lg:gap-1 lg:border-r lg:border-border lg:py-3">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-1 px-5 pt-3 pb-2.5 lg:w-56 lg:shrink-0 xl:w-64 lg:flex-col lg:flex-nowrap lg:justify-center lg:gap-1 lg:border-r lg:border-border lg:py-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-2">
             <h2 id="home-numbers-title" className="font-heading text-base font-semibold tracking-tight text-primary">
@@ -132,7 +132,7 @@ export function TodayPulse({
                 <dt className={`truncate text-xs font-medium ${alarming ? "text-danger" : "text-secondary"}`}>{label}</dt>
                 <dd
                   className={`font-heading text-[1.625rem] leading-8 font-bold tracking-tight tabular-nums ${
-                    muted ? "text-secondary/70" : "text-primary"
+                    muted ? "text-secondary" : "text-primary"
                   }`}
                 >
                   {metric.link.route ? (
@@ -148,7 +148,7 @@ export function TodayPulse({
                   )}
                 </dd>
                 {trend ? (
-                  <dd className={`truncate text-[0.6875rem] font-medium ${toneClass[trend.tone]}`}>
+                  <dd className={`text-[0.6875rem] leading-tight font-medium ${toneClass[trend.tone]}`}>
                     {trend.arrow ? <span aria-hidden="true" className="mr-1 text-[0.5625rem]">{trend.arrow}</span> : null}
                     {trend.text}
                   </dd>

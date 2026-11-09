@@ -72,6 +72,10 @@ function TrendChart({ points }: { points: InsightsSummary["sparkline"] }) {
     setActive(Math.round(ratio * (points.length - 1)));
   };
   const point = active === null ? null : points[active]!;
+  // With few points, or a value whose neighbours are missing, a line alone hides the data: mark it.
+  const markAll = points.length <= 10;
+  const isolated = (key: Series, i: number) =>
+    points[i]![key] !== null && (i === 0 || points[i - 1]![key] === null) && (i === points.length - 1 || points[i + 1]![key] === null);
   const flip = active !== null && active > (points.length - 1) / 2;
 
   return (
@@ -118,6 +122,17 @@ function TrendChart({ points }: { points: InsightsSummary["sparkline"] }) {
               <line x1={x(active)} x2={x(active)} y1="0" y2="96" stroke="var(--an-text-secondary)" strokeOpacity="0.35" strokeWidth="1" vectorEffect="non-scaling-stroke" />
             ) : null}
           </svg>
+          {series.flatMap((s) =>
+            points.map((p, i) =>
+              p[s.key] !== null && (markAll || isolated(s.key, i)) && i !== active ? (
+                <span
+                  key={`${s.key}-${p.date}`}
+                  className={`pointer-events-none absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${s.dot}`}
+                  style={{ left: `${x(i)}%`, top: `${y(p[s.key]!)}%` }}
+                />
+              ) : null,
+            ),
+          )}
           {point
             ? series.map((s) =>
                 point[s.key] === null ? null : (
@@ -241,7 +256,24 @@ export function InsightsPerformanceCard({
   if (summaryQuery.isPending) {
     body = <SkeletonRows label={t("home.insights.loading")} rows={3} />;
   } else if (summaryQuery.isError) {
-    body = <InlineNotice tone="attention" icon={<AlertIcon />} title={t("home.insights.errorLoading")} />;
+    body = (
+      <InlineNotice
+        tone="attention"
+        icon={<AlertIcon />}
+        title={t("home.insights.errorLoading")}
+        action={
+          <button
+            type="button"
+            onClick={() => void summaryQuery.refetch()}
+            disabled={summaryQuery.isFetching}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-surface px-3 text-xs font-semibold text-primary ring-1 ring-border transition-colors ring-inset hover:bg-surface-subtle disabled:opacity-60 ${FOCUS}`}
+          >
+            {summaryQuery.isFetching ? <SpinnerIcon aria-hidden="true" className="motion-safe:animate-spin" /> : null}
+            {t("common.retry")}
+          </button>
+        }
+      />
+    );
   } else if (summary?.status === "not_granted") {
     body = (
       <InlineNotice
@@ -334,7 +366,7 @@ export function InsightsPerformanceCard({
                 aria-label={t("home.insights.account")}
                 value={activeAccount?.id}
                 onChange={(e) => setSelectedId(e.target.value)}
-                className={`min-h-8 rounded-lg border border-border bg-surface px-2 text-xs! font-medium text-primary ${FOCUS}`}
+                className={`min-h-8 max-w-44 truncate rounded-lg border border-border bg-surface px-2 text-xs! font-medium text-primary ${FOCUS}`}
               >
                 {activeAccounts.map((a) => (
                   <option key={a.id} value={a.id}>

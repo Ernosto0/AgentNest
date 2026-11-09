@@ -285,6 +285,24 @@ describe("command bar", () => {
   });
 });
 
+describe("command input keyboard", () => {
+  it("clears a draft with Escape and counts characters near the limit", async () => {
+    mockApi(routes());
+    renderApp(`/w/${WS_GOLKENT}`);
+    const user = userEvent.setup();
+    const input = await screen.findByLabelText("Komut");
+    await user.type(input, "Aylık üyelik");
+    expect(screen.getByRole("button", { name: "Gönder" })).toBeEnabled();
+    await user.keyboard("{Escape}");
+    expect(input).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Gönder" })).toBeDisabled();
+
+    await user.click(input);
+    await user.paste("x".repeat(950));
+    expect(screen.getByText("950 / 1000 karakter")).toBeInTheDocument();
+  });
+});
+
 describe("offline demo AI indicator", () => {
   it("is shown for the fake provider and hidden for a real one", async () => {
     mockApi(routes({}, "fake"));

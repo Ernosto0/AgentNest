@@ -62,12 +62,14 @@ function AttentionRow({
         {icon}
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-body leading-snug font-medium text-primary">{label}</span>
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-body leading-snug font-medium text-primary [&>span:first-child]:line-clamp-2">
+          {label}
+        </span>
         {detail ? <span className="text-xs text-secondary">{detail}</span> : null}
         {to ? (
           <Link
             to={to}
-            className="w-fit text-xs font-semibold text-action outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']"
+            className="w-fit text-xs font-semibold text-action underline-offset-2 outline-none group-hover/row:underline after:absolute after:inset-0 after:rounded-xl after:content-['']"
           >
             {verb}
           </Link>
@@ -169,7 +171,10 @@ export function AttentionPanel({
         title={t("home.attention.title")}
         meta={
           total !== null && total > 0 ? (
-            <span className="font-medium text-attention">{t("home.attention.summary", { count: total })}</span>
+            <span className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-attention-subtle px-2 py-px font-semibold text-attention">
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-attention" />
+              {t("home.attention.summary", { count: total })}
+            </span>
           ) : undefined
         }
       />

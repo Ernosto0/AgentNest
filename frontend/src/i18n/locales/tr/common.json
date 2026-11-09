@@ -165,7 +165,9 @@
       "connectCalendar": "Randevuları otomatikleştirmek için Google Takvim bağlayın.",
       "viewConversation": "Konuşmayı aç",
       "connect": "Google Takvim'i bağla",
-      "window": "Bugün ve yarın"
+      "window": "Bugün ve yarın",
+      "more_one": "Bugün veya yarın +{{count}} randevu daha",
+      "more_other": "Bugün veya yarın +{{count}} randevu daha"
     },
     "insights": {
       "title": "Instagram Performansı",

@@ -130,6 +130,13 @@ export function CommandBar() {
             enterKeyHint="send"
             autoComplete="off"
             aria-describedby="command-hint"
+            onKeyDown={(event) => {
+              // Escape clears a draft request without leaving the field.
+              if (event.key === "Escape" && text) {
+                event.preventDefault();
+                setText("");
+              }
+            }}
             className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-form text-primary placeholder:text-secondary/70 focus:outline-none"
           />
           {text ? (
@@ -147,15 +154,27 @@ export function CommandBar() {
           ) : null}
           <Button
             type="submit"
-            variant={text.trim() ? "primary" : "secondary"}
-            disabled={!text.trim() || submit.isPending}
+            variant={text.trim() || submit.isPending ? "primary" : "secondary"}
+            disabled={!text.trim()}
+            pending={submit.isPending}
             aria-label={t("command.send")}
-            className="shrink-0 rounded-xl px-3 sm:px-4"
+            className="shrink-0 rounded-xl px-3 active:scale-[0.97] sm:px-4"
           >
-            {submit.isPending ? <SpinnerIcon className="motion-safe:animate-spin" /> : <SendIcon className="text-base" />}
-            <span className="hidden sm:inline">{t("command.send")}</span>
+            {submit.isPending ? null : <SendIcon className="text-base" />}
+            <span className="hidden sm:inline">{submit.isPending ? t("command.submitting") : t("command.send")}</span>
+            {text.trim() && !submit.isPending ? (
+              <kbd aria-hidden="true" className="hidden rounded bg-on-action/15 px-1 font-sans text-[0.6875rem] leading-4 sm:inline">
+                ↵
+              </kbd>
+            ) : null}
           </Button>
         </div>
+
+        {text.length >= MAX_CHARS - 100 ? (
+          <p aria-live="polite" className={`-mt-1 px-1 text-right text-xs tabular-nums ${text.length >= MAX_CHARS ? "text-danger" : "text-secondary"}`}>
+            {t("command.charCount", { count: text.length, max: MAX_CHARS })}
+          </p>
+        ) : null}
 
         {suggestions.length > 0 ? (
           <div role="group" aria-label={t("command.unsupported.suggestionsTitle")} className="flex flex-wrap items-center gap-1.5 px-0.5">

@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { PlusIcon } from "@/components/icons";
-import { FOCUS } from "./DashboardPanel";
 import type { ScheduledDay } from "./hooks";
 
 /**
@@ -25,12 +24,12 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
               key={day.dayStr}
               data-testid={`week-day-${day.dayStr}`}
               aria-current={day.isToday ? "date" : undefined}
-              className={`flex min-w-0 flex-col items-center gap-0.5 rounded-xl border px-0.5 pt-1.5 pb-1 text-center transition-colors ${
+              className={`group/day relative flex min-w-0 flex-col items-center gap-0.5 rounded-xl border px-0.5 pt-1.5 pb-1 text-center transition-colors has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-offset-2 has-[button:focus-visible]:outline-focus ${
                 day.isToday
                   ? "border-action bg-action text-on-action"
                   : empty
-                    ? "border-dashed border-border bg-transparent"
-                    : "border-transparent bg-surface-subtle"
+                    ? "border-dashed border-border bg-transparent hover:border-action/40 hover:bg-surface-subtle/60"
+                    : `border-transparent bg-surface-subtle ${day.hasStoryGap ? "hover:border-action/30" : ""}`
               }`}
             >
               {/* The full date is announced below; these visible labels are for sighted readers. */}
@@ -73,16 +72,16 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
                   onClick={onDraftStory}
                   title={t("home.week.gapAction")}
                   aria-label={`${fullDate}: ${t("home.week.gapAction")}`}
-                  className={`group flex size-8 items-center justify-center rounded-full transition-colors ${FOCUS} ${
+                  className={`flex size-7 items-center justify-center rounded-full outline-none transition-colors after:absolute after:inset-0 after:rounded-xl after:content-[''] ${
                     day.isToday
-                      ? "text-on-action/80 hover:bg-on-action/15 hover:text-on-action"
-                      : "text-secondary/70 hover:bg-surface hover:text-action"
+                      ? "text-on-action/80 group-hover/day:bg-on-action/15 group-hover/day:text-on-action"
+                      : "text-secondary/70 group-hover/day:bg-surface group-hover/day:text-action"
                   }`}
                 >
-                  <PlusIcon className="text-base transition-transform group-hover:scale-110" />
+                  <PlusIcon className="text-base transition-transform group-hover/day:scale-110" />
                 </button>
               ) : (
-                <span aria-hidden="true" className="size-8" />
+                <span aria-hidden="true" className="size-7" />
               )}
             </li>
           );

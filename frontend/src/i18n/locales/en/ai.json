@@ -113,7 +113,8 @@
     "status": {
       "cancelled": "Cancelled. Nothing changed.",
       "expired": "Expired. Nothing changed."
-    }
+    },
+    "charCount": "{{count}} / {{max}} characters"
   },
   "approvals": {
     "title": "Approvals",

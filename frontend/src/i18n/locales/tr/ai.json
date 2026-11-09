@@ -113,7 +113,8 @@
     "status": {
       "cancelled": "İptal edildi. Hiçbir şey değişmedi.",
       "expired": "Süresi doldu. Hiçbir şey değişmedi."
-    }
+    },
+    "charCount": "{{count}} / {{max}} karakter"
   },
   "approvals": {
     "title": "Onaylar",

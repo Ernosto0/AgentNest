@@ -165,7 +165,9 @@
       "connectCalendar": "Connect Google Calendar to automate bookings.",
       "viewConversation": "Open chat",
       "connect": "Connect Google Calendar",
-      "window": "Today and tomorrow"
+      "window": "Today and tomorrow",
+      "more_one": "+{{count}} more appointment today or tomorrow",
+      "more_other": "+{{count}} more appointments today or tomorrow"
     },
     "insights": {
       "title": "Instagram Performance",
