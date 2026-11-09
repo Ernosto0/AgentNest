@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { Command } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { AlertIcon, ClockIcon } from "@/components/icons";
 import { CancelContentSummary } from "@/features/approvals/CancelContentSummary";
 import { ChangeSummary, ImpactSummary } from "@/features/approvals/ChangeSummary";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -33,13 +34,23 @@ export function ConfirmationCard({ command }: { command: Command }) {
   return (
     <section
       aria-label={cancelContent ? t("command.confirm.cancelContent.title") : t("command.confirm.title")}
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-4 rounded-xl border border-attention/30 bg-attention-subtle/30 p-4 sm:p-5 shadow-2xs"
       data-testid="confirmation-card"
       data-payload-hash={approval.payload_hash}
     >
-      <h3 className="type-section text-primary">
-        {cancelContent ? t("command.confirm.cancelContent.title") : t("command.confirm.title")}
-      </h3>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-attention/20 pb-3">
+        <div className="flex items-center gap-2">
+          <AlertIcon className="text-lg text-attention shrink-0" />
+          <h3 className="font-heading text-base font-bold text-primary">
+            {cancelContent ? t("command.confirm.cancelContent.title") : t("command.confirm.title")}
+          </h3>
+        </div>
+        <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs font-medium text-secondary shadow-2xs">
+          <ClockIcon className="text-sm text-attention" />
+          <span>{t("command.confirm.expires", { time: expires })}</span>
+        </div>
+      </div>
+
       {cancelContent ? (
         <CancelContentSummary summary={approval.summary} />
       ) : (
@@ -52,17 +63,20 @@ export function ConfirmationCard({ command }: { command: Command }) {
           />
         </>
       )}
+
       {role === "staff" && !cancelContent ? (
-        <p className="rounded-control bg-surface-subtle p-3 text-body text-primary border border-border">
+        <p className="rounded-xl bg-surface p-3.5 text-body text-primary border border-border shadow-2xs">
           {t("command.confirm.staffNote")}
         </p>
       ) : null}
-      <p className="text-metadata text-secondary">{t("command.confirm.expires", { time: expires })}</p>
+
       {error ? <ErrorMessage error={error} /> : null}
-      <div className="flex flex-wrap gap-2">
+
+      <div className="flex flex-wrap gap-2.5 pt-1">
         <Button
           disabled={busy || !approval.can_decide}
           onClick={() => decide.mutate({ approval, decision: "approve" })}
+          className="rounded-lg shadow-xs font-semibold px-5"
         >
           {decide.isPending
             ? t("command.confirm.deciding")
@@ -70,7 +84,7 @@ export function ConfirmationCard({ command }: { command: Command }) {
               ? t("command.confirm.cancelContent.approve")
               : t("command.confirm.approve")}
         </Button>
-        <Button variant="secondary" disabled={busy} onClick={() => withdraw.mutate(command.id)}>
+        <Button variant="secondary" disabled={busy} onClick={() => withdraw.mutate(command.id)} className="rounded-lg">
           {t("command.confirm.withdraw")}
         </Button>
       </div>
