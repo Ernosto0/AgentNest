@@ -52,7 +52,7 @@
     "taskHint": "Ask for work on this account. Preparing content does not approve scheduling or publication. Only your own requests appear here.",
     "taskText": "Request",
     "submitTask": "Send request to assistant",
-    "taskAccepted": "Request recorded. Follow its progress below.",
+    "taskAccepted": "Request recorded and queued.",
     "taskProgress": "View request progress",
     "recentTasksOnly": "Showing the latest 20 requests.",
     "pending": "Pending",
@@ -129,6 +129,209 @@
     "controller": {
       "legacy": "Previous automation controls this account",
       "agent": "Account assistant controls this account"
+    },
+    "intro": {
+      "overview": "Direct your assistant, follow its work and see what it can do on this account.",
+      "voice": "How the assistant sounds in messages and comments. Goals guide it; they never grant permissions.",
+      "permissions": "Decide, action by action, what the assistant may do on its own, what it must ask about, and what it never does.",
+      "history": "Every loaded request and recorded action, by day. Filter by what they need from you."
+    },
+    "hero": {
+      "eyebrow": "Account assistant for",
+      "working_one": "Working on {{count}} item right now.",
+      "working_other": "Working on {{count}} items right now.",
+      "sentence": {
+        "active": "Ready for new work, within the permissions you set.",
+        "paused": "Paused. No new work starts until you resume.",
+        "inactive": "Not running. It starts no work on this account.",
+        "legacy": "The account assistant is not in control. Your previous automation settings apply."
+      },
+      "state": {
+        "active": "Active",
+        "paused": "Paused",
+        "inactive": "Inactive",
+        "legacy": "Previous automation"
+      }
+    },
+    "runCount": {
+      "running": "{{count}} working",
+      "queued": "{{count}} queued",
+      "waiting_operation": "{{count}} verifying outcome",
+      "waiting_customer": "{{count}} waiting for customer",
+      "sleeping": "{{count}} waiting until due"
+    },
+    "counts": {
+      "waitingTitle": "Waiting for you",
+      "workTitle": "Assistant work",
+      "approvals": "Action approvals",
+      "questions": "Information requests",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "failed": "Failed",
+      "note": "Work counts cover conversations, comments and requests on this account; completed and failed are all-time totals.",
+      "approvalsLink": "Review approvals",
+      "questionsLink": "Answer questions"
+    },
+    "composer": {
+      "placeholder": "Describe what you need, for example a post for this weekend…",
+      "blocked": {
+        "connection": "Reconnect the Instagram account to send new requests.",
+        "legacy": "Enable the account assistant to send requests.",
+        "paused": "Resume the assistant to send new requests.",
+        "inactive": "The assistant is not active, so it cannot take requests."
+      },
+      "shortcut": "Ctrl + Enter to send",
+      "count": "{{count}} / {{max}}",
+      "sending": "Sending…",
+      "follow": "Follow its progress",
+      "suggestionsLabel": "Try:",
+      "suggestions": {
+        "post": "Prepare a feed post introducing our services",
+        "story": "Prepare a story for this weekend",
+        "faq": "Prepare a post answering a question customers often ask"
+      },
+      "stepsLabel": "What happens after you send",
+      "steps": {
+        "recorded": {
+          "title": "Recorded and queued",
+          "body": "Your request appears under Your requests with its status."
+        },
+        "works": {
+          "title": "The assistant works on it",
+          "body": "It may ask you for information it does not have."
+        },
+        "control": {
+          "title": "You stay in control",
+          "body": "Actions set to ask for approval wait for you in Approvals."
+        }
+      }
+    },
+    "request": {
+      "title": "Request",
+      "titleMore": "{{action}} and {{count}} more",
+      "sent": "Sent {{time}}",
+      "viaTelegram": "via Telegram",
+      "asks": "The assistant asks:",
+      "answer": "Answer",
+      "result": "Result:"
+    },
+    "requests": {
+      "meta": "{{open}} open · {{count}} recent",
+      "empty": "No requests yet. Ask above; each request and its progress appears here.",
+      "all": "All requests",
+      "more": "Showing {{shown}} of {{count}} recent requests. Open History for the rest."
+    },
+    "actionsFeed": {
+      "fromRequest": "From your request",
+      "all": "Full history"
+    },
+    "modeShort": {
+      "automatic": "Automatic",
+      "ask": "Asks first",
+      "off": "Off",
+      "mixed": "Varies"
+    },
+    "capability": {
+      "summary": "{{available}} of {{total}} available on this connection",
+      "none": "The connection reports no capabilities yet.",
+      "groupCount": "{{available}}/{{total}}",
+      "assistant": "Assistant:",
+      "conflict": "Allowed, but the connection does not provide it.",
+      "editPermissions": "Edit what the assistant may do",
+      "group": {
+        "messaging": "Messaging",
+        "comments": "Comments",
+        "publishing": "Publishing",
+        "other": "Other"
+      },
+      "label": {
+        "messaging": "Direct messages",
+        "comment_read": "Read comments",
+        "comment_reply": "Reply publicly to comments",
+        "comment_private_reply": "Reply privately to comments",
+        "comment_moderate": "Hide, show and delete comments",
+        "publish_feed_image": "Feed posts",
+        "publish_story_image": "Stories"
+      }
+    },
+    "calendar": {
+      "manage": "Manage calendar",
+      "status": {
+        "connected": "Connected",
+        "needs_reauth": "Reconnect needed",
+        "degraded": "Unstable",
+        "none": "Not connected"
+      },
+      "problem": {
+        "needs_reauth": "Google needs you to sign in again before the assistant can use this calendar.",
+        "degraded": "The calendar is responding unreliably; bookings may be delayed."
+      }
+    },
+    "control": {
+      "title": "Control",
+      "controller": "In control",
+      "connection": "Instagram connection",
+      "legacyHint": "Hands the account back to the previous topic automation. Use only if you need the earlier behaviour."
+    },
+    "connection": {
+      "connected": "Connected",
+      "needs_reauth": "Reconnect needed",
+      "degraded": "Unstable",
+      "disconnected": "Disconnected"
+    },
+    "history": {
+      "filterLabel": "Filter history",
+      "filter": {
+        "all": "All",
+        "needs_you": "Needs you",
+        "in_progress": "In progress",
+        "done": "Completed",
+        "failed": "Failed",
+        "closed": "Cancelled"
+      },
+      "noMatch": "Nothing in this filter right now.",
+      "showAll": "Show all",
+      "noneInFilter": "None in this filter.",
+      "requestsMeta": "Only your own requests appear here.",
+      "actionsMeta_one": "Latest {{count}} recorded action",
+      "actionsMeta_other": "Latest {{count}} recorded actions",
+      "activityLog": "Activity log"
+    },
+    "empty": {
+      "title": "Your assistant needs an Instagram account",
+      "connect": "Connect an account"
+    },
+    "voiceIntro": "Shape how replies read. Facts such as prices and hours always come from your verified business information.",
+    "voiceSections": {
+      "style": "Style",
+      "channels": "By channel",
+      "examples": "Your own examples",
+      "examplesHint": "Up to two short lines per language that sound like your business."
+    },
+    "unsaved": "Unsaved changes",
+    "voiceSummary": {
+      "title": "Voice at a glance",
+      "hint": "Updates as you choose; saved only when you save.",
+      "dm": "Direct messages: {{style}}",
+      "comment": "Public comments: {{style}}"
+    },
+    "permissions": {
+      "needsCapability": "This Instagram connection does not provide this capability.",
+      "needsCalendar": "Needs a connected calendar.",
+      "legendLabel": "Permission options",
+      "legend": {
+        "off": "The assistant never does this.",
+        "ask": "It prepares the action; you approve it in Approvals.",
+        "automatic": "It acts without asking, within limits and request sources."
+      },
+      "changed": "Changed",
+      "limitShort": "Up to {{count}} a day",
+      "sources": "Who may trigger it",
+      "pending_one": "{{count}} action changed. Preview to review before applying.",
+      "pending_other": "{{count}} actions changed. Preview to review before applying.",
+      "noChanges": "No changes yet. Applying always shows the exact changes first.",
+      "previewNone": "No actions change in this version.",
+      "keepEditing": "Keep editing"
     }
   }
 }

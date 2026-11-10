@@ -52,7 +52,7 @@
     "taskHint": "Bu hesap için iş isteyin. İçerik hazırlamak zamanlama veya yayın onayı vermez. Burada yalnızca kendi istekleriniz görünür.",
     "taskText": "İstek",
     "submitTask": "Asistana istek gönder",
-    "taskAccepted": "İstek kaydedildi. İlerlemesini aşağıdan takip edin.",
+    "taskAccepted": "İstek kaydedildi ve sıraya alındı.",
     "taskProgress": "İstek ilerlemesini gör",
     "recentTasksOnly": "Son 20 istek gösteriliyor.",
     "pending": "Bekliyor",
@@ -129,6 +129,209 @@
     "controller": {
       "legacy": "Bu hesabı önceki otomasyon yönetiyor",
       "agent": "Bu hesabı hesap asistanı yönetiyor"
+    },
+    "intro": {
+      "overview": "Asistanınızı yönlendirin, çalışmasını izleyin ve bu hesapta neler yapabildiğini görün.",
+      "voice": "Asistanın mesajlarda ve yorumlarda nasıl konuştuğu. Hedefler yön verir; hiçbir zaman yetki vermez.",
+      "permissions": "Her işlem için asistanın kendi başına ne yapabileceğine, neyi size soracağına ve neyi asla yapmayacağına karar verin.",
+      "history": "Yüklenen tüm istekler ve kayıtlı işlemler, güne göre. Sizden ne beklediklerine göre süzün."
+    },
+    "hero": {
+      "eyebrow": "Hesap asistanı:",
+      "working_one": "Şu anda {{count}} iş üzerinde çalışıyor.",
+      "working_other": "Şu anda {{count}} iş üzerinde çalışıyor.",
+      "sentence": {
+        "active": "Belirlediğiniz yetkiler içinde yeni işlere hazır.",
+        "paused": "Duraklatıldı. Siz sürdürene kadar yeni iş başlamaz.",
+        "inactive": "Çalışmıyor. Bu hesapta hiçbir iş başlatmaz.",
+        "legacy": "Hesap asistanı kontrolde değil. Önceki otomasyon ayarlarınız geçerli."
+      },
+      "state": {
+        "active": "Etkin",
+        "paused": "Duraklatıldı",
+        "inactive": "Etkin değil",
+        "legacy": "Önceki otomasyon"
+      }
+    },
+    "runCount": {
+      "running": "{{count}} çalışıyor",
+      "queued": "{{count}} sırada",
+      "waiting_operation": "{{count}} sonuç doğrulanıyor",
+      "waiting_customer": "{{count}} müşteri bekleniyor",
+      "sleeping": "{{count}} zamanı bekleniyor"
+    },
+    "counts": {
+      "waitingTitle": "Sizi bekleyenler",
+      "workTitle": "Asistanın işleri",
+      "approvals": "İşlem onayları",
+      "questions": "Bilgi talepleri",
+      "inProgress": "Devam eden",
+      "completed": "Tamamlanan",
+      "failed": "Başarısız",
+      "note": "İş sayıları bu hesaptaki konuşmaları, yorumları ve istekleri kapsar; tamamlanan ve başarısız sayıları tüm zamanların toplamıdır.",
+      "approvalsLink": "Onayları incele",
+      "questionsLink": "Soruları yanıtla"
+    },
+    "composer": {
+      "placeholder": "Neye ihtiyacınız olduğunu yazın, örneğin bu hafta sonu için bir gönderi…",
+      "blocked": {
+        "connection": "Yeni istek göndermek için Instagram hesabını yeniden bağlayın.",
+        "legacy": "İstek göndermek için hesap asistanını etkinleştirin.",
+        "paused": "Yeni istek göndermek için asistanı sürdürün.",
+        "inactive": "Asistan etkin değil, bu yüzden istek alamaz."
+      },
+      "shortcut": "Göndermek için Ctrl + Enter",
+      "count": "{{count}} / {{max}}",
+      "sending": "Gönderiliyor…",
+      "follow": "İlerlemesini izleyin",
+      "suggestionsLabel": "Deneyin:",
+      "suggestions": {
+        "post": "Hizmetlerimizi tanıtan bir akış gönderisi hazırla",
+        "story": "Bu hafta sonu için bir hikâye hazırla",
+        "faq": "Müşterilerin sık sorduğu bir soruyu yanıtlayan bir gönderi hazırla"
+      },
+      "stepsLabel": "Gönderdikten sonra ne olur",
+      "steps": {
+        "recorded": {
+          "title": "Kaydedilir ve sıraya alınır",
+          "body": "İsteğiniz durumuyla birlikte İstekleriniz bölümünde görünür."
+        },
+        "works": {
+          "title": "Asistan üzerinde çalışır",
+          "body": "Elinde olmayan bilgileri size sorabilir."
+        },
+        "control": {
+          "title": "Kontrol sizde kalır",
+          "body": "Onay isteyecek şekilde ayarlanan işlemler Onaylar'da sizi bekler."
+        }
+      }
+    },
+    "request": {
+      "title": "İstek",
+      "titleMore": "{{action}} ve {{count}} işlem daha",
+      "sent": "Gönderildi: {{time}}",
+      "viaTelegram": "Telegram üzerinden",
+      "asks": "Asistan soruyor:",
+      "answer": "Yanıtla",
+      "result": "Sonuç:"
+    },
+    "requests": {
+      "meta": "{{open}} açık · son {{count}} istek",
+      "empty": "Henüz istek yok. Yukarıdan isteyin; her istek ve ilerlemesi burada görünür.",
+      "all": "Tüm istekler",
+      "more": "Son {{count}} isteğin {{shown}} tanesi gösteriliyor. Geri kalanı için Geçmiş'i açın."
+    },
+    "actionsFeed": {
+      "fromRequest": "İsteğinizden",
+      "all": "Tüm geçmiş"
+    },
+    "modeShort": {
+      "automatic": "Otomatik",
+      "ask": "Önce sorar",
+      "off": "Kapalı",
+      "mixed": "Değişken"
+    },
+    "capability": {
+      "summary": "Bu bağlantıda {{total}} yetenekten {{available}} tanesi kullanılabilir",
+      "none": "Bağlantı henüz hiçbir yetenek bildirmedi.",
+      "groupCount": "{{available}}/{{total}}",
+      "assistant": "Asistan:",
+      "conflict": "İzin verildi, ancak bağlantı bunu sağlamıyor.",
+      "editPermissions": "Asistanın yapabileceklerini düzenleyin",
+      "group": {
+        "messaging": "Mesajlaşma",
+        "comments": "Yorumlar",
+        "publishing": "Yayınlama",
+        "other": "Diğer"
+      },
+      "label": {
+        "messaging": "Doğrudan mesajlar",
+        "comment_read": "Yorumları okuma",
+        "comment_reply": "Yorumlara herkese açık yanıt",
+        "comment_private_reply": "Yorumlara özel yanıt",
+        "comment_moderate": "Yorumları gizleme, gösterme ve silme",
+        "publish_feed_image": "Akış gönderileri",
+        "publish_story_image": "Hikâyeler"
+      }
+    },
+    "calendar": {
+      "manage": "Takvimi yönet",
+      "status": {
+        "connected": "Bağlı",
+        "needs_reauth": "Yeniden bağlanmalı",
+        "degraded": "Kararsız",
+        "none": "Bağlı değil"
+      },
+      "problem": {
+        "needs_reauth": "Asistanın bu takvimi kullanabilmesi için Google'a yeniden giriş yapmanız gerekiyor.",
+        "degraded": "Takvim güvenilir yanıt vermiyor; randevular gecikebilir."
+      }
+    },
+    "control": {
+      "title": "Kontrol",
+      "controller": "Kontrol eden",
+      "connection": "Instagram bağlantısı",
+      "legacyHint": "Hesabı önceki konu otomasyonuna geri verir. Yalnızca önceki davranışa ihtiyacınız varsa kullanın."
+    },
+    "connection": {
+      "connected": "Bağlı",
+      "needs_reauth": "Yeniden bağlanmalı",
+      "degraded": "Kararsız",
+      "disconnected": "Bağlantı kesildi"
+    },
+    "history": {
+      "filterLabel": "Geçmişi süz",
+      "filter": {
+        "all": "Tümü",
+        "needs_you": "Sizi bekliyor",
+        "in_progress": "Devam eden",
+        "done": "Tamamlanan",
+        "failed": "Başarısız",
+        "closed": "İptal edilen"
+      },
+      "noMatch": "Şu anda bu filtrede bir şey yok.",
+      "showAll": "Tümünü göster",
+      "noneInFilter": "Bu filtrede kayıt yok.",
+      "requestsMeta": "Burada yalnızca kendi istekleriniz görünür.",
+      "actionsMeta_one": "Kayıtlı son {{count}} işlem",
+      "actionsMeta_other": "Kayıtlı son {{count}} işlem",
+      "activityLog": "Etkinlik kaydı"
+    },
+    "empty": {
+      "title": "Asistanınızın bir Instagram hesabına ihtiyacı var",
+      "connect": "Hesap bağlayın"
+    },
+    "voiceIntro": "Yanıtların nasıl okunacağını belirleyin. Fiyat ve çalışma saatleri gibi bilgiler her zaman doğrulanmış işletme bilgilerinizden gelir.",
+    "voiceSections": {
+      "style": "Üslup",
+      "channels": "Kanala göre",
+      "examples": "Kendi örnekleriniz",
+      "examplesHint": "Her dil için işletmeniz gibi konuşan en fazla iki kısa satır."
+    },
+    "unsaved": "Kaydedilmemiş değişiklikler",
+    "voiceSummary": {
+      "title": "Bir bakışta üslup",
+      "hint": "Seçtikçe güncellenir; yalnızca kaydettiğinizde saklanır.",
+      "dm": "Doğrudan mesajlar: {{style}}",
+      "comment": "Herkese açık yorumlar: {{style}}"
+    },
+    "permissions": {
+      "needsCapability": "Bu Instagram bağlantısı bu yeteneği sağlamıyor.",
+      "needsCalendar": "Bağlı bir takvim gerekir.",
+      "legendLabel": "Yetki seçenekleri",
+      "legend": {
+        "off": "Asistan bunu asla yapmaz.",
+        "ask": "İşlemi hazırlar; siz Onaylar'da onaylarsınız.",
+        "automatic": "Sormadan, sınırlar ve istek kaynakları içinde yapar."
+      },
+      "changed": "Değişti",
+      "limitShort": "Günde en fazla {{count}}",
+      "sources": "Kimler tetikleyebilir",
+      "pending_one": "{{count}} işlem değişti. Uygulamadan önce incelemek için önizleyin.",
+      "pending_other": "{{count}} işlem değişti. Uygulamadan önce incelemek için önizleyin.",
+      "noChanges": "Henüz değişiklik yok. Uygulamadan önce her zaman tam değişiklikler gösterilir.",
+      "previewNone": "Bu sürümde değişen işlem yok.",
+      "keepEditing": "Düzenlemeye devam et"
     }
   }
 }
