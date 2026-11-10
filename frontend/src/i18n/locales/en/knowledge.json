@@ -28,7 +28,10 @@
       "not_started": "Not started yet",
       "archived": "Archived",
       "missing": "Missing",
-      "present": "Added"
+      "present": "Added",
+      "needed": "Needed for setup",
+      "not_added": "Not added",
+      "one_of": "One of these is needed"
     },
     "source": {
       "owner_entry": "Entered by hand",
@@ -227,7 +230,122 @@
         "contest": "{{name}} suggests {{proposed}} (current value: {{current}}). The current value is on hold until you decide.",
         "new": "{{source}} suggests {{proposed}}.",
         "newUnverified": "{{source}} suggests {{proposed}}. Accepting it verifies this value (it is currently {{current}}, unverified)."
+      },
+      "current": "In use now",
+      "proposed": "Suggested",
+      "nothingYet": "Nothing yet"
+    },
+    "asideLabel": "Teaching and setup",
+    "answersHint": "Reusable replies built on your verified facts",
+    "expiredNote": "Its validity period has ended, so it is no longer used. Update the dates or archive it.",
+    "stats": {
+      "title": "What your assistant knows",
+      "subtitle": "Only verified facts are used in replies and posts.",
+      "verified": "Verified facts",
+      "verifiedHint": "In use now",
+      "review": "To review",
+      "reviewHint": "Not used until you act",
+      "suggestions": "Suggestions",
+      "suggestionsHint": "Waiting for your decision",
+      "notAdded": "Not added yet",
+      "neededHint_one": "{{count}} needed for setup",
+      "neededHint_other": "{{count}} needed for setup",
+      "optionalHint": "All optional",
+      "none": "Nothing waiting"
+    },
+    "attention": {
+      "title": "Needs your attention",
+      "meta_one": "{{count}} item",
+      "meta_other": "{{count}} items",
+      "clear": "Nothing needs your attention",
+      "clearHint": "Everything your assistant uses is verified. You can still add more detail to any category.",
+      "needed": {
+        "drafts": "Needed before the assistant can write drafts.",
+        "ready": "Needed before automation can be turned on."
+      },
+      "pendingValue": "Added but not verified yet: {{value}}",
+      "open": "Open",
+      "review": "Review",
+      "decide": "Decide",
+      "more_one": "Show {{count}} more",
+      "more_other": "Show {{count}} more",
+      "less": "Show less",
+      "verifyNamed": "Verify {{name}}",
+      "fact": {
+        "unverified": "Not verified, so not used yet",
+        "contested": "On hold: a team member suggested a change",
+        "expired": "Validity ended, no longer used"
       }
+    },
+    "browse": {
+      "hint": "Open a category to see, add or verify its facts.",
+      "search": "Search facts",
+      "searchLabel": "Search your business knowledge",
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results",
+      "noResults": "Nothing matches “{{query}}”",
+      "noResultsHint": "Try another word. Anything your business needs can be added under Other facts.",
+      "clear": "Clear search"
+    },
+    "group": {
+      "basics": {
+        "title": "Business basics",
+        "hint": "Who you are and how to reach you"
+      },
+      "offer": {
+        "title": "What you offer",
+        "hint": "Services, prices, promotions and booking"
+      },
+      "answers": {
+        "title": "How to answer",
+        "hint": "Policies, common questions, tone and handover"
+      }
+    },
+    "count": {
+      "needed": "Needed for setup",
+      "review_one": "{{count}} to review",
+      "review_other": "{{count}} to review",
+      "verified_one": "{{count}} verified",
+      "verified_other": "{{count}} verified",
+      "upcoming_one": "{{count}} starts later",
+      "upcoming_other": "{{count}} start later",
+      "notAdded_one": "{{count}} not added",
+      "notAdded_other": "{{count}} not added",
+      "empty": "Nothing added yet"
+    },
+    "setup": {
+      "title": "Assistant setup",
+      "level": {
+        "not_ready": "The assistant cannot write drafts yet. Add the essentials below.",
+        "ready_for_drafts": "The assistant can write drafts for you to approve. A few more steps turn on automation.",
+        "ready": "Everything the assistant needs to work is in place."
+      },
+      "stage": {
+        "drafts": "For drafts",
+        "ready": "For automation"
+      },
+      "note": "Setup checks only the essentials. Optional details, such as FAQs or promotions, improve answers but never block anything.",
+      "knowledgeOpen_one": "{{count}} business detail is missing. It is listed under Needs your attention.",
+      "knowledgeOpen_other": "{{count}} business details are missing. They are listed under Needs your attention."
+    },
+    "teach": {
+      "title": "Teach from text",
+      "body": "Paste your Instagram bio, a price list or text from your website.",
+      "steps": {
+        "paste": "You paste the text",
+        "suggest": "The assistant suggests facts from it",
+        "review": "You accept or reject each one"
+      }
+    },
+    "page": {
+      "addKind": "Add {{kind}}",
+      "anyOne": "Any one of these is enough.",
+      "facts": "Facts",
+      "factsHint": "Only verified facts are used in replies and posts.",
+      "empty": "Nothing here yet",
+      "emptyHint": "Add anything customers ask about that does not fit another category.",
+      "notAdded": "Not added yet",
+      "notAddedHint": "Suggested for your type of business. Add the ones that apply to you."
     }
   },
   "readiness": {

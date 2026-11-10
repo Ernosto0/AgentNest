@@ -1,117 +1,82 @@
-import { PageHeader } from "@/components/Layout";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/Button";
-import { Card } from "@/components/Card";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { ChevronRightIcon } from "@/components/icons";
+import { BookIcon, ChevronRightIcon } from "@/components/icons";
+import { PageHeader } from "@/components/Layout";
+import { FOCUS } from "@/features/home/DashboardPanel";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
-import { FactStatusChip } from "./FactStatusChip";
-import { useCandidates, useFacts, useReadiness, useTemplate } from "./hooks";
+import { AttentionPanel } from "./AttentionPanel";
+import { CategoryBrowser } from "./CategoryBrowser";
+import { knowledgeBase, useKnowledgeBase } from "./useKnowledgeBase";
+import { KnowledgeStats } from "./KnowledgeStats";
+import { attentionItems, overview } from "./model";
 import { PasteExtractSheet } from "./PasteExtractSheet";
-import { ReadinessChecklist } from "./ReadinessChecklist";
-import { summarize } from "./summary";
+import { SetupPanel } from "./SetupPanel";
+import { TeachPanel } from "./TeachPanel";
 
-const ROW =
-  "group flex min-h-20 w-full min-w-0 items-center justify-between gap-4 p-4 sm:px-5 text-left hover:bg-surface-subtle transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus";
-
-/** Business knowledge overview: readiness, suggestions, and one row per category. */
+/**
+ * The knowledge hub: what the assistant knows (counts), what needs the owner (blockers,
+ * suggestions, facts on hold), every category to browse or search, and, beside them, the
+ * paste-and-extract entry and the setup checklist.
+ */
 export function KnowledgePage() {
   const { t } = useTranslation();
-  const { workspace } = useCurrentWorkspace();
-  const base = `/w/${workspace.id}/more/knowledge`;
-  const template = useTemplate(workspace.id);
-  const facts = useFacts(workspace.id);
-  const candidates = useCandidates(workspace.id);
-  const readiness = useReadiness(workspace.id);
+  const { workspace, role } = useCurrentWorkspace();
+  const canVerify = role !== "staff";
+  const kb = useKnowledgeBase(workspace.id);
   const [pasting, setPasting] = useState(false);
 
-  const loadError = template.error ?? facts.error;
-  const summaries = template.data && facts.data ? summarize(template.data, facts.data) : [];
-  const pending = candidates.data?.length ?? 0;
+  // Suggestions and readiness only add to the picture; a failure there must not hide the facts.
+  const settled = kb.loaded && !kb.candidates.isPending && !kb.readiness.isPending;
+  const stats = kb.summaries && settled ? overview(kb.summaries, kb.candidates.data, kb.readiness.data) : null;
+  const attention = kb.loaded && settled ? attentionItems(kb.loaded.facts, kb.candidates.data, kb.readiness.data) : null;
 
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader title={t("knowledge.title")} description={t("knowledge.intro")} action={<Button variant="secondary" onClick={() => setPasting(true)} data-testid="open-paste-extract">{t("extract.open")}</Button>} />
+    <div className="flex min-w-0 flex-col gap-6">
+      <PageHeader title={t("knowledge.title")} description={t("knowledge.intro")} />
 
-      {loadError ? <ErrorMessage error={loadError} /> : null}
-      {template.isPending || facts.isPending ? (
-        <p role="status" className="text-sm text-secondary">{t("common.loading")}</p>
-      ) : null}
+      {kb.error ? <ErrorMessage error={kb.error} /> : null}
 
-      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="min-w-0 overflow-hidden rounded-panel border border-border bg-surface">
-      <Link to={`${base}/suggestions`} className={ROW}>
-        <span className="min-w-0">
-          <span className="block font-heading font-bold text-primary text-base group-hover:text-action transition-colors">
-            {t("knowledge.suggestions.link")}
-          </span>
-          <span className="block text-sm text-secondary font-medium mt-0.5">
-            {pending > 0
-              ? t("knowledge.suggestions.waiting", { count: pending })
-              : t("knowledge.suggestions.none")}
-          </span>
-        </span>
-        <div className="flex items-center gap-2">
-          {pending > 0 ? (
-            <span className="inline-flex items-center rounded-full bg-attention-subtle px-2.5 py-0.5 text-xs font-bold text-attention border border-border">
-              {pending}
-            </span>
-          ) : null}
-          <ChevronRightIcon className="shrink-0 text-xl text-secondary/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-        </div>
-      </Link>
+      {kb.error ? null : <KnowledgeStats data={stats} />}
 
-      <ul className="divide-y divide-border border-t border-border" aria-label={t("knowledge.categories")}>
-        {summaries.map((summary) => (
-          <li key={summary.category}>
-            <Link to={`${base}/${summary.category}`} className={ROW} data-category={summary.category}>
-              <span className="min-w-0 flex-1">
-                <span className="block font-heading font-bold text-primary text-base group-hover:text-action transition-colors">
-                  {t(`knowledge.category.${summary.category}`)}
-                </span>
-                <span className="mt-2.5 flex flex-wrap items-center gap-2.5">
-                  {summary.verified > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm text-secondary font-medium">
-                      <FactStatusChip state="verified" />
-                      <span className="font-bold text-primary text-xs">{summary.verified}</span>
-                    </span>
-                  ) : null}
-                  {summary.attention > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm text-secondary font-medium">
-                      <FactStatusChip state="unverified" />
-                      <span className="font-bold text-primary text-xs">{summary.attention}</span>
-                    </span>
-                  ) : null}
-                  {summary.missing > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm text-secondary font-medium">
-                      <FactStatusChip state="missing" />
-                      <span className="font-bold text-primary text-xs">{summary.missing}</span>
-                    </span>
-                  ) : null}
-                </span>
-              </span>
-              <ChevronRightIcon className="shrink-0 text-xl text-secondary/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-            </Link>
-          </li>
-        ))}
-      </ul>
-      </div>
-      <aside className="order-first min-w-0 xl:order-last">
-      {readiness.data ? (
-        <Card className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3">
-            <h2 className="text-base font-heading font-bold text-primary">{t("readiness.title")}</h2>
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_21rem] xl:grid-rows-[auto_1fr]">
+        {kb.error ? null : (
+          <div className="min-w-0 xl:col-start-1 xl:row-start-1">
+            <AttentionPanel items={attention} canVerify={canVerify} />
           </div>
-          <ReadinessChecklist workspaceId={workspace.id} readiness={readiness.data} />
-        </Card>
-      ) : null}
+        )}
+
+        <aside aria-label={t("knowledge.asideLabel")} className="grid min-w-0 items-start gap-4 md:grid-cols-2 xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:grid-cols-1">
+          <TeachPanel onPaste={() => setPasting(true)} />
+          <SetupPanel readiness={kb.readiness.data} error={kb.readiness.error} />
+          <Link
+            to={`${knowledgeBase(workspace.id)}/answers`}
+            className={`group flex min-w-0 items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 md:col-span-2 xl:col-span-1 transition-colors hover:border-action/35 hover:bg-surface-subtle/50 ${FOCUS}`}
+          >
+            <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-base text-action">
+              <BookIcon />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-body leading-5 font-semibold text-primary group-hover:text-action">{t("more.answers")}</span>
+              <span className="block text-xs text-secondary">{t("knowledge.answersHint")}</span>
+            </span>
+            <ChevronRightIcon aria-hidden="true" className="shrink-0 text-lg text-secondary/50 group-hover:text-primary" />
+          </Link>
+        </aside>
+
+        {kb.error ? null : (
+          <CategoryBrowser
+            className="xl:col-start-1 xl:row-start-2"
+            summaries={kb.summaries}
+            facts={kb.loaded?.facts ?? []}
+            template={kb.loaded?.template ?? []}
+            needed={kb.needed}
+          />
+        )}
+      </div>
 
       {pasting ? <PasteExtractSheet onClose={() => setPasting(false)} /> : null}
-
-      </aside>
-      </div>
     </div>
   );
 }

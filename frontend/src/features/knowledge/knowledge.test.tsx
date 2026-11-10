@@ -98,9 +98,41 @@ describe("category screen", () => {
     expect(within(unverified).getByText("Doğrulanmamış")).toBeInTheDocument();
     expect(unverified).toHaveTextContent("Doğrulanana kadar hiçbir yerde kullanılmaz.");
 
+    // Readiness is not waiting for it, so it is a suggestion, not a gap.
     const missing = screen.getByTestId("missing-pricing.single_session");
-    expect(within(missing).getByText("Eksik")).toBeInTheDocument();
-    expect(missing).toHaveTextContent("Otomasyonun açılabilmesi için gerekli.");
+    expect(within(missing).getByText("Eklenmedi")).toBeInTheDocument();
+    expect(screen.queryByTestId("category-needed")).toBeNull();
+  });
+
+  it("marks a missing item as needed only when readiness is waiting for it", async () => {
+    mockApi(
+      routes({
+        ...pricingRoutes,
+        [`GET ${BASE}/readiness`]: () =>
+          json({
+            level: "ready_for_drafts",
+            requirements: [
+              { code: "price_policy", required_for: "ready", satisfied: false, status: "missing", link: { target: "knowledge", category: "pricing", key: "pricing.single_session" }, missing_keys: ["pricing.single_session"] },
+            ],
+          }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge/pricing`);
+
+    const missing = await screen.findByTestId("missing-pricing.single_session");
+    expect(await within(missing).findByText("Kurulum için gerekli")).toBeInTheDocument();
+    const banner = screen.getByTestId("category-needed");
+    expect(banner).toHaveTextContent("Fiyat politikası");
+    expect(banner).toHaveTextContent("Otomasyonun açılabilmesi için gerekli.");
+  });
+
+  it("offers every category in the side navigation, with the open one marked", async () => {
+    mockApi(routes(pricingRoutes));
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge/pricing`);
+    const nav = await screen.findByRole("navigation", { name: "Kategoriler" });
+    expect(within(nav).getAllByRole("link")).toHaveLength(14);
+    expect(within(nav).getByRole("link", { name: /Fiyatlar/ })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: /Diğer bilgiler/ })).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/knowledge/custom`);
   });
 
   it("verifies an unverified fact with its current version", async () => {
@@ -311,7 +343,7 @@ describe("suggestions", () => {
 });
 
 describe("overview", () => {
-  it("shows one row per category with counts and the number of waiting suggestions", async () => {
+  it("shows real counts, the open setup gap, waiting suggestions and one tile per category", async () => {
     mockApi(
       routes({
         ...pricingRoutes,
@@ -322,11 +354,89 @@ describe("overview", () => {
 
     const pricing = await screen.findByRole("link", { name: /Fiyatlar/ });
     expect(pricing).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/knowledge/pricing`);
-    expect(pricing).toHaveTextContent("Doğrulandı1");
-    expect(pricing).toHaveTextContent("Doğrulanmamış1");
-    expect(pricing).toHaveTextContent("Eksik1");
-    expect(await screen.findByText("1 öneri sizi bekliyor")).toBeInTheDocument();
+    expect(pricing).toHaveTextContent("1 doğrulandı");
+    expect(pricing).toHaveTextContent("1 incelenecek");
+    expect(pricing).toHaveTextContent("1 eklenmedi");
     expect(screen.getByRole("link", { name: /Diğer bilgiler/ })).toBeInTheDocument(); // custom facts
+
+    expect(await screen.findByTestId("knowledge-stat-verified")).toHaveTextContent("1");
+    expect(screen.getByTestId("knowledge-stat-review")).toHaveTextContent("1");
+    expect(screen.getByRole("link", { name: "Öneriler: 1" })).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/knowledge/suggestions`);
+
+    // The booking requirement is open in READINESS: it leads the attention list with a deep link.
+    const booking = await screen.findByTestId("attention-needed-booking_instructions");
+    expect(booking).toHaveTextContent("Rezervasyon talimatı");
+    expect(within(booking).getByRole("link", { name: /Ekle/ })).toHaveAttribute(
+      "href",
+      `/w/${WS_GOLKENT}/more/knowledge/booking#fact-booking.instructions`,
+    );
+    expect(screen.getByText("1 öneri sizi bekliyor")).toBeInTheDocument();
+  });
+
+  it("verifies a waiting fact from the attention list with its current version", async () => {
+    const user = userEvent.setup();
+    const requests = mockApi(
+      routes({
+        ...pricingRoutes,
+        [`POST ${BASE}/facts/${student.id}/verify`]: () =>
+          json({ ...student, status: "verified", state: "verified", usable: true, current_version: 2 }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge`);
+
+    const row = await screen.findByTestId("attention-fact-pricing.student_monthly");
+    expect(row).toHaveTextContent("4.500 ₺ / ay");
+    await user.click(within(row).getByRole("button", { name: "Öğrenci aylık üyelik bilgisini doğrula" }));
+    await waitFor(() => expect(requests.some((r) => r.path.endsWith("/verify"))).toBe(true));
+    expect(requests.find((r) => r.path.endsWith("/verify"))?.body).toEqual({ expected_version: 1 });
+  });
+
+  it("does not let staff verify from the attention list", async () => {
+    mockApi(routes(pricingRoutes, staffMe()));
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge`);
+    const row = await screen.findByTestId("attention-fact-pricing.student_monthly");
+    expect(within(row).queryByRole("button", { name: /doğrula/ })).toBeNull();
+    expect(within(row).getByRole("link", { name: /Aç/ })).toHaveAttribute(
+      "href",
+      `/w/${WS_GOLKENT}/more/knowledge/pricing#fact-pricing.student_monthly`,
+    );
+  });
+
+  it("keeps knowledge gaps in one place and lists the account step in setup", async () => {
+    mockApi(routes());
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge`);
+    const setup = await screen.findByTestId("knowledge-setup");
+    expect(await within(setup).findByText("Taslaklar için hazır")).toBeInTheDocument();
+    expect(setup).toHaveTextContent("1 işletme bilgisi eksik.");
+    expect(within(setup).getByRole("link", { name: /Instagram hesabı bağlı/ })).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/automation`);
+    expect(within(setup).queryByRole("link", { name: /Rezervasyon talimatı/ })).toBeNull();
+  });
+
+  it("says so when nothing needs attention", async () => {
+    mockApi(routes({ [`GET ${BASE}/readiness`]: () => json({ level: "ready", requirements: [] }) }));
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge`);
+    expect(await screen.findByText("İlginizi bekleyen bir şey yok")).toBeInTheDocument();
+  });
+
+  it("searches names and values and deep-links each result into its category", async () => {
+    const user = userEvent.setup();
+    mockApi(routes(pricingRoutes));
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge`);
+    const search = await screen.findByRole("searchbox", { name: "İşletme bilgilerinde ara" });
+
+    await user.type(search, "ogrenci");
+    const results = await screen.findByTestId("knowledge-search-results");
+    expect(within(results).getByRole("link", { name: /Öğrenci aylık üyelik/ })).toHaveAttribute(
+      "href",
+      `/w/${WS_GOLKENT}/more/knowledge/pricing#fact-pricing.student_monthly`,
+    );
+    expect(screen.queryByRole("link", { name: /Diğer bilgiler/ })).toBeNull(); // tiles give way to results
+
+    await user.clear(search);
+    await user.type(search, "sauna");
+    expect(await screen.findByTestId("knowledge-search-empty")).toHaveTextContent("“sauna” ile eşleşen bir şey yok");
+    await user.click(screen.getByRole("button", { name: "Aramayı temizle" }));
+    expect(await screen.findByRole("link", { name: /Diğer bilgiler/ })).toBeInTheDocument();
   });
 
   it("is reachable from More", async () => {

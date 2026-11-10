@@ -8,7 +8,7 @@ import type { Extraction } from "@/api/types";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { SpinnerIcon } from "@/components/icons";
+import { SparkIcon, SpinnerIcon } from "@/components/icons";
 import { newRequestId } from "@/features/commands/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { candidatesKey } from "./hooks";
@@ -107,8 +107,9 @@ export function PasteExtractSheet({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="flex flex-col gap-3">
-        <div className="rounded-panel bg-surface-subtle p-3.5 border border-border text-sm text-secondary">
-          {t("extract.intro")}
+        <div className="flex items-start gap-2.5 rounded-xl bg-assistant px-3.5 py-3 text-sm text-primary/85">
+          <SparkIcon aria-hidden="true" className="mt-0.5 shrink-0 text-base text-action" />
+          <p>{t("extract.intro")}</p>
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="extract-text" className="text-sm font-medium text-primary">

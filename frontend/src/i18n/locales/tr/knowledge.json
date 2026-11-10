@@ -28,7 +28,10 @@
       "not_started": "Henüz başlamadı",
       "archived": "Arşivde",
       "missing": "Eksik",
-      "present": "Eklendi"
+      "present": "Eklendi",
+      "needed": "Kurulum için gerekli",
+      "not_added": "Eklenmedi",
+      "one_of": "Bunlardan biri gerekli"
     },
     "source": {
       "owner_entry": "Elle girildi",
@@ -36,7 +39,7 @@
       "candidate_accepted": "Kabul edilen öneri",
       "seed": "Demo verisi",
       "template_default": "Şablon",
-      "owner_answer": "??letme yan?t?"
+      "owner_answer": "İşletme yanıtı"
     },
     "candidateSource": {
       "pasted_text": "Yapıştırdığınız metin",
@@ -227,7 +230,122 @@
         "contest": "{{name}} {{proposed}} değerini öneriyor (mevcut değer: {{current}}). Siz karar verene kadar mevcut değer beklemede.",
         "new": "{{source}} {{proposed}} değerini öneriyor.",
         "newUnverified": "{{source}} {{proposed}} değerini öneriyor. Kabul ederseniz bu değer doğrulanır (şu an {{current}}, doğrulanmamış)."
+      },
+      "current": "Şu an kullanılan",
+      "proposed": "Önerilen",
+      "nothingYet": "Henüz yok"
+    },
+    "asideLabel": "Öğretme ve kurulum",
+    "answersHint": "Doğrulanmış bilgilerinize dayanan hazır yanıtlar",
+    "expiredNote": "Geçerlilik süresi bittiği için artık kullanılmıyor. Tarihleri güncelleyin veya arşivleyin.",
+    "stats": {
+      "title": "Asistanınızın bildikleri",
+      "subtitle": "Yanıtlarda ve gönderilerde yalnızca doğrulanmış bilgiler kullanılır.",
+      "verified": "Doğrulanmış bilgi",
+      "verifiedHint": "Şu an kullanımda",
+      "review": "İncelenecek",
+      "reviewHint": "Siz bakana kadar kullanılmaz",
+      "suggestions": "Öneriler",
+      "suggestionsHint": "Kararınızı bekliyor",
+      "notAdded": "Henüz eklenmedi",
+      "neededHint_one": "{{count}} tanesi kurulum için gerekli",
+      "neededHint_other": "{{count}} tanesi kurulum için gerekli",
+      "optionalHint": "Hepsi isteğe bağlı",
+      "none": "Bekleyen yok"
+    },
+    "attention": {
+      "title": "İlginizi bekleyenler",
+      "meta_one": "{{count}} konu",
+      "meta_other": "{{count}} konu",
+      "clear": "İlginizi bekleyen bir şey yok",
+      "clearHint": "Asistanın kullandığı her bilgi doğrulanmış. Dilediğiniz kategoriye yine de ayrıntı ekleyebilirsiniz.",
+      "needed": {
+        "drafts": "Asistanın taslak yazabilmesi için gerekli.",
+        "ready": "Otomasyonun açılabilmesi için gerekli."
+      },
+      "pendingValue": "Eklendi ama henüz doğrulanmadı: {{value}}",
+      "open": "Aç",
+      "review": "İncele",
+      "decide": "Karar ver",
+      "more_one": "{{count}} tane daha göster",
+      "more_other": "{{count}} tane daha göster",
+      "less": "Daha az göster",
+      "verifyNamed": "{{name}} bilgisini doğrula",
+      "fact": {
+        "unverified": "Doğrulanmadığı için henüz kullanılmıyor",
+        "contested": "Beklemede: bir ekip üyesi değişiklik önerdi",
+        "expired": "Geçerliliği bitti, artık kullanılmıyor"
       }
+    },
+    "browse": {
+      "hint": "Bilgilerini görmek, eklemek veya doğrulamak için bir kategori açın.",
+      "search": "Bilgilerde ara",
+      "searchLabel": "İşletme bilgilerinde ara",
+      "results_one": "{{count}} sonuç",
+      "results_other": "{{count}} sonuç",
+      "noResults": "“{{query}}” ile eşleşen bir şey yok",
+      "noResultsHint": "Başka bir kelime deneyin. İşletmenize dair her bilgiyi Diğer bilgiler altına ekleyebilirsiniz.",
+      "clear": "Aramayı temizle"
+    },
+    "group": {
+      "basics": {
+        "title": "Temel bilgiler",
+        "hint": "Kim olduğunuz ve size nasıl ulaşılır"
+      },
+      "offer": {
+        "title": "Sunduklarınız",
+        "hint": "Hizmetler, fiyatlar, kampanyalar ve rezervasyon"
+      },
+      "answers": {
+        "title": "Nasıl yanıt verilir",
+        "hint": "Politikalar, sık sorulanlar, üslup ve devir"
+      }
+    },
+    "count": {
+      "needed": "Kurulum için gerekli",
+      "review_one": "{{count}} incelenecek",
+      "review_other": "{{count}} incelenecek",
+      "verified_one": "{{count}} doğrulandı",
+      "verified_other": "{{count}} doğrulandı",
+      "upcoming_one": "{{count}} ileride başlıyor",
+      "upcoming_other": "{{count}} ileride başlıyor",
+      "notAdded_one": "{{count}} eklenmedi",
+      "notAdded_other": "{{count}} eklenmedi",
+      "empty": "Henüz bir şey eklenmedi"
+    },
+    "setup": {
+      "title": "Asistan kurulumu",
+      "level": {
+        "not_ready": "Asistan henüz taslak yazamaz. Aşağıdaki temel bilgileri ekleyin.",
+        "ready_for_drafts": "Asistan onayınıza sunulacak taslaklar yazabilir. Otomasyon için birkaç adım kaldı.",
+        "ready": "Asistanın çalışması için gereken her şey hazır."
+      },
+      "stage": {
+        "drafts": "Taslaklar için",
+        "ready": "Otomasyon için"
+      },
+      "note": "Kurulum yalnızca temel bilgileri kontrol eder. Sık sorulanlar veya kampanyalar gibi isteğe bağlı ayrıntılar yanıtları iyileştirir ama hiçbir şeyi engellemez.",
+      "knowledgeOpen_one": "{{count}} işletme bilgisi eksik. İlginizi bekleyenler altında listelendi.",
+      "knowledgeOpen_other": "{{count}} işletme bilgisi eksik. İlginizi bekleyenler altında listelendi."
+    },
+    "teach": {
+      "title": "Metinden öğret",
+      "body": "Instagram biyografinizi, fiyat listenizi veya web sitenizdeki bir metni yapıştırın.",
+      "steps": {
+        "paste": "Metni siz yapıştırırsınız",
+        "suggest": "Asistan metinden bilgi önerir",
+        "review": "Her birini siz kabul eder ya da reddedersiniz"
+      }
+    },
+    "page": {
+      "addKind": "{{kind}} ekle",
+      "anyOne": "Bunlardan biri yeterli.",
+      "facts": "Bilgiler",
+      "factsHint": "Yanıtlarda ve gönderilerde yalnızca doğrulanmış bilgiler kullanılır.",
+      "empty": "Burada henüz bir şey yok",
+      "emptyHint": "Müşterilerin sorduğu ve başka bir kategoriye uymayan her şeyi ekleyin.",
+      "notAdded": "Henüz eklenmedi",
+      "notAddedHint": "İşletme türünüz için önerilenler. Size uyanları ekleyin."
     }
   },
   "readiness": {

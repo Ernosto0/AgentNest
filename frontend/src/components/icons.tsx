@@ -169,3 +169,56 @@ export const CriticalIcon = (p: IconProps) => (
     <path d="M12 8v5M12 16.5v.01" />
   </Svg>
 );
+export const StoreIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 10v10h16V10M3 4h18l-1 6a3 3 0 0 1-5.5 0 3 3 0 0 1-5 0A3 3 0 0 1 4 10Z" />
+    <path d="M10 20v-5h4v5" />
+  </Svg>
+);
+export const PhoneIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2Z" />
+  </Svg>
+);
+export const MapPinIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z" />
+    <circle cx="12" cy="9" r="2.5" />
+  </Svg>
+);
+export const TagIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9Z" />
+    <path d="M7.5 7.5v.01" />
+  </Svg>
+);
+export const PercentIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M19 5 5 19" />
+    <circle cx="7" cy="7" r="2.5" />
+    <circle cx="17" cy="17" r="2.5" />
+  </Svg>
+);
+export const QuestionIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.01" />
+  </Svg>
+);
+export const LayersIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m12 3 9 5-9 5-9-5Z" />
+    <path d="m3 13 9 5 9-5" />
+  </Svg>
+);
+export const ListIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M9 6h11M9 12h11M9 18h11M4 6v.01M4 12v.01M4 18v.01" />
+  </Svg>
+);
+export const NoteIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M6 3h9l4 4v14H6Z" />
+    <path d="M14 3v5h5M9 13h7M9 17h5" />
+  </Svg>
+);
