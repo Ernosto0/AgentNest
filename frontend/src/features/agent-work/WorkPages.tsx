@@ -7,8 +7,11 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/Layout";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ChevronLeftIcon, CommentIcon, InfoIcon, LinkIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
+import { SkeletonRows } from "@/features/home/DashboardPanel";
 import { useSocialAccounts } from "@/features/inbox/hooks";
+import { AccountSelect, FOCUS, ListTime, PANE, PaneEmpty, PaneNote } from "@/features/inbox/InboxParts";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { actionLabelKey, type Schema } from "@/features/agent/hooks";
 import { newRequestId } from "@/features/commands/hooks";
@@ -33,6 +36,8 @@ import {
 
 const INPUT = "mt-1 block min-h-11 w-full min-w-0 rounded-control border border-border bg-surface px-3 py-2 text-primary placeholder:text-secondary focus-visible:outline-2 focus-visible:outline-focus focus:border-control";
 const LINK = "text-action font-medium hover:text-action-hover underline";
+/** Back to the list on narrow screens; on wide screens the list is beside the detail. */
+const BACK = `-mt-1 -mb-2 -ml-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-control px-1 text-body font-semibold text-action hover:text-action-hover lg:hidden ${FOCUS}`;
 function LocalTime({ value }: { value: string }) {
   const { i18n } = useTranslation();
   const { workspace } = useCurrentWorkspace();
@@ -78,14 +83,39 @@ function WorkFrame({ children, titleKey }: { children: (account: string) => Reac
   const [params, setParams] = useSearchParams();
   const accounts = useSocialAccounts(workspace.id);
   const navigate = useNavigate();
+  const { role } = useCurrentWorkspace();
   const inbox = titleKey.startsWith("agentWork.question") || titleKey.startsWith("agentWork.comment");
   const account = params.get("account") ?? accounts.data?.[0]?.id ?? "";
+  const changeAccount = (value: string) => { const next = new URLSearchParams(params); next.set("account", value); next.delete("cursor"); if (inbox) { next.set("section", titleKey.startsWith("agentWork.question") ? "questions" : "comments"); navigate(`/w/${workspace.id}/inbox?${next}`); } else setParams(next); };
+  if (inbox) {
+    // Inside the inbox: the list pane gets the same compact toolbar as Messages; a detail pane is a
+    // surface with its own heading (the list beside it already offers the account choice).
+    const detail = titleKey === "agentWork.question" || titleKey === "agentWork.commentThread";
+    const status = <>
+      {accounts.error ? <div className="p-3"><ErrorMessage error={accounts.error} /></div> : null}
+      {accounts.isPending ? <div className="px-4 py-3"><SkeletonRows label={t("common.loading")} rows={3} /></div> : null}
+      {!accounts.isPending && !accounts.error && !accounts.data?.length ? <PaneEmpty icon={<LinkIcon />} title={t("agentWork.noAccount")} action={role === "owner" ? <Link className={`${LINK} inline-flex min-h-11 items-center`} to={`/w/${workspace.id}/more/settings/connections`}>{t("automation.manageConnection")}</Link> : undefined} /> : null}
+    </>;
+    const back = `/w/${workspace.id}/inbox?${new URLSearchParams({ ...Object.fromEntries(params), account, section: titleKey === "agentWork.question" ? "questions" : "comments" })}`;
+    if (detail) return <div className={`${PANE} flex flex-col gap-4 p-4 sm:p-5`}>
+      <Link className={BACK} to={back}><ChevronLeftIcon aria-hidden="true" className="text-lg" /><span>{t("core.backList")}</span></Link>
+      <h2 className="font-heading text-lg leading-snug font-semibold tracking-tight text-primary">{t(titleKey)}</h2>
+      {status}
+      {account ? children(account) : null}
+    </div>;
+    return <div className="flex min-w-0 flex-col">
+      <h2 className="sr-only">{t(titleKey)}</h2>
+      {accounts.data && accounts.data.length > 1 ? <div className="border-b border-border p-3"><AccountSelect accounts={accounts.data} value={account} onChange={changeAccount} /></div> : null}
+      {status}
+      {account ? children(account) : null}
+    </div>;
+  }
   return <div className="flex min-w-0 flex-col gap-6">
-    {inbox ? <h2 className="type-section">{t(titleKey)}</h2> : <PageHeader title={t(titleKey)} />}
-    {!inbox ? <Link className={LINK} to={`/w/${workspace.id}/more/agent?account=${account}`}>{t("agentWork.back")}</Link> : null}
+    <PageHeader title={t(titleKey)} />
+    <Link className={LINK} to={`/w/${workspace.id}/more/agent?account=${account}`}>{t("agentWork.back")}</Link>
     {accounts.data?.length ? <label className="flex min-w-0 flex-col gap-1.5 text-body font-medium text-secondary">
       <span>{t("agentWork.account")}</span>
-      <select className="min-h-11 w-full max-w-full rounded-control border border-control bg-surface px-3 py-2 text-form text-primary" value={account} onChange={e => { const next = new URLSearchParams(params); next.set("account", e.target.value); next.delete("cursor"); if (inbox) { next.set("section", titleKey.startsWith("agentWork.question") ? "questions" : "comments"); navigate(`/w/${workspace.id}/inbox?${next}`); } else setParams(next); }}>
+      <select className="min-h-11 w-full max-w-full rounded-control border border-control bg-surface px-3 py-2 text-form text-primary" value={account} onChange={e => changeAccount(e.target.value)}>
         {accounts.data.map(a => <option key={a.id} value={a.id}>@{a.username ?? t("agentWork.account")}</option>)}
       </select>
     </label> : null}
@@ -109,47 +139,91 @@ function QuestionList({ account }: { account: string }) {
   const cursor = params.get("cursor") ?? undefined;
   const setCursor = (value: string) => { const next = new URLSearchParams(params); next.set("cursor", value); setParams(next); };
   const questions = useQuestions(workspace.id, account, cursor);
+  const { questionId } = useParams();
   return (
-    <div className="flex flex-col gap-4">
-      {questions.isPending ? (
-        <p role="status" className="text-sm text-secondary">
-          {t("common.loading")}
-        </p>
-      ) : null}
-      {questions.error ? <ErrorMessage error={questions.error} /> : null}
-      <ul className="overflow-hidden rounded-panel border border-border bg-surface">
-        {questions.data?.items.map((q) => (
-          <li
-            key={q.id}
-            className="border-b border-border bg-surface p-4 flex flex-col gap-2.5 last:border-b-0 hover:bg-surface-subtle"
-          >
-            <Link
-              className="text-base font-semibold text-action hover:text-action-hover underline break-words"
+    <div className="flex min-w-0 flex-col p-1.5">
+      {questions.isPending ? <div className="px-3 py-2"><SkeletonRows label={t("common.loading")} rows={3} /></div> : null}
+      {questions.error ? <div className="p-1.5"><ErrorMessage error={questions.error} /></div> : null}
+      {questions.data?.items.length ? (
+        <ul className="flex flex-col gap-0.5">
+          {questions.data.items.map((q) => (
+            <PaneRow
+              key={q.id}
+              selected={q.id === questionId}
+              icon={<InfoIcon />}
+              iconTone={q.state === "pending" ? "attention" : "neutral"}
               to={`/w/${workspace.id}/more/agent/questions/${q.id}?${new URLSearchParams({ ...Object.fromEntries(params), account, section: "questions" })}`}
-            >
-              {q.body ?? t("agentWork.removed")}
-            </Link>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-secondary">
-              <WorkState state={q.state} />
-              <span>·</span>
-              <span>
-                {t("agentWork.expires")} <LocalTime value={q.expires_at} />
-              </span>
-            </div>
-          </li>
-        ))}
-      </ul>
+              text={q.body ?? t("agentWork.removed")}
+              meta={<>
+                <WorkState state={q.state} />
+                <span className="text-xs text-secondary">{t("agentWork.expires")} <LocalTime value={q.expires_at} /></span>
+              </>}
+            />
+          ))}
+        </ul>
+      ) : null}
       {questions.data?.items.length === 0 ? (
-        <p className="text-sm text-secondary">{t("agentWork.emptyQuestions")}</p>
+        <PaneEmpty icon={<InfoIcon />} title={t("agentWork.emptyQuestions")} hint={t("core.questionsHint")} />
       ) : null}
       {questions.data?.next_cursor ? (
-        <div>
-          <Button variant="secondary" onClick={() => setCursor(questions.data!.next_cursor!)}>
+        <div className="px-1.5 pt-2 pb-1.5">
+          <Button variant="secondary" block onClick={() => setCursor(questions.data!.next_cursor!)}>
             {t("agentWork.next")}
           </Button>
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * A row of an inbox list pane (comment, question). The text is the link and is stretched over the
+ * whole row, so the row is one target while the link's name stays the text itself.
+ */
+function PaneRow({
+  selected,
+  icon,
+  iconTone = "neutral",
+  eyebrow,
+  to,
+  text,
+  meta,
+}: {
+  selected: boolean;
+  icon: ReactNode;
+  iconTone?: "neutral" | "attention";
+  eyebrow?: ReactNode;
+  to: string;
+  text: string;
+  meta: ReactNode;
+}) {
+  return (
+    <li
+      className={`group/row relative flex min-w-0 items-start gap-3 rounded-xl px-3 py-3 transition-colors has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-focus ${
+        selected ? "bg-assistant" : "hover:bg-surface-subtle"
+      }`}
+    >
+      {selected ? <span aria-hidden="true" className="absolute top-3 bottom-3 left-0 w-[3px] rounded-full bg-action" /> : null}
+      <span
+        aria-hidden="true"
+        className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-base ${
+          iconTone === "attention" ? "bg-attention-subtle text-attention" : selected ? "bg-surface text-action" : "bg-surface-subtle text-action"
+        }`}
+      >
+        {icon}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        {eyebrow ? <div className="flex min-w-0 items-center justify-between gap-2">{eyebrow}</div> : null}
+        <Link
+          to={to}
+          aria-current={selected ? "true" : undefined}
+          className="line-clamp-2 text-body leading-5 font-medium break-words text-primary outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']"
+        >
+          {text}
+        </Link>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{meta}</div>
+      </div>
+    </li>
   );
 }
 
@@ -163,7 +237,6 @@ export function QuestionPage() {
 
 function QuestionDetail({ account }: { account: string }) {
   const { questionId = "" } = useParams();
-  const [params] = useSearchParams();
   const { workspace, role } = useCurrentWorkspace();
   const { t } = useTranslation();
   const question = useQuestion(workspace.id, account, questionId);
@@ -187,10 +260,7 @@ function QuestionDetail({ account }: { account: string }) {
   const q = question.data;
   return (
     <div className="flex min-w-0 flex-col gap-5">
-      <Link className={LINK} to={`/w/${workspace.id}/inbox?${new URLSearchParams({ ...Object.fromEntries(params), account, section: "questions" })}`}>{t("core.backList")}</Link>
-      <div className="lg:col-span-2 rounded-control border border-attention bg-attention-subtle p-3.5 text-sm font-medium text-attention shadow-xs">
-        {t("agentWork.informationOnly")}
-      </div>
+      <PaneNote tone="attention">{t("agentWork.informationOnly")}</PaneNote>
       <Card className="flex flex-col gap-3">
         <p className="whitespace-pre-wrap break-words text-base text-primary font-medium">
           {q.body ?? t("agentWork.removed")}
@@ -613,53 +683,41 @@ function CommentList({ account }: { account: string }) {
   const cursor = params.get("cursor") ?? undefined;
   const setCursor = (value: string) => { const next = new URLSearchParams(params); next.set("cursor", value); setParams(next); };
   const comments = useComments(workspace.id, account, cursor);
+  const { threadId } = useParams();
   return (
-    <div className="flex flex-col gap-4">
-      <div
-        role="note"
-        className="rounded-panel border border-border bg-surface p-4 text-sm text-secondary flex items-start gap-3 shadow-xs"
-      >
-        <span className="text-base select-none" aria-hidden="true">
-          ℹ️
-        </span>
-        <p className="leading-relaxed">{t("agentWork.publicNotice")}</p>
-      </div>
-      {comments.isPending ? (
-        <p role="status" className="text-sm text-secondary">
-          {t("common.loading")}
-        </p>
-      ) : null}
-      {comments.error ? <ErrorMessage error={comments.error} /> : null}
-      <ul className="overflow-hidden rounded-panel border border-border bg-surface">
-        {comments.data?.items.map((c) => (
-          <li
-            key={c.id}
-            className="border-b border-border bg-surface p-4 flex flex-col gap-2.5 last:border-b-0 hover:bg-surface-subtle"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                {t(c.is_owner ? "agentWork.nativeOwner" : "agentWork.customer")}
-              </span>
-              <div className="flex items-center gap-2">
-                <WorkState state={c.state} />
-                {c.is_simulated ? <SimulatedBadge /> : null}
-              </div>
-            </div>
-            <Link
-              className="text-base font-semibold text-action hover:text-action-hover underline break-words"
+    <div className="flex min-w-0 flex-col p-1.5">
+      <div className="p-1.5 pb-2"><PaneNote>{t("agentWork.publicNotice")}</PaneNote></div>
+      {comments.isPending ? <div className="px-3 py-2"><SkeletonRows label={t("common.loading")} rows={3} /></div> : null}
+      {comments.error ? <div className="p-1.5"><ErrorMessage error={comments.error} /></div> : null}
+      {comments.data?.items.length ? (
+        <ul className="flex flex-col gap-0.5">
+          {comments.data.items.map((c) => (
+            <PaneRow
+              key={c.id}
+              selected={c.thread_id === threadId}
+              icon={<CommentIcon />}
+              eyebrow={<>
+                <span className="truncate text-xs font-semibold tracking-wide text-secondary uppercase">
+                  {t(c.is_owner ? "agentWork.nativeOwner" : "agentWork.customer")}
+                </span>
+                {c.provider_timestamp ? <ListTime value={c.provider_timestamp} timeZone={workspace.timezone} /> : null}
+              </>}
               to={`/w/${workspace.id}/more/agent/comments/${c.thread_id}?${new URLSearchParams({ ...Object.fromEntries(params), account, section: "comments" })}`}
-            >
-              {c.text ?? t("agentWork.removed")}
-            </Link>
-          </li>
-        ))}
-      </ul>
+              text={c.text ?? t("agentWork.removed")}
+              meta={<>
+                <WorkState state={c.state} />
+                {c.is_simulated ? <SimulatedBadge compact className="ml-auto" /> : null}
+              </>}
+            />
+          ))}
+        </ul>
+      ) : null}
       {comments.data?.items.length === 0 ? (
-        <p className="text-sm text-secondary">{t("agentWork.emptyComments")}</p>
+        <PaneEmpty icon={<CommentIcon />} title={t("agentWork.emptyComments")} hint={t("convo.commentsEmptyHint")} />
       ) : null}
       {comments.data?.next_cursor ? (
-        <div>
-          <Button variant="secondary" onClick={() => setCursor(comments.data!.next_cursor!)}>
+        <div className="px-1.5 pt-2 pb-1.5">
+          <Button variant="secondary" block onClick={() => setCursor(comments.data!.next_cursor!)}>
             {t("agentWork.next")}
           </Button>
         </div>
@@ -678,23 +736,13 @@ function CommentThread({ account }: { account: string }) {
   const { workspace } = useCurrentWorkspace();
   const { t } = useTranslation();
   const { threadId = "" } = useParams();
-  const [params] = useSearchParams();
   const [cursor, setCursor] = useState<string>();
   const comments = useComments(workspace.id, account, cursor, threadId);
   const threads = useWorkThreads(workspace.id, account, threadId);
   const media = useCommentMedia(workspace.id, account, comments.data?.items[0]?.media_id ?? "");
   return (
     <div className="flex flex-col gap-5">
-      <Link className={LINK} to={`/w/${workspace.id}/inbox?${new URLSearchParams({ ...Object.fromEntries(params), account, section: "comments" })}`}>{t("core.backList")}</Link>
-      <div
-        role="note"
-        className="rounded-panel border border-border bg-surface p-4 text-sm text-secondary flex items-start gap-3 shadow-xs"
-      >
-        <span className="text-base select-none" aria-hidden="true">
-          ℹ️
-        </span>
-        <p className="leading-relaxed">{t("agentWork.publicNotice")}</p>
-      </div>
+      <PaneNote>{t("agentWork.publicNotice")}</PaneNote>
       {media.data ? (
         <section
           aria-labelledby="comment-post-context-heading"

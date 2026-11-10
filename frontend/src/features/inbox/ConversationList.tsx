@@ -1,29 +1,103 @@
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Card } from "@/components/Card";
-import { EmptyState } from "@/components/EmptyState";
+import type { Conversation } from "@/api/types";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { ChevronRightIcon } from "@/components/icons";
+import { ChatIcon, HandIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
+import { SkeletonRows } from "@/features/home/DashboardPanel";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { WindowTimer } from "./DraftParts";
 import { useConversations, useSocialAccounts, type AttentionFilter } from "./hooks";
+import { AccountSelect, AttentionChip, CustomerAvatar, FOCUS, ListTime, PaneEmpty, QuietPill } from "./InboxParts";
 import { customerLabel } from "./labels";
 
 const FILTERS: AttentionFilter[] = ["any", "needs_approval", "needs_human", "failed"];
 
-function getInitials(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return "?";
-  if (trimmed.startsWith("Müşteri #") || trimmed.startsWith("Customer #")) {
-    const num = trimmed.replace(/[^0-9]/g, "");
-    return num ? `#${num.slice(-2)}` : "#";
-  }
-  const parts = trimmed.split(/\s+/);
-  if (parts.length >= 2) {
-    return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
-  }
-  return trimmed.slice(0, 2).toUpperCase();
+/** The filter pills of the conversation list; they wrap rather than hide a filter off the edge. */
+function FilterPills({ value, onChange }: { value: AttentionFilter; onChange: (next: AttentionFilter) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="group"
+      aria-label={t("convo.filters.label")}
+      className="flex flex-wrap gap-1.5"
+    >
+      {FILTERS.map((name) => {
+        const selected = value === name;
+        return (
+          <button
+            key={name}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onChange(name)}
+            className={`inline-flex min-h-9 shrink-0 items-center rounded-full px-3 text-metadata font-semibold whitespace-nowrap transition-colors pointer-coarse:min-h-11 ${FOCUS} ${
+              selected
+                ? "bg-action text-on-action"
+                : "border border-border bg-surface text-secondary hover:border-control/40 hover:bg-surface-subtle hover:text-primary"
+            }`}
+          >
+            {t(`convo.filters.${name}`)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * One conversation: who, when, the last message and why it waits. The whole row is the link;
+ * its accessible name starts with the customer.
+ */
+function ConversationRow({ conversation, selected, to }: { conversation: Conversation; selected: boolean; to: string }) {
+  const { t } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
+  const label = customerLabel(conversation, t);
+  const human = conversation.handling_mode === "human";
+  return (
+    <li>
+      <Link
+        to={to}
+        data-conversation-id={conversation.id}
+        aria-current={selected ? "true" : undefined}
+        className={`group/row relative flex min-w-0 items-start gap-3 rounded-xl px-3 py-3 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
+          selected ? "bg-assistant" : "hover:bg-surface-subtle"
+        }`}
+      >
+        {selected ? <span aria-hidden="true" className="absolute top-3 bottom-3 left-0 w-[3px] rounded-full bg-action" /> : null}
+        <CustomerAvatar label={label} selected={selected} />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="flex min-w-0 items-center justify-between gap-2">
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span title={label} className="min-w-0 truncate text-body leading-5 font-semibold text-primary">
+                {label}
+              </span>
+              {conversation.is_simulated ? <SimulatedBadge compact /> : null}
+            </span>
+            <ListTime value={conversation.last_message_at} timeZone={workspace.timezone} />
+          </span>
+          <span
+            className={`truncate text-body leading-5 ${
+              conversation.last_message_preview ? "text-secondary" : "text-secondary italic"
+            }`}
+          >
+            {conversation.last_message_preview ?? t("convo.noPreview")}
+          </span>
+          {conversation.attention !== "none" || human || conversation.window_ends_at ? (
+            <span className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <AttentionChip attention={conversation.attention} />
+              {human ? (
+                <QuietPill>
+                  <HandIcon aria-hidden="true" className="text-[0.8125rem]" />
+                  {t("convo.handledByYou")}
+                </QuietPill>
+              ) : null}
+              <WindowTimer endsAt={conversation.window_ends_at} compact />
+            </span>
+          ) : null}
+        </span>
+      </Link>
+    </li>
+  );
 }
 
 interface ConversationListProps {
@@ -31,10 +105,12 @@ interface ConversationListProps {
   className?: string;
 }
 
+/** The Messages tab of the inbox: account and attention filters above the recent conversations. */
 export function ConversationList({ activeId, className = "" }: ConversationListProps) {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const rawFilter = searchParams.get("attention");
   const filter: AttentionFilter =
@@ -42,119 +118,84 @@ export function ConversationList({ activeId, className = "" }: ConversationListP
 
   const setFilter = (next: AttentionFilter) => {
     const nextParams = new URLSearchParams(searchParams);
-    if (next === "any") {
-      nextParams.delete("attention");
-    } else {
-      nextParams.set("attention", next);
-    }
+    if (next === "any") nextParams.delete("attention");
+    else nextParams.set("attention", next);
     setSearchParams(nextParams);
   };
 
   const conversations = useConversations(workspace.id, filter);
   const accounts = useSocialAccounts(workspace.id);
-  const navigate = useNavigate();
   const account = searchParams.get("account");
-  const shown = conversations.data?.filter(c => !account || c.social_account_id === account);
+  const shown = conversations.data?.filter((c) => !account || c.social_account_id === account);
+  const query = searchParams.toString();
 
   return (
-    <div className={`flex flex-col gap-4 ${className}`}>
-      <h2 className="type-section">{t("core.messages")}</h2>
-      {accounts.data && accounts.data.length > 1 ? <label className="flex flex-col gap-2 font-medium"><span>{t("agent.account")}</span><select value={account ?? ""} className="min-h-11 w-full rounded-control border border-control bg-surface p-2" onChange={e => { const next = new URLSearchParams(searchParams); if (e.target.value) next.set("account", e.target.value); else next.delete("account"); navigate(`/w/${workspace.id}/inbox?${next}`); }}><option value="">{t("core.allAccounts")}</option>{accounts.data.map(a => <option key={a.id} value={a.id}>@{a.username ?? t("agent.account")}</option>)}</select></label> : null}
-      <p className="text-metadata text-secondary">{t("core.previewOnly")}</p>
-
-      <div role="group" aria-label={t("convo.filters.label")} className="flex flex-wrap gap-1 border-b border-border">
-        {FILTERS.map((name) => {
-          const isSelected = filter === name;
-          return (
-            <button
-              key={name}
-              type="button"
-              aria-pressed={isSelected}
-              onClick={() => setFilter(name)}
-              className={`min-h-11 border-b-2 px-3 py-2 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                isSelected
-                  ? "border-action text-action"
-                  : "border-transparent text-secondary hover:text-primary hover:bg-surface-subtle"
-              }`}
-            >
-              {t(`convo.filters.${name}`)}
-            </button>
-          );
-        })}
+    <div className={`flex min-w-0 flex-col ${className}`}>
+      <h2 className="sr-only">{t("core.messages")}</h2>
+      <div className="flex flex-col gap-2.5 border-b border-border px-3 pt-3 pb-3">
+        {accounts.data && accounts.data.length > 1 ? (
+          <AccountSelect
+            accounts={accounts.data}
+            value={account ?? ""}
+            allLabel={t("core.allAccounts")}
+            onChange={(value) => {
+              const next = new URLSearchParams(searchParams);
+              if (value) next.set("account", value);
+              else next.delete("account");
+              navigate(`/w/${workspace.id}/inbox?${next}`);
+            }}
+          />
+        ) : null}
+        <FilterPills value={filter} onChange={setFilter} />
       </div>
 
-      {conversations.isError ? <ErrorMessage error={conversations.error} /> : null}
-      {conversations.isPending ? <p className="text-body text-secondary">{t("common.loading")}</p> : null}
-      {shown && shown.length === 0 ? (
-        <EmptyState title={t("convo.empty")} description={t("convo.emptyHint")} />
-      ) : null}
-      {shown && shown.length > 0 ? (
-        <Card className="overflow-hidden p-0">
-          <ul className="flex flex-col divide-y divide-border" aria-label={t("convo.title")}>
-            {shown.map((conversation) => {
-              const label = customerLabel(conversation, t);
-              const initials = getInitials(label);
-              const isSelected = activeId === conversation.id;
-
-              return (
-                <li key={conversation.id}>
-                  <Link
-                    to={`/w/${workspace.id}/inbox/${conversation.id}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
-                    data-conversation-id={conversation.id}
-                    aria-current={isSelected ? "true" : undefined}
-                    className={`flex min-h-16 items-center justify-between gap-3.5 p-4 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
-                      isSelected
-                        ? "bg-assistant border-l-4 border-l-action"
-                        : "bg-surface hover:bg-surface-subtle"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3.5 min-w-0">
-                      <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold tracking-tight transition-colors shadow-2xs ${
-                          isSelected
-                            ? "bg-action text-on-action"
-                            : "bg-surface-subtle text-primary border border-border"
-                        }`}
-                        aria-hidden="true"
-                      >
-                        {initials}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="block font-bold text-primary truncate text-sm">{label}</span>
-                        </div>
-                        <span className="block truncate text-body text-secondary mt-0.5">
-                          {conversation.last_message_preview ?? t("convo.noPreview")}
-                        </span>
-                        <span className="mt-2 flex flex-wrap items-center gap-1.5 text-metadata">
-                          {conversation.attention !== "none" ? (
-                            <span
-                              data-testid="attention-chip"
-                              className="inline-flex items-center rounded-control bg-attention-subtle px-2 py-0.5 text-xs font-medium text-attention"
-                            >
-                              {t(`convo.attention.${conversation.attention}`)}
-                            </span>
-                          ) : null}
-                          {conversation.handling_mode === "human" ? (
-                            <span className="inline-flex items-center rounded-full bg-surface-subtle px-2 py-0.5 text-xs font-semibold text-secondary border border-border">
-                              {t("convo.handledByYou")}
-                            </span>
-                          ) : null}
-                          <WindowTimer endsAt={conversation.window_ends_at} />
-                          {conversation.is_simulated ? <SimulatedBadge /> : null}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRightIcon
-                      className={`shrink-0 text-xl transition-transform ${isSelected ? "text-action translate-x-0.5" : "text-secondary/40"}`}
-                    />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-      ) : null}
+      <div className="flex min-w-0 flex-col p-1.5">
+        {conversations.isError ? (
+          <div className="p-1.5">
+            <ErrorMessage error={conversations.error} />
+          </div>
+        ) : null}
+        {conversations.isPending ? (
+          <div className="px-3 py-2">
+            <SkeletonRows label={t("common.loading")} rows={4} />
+          </div>
+        ) : null}
+        {shown && shown.length === 0 ? (
+          filter === "any" ? (
+            <PaneEmpty icon={<ChatIcon />} title={t("convo.empty")} hint={t("convo.emptyHint")} />
+          ) : (
+            <PaneEmpty
+              icon={<ChatIcon />}
+              title={t("convo.emptyFilter", { filter: t(`convo.filters.${filter}`) })}
+              hint={t("convo.emptyFilterHint")}
+              action={
+                <button
+                  type="button"
+                  onClick={() => setFilter("any")}
+                  className={`inline-flex min-h-11 items-center rounded-control px-3 text-metadata font-semibold text-action underline-offset-4 hover:underline ${FOCUS}`}
+                >
+                  {t("convo.showAll")}
+                </button>
+              }
+            />
+          )
+        ) : null}
+        {shown && shown.length > 0 ? (
+          <>
+            <ul className="flex flex-col gap-0.5" aria-label={t("convo.title")}>
+              {shown.map((conversation) => (
+                <ConversationRow
+                  key={conversation.id}
+                  conversation={conversation}
+                  selected={activeId === conversation.id}
+                  to={`/w/${workspace.id}/inbox/${conversation.id}${query ? `?${query}` : ""}`}
+                />
+              ))}
+            </ul>
+            <p className="px-3 pt-2 pb-1.5 text-center text-xs text-secondary">{t("convo.recentOnly")}</p>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

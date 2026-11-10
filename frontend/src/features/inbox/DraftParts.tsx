@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReplyDraft } from "@/api/types";
+import { ClockIcon } from "@/components/icons";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { useWindowMinutes } from "./hooks";
 
 /** What a chip needs: the text, and where it comes from. A value found by matching (not rendered) has no version. */
 export interface ChipFact {
@@ -67,11 +69,11 @@ export function ReasonChips({ reasons }: { reasons: string[] }) {
   const { t, i18n } = useTranslation();
   if (reasons.length === 0) return null;
   return (
-    <ul className="flex flex-wrap gap-2" aria-label={t("convo.draft.reasons")}>
+    <ul className="flex flex-wrap gap-1.5" aria-label={t("convo.draft.reasons")}>
       {reasons.map((code) => (
         <li
           key={code}
-          className="inline-flex items-center rounded-full bg-surface-subtle px-2.5 py-1 text-metadata font-medium text-secondary border border-border shadow-2xs"
+          className="inline-flex items-center rounded-full border border-action/10 bg-surface/80 px-2.5 py-0.5 text-xs leading-5 font-medium text-secondary"
         >
           {i18n.exists(`convo.reason.${code}`) ? t(`convo.reason.${code}`) : code}
         </li>
@@ -80,27 +82,43 @@ export function ReasonChips({ reasons }: { reasons: string[] }) {
   );
 }
 
-/** Time left to answer (Instagram allows 24 hours after the customer's last message). */
-export function WindowTimer({ endsAt }: { endsAt: string | null }) {
+/**
+ * Time left to answer (Instagram allows 24 hours after the customer's last message).
+ * `compact` suits list rows: a short visible label with the full sentence for screen readers.
+ */
+export function WindowTimer({ endsAt, compact = false }: { endsAt: string | null; compact?: boolean }) {
   const { t } = useTranslation();
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
-  if (!endsAt) return null;
-  const minutes = Math.floor((new Date(endsAt).getTime() - now) / 60_000);
-  if (minutes <= 0) return <span className="text-metadata font-medium text-danger">{t("convo.window.closed")}</span>;
-  const label =
-    minutes >= 60
+  const minutes = useWindowMinutes(endsAt);
+  if (minutes === null) return null;
+  const closed = minutes <= 0;
+  const full = closed
+    ? t("convo.window.closed")
+    : minutes >= 60
       ? t("convo.window.hours", { count: Math.floor(minutes / 60) })
       : t("convo.window.minutes", { count: minutes });
+  const tone = closed ? "text-danger" : minutes < 120 ? "text-attention" : "text-secondary";
+  if (!compact) {
+    return (
+      <span className={`inline-flex items-center gap-1.5 text-metadata font-medium ${tone}`} data-testid={closed ? undefined : "window-timer"}>
+        <ClockIcon aria-hidden="true" className="shrink-0 text-sm" />
+        {full}
+      </span>
+    );
+  }
+  const short = closed
+    ? t("convo.window.closedShort")
+    : minutes >= 60
+      ? t("convo.window.hoursShort", { count: Math.floor(minutes / 60) })
+      : t("convo.window.minutesShort", { count: minutes });
   return (
     <span
-      className={`text-metadata font-medium ${minutes < 120 ? "text-attention" : "text-secondary"}`}
-      data-testid="window-timer"
+      className={`inline-flex items-center gap-1 text-xs leading-4 font-medium whitespace-nowrap ${tone}`}
+      data-testid={closed ? undefined : "window-timer"}
+      title={full}
     >
-      {label}
+      <ClockIcon aria-hidden="true" className="shrink-0 text-[0.8125rem]" />
+      <span aria-hidden="true">{short}</span>
+      <span className="sr-only">{full}</span>
     </span>
   );
 }
@@ -131,7 +149,7 @@ export function ApprovalStateNote({ state, showPending }: { state: ApprovalState
   if (line === null) return null;
   return (
     <div
-      className="rounded-control bg-surface-subtle border border-border p-3 text-body text-secondary"
+      className="rounded-xl bg-surface/70 px-3.5 py-2.5 text-body text-secondary"
       data-testid="approval-state"
       data-approval-status={state.status}
     >

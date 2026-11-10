@@ -29,6 +29,12 @@ export const SettingsIcon = (p: IconProps) => <Svg {...p}><path d="M4 7h2m6 0h8M
 export const SparkIcon = (p: IconProps) => <Svg {...p}><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z" /></Svg>;
 export const UsersIcon = (p: IconProps) => <Svg {...p}><circle cx="9" cy="8" r="3" /><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M21 21v-3a6 6 0 0 0-4-5" /></Svg>;
 export const LinkIcon = (p: IconProps) => <Svg {...p}><path d="m10 13 4-4M8 16l-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M14 8l2-2a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" /></Svg>;
+/** A private conversation (direct messages). */
+export const ChatIcon = (p: IconProps) => <Svg {...p}><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12Z" /></Svg>;
+/** A public comment under a post. */
+export const CommentIcon = (p: IconProps) => <Svg {...p}><path d="M4 5h16v11H9l-5 4Z" /><path d="M8 9h8M8 12h5" /></Svg>;
+export const MoreIcon = (p: IconProps) => <Svg {...p}><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></Svg>;
+export const ChevronDownIcon = (p: IconProps) => <Svg {...p}><path d="m6 9 6 6 6-6" /></Svg>;
 
 export const PencilIcon = (p: IconProps) => (
   <Svg {...p}>

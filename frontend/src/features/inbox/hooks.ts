@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
 import type {
@@ -20,6 +21,16 @@ export const conversationsKey = (ws: string, attention: AttentionFilter) =>
   ["conversations", ws, attention] as const;
 export const conversationKey = (ws: string, id: string) => ["conversation", ws, id] as const;
 const POLL_MS = 4000;
+
+/** Minutes left in the reply window, re-evaluated every 30 seconds; null when unknown. */
+export function useWindowMinutes(endsAt: string | null): number | null {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return endsAt ? Math.floor((new Date(endsAt).getTime() - now) / 60_000) : null;
+}
 
 export function useConversations(ws: string, attention: AttentionFilter) {
   return useQuery<Conversation[], AppError>({

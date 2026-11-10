@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { ValidationIssue } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { AlertIcon, SendIcon } from "@/components/icons";
 import { useSubmitReply } from "./hooks";
 
 const MAX_REPLY_CHARS = 1000;
@@ -49,47 +50,57 @@ export function ReplyComposer({
     }
   };
 
+  const hasText = text.trim().length > 0;
   return (
     <form
-      className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-4 md:p-5 shadow-xs"
+      className="flex flex-col gap-2.5"
       onSubmit={(event) => {
         event.preventDefault();
-        if (text.trim()) send();
+        if (hasText) send();
       }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <label htmlFor="reply-text" className="text-form font-semibold text-primary">
-          {t("convo.composer.label")}
-        </label>
-        <span
-          className={`text-metadata tabular-nums font-mono ${
-            text.length >= MAX_REPLY_CHARS
-              ? "text-danger font-semibold"
-              : text.length > MAX_REPLY_CHARS * 0.9
-                ? "text-attention font-medium"
-                : "text-secondary"
-          }`}
-        >
-          {text.length} / {MAX_REPLY_CHARS}
-        </span>
+      <label htmlFor="reply-text" className="text-body font-semibold text-primary">
+        {t("convo.composer.label")}
+      </label>
+      {/* One framed field: the text, then its limit and the send action on the same surface. */}
+      <div className="flex flex-col rounded-xl border border-control/50 bg-surface transition-colors focus-within:border-action focus-within:ring-2 focus-within:ring-action/15 has-[textarea:disabled]:opacity-60">
+        <textarea
+          id="reply-text"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={3}
+          maxLength={MAX_REPLY_CHARS}
+          disabled={disabled}
+          aria-describedby="reply-limit"
+          className="min-h-24 w-full resize-y rounded-t-xl border-0 bg-transparent px-3.5 pt-3 pb-1 text-form text-primary placeholder:text-secondary/60 focus:outline-none disabled:cursor-not-allowed"
+        />
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-2 pt-1 pb-2 pl-3.5">
+          <span id="reply-limit" className="flex items-center gap-3 text-xs text-secondary">
+            <span
+              className={`tabular-nums ${
+                text.length >= MAX_REPLY_CHARS
+                  ? "font-semibold text-danger"
+                  : text.length > MAX_REPLY_CHARS * 0.9
+                    ? "font-medium text-attention"
+                    : ""
+              }`}
+            >
+              {text.length} / {MAX_REPLY_CHARS}
+            </span>
+            {hasText ? <span className="hidden sm:inline">{t("convo.composer.shortcut")}</span> : null}
+          </span>
+          <Button type="submit" variant={hasText ? "primary" : "secondary"} disabled={disabled || submit.isPending || !hasText} className="min-h-10">
+            <SendIcon aria-hidden="true" className="text-base" />
+            {submit.isPending ? t("convo.composer.sending") : t("convo.composer.send")}
+          </Button>
+        </div>
       </div>
-      <textarea
-        id="reply-text"
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        onKeyDown={handleKeyDown}
-        rows={3}
-        maxLength={MAX_REPLY_CHARS}
-        disabled={disabled}
-        className="min-h-28 w-full rounded-control border border-control bg-surface p-3 text-form text-primary placeholder:text-secondary/60 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-60"
-      />
       {warnings.length > 0 ? (
-        <ul
-          className="rounded-control bg-attention-subtle p-3 text-body text-attention border border-attention/30"
-          data-testid="reply-warnings"
-        >
+        <ul className="flex flex-col gap-1 rounded-xl bg-attention-subtle px-3.5 py-2.5 text-body text-attention" data-testid="reply-warnings">
           {warnings.map((issue, index) => (
-            <li key={`${issue.code}-${index}`}>
+            <li key={`${issue.code}-${index}`} className="flex items-start gap-2">
+              <AlertIcon aria-hidden="true" className="mt-1 shrink-0 text-sm" />
               {issue.matches_verified
                 ? t("convo.composer.warningVerified", { text: issue.text })
                 : t("convo.composer.warning", { text: issue.text })}
@@ -98,11 +109,6 @@ export function ReplyComposer({
         </ul>
       ) : null}
       {submit.error ? <ErrorMessage error={submit.error} /> : null}
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
-        <Button type="submit" disabled={disabled || submit.isPending || !text.trim()}>
-          {submit.isPending ? t("convo.composer.sending") : t("convo.composer.send")}
-        </Button>
-      </div>
     </form>
   );
 }

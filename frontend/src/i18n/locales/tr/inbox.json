@@ -8,7 +8,7 @@
     "emptyHint": "Bir müşteri Instagram hesabınıza yazdığında konuşma burada görünür.",
     "selectConversation": "Bir konuşma seçin",
     "selectHint": "Detayları, mesajları ve yanıt taslaklarını görüntülemek için bir konuşma seçin.",
-    "back": "← Gelen kutusu",
+    "back": "Tüm konuşmalar",
     "handledByYou": "Size devredildi",
     "humanMode": "Bu konuşmayı siz yürütüyorsunuz. Siz geri devretmedikçe asistan yanıt taslağı hazırlamaz.",
     "takeover": "Devral",
@@ -20,7 +20,7 @@
     "eraseTooltip": "Müşteri konuşma kayıtlarını kalıcı olarak sil (Yalnızca sahip)",
     "eraseConfirm": "Bu konuşmaya ait tüm mesajları ve müşteri hafızasını kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
     "messages": "Mesajlar",
-    "attachment": "[ek]",
+    "attachment": "Fotoğraf veya dosya",
     "sentInApp": "Instagram uygulamasından gönderildi",
     "saveAsAnswer": "Onaylı yanıt olarak kaydet",
     "savedAsAnswer": "Onaylı yanıt olarak kaydedildi",
@@ -42,7 +42,13 @@
       "hours_one": "Yanıt için {{count}} saat kaldı",
       "hours_other": "Yanıt için {{count}} saat kaldı",
       "minutes_one": "Yanıt için {{count}} dakika kaldı",
-      "minutes_other": "Yanıt için {{count}} dakika kaldı"
+      "minutes_other": "Yanıt için {{count}} dakika kaldı",
+      "closedShort": "Süre doldu",
+      "hoursShort_one": "{{count}} sa kaldı",
+      "hoursShort_other": "{{count}} sa kaldı",
+      "minutesShort_one": "{{count}} dk kaldı",
+      "minutesShort_other": "{{count}} dk kaldı",
+      "closedHint": "Instagram, müşterinin son mesajından sonraki 24 saat içinde yanıt verilmesine izin verir. Müşteri yeniden yazdığında tekrar yanıt verebilirsiniz."
     },
     "status": {
       "pending_approval": "Onay bekliyor",
@@ -84,6 +90,11 @@
         "rejected": "{{name}} reddetti ({{time}})",
         "expired": "Onay süresi doldu ({{time}})",
         "note": "Not: {{note}}"
+      },
+      "origin": {
+        "ai": "Asistanın taslağı",
+        "approved_answer": "Onaylı yanıttan",
+        "owner": "Sizin yanıtınız"
       }
     },
     "composer": {
@@ -91,7 +102,8 @@
       "send": "Yanıtı gönder",
       "sending": "Gönderiliyor…",
       "warning": "“{{text}}” işletme bilgilerinizdeki doğrulanmış bir değer değil.",
-      "warningVerified": "“{{text}}” doğrulanmış bilginizle eşleşiyor, ama elle yazılmış."
+      "warningVerified": "“{{text}}” doğrulanmış bilginizle eşleşiyor, ama elle yazılmış.",
+      "shortcut": "Göndermek için Ctrl + Enter"
     },
     "reason": {
       "POLICY_REQUIRES_APPROVAL": "Otomatik gönderim kapalı",
@@ -136,6 +148,39 @@
       "CAPABILITY_MISSING": "Mesaj izni eksik",
       "OWNER_REPLY": "Siz yazdınız",
       "OWNER_EDIT": "Siz düzenlediniz"
+    },
+    "removed": "Bu mesaj kaldırıldı.",
+    "assistantHandles": "Asistan yürütüyor",
+    "recentOnly": "En son konuşmalarınız gösteriliyor.",
+    "emptyFilter": "“{{filter}}” altında konuşma yok",
+    "emptyFilterHint": "Şu anda bu filtreye uyan bir konuşma yok.",
+    "showAll": "Tüm konuşmaları göster",
+    "tabWaiting_one": "{{count}} bekleyen",
+    "tabWaiting_other": "{{count}} bekleyen",
+    "commentsEmptyHint": "Gönderilerinize gelen herkese açık yorumlar burada görünür.",
+    "sectionIntro": {
+      "messages": "Müşteri mesajları ve sizi bekleyen yanıtlar.",
+      "comments": "Gönderilerinize gelen herkese açık yorumlar ve asistanın bunlarla ilgili yaptıkları.",
+      "questions": "Asistanın müşterilere yanıt verebilmek için sizden istediği bilgiler."
+    },
+    "select": {
+      "messages": {
+        "title": "Bir konuşma seçin",
+        "hint": "Mesajları okumak, asistanın taslağını incelemek ve yanıtlamak için bir konuşma açın."
+      },
+      "comments": {
+        "title": "Bir yorum seçin",
+        "hint": "Gönderiyi, yorum dizisini ve asistanın yaptıklarını görmek için bir yorum açın."
+      },
+      "questions": {
+        "title": "Bir soru seçin",
+        "hint": "Yanıtlamak için bir soru açın. Yanıtınız asistanın müşterilere cevap vermesine yardımcı olur."
+      }
+    },
+    "legend": {
+      "needs_approval": "Asistan bir yanıt hazırladı. İnceleyin; onaylayın, düzenleyin ya da reddedin.",
+      "needs_human": "Asistan bunu size bıraktı, örneğin bir şikayet. Kendi yanıtınızı yazın.",
+      "failed": "Bir yanıt gönderilemedi. Ne olduğunu görmek için konuşmayı açın."
     }
   },
   "automation": {

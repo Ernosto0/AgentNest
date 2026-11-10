@@ -8,7 +8,7 @@
     "emptyHint": "When a customer writes to your Instagram account, the conversation appears here.",
     "selectConversation": "Select a conversation",
     "selectHint": "Select a conversation to view details, messages, and reply drafts.",
-    "back": "← Inbox",
+    "back": "All conversations",
     "handledByYou": "Handled by you",
     "humanMode": "You are handling this conversation. The assistant does not draft replies until you hand it back.",
     "takeover": "Take over",
@@ -20,7 +20,7 @@
     "eraseTooltip": "Permanently erase customer conversation records (Owner only)",
     "eraseConfirm": "Are you sure you want to permanently erase all messages and customer memory for this conversation? This cannot be undone.",
     "messages": "Messages",
-    "attachment": "[attachment]",
+    "attachment": "Photo or file",
     "sentInApp": "Sent in the Instagram app",
     "saveAsAnswer": "Save as approved answer",
     "savedAsAnswer": "Saved as approved answer",
@@ -42,7 +42,13 @@
       "hours_one": "{{count}} hour left to reply",
       "hours_other": "{{count}} hours left to reply",
       "minutes_one": "{{count}} minute left to reply",
-      "minutes_other": "{{count}} minutes left to reply"
+      "minutes_other": "{{count}} minutes left to reply",
+      "closedShort": "Closed",
+      "hoursShort_one": "{{count}}h left",
+      "hoursShort_other": "{{count}}h left",
+      "minutesShort_one": "{{count}}m left",
+      "minutesShort_other": "{{count}}m left",
+      "closedHint": "Instagram allows replies only within 24 hours of the customer’s last message. You can reply again once they write."
     },
     "status": {
       "pending_approval": "Waiting for approval",
@@ -84,6 +90,11 @@
         "rejected": "{{name}} rejected this ({{time}})",
         "expired": "Approval expired ({{time}})",
         "note": "Note: {{note}}"
+      },
+      "origin": {
+        "ai": "Assistant’s draft",
+        "approved_answer": "From an approved answer",
+        "owner": "Your reply"
       }
     },
     "composer": {
@@ -91,7 +102,8 @@
       "send": "Send reply",
       "sending": "Sending…",
       "warning": "“{{text}}” is not a verified value from your business information.",
-      "warningVerified": "“{{text}}” matches your verified information, but is typed by hand."
+      "warningVerified": "“{{text}}” matches your verified information, but is typed by hand.",
+      "shortcut": "Ctrl + Enter to send"
     },
     "reason": {
       "POLICY_REQUIRES_APPROVAL": "Automatic replies are off",
@@ -136,6 +148,39 @@
       "CAPABILITY_MISSING": "Messaging permission missing",
       "OWNER_REPLY": "Written by you",
       "OWNER_EDIT": "Edited by you"
+    },
+    "removed": "This message was removed.",
+    "assistantHandles": "Assistant is handling",
+    "recentOnly": "Showing your most recent conversations.",
+    "emptyFilter": "Nothing under “{{filter}}”",
+    "emptyFilterHint": "No conversation matches this filter right now.",
+    "showAll": "Show all conversations",
+    "tabWaiting_one": "{{count}} waiting",
+    "tabWaiting_other": "{{count}} waiting",
+    "commentsEmptyHint": "Public comments on your posts appear here.",
+    "sectionIntro": {
+      "messages": "Customer messages and the replies waiting for you.",
+      "comments": "Public comments on your posts and how the assistant handles them.",
+      "questions": "Information the assistant needs from you to answer customers."
+    },
+    "select": {
+      "messages": {
+        "title": "Select a conversation",
+        "hint": "Open a conversation to read the messages, review the assistant’s draft and reply."
+      },
+      "comments": {
+        "title": "Select a comment",
+        "hint": "Open a comment to see the post, the thread and what the assistant did."
+      },
+      "questions": {
+        "title": "Select a question",
+        "hint": "Open a question to answer it. Your answer helps the assistant reply to customers."
+      }
+    },
+    "legend": {
+      "needs_approval": "The assistant prepared a reply. Review it, then approve, edit or reject.",
+      "needs_human": "The assistant left this to you, for example a complaint. Write your own reply.",
+      "failed": "A reply could not be sent. Open the conversation to see what happened."
     }
   },
   "automation": {

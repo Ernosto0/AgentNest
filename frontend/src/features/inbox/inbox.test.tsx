@@ -475,8 +475,48 @@ describe("inbox", () => {
     await userEvent.click(await screen.findByRole("link", { name: /Ayşe/ }));
     expect(screen.getByTestId("inbox-list")).toBe(list);
     expect(router.state.location.search).toBe("?attention=needs_approval");
-    await userEvent.click(screen.getByRole("link", { name: "← Gelen kutusu" }));
+    await userEvent.click(screen.getByRole("link", { name: "Tüm konuşmalar" }));
     expect(router.state.location.search).toBe("?attention=needs_approval");
+  });
+
+  it("explains an empty filter and offers to show every conversation", async () => {
+    mockApi(routes({ [`GET ${BASE}/conversations`]: () => json({ items: [], next_cursor: null }) }));
+    const { router } = renderApp(`/w/${WS_GOLKENT}/inbox?attention=failed`);
+    expect(await screen.findByText("“Sorunlar” altında konuşma yok")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Tüm konuşmaları göster" }));
+    expect(router.state.location.search).toBe("");
+    expect(screen.getByRole("button", { name: "Tümü" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("explains a closed reply window next to your reply", async () => {
+    const closed = detail(null);
+    closed.conversation = conversation({ window_ends_at: new Date(Date.now() - 3_600_000).toISOString() });
+    mockApi(routes({ [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(closed) }));
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    expect(await screen.findByText(/24 saat içinde yanıt verilmesine izin verir/)).toBeInTheDocument();
+    expect(screen.queryByTestId("window-timer")).not.toBeInTheDocument();
+  });
+
+  it("counts unanswered comments on the Comments tab without renaming it", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations`]: () => json({ items: [], next_cursor: null }),
+        [`GET ${BASE}/home/attention`]: () => json({ drafts: 0, unanswered_comments: 3 }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox`);
+    const tab = await screen.findByRole("link", { name: "Yorumlar" });
+    await waitFor(() => expect(tab).toHaveAccessibleDescription("3 bekleyen"));
+    expect(screen.getByRole("link", { name: "Mesajlar" })).not.toHaveAccessibleDescription();
+  });
+
+  it("teaches what each attention reason means while nothing is selected", async () => {
+    mockApi(routes({ [`GET ${BASE}/conversations`]: () => json({ items: [conversation()], next_cursor: null }) }));
+    renderApp(`/w/${WS_GOLKENT}/inbox`);
+    expect(await screen.findByRole("heading", { name: "Bir konuşma seçin" })).toBeInTheDocument();
+    expect(screen.getByText(/Asistan bir yanıt hazırladı/)).toBeInTheDocument();
+    // The legend's example chips are not conversation state.
+    expect(await screen.findAllByTestId("attention-chip")).toHaveLength(1);
   });
 
   it("warns before tab navigation discards a manual reply and preserves cancelled navigation", async () => {
