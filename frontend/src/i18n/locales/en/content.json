@@ -1,12 +1,12 @@
 {
   "content": {
     "title": "Content",
-    "intro": "Your Instagram posts and stories: drafts, scheduled and published.",
+    "intro": "Plan, prepare and follow your Instagram posts and stories.",
     "tabsLabel": "Content list",
     "viewsLabel": "View",
     "viewLibrary": "Library",
     "viewAgenda": "Agenda",
-    "agendaEmpty": "No posts scheduled in the near future.",
+    "agendaEmpty": "Nothing is scheduled yet.",
     "agendaNotice": "Only scheduled posts are listed.",
     "tabs": {
       "drafts": "Drafts",
@@ -18,8 +18,7 @@
       "drafts": "No drafts",
       "scheduled": "Nothing scheduled",
       "published": "Nothing published yet",
-      "problems": "No problems",
-      "hint": "The posts and stories you prepare are listed here by their status."
+      "problems": "No problems"
     },
     "type": {
       "feed_image": "Post",
@@ -34,7 +33,14 @@
       "publishedAt": "Published: {{time}}",
       "updatedAt": "Updated: {{time}}",
       "generating": "Preparing…",
-      "untitled": "Untitled"
+      "untitled": "Untitled",
+      "aiDraft": "AI",
+      "aiDraftHint": "Prepared by the assistant",
+      "noText": "No text yet",
+      "noImage": "No image yet",
+      "imageDeleted": "Image deleted",
+      "imageFailed": "Image unavailable",
+      "rejectedNote": "Note: {{note}}"
     },
     "back": "← Content",
     "notFound": "This content could not be found.",
@@ -264,6 +270,97 @@
       "messaging": "Messaging",
       "publish_feed_image": "Publishing feed posts",
       "publish_story_image": "Publishing stories"
+    },
+    "when": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "yesterday": "Yesterday"
+    },
+    "composer": {
+      "title": "Start new content",
+      "inputLabel": "What should the assistant prepare?",
+      "placeholder": "E.g. a story for Saturday's trial class",
+      "typeLabel": "Format",
+      "hint": "Prices, hours and similar details come only from your verified information.",
+      "account": "Publishing account: {{account}}",
+      "noAccount": "No Instagram account is connected yet; you can still prepare drafts."
+    },
+    "tiles": {
+      "draftsPending": "Awaiting approval: {{count}}",
+      "draftsActive": "Ready to work on",
+      "draftsNone": "Nothing in progress",
+      "scheduledNext": "Next: {{when}}",
+      "scheduledNone": "Nothing planned",
+      "publishedLast": "Latest: {{when}}",
+      "publishedNone": "Nothing yet",
+      "problemsSome": "Needs your attention",
+      "problemsNone": "All clear",
+      "countUnknown": "Could not load"
+    },
+    "tabHelp": {
+      "drafts": "Drafts and posts waiting for approval, most recently edited first.",
+      "scheduled": "Approved and waiting for their time, earliest first.",
+      "published": "Confirmed on Instagram, newest first.",
+      "problems": "On hold, failed or rejected. Open one to see what to do next."
+    },
+    "filters": {
+      "label": "Filter content",
+      "searchLabel": "Search content",
+      "search": "Search titles and text",
+      "format": "Format",
+      "all": "All",
+      "posts": "Posts",
+      "stories": "Stories",
+      "clear": "Clear filters",
+      "noMatch": "Nothing matches these filters",
+      "noMatchHint": "Try another word or show all formats.",
+      "showing": "Showing {{shown}} of {{total}}"
+    },
+    "capped": {
+      "recent": "Showing the {{count}} most recent. Older items are not listed here.",
+      "earliest": "Showing the first {{count}} scheduled items. Later ones are not listed here."
+    },
+    "emptyHint": {
+      "drafts": "Describe a post or story above and the assistant prepares a draft, or start a blank one and write it yourself.",
+      "scheduled": "Open a draft, add an image and choose a time. Approved posts wait here until they go out.",
+      "published": "Posts and stories appear here once Instagram confirms they are live.",
+      "problems": "Nothing is on hold, failed or rejected."
+    },
+    "emptyAction": {
+      "write": "Start with the assistant",
+      "drafts": "Review drafts",
+      "agenda": "See the agenda"
+    },
+    "onboarding": {
+      "title": "Your content library is empty",
+      "intro": "This is how a post goes from an idea to Instagram.",
+      "step1Title": "Describe it",
+      "step1": "The assistant drafts the text from your verified business information. You can also write it yourself.",
+      "step2Title": "Review and schedule",
+      "step2": "Add an image, check the preview and choose a time. Nothing goes out without approval.",
+      "step3Title": "Follow it",
+      "step3": "Published posts, and anything that needs attention, show up here."
+    },
+    "agenda": {
+      "week": "Week",
+      "list": "List",
+      "layoutLabel": "Agenda layout",
+      "weekNav": "Choose a week",
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "thisWeek": "This week",
+      "upcoming": "Everything scheduled",
+      "weekSummary": "Posts: {{posts}} · Stories: {{stories}}",
+      "free": "Free",
+      "past": "—",
+      "notLoaded": "Not loaded",
+      "noTime": "No time set",
+      "earlier": "Earlier, still in progress",
+      "weekEmpty": "Nothing is scheduled this week.",
+      "jumpTo": "Go to {{when}}",
+      "emptyHint": "When you schedule a draft, it appears here on its day.",
+      "reviewDrafts": "Review drafts ({{count}})",
+      "capped": "Only the first {{count}} scheduled items are loaded. Days after {{day}} may hold more."
     }
   }
 }

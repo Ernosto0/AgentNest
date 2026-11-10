@@ -84,7 +84,7 @@ describe("content list", () => {
     );
     renderApp(`/w/${WS_GOLKENT}/content`);
     const user = userEvent.setup();
-    const titles = () => screen.queryAllByTestId("content-card").map((card) => card.querySelector("span.truncate")?.textContent);
+    const titles = () => screen.queryAllByTestId("content-card").map((card) => within(card).getByTestId("content-card-title").textContent);
 
     expect(await screen.findByText("Taslak A")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Taslaklar" })).toHaveAttribute("aria-selected", "true");

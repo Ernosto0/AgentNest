@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
 import type {
@@ -33,18 +33,43 @@ export function isGenerating(item: Pick<ContentItem, "generation">): boolean {
   return status === "queued" || status === "running";
 }
 
+/**
+ * How many items one tab list asks for (the API's default page). The API has no cursor yet, so a
+ * full page means the tab may hold more: callers show "50+" and say the list is cut, never a total.
+ */
+export const LIST_LIMIT = 50;
+/** Tabs that are not on screen refresh slowly: they only feed the counts on the status tiles. */
+const COUNT_POLL_MS = 30_000;
+
+async function fetchContentList(ws: string, tab: ContentTab): Promise<ContentItem[]> {
+  return (
+    await unwrap(
+      api.GET("/api/v1/workspaces/{workspace_id}/content-items", {
+        params: { path: { workspace_id: ws }, query: { tab, limit: LIST_LIMIT } },
+      }),
+    )
+  ).items;
+}
+
 export function useContentItems(ws: string, tab: ContentTab) {
   return useQuery<ContentItem[], AppError>({
     queryKey: contentListKey(ws, tab),
-    queryFn: async () =>
-      (
-        await unwrap(
-          api.GET("/api/v1/workspaces/{workspace_id}/content-items", {
-            params: { path: { workspace_id: ws }, query: { tab } },
-          }),
-        )
-      ).items,
+    queryFn: () => fetchContentList(ws, tab),
     refetchInterval: LIST_POLL_MS,
+  });
+}
+
+/**
+ * Every tab's list, for the status tiles. The queries share their keys with `useContentItems`, so
+ * the open tab is not fetched twice and switching tabs shows a list that is already there.
+ */
+export function useAllContentTabs(ws: string, tabs: readonly ContentTab[]) {
+  return useQueries({
+    queries: tabs.map((tab) => ({
+      queryKey: contentListKey(ws, tab),
+      queryFn: () => fetchContentList(ws, tab),
+      refetchInterval: COUNT_POLL_MS,
+    })),
   });
 }
 

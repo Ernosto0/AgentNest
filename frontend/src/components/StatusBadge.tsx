@@ -56,21 +56,25 @@ interface StatusBadgeProps {
   /** Values for labels that carry one (`retry_scheduled` shows `{{time}}`). */
   params?: Record<string, string | number>;
   className?: string;
+  /** Smaller pill for dense surfaces (content cards, agenda); the words stay the same. */
+  compact?: boolean;
 }
 
-export function StatusBadge({ status, simulated = false, params, className = "" }: StatusBadgeProps) {
+export function StatusBadge({ status, simulated = false, params, className = "", compact = false }: StatusBadgeProps) {
   const { t } = useTranslation();
   const { tone, icon: Icon, spins } = PRESENTATION[status];
   return (
     <span className={`inline-flex flex-wrap items-center gap-1.5 ${className}`}>
       <span
         data-status={status}
-        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium ring-1 ring-inset ${TONES[tone]}`}
+        className={`inline-flex items-center rounded-full font-medium ring-1 ring-inset ${
+          compact ? "gap-1 px-2 py-px text-xs leading-5" : "gap-1.5 px-2.5 py-1 text-sm"
+        } ${TONES[tone]}`}
       >
-        <Icon className={spins ? "motion-safe:animate-spin" : undefined} />
+        <Icon className={`shrink-0 ${spins ? "motion-safe:animate-spin" : ""}`} />
         <span>{t(`status.${status}`, params)}</span>
       </span>
-      {simulated ? <SimulatedBadge /> : null}
+      {simulated ? <SimulatedBadge compact={compact} /> : null}
     </span>
   );
 }

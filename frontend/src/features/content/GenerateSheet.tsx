@@ -65,10 +65,13 @@ function GenerationProgress({ contentId, onOpen }: { contentId: string; onOpen: 
 export function GenerateSheet({
   initialMode,
   initialType,
+  initialObjective = "",
   onClose,
 }: {
   initialMode: NewContentMode;
   initialType?: ContentType;
+  /** A brief typed elsewhere (the content composer): the sheet opens with it, to review and send. */
+  initialObjective?: string;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -83,7 +86,7 @@ export function GenerateSheet({
 
   const [mode, setMode] = useState<NewContentMode>(initialMode);
   const [type, setType] = useState<ContentType>(initialType ?? "feed_image");
-  const [objective, setObjective] = useState("");
+  const [objective, setObjective] = useState(initialObjective.slice(0, OBJECTIVE_MAX));
   const [notes, setNotes] = useState("");
   const [title, setTitle] = useState("");
   const [createdId, setCreatedId] = useState<string | null>(null);

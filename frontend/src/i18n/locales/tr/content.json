@@ -1,12 +1,12 @@
 {
   "content": {
     "title": "İçerik",
-    "intro": "Instagram gönderileriniz ve story'leriniz: taslaklar, zamanlananlar ve yayınlananlar.",
+    "intro": "Instagram gönderi ve story'lerinizi planlayın, hazırlayın ve takip edin.",
     "tabsLabel": "İçerik listesi",
     "viewsLabel": "Görünüm",
     "viewLibrary": "Kütüphane",
     "viewAgenda": "Ajanda",
-    "agendaEmpty": "Yakın zamanda planlanmış gönderi yok.",
+    "agendaEmpty": "Henüz zamanlanmış içerik yok.",
     "agendaNotice": "Yalnızca zamanlanmış gönderiler listelenir.",
     "tabs": {
       "drafts": "Taslaklar",
@@ -18,8 +18,7 @@
       "drafts": "Taslak yok",
       "scheduled": "Zamanlanmış içerik yok",
       "published": "Henüz yayınlanan içerik yok",
-      "problems": "Sorun yok",
-      "hint": "Hazırladığınız gönderi ve story'ler durumuna göre burada listelenir."
+      "problems": "Sorun yok"
     },
     "type": {
       "feed_image": "Gönderi",
@@ -34,7 +33,14 @@
       "publishedAt": "Yayın: {{time}}",
       "updatedAt": "Güncellendi: {{time}}",
       "generating": "Hazırlanıyor…",
-      "untitled": "Başlıksız"
+      "untitled": "Başlıksız",
+      "aiDraft": "YZ",
+      "aiDraftHint": "Asistan hazırladı",
+      "noText": "Henüz metin yok",
+      "noImage": "Henüz görsel yok",
+      "imageDeleted": "Görsel silindi",
+      "imageFailed": "Görsel gösterilemedi",
+      "rejectedNote": "Not: {{note}}"
     },
     "back": "← İçerik",
     "notFound": "Bu içerik bulunamadı.",
@@ -264,6 +270,97 @@
       "messaging": "Mesajlaşma",
       "publish_feed_image": "Gönderi yayınlama",
       "publish_story_image": "Story yayınlama"
+    },
+    "when": {
+      "today": "Bugün",
+      "tomorrow": "Yarın",
+      "yesterday": "Dün"
+    },
+    "composer": {
+      "title": "Yeni içerik başlat",
+      "inputLabel": "Asistan ne hazırlasın?",
+      "placeholder": "Örn. cumartesi deneme dersi için bir story",
+      "typeLabel": "Biçim",
+      "hint": "Fiyat ve saat gibi bilgiler yalnızca doğrulanmış bilgilerinizden alınır.",
+      "account": "Yayın hesabı: {{account}}",
+      "noAccount": "Henüz bağlı Instagram hesabı yok; yine de taslak hazırlayabilirsiniz."
+    },
+    "tiles": {
+      "draftsPending": "Onay bekleyen: {{count}}",
+      "draftsActive": "Üzerinde çalışılabilir",
+      "draftsNone": "Devam eden yok",
+      "scheduledNext": "Sıradaki: {{when}}",
+      "scheduledNone": "Plan yok",
+      "publishedLast": "Son: {{when}}",
+      "publishedNone": "Henüz yok",
+      "problemsSome": "İlgilenmeniz gerekiyor",
+      "problemsNone": "Her şey yolunda",
+      "countUnknown": "Yüklenemedi"
+    },
+    "tabHelp": {
+      "drafts": "Taslaklar ve onay bekleyenler; en son düzenlenen önce.",
+      "scheduled": "Onaylanmış, zamanını bekleyenler; en yakın önce.",
+      "published": "Instagram'da yayında olduğu doğrulananlar; en yeni önce.",
+      "problems": "Beklemede, başarısız ya da reddedilmiş olanlar. Ne yapılacağını görmek için birini açın."
+    },
+    "filters": {
+      "label": "İçeriği filtrele",
+      "searchLabel": "İçerikte ara",
+      "search": "Başlık ve metinde ara",
+      "format": "Biçim",
+      "all": "Tümü",
+      "posts": "Gönderiler",
+      "stories": "Story'ler",
+      "clear": "Filtreleri temizle",
+      "noMatch": "Bu filtrelere uyan içerik yok",
+      "noMatchHint": "Başka bir kelime deneyin ya da tüm biçimleri gösterin.",
+      "showing": "{{total}} içerikten {{shown}} tanesi gösteriliyor"
+    },
+    "capped": {
+      "recent": "En son {{count}} içerik gösteriliyor. Daha eskiler burada listelenmez.",
+      "earliest": "İlk {{count}} zamanlanmış içerik gösteriliyor. Daha sonrakiler burada listelenmez."
+    },
+    "emptyHint": {
+      "drafts": "Yukarıda bir gönderi ya da story'yi anlatın, asistan taslağını hazırlasın; ya da boş bir taslakla başlayıp kendiniz yazın.",
+      "scheduled": "Bir taslağı açın, görsel ekleyin ve saat seçin. Onaylanan gönderiler yayın zamanına kadar burada bekler.",
+      "published": "Instagram yayında olduklarını doğruladığında gönderi ve story'ler burada görünür.",
+      "problems": "Beklemede, başarısız ya da reddedilmiş içerik yok."
+    },
+    "emptyAction": {
+      "write": "Asistanla başlayın",
+      "drafts": "Taslaklara bakın",
+      "agenda": "Ajandaya bakın"
+    },
+    "onboarding": {
+      "title": "İçerik kütüphaneniz henüz boş",
+      "intro": "Bir gönderi fikirden Instagram'a şöyle ilerler.",
+      "step1Title": "Anlatın",
+      "step1": "Asistan metni doğrulanmış işletme bilgilerinizden hazırlar. İsterseniz kendiniz de yazabilirsiniz.",
+      "step2Title": "Gözden geçirin ve zamanlayın",
+      "step2": "Görsel ekleyin, önizlemeye bakın ve saat seçin. Onay olmadan hiçbir şey yayınlanmaz.",
+      "step3Title": "Takip edin",
+      "step3": "Yayınlanan gönderiler ve ilgilenmeniz gerekenler burada görünür."
+    },
+    "agenda": {
+      "week": "Hafta",
+      "list": "Liste",
+      "layoutLabel": "Ajanda görünümü",
+      "weekNav": "Hafta seçin",
+      "prevWeek": "Önceki hafta",
+      "nextWeek": "Sonraki hafta",
+      "thisWeek": "Bu hafta",
+      "upcoming": "Zamanlanan her şey",
+      "weekSummary": "{{posts}} gönderi · {{stories}} story",
+      "free": "Boş",
+      "past": "—",
+      "notLoaded": "Yüklenmedi",
+      "noTime": "Saat yok",
+      "earlier": "Daha önce, hâlâ sürüyor",
+      "weekEmpty": "Bu hafta zamanlanmış içerik yok.",
+      "jumpTo": "{{when}} haftasına git",
+      "emptyHint": "Bir taslağı zamanladığınızda burada kendi gününde görünür.",
+      "reviewDrafts": "Taslaklara bakın ({{count}})",
+      "capped": "Yalnızca ilk {{count}} zamanlanmış içerik yüklendi. {{day}} sonrasındaki günlerde başkaları da olabilir."
     }
   }
 }

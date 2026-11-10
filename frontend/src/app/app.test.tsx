@@ -116,7 +116,8 @@ describe("workspace shell", () => {
     });
     renderApp(`/w/${WS_GOLKENT}/content`);
     expect(await screen.findByRole("heading", { name: "İçerik" })).toBeInTheDocument();
-    expect(await screen.findByText("Taslak yok")).toBeInTheDocument();
+    // A library with nothing in any tab explains how content gets here.
+    expect(await screen.findByText("İçerik kütüphaneniz henüz boş")).toBeInTheDocument();
   });
 
   it("the inbox tab is a real screen with its own empty state (Phase 4)", async () => {
