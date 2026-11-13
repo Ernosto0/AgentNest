@@ -389,8 +389,9 @@ def test_an_operator_alert_names_its_condition_and_hides_operator_text(env: Env)
     latest = next(e for e in stuck if e["occurred_at"].startswith("2026-03-10T11"))
     condition = "asistan oturumu 30 dakikadan uzun süredir ilerlemiyor"
     assert first["text"] == f"Operatör uyarısı: {condition}"
+    assert first["level"] == "warning" and first["routine"] is False
     assert latest["text"] == f"Operatör uyarısı sürüyor: {condition}"
-    assert latest["level"] == "warning" and latest["routine"] is False
+    assert latest["level"] == "info" and latest["routine"] is True
     assert latest["resource"]["label"] == condition
     assert latest["resource"]["link"] == f"/w/{env.workspace.id}/more/settings/system-health"
     count = {"key": "notification_count", "label": "Bildirim sırası", "value": "3"}

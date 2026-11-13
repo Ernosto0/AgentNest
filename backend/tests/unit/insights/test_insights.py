@@ -214,3 +214,29 @@ def test_get_summary_with_records_computes_aggregates_and_deltas() -> None:
     assert summary.follower_count == 1200
     assert summary.follower_delta is None  # follower history is not complete
     assert len(summary.sparkline) == 7
+
+
+def test_eligible_requires_enabled_provider(monkeypatch: object) -> None:
+    from unittest.mock import patch
+
+    from app.core.config import Settings
+    from app.insights.jobs import _eligible
+
+    mock_account = SocialAccount(
+        id=uuid.uuid4(),
+        workspace_id=uuid.uuid4(),
+        provider_kind="mock",
+        external_account_id="mock_1",
+        username="demo",
+        status="connected",
+        granted_scopes=[],
+    )
+    meta_only = Settings(_env_file=None).model_copy(update={"instagram_enabled_providers": "meta"})
+    with patch("app.insights.jobs.get_settings", return_value=meta_only):
+        assert _eligible(mock_account) is False
+
+    mock_enabled = Settings(_env_file=None).model_copy(
+        update={"instagram_enabled_providers": "mock"}
+    )
+    with patch("app.insights.jobs.get_settings", return_value=mock_enabled):
+        assert _eligible(mock_account) is True

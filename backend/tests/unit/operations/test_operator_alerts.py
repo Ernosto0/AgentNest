@@ -802,3 +802,17 @@ def test_an_aggregated_dead_job_alert_belongs_to_a_workspace_only_when_all_its_j
     assert by_key["dead_job:send_reply"].workspace_id is None  # two tenants: system-level
     assert by_key["dead_job:publish_content"].workspace_id == ws_a  # one tenant: theirs
     assert by_key["dead_job:retention_cleanup"].workspace_id is None
+
+
+def test_dead_jobs_older_than_24h_do_not_keep_alert_firing() -> None:
+    from app.operations.operator_alerts import _collect_dead_jobs
+
+    now = datetime(2026, 11, 3, 12, 0, tzinfo=UTC)
+    ws_a = uuid.uuid4()
+    stale = _dead("generate_daily_report", ws_a, now - timedelta(days=5))
+    recent = _dead("send_reply", ws_a, now - timedelta(hours=2))
+    session = MagicMock()
+    session.scalars.return_value.all.return_value = [stale, recent]
+    by_key = {c.alert_key: c for c in _collect_dead_jobs(session, now)}
+    assert "dead_job:generate_daily_report" not in by_key
+    assert "dead_job:send_reply" in by_key

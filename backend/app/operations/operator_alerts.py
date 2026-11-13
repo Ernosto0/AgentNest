@@ -57,6 +57,7 @@ COOLDOWN_CAPABILITY_LOSS = timedelta(hours=6)
 COOLDOWN_AI_BUDGET = timedelta(hours=6)
 
 # Thresholds
+DEAD_JOB_WINDOW = timedelta(hours=24)
 SIGNATURE_BURST_THRESHOLD = 10
 SIGNATURE_BURST_WINDOW = timedelta(hours=1)
 STUCK_REAUTH_THRESHOLD = timedelta(hours=24)
@@ -106,11 +107,29 @@ def _sole_workspace(jobs: list[Job]) -> uuid.UUID | None:
     return None
 
 
-def _collect_dead_jobs(session: Session) -> list[AlertCandidate]:
+def _recent_dead_jobs(jobs: list[Job], now: datetime | None) -> list[Job]:
+    if now is None:
+        return list(jobs)
+    cutoff = now - DEAD_JOB_WINDOW
+    out: list[Job] = []
+    for j in jobs:
+        stamp = j.finished_at or j.updated_at or j.run_at
+        if stamp is None or stamp >= cutoff:
+            out.append(j)
+    return out
+
+
+def _collect_dead_jobs(session: Session, now: datetime | None = None) -> list[AlertCandidate]:
     """1. Dead background jobs (immediate per-job-type key, 1h cooldown, CRITICAL)."""
-    dead_jobs = session.scalars(
-        select(Job).where(Job.status == "dead").order_by(Job.job_type, Job.run_at.desc())
-    ).all()
+    stmt = select(Job).where(Job.status == "dead")
+    if now is not None:
+        stmt = stmt.where(
+            func.coalesce(Job.finished_at, Job.updated_at, Job.run_at) >= now - DEAD_JOB_WINDOW
+        )
+    dead_jobs = _recent_dead_jobs(
+        list(session.scalars(stmt.order_by(Job.job_type, Job.run_at.desc())).all()),
+        now,
+    )
 
     if not dead_jobs:
         return []
@@ -419,14 +438,24 @@ def collect_active_alert_candidates(
 
     # 1. System-wide collectors (Category B tables)
     clear_tenant_context(session)
-    candidates.extend(_collect_dead_jobs(session))
+    candidates.extend(_collect_dead_jobs(session, now))
     candidates.extend(_collect_backup_failure(session, clock, settings))
     candidates.extend(_collect_signature_failure_bursts(session, now))
 
     # Agent dead jobs (system-wide Job table)
-    dead_agent_jobs = session.scalars(
-        select(Job).where(Job.status == "dead", Job.job_type.in_(AGENT_CRITICAL_JOB_TYPES))
-    ).all()
+    dead_agent_jobs = _recent_dead_jobs(
+        list(
+            session.scalars(
+                select(Job).where(
+                    Job.status == "dead",
+                    Job.job_type.in_(AGENT_CRITICAL_JOB_TYPES),
+                    func.coalesce(Job.finished_at, Job.updated_at, Job.run_at)
+                    >= now - DEAD_JOB_WINDOW,
+                )
+            ).all()
+        ),
+        now,
+    )
     by_agent_type: dict[str, list[Job]] = {}
     for j in dead_agent_jobs:
         by_agent_type.setdefault(j.job_type, []).append(j)

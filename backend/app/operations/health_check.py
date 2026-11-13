@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.clock import Clock
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.core.context import WorkspaceContext
 from app.inbox.system import system_context
 from app.integrations.instagram import queries
@@ -40,7 +40,11 @@ def run_health_check(
 ) -> Result:
     with session_factory() as session:
         account = queries.get_account_in_workspace(session, workspace_id, social_account_id)
-        if account is None or account.status != "degraded":
+        if (
+            account is None
+            or account.status != "degraded"
+            or (provider is None and account.provider_kind not in settings.instagram_providers)
+        ):
             return "skipped"
         ref = account_ref(account, settings)
         kind = account.provider_kind
@@ -86,7 +90,8 @@ def degraded_account_ids(session: Session) -> list[tuple[uuid.UUID, uuid.UUID]]:
     """``(workspace_id, account_id)`` of every degraded account (the scheduler's view)."""
     rows = session.execute(
         select(SocialAccount.workspace_id, SocialAccount.id).where(
-            SocialAccount.status == "degraded"
+            SocialAccount.status == "degraded",
+            SocialAccount.provider_kind.in_(get_settings().instagram_providers),
         )
     ).all()
     return [(w, a) for w, a in rows]

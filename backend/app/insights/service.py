@@ -48,7 +48,7 @@ def sync_account_daily(
     One-day requests also keep provider ``total_value`` responses from being stored
     as though an entire multi-day aggregate belonged to a single day.
     """
-    if not settings.insights_enabled:
+    if not settings.insights_enabled or account.provider_kind not in settings.instagram_providers:
         return
 
     # Check permission scope
@@ -123,7 +123,7 @@ def capture_media_snapshot(
     is_final: bool = False,
 ) -> None:
     """Snapshot media performance for a post or story."""
-    if not settings.insights_enabled:
+    if not settings.insights_enabled or account.provider_kind not in settings.instagram_providers:
         return
 
     provider = get_provider(
@@ -165,7 +165,7 @@ def sync_account_audience(
     account: SocialAccount,
 ) -> None:
     """Fetch audience demographics and active hours, saving weekly snapshots."""
-    if not settings.insights_enabled:
+    if not settings.insights_enabled or account.provider_kind not in settings.instagram_providers:
         return
 
     provider = get_provider(

@@ -30,6 +30,7 @@ def _eligible(account: SocialAccount | None) -> bool:
     return bool(
         account
         and account.status == "connected"
+        and account.provider_kind in get_settings().instagram_providers
         and (
             account.provider_kind == "mock"
             or "instagram_business_manage_insights" in (account.granted_scopes or [])

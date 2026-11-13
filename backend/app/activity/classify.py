@@ -20,7 +20,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal, get_args
 
-from sqlalchemy import ColumnElement, and_, false, func, not_, or_
+from sqlalchemy import ColumnElement, and_, case, false, func, not_, or_
 
 from app.audit.models import AuditLog
 
@@ -112,7 +112,10 @@ RULES: dict[str, Rule] = {
     "security.token_key_rotated": Rule("success"),
     "security.token_key_rotation_failed": Rule("failure"),
     "security.operator_alert_fired": Rule(
-        "warning", fields=("severity",), by_value={"critical": "failure"}
+        "warning",
+        routine=True,
+        fields=("is_refire", "severity"),
+        by_value={"true": "info", "critical": "failure"},
     ),
     "security.operator_alert_resolved": Rule("success"),
     "security.alert_delivery_failed": Rule("failure"),
@@ -132,12 +135,23 @@ class Classification:
     routine: bool
 
 
+def _norm(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
 def _field_value(rule: Rule, metadata: Mapping[str, Any]) -> str | None:
+    first: str | None = None
     for name in rule.fields:
         value = metadata.get(name)
         if value is not None:
-            return str(value)
-    return None
+            norm = _norm(value)
+            if norm in rule.by_value:
+                return norm
+            if first is None:
+                first = norm
+    return first
 
 
 def classify(action: str, actor_type: str, metadata: Mapping[str, Any] | None) -> Classification:
@@ -155,8 +169,14 @@ def classify(action: str, actor_type: str, metadata: Mapping[str, Any] | None) -
 
 
 def _field_expr(rule: Rule) -> ColumnElement[Any]:
-    columns = [AuditLog.metadata_[name].astext for name in rule.fields]
-    return columns[0] if len(columns) == 1 else func.coalesce(*columns)
+    columns: list[ColumnElement[str]] = [AuditLog.metadata_[name].astext for name in rule.fields]
+    if len(columns) == 1:
+        return columns[0]
+    known = list(rule.by_value)
+    return case(
+        *[(col.in_(known), col) for col in columns],
+        else_=func.coalesce(*columns),
+    )
 
 
 def _rule_has_level(action: str, rule: Rule, wanted: frozenset[str]) -> ColumnElement[bool]:
@@ -165,7 +185,7 @@ def _rule_has_level(action: str, rule: Rule, wanted: frozenset[str]) -> ColumnEl
     hits = [v for v, lvl in rule.by_value.items() if lvl in wanted]
     clauses: list[ColumnElement[bool]] = []
     if hits:
-        clauses.append(value.in_(hits))
+        clauses.append(and_(value.is_not(None), value.in_(hits)))
     if rule.level in wanted:
         clauses.append(or_(value.is_(None), value.not_in(list(rule.by_value))))
     if not clauses:
