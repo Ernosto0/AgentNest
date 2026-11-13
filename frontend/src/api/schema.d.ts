@@ -2724,6 +2724,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/activity/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Activity Summary */
+        get: operations["activity_summary_api_v1_workspaces__workspace_id__activity_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2818,6 +2835,19 @@ export interface components {
             resource: components["schemas"]["ActivityResourceOut"] | null;
             /** Is Simulated */
             is_simulated: boolean;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "failure" | "warning" | "success" | "info";
+            /** Routine */
+            routine: boolean;
+            /** Collapse Key */
+            collapse_key: string;
+            /** Correlation Id */
+            correlation_id: string | null;
+            /** Details */
+            details: components["schemas"]["ActivityDetailOut"][];
         };
         /** ActivityResourceOut */
         ActivityResourceOut: {
@@ -6121,6 +6151,40 @@ export interface components {
         InsightsContentListOut: {
             /** Items */
             items: components["schemas"]["InsightsContentItemOut"][];
+        };
+        /** ActivityDetailOut */
+        ActivityDetailOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
+        /** ActivitySummaryOut */
+        ActivitySummaryOut: {
+            /** Days */
+            days: number;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /** Total */
+            total: number;
+            /** Routine */
+            routine: number;
+            /** Failure */
+            failure: number;
+            /** Warning */
+            warning: number;
+            /** Success */
+            success: number;
         };
     };
     responses: never;
@@ -9945,6 +10009,9 @@ export interface operations {
             query?: {
                 type?: ("messages" | "replies" | "approvals" | "content" | "knowledge" | "commands" | "accounts" | "members" | "system") | null;
                 date?: string | null;
+                level?: ("failure" | "warning" | "success" | "info")[] | null;
+                include_routine?: boolean;
+                correlation?: string | null;
                 cursor?: string | null;
                 limit?: number;
             };
@@ -11617,6 +11684,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HomeAttentionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activity_summary_api_v1_workspaces__workspace_id__activity_summary_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySummaryOut"];
                 };
             };
             /** @description Validation Error */

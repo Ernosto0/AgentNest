@@ -103,6 +103,11 @@ export function entry(n: number, overrides: Partial<ActivityEntry> = {}): Activi
       link: `/w/${WS_GOLKENT}/inbox/c1000000-0000-4000-8000-000000000001`,
     },
     is_simulated: false,
+    level: "success",
+    routine: false,
+    collapse_key: `key-${n}`,
+    correlation_id: null,
+    details: [],
     ...overrides,
   };
 }

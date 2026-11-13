@@ -92,6 +92,20 @@ class OperatorAlertEvaluationReport(BaseModel):
     resolved_keys: list[str]
 
 
+def _sole_workspace(jobs: list[Job]) -> uuid.UUID | None:
+    """The workspace of an aggregated dead-job alert: only when every job belongs to it.
+
+    A per-job-type alert counts dead jobs across all workspaces. Attributing it to the
+    workspace of one sample job would put a platform-wide condition (and other tenants' counts)
+    into that tenant's Activity feed (INV-01), so a mixed or workspace-less set is system-level.
+    """
+    workspaces = {j.workspace_id for j in jobs}
+    if len(workspaces) == 1:
+        (only,) = workspaces
+        return only
+    return None
+
+
 def _collect_dead_jobs(session: Session) -> list[AlertCandidate]:
     """1. Dead background jobs (immediate per-job-type key, 1h cooldown, CRITICAL)."""
     dead_jobs = session.scalars(
@@ -129,7 +143,7 @@ def _collect_dead_jobs(session: Session) -> list[AlertCandidate]:
                     "last_error": sample.last_error_detail,
                 },
                 cooldown=COOLDOWN_DEAD_JOBS,
-                workspace_id=sample.workspace_id,
+                workspace_id=_sole_workspace(jobs),
             )
         )
     return candidates
@@ -432,7 +446,7 @@ def collect_active_alert_candidates(
                     "last_error": sample.last_error_detail,
                 },
                 cooldown=COOLDOWN_AGENT_HEALTH,
-                workspace_id=sample.workspace_id,
+                workspace_id=_sole_workspace(jobs),
             )
         )
 
@@ -520,12 +534,16 @@ def evaluate_operator_alerts(
             state.summary = cand.summary
             state.details = cand.details
             state.severity = cand.severity
+            state.workspace_id = cand.workspace_id
             should_send = True
             new_fired += 1
         else:
             # Case C: Currently firing
             state.summary = cand.summary
             state.details = cand.details
+            # An aggregate alert follows its condition (see _sole_workspace), so the recovery
+            # notice is attributed where the latest notification was.
+            state.workspace_id = cand.workspace_id
             if state.cooldown_until is None or now >= state.cooldown_until:
                 # Cooldown expired: re-notify operator
                 state.last_notified_at = now

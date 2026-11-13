@@ -1,14 +1,31 @@
 {
   "activity": {
     "title": "Activity",
-    "intro": "A record of everything important that happens in your workspace, newest first.",
+    "intro": "What happened in your workspace, day by day: messages and replies, approvals, posts, information changes and the assistant's work. Every entry stays in the record.",
     "filterLabel": "Activity type",
     "empty": "No activity yet",
     "emptyHint": "When something happens it shows up here.",
-    "loadMore": "Load more",
+    "emptyKeyHint": "Nothing important has happened yet. Technical entries are hidden.",
+    "showTechnical": "Show technical entries",
+    "filteredEmpty": "No entries match these filters",
+    "filteredEmptyHint": "Try another type, outcome or day.",
+    "filteredEmptyTechnical": "Try another type, outcome or day. Technical entries are hidden; you can turn them on above.",
+    "loadMore": "Load older activity",
+    "retry": "Try again",
+    "loaded_one": "{{count}} entry shown",
+    "loaded_other": "{{count}} entries shown",
+    "endOfHistory_one": "{{count}} entry shown · that is everything",
+    "endOfHistory_other": "{{count}} entries shown · that is everything",
     "byAt": "{{actor}} · {{time}}",
     "today": "Today",
     "yesterday": "Yesterday",
+    "dayCount_one": "{{count}} entry",
+    "dayCount_other": "{{count}} entries",
+    "dayCountMore_one": "{{count}}+ entry so far",
+    "dayCountMore_other": "{{count}}+ entries so far",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
+    "routineTag": "Technical",
     "groups": {
       "all": "All",
       "messages": "Messages",
@@ -20,6 +37,74 @@
       "accounts": "Accounts",
       "members": "Members",
       "system": "System"
+    },
+    "level": {
+      "failure": "Failed",
+      "warning": "Warning",
+      "success": "Completed",
+      "info": "Recorded"
+    },
+    "actorType": {
+      "user": "team member",
+      "system": "automatic",
+      "agent": "AI",
+      "provider": "Instagram"
+    },
+    "summary": {
+      "title_one": "Last {{count}} day",
+      "title_other": "Last {{count}} days",
+      "scope": "Key activity on the workspace clock",
+      "total": "Key events",
+      "success": "Completed",
+      "warning": "Warnings",
+      "failure": "Failed",
+      "routine_one": "+{{value}} technical entry",
+      "routine_other": "+{{value}} technical entries",
+      "unavailable": "The summary could not be loaded. The activity below is unaffected."
+    },
+    "filters": {
+      "outcome": "Outcome",
+      "outcomeAll": "All outcomes",
+      "outcomes": {
+        "problems": "Problems (failed or warning)",
+        "failure": "Failed",
+        "warning": "Warnings",
+        "success": "Completed"
+      },
+      "day": "Day",
+      "clearDay": "Clear the day",
+      "technical": "Technical entries",
+      "showing": "Showing: {{what}}",
+      "clear": "Clear filters"
+    },
+    "details": {
+      "when": "When",
+      "by": "By",
+      "category": "Type",
+      "outcome": "Outcome",
+      "record": "Related record",
+      "routine": "Technical entry",
+      "routineHint": "Internal bookkeeping that repeats or tracks the progress of another entry. It is kept for the record and never marks a problem.",
+      "simulated": "Simulation",
+      "simulatedHint": "This entry comes from the simulated provider, not from Instagram.",
+      "reference": "Reference",
+      "showFlow": "Show related activity"
+    },
+    "group": {
+      "count_one": "{{count}} entry",
+      "count_other": "{{count}} entries",
+      "countMore_one": "{{count}}+ entry",
+      "countMore_other": "{{count}}+ entries",
+      "grouped": "Similar entries grouped",
+      "show": "Show the grouped entries",
+      "hide": "Hide the grouped entries",
+      "problems_one": "{{count}} with a problem",
+      "problems_other": "{{count}} with a problem"
+    },
+    "flow": {
+      "title": "Related activity",
+      "hint": "Every entry recorded for the same flow, including technical ones.",
+      "back": "Back to all activity"
     },
     "owner_question": {
       "created": "Business information requested.",

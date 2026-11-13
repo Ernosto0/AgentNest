@@ -52,6 +52,8 @@ def entry(
     simulated: bool = False,
     workspace_id: uuid.UUID | None = None,
     row_id: uuid.UUID | None = None,
+    metadata: dict[str, Any] | None = None,
+    correlation_id: uuid.UUID | None = None,
 ) -> AuditLog:
     row = AuditLog(
         id=row_id or uuid.uuid4(),
@@ -63,6 +65,8 @@ def entry(
         resource_type=resource_type,
         resource_id=resource_id,
         is_simulated=simulated,
+        metadata_=metadata or {},
+        correlation_id=correlation_id,
     )
     env.session.add(row)
     env.session.flush()
@@ -299,3 +303,238 @@ def test_other_workspaces_and_system_rows_never_show(env: Env, db_session: Sessi
     db_session.add(row)
     db_session.commit()
     assert [e["action"] for e in feed(env).json()["items"]] == ["fact.updated"]
+
+
+# --- Classification, descriptions, grouping and summary (redesigned Activity) ---------------
+
+ALERT_META = {
+    "alert_key": "agent_health:stuck_session:5d0c",
+    "category": "agent",
+    "severity": "warning",
+    "summary": "Account agent session 5d0c stuck > 30 minutes in state running",
+    "is_refire": True,
+    "notification_count": 4,
+}
+
+
+def test_entries_carry_level_routine_details_and_a_collapse_key(env: Env) -> None:
+    entry(env, "reply.sent", T0)
+    entry(env, "content.failed", T0, metadata={"error_code": "PROVIDER_RATE_LIMITED"})
+    entry(env, "social_account.degraded", T0)
+    entry(env, "agent.step_transition", T0, metadata={"from": "model_pending", "to": "consumed"})
+    entry(env, "agent.step_transition", T0, metadata={"from": "claimed", "to": "failed"})
+    entry(env, "reply_draft.sent", T0, actor_type="system")
+    entry(env, "something.new_in_a_later_version", T0)
+    env.session.commit()
+
+    items = feed(env).json()["items"]
+    shape = sorted((e["action"], e["level"], e["routine"]) for e in items)
+    assert shape == sorted(
+        [
+            ("reply.sent", "success", False),
+            ("content.failed", "failure", False),
+            ("social_account.degraded", "warning", False),
+            ("agent.step_transition", "info", True),
+            # A failed step is a problem: never routine, and it says so.
+            ("agent.step_transition", "failure", False),
+            ("reply_draft.sent", "success", True),
+            ("something.new_in_a_later_version", "info", False),
+        ]
+    )
+    failed_step = next(
+        e for e in items if e["action"] == "agent.step_transition" and e["level"] == "failure"
+    )
+    assert failed_step["text"] == "Asistan adımı başarısız oldu"
+    failed = next(e for e in items if e["action"] == "content.failed")
+    detail = {"key": "error_code", "label": "Neden kodu", "value": "PROVIDER_RATE_LIMITED"}
+    assert detail in failed["details"]
+    assert all(isinstance(e["collapse_key"], str) and e["collapse_key"] for e in items)
+
+
+def test_an_operator_alert_names_its_condition_and_hides_operator_text(env: Env) -> None:
+    alert_id = uuid.uuid4()
+    for i in range(3):
+        entry(
+            env,
+            "security.operator_alert_fired",
+            datetime(2026, 3, 10, 9 + i, 0, tzinfo=UTC),
+            resource_type="operator_alert",
+            resource_id=alert_id,
+            metadata={**ALERT_META, "is_refire": i > 0, "notification_count": i + 1},
+        )
+    entry(
+        env,
+        "security.operator_alert_fired",
+        T0,
+        resource_type="operator_alert",
+        resource_id=uuid.uuid4(),
+        metadata={"alert_key": "dead_job:send_reply", "severity": "critical", "is_refire": False},
+    )
+    entry(
+        env,
+        "security.alert_delivery_failed",
+        T0,
+        resource_type="operator_alert",
+        resource_id=alert_id,
+        metadata={"alert_key": ALERT_META["alert_key"], "error": "SMTP auth failed for x@y.z"},
+    )
+    env.session.commit()
+
+    response = feed(env)
+    assert response.status_code == 200, response.text
+    items = response.json()["items"]
+    stuck = [e for e in items if "ilerlemiyor" in e["text"] and "fired" in e["action"]]
+    assert len(stuck) == 3
+    first = next(e for e in stuck if e["occurred_at"].startswith("2026-03-10T09"))
+    latest = next(e for e in stuck if e["occurred_at"].startswith("2026-03-10T11"))
+    condition = "asistan oturumu 30 dakikadan uzun süredir ilerlemiyor"
+    assert first["text"] == f"Operatör uyarısı: {condition}"
+    assert latest["text"] == f"Operatör uyarısı sürüyor: {condition}"
+    assert latest["level"] == "warning" and latest["routine"] is False
+    assert latest["resource"]["label"] == condition
+    assert latest["resource"]["link"] == f"/w/{env.workspace.id}/more/settings/system-health"
+    count = {"key": "notification_count", "label": "Bildirim sırası", "value": "3"}
+    assert count in latest["details"]
+    # Re-notifications of one condition group together; another condition does not join them.
+    assert len({e["collapse_key"] for e in stuck}) == 1
+    dead = next(e for e in items if "kalıcı" in e["text"])
+    assert dead["level"] == "failure" and dead["collapse_key"] != latest["collapse_key"]
+    undelivered = next(e for e in items if e["action"] == "security.alert_delivery_failed")
+    assert undelivered["level"] == "failure"
+    # Operator summaries and exception strings never reach the reader.
+    assert "stuck >" not in response.text and "SMTP" not in response.text
+
+
+def test_fact_values_and_unsafe_values_in_details(env: Env) -> None:
+    entry(
+        env,
+        "fact.updated",
+        T0,
+        actor_type="user",
+        actor_id=str(env.owner.user.id),
+        metadata={
+            "key": "pricing.membership_monthly",
+            "version": 3,
+            "old_display": "5.500 ₺ / ay",
+            "new_display": "6.000 ₺ / ay",
+            "reason": "not a code; free text here",
+            "original_filename": "secret-plan.png",
+        },
+    )
+    env.session.commit()
+    item = feed(env).json()["items"][0]
+    pairs = {d["key"]: d["value"] for d in item["details"]}
+    assert pairs["old_display"] == "5.500 ₺ / ay" and pairs["new_display"] == "6.000 ₺ / ay"
+    assert pairs["version"] == "3" and pairs["key"] == "pricing.membership_monthly"
+    assert "reason" not in pairs and "original_filename" not in pairs
+
+
+def test_level_routine_and_correlation_filters(env: Env) -> None:
+    flow = uuid.uuid4()
+    entry(env, "message.received", T0, correlation_id=flow)
+    entry(env, "reply.sent", T0, correlation_id=flow)
+    entry(env, "operation.succeeded", T0, correlation_id=flow)
+    entry(env, "reply.failed", T0)
+    entry(env, "reply.outcome_unknown", T0)
+    env.session.commit()
+
+    def actions(**params: Any) -> list[str]:
+        response = feed(env, **params)
+        assert response.status_code == 200, response.text
+        return sorted(e["action"] for e in response.json()["items"])
+
+    assert actions(level="failure") == ["reply.failed"]
+    assert actions(level=["failure", "warning"]) == ["reply.failed", "reply.outcome_unknown"]
+    assert actions(level="success") == ["operation.succeeded", "reply.sent"]
+    assert actions(level="success", include_routine="false") == ["reply.sent"]
+    assert "operation.succeeded" not in actions(include_routine="false")
+    flow_actions = ["message.received", "operation.succeeded", "reply.sent"]
+    assert actions(correlation=str(flow)) == flow_actions
+    assert feed(env, level="nonsense").status_code == 422
+    assert feed(env, correlation="nope").status_code == 422
+
+
+def _sample_rows() -> list[tuple[str, str, dict[str, Any]]]:
+    """Every rule, with each metadata value it knows, an unknown value and none, for a system
+    and a user actor."""
+    from app.activity.classify import RULES
+
+    rows: list[tuple[str, str, dict[str, Any]]] = []
+    for action, rule in RULES.items():
+        metas: list[dict[str, Any]] = [{}]
+        for name in rule.fields:
+            metas += [{name: value} for value in [*rule.by_value, "something_else"]]
+        for meta in metas:
+            for actor in ("system", "user"):
+                rows.append((action, actor, meta))
+    rows.append(("an.unknown_action", "system", {}))
+    return rows
+
+
+def test_the_sql_filters_agree_with_the_row_classification(env: Env) -> None:
+    from app.activity.classify import LEVELS, classify
+
+    expected: dict[str, tuple[str, bool]] = {}
+    for action, actor, meta in _sample_rows():
+        row = entry(env, action, T0, actor_type=actor, metadata=meta)
+        found = classify(action, actor, meta)
+        expected[str(row.id)] = (found.level, found.routine)
+    env.session.commit()
+
+    def ids(**params: Any) -> set[str]:
+        seen: set[str] = set()
+        cursor: str | None = None
+        while True:
+            page_params = {"limit": 100, **params, **({"cursor": cursor} if cursor else {})}
+            body = feed(env, **page_params).json()
+            seen.update(e["id"] for e in body["items"])
+            cursor = body["next_cursor"]
+            if cursor is None:
+                return seen
+
+    assert ids() == set(expected)
+    for level in LEVELS:
+        assert ids(level=level) == {k for k, v in expected.items() if v[0] == level}, level
+    assert ids(include_routine="false") == {k for k, v in expected.items() if not v[1]}
+    # A routine entry is never a problem.
+    problems = {k for k, v in expected.items() if v[0] in ("failure", "warning")}
+    assert problems <= ids(include_routine="false")
+
+
+def test_routine_is_never_a_problem_nor_a_persons_own_action() -> None:
+    from app.activity.classify import classify
+
+    for action, actor, meta in _sample_rows():
+        found = classify(action, actor, meta)
+        if found.routine:
+            assert found.level in ("info", "success"), (action, meta)
+            assert actor != "user", action
+
+
+def test_the_summary_counts_recent_local_days_like_the_filters(
+    env: Env, clock: FrozenClock
+) -> None:
+    now = clock.now()  # 2026-01-15 12:00Z = 15:00 in Istanbul
+    entry(env, "reply.sent", now)
+    entry(env, "reply.failed", now)
+    entry(env, "social_account.degraded", now)
+    entry(env, "operation.succeeded", now)  # routine
+    entry(env, "agent.step_transition", now, metadata={"to": "failed"})  # a failure
+    # 9 January 00:00 in Istanbul is 8 January 21:00Z: the first instant of the 7-day window.
+    entry(env, "message.received", datetime(2026, 1, 8, 21, 0, tzinfo=UTC))
+    entry(env, "message.received", datetime(2026, 1, 8, 20, 59, tzinfo=UTC))  # just before
+    entry(env, "reply.failed", now, workspace_id=uuid.uuid4())  # another workspace
+    env.session.commit()
+
+    response = env.call(env.owner, "GET", "/activity/summary")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["days"] == 7
+    assert body["period_start"].startswith("2026-01-08T21:00:00")
+    assert (body["total"], body["routine"]) == (5, 1)
+    assert (body["failure"], body["warning"], body["success"]) == (2, 1, 1)
+
+    one_day = env.call(env.owner, "GET", "/activity/summary", params={"days": 1}).json()
+    assert one_day["total"] == 4
+    assert env.call(env.owner, "GET", "/activity/summary", params={"days": 0}).status_code == 422
+    assert env.call(env.staff, "GET", "/activity/summary").status_code == 403

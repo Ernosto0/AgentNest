@@ -6682,6 +6682,58 @@
             }
           },
           {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "failure",
+                      "warning",
+                      "success",
+                      "info"
+                    ],
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
+            }
+          },
+          {
+            "name": "include_routine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Include Routine"
+            }
+          },
+          {
+            "name": "correlation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Correlation"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -9586,6 +9638,61 @@
           "reports"
         ]
       }
+    },
+    "/api/v1/workspaces/{workspace_id}/activity/summary": {
+      "get": {
+        "tags": [
+          "activity"
+        ],
+        "summary": "Activity Summary",
+        "operationId": "activity_summary_api_v1_workspaces__workspace_id__activity_summary_get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 7,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivitySummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -9846,6 +9953,43 @@
           "is_simulated": {
             "type": "boolean",
             "title": "Is Simulated"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "failure",
+              "warning",
+              "success",
+              "info"
+            ],
+            "title": "Level"
+          },
+          "routine": {
+            "type": "boolean",
+            "title": "Routine"
+          },
+          "collapse_key": {
+            "type": "string",
+            "title": "Collapse Key"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityDetailOut"
+            },
+            "type": "array",
+            "title": "Details"
           }
         },
         "type": "object",
@@ -9857,7 +10001,12 @@
           "actor",
           "text",
           "resource",
-          "is_simulated"
+          "is_simulated",
+          "level",
+          "routine",
+          "collapse_key",
+          "correlation_id",
+          "details"
         ],
         "title": "ActivityEntryOut"
       },
@@ -19494,6 +19643,79 @@
         ],
         "title": "InsightsContentListOut",
         "type": "object"
+      },
+      "ActivityDetailOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "value"
+        ],
+        "title": "ActivityDetailOut"
+      },
+      "ActivitySummaryOut": {
+        "properties": {
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period End"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "routine": {
+            "type": "integer",
+            "title": "Routine"
+          },
+          "failure": {
+            "type": "integer",
+            "title": "Failure"
+          },
+          "warning": {
+            "type": "integer",
+            "title": "Warning"
+          },
+          "success": {
+            "type": "integer",
+            "title": "Success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "days",
+          "period_start",
+          "period_end",
+          "total",
+          "routine",
+          "failure",
+          "warning",
+          "success"
+        ],
+        "title": "ActivitySummaryOut"
       }
     }
   }

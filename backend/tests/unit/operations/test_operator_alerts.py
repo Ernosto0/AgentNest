@@ -767,3 +767,38 @@ def test_evaluate_alerts_cli_main_clean(capsys: pytest.CaptureFixture[str]) -> N
     assert exit_code == 0
     captured = capsys.readouterr()
     assert '"active_candidates_count": 0' in captured.out
+
+
+def _dead(job_type: str, workspace_id: uuid.UUID | None, now: datetime) -> Job:
+    return Job(
+        id=uuid.uuid4(),
+        job_type=job_type,
+        status="dead",
+        payload={},
+        attempts=6,
+        max_attempts=6,
+        last_error_code="PROVIDER_UNAVAILABLE",
+        run_at=now,
+        workspace_id=workspace_id,
+    )
+
+
+def test_an_aggregated_dead_job_alert_belongs_to_a_workspace_only_when_all_its_jobs_do() -> None:
+    """A per-type alert counts dead jobs of every tenant; stamping it with one sample job's
+    workspace put a platform-wide condition into that tenant's Activity feed (INV-01)."""
+    from app.operations.operator_alerts import _collect_dead_jobs
+
+    now = datetime(2026, 11, 3, 12, 0, tzinfo=UTC)
+    ws_a, ws_b = uuid.uuid4(), uuid.uuid4()
+    session = MagicMock()
+    session.scalars.return_value.all.return_value = [
+        _dead("send_reply", ws_a, now),
+        _dead("send_reply", ws_b, now),
+        _dead("publish_content", ws_a, now),
+        _dead("publish_content", ws_a, now),
+        _dead("retention_cleanup", None, now),
+    ]
+    by_key = {c.alert_key: c for c in _collect_dead_jobs(session)}
+    assert by_key["dead_job:send_reply"].workspace_id is None  # two tenants: system-level
+    assert by_key["dead_job:publish_content"].workspace_id == ws_a  # one tenant: theirs
+    assert by_key["dead_job:retention_cleanup"].workspace_id is None

@@ -1,168 +1,165 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useSearchParams } from "react-router-dom";
-import type { ActivityEntry } from "@/api/types";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/Button";
-import { PageHeader } from "@/components/Layout";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { ClockIcon, SparkIcon, UsersIcon } from "@/components/icons";
-import { SimulatedBadge } from "@/components/SimulatedBadge";
-import { shiftDay, todayIn } from "@/features/reports/dates";
+import { ClockIcon, LayersIcon } from "@/components/icons";
+import { PageHeader } from "@/components/Layout";
+import { SkeletonRows } from "@/features/home/DashboardPanel";
+import { isLocalDay, todayIn } from "@/features/reports/dates";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
-import { ACTIVITY_GROUPS, isActivityGroup, useActivity, type ActivityGroup } from "./hooks";
+import { ActivityFilters } from "./ActivityFilters";
+import { ActivitySummaryStrip } from "./ActivitySummaryStrip";
+import { ActivityTimeline } from "./ActivityTimeline";
+import { isActivityGroup, isOutcome, useActivity, useActivitySummary, type ActivityFilters as Filters } from "./hooks";
+import { buildTimeline } from "./timeline";
 
-/** What happened in the workspace, newest first: the audit log in plain language (J5). */
-export function ActivityFeed() {
-  const { t, i18n } = useTranslation();
-  const { workspace } = useCurrentWorkspace();
-  const [params, setParams] = useSearchParams();
-  const requested = params.get("type");
-  const group: ActivityGroup | null = isActivityGroup(requested) ? requested : null;
-  const feed = useActivity(workspace.id, group);
-  const entries = useMemo(() => feed.data?.pages.flatMap((page) => page.items) ?? [], [feed.data]);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  const choose = (next: ActivityGroup | null) =>
-    setParams(next ? { type: next } : {}, { replace: true });
-
-  // Times are shown on the workspace clock, not the phone's (INV-19).
-  const when = (value: string) =>
-    new Date(value).toLocaleString(i18n.language, {
-      dateStyle: "short",
-      timeStyle: "short",
-      timeZone: workspace.timezone,
-    });
-
-  // Group entries by local date on the workspace clock
-  const grouped = useMemo(() => {
-    const groups: { dayKey: string; label: string; items: ActivityEntry[] }[] = [];
-    const map = new Map<string, ActivityEntry[]>();
-    for (const entry of entries) {
-      const dayKey = todayIn(workspace.timezone, new Date(entry.occurred_at));
-      let list = map.get(dayKey);
-      if (!list) {
-        list = [];
-        map.set(dayKey, list);
-        const today = todayIn(workspace.timezone);
-        const yesterday = shiftDay(today, -1);
-        let label: string;
-        if (dayKey === today) {
-          label = t("activity.today");
-        } else if (dayKey === yesterday) {
-          label = t("activity.yesterday");
-        } else {
-          label = new Date(`${dayKey}T12:00:00Z`).toLocaleDateString(i18n.language, {
-            dateStyle: "full",
-            timeZone: "UTC",
-          });
-        }
-        groups.push({ dayKey, label, items: list });
-      }
-      list.push(entry);
-    }
-    return groups;
-  }, [entries, workspace.timezone, i18n.language, t]);
-
-  return (
-    <div className="flex flex-col gap-6 w-full">
-      <PageHeader title={t("activity.title")} description={t("activity.intro")} />
-
-      <div role="group" aria-label={t("activity.filterLabel")} className="flex flex-wrap gap-1.5 p-1 bg-surface-subtle/80 rounded-xl border border-border/70 shadow-2xs w-fit">
-        {[null, ...ACTIVITY_GROUPS].map((name) => {
-          const active = group === name;
-          return (
-            <button
-              key={name ?? "all"}
-              type="button"
-              aria-pressed={active}
-              onClick={() => choose(name)}
-              className={`inline-flex min-h-11 items-center rounded-control px-3 py-2 text-body font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                active
-                  ? "bg-surface text-primary shadow-xs font-bold ring-1 ring-border/50"
-                  : "text-secondary hover:bg-surface/50 hover:text-primary"
-              }`}
-            >
-              {name ? t(`activity.groups.${name}`) : t("activity.groups.all")}
-            </button>
-          );
-        })}
-      </div>
-
-      {feed.isError ? <ErrorMessage error={feed.error} /> : null}
-      {feed.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
-      {feed.data && entries.length === 0 ? (
-        <EmptyState title={t("activity.empty")} description={t("activity.emptyHint")} />
-      ) : null}
-      {entries.length > 0 ? (
-        <div className="flex flex-col gap-5">
-          {grouped.map((group) => (
-            <div key={group.dayKey} className="grid min-w-0 gap-3 lg:grid-cols-[10rem_minmax(0,1fr)] lg:gap-6">
-              <div className="pt-4 lg:sticky lg:top-24 lg:self-start">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-secondary">
-                  {group.label}
-                </h2>
-              </div>
-              <ul className="min-w-0 divide-y divide-border rounded-panel border border-border bg-surface" aria-label={group.label}>
-                {group.items.map((entry) => (
-                  <li key={entry.id}>
-                    <EntryRow entry={entry} when={when(entry.occurred_at)} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      ) : null}
-      {feed.hasNextPage ? (
-        <div>
-          <Button variant="secondary" disabled={feed.isFetchingNextPage} onClick={() => feed.fetchNextPage()}>
-            {feed.isFetchingNextPage ? t("common.loading") : t("activity.loadMore")}
-          </Button>
-        </div>
-      ) : null}
-    </div>
-  );
+/** Filters live in the URL so a view can be shared, reloaded and navigated back to. */
+function readFilters(params: URLSearchParams): Filters {
+  const type = params.get("type");
+  const level = params.get("level");
+  const day = params.get("day");
+  const flow = params.get("flow");
+  return {
+    group: isActivityGroup(type) ? type : null,
+    outcome: isOutcome(level) ? level : null,
+    day: isLocalDay(day) ? day : null,
+    technical: params.get("technical") === "1",
+    flow: flow && UUID.test(flow) ? flow : null,
+  };
 }
 
-function EntryRow({ entry, when }: { entry: ActivityEntry; when: string }) {
+function writeFilters(filters: Filters): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (filters.flow) return { flow: filters.flow };
+  if (filters.group) out.type = filters.group;
+  if (filters.outcome) out.level = filters.outcome;
+  if (filters.day) out.day = filters.day;
+  if (filters.technical) out.technical = "1";
+  return out;
+}
+
+/**
+ * Activity (J5, ui-spec §4.13): what happened in the workspace, as a timeline of local days.
+ *
+ * The server classifies every audit entry (level, routine, grouping key) and filters in SQL; this
+ * page only arranges what it receives. Grouping folds adjacent entries of the same kind into one
+ * row that expands to every individual entry, so nothing in the audit log is hidden or merged
+ * away. Routine bookkeeping is left out by default and one switch brings it back.
+ */
+export function ActivityFeed() {
   const { t } = useTranslation();
-  const { resource } = entry;
-  const isAgent = entry.actor.type === "agent" || entry.actor.type === "system";
+  const { workspace } = useCurrentWorkspace();
+  const [params, setParams] = useSearchParams();
+  const filters = useMemo(() => readFilters(params), [params]);
+  const feed = useActivity(workspace.id, filters);
+  const summary = useActivitySummary(workspace.id);
+  const today = todayIn(workspace.timezone);
+
+  const entries = useMemo(() => feed.data?.pages.flatMap((page) => page.items) ?? [], [feed.data]);
+  const sections = useMemo(
+    () => buildTimeline(entries, workspace.timezone, Boolean(feed.hasNextPage)),
+    [entries, workspace.timezone, feed.hasNextPage],
+  );
+
+  const apply = (next: Filters) => setParams(writeFilters(next), { replace: false });
+  const change = (patch: Partial<Filters>) => apply({ ...filters, ...patch, flow: null });
+  const clear = () => apply({ group: null, outcome: null, day: null, technical: filters.technical, flow: null });
+  const showFlow = (flow: string) => {
+    apply({ ...filters, flow });
+    const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo?.({ top: 0, behavior: reduced ? "auto" : "smooth" });
+  };
+
+  const narrowed = filters.group !== null || filters.outcome !== null || filters.day !== null;
+  const loadedAll = feed.isSuccess && !feed.hasNextPage;
 
   return (
-    <div className="flex items-start gap-3.5 p-4 transition-colors hover:bg-surface-subtle/40" data-testid="activity-entry">
-      <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-          isAgent ? "bg-assistant text-action border border-action/20" : "bg-surface-subtle text-secondary border border-border"
-        }`}
-        aria-hidden="true"
-      >
-        {isAgent ? <SparkIcon className="text-base" /> : <UsersIcon className="text-base" />}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-heading font-semibold text-primary text-sm">{entry.text}</p>
-          {entry.is_simulated ? <SimulatedBadge /> : null}
+    <div className="flex w-full min-w-0 flex-col gap-5 lg:gap-6">
+      <PageHeader title={t("activity.title")} description={t("activity.intro")} />
+
+      {filters.flow ? (
+        <div role="status" data-testid="activity-flow" className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-info-subtle px-4 py-3 sm:px-5">
+          <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-base text-info">
+            <LayersIcon />
+          </span>
+          <div className="min-w-0 flex-1 basis-56">
+            <p className="text-body font-semibold text-primary">{t("activity.flow.title")}</p>
+            <p className="text-metadata text-secondary">{t("activity.flow.hint")}</p>
+          </div>
+          <Button variant="secondary" onClick={() => apply({ ...filters, flow: null })}>
+            {t("activity.flow.back")}
+          </Button>
         </div>
-        {resource ? (
-          <p className="text-sm">
-            {resource.link ? (
-              <Link
-                to={resource.link}
-                className="font-medium text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-              >
-                {resource.label}
-              </Link>
-            ) : (
-              <span className="text-secondary">{resource.label}</span>
-            )}
+      ) : (
+        <>
+          <ActivitySummaryStrip
+            summary={summary.data}
+            pending={summary.isPending}
+            failed={summary.isError}
+            outcome={filters.outcome}
+            onOutcome={(outcome) => change({ outcome })}
+          />
+          <ActivityFilters filters={filters} today={today} onChange={change} onClear={clear} />
+        </>
+      )}
+
+      {feed.isError && !feed.data ? <ErrorMessage error={feed.error} /> : null}
+
+      {feed.isPending ? (
+        <div className="rounded-2xl border border-border bg-surface px-5 py-4">
+          <SkeletonRows label={t("common.loading")} rows={6} />
+        </div>
+      ) : null}
+
+      {feed.isSuccess && entries.length === 0 ? (
+        narrowed || filters.flow ? (
+          <EmptyState
+            icon={<ClockIcon />}
+            title={t("activity.filteredEmpty")}
+            description={filters.technical ? t("activity.filteredEmptyHint") : t("activity.filteredEmptyTechnical")}
+            action={
+              <Button variant="secondary" onClick={clear}>
+                {t("activity.filters.clear")}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={<ClockIcon />}
+            title={t("activity.empty")}
+            description={filters.technical ? t("activity.emptyHint") : t("activity.emptyKeyHint")}
+            action={
+              filters.technical ? undefined : (
+                <Button variant="secondary" onClick={() => change({ technical: true })}>
+                  {t("activity.showTechnical")}
+                </Button>
+              )
+            }
+          />
+        )
+      ) : null}
+
+      {entries.length > 0 ? (
+        <ActivityTimeline sections={sections} clock={{ timezone: workspace.timezone, today }} onShowFlow={filters.flow ? null : showFlow} />
+      ) : null}
+
+      {entries.length > 0 ? (
+        <div className="flex min-w-0 flex-col items-center gap-3 pt-1 pb-2 text-center lg:ml-[calc(9.5rem+1.5rem)]">
+          <p role="status" className="text-metadata text-secondary">
+            {loadedAll ? t("activity.endOfHistory", { count: entries.length }) : t("activity.loaded", { count: entries.length })}
           </p>
-        ) : null}
-        <div className="flex items-center gap-1.5 text-xs text-secondary mt-0.5">
-          <ClockIcon className="text-xs shrink-0" />
-          <p>{t("activity.byAt", { actor: entry.actor.label, time: when })}</p>
+          {feed.isFetchNextPageError ? <ErrorMessage error={feed.error} /> : null}
+          {feed.hasNextPage ? (
+            <Button variant="secondary" pending={feed.isFetchingNextPage} onClick={() => void feed.fetchNextPage()}>
+              {feed.isFetchingNextPage ? t("common.loading") : feed.isFetchNextPageError ? t("activity.retry") : t("activity.loadMore")}
+            </Button>
+          ) : null}
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

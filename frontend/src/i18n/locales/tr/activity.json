@@ -1,14 +1,31 @@
 {
   "activity": {
     "title": "Etkinlik",
-    "intro": "Çalışma alanınızda olan her önemli şeyin kaydı, en yeniden eskiye.",
+    "intro": "Çalışma alanınızda gün gün neler olduğu: mesajlar ve yanıtlar, onaylar, gönderiler, bilgi değişiklikleri ve asistanın işleri. Her kayıt korunur.",
     "filterLabel": "Etkinlik türü",
     "empty": "Henüz etkinlik yok",
     "emptyHint": "Bir şey olduğunda burada görünür.",
-    "loadMore": "Daha fazla yükle",
+    "emptyKeyHint": "Henüz önemli bir şey olmadı. Teknik kayıtlar gizli.",
+    "showTechnical": "Teknik kayıtları göster",
+    "filteredEmpty": "Bu filtrelere uyan kayıt yok",
+    "filteredEmptyHint": "Başka bir tür, sonuç ya da gün deneyin.",
+    "filteredEmptyTechnical": "Başka bir tür, sonuç ya da gün deneyin. Teknik kayıtlar gizli; yukarıdan açabilirsiniz.",
+    "loadMore": "Daha eski etkinlikleri yükle",
+    "retry": "Yeniden dene",
+    "loaded_one": "{{count}} kayıt gösteriliyor",
+    "loaded_other": "{{count}} kayıt gösteriliyor",
+    "endOfHistory_one": "{{count}} kayıt gösteriliyor · hepsi bu",
+    "endOfHistory_other": "{{count}} kayıt gösteriliyor · hepsi bu",
     "byAt": "{{actor}} · {{time}}",
     "today": "Bugün",
     "yesterday": "Dün",
+    "dayCount_one": "{{count}} kayıt",
+    "dayCount_other": "{{count}} kayıt",
+    "dayCountMore_one": "şimdilik {{count}}+ kayıt",
+    "dayCountMore_other": "şimdilik {{count}}+ kayıt",
+    "showDetails": "Ayrıntıları göster",
+    "hideDetails": "Ayrıntıları gizle",
+    "routineTag": "Teknik",
     "groups": {
       "all": "Tümü",
       "messages": "Mesajlar",
@@ -20,6 +37,74 @@
       "accounts": "Hesaplar",
       "members": "Üyeler",
       "system": "Sistem"
+    },
+    "level": {
+      "failure": "Başarısız",
+      "warning": "Uyarı",
+      "success": "Tamamlandı",
+      "info": "Kaydedildi"
+    },
+    "actorType": {
+      "user": "ekip üyesi",
+      "system": "otomatik",
+      "agent": "yapay zekâ",
+      "provider": "Instagram"
+    },
+    "summary": {
+      "title_one": "Son {{count}} gün",
+      "title_other": "Son {{count}} gün",
+      "scope": "Çalışma alanı saatine göre önemli etkinlik",
+      "total": "Önemli olay",
+      "success": "Tamamlanan",
+      "warning": "Uyarı",
+      "failure": "Başarısız",
+      "routine_one": "+{{value}} teknik kayıt",
+      "routine_other": "+{{value}} teknik kayıt",
+      "unavailable": "Özet yüklenemedi. Aşağıdaki etkinlik bundan etkilenmez."
+    },
+    "filters": {
+      "outcome": "Sonuç",
+      "outcomeAll": "Tüm sonuçlar",
+      "outcomes": {
+        "problems": "Sorunlar (başarısız ya da uyarı)",
+        "failure": "Başarısız",
+        "warning": "Uyarılar",
+        "success": "Tamamlanan"
+      },
+      "day": "Gün",
+      "clearDay": "Günü temizle",
+      "technical": "Teknik kayıtlar",
+      "showing": "Gösterilen: {{what}}",
+      "clear": "Filtreleri temizle"
+    },
+    "details": {
+      "when": "Ne zaman",
+      "by": "Yapan",
+      "category": "Tür",
+      "outcome": "Sonuç",
+      "record": "İlgili kayıt",
+      "routine": "Teknik kayıt",
+      "routineHint": "Başka bir kaydı tekrarlayan ya da ilerleyişini izleyen iç kayıt. Kayıt için saklanır ve hiçbir zaman bir sorunu işaret etmez.",
+      "simulated": "Simülasyon",
+      "simulatedHint": "Bu kayıt Instagram'dan değil, simülasyon sağlayıcısından geliyor.",
+      "reference": "Referans",
+      "showFlow": "İlgili etkinliği göster"
+    },
+    "group": {
+      "count_one": "{{count}} kayıt",
+      "count_other": "{{count}} kayıt",
+      "countMore_one": "{{count}}+ kayıt",
+      "countMore_other": "{{count}}+ kayıt",
+      "grouped": "Benzer kayıtlar gruplandı",
+      "show": "Gruplanan kayıtları göster",
+      "hide": "Gruplanan kayıtları gizle",
+      "problems_one": "{{count}} kayıtta sorun var",
+      "problems_other": "{{count}} kayıtta sorun var"
+    },
+    "flow": {
+      "title": "İlgili etkinlik",
+      "hint": "Aynı akış için yazılan tüm kayıtlar, teknik olanlar dahil.",
+      "back": "Tüm etkinliğe dön"
     },
     "owner_question": {
       "created": "İşletmeden bilgi istendi.",

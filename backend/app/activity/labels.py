@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.activity.describe import alert_condition
 from app.agent.models import AgentAction, AgentThread
 from app.approvals.models import Approval
 from app.audit.models import AuditLog
@@ -334,6 +335,15 @@ def resolve_resources(
                 result[row.id] = Resource(
                     kind, rid, fact_text, f"/w/{ws}/more/knowledge/{category}"
                 )
+        elif kind == "operator_alert":
+            # The alert's condition, read from the row's own codes (alert summaries are English
+            # operator text and are never shown). Same roles as activity.view.
+            result[row.id] = Resource(
+                kind,
+                rid,
+                alert_condition(row.metadata_ or {}, locale),
+                f"/w/{ws}/more/settings/system-health",
+            )
         elif kind == "fact_candidate":
             if rid not in candidate_facts:
                 result[row.id] = Resource(kind, rid, _gone(locale), None)
@@ -344,7 +354,8 @@ def resolve_resources(
                 )
                 result[row.id] = Resource(kind, rid, label, f"/w/{ws}/more/knowledge/suggestions")
         else:
-            # owner_command, media_asset, agent_run, workspace, ...: a neutral name, no screen.
+            # owner_command, media_asset, agent_run, agent_session, agent_step, workspace, ...:
+            # a neutral name per type, no screen.
             label = _text(f"activity.resource.{kind}", locale, "activity.resource.other")
             result[row.id] = Resource(kind, rid, label, None)
     return result

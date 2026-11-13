@@ -3,7 +3,9 @@
 Every query carries the ``workspace_id`` filter (INV-01); system-level rows have no workspace and
 never appear. Paging is an opaque keyset cursor over ``(occurred_at, id)``, so entries with the
 same timestamp are neither skipped nor repeated. ``date`` is a local day in the workspace
-timezone (INV-19).
+timezone (INV-19). ``levels`` and ``include_routine`` filter by the read-time classification
+(``classify.py``) in SQL, so a filtered page is still a complete, ordered slice of the history;
+``correlation`` narrows to the entries written for one flow.
 """
 
 import base64
@@ -15,6 +17,7 @@ from datetime import date, datetime
 from sqlalchemy import select, tuple_
 from sqlalchemy.orm import Session
 
+from app.activity import classify
 from app.activity.groups import GROUPS, actions_in
 from app.audit.models import AuditLog
 from app.core.context import WorkspaceContext
@@ -61,6 +64,9 @@ def list_feed(
     local_date: date | None = None,
     cursor: str | None = None,
     limit: int = DEFAULT_LIMIT,
+    levels: set[str] | None = None,
+    include_routine: bool = True,
+    correlation_id: uuid.UUID | None = None,
 ) -> FeedPage:
     statement = select(AuditLog).where(AuditLog.workspace_id == ctx.workspace_id)
     if group == "system":
@@ -72,6 +78,12 @@ def list_feed(
     if local_date is not None:
         start, end = day_bounds(local_date, ctx.timezone)
         statement = statement.where(AuditLog.occurred_at >= start, AuditLog.occurred_at < end)
+    if levels:
+        statement = statement.where(classify.level_clause(levels))
+    if not include_routine:
+        statement = statement.where(classify.not_routine_clause())
+    if correlation_id is not None:
+        statement = statement.where(AuditLog.correlation_id == correlation_id)
     if cursor is not None:
         at, row_id = decode_cursor(cursor)
         statement = statement.where(tuple_(AuditLog.occurred_at, AuditLog.id) < tuple_(at, row_id))

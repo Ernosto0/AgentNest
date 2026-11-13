@@ -66,6 +66,9 @@ export type MediaAsset = Schemas["MediaAssetOut"];
 // Phase 6: activity feed and the daily report.
 export type ActivityEntry = Schemas["ActivityEntryOut"];
 export type ActivityPage = Schemas["Page_ActivityEntryOut_"];
+export type ActivityLevel = ActivityEntry["level"];
+export type ActivityDetail = Schemas["ActivityDetailOut"];
+export type ActivitySummary = Schemas["ActivitySummaryOut"];
 export type DailyReport = Schemas["DailyReportOut"];
 export type ReportMetric = Schemas["MetricOut"];
 export type MetricItems = Schemas["MetricItemsOut"];
