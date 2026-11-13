@@ -192,11 +192,11 @@ describe("language", () => {
 
     await user.click(within(screen.getAllByRole("navigation", { name: "Ana gezinme" })[1]!).getByRole("link", { name: "Daha fazla" }));
     await user.click(await within(screen.getByRole("main")).findByRole("link", { name: "Ayarlar" }));
-    expect(await screen.findByRole("heading", { name: "Dil" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Hesap", level: 2 })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "English" }));
+    await user.click(screen.getByRole("radio", { name: "English" }));
 
-    expect(await screen.findByRole("heading", { name: "Language" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Account", level: 2 })).toBeInTheDocument();
     expect(screen.getByTestId("simulation-banner")).toHaveTextContent("Demo workspace");
     for (const nav of screen.getAllByRole("navigation", { name: "Main navigation" })) {
       expect(within(nav).getByRole("link", { name: "Inbox" })).toBeInTheDocument();

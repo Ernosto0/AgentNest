@@ -263,6 +263,8 @@ def test_workspace_deletion_request_owner_flow() -> None:
     assert len(emails) == 1
     assert emails[0].to_email == "owner@example.com"
     assert "https://app.agentnest.test/w/" in emails[0].text_body
+    # The cancel link opens the real Settings route (/w/{id}/settings is not a route).
+    assert f"https://app.agentnest.test/w/{ws_id}/more/settings#danger-zone" in emails[0].text_body
 
     mock_audit.assert_called_once()
     assert mock_audit.call_args[0][2] == "workspace.deletion_requested"

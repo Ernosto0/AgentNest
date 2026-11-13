@@ -215,7 +215,15 @@ export function useRequestWorkspaceDeletion(ws: string) {
           params: { path: { workspace_id: ws } },
         }),
       )) as unknown as WorkspaceDeletionStatus,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspace-deletion-status", ws] }),
+    onSuccess: (status) => {
+      queryClient.setQueryData(["workspace-deletion-status", ws], status);
+      // The request flips the workspace status, pauses automation and disconnects accounts.
+      return Promise.all(
+        ["workspace", "social-accounts", "automation", "agent", "readiness"].map((name) =>
+          queryClient.invalidateQueries({ queryKey: [name, ws] }),
+        ),
+      );
+    },
   });
 }
 
@@ -228,7 +236,10 @@ export function useCancelWorkspaceDeletion(ws: string) {
           params: { path: { workspace_id: ws } },
         }),
       )) as unknown as WorkspaceDeletionStatus,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspace-deletion-status", ws] }),
+    onSuccess: (status) => {
+      queryClient.setQueryData(["workspace-deletion-status", ws], status);
+      return queryClient.invalidateQueries({ queryKey: ["workspace", ws] });
+    },
   });
 }
 

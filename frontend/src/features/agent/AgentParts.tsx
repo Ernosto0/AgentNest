@@ -109,7 +109,8 @@ export function Segmented<V extends string>({
   label: string;
   hideLabel?: boolean;
   value: V;
-  options: { value: V; label: string }[];
+  /** `lang` marks a label written in another language (e.g. "English" on a Turkish screen). */
+  options: { value: V; label: string; lang?: string }[];
   onChange: (value: V) => void;
   disabled?: boolean;
   name?: string;
@@ -124,6 +125,7 @@ export function Segmented<V extends string>({
         {options.map((option) => (
           <label
             key={option.value}
+            lang={option.lang}
             className={`relative inline-flex min-h-9 cursor-pointer items-center justify-center rounded-lg px-3 text-metadata font-semibold whitespace-nowrap text-secondary transition-colors select-none pointer-coarse:min-h-11 has-checked:bg-surface has-checked:text-primary has-checked:shadow-[0_1px_2px_rgb(37_59_49/0.10)] has-checked:ring-1 has-checked:ring-border has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-focus has-disabled:cursor-not-allowed has-disabled:opacity-70 [&:not(:has(:checked)):not(:has(:disabled))]:hover:bg-surface/70 [&:not(:has(:checked)):not(:has(:disabled))]:hover:text-primary ${stretch ? "flex-1" : ""}`}
           >
             <input

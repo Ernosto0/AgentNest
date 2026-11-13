@@ -24,6 +24,7 @@ export type FactState = Fact["state"];
 export type FactCreateBody = Schemas["FactCreate"];
 export type FactPatchBody = Schemas["FactPatch"];
 export type WorkspaceCreateBody = Schemas["WorkspaceCreate"];
+export type WorkspacePatchBody = Schemas["WorkspacePatch"];
 
 export type Command = Schemas["CommandOut"];
 export type CommandStatus = Command["status"];

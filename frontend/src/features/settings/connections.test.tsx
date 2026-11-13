@@ -367,11 +367,12 @@ describe("the menus", () => {
   it("links both screens from the settings page", async () => {
     mockApi(routes(WS_GOLKENT, () => [account()]));
     renderApp(`/w/${WS_GOLKENT}/more/settings`);
-    expect(await screen.findByRole("link", { name: "Instagram bağlantısını yönet" })).toHaveAttribute(
+    // The account needs reauthorisation, so the settings summary offers "Reconnect".
+    expect(await screen.findByRole("link", { name: "Instagram: Yeniden bağla" })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/more/settings/connections`,
     );
-    expect(screen.getByRole("link", { name: "Sistem durumunu gör" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /^Sistem durumu/ })).toHaveAttribute(
       "href",
       `/w/${WS_GOLKENT}/more/settings/system-health`,
     );

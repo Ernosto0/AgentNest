@@ -147,7 +147,8 @@ def request_workspace_deletion(
 
     # 8. Dispatch notification email to all workspace owners
     base_origin = (settings.frontend_origin or settings.app_base_url).rstrip("/")
-    cancel_url = f"{base_origin}/w/{ctx.workspace_id}/settings"
+    # The Settings route; the anchor opens the deletion panel where the owner can cancel.
+    cancel_url = f"{base_origin}/w/{ctx.workspace_id}/more/settings#danger-zone"
     owner_rows = list(
         session.execute(
             select(User.email)

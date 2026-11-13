@@ -66,6 +66,15 @@ export function useSaveLocale() {
   });
 }
 
+/** Save the display name on the account (PATCH /auth/me); the server trims and bounds it. */
+export function useSaveDisplayName() {
+  const queryClient = useQueryClient();
+  return useMutation<Me, AppError, string>({
+    mutationFn: (display_name) => unwrap(api.PATCH("/api/v1/auth/me", { body: { display_name } })),
+    onSuccess: (me) => queryClient.setQueryData(meKey, me),
+  });
+}
+
 export function useSessions() {
   return useQuery<AuthSession[]>({
     queryKey: sessionsKey,
@@ -83,9 +92,8 @@ export function useRevokeSession() {
           params: { path: { session_id: sessionId } },
         })
       ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: sessionsKey });
-    },
+    // Refresh after any outcome: a 404 means that session already ended elsewhere.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: sessionsKey }),
   });
 }
 
@@ -98,9 +106,7 @@ export function useRevokeAllSessions() {
           body: { include_current: includeCurrent },
         })
       ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: sessionsKey });
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: sessionsKey }),
   });
 }
 
