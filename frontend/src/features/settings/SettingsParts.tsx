@@ -1,4 +1,4 @@
-import { useEffect, useState, type HTMLAttributes, type ReactNode } from "react";
+import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRightIcon } from "@/components/icons";
@@ -191,31 +191,69 @@ export interface SectionLink {
 export function SectionNav({ sections }: { sections: SectionLink[] }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [active, setActive] = useState(sections[0]?.id ?? "");
+  const [active, setActive] = useState(() => {
+    const fromHash = window.location.hash.slice(1);
+    return sections.find((section) => section.id === fromHash)?.id ?? sections[0]?.id ?? "";
+  });
+  // While a click (or a deep link) is scrolling to a section, that section stays highlighted; the
+  // scroll position would otherwise pass through the sections in between and flip the highlight.
+  const lock = useRef<{ settle: number | null } | null>(null);
 
   useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") return;
-    const visible = new Map<string, boolean>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) visible.set(entry.target.id, entry.isIntersecting);
-        const first = sections.find((section) => visible.get(section.id));
-        if (first) setActive(first.id);
-      },
-      // A section counts as current while its top part is in the upper half of the viewport.
-      { rootMargin: "-15% 0px -55% 0px" },
-    );
-    for (const section of sections) {
-      const element = document.getElementById(section.id);
-      if (element) observer.observe(element);
+    // The current section is the last one whose top has passed the reading line below the
+    // sticky top area; at the very bottom of the page, the final section short enough to never
+    // reach that line would otherwise never be highlighted.
+    const READING_LINE = 140;
+    const measure = () => {
+      let current = sections[0]?.id ?? "";
+      for (const section of sections) {
+        const element = document.getElementById(section.id);
+        if (element && element.getBoundingClientRect().top <= READING_LINE) current = section.id;
+      }
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      if (atBottom && window.scrollY > 0) current = sections[sections.length - 1]?.id ?? current;
+      setActive(current);
+    };
+
+    let frame = 0;
+    const onScroll = () => {
+      if (lock.current) {
+        // Keep the clicked section until the scroll comes to rest; the next scroll measures again.
+        if (lock.current.settle !== null) window.clearTimeout(lock.current.settle);
+        lock.current.settle = window.setTimeout(() => {
+          lock.current = null;
+        }, 150);
+        return;
+      }
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        measure();
+      });
+    };
+    // A deep link (#security) is scrolled to by the page itself; hold its highlight until it lands.
+    if (sections.some((section) => section.id === window.location.hash.slice(1))) {
+      lock.current = { settle: window.setTimeout(() => (lock.current = null), 400) };
+    } else {
+      measure();
     }
-    return () => observer.disconnect();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+      if (lock.current?.settle != null) window.clearTimeout(lock.current.settle);
+      lock.current = null;
+    };
   }, [sections]);
 
   const go = (id: string) => {
     const target = document.getElementById(id);
     if (!target) return;
     setActive(id);
+    if (lock.current?.settle != null) window.clearTimeout(lock.current.settle);
+    lock.current = { settle: window.setTimeout(() => (lock.current = null), 400) };
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     target.scrollIntoView?.({ behavior: reduce ? "auto" : "smooth", block: "start" });
     document.getElementById(`${id}-title`)?.focus({ preventScroll: true });
