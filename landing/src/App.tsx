@@ -120,7 +120,7 @@ export function App() {
         <Problem t={t.problem} />
         <HowItWorks t={t} />
         <Section id="demo" tone="surface">
-          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-20">
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-20">
             <div>
               <SectionHeader eyebrow={t.demo.eyebrow} title={t.demo.title} body={t.demo.body} />
               <ul className="reveal mt-10 flex flex-col gap-5">
@@ -345,7 +345,7 @@ function Hero({ t, heroRef }: { t: Copy; heroRef: RefObject<HTMLElement | null> 
 }
 
 function Promises({ t }: { t: Copy }) {
-  const icons = [<TagIcon key="t" />, <ShieldCheckIcon key="s" />, <ChartIcon key="c" />]
+  const icons = [<ClockIcon key="t" />, <ChatIcon key="s" />, <CalendarIcon key="c" />]
   return (
     <section aria-label={t.promises.map((p) => p.title).join(' ')} className="relative">
       <div className={container}>

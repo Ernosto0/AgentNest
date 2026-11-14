@@ -214,7 +214,7 @@ export const copy: Record<Lang, Copy> = {
     meta: {
       title: `${PRODUCT_NAME} · Küçük işletmeler için Instagram asistanı`,
       description:
-        'Instagram DM’lerine yalnızca sizin doğruladığınız bilgilerle yanıt hazırlar, paylaşımları planlar, günün dürüst özetini çıkarır. Son söz her zaman sizde.',
+        'Instagram’da zaman kazanın, müşteri mesajlarını gözden kaçırmayın. AgentNest işletmenizin bilgileriyle yanıt hazırlar, paylaşımlarınızı planlar. Kontrol sizde kalır.',
     },
     nav: {
       links: [
@@ -232,10 +232,10 @@ export const copy: Record<Lang, Copy> = {
     },
     hero: {
       badge: 'Ücretsiz pilot programı · Başvurular açık',
-      title: 'Instagram mesajlarına doğru yanıt.',
-      accent: 'Son söz her zaman sizde.',
+      title: 'Instagram işletmenizi büyütsün,',
+      accent: 'vaktinizi tüketmesin.',
       lead:
-        'Müşteri DM’lerine yalnızca sizin doğruladığınız fiyat ve bilgilerle yanıt hazırlar, paylaşımlarınızı planlar, akşam günün dürüst özetini çıkarır. Önemli her adım tek dokunuşla onayınıza gelir: telefonunuzdan ya da Telegram’dan.',
+        `${PRODUCT_NAME} müşteri mesajlarına işletmenizin bilgileriyle yanıt hazırlar, paylaşımlarınızı planlar ve önemli konuları size getirir. Kontrol her zaman sizde kalır.`,
       cta: 'Ücretsiz pilota başvurun',
       secondary: 'Nasıl çalıştığını görün',
       points: ['30 gün ücretsiz', 'Kart bilgisi yok', 'Kurulum 30 dakika'],
@@ -263,16 +263,16 @@ export const copy: Record<Lang, Copy> = {
     },
     promises: [
       {
-        title: 'Fiyat uydurmaz.',
-        body: 'Fiyat, saat, adres ve kampanyalar yalnızca sizin doğruladığınız bilgilerden gelir.',
+        title: 'Tekrar eden sorularda zaman kazanın.',
+        body: 'Fiyat, saat ve adres sorularının yanıtları, doğruladığınız bilgilerle hazır olsun. Her seferinde baştan yazmayın.',
       },
       {
-        title: 'Siz izin vermeden göndermez.',
-        body: 'Her yanıt onayınıza gelir. Yalnızca sizin açtığınız rutin sorular otomatik yanıtlanır.',
+        title: 'Müşteri mesajlarını gözden kaçırmayın.',
+        body: 'Yanıt bekleyen mesajları ve size iletilen önemli konuşmaları bir arada görün. Hazır yanıtları tek dokunuşla onaylayın.',
       },
       {
-        title: 'Olmayanı oldu demez.',
-        body: 'Planlanan paylaşım “yayınlandı” sayılmaz. Başarısız olan her şey nedeniyle birlikte yazılır.',
+        title: 'Paylaşımlarınız son dakikaya kalmasın.',
+        body: 'İçeriklerinizi önceden planlayın, onayınızla yayınlansın. Nelerin yayınlandığını, nelerin beklediğini görün.',
       },
     ],
     audience: {
@@ -280,10 +280,10 @@ export const copy: Record<Lang, Copy> = {
       items: ['Pilates ve spor stüdyoları', 'Güzellik salonları', 'Kafeler', 'Butikler', 'Klinikler', 'Hizmet işletmeleri'],
     },
     problem: {
-      eyebrow: 'Neden farklı',
-      title: 'Ders arasında DM yetiştirmeye çalışmayın.',
+      eyebrow: 'İşletmenize daha çok zaman',
+      title: 'İşinizin arasında bir de DM yetiştirmeyin.',
       body:
-        'Her gün aynı fiyat, saat ve adres sorularını yanıtlamak zaman alır; sıradan bir bot kurmak ise müşteriye yanlış bilgi verme riski taşır. İkisinin arasında güvenilir bir yol var.',
+        'Müşterilerinizle ilgilenirken mesajlar birikir, aynı sorular tekrar gelir, paylaşımlar ertelenir. AgentNest yanıtları ve planları hazırlar; siz önemli konulara odaklanırsınız.',
       withoutLabel: 'Bugün',
       withLabel: `${PRODUCT_NAME} ile`,
       rows: [
@@ -594,9 +594,9 @@ export const copy: Record<Lang, Copy> = {
     },
     pilot: {
       eyebrow: 'Pilot programı',
-      title: 'İlk işletmelerden biri olun.',
+      title: 'İşletmenize daha çok zaman ayırın.',
       body:
-        'Instagram’ı aktif kullanan 10–15 yerel işletmeyle başlıyoruz. Başvurunuzu aldıktan sonra sizi arar, işletmenizi ve Instagram’ı nasıl kullandığınızı konuşuruz.',
+        'Mesajları ve paylaşımları daha az uğraşla yönetmeyi 30 gün ücretsiz deneyin. Instagram’ı aktif kullanan 10–15 yerel işletmeyle başlıyoruz. Başvurunuzdan sonra sizi arayıp ihtiyaçlarınızı konuşuruz.',
       expectations: [
         {
           badge: '30 dakika',
@@ -659,7 +659,7 @@ export const copy: Record<Lang, Copy> = {
     },
     mobileCta: { label: 'Ücretsiz pilota başvurun', sub: '30 gün · kart yok' },
     footer: {
-      tagline: 'Küçük işletmeler için Instagram asistanı.',
+      tagline: 'Instagram’a daha az vakit, işletmenize daha çok zaman. Kontrol her zaman sizde.',
       trademark:
         'Instagram ve WhatsApp, Meta Platforms, Inc.’in ticari markalarıdır; Telegram, sahibinin ticari markasıdır. Bu ürün bu şirketlerle bağlantılı değildir.',
       top: 'Başa dön',
@@ -669,7 +669,7 @@ export const copy: Record<Lang, Copy> = {
     meta: {
       title: `${PRODUCT_NAME} · An Instagram assistant for small businesses`,
       description:
-        'Drafts Instagram DM replies using only details you verified, plans your posts and gives you an honest daily summary. You always have the final say.',
+        'Save time on Instagram and keep track of customer messages. AgentNest drafts replies using your business details and plans your posts. You stay in control.',
     },
     nav: {
       links: [
@@ -687,10 +687,10 @@ export const copy: Record<Lang, Copy> = {
     },
     hero: {
       badge: 'Free pilot programme · Applications open',
-      title: 'Right answers for every Instagram DM.',
-      accent: 'You always have the final say.',
+      title: 'Let Instagram grow your business,',
+      accent: 'not take up your day.',
       lead:
-        'It drafts replies to customer DMs using only the prices and details you have verified, plans your posts and gives you an honest summary each evening. Anything important comes to you for a one-tap approval, on your phone or in Telegram.',
+        `${PRODUCT_NAME} drafts replies to customer messages using your business details, plans your posts and brings important conversations to you. You always stay in control.`,
       cta: 'Apply for the free pilot',
       secondary: 'See how it works',
       points: ['Free for 30 days', 'No card needed', '30-minute setup'],
@@ -718,16 +718,16 @@ export const copy: Record<Lang, Copy> = {
     },
     promises: [
       {
-        title: 'Never invents a price.',
-        body: 'Prices, hours, addresses and offers come only from details you have verified.',
+        title: 'Save time on recurring questions.',
+        body: 'Replies about prices, hours and your address are ready using details you verified. No need to write them from scratch each time.',
       },
       {
-        title: 'Never sends without your say.',
-        body: 'Every reply comes to you for approval. Only the routine questions you switch on are answered automatically.',
+        title: 'Keep customer messages in view.',
+        body: 'See messages awaiting a reply and important conversations passed to you in one place. Approve prepared replies with one tap.',
       },
       {
-        title: 'Never claims what didn’t happen.',
-        body: 'A scheduled post is never counted as published. Anything that failed is listed with the reason.',
+        title: 'Keep posts off your last-minute list.',
+        body: 'Plan content ahead and publish with your approval. See what has been published and what is still waiting.',
       },
     ],
     audience: {
@@ -735,10 +735,10 @@ export const copy: Record<Lang, Copy> = {
       items: ['Pilates and fitness studios', 'Beauty salons', 'Cafés', 'Boutiques', 'Clinics', 'Service businesses'],
     },
     problem: {
-      eyebrow: 'Why it is different',
-      title: 'Stop catching up on DMs between classes.',
+      eyebrow: 'More time for your business',
+      title: 'One less task between customers.',
       body:
-        'Answering the same price, hours and address questions every day drains your time, while a generic chatbot risks telling a customer the wrong price. There is a reliable middle ground.',
+        'While you look after customers, messages pile up, the same questions return and posts get postponed. AgentNest prepares replies and plans so you can focus on what needs you.',
       withoutLabel: 'Today',
       withLabel: `With ${PRODUCT_NAME}`,
       rows: [
@@ -1048,9 +1048,9 @@ export const copy: Record<Lang, Copy> = {
     },
     pilot: {
       eyebrow: 'Pilot programme',
-      title: 'Be one of the first businesses.',
+      title: 'Make more time for your business.',
       body:
-        'We are starting with 10–15 local businesses that use Instagram actively. After you apply, we call you to talk about your business and how you use Instagram.',
+        'Try managing messages and posts with less effort, free for 30 days. We are starting with 10–15 local businesses that use Instagram actively. After you apply, we call you to discuss your needs.',
       expectations: [
         {
           badge: '30 minutes',
@@ -1105,7 +1105,7 @@ export const copy: Record<Lang, Copy> = {
     },
     mobileCta: { label: 'Apply for the free pilot', sub: '30 days · no card' },
     footer: {
-      tagline: 'An Instagram assistant for small businesses.',
+      tagline: 'Less time on Instagram. More time for your business. Always in your control.',
       trademark:
         'Instagram and WhatsApp are trademarks of Meta Platforms, Inc.; Telegram is a trademark of its owner. This product is not affiliated with these companies.',
       top: 'Back to top',
