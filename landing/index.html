@@ -3,12 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="Küçük işletmeler için Instagram asistanı. Fiyat uydurmaz, onaysız göndermez, olmayanı oldu demez." />
-    <meta name="theme-color" content="#FBFBFD" />
-    <title>AgentNest</title>
+    <title>AgentNest · Küçük işletmeler için Instagram asistanı</title>
+    <meta
+      name="description"
+      content="Instagram DM’lerine yalnızca sizin doğruladığınız bilgilerle yanıt hazırlar, paylaşımları planlar, günün dürüst özetini çıkarır. Son söz her zaman sizde."
+    />
+    <meta name="theme-color" content="#f7f8f3" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AgentNest" />
+    <meta property="og:title" content="AgentNest · Küçük işletmeler için Instagram asistanı" />
+    <meta
+      property="og:description"
+      content="Fiyat uydurmaz. Siz izin vermeden göndermez. Olmayanı oldu demez. Ücretsiz pilot programına başvurun."
+    />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:locale:alternate" content="en_GB" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <!-- Before first paint: apply the saved theme (or the OS preference). External so a strict CSP can block inline scripts. -->
+    <script src="./theme.js"></script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p>
+        AgentNest: küçük işletmeler için Instagram asistanı. Bu sayfa JavaScript gerektirir. /
+        An Instagram assistant for small businesses. This page needs JavaScript.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

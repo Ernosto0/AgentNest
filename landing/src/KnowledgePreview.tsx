@@ -1,63 +1,94 @@
+import { useState } from 'react'
 import type { Copy } from './copy'
+import { AlertIcon, ArrowDownIcon, ArrowRightIcon, Badge, CheckIcon, ExampleLabel, RotateIcon, buttonSecondary } from './ui'
 
-type Props = { t: Copy['knowledge'] }
+// Paste → picked-out facts → the owner verifies each one. Mirrors the app's knowledge rows:
+// "Verify" is the primary action only for unverified facts. Example data only.
+const INITIAL = [true, true, false, false]
 
-export function KnowledgePreview({ t }: Props) {
+export function KnowledgePreview({ t, example }: { t: Copy['knowledge']; example: string }) {
+  const [verified, setVerified] = useState<boolean[]>(INITIAL)
+  const done = verified.filter(Boolean).length
+  const progress = t.progress.replace('{n}', String(done)).replace('{total}', String(verified.length))
+
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start lg:gap-14">
-      <div className="rounded-xl border border-rule bg-surface/60 p-6">
-        <p className="font-mono text-xs tracking-wide text-kase uppercase">{t.extractKicker}</p>
-        <h3 className="mt-2 font-display text-xl leading-snug font-bold tracking-[-0.01em]">{t.extractTitle}</h3>
-        <p className="mt-2.5 text-base leading-relaxed text-muted">{t.extractBody}</p>
+    <div className="reveal grid items-start gap-4 lg:grid-cols-[minmax(0,0.85fr)_auto_minmax(0,1.15fr)] lg:gap-6">
+      <figure className="rounded-panel border border-dashed border-control/50 bg-surface p-5">
+        <figcaption className="flex items-center justify-between gap-2">
+          <span className="type-eyebrow text-secondary">{t.pasteLabel}</span>
+          <ExampleLabel>{example}</ExampleLabel>
+        </figcaption>
+        <p className="mt-3 text-[0.9375rem] leading-relaxed">“{t.pasteSample}”</p>
+        <p className="mt-4 flex items-center gap-1.5 border-t border-border pt-3 text-xs text-secondary">
+          <AlertIcon aria-hidden className="text-attention" />
+          {t.pasteNote}
+        </p>
+      </figure>
 
-        <div className="mt-5 rounded-lg border border-dashed border-muted/50 bg-paper p-4">
-          <p className="font-mono text-[0.6875rem] tracking-wide text-muted uppercase">{t.extractSourceLabel}</p>
-          <p className="mt-2 font-mono text-xs leading-relaxed text-ink">“{t.extractSourceSample}”</p>
-        </div>
-      </div>
+      <span aria-hidden className="grid place-items-center text-xl text-control lg:pt-24">
+        <ArrowDownIcon className="lg:hidden" />
+        <ArrowRightIcon className="hidden lg:block" />
+      </span>
 
-      <div className="rounded-xl border border-rule bg-paper">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-5 py-3.5">
-          <span className="font-mono text-xs tracking-wide text-muted uppercase">{t.ledgerTitle}</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-kase-soft px-2.5 py-0.5 font-mono text-[0.6875rem] font-medium text-kase">
-            <span aria-hidden>✓</span>
-            {t.verifiedBadge}
+      <div className="overflow-hidden rounded-panel border border-border bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5">
+          <span className="font-heading text-sm font-bold">{t.ledgerTitle}</span>
+          <span className="flex items-center gap-3">
+            <span aria-live="polite" className="text-xs font-medium text-secondary tabular-nums">
+              {progress}
+            </span>
+            <span aria-hidden className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-subtle">
+              <span
+                className="block h-full rounded-full bg-action transition-[width] duration-500"
+                style={{ width: `${(done / verified.length) * 100}%` }}
+              />
+            </span>
           </span>
         </div>
 
-        <ul className="divide-y divide-rule">
+        <ul className="divide-y divide-border">
           {t.facts.map((fact, i) => (
-            <li
-              key={fact.label}
-              className="grid gap-2 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6"
-            >
+            <li key={fact.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-3.5">
               <div className="flex min-w-0 flex-col">
-                <div className="flex items-center gap-2 font-mono text-[0.6875rem] text-muted">
-                  <span className="text-kase">{i + 1}</span>
-                  <span>{fact.category}</span>
-                  <span aria-hidden>·</span>
-                  <span>{fact.verifiedAt}</span>
-                </div>
-                <span className="mt-0.5 font-display text-base font-medium">{fact.label}</span>
+                <span className="text-xs text-secondary">
+                  {fact.category} · {fact.label}
+                </span>
+                <span className="mt-0.5 font-heading text-[0.9375rem] font-bold tabular-nums">{fact.value}</span>
               </div>
-              <span className="justify-self-start rounded-md bg-kase-soft px-3 py-1 font-display text-base font-bold text-kase sm:justify-self-end">
-                {fact.value}
-              </span>
+              {verified[i] ? (
+                <Badge tone="success" size="sm" icon={<CheckIcon />} className="pop-in">
+                  {t.verified}
+                </Badge>
+              ) : (
+                <span className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+                  <Badge tone="attention" size="sm">
+                    {t.unverified}
+                  </Badge>
+                  <button
+                    type="button"
+                    onClick={() => setVerified((v) => v.map((x, j) => (j === i ? true : x)))}
+                    aria-label={`${t.verify}: ${fact.label}`}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-control bg-action px-3 text-xs font-semibold text-on-action hover:bg-action-hover"
+                  >
+                    <CheckIcon aria-hidden />
+                    {t.verify}
+                  </button>
+                </span>
+              )}
             </li>
           ))}
         </ul>
 
-        <div className="border-t border-rule bg-surface/50 px-5 py-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded border border-kase px-2 py-0.5 font-mono text-[0.6875rem] font-medium text-kase uppercase">
-              {t.missingRule.badge}
-            </span>
-            <span className="font-mono text-xs text-ink">{t.missingRule.question}</span>
-          </div>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{t.missingRule.outcome}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-subtle px-5 py-3">
+          <p className="text-xs text-secondary">{t.usageNote}</p>
+          {done === verified.length && (
+            <button type="button" onClick={() => setVerified(INITIAL)} className={`${buttonSecondary} min-h-9 px-3 text-xs`}>
+              <RotateIcon aria-hidden />
+              {t.reset}
+            </button>
+          )}
         </div>
       </div>
     </div>
   )
 }
-

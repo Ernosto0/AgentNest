@@ -2,100 +2,145 @@ import { PRODUCT_NAME } from './brand'
 
 export type Lang = 'tr' | 'en'
 
-type Fact = { value: string; source: string }
-
 export type ChatMessage = {
   from: 'owner' | 'assistant'
   text: string
   time: string
   // A story graphic the owner sends, drawn from these three lines.
   attachment?: { kicker: string; title: string; note: string }
-  // The message a button reply answers; WhatsApp shows it quoted above the reply.
-  quote?: string
-  // Reply buttons under an assistant message.
+  // Inline buttons under an assistant message. Decisions are buttons, never typed text.
   actions?: string[]
 }
 
+// Mirrors the app's status vocabulary (frontend/src/components/StatusBadge.tsx).
 export type PostStatus = 'published' | 'scheduled' | 'held' | 'pending'
 
+type Titled = { title: string; body: string }
+
 export type Copy = {
-  meta: { title: string }
-  nav: { waitlist: string; language: string; dark: string }
+  meta: { title: string; description: string }
+  nav: {
+    links: { id: string; label: string }[]
+    cta: string
+    language: string
+    toDark: string
+    toLight: string
+    skip: string
+    menu: string
+  }
   hero: {
-    kicker: string
-    pilotBadge: string
-    promises: [string, string, string]
+    badge: string
+    title: string
+    accent: string
     lead: string
     cta: string
-    note: string
-    preview: {
-      dmLabel: string
-      dmText: string
-      factLabel: string
-      factText: string
-      stampLabel: string
-      stampSub: string
-    }
+    secondary: string
+    points: [string, string, string]
   }
-  index: { label: string; links: { id: string; label: string }[] }
-  comparison: {
+  preview: {
+    example: string
+    screen: string
+    greeting: string
+    date: string
+    waitingTitle: string
+    queue: [string, string, string]
+    queueCounts: [number, number, number]
+    metricsTitle: string
+    metrics: [string, string, string]
+    metricValues: [number, number, number]
+    customer: string
+    time: string
+    message: string
+    reply: [string, string, string]
+    facts: [string, string]
+    pending: string
+    sent: string
+    approve: string
+    undo: string
+  }
+  promises: Titled[]
+  audience: { label: string; items: string[] }
+  problem: {
+    eyebrow: string
     title: string
     body: string
     withoutLabel: string
     withLabel: string
     rows: { scenario: string; without: string; withProduct: string }[]
   }
-  whatsapp: {
+  how: { eyebrow: string; title: string; body: string; steps: Titled[] }
+  knowledge: {
+    eyebrow: string
     title: string
     body: string
+    pasteLabel: string
+    pasteSample: string
+    pasteNote: string
+    ledgerTitle: string
+    progress: string // "{n} / {total} doğrulandı"
+    verified: string
+    unverified: string
+    verify: string
+    reset: string
+    usageNote: string
+    facts: { category: string; label: string; value: string }[]
+  }
+  demo: {
+    eyebrow: string
+    title: string
+    body: string
+    points: Titled[]
+    tabs: [string, string]
+    example: string
+    channel: string
+    known: {
+      customer: string
+      time: string
+      message: string
+      draftLabel: string
+      draft: [string, string, string]
+      facts: [{ value: string; source: string }, { value: string; source: string }]
+      approve: string
+      edit: string
+      editAlt: string
+      editing: string
+      saveEdit: string
+      pending: string
+      sent: string
+      replay: string
+      hint: string
+    }
+    unknown: {
+      customer: string
+      time: string
+      message: string
+      badge: string
+      title: string
+      body: string
+      questionLabel: string
+      question: string
+      answer: string
+      afterAnswer: string
+    }
+  }
+  owner: {
+    eyebrow: string
+    title: string
+    body: string
+    channels: Titled[]
     note: string
     example: string
-    online: string
+    bot: string
+    botSub: string
     today: string
     placeholder: string
-    clock: string
     chat: ChatMessage[]
     commandsTitle: string
     commandsHint: string
     commands: { ask: string; answer: string; action?: string }[]
   }
-  knowledge: {
-    title: string
-    body: string
-    extractKicker: string
-    extractTitle: string
-    extractBody: string
-    extractSourceLabel: string
-    extractSourceSample: string
-    ledgerTitle: string
-    verifiedBadge: string
-    facts: { category: string; label: string; value: string; verifiedAt: string }[]
-    missingRule: { badge: string; question: string; outcome: string }
-  }
-  demo: {
-    title: string
-    body: string
-    example: string
-    channel: string
-    customer: string
-    received: string
-    message: string
-    draftLabel: string
-    // The draft is written around two verified facts: before, fact 1, between, fact 2, after.
-    draft: [string, string, string]
-    facts: [Fact, Fact]
-    approve: string
-    tapHint: string
-    edit: string
-    editClosingAlt: string
-    editingBadge: string
-    saveEdit: string
-    stamp: string
-    sent: string
-    approvedAt: string
-    replay: string
-  }
   content: {
+    eyebrow: string
     title: string
     body: string
     note: string
@@ -104,31 +149,48 @@ export type Copy = {
     heldReason: string
     posts: { day: string; time: string; kind: string; title: string; status: string; state: PostStatus }[]
   }
-  escalate: { title: string; body: string; badge: string; items: string[]; examples: [string, string, string, string] }
   report: {
     title: string
     body: string
     example: string
     heading: string
-    verifiedTag: string
-    rows: [string, string][]
+    asOf: string
+    metrics: { label: string; value: string }[]
     footerNote: string
   }
-  control: { title: string; items: { title: string; body: string }[] }
-  steps: { title: string; items: { title: string; body: string }[] }
-  faq: { title: string; items: { q: string; a: string }[] }
-  pilot: {
+  limits: {
+    eyebrow: string
     title: string
     body: string
-    expectationsTitle: string
+    escalateTitle: string
+    escalateBadge: string
+    escalate: { title: string; example: string }[]
+    notYetTitle: string
+    notYet: Titled[]
+  }
+  trust: {
+    eyebrow: string
+    title: string
+    body: string
+    controlTitle: string
+    control: Titled[]
+    securityTitle: string
+    security: Titled[]
+  }
+  faq: { eyebrow: string; title: string; body: string; items: { q: string; a: string }[] }
+  pilot: {
+    eyebrow: string
+    title: string
+    body: string
     expectations: { badge: string; title: string; detail: string }[]
     nextStepsTitle: string
-    nextSteps: [string, string]
+    nextSteps: Titled[]
     whatsappDirectLabel: string
     whatsappPrefill: string
   }
   form: {
-    dossierHeader: string
+    title: string
+    subtitle: string
     categoryLabel: string
     categories: string[]
     business: string
@@ -146,83 +208,219 @@ export type Copy = {
     preview: string
     failed: string
   }
-  footer: { trademark: string }
+  mobileCta: { label: string; sub: string }
+  footer: { tagline: string; trademark: string; top: string }
 }
 
 export const copy: Record<Lang, Copy> = {
   tr: {
-    meta: { title: `${PRODUCT_NAME} · Küçük işletmeler için Instagram asistanı` },
-    nav: { waitlist: 'Pilot listesi', language: 'Dil', dark: 'Koyu tema' },
-    hero: {
-      kicker: 'Küçük işletmeler için Instagram asistanı',
-      pilotBadge: 'Erken Erişim · Pilot Programı',
-      promises: ['Fiyat uydurmaz.', 'Onaysız göndermez.', 'Olmayanı oldu demez.'],
-      lead:
-        "Müşteri DM'lerine sizin doğruladığınız bilgilerle yanıt hazırlar, paylaşımlarınızı planlar ve gün sonunda ne olduğunu anlatır. Siz hepsini WhatsApp'tan yönetir, önemli olanı tek dokunuşla onaylarsınız.",
-      cta: 'Pilot listesine katılın',
-      note: 'Kurulumu sizinle birlikte, 30 dakikada yapıyoruz.',
-      preview: {
-        dmLabel: '1 · Gelen Instagram DM (23:47)',
-        dmText: '“Merhaba, aylık üyelik ne kadar? Deneme dersi var mı?”',
-        factLabel: '2 · Doğrulanan Bilgi Kaynağı',
-        factText: '6.000 ₺ (Aylık üyelik) · Ücretsiz (Deneme dersi)',
-        stampLabel: '3 · WhatsApp’tan Tek Dokunuş',
-        stampSub: 'ONAYLANDI · 23:48',
-      },
+    meta: {
+      title: `${PRODUCT_NAME} · Küçük işletmeler için Instagram asistanı`,
+      description:
+        'Instagram DM’lerine yalnızca sizin doğruladığınız bilgilerle yanıt hazırlar, paylaşımları planlar, günün dürüst özetini çıkarır. Son söz her zaman sizde.',
     },
-    index: {
-      label: 'Bu sayfada',
+    nav: {
       links: [
-        { id: 'karsilastirma', label: 'Neden farklı' },
-        { id: 'whatsapp', label: 'WhatsApp’tan yönetim' },
-        { id: 'bilgi', label: 'Bilgi kaynağı' },
-        { id: 'dm', label: 'Müşteri mesajları' },
-        { id: 'icerik', label: 'Paylaşımlar' },
-        { id: 'kontrol', label: 'Kontrol sizde' },
+        { id: 'nasil', label: 'Nasıl çalışır' },
+        { id: 'demo', label: 'Örnekler' },
+        { id: 'guven', label: 'Güvenlik' },
         { id: 'sss', label: 'Sorular' },
       ],
+      cta: 'Pilota başvurun',
+      language: 'Dil',
+      toDark: 'Koyu temaya geç',
+      toLight: 'Açık temaya geç',
+      skip: 'İçeriğe geç',
+      menu: 'Menü',
     },
-    comparison: {
+    hero: {
+      badge: 'Ücretsiz pilot programı · Başvurular açık',
+      title: 'Instagram mesajlarına doğru yanıt.',
+      accent: 'Son söz her zaman sizde.',
+      lead:
+        'Müşteri DM’lerine yalnızca sizin doğruladığınız fiyat ve bilgilerle yanıt hazırlar, paylaşımlarınızı planlar, akşam günün dürüst özetini çıkarır. Önemli her adım tek dokunuşla onayınıza gelir: telefonunuzdan ya da Telegram’dan.',
+      cta: 'Ücretsiz pilota başvurun',
+      secondary: 'Nasıl çalıştığını görün',
+      points: ['30 gün ücretsiz', 'Kart bilgisi yok', 'Kurulum 30 dakika'],
+    },
+    preview: {
+      example: 'Örnek ekran',
+      screen: 'Bugün',
+      greeting: 'Günaydın, Ayşe',
+      date: 'Salı, 10 Kasım',
+      waitingTitle: 'Sizi bekleyenler',
+      queue: ['Onay bekleyen yanıt', 'Size iletilen konuşma', 'Beklemedeki paylaşım'],
+      queueCounts: [2, 1, 1],
+      metricsTitle: 'Bugün',
+      metrics: ['Gelen mesaj', 'Gönderilen yanıt', 'Yayınlanan paylaşım'],
+      metricValues: [14, 11, 1],
+      customer: 'ayse.yilmaz',
+      time: '23:47',
+      message: 'Merhaba, aylık üyelik ne kadar? Deneme dersi var mı?',
+      reply: ['Merhaba Ayşe Hanım, aylık üyeliğimiz ', ', ilk deneme dersiniz ', '. Size uygun bir gün ayarlayalım mı?'],
+      facts: ['6.000 ₺', 'ücretsiz'],
+      pending: 'Onay bekliyor',
+      sent: 'Gönderildi',
+      approve: 'Onayla ve gönder',
+      undo: 'Tekrar göster',
+    },
+    promises: [
+      {
+        title: 'Fiyat uydurmaz.',
+        body: 'Fiyat, saat, adres ve kampanyalar yalnızca sizin doğruladığınız bilgilerden gelir.',
+      },
+      {
+        title: 'Siz izin vermeden göndermez.',
+        body: 'Her yanıt onayınıza gelir. Yalnızca sizin açtığınız rutin sorular otomatik yanıtlanır.',
+      },
+      {
+        title: 'Olmayanı oldu demez.',
+        body: 'Planlanan paylaşım “yayınlandı” sayılmaz. Başarısız olan her şey nedeniyle birlikte yazılır.',
+      },
+    ],
+    audience: {
+      label: 'Kimler için',
+      items: ['Pilates ve spor stüdyoları', 'Güzellik salonları', 'Kafeler', 'Butikler', 'Klinikler', 'Hizmet işletmeleri'],
+    },
+    problem: {
+      eyebrow: 'Neden farklı',
       title: 'Ders arasında DM yetiştirmeye çalışmayın.',
       body:
         'Her gün aynı fiyat, saat ve adres sorularını yanıtlamak zaman alır; sıradan bir bot kurmak ise müşteriye yanlış bilgi verme riski taşır. İkisinin arasında güvenilir bir yol var.',
-      withoutLabel: 'Bugünkü durum',
+      withoutLabel: 'Bugün',
       withLabel: `${PRODUCT_NAME} ile`,
       rows: [
         {
           scenario: 'Gece 23:45’te gelen “Aylık ne kadar?” sorusu',
-          without:
-            'Ders yorgunluğuyla geç görülür ya da sabaha kalır. Müşteri yanıt beklerken başka bir stüdyoya yazar.',
+          without: 'Yorgunlukla geç görülür ya da sabaha kalır. Müşteri beklerken başka bir stüdyoya yazar.',
           withProduct:
-            'Doğrulanmış fiyat ve deneme dersi bilgisiyle taslak anında hazırlanır; seçiminize göre tek dokunuşla ya da otomatik yanıtlanır.',
+            'Doğrulanmış fiyatla taslak hemen hazırlanır. Tek dokunuşla siz gönderirsiniz ya da açtıysanız otomatik yanıtlanır.',
         },
         {
           scenario: '“Ya müşterime yanlış fiyat söylerse?” endişesi',
-          without:
-            'Sıradan yapay zekâ araçları bilmediği detayı tahmin eder, olmayan indirimi vaat eder veya pazarlığa girer.',
-          withProduct:
-            'Yalnızca sizin onayladığınız bilgi kartlarını kullanır. Kayıtlı olmayan bir soru gelirse tahmin yürütmez, mesajı size devreder.',
+          without: 'Sıradan yapay zekâ araçları bilmediği detayı tahmin eder, olmayan indirimi vaat eder, pazarlığa girer.',
+          withProduct: 'Yalnızca doğruladığınız bilgileri kullanır. Kayıtlı olmayan bir soru gelirse tahmin etmez, size iletir.',
         },
         {
-          scenario: 'Fiyat değiştiğinde unutulan eski paylaşımlar',
-          without:
-            'Üyelik fiyatı güncellenir ama önceden planlanan Cuma story’si eski fiyatla yayınlanır; müşteriye mahcup olunur.',
-          withProduct:
-            'WhatsApp’tan yeni fiyatı yazdığınız an, eski fiyatı içeren tüm planlı paylaşımlar kendiliğinden beklemeye alınır.',
+          scenario: 'Fiyat değişince unutulan planlı paylaşımlar',
+          without: 'Fiyat güncellenir ama Cuma için planlanan story eski fiyatla yayınlanır.',
+          withProduct: 'Yeni fiyatı girdiğiniz an, eski fiyatı içeren planlı paylaşımlar kendiliğinden beklemeye alınır.',
         },
       ],
     },
-    whatsapp: {
-      title: 'WhatsApp’tan yönetin.',
+    how: {
+      eyebrow: 'Nasıl çalışır',
+      title: 'Dört adımda, her adımı sizin bildiğiniz bir sistem.',
+      body: 'Kurulumdan sonra işiniz yalnızca onaylamak. Asistan bilmediği yerde durur ve size sorar.',
+      steps: [
+        {
+          title: 'Bilgilerinizi verirsiniz',
+          body: 'Fiyat listenizi ya da biyografinizi yapıştırırsınız. Bilgileri ayıklar, siz tek tek doğrularsınız.',
+        },
+        {
+          title: 'Mesaj gelince taslak hazırlanır',
+          body: 'Instagram DM’i gelir gelmez, doğrulanmış bilgilerle bir yanıt taslağı yazılır.',
+        },
+        {
+          title: 'Siz onaylarsınız',
+          body: 'Tek dokunuşla gönderir, düzenler ya da konuşmayı devralırsınız. Rutin soruları otomatiğe bırakabilirsiniz.',
+        },
+        {
+          title: 'Akşam özetini alırsınız',
+          body: 'Kaç mesaj geldi, ne gönderildi, ne bekliyor. Sayılar gerçek kayıtlardan gelir.',
+        },
+      ],
+    },
+    knowledge: {
+      eyebrow: 'Bilgi kaynağı',
+      title: 'İşletmenizi sizin verdiğiniz bilgilerden tanır.',
       body:
-        'Yeni bir uygulama öğrenmenize gerek yok. Fiyat değişikliğini yazın, bir fotoğraf gönderin, günün özetini sorun. Önemli her işlem için size butonlu bir onay gelir.',
-      note:
-        '“Tamam” yazmak hiçbir şeyi onaylamaz. Her onay tek bir işleme bağlıdır ve bir süre sonra geçersiz olur. İsterseniz Telegram’dan ya da telefonunuzdaki web uygulamasından da yönetebilirsiniz.',
+        'Tablo ya da teknik panel doldurmazsınız. Müşterilere gönderdiğiniz hazır fiyat mesajını yapıştırın; içindeki fiyat, saat ve kampanyalar bilgi kartlarına dönüşür. Taslaklarda yalnızca sizin doğruladıklarınız kullanılır.',
+      pasteLabel: 'Yapıştırdığınız metin',
+      pasteSample:
+        'Reformer Pilates Stüdyosu · Hafta içi 08:00–21:00 · Aylık üyelik (haftada 2 ders) 6.000 TL. İlk deneme dersimiz ücretsizdir. Adres: Bahçelievler Mah. No: 12',
+      pasteNote: 'Ayıklama bir bilgiyi kendiliğinden doğrulamaz.',
+      ledgerTitle: 'Bilgi kartlarınız',
+      progress: '{n} / {total} doğrulandı',
+      verified: 'Doğrulandı',
+      unverified: 'Doğrulanmadı',
+      verify: 'Doğrula',
+      reset: 'Baştan göster',
+      usageNote: 'Doğrulanmamış bilgi hiçbir taslakta kullanılmaz.',
+      facts: [
+        { category: 'Fiyat', label: 'Aylık üyelik (haftada 2)', value: '6.000 ₺' },
+        { category: 'Kampanya', label: 'İlk deneme dersi', value: 'Ücretsiz' },
+        { category: 'Saatler', label: 'Hafta içi çalışma saatleri', value: '08:00 – 21:00' },
+        { category: 'Adres', label: 'Stüdyo konumu', value: 'Bahçelievler Mah. No: 12' },
+      ],
+    },
+    demo: {
+      eyebrow: 'Müşteri mesajları',
+      title: 'Her fiyatın bir kaynağı var.',
+      body:
+        'Taslaktaki her fiyat ve kampanya, sizin doğruladığınız bir bilgiden gelir ve kaynağı altında yazar. Bilgi kayıtlı değilse taslak yazılmaz; soru size gelir.',
+      points: [
+        { title: 'Kaynağı belli taslak', body: 'Vurgulu her bilginin hangi karttan geldiği altında yazar.' },
+        { title: 'Tek dokunuşla onay', body: 'Gönderir, düzenler ya da konuşmayı devralırsınız.' },
+        { title: 'Bilmediğinde durur', body: 'Kayıtlı olmayan soruya taslak yazmaz, size sorar.' },
+      ],
+      tabs: ['Bilgi kayıtlı', 'Bilgi kayıtlı değil'],
       example: 'Örnek ekran',
-      online: 'çevrimiçi',
+      channel: 'Instagram DM',
+      known: {
+        customer: 'ayse.yilmaz',
+        time: '23:47',
+        message: 'Merhaba, aylık üyelik ne kadar? Deneme dersi var mı?',
+        draftLabel: 'Yanıt taslağı',
+        draft: ['Merhaba Ayşe Hanım, aylık üyeliğimiz ', '. İlk deneme dersiniz ', '. Size uygun bir gün ayarlayalım mı?'],
+        facts: [
+          { value: '6.000 ₺', source: 'Aylık üyelik · Fiyat · 12 Ekim’de doğrulandı' },
+          { value: 'ücretsiz', source: 'İlk deneme dersi · Kampanya · 3 Ekim’de doğrulandı' },
+        ],
+        approve: 'Onayla ve gönder',
+        edit: 'Düzenle',
+        editAlt: '. Bu hafta uygun olduğunuz bir günü birlikte seçelim mi?',
+        editing: 'Düzenlendi',
+        saveEdit: 'Diğer ifade',
+        pending: 'Onay bekliyor',
+        sent: 'Gönderildi · 23:48',
+        replay: 'Tekrar göster',
+        hint: 'Vurgulu bilgilere dokunup kaynağını görün.',
+      },
+      unknown: {
+        customer: 'elif.k',
+        time: '21:12',
+        message: 'Hamile pilatesi dersiniz var mı?',
+        badge: 'Size iletildi',
+        title: 'Taslak yazılmadı',
+        body: 'Bu konuda doğrulanmış bir bilgi yok. Asistan tahmin etmek yerine durdu ve size sordu.',
+        questionLabel: 'Asistanın size sorusu',
+        question: '“Hamile pilatesi dersi” hakkında kayıtlı bilgi yok. Müşteriye ne söyleyelim?',
+        answer: 'Yanıtı siz yazarsınız',
+        afterAnswer: 'Cevabınızı bilgi olarak eklerseniz, bir dahaki benzer soruda onu kullanır.',
+      },
+    },
+    owner: {
+      eyebrow: 'Telefonunuzdan yönetin',
+      title: 'Yazın, sorun, dokunarak onaylayın.',
+      body:
+        'Fiyat değişikliğini yazın, bir fotoğraf gönderin, günün özetini sorun. Önemli her işlem size butonlu bir onay olarak gelir.',
+      channels: [
+        {
+          title: 'Telefonunuzdaki web uygulaması',
+          body: 'Kurulum gerektirmez. Bugün ekranı, gelen kutusu ve onaylar tek yerde.',
+        },
+        {
+          title: 'Telegram',
+          body: 'Bildirimler ve onaylar sohbet olarak gelir. Hesabınızı tek kullanımlık bir kodla bağlarsınız.',
+        },
+      ],
+      note: '“Tamam” yazmak hiçbir şeyi onaylamaz. Her onay tek bir işleme bağlı bir butondur, bir kez kullanılır ve süresi dolar.',
+      example: 'Örnek sohbet',
+      bot: PRODUCT_NAME,
+      botSub: 'bot',
       today: 'Bugün',
-      placeholder: 'Mesaj',
-      clock: '09:14',
+      placeholder: 'Mesaj yazın',
       chat: [
         { from: 'owner', text: 'Aylık üyelik artık 7.000 TL', time: '09:12' },
         {
@@ -230,12 +428,6 @@ export const copy: Record<Lang, Copy> = {
           text: 'Aylık üyelik fiyatını 6.000 ₺ yerine 7.000 ₺ yapayım mı?',
           time: '09:12',
           actions: ['Evet, güncelle', 'Vazgeç'],
-        },
-        {
-          from: 'owner',
-          quote: 'Aylık üyelik fiyatını 6.000 ₺ yerine 7.000 ₺ yapayım mı?',
-          text: 'Evet, güncelle',
-          time: '09:13',
         },
         {
           from: 'assistant',
@@ -250,183 +442,144 @@ export const copy: Record<Lang, Copy> = {
         },
         {
           from: 'assistant',
-          text: 'Story yarın 19:00 için hazır. Onaylıyor musunuz?',
+          text: 'Story taslağı hazır: yarın 19:00. Onaylarsanız planlarım.',
           time: '09:14',
-          actions: ['Onayla', 'Saati değiştir'],
+          actions: ['Onayla', 'Reddet'],
         },
       ],
       commandsTitle: 'Başka neler yazabilirsiniz',
-      commandsHint: 'WhatsApp ekranında görmek için bir komuta dokunun',
+      commandsHint: 'Sohbette görmek için birine dokunun',
       commands: [
         { ask: 'Bugün kaç DM geldi?', answer: '14 mesaj geldi. 11’i yanıtlandı, 2’si size iletildi, 1’i yanıt bekliyor.' },
+        { ask: 'Onay bekleyen ne var?', answer: '2 yanıt ve 1 paylaşım onayınızı bekliyor.', action: 'Onaylara git' },
         {
           ask: 'Deneme dersi için bir story hazırla.',
-          answer: 'Taslak hazır. İçindeki fiyat ve tarih doğrulandı, onayınızı bekliyor.',
+          answer: 'Taslak hazır. İçindeki fiyat ve tarih doğrulanmış bilgilerden geliyor.',
           action: 'Taslağı gör',
         },
-        { ask: 'Yanıtlar biraz daha samimi olsun.', answer: 'Yanıt tonu güncellendi. Bundan sonraki taslaklarda geçerli.' },
-        { ask: 'Onay bekleyen ne var?', answer: '2 yanıt ve 1 paylaşım onayınızı bekliyor.' },
+        {
+          ask: 'Yanıtlar biraz daha samimi olsun.',
+          answer: 'Yanıt tonunu daha samimi yapayım mı? Sonraki taslaklarda geçerli olur.',
+          action: 'Evet, güncelle',
+        },
         {
           ask: 'Dünkü paylaşım neden yayınlanmadı?',
-          answer: 'Instagram görseli kabul etmedi, çünkü oranı 9:16 değildi. Yeni bir görsel gönderirseniz yeniden planlarım.',
+          answer: 'Instagram görseli kabul etmedi: oranı desteklenmiyordu. Yeni bir görsel gönderirseniz yeniden hazırlarım.',
         },
         { ask: 'Yarınki paylaşımı iptal et.', answer: 'Yarın 19:00 story’sini iptal edeyim mi?', action: 'İptal et' },
       ],
     },
-    knowledge: {
-      title: 'İşletmenizi nereden tanıyor?',
-      body:
-        'Karmaşık tablolar veya teknik paneller doldurmazsınız. Mevcut fiyat listenizi ya da Instagram biyografinizi yapıştırırsınız; bilgileri tek tek ayıklar, siz yalnızca doğrularsınız.',
-      extractKicker: 'Adım 1 · Hızlı aktarım',
-      extractTitle: 'Mevcut metninizi olduğu gibi yapıştırın.',
-      extractBody:
-        'WhatsApp’ta müşterilere gönderdiğiniz hazır fiyat mesajını veya profil yazınızı verin; içindeki fiyat, saat ve kampanyaları otomatik olarak bilgi kartlarına dönüştürsün.',
-      extractSourceLabel: 'Yapıştırılan metin örneği',
-      extractSourceSample:
-        'Reformer Pilates Stüdyosu · Hafta içi 08:00-21:00 · Aylık üyelik (haftada 2 ders) 6.000 TL. İlk deneme dersimiz ücretsizdir. Adres: Bahçelievler Mah. No: 12',
-      ledgerTitle: 'Adım 2 · Doğrulanmış İşletme Kartınız',
-      verifiedBadge: 'Doğrulandı',
-      facts: [
-        {
-          category: 'Fiyatlar',
-          label: 'Aylık üyelik (Haftada 2)',
-          value: '6.000 ₺',
-          verifiedAt: '12 Ekim’de doğrulandı',
-        },
-        {
-          category: 'Kampanyalar',
-          label: 'İlk deneme dersi',
-          value: 'Ücretsiz',
-          verifiedAt: '3 Ekim’de doğrulandı',
-        },
-        {
-          category: 'Saatler',
-          label: 'Hafta içi çalışma saatleri',
-          value: '08:00 – 21:00',
-          verifiedAt: '1 Ekim’de doğrulandı',
-        },
-        {
-          category: 'Adres',
-          label: 'Stüdyo konumu',
-          value: 'Bahçelievler Mah. No: 12',
-          verifiedAt: '1 Ekim’de doğrulandı',
-        },
-      ],
-      missingRule: {
-        badge: 'Kayıtlı bilgi yoksa',
-        question: 'Örnek müşteri sorusu: “Hamile pilatesi dersiniz var mı?”',
-        outcome: 'Kartlarda bu bilgi yoksa asla uydurmaz. Yanıt taslağı üretmez, soruyu doğrudan size iletir.',
-      },
-    },
-    demo: {
-      title: 'Her fiyatın bir kaynağı var.',
-      body:
-        'Taslaktaki her fiyat, saat ve kampanya, sizin girip doğruladığınız bir bilgiden gelir ve kaynağı altında yazar. Bir bilgi eksikse tahmin etmez, size sorar.',
-      example: 'Örnek ekran',
-      channel: 'Instagram',
-      customer: 'ayse.yilmaz',
-      received: '23:47',
-      message: 'Merhaba, aylık üyelik ne kadar? Deneme dersi var mı?',
-      draftLabel: 'Taslak yanıt',
-      draft: ['Merhaba Ayşe Hanım, aylık üyeliğimiz ', '. İlk deneme dersiniz ', '. Size uygun bir gün ayarlayalım mı?'],
-      facts: [
-        { value: '6.000 ₺', source: 'Aylık üyelik · Fiyatlar · 12 Ekim’de doğrulandı' },
-        { value: 'ücretsiz', source: 'Deneme dersi · Kampanyalar · 3 Ekim’de doğrulandı' },
-      ],
-      approve: 'Onayla ve gönder',
-      tapHint: '← Dokunup deneyin',
-      edit: 'Düzenle',
-      editClosingAlt: '. Uygun olduğunuz bir günü birlikte seçelim mi?',
-      editingBadge: 'Taslak düzenleniyor',
-      saveEdit: 'Metni değiştir',
-      stamp: 'Onaylandı',
-      sent: 'Gönderildi',
-      approvedAt: '23:48',
-      replay: 'Tekrar göster',
-    },
     content: {
-      title: 'Paylaşımlarınız da planlı.',
+      eyebrow: 'Paylaşımlar',
+      title: 'Paylaşımlarınız planlı ve kontrollü.',
       body:
-        'Ne paylaşmak istediğinizi yazın. Taslak doğrulanmış bilgilerle hazırlanır, siz onaylarsınız, saati gelince paylaşılır. Bir fiyat değişirse, eski fiyatı içeren paylaşım kendiliğinden beklemeye alınır.',
+        'Ne paylaşmak istediğinizi yazın. Taslak doğrulanmış bilgilerle hazırlanır, siz onaylarsınız, saati gelince paylaşılır.',
       note: 'Planlandı, yayınlandı demek değildir. Paylaşım gerçekten yayınlanınca haber verir, yayınlanamazsa nedenini söyler.',
       example: 'Örnek',
       heading: 'Bu hafta',
-      heldReason: 'Fiyat 6.000 ₺ → 7.000 ₺ olarak güncellendiği için otomatik beklemeye alındı.',
+      heldReason: 'Fiyat 6.000 ₺ → 7.000 ₺ olarak değiştiği için kendiliğinden beklemeye alındı.',
       posts: [
         { day: 'Pzt', time: '19:00', kind: 'Story', title: 'Deneme dersi', status: 'Yayınlandı', state: 'published' },
         { day: 'Çar', time: '12:30', kind: 'Gönderi', title: 'Sabah reformer grubu', status: 'Planlandı', state: 'scheduled' },
-        { day: 'Cum', time: '19:00', kind: 'Story', title: 'Üyelik kampanyası', status: 'Beklemede · eski fiyat', state: 'held' },
+        { day: 'Cum', time: '19:00', kind: 'Story', title: 'Üyelik kampanyası', status: 'Beklemede', state: 'held' },
         { day: 'Paz', time: '10:00', kind: 'Gönderi', title: 'Hafta sonu saatleri', status: 'Onay bekliyor', state: 'pending' },
-      ],
-    },
-    escalate: {
-      title: 'Bazı mesajlar her zaman size gelir.',
-      body: 'Bunlara otomatik yanıt verilmez. Mesaj size bildirilir, yanıtı siz yazarsınız.',
-      badge: 'Size iletilir',
-      items: ['Şikâyetler', 'İade talepleri', 'İndirim ve pazarlık', 'Emin olamadığı her şey'],
-      examples: [
-        '“Bugünkü ders çok kalabalıktı, memnun kalmadım.”',
-        '“Bu ay gelemedim, kalan derslerimin iadesini alabilir miyim?”',
-        '“İki arkadaş yazılırsak aylık ücrete indirim yapar mısınız?”',
-        '“Bel fıtığım var, hangi eğitmenle çalışmam uygun olur?”',
       ],
     },
     report: {
       title: 'Akşam, günün dürüst bir özeti.',
-      body: 'Sayılar gerçek kayıtlardan gelir. Planlanan bir paylaşım yayınlanmış gibi gösterilmez, başarısız olan her şey nedeniyle birlikte yazılır.',
+      body: 'Sayılar gerçek kayıtlardan gelir. Başarısız olan her şey nedeniyle birlikte yazılır.',
       example: 'Örnek',
-      heading: 'Günün özeti · 21:00',
-      verifiedTag: 'Gerçek kayıt',
-      rows: [
-        ['Gelen mesaj', '14'],
-        ['Onaylanan yanıt', '11'],
-        ['Size iletilen', '2'],
-        ['Yanıt bekleyen', '1'],
-        ['Planlanan paylaşım', 'Yarın 19:00'],
-        ['Yayınlanan paylaşım', '0'],
+      heading: 'Günün özeti',
+      asOf: '21:00 itibarıyla',
+      metrics: [
+        { label: 'Gelen mesaj', value: '14' },
+        { label: 'Gönderilen yanıt', value: '11' },
+        { label: 'Size iletilen', value: '2' },
+        { label: 'Yanıt bekleyen', value: '1' },
+        { label: 'Yayınlanan paylaşım', value: '0' },
+        { label: 'Sıradaki paylaşım', value: 'Yarın 19:00' },
       ],
-      footerNote: 'Planlanan paylaşımlar gerçekten yayınlanana kadar “0” olarak görünür.',
+      footerNote: 'Planlanan paylaşım, Instagram yayınlandığını doğrulayana kadar “yayınlanan” sayılmaz.',
     },
-    control: {
-      title: 'Kontrol sizde.',
-      items: [
+    limits: {
+      eyebrow: 'Sınırları belli',
+      title: 'Ne yapmadığını da açıkça söylüyoruz.',
+      body: 'Bazı mesajlar her zaman size gelir. Bazı şeyleri de bilerek henüz yapmıyor.',
+      escalateTitle: 'Her zaman size gelenler',
+      escalateBadge: 'Size iletilir',
+      escalate: [
+        { title: 'Şikâyetler', example: '“Bugünkü ders çok kalabalıktı, memnun kalmadım.”' },
+        { title: 'İade talepleri', example: '“Bu ay gelemedim, kalan derslerimin iadesini alabilir miyim?”' },
+        { title: 'İndirim ve pazarlık', example: '“İki arkadaş yazılırsak indirim yapar mısınız?”' },
+        { title: 'Emin olamadığı her şey', example: '“Bel fıtığım var, hangi eğitmenle çalışmam uygun olur?”' },
+      ],
+      notYetTitle: 'Şimdilik yapmadıkları',
+      notYet: [
         {
-          title: 'Neyin otomatik olacağını siz seçersiniz.',
-          body: 'Örneğin saat ve adres soruları otomatik yanıtlanır, fiyat soruları onayınıza gelir. İstediğiniz zaman değiştirirsiniz.',
+          title: 'Gönderi yorumlarını yanıtlamaz.',
+          body: 'Gerekli Meta izinleri doğrulanana kadar yorumlar sizde kalır.',
         },
         {
-          title: 'Bir konuşmayı devralabilirsiniz.',
-          body: 'Bir müşteriyle kendiniz konuşmak istediğinizde o konuşmada otomasyon durur. Bıraktığınızda kaldığı yerden devam eder.',
+          title: 'DM’deki fotoğraf ve sesli mesajları yorumlamaz.',
+          body: 'Ek içeren mesajlar size iletilir.',
         },
         {
-          title: 'Ekibinize uygun roller.',
-          body: 'Personel yanıt ve paylaşım taslağı hazırlar. Fiyat değişikliği ve yayın sizin onayınızla olur.',
+          title: 'Komutla onaylamaz, yayınlamaz, göndermez.',
+          body: 'Bunlar yalnızca o işleme bağlı bir butonla olur.',
         },
         {
-          title: 'Her işlemin kaydı tutulur.',
-          body: 'Ne gönderildi, kim onayladı, ne zaman oldu. Hepsini tek bir listede görürsünüz.',
+          title: 'WhatsApp’tan yönetilmez.',
+          body: 'Şu an web uygulaması ve Telegram var.',
         },
       ],
     },
-    steps: {
-      title: 'Nasıl başlarsınız',
-      items: [
+    trust: {
+      eyebrow: 'Kontrol ve güvenlik',
+      title: 'Kontrol sizde. Verileriniz de.',
+      body: 'Neyin otomatik olacağına siz karar verirsiniz. Her işlemin kim tarafından, ne zaman yapıldığı kayıtlıdır.',
+      controlTitle: 'Kontrol',
+      control: [
         {
-          title: 'Bilgilerinizi birlikte giriyoruz.',
-          body: 'Fiyatlar, saatler, adres ve kampanyalar. Kurulumu işletmenize gelip sizinle yapıyoruz. Her bilgiyi siz doğrularsınız.',
+          title: 'Neyin otomatik olacağını siz seçersiniz',
+          body: 'Örneğin saat ve adres soruları otomatik yanıtlanır, fiyat soruları onayınıza gelir.',
         },
         {
-          title: 'Instagram hesabınızı bağlıyoruz.',
-          body: 'Instagram’ın resmi giriş ekranıyla bağlanır. Sonra birkaç örnek müşteri sorusuyla yanıtları birlikte deneriz.',
+          title: 'Konuşmayı devralabilirsiniz',
+          body: 'Müşteriyle kendiniz konuşurken otomasyon o konuşmada durur; bıraktığınızda devam eder.',
         },
         {
-          title: 'Gerisini WhatsApp’tan yönetirsiniz.',
-          body: 'Taslaklar ve onaylar telefonunuza gelir. Hazır olduğunuzda sık sorulan sorular için otomatik yanıtı açarsınız.',
+          title: 'Ekibinize uygun roller',
+          body: 'Personel taslak hazırlar. Fiyat değişikliği ve yayın sizin onayınızla olur.',
+        },
+        {
+          title: 'Her işlemin kaydı',
+          body: 'Ne gönderildi, kim onayladı, ne zaman oldu. Hepsi tek bir listede.',
+        },
+      ],
+      securityTitle: 'Güvenlik',
+      security: [
+        {
+          title: 'Instagram şifreniz bize gelmez',
+          body: 'Hesap, Instagram’ın resmi giriş ekranıyla bağlanır. Bağlantıyı istediğiniz an kaldırırsınız.',
+        },
+        {
+          title: 'Onaylar tek kullanımlık',
+          body: 'Her onay bir işleme ve onun son haline bağlıdır. Metin değişirse onay geçersiz olur.',
+        },
+        {
+          title: 'İşletmeniz kendi alanında',
+          body: 'Her işletmenin verisi ayrı tutulur; başka bir işletme sizinkini göremez.',
+        },
+        {
+          title: 'Silme hakkı sizde',
+          body: 'Bağlantıyı kaldırdığınızda ilgili veriler silinir. Silme talebinizi her zaman iletebilirsiniz.',
         },
       ],
     },
     faq: {
+      eyebrow: 'Sorular',
       title: 'Sık sorulanlar',
+      body: 'Cevabını bulamadığınız bir şey varsa pilot formuna yazın, sizi arayalım.',
       items: [
         {
           q: 'Instagram şifremi vermem gerekiyor mu?',
@@ -434,67 +587,73 @@ export const copy: Record<Lang, Copy> = {
         },
         {
           q: 'Müşterime yanlış bir şey yazarsa?',
-          a: 'Fiyat, saat, adres ve kampanya gibi bilgileri yalnızca sizin doğruladıklarınızdan alır. Her yanıt gönderilmeden önce bu açıdan kontrol edilir. Emin olamadığı mesajları size bırakır.',
+          a: 'Fiyat, saat, adres ve kampanya bilgilerini yalnızca sizin doğruladıklarınızdan alır ve her yanıt gönderilmeden önce bu açıdan kontrol edilir. Emin olamadığı mesajları size bırakır.',
         },
         {
           q: 'Gece gelen mesajlar ne olur?',
           a: 'Rutin sorular için otomatik yanıtı açtıysanız hemen yanıtlanır. Açmadıysanız taslak hazır bekler, siz uygun olduğunuzda onaylarsınız. Instagram’ın 24 saatlik yanıt kuralına uyar.',
         },
         {
-          q: 'WhatsApp kullanmak zorunda mıyım?',
-          a: 'Hayır. Telegram’ı ya da telefonunuzdaki web uygulamasını da kullanabilirsiniz. Hepsinde aynı onaylar ve bildirimler var.',
+          q: 'WhatsApp’tan yönetebilir miyim?',
+          a: 'Şimdilik hayır. Telefonunuzdaki web uygulamasını ya da Telegram’ı kullanırsınız; ikisinde de aynı onaylar ve bildirimler var. WhatsApp’ı pilot işletmelerin geri bildirimine göre değerlendiriyoruz.',
+        },
+        {
+          q: 'Gönderi yorumlarına da yanıt veriyor mu?',
+          a: 'Henüz değil. Yorum yanıtları, Meta’nın gerekli izinleri gerçek hesaplarda doğrulandıktan sonra açılacak. O zamana kadar yorumlar sizde kalır.',
         },
         {
           q: 'Kurulumu kendim yapabilir miyim?',
-          a: 'Evet. Instagram biyografinizi ya da fiyat listenizi yapıştırın, bilgileri o çıkarır, siz tek tek doğrularsınız. İsterseniz işletmenize gelip birlikte de kuruyoruz.',
+          a: 'Evet. İşletme türünüzü seçer, biyografinizi ya da fiyat listenizi yapıştırırsınız; bilgileri o ayıklar, siz tek tek doğrularsınız. Pilot süresince isterseniz birlikte de kuruyoruz.',
         },
         {
-          q: 'Hangi işletmeler için uygun?',
-          a: 'Instagram üzerinden müşterileriyle iletişim kuran tüm yerel işletmeler için: kafeler, butikler, güzellik salonları, spor stüdyoları, klinikler ve hizmet işletmeleri.',
+          q: 'Ekibim de kullanabilir mi?',
+          a: 'Evet. Ekip üyelerini davet edersiniz. Personel yanıt ve paylaşım taslağı hazırlar; fiyat değişikliği ve yayın işletme sahibi ya da yöneticinin onayıyla olur.',
+        },
+        {
+          q: 'Pilot bitince ne olacak?',
+          a: 'Pilot 30 gün ücretsizdir ve kart bilgisi istemiyoruz. Devam etmek isterseniz pilot işletmelere 12 ay sabit kurucu fiyatı sunuyoruz. Kendiliğinden ücretlendirme yoktur; devam etmezseniz bağlantıyı kaldırırsınız, verileriniz silinir.',
         },
       ],
     },
     pilot: {
-      title: 'Pilot listesine katılın',
+      eyebrow: 'Pilot programı',
+      title: 'İlk işletmelerden biri olun.',
       body:
-        'Instagram kullanan seçilmiş yerel işletmelerle pilot uygulamaya başlıyoruz. Listeye katılırsanız sizi arayıp işletmenizi ve Instagram’ı nasıl kullandığınızı konuşuruz. Uygun olursa kurulumu sizinle birlikte yaparız.',
-      expectationsTitle: 'Pilot programı hakkında bilmeniz gerekenler',
+        'Instagram’ı aktif kullanan 10–15 yerel işletmeyle başlıyoruz. Başvurunuzu aldıktan sonra sizi arar, işletmenizi ve Instagram’ı nasıl kullandığınızı konuşuruz.',
       expectations: [
         {
-          badge: '30 dakika · Birlikte kurulum',
-          title: 'Kurulumu sizinle birlikte yapıyoruz.',
-          detail:
-            'İster yerinde ister görüntülü görüşmeyle; fiyat ve saatlerinizi birlikte giriyor, 5 gerçek müşteri sorusuyla canlı test yapıyoruz.',
+          badge: '30 dakika',
+          title: 'Kurulumu birlikte yapıyoruz',
+          detail: 'Yerinde ya da görüntülü; fiyat ve saatlerinizi birlikte girip 5 gerçek müşteri sorusuyla deneriz.',
         },
         {
-          badge: 'Ücretsiz pilot · Taahhüt yok',
-          title: 'İlk deneme sürecinde ücret veya kart bilgisi istemiyoruz.',
-          detail:
-            'Sistemi kendi müşterilerinizle, gerçek iş akışınızda deneyin. Memnun kalmazsanız tek dokunuşla Instagram bağlantısını kaldırabilirsiniz.',
+          badge: '30 gün ücretsiz',
+          title: 'Ücret ve kart bilgisi yok',
+          detail: 'Kendi müşterilerinizle, gerçek iş akışınızda deneyin. Memnun kalmazsanız bağlantıyı kaldırın.',
         },
         {
-          badge: '10–15 işletme · Birebir destek',
-          title: 'Her işletmeyle doğrudan kurucu ekip ilgileniyor.',
-          detail:
-            'Kalabalık bir çağrı merkezi değil; işletmenizin çalışma düzenini bilen, ihtiyaç duyduğunuzda doğrudan ulaşabileceğiniz küçük bir ekiple çalışırsınız.',
+          badge: 'Birebir destek',
+          title: 'Kurucu ekiple doğrudan çalışırsınız',
+          detail: 'Çağrı merkezi değil; işletmenizi tanıyan, doğrudan ulaşabileceğiniz küçük bir ekip.',
         },
         {
-          badge: 'Resmi bağlantı · Şifre paylaşılmaz',
-          title: 'Instagram şifreniz her zaman sizde kalır.',
-          detail:
-            'Hesabınız Instagram’ın resmi giriş ekranıyla bağlanır. Bağlantıyı kestiğiniz anda erişim durur ve verileriniz silinir.',
+          badge: 'Resmi bağlantı',
+          title: 'Şifreniz sizde kalır',
+          detail: 'Instagram’ın resmi giriş ekranı. Bağlantıyı kestiğiniz an erişim durur.',
         },
       ],
-      nextStepsTitle: 'Formu gönderdikten sonra ne olur?',
+      nextStepsTitle: 'Başvurudan sonra',
       nextSteps: [
-        '24 saat içinde sizi kısaca arar veya WhatsApp’tan yazarız.',
-        'Uygun bir gün seçip 30 dakikada kurulumu birlikte tamamlarız.',
+        { title: '24 saat içinde', body: 'Sizi kısaca arar ya da mesaj atarız.' },
+        { title: 'Uygun bir günde', body: 'Kurulumu 30 dakikada birlikte tamamlarız.' },
+        { title: 'Sonrasında', body: 'Taslaklar ve onaylar telefonunuza gelir.' },
       ],
-      whatsappDirectLabel: 'Form doldurmak istemiyor musunuz? Bize doğrudan WhatsApp’tan yazın →',
+      whatsappDirectLabel: 'Form doldurmak istemiyor musunuz? Bize WhatsApp’tan yazın',
       whatsappPrefill: `Merhaba, ${PRODUCT_NAME} pilot programı hakkında bilgi almak istiyorum.`,
     },
     form: {
-      dossierHeader: 'Pilot Başvuru Kartı',
+      title: 'Pilot başvurusu',
+      subtitle: 'Yaklaşık 1 dakika sürer.',
       categoryLabel: 'İşletme türü',
       categories: [
         'Güzellik / Bakım',
@@ -502,7 +661,7 @@ export const copy: Record<Lang, Copy> = {
         'Mağaza / Butik',
         'Spor / Pilates',
         'Klinik / Sağlık',
-        'Hizmet İşletmesi',
+        'Hizmet işletmesi',
         'Diğer',
       ],
       business: 'İşletme adı',
@@ -513,91 +672,230 @@ export const copy: Record<Lang, Copy> = {
       city: 'Şehir',
       consent:
         'Bilgilerimin yalnızca pilot programı hakkında benimle iletişime geçmek için kullanılmasını kabul ediyorum. Bilgilerim başkasıyla paylaşılmaz ve istediğimde silinir.',
-      submit: 'Listeye katıl',
+      submit: 'Başvuruyu gönder',
       sending: 'Gönderiliyor…',
       required: 'Bu alan gerekli.',
       consentRequired: 'Devam etmek için onay kutusunu işaretleyin.',
-      sent: 'Teşekkürler, listeye eklendiniz. Sizinle iletişime geçeceğiz.',
+      sent: 'Teşekkürler, başvurunuz alındı. 24 saat içinde size ulaşacağız.',
       preview: 'Önizleme: bu form henüz bir yere bağlı değil. Bilgileriniz gönderilmedi.',
       failed: 'Gönderilemedi. Bağlantınızı kontrol edip tekrar deneyin.',
     },
+    mobileCta: { label: 'Ücretsiz pilota başvurun', sub: '30 gün · kart yok' },
     footer: {
-      trademark: 'Instagram ve WhatsApp, Meta Platforms, Inc.’in ticari markalarıdır. Bu ürün Meta ile bağlantılı değildir.',
+      tagline: 'Küçük işletmeler için Instagram asistanı.',
+      trademark:
+        'Instagram ve WhatsApp, Meta Platforms, Inc.’in ticari markalarıdır; Telegram, sahibinin ticari markasıdır. Bu ürün bu şirketlerle bağlantılı değildir.',
+      top: 'Başa dön',
     },
   },
   en: {
-    meta: { title: `${PRODUCT_NAME} · An Instagram assistant for small businesses` },
-    nav: { waitlist: 'Pilot waitlist', language: 'Language', dark: 'Dark mode' },
-    hero: {
-      kicker: 'An Instagram assistant for small businesses',
-      pilotBadge: 'Early Access · Pilot Programme',
-      promises: ['Never invents a price.', 'Never sends without you.', 'Never claims what didn’t happen.'],
-      lead:
-        'It drafts replies to your Instagram DMs using only details you have verified, plans your posts, and tells you what happened each day. You run it all from WhatsApp and approve what matters with one tap.',
-      cta: 'Join the pilot waitlist',
-      note: 'We set it up together with you in 30 minutes.',
-      preview: {
-        dmLabel: '1 · Incoming Instagram DM (23:47)',
-        dmText: '“Hi! How much is a monthly membership? Do you have a trial class?”',
-        factLabel: '2 · Verified Fact Source',
-        factText: '₺6,000 (Monthly membership) · Free (Trial class)',
-        stampLabel: '3 · One-Tap WhatsApp Sign-off',
-        stampSub: 'APPROVED · 23:48',
-      },
+    meta: {
+      title: `${PRODUCT_NAME} · An Instagram assistant for small businesses`,
+      description:
+        'Drafts Instagram DM replies using only details you verified, plans your posts and gives you an honest daily summary. You always have the final say.',
     },
-    index: {
-      label: 'On this page',
+    nav: {
       links: [
-        { id: 'karsilastirma', label: 'Why it is different' },
-        { id: 'whatsapp', label: 'Run it from WhatsApp' },
-        { id: 'bilgi', label: 'How it knows' },
-        { id: 'dm', label: 'Customer messages' },
-        { id: 'icerik', label: 'Posts' },
-        { id: 'kontrol', label: 'You stay in control' },
+        { id: 'nasil', label: 'How it works' },
+        { id: 'demo', label: 'Examples' },
+        { id: 'guven', label: 'Security' },
         { id: 'sss', label: 'Questions' },
       ],
+      cta: 'Apply for the pilot',
+      language: 'Language',
+      toDark: 'Switch to dark theme',
+      toLight: 'Switch to light theme',
+      skip: 'Skip to content',
+      menu: 'Menu',
     },
-    comparison: {
-      title: 'Stop trying to catch up on DMs between classes.',
+    hero: {
+      badge: 'Free pilot programme · Applications open',
+      title: 'Right answers for every Instagram DM.',
+      accent: 'You always have the final say.',
+      lead:
+        'It drafts replies to customer DMs using only the prices and details you have verified, plans your posts and gives you an honest summary each evening. Anything important comes to you for a one-tap approval, on your phone or in Telegram.',
+      cta: 'Apply for the free pilot',
+      secondary: 'See how it works',
+      points: ['Free for 30 days', 'No card needed', '30-minute setup'],
+    },
+    preview: {
+      example: 'Example screen',
+      screen: 'Today',
+      greeting: 'Good morning, Anna',
+      date: 'Tuesday, 10 November',
+      waitingTitle: 'Waiting for you',
+      queue: ['Replies awaiting approval', 'Conversations passed to you', 'Posts on hold'],
+      queueCounts: [2, 1, 1],
+      metricsTitle: 'Today',
+      metrics: ['Messages received', 'Replies sent', 'Posts published'],
+      metricValues: [14, 11, 1],
+      customer: 'anna.berg',
+      time: '23:47',
+      message: 'Hi! How much is a monthly membership? Do you have a trial class?',
+      reply: ['Hi Anna, a monthly membership is ', ' and your first trial class is ', '. Shall we find a day that suits you?'],
+      facts: ['₺6,000', 'free'],
+      pending: 'Awaiting approval',
+      sent: 'Sent',
+      approve: 'Approve and send',
+      undo: 'Show again',
+    },
+    promises: [
+      {
+        title: 'Never invents a price.',
+        body: 'Prices, hours, addresses and offers come only from details you have verified.',
+      },
+      {
+        title: 'Never sends without your say.',
+        body: 'Every reply comes to you for approval. Only the routine questions you switch on are answered automatically.',
+      },
+      {
+        title: 'Never claims what didn’t happen.',
+        body: 'A scheduled post is never counted as published. Anything that failed is listed with the reason.',
+      },
+    ],
+    audience: {
+      label: 'Made for',
+      items: ['Pilates and fitness studios', 'Beauty salons', 'Cafés', 'Boutiques', 'Clinics', 'Service businesses'],
+    },
+    problem: {
+      eyebrow: 'Why it is different',
+      title: 'Stop catching up on DMs between classes.',
       body:
-        'Answering the same price, hours and address questions every day drains your time—while a generic chatbot risks telling a customer the wrong price. There is a reliable middle ground.',
-      withoutLabel: 'Without it',
+        'Answering the same price, hours and address questions every day drains your time, while a generic chatbot risks telling a customer the wrong price. There is a reliable middle ground.',
+      withoutLabel: 'Today',
       withLabel: `With ${PRODUCT_NAME}`,
       rows: [
         {
-          scenario: 'A “How much is monthly membership?” DM at 23:45',
-          without:
-            'Seen late after a long day or left until morning. While waiting, the customer messages another studio.',
+          scenario: 'A “How much per month?” DM at 23:45',
+          without: 'Seen late after a long day or left until morning. While waiting, the customer messages another studio.',
           withProduct:
-            'A draft is prepared right away using your verified price and trial-class rule—sent with one tap, or automatically if you chose.',
+            'A draft is ready right away with your verified price. You send it with one tap, or it goes out automatically if you chose that.',
         },
         {
-          scenario: 'The fear of “What if it quotes the wrong price?”',
-          without:
-            'Generic AI bots guess missing details, invent discounts, or get pulled into haggling.',
-          withProduct:
-            'Uses only the fact cards you have verified. If a customer asks something not on record, it never guesses—it passes the message to you.',
+          scenario: 'The worry: “What if it quotes the wrong price?”',
+          without: 'Generic AI bots guess missing details, invent discounts and get pulled into haggling.',
+          withProduct: 'It uses only details you verified. If a question is not on record, it does not guess; it passes it to you.',
         },
         {
-          scenario: 'Scheduled posts left behind when prices change',
-          without:
-            'You update your membership fee, but Friday’s scheduled story still goes out with the old price.',
-          withProduct:
-            'The moment you text the new price on WhatsApp, any scheduled post carrying the old price is put on hold automatically.',
+          scenario: 'Scheduled posts forgotten when a price changes',
+          without: 'You update the price, but Friday’s scheduled story still goes out with the old one.',
+          withProduct: 'The moment you enter the new price, scheduled posts that show the old one are put on hold automatically.',
         },
       ],
     },
-    whatsapp: {
-      title: 'Run it from WhatsApp.',
+    how: {
+      eyebrow: 'How it works',
+      title: 'Four steps, each one a system you understand.',
+      body: 'After setup, your job is to approve. Where the assistant does not know something, it stops and asks you.',
+      steps: [
+        {
+          title: 'You give it your details',
+          body: 'Paste your price list or bio. It picks out the facts and you verify them one by one.',
+        },
+        {
+          title: 'A DM arrives, a draft is ready',
+          body: 'As soon as an Instagram DM comes in, a reply is drafted from verified details.',
+        },
+        {
+          title: 'You approve',
+          body: 'Send with one tap, edit, or take over the conversation. Routine questions can run automatically.',
+        },
+        {
+          title: 'You get the evening summary',
+          body: 'How many messages came in, what was sent, what is waiting. Numbers come from real records.',
+        },
+      ],
+    },
+    knowledge: {
+      eyebrow: 'Source of truth',
+      title: 'It knows your business from what you tell it.',
       body:
-        'There is no new app to learn. Text a price change, send a photo, ask for today’s summary. Anything important comes back to you as a confirmation with buttons.',
-      note:
-        'Typing “ok” never approves anything. Each approval belongs to one action and expires after a while. You can also use Telegram or the web app on your phone.',
+        'No spreadsheets or technical dashboards. Paste the price message you already send customers; the prices, hours and offers in it become fact cards. Drafts use only the ones you verified.',
+      pasteLabel: 'The text you paste',
+      pasteSample:
+        'Reformer Pilates Studio · Weekdays 08:00–21:00 · Monthly membership (2x/week) ₺6,000. Your first trial class is free. Address: Bahçelievler Mah. No: 12',
+      pasteNote: 'Picking out a fact never verifies it.',
+      ledgerTitle: 'Your fact cards',
+      progress: '{n} of {total} verified',
+      verified: 'Verified',
+      unverified: 'Not verified',
+      verify: 'Verify',
+      reset: 'Show again',
+      usageNote: 'An unverified fact is never used in a draft.',
+      facts: [
+        { category: 'Price', label: 'Monthly membership (2x/week)', value: '₺6,000' },
+        { category: 'Offer', label: 'First trial class', value: 'Free' },
+        { category: 'Hours', label: 'Weekday opening hours', value: '08:00 – 21:00' },
+        { category: 'Address', label: 'Studio location', value: 'Bahçelievler Mah. No: 12' },
+      ],
+    },
+    demo: {
+      eyebrow: 'Customer messages',
+      title: 'Every price has a source.',
+      body:
+        'Every price and offer in a draft comes from a fact you verified, and its source is listed underneath. If a fact is not on record, no draft is written; the question comes to you.',
+      points: [
+        { title: 'A draft with sources', body: 'Every highlighted fact shows which card it came from.' },
+        { title: 'One-tap approval', body: 'Send it, edit it or take over the conversation.' },
+        { title: 'It stops when it does not know', body: 'No draft for a question that is not on record; it asks you.' },
+      ],
+      tabs: ['Fact on record', 'Fact not on record'],
       example: 'Example screen',
-      online: 'online',
+      channel: 'Instagram DM',
+      known: {
+        customer: 'anna.berg',
+        time: '23:47',
+        message: 'Hi! How much is a monthly membership? Do you have a trial class?',
+        draftLabel: 'Draft reply',
+        draft: ['Hi Anna, a monthly membership is ', ' and your first trial class is ', '. Shall we find a day that suits you?'],
+        facts: [
+          { value: '₺6,000', source: 'Monthly membership · Price · verified 12 Oct' },
+          { value: 'free', source: 'First trial class · Offer · verified 3 Oct' },
+        ],
+        approve: 'Approve and send',
+        edit: 'Edit',
+        editAlt: '. Would you like to pick a day this week together?',
+        editing: 'Edited',
+        saveEdit: 'Other phrasing',
+        pending: 'Awaiting approval',
+        sent: 'Sent · 23:48',
+        replay: 'Show again',
+        hint: 'Tap a highlighted fact to see its source.',
+      },
+      unknown: {
+        customer: 'emma.k',
+        time: '21:12',
+        message: 'Do you offer prenatal Pilates?',
+        badge: 'Passed to you',
+        title: 'No draft written',
+        body: 'There is no verified fact about this. Instead of guessing, the assistant stopped and asked you.',
+        questionLabel: 'The assistant asks you',
+        question: 'Nothing is on record about “prenatal Pilates”. What should we tell the customer?',
+        answer: 'You write the reply',
+        afterAnswer: 'If you save your answer as a fact, it is used the next time someone asks.',
+      },
+    },
+    owner: {
+      eyebrow: 'Run it from your phone',
+      title: 'Write, ask, approve with a tap.',
+      body:
+        'Text a price change, send a photo, ask for today’s summary. Anything important comes back to you as a confirmation with buttons.',
+      channels: [
+        {
+          title: 'The web app on your phone',
+          body: 'Nothing to install. Today, the inbox and approvals in one place.',
+        },
+        {
+          title: 'Telegram',
+          body: 'Notifications and approvals arrive as a chat. You link your account with a one-time code.',
+        },
+      ],
+      note: 'Typing “ok” never approves anything. Every approval is a button tied to one action; it works once and expires.',
+      example: 'Example chat',
+      bot: PRODUCT_NAME,
+      botSub: 'bot',
       today: 'Today',
       placeholder: 'Message',
-      clock: '09:14',
       chat: [
         { from: 'owner', text: 'Monthly membership is 7,000 now', time: '09:12' },
         {
@@ -605,12 +903,6 @@ export const copy: Record<Lang, Copy> = {
           text: 'Change the monthly membership from ₺6,000 to ₺7,000?',
           time: '09:12',
           actions: ['Yes, update', 'Cancel'],
-        },
-        {
-          from: 'owner',
-          quote: 'Change the monthly membership from ₺6,000 to ₺7,000?',
-          text: 'Yes, update',
-          time: '09:13',
         },
         {
           from: 'assistant',
@@ -625,104 +917,37 @@ export const copy: Record<Lang, Copy> = {
         },
         {
           from: 'assistant',
-          text: 'The story is ready for tomorrow at 19:00. Approve it?',
+          text: 'Story draft ready for tomorrow at 19:00. Approve and I will schedule it.',
           time: '09:14',
-          actions: ['Approve', 'Change time'],
+          actions: ['Approve', 'Reject'],
         },
       ],
       commandsTitle: 'Other things you can write',
-      commandsHint: 'Tap a command to preview it on the WhatsApp screen',
+      commandsHint: 'Tap one to see it in the chat',
       commands: [
         { ask: 'How many DMs today?', answer: '14 messages. 11 answered, 2 passed to you, 1 waiting for a reply.' },
+        { ask: 'What is waiting for me?', answer: '2 replies and 1 post are waiting for your approval.', action: 'Open approvals' },
         {
           ask: 'Make a story for the trial class.',
-          answer: 'The draft is ready. Its price and date are verified, and it is waiting for your approval.',
+          answer: 'The draft is ready. Its price and date come from verified facts.',
           action: 'See draft',
         },
-        { ask: 'Make the replies a bit friendlier.', answer: 'Reply tone updated. It applies to new drafts from now on.' },
-        { ask: 'What is waiting for me?', answer: '2 replies and 1 post are waiting for your approval.' },
+        {
+          ask: 'Make the replies a bit friendlier.',
+          answer: 'Make the reply tone friendlier? It applies to new drafts.',
+          action: 'Yes, update',
+        },
         {
           ask: 'Why didn’t yesterday’s post go out?',
-          answer: 'Instagram rejected the image because it was not 9:16. Send a new image and I will schedule it again.',
+          answer: 'Instagram rejected the image because its ratio was not supported. Send a new image and I will prepare it again.',
         },
         { ask: 'Cancel tomorrow’s post.', answer: 'Cancel tomorrow’s 19:00 story?', action: 'Cancel post' },
       ],
     },
-    knowledge: {
-      title: 'How does it know your business?',
-      body:
-        'You do not fill out complex spreadsheets or dashboards. Paste your existing price list or Instagram bio; it picks out the facts one by one, and you simply verify them.',
-      extractKicker: 'Step 1 · Quick import',
-      extractTitle: 'Paste the text you already have.',
-      extractBody:
-        'Share the price message you usually send on WhatsApp or your profile bio; it turns your prices, hours and offers into structured fact cards.',
-      extractSourceLabel: 'Example pasted text',
-      extractSourceSample:
-        'Reformer Pilates Studio · Weekdays 08:00-21:00 · Monthly membership (2x/week) ₺6,000. First trial class is free. Address: Bahçelievler Mah. No: 12',
-      ledgerTitle: 'Step 2 · Your Verified Business Card',
-      verifiedBadge: 'Verified',
-      facts: [
-        {
-          category: 'Prices',
-          label: 'Monthly membership (2x/week)',
-          value: '₺6,000',
-          verifiedAt: 'Verified 12 Oct',
-        },
-        {
-          category: 'Campaigns',
-          label: 'First trial class',
-          value: 'Free',
-          verifiedAt: 'Verified 3 Oct',
-        },
-        {
-          category: 'Hours',
-          label: 'Weekday opening hours',
-          value: '08:00 – 21:00',
-          verifiedAt: 'Verified 1 Oct',
-        },
-        {
-          category: 'Address',
-          label: 'Studio location',
-          value: 'Bahçelievler Mah. No: 12',
-          verifiedAt: 'Verified 1 Oct',
-        },
-      ],
-      missingRule: {
-        badge: 'When a fact is not on record',
-        question: 'Example customer question: “Do you offer prenatal Pilates?”',
-        outcome: 'If it is not on your verified cards, it never invents an answer. No draft is sent—the question is passed straight to you.',
-      },
-    },
-    demo: {
-      title: 'Every price has a source.',
-      body:
-        'Every price, opening hour and campaign in a draft comes from a fact you entered and verified, and the source is listed underneath. If a fact is missing, it asks you instead of guessing.',
-      example: 'Example screen',
-      channel: 'Instagram',
-      customer: 'anna.berg',
-      received: '23:47',
-      message: 'Hi! How much is a monthly membership? Do you have a trial class?',
-      draftLabel: 'Draft reply',
-      draft: ['Hi Anna, a monthly membership is ', ' and your first trial class is ', '. Shall we find a day that suits you?'],
-      facts: [
-        { value: '₺6,000', source: 'Monthly membership · Prices · verified 12 Oct' },
-        { value: 'free', source: 'Trial class · Campaigns · verified 3 Oct' },
-      ],
-      approve: 'Approve and send',
-      tapHint: '← Tap to try it',
-      edit: 'Edit',
-      editClosingAlt: '. Would you like to pick a day this week?',
-      editingBadge: 'Editing draft',
-      saveEdit: 'Switch phrasing',
-      stamp: 'Approved',
-      sent: 'Sent',
-      approvedAt: '23:48',
-      replay: 'Show again',
-    },
     content: {
+      eyebrow: 'Posts',
       title: 'Your posts, planned and checked.',
-      body:
-        'Say what you want to post. The draft uses verified details, you approve it, and it goes out at the set time. If a price changes, any post that still shows the old price is put on hold automatically.',
+      body: 'Say what you want to post. The draft uses verified details, you approve it, and it goes out at the set time.',
       note: 'Scheduled does not mean published. You hear when a post actually goes out, and if it fails, you hear why.',
       example: 'Example',
       heading: 'This week',
@@ -730,78 +955,105 @@ export const copy: Record<Lang, Copy> = {
       posts: [
         { day: 'Mon', time: '19:00', kind: 'Story', title: 'Trial class', status: 'Published', state: 'published' },
         { day: 'Wed', time: '12:30', kind: 'Post', title: 'Morning reformer group', status: 'Scheduled', state: 'scheduled' },
-        { day: 'Fri', time: '19:00', kind: 'Story', title: 'Membership offer', status: 'On hold · old price', state: 'held' },
+        { day: 'Fri', time: '19:00', kind: 'Story', title: 'Membership offer', status: 'On hold', state: 'held' },
         { day: 'Sun', time: '10:00', kind: 'Post', title: 'Weekend hours', status: 'Awaiting approval', state: 'pending' },
       ],
     },
-    escalate: {
-      title: 'Some messages always come to you.',
-      body: 'These never get an automatic reply. You are notified and you write the answer.',
-      badge: 'Passed to you',
-      items: ['Complaints', 'Refund requests', 'Discounts and haggling', 'Anything it isn’t sure about'],
-      examples: [
-        '“Today’s class was too crowded, I wasn’t happy with it.”',
-        '“I couldn’t attend this month, can I get a refund for my remaining sessions?”',
-        '“If two of us sign up together, can you give us a discount on the monthly fee?”',
-        '“I have a herniated disc—which instructor would be best for me?”',
-      ],
-    },
     report: {
-      title: 'Each evening, a plain account of the day.',
-      body: 'Every number comes from real records. A scheduled post is never shown as published, and anything that failed is listed with the reason.',
+      title: 'Each evening, an honest account of the day.',
+      body: 'Every number comes from real records. Anything that failed is listed with the reason.',
       example: 'Example',
-      heading: 'Daily summary · 21:00',
-      verifiedTag: 'Real record',
-      rows: [
-        ['Messages received', '14'],
-        ['Replies approved', '11'],
-        ['Passed to you', '2'],
-        ['Awaiting reply', '1'],
-        ['Post scheduled', 'Tomorrow 19:00'],
-        ['Posts published', '0'],
+      heading: 'Daily summary',
+      asOf: 'As of 21:00',
+      metrics: [
+        { label: 'Messages received', value: '14' },
+        { label: 'Replies sent', value: '11' },
+        { label: 'Passed to you', value: '2' },
+        { label: 'Awaiting reply', value: '1' },
+        { label: 'Posts published', value: '0' },
+        { label: 'Next post', value: 'Tomorrow 19:00' },
       ],
-      footerNote: 'Scheduled posts remain “0” published until Instagram confirms they went live.',
+      footerNote: 'A scheduled post is not counted as published until Instagram confirms it went live.',
     },
-    control: {
-      title: 'You stay in control.',
-      items: [
+    limits: {
+      eyebrow: 'Clear limits',
+      title: 'We are just as clear about what it does not do.',
+      body: 'Some messages always come to you. And some things it deliberately does not do yet.',
+      escalateTitle: 'Always passed to you',
+      escalateBadge: 'Passed to you',
+      escalate: [
+        { title: 'Complaints', example: '“Today’s class was too crowded, I wasn’t happy with it.”' },
+        { title: 'Refund requests', example: '“I couldn’t come this month, can I get a refund for my remaining sessions?”' },
+        { title: 'Discounts and haggling', example: '“If two of us sign up together, can we get a discount?”' },
+        { title: 'Anything it isn’t sure about', example: '“I have a herniated disc, which instructor would suit me?”' },
+      ],
+      notYetTitle: 'What it does not do yet',
+      notYet: [
         {
-          title: 'You choose what runs automatically.',
-          body: 'For example, questions about hours and address are answered automatically, while price questions come to you. Change it any time.',
+          title: 'It does not reply to post comments.',
+          body: 'Comments stay with you until the required Meta permissions are verified.',
         },
         {
-          title: 'Take over any conversation.',
-          body: 'When you want to talk to a customer yourself, automation stops for that conversation. Hand it back and it picks up where it left off.',
+          title: 'It does not interpret photos or voice notes in DMs.',
+          body: 'Messages with attachments are passed to you.',
         },
         {
-          title: 'Roles that fit your team.',
-          body: 'Staff can draft replies and posts. Price changes and publishing need your approval.',
+          title: 'It never approves, publishes or sends by command.',
+          body: 'That only happens with a button tied to that one action.',
         },
         {
-          title: 'Every action is recorded.',
-          body: 'What was sent, who approved it, and when. All of it in one list.',
+          title: 'It is not run from WhatsApp.',
+          body: 'Today you use the web app and Telegram.',
         },
       ],
     },
-    steps: {
-      title: 'How you get started',
-      items: [
+    trust: {
+      eyebrow: 'Control and security',
+      title: 'You stay in control. So does your data.',
+      body: 'You decide what runs automatically. Every action is recorded with who did it and when.',
+      controlTitle: 'Control',
+      control: [
         {
-          title: 'We enter your details together.',
-          body: 'Prices, hours, address and campaigns. We come to your business and set it up with you. You verify every detail.',
+          title: 'You choose what runs automatically',
+          body: 'For example, hours and address questions are answered automatically, price questions come to you.',
         },
         {
-          title: 'We connect your Instagram account.',
-          body: 'It connects through Instagram’s official login. Then we try a few typical customer questions together.',
+          title: 'Take over any conversation',
+          body: 'While you talk to a customer yourself, automation pauses for that conversation; hand it back and it continues.',
         },
         {
-          title: 'You run the rest from WhatsApp.',
-          body: 'Drafts and approvals come to your phone. When you are ready, turn on automatic replies for common questions.',
+          title: 'Roles that fit your team',
+          body: 'Staff draft replies and posts. Price changes and publishing need your approval.',
+        },
+        {
+          title: 'Every action recorded',
+          body: 'What was sent, who approved it and when. All of it in one list.',
+        },
+      ],
+      securityTitle: 'Security',
+      security: [
+        {
+          title: 'Your Instagram password never reaches us',
+          body: 'Your account connects through Instagram’s official login. Disconnect whenever you like.',
+        },
+        {
+          title: 'Single-use approvals',
+          body: 'Each approval is tied to one action and its exact final version. If the text changes, the approval no longer counts.',
+        },
+        {
+          title: 'Your business, its own space',
+          body: 'Each business’s data is kept separate; no other business can see yours.',
+        },
+        {
+          title: 'You can have it deleted',
+          body: 'When you disconnect, the related data is deleted. You can ask for deletion at any time.',
         },
       ],
     },
     faq: {
-      title: 'Questions',
+      eyebrow: 'Questions',
+      title: 'Frequently asked',
+      body: 'Something not covered here? Write it in the pilot form and we will call you.',
       items: [
         {
           q: 'Do I have to give you my Instagram password?',
@@ -809,77 +1061,75 @@ export const copy: Record<Lang, Copy> = {
         },
         {
           q: 'What if it tells a customer something wrong?',
-          a: 'Prices, hours, addresses and campaigns come only from details you verified, and every reply is checked for them before it is sent. Messages it is unsure about are left to you.',
+          a: 'Prices, hours, addresses and offers come only from details you verified, and every reply is checked for them before it is sent. Messages it is unsure about are left to you.',
         },
         {
           q: 'What happens to messages at night?',
-          a: 'If you turned on automatic replies for routine questions, they are answered right away. If not, the draft waits for you to approve when it suits you. It follows Instagram’s 24-hour reply rule.',
+          a: 'If you switched on automatic replies for routine questions, they are answered right away. If not, the draft waits for you to approve when it suits you. It follows Instagram’s 24-hour reply rule.',
         },
         {
-          q: 'Do I have to use WhatsApp?',
-          a: 'No. You can use Telegram or the web app on your phone. All of them have the same approvals and notifications.',
+          q: 'Can I run it from WhatsApp?',
+          a: 'Not yet. You use the web app on your phone or Telegram; both have the same approvals and notifications. We are considering WhatsApp based on pilot feedback.',
+        },
+        {
+          q: 'Does it reply to post comments too?',
+          a: 'Not yet. Comment replies will be switched on once the required Meta permissions are verified on real accounts. Until then, comments stay with you.',
         },
         {
           q: 'Can I set it up myself?',
-          a: 'Yes. Paste your Instagram bio or price list, it picks out the details, and you verify each one. If you prefer, we come to your business and set it up together.',
+          a: 'Yes. Choose your business type, paste your bio or price list, and it picks out the details for you to verify one by one. During the pilot we can also set it up with you.',
         },
         {
-          q: 'Which businesses is it for?',
-          a: 'For any small business that communicates with customers on Instagram: cafés, boutiques, salons, fitness studios, clinics and service businesses.',
+          q: 'Can my team use it?',
+          a: 'Yes. You invite team members. Staff draft replies and posts; price changes and publishing need the owner’s or a manager’s approval.',
+        },
+        {
+          q: 'What happens after the pilot?',
+          a: 'The pilot is free for 30 days and needs no card. If you want to continue, pilot businesses get a founder price fixed for 12 months. Nothing is charged automatically; if you stop, you disconnect and your data is deleted.',
         },
       ],
     },
     pilot: {
-      title: 'Join the pilot waitlist',
+      eyebrow: 'Pilot programme',
+      title: 'Be one of the first businesses.',
       body:
-        'We are starting with a small cohort of local businesses using Instagram. If you join, we will call you to talk about your business and how you use Instagram. If it is a good fit, we set it up together with you.',
-      expectationsTitle: 'What to expect in the pilot programme',
+        'We are starting with 10–15 local businesses that use Instagram actively. After you apply, we call you to talk about your business and how you use Instagram.',
       expectations: [
         {
-          badge: '30 minutes · Guided setup',
-          title: 'We set it up together with you.',
-          detail:
-            'In person or over a quick video call, we enter your prices and hours together and test 5 real customer questions live.',
+          badge: '30 minutes',
+          title: 'We set it up together',
+          detail: 'In person or on a video call, we enter your prices and hours and try 5 real customer questions.',
         },
         {
-          badge: 'Free pilot · No commitment',
-          title: 'No fee or card required for the initial pilot.',
-          detail:
-            'Try it with your own customers in your real daily workflow. If it is not for you, disconnect your Instagram account with one tap.',
+          badge: 'Free for 30 days',
+          title: 'No fee, no card',
+          detail: 'Try it with your own customers in your real workflow. Not for you? Disconnect.',
         },
         {
-          badge: '10–15 businesses · Direct support',
-          title: 'You work directly with the founding team.',
-          detail:
-            'No ticket queues—we work closely with a small cohort of local businesses so you can reach us directly whenever you need help.',
+          badge: 'Direct support',
+          title: 'You work with the founding team',
+          detail: 'No ticket queue; a small team that knows your business and that you can reach directly.',
         },
         {
-          badge: 'Official login · Password stays yours',
-          title: 'We never ask for your Instagram password.',
-          detail:
-            'Your account connects through Instagram’s official login screen. Disconnect at any time and access stops immediately.',
+          badge: 'Official login',
+          title: 'Your password stays yours',
+          detail: 'Instagram’s official login screen. Disconnect and access stops immediately.',
         },
       ],
-      nextStepsTitle: 'What happens after you submit?',
+      nextStepsTitle: 'After you apply',
       nextSteps: [
-        'We call or message you on WhatsApp within 24 hours.',
-        'We pick a convenient day and complete the 30-minute setup together.',
+        { title: 'Within 24 hours', body: 'We call or message you briefly.' },
+        { title: 'On a day that suits you', body: 'We finish the 30-minute setup together.' },
+        { title: 'From then on', body: 'Drafts and approvals come to your phone.' },
       ],
-      whatsappDirectLabel: 'Prefer not to fill out a form? Message us directly on WhatsApp →',
+      whatsappDirectLabel: 'Prefer not to fill in a form? Message us on WhatsApp',
       whatsappPrefill: `Hi, I would like to learn more about the ${PRODUCT_NAME} pilot programme.`,
     },
     form: {
-      dossierHeader: 'Pilot Application Card',
+      title: 'Pilot application',
+      subtitle: 'Takes about a minute.',
       categoryLabel: 'Business type',
-      categories: [
-        'Beauty / Salon',
-        'Café / Restaurant',
-        'Shop / Retail',
-        'Fitness / Yoga',
-        'Clinic / Health',
-        'Services',
-        'Other',
-      ],
+      categories: ['Beauty / Salon', 'Café / Restaurant', 'Shop / Retail', 'Fitness / Pilates', 'Clinic / Health', 'Services', 'Other'],
       business: 'Business name',
       instagram: 'Instagram account',
       instagramHint: '@username',
@@ -888,16 +1138,20 @@ export const copy: Record<Lang, Copy> = {
       city: 'City',
       consent:
         'I agree that my details are used only to contact me about the pilot programme. They are not shared with anyone and are deleted when I ask.',
-      submit: 'Join the waitlist',
+      submit: 'Send application',
       sending: 'Sending…',
       required: 'This field is required.',
       consentRequired: 'Tick the consent box to continue.',
-      sent: 'Thank you, you are on the list. We will be in touch.',
+      sent: 'Thank you, we received your application. We will be in touch within 24 hours.',
       preview: 'Preview: this form is not connected yet. Nothing was sent.',
       failed: 'Could not send. Check your connection and try again.',
     },
+    mobileCta: { label: 'Apply for the free pilot', sub: '30 days · no card' },
     footer: {
-      trademark: 'Instagram and WhatsApp are trademarks of Meta Platforms, Inc. This product is not affiliated with Meta.',
+      tagline: 'An Instagram assistant for small businesses.',
+      trademark:
+        'Instagram and WhatsApp are trademarks of Meta Platforms, Inc.; Telegram is a trademark of its owner. This product is not affiliated with these companies.',
+      top: 'Back to top',
     },
   },
 }
