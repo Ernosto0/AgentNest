@@ -1,0 +1,44 @@
+# Static server for the landing page. Railway terminates TLS and routes to $PORT.
+#   - PORT                  : port to listen on (Railway sets it; default 8080).
+#   - LANDING_CONNECT_SRC   : extra CSP connect-src origin for the waitlist endpoint, if one is set
+#                             at build time (e.g. https://forms.example.com). Empty: same origin only.
+{
+	admin off
+	auto_https off
+}
+
+# Container-internal liveness probe.
+http://127.0.0.1:8081 {
+	respond /healthz "ok" 200
+}
+
+:{$PORT:8080} {
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' {$LANDING_CONNECT_SRC:}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# `handle` blocks are mutually exclusive, so the SPA fallback never swallows the probe.
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	handle {
+		root * /srv/landing
+		encode zstd gzip
+
+		@immutable path /assets/*
+		header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+		@entry not path /assets/*
+		header @entry Cache-Control "no-cache"
+
+		try_files {path} /index.html
+		file_server
+	}
+}

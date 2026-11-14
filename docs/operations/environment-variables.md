@@ -159,6 +159,8 @@ Manual Phase 7 probes read process environment variables directly, not applicati
 
 | Variable | dev | prod | Description |
 |---|---|---|---|
-| `VITE_WAITLIST_ENDPOINT` | empty (preview mode) | required to collect signups | URL that accepts a JSON `POST` of `{ business, instagram, contact, city, lang }`. When empty, the form says nothing was sent. The destination is not chosen yet. |
+| `VITE_WAITLIST_ENDPOINT` | empty (preview mode) | required to collect signups | URL that accepts a JSON `POST` of `{ business, category, instagram, contact, city, lang }`. When empty, the form says nothing was sent. The destination is not chosen yet. |
+| `VITE_WAITLIST_WHATSAPP` | empty (link hidden) | optional | The founders' contact number (digits) or a full `https://` link for the form's "message us on WhatsApp" fallback. A contact path only, not a product channel. |
+| `LANDING_CONNECT_SRC` | empty (same origin only) | when `VITE_WAITLIST_ENDPOINT` is on another origin | Runtime variable of the landing container (`landing/Caddyfile`): extra origin allowed in the page's CSP `connect-src`, e.g. `https://forms.example.com`. |
 
 **Phase 7 provider/storage checks (all environments):** enabling `meta` requires the Meta app ID/secret, an explicitly configured webhook verification token, OAuth redirect URI, a valid encryption key ring and S3. A supplied key ring is validated even when Meta is disabled. Selecting S3 requires bucket, region and explicit access/secret keys; endpoint is optional for AWS. `MEDIA_PUBLIC_BASE_URL` is reserved until secured public local-media serving exists and does not allow Meta with local storage. Mock/local defaults still require no external credentials. S3 presigned GET TTLs are restricted to 1 through 604800 seconds. Live verification and both phase gates remain pending.
