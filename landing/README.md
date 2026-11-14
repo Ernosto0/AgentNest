@@ -16,7 +16,8 @@ npm run typecheck
   band. Tokens live in `src/index.css`; shared pieces (icons, badges, buttons) in `src/ui.tsx`.
 - **Copy** for both languages lives in `src/copy.ts`. It describes what is built: the web app and the
   Telegram owner channel (Phase 9). WhatsApp owner control and comment replies are deferred
-  (`docs/product/mvp-scope.md`) and the page says so. Re-check the copy, including the pilot price
+  (`docs/product/mvp-scope.md`), so the page does not promise them; the FAQ answers honestly if asked.
+  Re-check the copy, including the pilot price
   wording in the FAQ, against the product before publishing.
 - **Product name** is a single constant in `src/brand.ts` (the final name is still open, OQ-10).
 - **Waitlist**: set `VITE_WAITLIST_ENDPOINT` at build time to a URL that accepts a JSON `POST` of
@@ -25,8 +26,8 @@ npm run typecheck
   shows a "message us on WhatsApp" fallback under the form; unset, it is hidden.
 - **Fonts** are the app's self-hosted WOFF2 files (`src/assets/fonts/`, notices in `public/fonts/`),
   so visitors' browsers make no request to a font CDN.
-- **Theme**: an inline script in `index.html` applies the saved choice, or the OS preference, before
-  first paint. Language and theme choices are remembered in `localStorage`.
+- **Theme**: `public/theme.js` applies the saved choice before first paint; light is the default, whatever the OS
+  preference. Language and theme choices are remembered in `localStorage`.
 - Every screen, chat and summary on the page is an illustration with example data and is labelled
   as an example. The interactive parts (approve, verify, scenario tabs, commands) only change local
   state; nothing is sent anywhere.

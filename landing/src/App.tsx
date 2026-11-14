@@ -629,42 +629,19 @@ function Limits({ t }: { t: Copy['limits'] }) {
   return (
     <Section id="sinirlar">
       <SectionHeader eyebrow={t.eyebrow} title={t.title} body={t.body} />
-      <div className="mt-12 grid gap-5 lg:grid-cols-2">
-        <div className="reveal rounded-frame border border-border bg-surface p-6">
-          <h3 className="flex items-center gap-2 font-heading text-lg font-bold">
-            <HandIcon aria-hidden className="text-attention" /> {t.escalateTitle}
-          </h3>
-          <ul className="mt-4 divide-y divide-border">
-            {t.escalate.map((item) => (
-              <li key={item.title} className="py-3.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-semibold">{item.title}</span>
-                  <Badge tone="attention" size="sm" icon={<HandIcon />}>
-                    {t.escalateBadge}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-sm text-secondary italic">{item.example}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="reveal rounded-frame border border-border bg-surface p-6">
-          <h3 className="flex items-center gap-2 font-heading text-lg font-bold">
-            <MinusCircleIcon aria-hidden className="text-secondary" /> {t.notYetTitle}
-          </h3>
-          <ul className="mt-4 divide-y divide-border">
-            {t.notYet.map((item) => (
-              <li key={item.title} className="flex gap-3 py-3.5">
-                <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-control" />
-                <div>
-                  <p className="font-semibold">{item.title}</p>
-                  <p className="mt-0.5 text-sm text-secondary">{item.body}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <ul className="mt-12 grid gap-4 sm:grid-cols-2">
+        {t.escalate.map((item) => (
+          <li key={item.title} className="reveal rounded-frame border border-border bg-surface p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-heading text-lg font-bold tracking-tight">{item.title}</h3>
+              <Badge tone="attention" size="sm" icon={<HandIcon />}>
+                {t.escalateBadge}
+              </Badge>
+            </div>
+            <p className="mt-2.5 rounded-panel bg-surface-subtle px-3.5 py-2.5 text-sm leading-relaxed text-secondary italic">{item.example}</p>
+          </li>
+        ))}
+      </ul>
     </Section>
   )
 }

@@ -162,11 +162,8 @@ export type Copy = {
     eyebrow: string
     title: string
     body: string
-    escalateTitle: string
     escalateBadge: string
     escalate: { title: string; example: string }[]
-    notYetTitle: string
-    notYet: Titled[]
   }
   trust: {
     eyebrow: string
@@ -502,35 +499,15 @@ export const copy: Record<Lang, Copy> = {
       footerNote: 'Planlanan paylaşım, Instagram yayınlandığını doğrulayana kadar “yayınlanan” sayılmaz.',
     },
     limits: {
-      eyebrow: 'Sınırları belli',
-      title: 'Ne yapmadığını da açıkça söylüyoruz.',
-      body: 'Bazı mesajlar her zaman size gelir. Bazı şeyleri de bilerek henüz yapmıyor.',
-      escalateTitle: 'Her zaman size gelenler',
+      eyebrow: 'Son söz sizde',
+      title: 'Bazı mesajlar her zaman size gelir.',
+      body: 'Bunlara otomatik yanıt verilmez. Mesaj size bildirilir, yanıtı siz yazarsınız.',
       escalateBadge: 'Size iletilir',
       escalate: [
         { title: 'Şikâyetler', example: '“Bugünkü ders çok kalabalıktı, memnun kalmadım.”' },
         { title: 'İade talepleri', example: '“Bu ay gelemedim, kalan derslerimin iadesini alabilir miyim?”' },
         { title: 'İndirim ve pazarlık', example: '“İki arkadaş yazılırsak indirim yapar mısınız?”' },
         { title: 'Emin olamadığı her şey', example: '“Bel fıtığım var, hangi eğitmenle çalışmam uygun olur?”' },
-      ],
-      notYetTitle: 'Şimdilik yapmadıkları',
-      notYet: [
-        {
-          title: 'Gönderi yorumlarını yanıtlamaz.',
-          body: 'Gerekli Meta izinleri doğrulanana kadar yorumlar sizde kalır.',
-        },
-        {
-          title: 'DM’deki fotoğraf ve sesli mesajları yorumlamaz.',
-          body: 'Ek içeren mesajlar size iletilir.',
-        },
-        {
-          title: 'Komutla onaylamaz, yayınlamaz, göndermez.',
-          body: 'Bunlar yalnızca o işleme bağlı bir butonla olur.',
-        },
-        {
-          title: 'WhatsApp’tan yönetilmez.',
-          body: 'Şu an web uygulaması ve Telegram var.',
-        },
       ],
     },
     trust: {
@@ -976,35 +953,15 @@ export const copy: Record<Lang, Copy> = {
       footerNote: 'A scheduled post is not counted as published until Instagram confirms it went live.',
     },
     limits: {
-      eyebrow: 'Clear limits',
-      title: 'We are just as clear about what it does not do.',
-      body: 'Some messages always come to you. And some things it deliberately does not do yet.',
-      escalateTitle: 'Always passed to you',
+      eyebrow: 'You have the final say',
+      title: 'Some messages always come to you.',
+      body: 'These never get an automatic reply. You are notified and you write the answer.',
       escalateBadge: 'Passed to you',
       escalate: [
         { title: 'Complaints', example: '“Today’s class was too crowded, I wasn’t happy with it.”' },
         { title: 'Refund requests', example: '“I couldn’t come this month, can I get a refund for my remaining sessions?”' },
         { title: 'Discounts and haggling', example: '“If two of us sign up together, can we get a discount?”' },
         { title: 'Anything it isn’t sure about', example: '“I have a herniated disc, which instructor would suit me?”' },
-      ],
-      notYetTitle: 'What it does not do yet',
-      notYet: [
-        {
-          title: 'It does not reply to post comments.',
-          body: 'Comments stay with you until the required Meta permissions are verified.',
-        },
-        {
-          title: 'It does not interpret photos or voice notes in DMs.',
-          body: 'Messages with attachments are passed to you.',
-        },
-        {
-          title: 'It never approves, publishes or sends by command.',
-          body: 'That only happens with a button tied to that one action.',
-        },
-        {
-          title: 'It is not run from WhatsApp.',
-          body: 'Today you use the web app and Telegram.',
-        },
       ],
     },
     trust: {
