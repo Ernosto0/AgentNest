@@ -107,12 +107,14 @@ def upgrade() -> None:
     # 3. Row-Level Security
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        op.execute(sa.text("ALTER TABLE public.action_tokens ENABLE ROW LEVEL SECURITY"))
-        op.execute(sa.text("ALTER TABLE public.action_tokens FORCE ROW LEVEL SECURITY"))
+        schema = bind.execute(sa.text("SELECT current_schema()")).scalar_one() or "public"
+        q_schema = '"' + str(schema).replace('"', '""') + '"'
+        op.execute(sa.text("ALTER TABLE action_tokens ENABLE ROW LEVEL SECURITY"))
+        op.execute(sa.text("ALTER TABLE action_tokens FORCE ROW LEVEL SECURITY"))
         op.execute(
             sa.text(
                 """
-                CREATE POLICY tenant_isolation_policy ON public.action_tokens
+                CREATE POLICY tenant_isolation_policy ON action_tokens
                     FOR ALL
                     USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
                     WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
@@ -123,8 +125,8 @@ def upgrade() -> None:
         # 4. Ingress SECURITY DEFINER lookup helper function
         op.execute(
             sa.text(
-                """
-                CREATE OR REPLACE FUNCTION public.resolve_action_token_by_hash(
+                f"""
+                CREATE OR REPLACE FUNCTION resolve_action_token_by_hash(
                     p_token_hash text
                 )
                 RETURNS TABLE (
@@ -139,36 +141,36 @@ def upgrade() -> None:
                 )
                 LANGUAGE sql
                 SECURITY DEFINER
-                SET search_path = public, pg_temp
+                SET search_path = {q_schema}, pg_temp
                 STABLE
                 AS $$
                     SELECT a.id, a.workspace_id, a.approval_id, a.decision, a.user_id,
                            a.payload_hash, a.expires_at, a.used_at
-                    FROM public.action_tokens a
+                    FROM action_tokens a
                     WHERE a.token_hash = p_token_hash
                     LIMIT 1;
                 $$;
 
-                GRANT EXECUTE ON FUNCTION public.resolve_action_token_by_hash(text) TO PUBLIC;
+                GRANT EXECUTE ON FUNCTION resolve_action_token_by_hash(text) TO PUBLIC;
                 """
             )
         )
 
         # 5. Table grants for least-privilege runtime roles
         op.execute(
-            """
+            f"""
             DO $$
             BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.action_tokens TO agentnest_app;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE action_tokens TO agentnest_app;
                 END IF;
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.action_tokens TO agentnest_worker;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE action_tokens TO agentnest_worker;
                 END IF;
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_migrator') THEN
-                    GRANT ALL ON TABLE public.action_tokens TO agentnest_migrator;
+                    GRANT ALL ON TABLE action_tokens TO agentnest_migrator;
                 END IF;
             END $$;
             """
@@ -179,13 +181,13 @@ def downgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         op.execute(
-            sa.text("DROP FUNCTION IF EXISTS public.resolve_action_token_by_hash(text)")
+            sa.text("DROP FUNCTION IF EXISTS resolve_action_token_by_hash(text)")
         )
         op.execute(
-            sa.text("DROP POLICY IF EXISTS tenant_isolation_policy ON public.action_tokens")
+            sa.text("DROP POLICY IF EXISTS tenant_isolation_policy ON action_tokens")
         )
-        op.execute(sa.text("ALTER TABLE public.action_tokens NO FORCE ROW LEVEL SECURITY"))
-        op.execute(sa.text("ALTER TABLE public.action_tokens DISABLE ROW LEVEL SECURITY"))
+        op.execute(sa.text("ALTER TABLE action_tokens NO FORCE ROW LEVEL SECURITY"))
+        op.execute(sa.text("ALTER TABLE action_tokens DISABLE ROW LEVEL SECURITY"))
 
     op.drop_index(
         op.f("ix_action_tokens_expires_at"),

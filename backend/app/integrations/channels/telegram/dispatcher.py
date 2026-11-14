@@ -42,6 +42,41 @@ class ProcessResult:
     error: str | None = None
 
 
+class _DeferredTelegramClient:
+    """Queues outbound Telegram HTTP replies until after the DB transaction commits."""
+
+    def __init__(self, inner: Any) -> None:
+        self._inner = inner
+        self._pending: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
+
+    def _queue(self, method: str, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        self._pending.append((method, args, kwargs))
+        return {}
+
+    def send_message(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return self._queue("send_message", *args, **kwargs)
+
+    def answer_callback_query(self, *args: Any, **kwargs: Any) -> Any:
+        return self._queue("answer_callback_query", *args, **kwargs)
+
+    def edit_message_text(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return self._queue("edit_message_text", *args, **kwargs)
+
+    def edit_message_reply_markup(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return self._queue("edit_message_reply_markup", *args, **kwargs)
+
+    def get_file(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return dict(self._inner.get_file(*args, **kwargs))
+
+    def download_file(self, *args: Any, **kwargs: Any) -> bytes:
+        return bytes(self._inner.download_file(*args, **kwargs))
+
+    def flush(self) -> None:
+        pending, self._pending = self._pending, []
+        for method, args, kwargs in pending:
+            getattr(self._inner, method)(*args, **kwargs)
+
+
 def _parse_command(text: str) -> tuple[str, str]:
     """Parse text into (command, argument).
 
@@ -108,6 +143,14 @@ def process_update(
     session.add(record)
     session.flush()
 
+    deferred_client = _DeferredTelegramClient(tg_client)
+
+    def _finalize(res: ProcessResult) -> ProcessResult:
+        # Commit DB work before outbound Telegram HTTP calls (no HTTP inside open DB TX).
+        session.commit()
+        deferred_client.flush()
+        return res
+
     # 3. Handle Callback Query
     if update.callback_query:
         cb_data = (update.callback_query.data or "").strip()
@@ -115,20 +158,38 @@ def process_update(
             token_str = cb_data[4:]
             from app.integrations.channels.telegram.handlers import handle_approval_callback
 
-            action_name = handle_approval_callback(
-                session=session,
-                clock=clock,
-                callback_query=update.callback_query,
-                token_str=token_str,
-                tg_client=tg_client,
-            )
-            return ProcessResult(
-                status="processed",
-                update_id=update_id,
-                channel_user_id=channel_user_id,
-                action=action_name,
-            )
+            try:
+                action_name = handle_approval_callback(
+                    session=session,
+                    clock=clock,
+                    callback_query=update.callback_query,
+                    token_str=token_str,
+                    tg_client=deferred_client,  # type: ignore[arg-type]
+                )
+                return _finalize(
+                    ProcessResult(
+                        status="processed",
+                        update_id=update_id,
+                        channel_user_id=channel_user_id,
+                        action=action_name,
+                    )
+                )
+            except Exception as exc:
+                _log.exception("telegram_callback_processing_failed", update_id=update_id)
+                session.rollback()
+                rec = session.get(TelegramUpdate, update_id)
+                if rec is not None:
+                    rec.status = "failed"
+                    rec.error = str(exc)
+                    session.commit()
+                return ProcessResult(
+                    status="failed",
+                    update_id=update_id,
+                    channel_user_id=channel_user_id,
+                    error=str(exc),
+                )
 
+        session.commit()
         try:
             tg_client.answer_callback_query(update.callback_query.id)
         except Exception as exc:
@@ -143,7 +204,7 @@ def process_update(
     # 4. If no message or chat_id, mark ignored
     if not message or not chat_id or not channel_user_id:
         record.status = "ignored"
-        session.flush()
+        session.commit()
         return ProcessResult(
             status="ignored",
             update_id=update_id,
@@ -170,18 +231,20 @@ def process_update(
                 "3. Generate a <b>Telegram Link Code</b>\n"
                 "4. Send <code>/link &lt;CODE&gt;</code> here!"
             )
-            tg_client.send_message(chat_id=chat_id, text=greeting, parse_mode="HTML")
-            return ProcessResult(
-                status="processed",
-                update_id=update_id,
-                channel_user_id=channel_user_id,
-                action="start",
+            deferred_client.send_message(chat_id=chat_id, text=greeting, parse_mode="HTML")
+            return _finalize(
+                ProcessResult(
+                    status="processed",
+                    update_id=update_id,
+                    channel_user_id=channel_user_id,
+                    action="start",
+                )
             )
 
         # Route: /link <code>
         if cmd == "/link":
             if not arg:
-                tg_client.send_message(
+                deferred_client.send_message(
                     chat_id=chat_id,
                     text=(
                         "⚠️ Please provide your 8-character link code: "
@@ -189,11 +252,13 @@ def process_update(
                     ),
                     parse_mode="HTML",
                 )
-                return ProcessResult(
-                    status="processed",
-                    update_id=update_id,
-                    channel_user_id=channel_user_id,
-                    action="link_missing_code",
+                return _finalize(
+                    ProcessResult(
+                        status="processed",
+                        update_id=update_id,
+                        channel_user_id=channel_user_id,
+                        action="link_missing_code",
+                    )
                 )
 
             try:
@@ -217,7 +282,7 @@ def process_update(
                     user_name = "User"
                     ws_name = "AgentNest"
 
-                tg_client.send_message(
+                deferred_client.send_message(
                     chat_id=chat_id,
                     text=(
                         f"✅ <b>Successfully linked!</b>\n\n"
@@ -226,11 +291,13 @@ def process_update(
                     ),
                     parse_mode="HTML",
                 )
-                return ProcessResult(
-                    status="processed",
-                    update_id=update_id,
-                    channel_user_id=channel_user_id,
-                    action="link_success",
+                return _finalize(
+                    ProcessResult(
+                        status="processed",
+                        update_id=update_id,
+                        channel_user_id=channel_user_id,
+                        action="link_success",
+                    )
                 )
             except AppError as exc:
                 if exc.code == "LINK_CODE_INVALID":
@@ -251,12 +318,14 @@ def process_update(
                 else:
                     msg = f"❌ <b>Link failed:</b> {html.escape(exc.code)}"
 
-                tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
-                return ProcessResult(
-                    status="processed",
-                    update_id=update_id,
-                    channel_user_id=channel_user_id,
-                    action=f"link_failed_{exc.code}",
+                deferred_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+                return _finalize(
+                    ProcessResult(
+                        status="processed",
+                        update_id=update_id,
+                        channel_user_id=channel_user_id,
+                        action=f"link_failed_{exc.code}",
+                    )
                 )
 
         # Route: /unlink
@@ -267,16 +336,18 @@ def process_update(
                 channel="telegram",
                 channel_user_id=channel_user_id,
             )
-            tg_client.send_message(
+            deferred_client.send_message(
                 chat_id=chat_id,
                 text="🔌 Your Telegram account has been unlinked from AgentNest.",
                 parse_mode="HTML",
             )
-            return ProcessResult(
-                status="processed",
-                update_id=update_id,
-                channel_user_id=channel_user_id,
-                action="unlink",
+            return _finalize(
+                ProcessResult(
+                    status="processed",
+                    update_id=update_id,
+                    channel_user_id=channel_user_id,
+                    action="unlink",
+                )
             )
 
         # Route: /status
@@ -287,7 +358,7 @@ def process_update(
                 channel_user_id=channel_user_id,
             )
             if resolved is None:
-                tg_client.send_message(
+                deferred_client.send_message(
                     chat_id=chat_id,
                     text=(
                         "ℹ️ <b>Account Status</b>\n\n"
@@ -310,7 +381,7 @@ def process_update(
                     or 0
                 )
                 linked_time_str = link.linked_at.strftime("%Y-%m-%d %H:%M UTC")
-                tg_client.send_message(
+                deferred_client.send_message(
                     chat_id=chat_id,
                     text=(
                         f"✅ <b>Linked to AgentNest</b>\n\n"
@@ -322,11 +393,13 @@ def process_update(
                     ),
                     parse_mode="HTML",
                 )
-            return ProcessResult(
-                status="processed",
-                update_id=update_id,
-                channel_user_id=channel_user_id,
-                action="status",
+            return _finalize(
+                ProcessResult(
+                    status="processed",
+                    update_id=update_id,
+                    channel_user_id=channel_user_id,
+                    action="status",
+                )
             )
 
         # Non-command or unhandled text
@@ -338,7 +411,7 @@ def process_update(
 
         if resolved is None:
             # Unlinked user
-            tg_client.send_message(
+            deferred_client.send_message(
                 chat_id=chat_id,
                 text=(
                     "ℹ️ You have not linked your Telegram account yet.\n\n"
@@ -348,18 +421,28 @@ def process_update(
                 ),
                 parse_mode="HTML",
             )
-            return ProcessResult(
-                status="processed",
-                update_id=update_id,
-                channel_user_id=channel_user_id,
-                action="unlinked_prompt",
+            return _finalize(
+                ProcessResult(
+                    status="processed",
+                    update_id=update_id,
+                    channel_user_id=channel_user_id,
+                    action="unlinked_prompt",
+                )
             )
 
         # Linked user non-command message: execute custom hook or Session 05 handlers
         user, workspace, link = resolved
         action_name = "linked_message"
         if on_linked_message is not None:
-            on_linked_message(session, clock, user, workspace, link, message, tg_client)
+            on_linked_message(
+                session,
+                clock,
+                user,
+                workspace,
+                link,
+                message,
+                deferred_client,  # type: ignore[arg-type]
+            )
         else:
             from app.integrations.channels.telegram.handlers import handle_linked_message
 
@@ -370,22 +453,27 @@ def process_update(
                 workspace,
                 link,
                 message,
-                tg_client,
+                deferred_client,  # type: ignore[arg-type]
                 update_id=update_id,
             )
 
-        return ProcessResult(
-            status="processed",
-            update_id=update_id,
-            channel_user_id=channel_user_id,
-            action=action_name or "linked_message",
+        return _finalize(
+            ProcessResult(
+                status="processed",
+                update_id=update_id,
+                channel_user_id=channel_user_id,
+                action=action_name or "linked_message",
+            )
         )
 
     except Exception as exc:
         _log.exception("telegram_update_processing_failed", update_id=update_id)
-        record.status = "failed"
-        record.error = str(exc)
-        session.flush()
+        session.rollback()
+        rec = session.get(TelegramUpdate, update_id)
+        if rec is not None:
+            rec.status = "failed"
+            rec.error = str(exc)
+            session.commit()
         return ProcessResult(
             status="failed",
             update_id=update_id,

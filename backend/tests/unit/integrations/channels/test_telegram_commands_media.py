@@ -343,7 +343,7 @@ def test_telegram_photo_ingestion_no_caption_cached(
     assert "Fotoğraf Alındı" in send_calls[0]["body"]["text"]
 
     # Verify cached in pending media
-    cached_asset_id = get_pending_media(owner.id, clock.now())
+    cached_asset_id = get_pending_media(owner.id, clock.now(), session=db_session)
     assert cached_asset_id == asset.id
 
 

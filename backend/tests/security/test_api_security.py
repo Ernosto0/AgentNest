@@ -61,6 +61,7 @@ def test_the_csrf_exemption_list_matches_expected_unauthenticated_and_webhook_ro
         "/api/v1/invites/accept",
         "/api/v1/webhooks/meta/deauthorize",
         "/api/v1/webhooks/meta/data-deletion",
+        "/api/v1/webhooks/telegram",
     } == set(CSRF_EXEMPT_PATHS)
 
 

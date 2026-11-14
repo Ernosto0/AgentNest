@@ -389,19 +389,35 @@ def reconcile_stuck_operations(job: JobContext) -> None:
             stuck_rows = session.execute(
                 text(
                     "SELECT id, workspace_id, subject_type "
-                    "FROM public.discover_stuck_operations(:cutoff, 100)"
+                    "FROM discover_stuck_operations(:cutoff, 100)"
                 ),
                 {"cutoff": cutoff},
             ).all()
-            stuck = [
-                (row[0], row[1], "publish_content" if row[2] == "content" else "send_reply")
-                for row in stuck_rows
-            ]
+            stuck = []
+            for row in stuck_rows:
+                subject_type = row[2]
+                if subject_type in ("content", "content_item"):
+                    op_kind = "publish_content"
+                elif subject_type == "calendar_appointment":
+                    op_kind = "calendar_appointment"
+                elif subject_type == "reply_draft":
+                    op_kind = "send_reply"
+                else:
+                    continue
+                stuck.append((row[0], row[1], op_kind))
         else:
             fallback_rows = session.execute(
                 select(Operation.id, Operation.workspace_id, Operation.operation_type).where(
                     Operation.status == "in_progress",
-                    Operation.operation_type.in_(("send_reply", "publish_content")),
+                    Operation.operation_type.in_(
+                        (
+                            "send_reply",
+                            "publish_content",
+                            "calendar_create_event",
+                            "calendar_update_event",
+                            "calendar_cancel_event",
+                        )
+                    ),
                     Operation.started_at < cutoff,
                 )
             ).all()
@@ -411,6 +427,8 @@ def reconcile_stuck_operations(job: JobContext) -> None:
             set_tenant_context(session, workspace_id)
             if operation_type == "publish_content":
                 _unstick_publish(session, job.clock, workspace_id, operation_id)
+            elif operation_type == "calendar_appointment" or operation_type.startswith("calendar_"):
+                _unstick_calendar(session, job.clock, workspace_id, operation_id)
             else:
                 _unstick_send(session, job.clock, workspace_id, operation_id)
             session.commit()
@@ -440,6 +458,29 @@ def _unstick_send(
         dedup_key=f"reconcile_send:{op.id}:1",
         clock=clock,
     )
+
+
+def _unstick_calendar(
+    session: Session, clock: Clock, workspace_id: uuid.UUID, operation_id: uuid.UUID
+) -> None:
+    from app.agent.models import AgentAction
+    from app.operations.calendar import _queue_reconcile
+
+    op = session.scalars(
+        select(Operation)
+        .where(Operation.workspace_id == workspace_id, Operation.id == operation_id)
+        .with_for_update()
+    ).one()
+    if op.status != "in_progress":
+        return
+    set_operation(clock, op, "unknown", code="OUTCOME_UNKNOWN")
+    action = session.scalar(
+        select(AgentAction).where(AgentAction.operation_id == op.id).with_for_update()
+    )
+    if action is not None and action.status in {"queued", "in_progress"}:
+        action.status = "outcome_unknown"
+        action.outcome_code = "OUTCOME_UNKNOWN"
+    _queue_reconcile(session, clock, op, round_num=1)
 
 
 def _unstick_publish(

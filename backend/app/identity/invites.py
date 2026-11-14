@@ -9,9 +9,10 @@ import uuid
 from dataclasses import dataclass
 from datetime import timedelta
 
-from sqlalchemy import select, text
+from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 
+from app.approvals.models import ActionToken
 from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.config import Settings
@@ -22,7 +23,15 @@ from app.core.errors import AppError
 from app.core.security import generate_token, hash_password, hash_token, password_policy_problems
 from app.identity import repository as repo
 from app.identity import service as identity_service
-from app.identity.models import AuthSession, Invite, User, Workspace, WorkspaceMember
+from app.identity.models import (
+    AuthSession,
+    ChannelLink,
+    ChannelLinkCode,
+    Invite,
+    User,
+    Workspace,
+    WorkspaceMember,
+)
 from app.notifications import service as notifications
 
 INVITE_TTL = timedelta(days=7)
@@ -364,7 +373,52 @@ def remove_member(
     member = _get_member(session, ctx, user_id)
     if member.role == "owner" and _owner_count(session, ctx) == 1:
         raise AppError("LAST_OWNER_REQUIRED")
+    now = clock.now()
     role = member.role
+
+    # Revoke any active messaging channel links, pending link codes, and unused approval tokens
+    # so a removed member immediately loses bot/callback access to the workspace.
+    active_links = list(
+        session.scalars(
+            select(ChannelLink).where(
+                ChannelLink.workspace_id == ctx.workspace_id,
+                ChannelLink.user_id == user_id,
+                ChannelLink.status == "active",
+            )
+        )
+    )
+    for link in active_links:
+        link.status = "unlinked"
+        link.unlinked_at = now
+        audit.record(
+            session,
+            ctx,
+            "channel_link.unlinked",
+            "channel_link",
+            link.id,
+            {
+                "channel": link.channel,
+                "user_id": str(user_id),
+                "channel_user_id": link.channel_user_id,
+                "initiated_by": "member_removed",
+            },
+            clock=clock,
+        )
+
+    session.execute(
+        delete(ChannelLinkCode).where(
+            ChannelLinkCode.workspace_id == ctx.workspace_id,
+            ChannelLinkCode.user_id == user_id,
+        )
+    )
+    session.execute(
+        delete(ActionToken).where(
+            ActionToken.workspace_id == ctx.workspace_id,
+            ActionToken.user_id == user_id,
+            ActionToken.used_at.is_(None),
+        )
+    )
+
     session.delete(member)
     audit.record(
         session,

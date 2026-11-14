@@ -75,12 +75,12 @@ CATEGORY_C_TABLES: tuple[str, ...] = (
 
 def upgrade() -> None:
     for tbl in CATEGORY_C_TABLES:
-        op.execute(sa.text(f"ALTER TABLE public.{tbl} ENABLE ROW LEVEL SECURITY"))
-        op.execute(sa.text(f"ALTER TABLE public.{tbl} FORCE ROW LEVEL SECURITY"))
+        op.execute(sa.text(f"ALTER TABLE {tbl} ENABLE ROW LEVEL SECURITY"))
+        op.execute(sa.text(f"ALTER TABLE {tbl} FORCE ROW LEVEL SECURITY"))
         op.execute(
             sa.text(
                 f"""
-                CREATE POLICY tenant_isolation_policy ON public.{tbl}
+                CREATE POLICY tenant_isolation_policy ON {tbl}
                     FOR ALL
                     USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
                     WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
@@ -91,7 +91,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     for tbl in CATEGORY_C_TABLES:
-        op.execute(sa.text(f"DROP POLICY IF EXISTS tenant_isolation_policy ON public.{tbl}"))
-        op.execute(sa.text(f"ALTER TABLE public.{tbl} NO FORCE ROW LEVEL SECURITY"))
-        op.execute(sa.text(f"ALTER TABLE public.{tbl} DISABLE ROW LEVEL SECURITY"))
+        op.execute(sa.text(f"DROP POLICY IF EXISTS tenant_isolation_policy ON {tbl}"))
+        op.execute(sa.text(f"ALTER TABLE {tbl} NO FORCE ROW LEVEL SECURITY"))
+        op.execute(sa.text(f"ALTER TABLE {tbl} DISABLE ROW LEVEL SECURITY"))
 

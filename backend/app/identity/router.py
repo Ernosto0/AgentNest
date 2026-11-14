@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import (
@@ -22,7 +22,7 @@ from app.core.db import get_db
 from app.core.errors import AppError
 from app.identity import invites as invites_service
 from app.identity import repository as repo
-from app.identity import service
+from app.identity import service, throttling
 from app.identity.models import Invite, User, Workspace, WorkspaceMember
 from app.identity.schemas import (
     InviteAccept,
@@ -213,11 +213,21 @@ def change_password(
 @auth_router.post("/password-reset/request", status_code=202)
 def request_password_reset(
     body: PasswordResetRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_app_settings),
     clock: Clock = Depends(get_clock),
 ) -> None:
-    service.request_password_reset(db, clock, settings, email=body.email)
+    ip = throttling.extract_client_ip(request, settings)
+    throttling.enforce_password_reset_throttle(db, clock, email=body.email, ip_address=ip)
+    service.request_password_reset(
+        db,
+        clock,
+        settings,
+        email=body.email,
+        background_tasks=background_tasks,
+    )
 
 
 @auth_router.post("/password-reset/confirm", status_code=204)

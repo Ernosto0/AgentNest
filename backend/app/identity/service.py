@@ -401,6 +401,7 @@ def request_password_reset(
     settings: Settings,
     *,
     email: str,
+    background_tasks: Any | None = None,
 ) -> None:
     """Request a password reset link. Always returns successfully to prevent account enumeration
     (ADR-025 §2.3).
@@ -451,7 +452,16 @@ def request_password_reset(
             else settings.app_base_url.rstrip("/")
         )
         reset_url = f"{base_url}/reset-password/{raw_token}"
-        send_password_reset_email(settings, user.email, reset_url, ui_locale=user.ui_locale)
+        if background_tasks is not None:
+            background_tasks.add_task(
+                send_password_reset_email,
+                settings,
+                user.email,
+                reset_url,
+                ui_locale=user.ui_locale,
+            )
+        else:
+            send_password_reset_email(settings, user.email, reset_url, ui_locale=user.ui_locale)
     else:
         # Constant-time dummy operation against user enumeration
         _ = hash_token(generate_token())

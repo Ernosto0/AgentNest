@@ -105,6 +105,7 @@ CATEGORY_C_TABLES: tuple[str, ...] = (
     "sim_published_media",
     "sim_sent_messages",
     "social_accounts",
+    "telegram_pending_media",
 )
 
 

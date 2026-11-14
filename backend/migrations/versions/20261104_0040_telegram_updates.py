@@ -61,17 +61,19 @@ def upgrade() -> None:
     # 3. Grants for least-privilege runtime roles
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
+        schema = bind.execute(sa.text("SELECT current_schema()")).scalar_one() or "public"
+        q_schema = '"' + str(schema).replace('"', '""') + '"'
         op.execute(
-            """
+            f"""
             DO $$
             BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.telegram_updates TO agentnest_app;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_updates TO agentnest_app;
                 END IF;
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.telegram_updates TO agentnest_worker;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_updates TO agentnest_worker;
                 END IF;
             END $$;
             """

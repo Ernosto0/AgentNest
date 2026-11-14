@@ -13,13 +13,19 @@ def execute(ec: ExecContext, resolution: dict[str, Any]) -> CommandResult:
     account = next((a for a in accounts if a.status != "disconnected"), None)
 
     if not account:
-        params = {"reach": 0, "views": 0, "interactions": 0, "days": 7, "is_simulated": False}
+        empty_params: dict[str, Any] = {
+            "reach": 0,
+            "views": 0,
+            "interactions": 0,
+            "days": 7,
+            "is_simulated": False,
+        }
         reply_text = (
             "Henüz bağlı bir Instagram hesabı bulunmuyor."
             if ec.user_locale.lower().startswith("tr")
             else "No connected Instagram account found."
         )
-        return CommandResult("command.insights_summary", params, [], reply_text=reply_text)
+        return CommandResult("command.insights_summary", empty_params, [], reply_text=reply_text)
 
     range_val = str(resolution.get("range", "7d"))
     days = 28 if range_val == "28d" else 7
@@ -27,7 +33,7 @@ def execute(ec: ExecContext, resolution: dict[str, Any]) -> CommandResult:
         ec.session, ec.ctx.workspace_id, account.id, range_days=days, clock=ec.clock
     )
 
-    params = {
+    params: dict[str, Any] = {
         "reach": summary.reach,
         "views": summary.views,
         "interactions": summary.interactions,

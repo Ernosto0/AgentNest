@@ -26,6 +26,7 @@ from app.identity.models import (
     ChannelLinkCode,
     User,
     Workspace,
+    WorkspaceMember,
 )
 
 MAX_ACTIVE_LINK_CODES = 3
@@ -455,7 +456,22 @@ class ChannelLinkService:
             user = db.get(User, link.user_id)
             workspace = db.get(Workspace, link.workspace_id)
 
-        if user is None or workspace is None or link is None or link.status != "active":
+        if (
+            user is None
+            or not user.is_active
+            or workspace is None
+            or link is None
+            or link.status != "active"
+        ):
+            return None
+
+        member = db.scalar(
+            select(WorkspaceMember).where(
+                WorkspaceMember.workspace_id == workspace.id,
+                WorkspaceMember.user_id == user.id,
+            )
+        )
+        if member is None:
             return None
 
         return user, workspace, link

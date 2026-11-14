@@ -9,12 +9,13 @@ from __future__ import annotations
 import uuid
 
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.clock import Clock
 from app.core.db import set_tenant_context
 from app.core.logging import get_logger
-from app.identity.models import ChannelLink, User, Workspace
+from app.identity.models import ChannelLink, User, Workspace, WorkspaceMember
 from app.integrations.channels.base import ChannelRecipient, DeliveryResult
 from app.integrations.channels.registry import get_channel
 from app.jobs.queue import enqueue
@@ -111,7 +112,20 @@ def deliver_channel_notification(ctx: JobContext) -> None:
 
         user = session.get(User, recipient_user_id)
         workspace = session.get(Workspace, workspace_id)
+        member = session.scalar(
+            select(WorkspaceMember).where(
+                WorkspaceMember.workspace_id == workspace_id,
+                WorkspaceMember.user_id == recipient_user_id,
+            )
+        )
         link = session.get(ChannelLink, channel_link_id) if channel_link_id else None
+        if member is None or user is None or not user.is_active or (
+            channel_name != "web" and (link is None or link.status != "active")
+        ):
+            delivery.status = "failed"
+            delivery.last_error = "recipient_not_member_or_unlinked"
+            session.commit()
+            return
 
         recipient = ChannelRecipient(
             user_id=recipient_user_id,

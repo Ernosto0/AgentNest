@@ -9,6 +9,46 @@ from __future__ import annotations
 import re
 from typing import Any
 
+_METRIC_AFTER_CUES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("replies_auto", re.compile(r"^\s*(?:otomatik|automatically)\b", re.IGNORECASE)),
+    (
+        "replies_approved",
+        re.compile(r"^\s*(?:onayınızla|after your approval|approved)\b", re.IGNORECASE),
+    ),
+    (
+        "replies_by_owner",
+        re.compile(r"^\s*(?:tanesini doğrudan siz|yourself)\b", re.IGNORECASE),
+    ),
+    (
+        "escalations",
+        re.compile(r"^\s*(?:konuşma size devredildi|handed over|escalated)\b", re.IGNORECASE),
+    ),
+    ("attention_now", re.compile(r"^\s*(?:konu var|needing attention)\b", re.IGNORECASE)),
+    ("pending_approvals", re.compile(r"^\s*(?:pending approvals?|bekleyen onay)\b", re.IGNORECASE)),
+    (
+        "inbound_messages",
+        re.compile(r"^\s*(?:incoming\s+(?:dm|message)s?|gelen\s+(?:dm|mesaj))\b", re.IGNORECASE),
+    ),
+    (
+        "conversations",
+        re.compile(r"^\s*(?:conversations?|farklı konuşma)\b", re.IGNORECASE),
+    ),
+    (
+        "replies_sent",
+        re.compile(
+            r"^\s*(?:replies?\s+were\s+sent|yanıt\s+gönderildi|mesaja\s+yanıt\s+verildi)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    ("reach", re.compile(r"^\s*(?:kişiye ulaştı|accounts)\b", re.IGNORECASE)),
+    ("views", re.compile(r"^\s*(?:görüntülenme|views?)\b", re.IGNORECASE)),
+    ("interactions", re.compile(r"^\s*(?:etkileşim|interactions?)\b", re.IGNORECASE)),
+)
+_METRIC_BEFORE_CUES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("attention_now", re.compile(r"ilgilenmeniz gereken\s*$", re.IGNORECASE)),
+    ("reach", re.compile(r"\breached\s*$", re.IGNORECASE)),
+)
+
 
 def _extract_numbers(text: str) -> list[int]:
     """Extract integer numbers from text (e.g. '11', '7000', '5')."""
@@ -18,43 +58,56 @@ def _extract_numbers(text: str) -> list[int]:
 def validate_metrics_grounding(
     narrated_text: str, params: dict[str, Any], user_query: str = ""
 ) -> list[str]:
-    """Verify INV-08: the narrated text never invents numbers outside the computed params.
-
-    Allowed numbers include:
-    - Any numeric values directly in `params` (inbound_messages, replies_sent, etc.)
-    - Any derived totals: e.g. (replies_auto + replies_approved) for assistant replies.
-    - Dates / times / versions formatted in params.
-    - Numbers present in the user query (e.g. asking "is it 7000?").
-    """
-    allowed_numbers = set()
+    """Verify INV-08: narrated text never invents numbers or misattributes metrics."""
+    allowed_numbers: set[int] = set()
     for v in params.values():
-        if isinstance(v, (int, float)):
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
             allowed_numbers.add(int(v))
         elif isinstance(v, str):
             for n in _extract_numbers(v):
                 allowed_numbers.add(n)
 
-    # Common valid combinations
-    auto = int(params.get("replies_auto") or 0)
-    approved = int(params.get("replies_approved") or 0)
-    allowed_numbers.add(auto + approved)  # total assistant replies
+    if "replies_auto" in params or "replies_approved" in params:
+        auto = int(params.get("replies_auto") or 0)
+        approved = int(params.get("replies_approved") or 0)
+        allowed_numbers.add(auto + approved)
 
-    # Numbers in user query
-    for n in _extract_numbers(user_query):
-        allowed_numbers.add(n)
+    query_numbers = set(_extract_numbers(user_query))
+    allowed_numbers.update(query_numbers)
 
-    found_numbers = _extract_numbers(narrated_text)
-    problems = []
-    for num in found_numbers:
-        # 0 or 1 might appear in conversational words or days
-        if num in (0, 1) and any(
-            k in params for k in ("inbound_messages", "conversations", "replies_sent", "count")
-        ):
-            continue
+    problems: list[str] = []
+    for match in re.finditer(r"\b(\d+)\b", narrated_text):
+        num = int(match.group(1))
         if num not in allowed_numbers:
             problems.append(
                 f"Number {num} in narration is not grounded in command params {allowed_numbers}"
             )
+            continue
+
+        # Bind metric labels adjacent to this number to the specific field value in params.
+        if num in query_numbers:
+            continue
+        after_clause = re.split(r"[,.;()\n]", narrated_text[match.end() : match.end() + 40])[0]
+        before_start = max(0, match.start() - 32)
+        before_clause = re.split(r"[,.;()\n]", narrated_text[before_start : match.start()])[-1]
+
+        matched_field: str | None = None
+        for field, pat in _METRIC_AFTER_CUES:
+            if pat.search(after_clause):
+                matched_field = field
+                break
+        if matched_field is None:
+            for field, pat in _METRIC_BEFORE_CUES:
+                if pat.search(before_clause):
+                    matched_field = field
+                    break
+
+        if matched_field is not None and matched_field in params:
+            expected_val = int(params[matched_field] or 0)
+            if num != expected_val:
+                problems.append(
+                    f"Number {num} is attributed to '{matched_field}' (expected {expected_val})"
+                )
 
     return problems
 

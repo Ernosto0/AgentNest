@@ -11,6 +11,7 @@ import hmac
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.api.deps import get_app_settings, get_clock
 from app.core.clock import Clock
@@ -63,8 +64,9 @@ async def telegram_webhook(
     if not isinstance(raw_json, dict) or "update_id" not in raw_json:
         return JSONResponse({"status": "missing_update_id"}, status_code=400)
 
-    result = process_update(db, clock, raw_json, client=client)
-    db.commit()
+    result = await run_in_threadpool(process_update, db, clock, raw_json, client)
+    if db.in_transaction():
+        db.commit()
 
     if result.status == "duplicate":
         return JSONResponse({"status": "duplicate"}, status_code=200)

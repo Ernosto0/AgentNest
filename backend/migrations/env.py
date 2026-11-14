@@ -20,6 +20,7 @@ import app.content.models  # noqa: F401  # isort: skip
 import app.identity.models  # noqa: F401  # isort: skip
 import app.inbox.models  # noqa: F401  # isort: skip
 import app.integrations.calendar.models  # noqa: F401  # isort: skip
+import app.integrations.channels.telegram.models  # noqa: F401  # isort: skip
 import app.integrations.instagram.models  # noqa: F401  # isort: skip
 import app.jobs.models  # noqa: F401  # isort: skip
 import app.knowledge.models  # noqa: F401  # isort: skip

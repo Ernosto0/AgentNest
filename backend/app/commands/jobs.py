@@ -80,39 +80,40 @@ def interpret_command(job: JobContext) -> None:
 
     if resolution is not None:
         llm_reply_text = None
-        try:
-            from app.ai.tasks.narrate_command_result import (
-                NARRATE_COMMAND_RESULT,
-                NarrateCommandResultInput,
-            )
-
-            narration_outcome = run_task(
-                runner_deps(job.session_factory, job.clock),
-                prepared.ctx,
-                NARRATE_COMMAND_RESULT,
-                NarrateCommandResultInput(
-                    user_query=resolution.user_query,
-                    user_locale=resolution.user_locale,
-                    message_key=resolution.message_key,
-                    params=resolution.params,
-                ),
-                resolution.correlation_id,
-                job_id=job.job_id,
-            )
-            if narration_outcome.output and narration_outcome.output.reply_text:
-                llm_reply_text = narration_outcome.output.reply_text
-        except Exception as exc:
-            _log.warning("command_narration_failed", error=str(exc))
-        finally:
-            with job.session_factory() as session:  # [T3]
-                service.finalize_interpretation(
-                    session,
-                    job.clock,
-                    job.workspace_id,
-                    payload.command_id,
-                    target_event=resolution.target_event,
-                    reply_text=llm_reply_text,
+        if not resolution.has_deterministic_reply:
+            try:
+                from app.ai.tasks.narrate_command_result import (
+                    NARRATE_COMMAND_RESULT,
+                    NarrateCommandResultInput,
                 )
+
+                narration_outcome = run_task(
+                    runner_deps(job.session_factory, job.clock),
+                    prepared.ctx,
+                    NARRATE_COMMAND_RESULT,
+                    NarrateCommandResultInput(
+                        user_query=resolution.user_query,
+                        user_locale=resolution.user_locale,
+                        message_key=resolution.message_key,
+                        params=resolution.params,
+                    ),
+                    resolution.correlation_id,
+                    job_id=job.job_id,
+                )
+                if narration_outcome.output and narration_outcome.output.reply_text:
+                    llm_reply_text = narration_outcome.output.reply_text
+            except Exception as exc:
+                _log.warning("command_narration_failed", error=str(exc))
+
+        with job.session_factory() as session:  # [T3]
+            service.finalize_interpretation(
+                session,
+                job.clock,
+                job.workspace_id,
+                payload.command_id,
+                target_event=resolution.target_event,
+                reply_text=llm_reply_text,
+            )
 
 
 @job_handler("expire_commands", ExpireCommandsPayload, max_attempts=1)

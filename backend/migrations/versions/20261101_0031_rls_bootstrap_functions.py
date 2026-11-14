@@ -9,12 +9,19 @@ branch_labels = None
 depends_on = None
 
 
+def _active_schema_sql() -> str:
+    bind = op.get_bind()
+    schema = bind.execute(sa.text("SELECT current_schema()")).scalar_one() or "public"
+    return '"' + str(schema).replace('"', '""') + '"'
+
+
 def upgrade() -> None:
+    q_schema = _active_schema_sql()
     # 1. Webhook social account resolution by external account id
     op.execute(
         sa.text(
-            """
-            CREATE OR REPLACE FUNCTION public.resolve_social_account_by_external(
+            f"""
+            CREATE OR REPLACE FUNCTION resolve_social_account_by_external(
                 p_provider_kind text,
                 p_external_account_id text
             )
@@ -27,18 +34,18 @@ def upgrade() -> None:
             )
             LANGUAGE sql
             SECURITY DEFINER
-            SET search_path = public, pg_temp
+            SET search_path = {q_schema}, pg_temp
             STABLE
             AS $$
                 SELECT sa.id, sa.workspace_id, sa.status, sa.provider_kind, sa.external_account_id
-                FROM public.social_accounts sa
+                FROM social_accounts sa
                 WHERE sa.provider_kind = p_provider_kind
                   AND sa.external_account_id = p_external_account_id
                 ORDER BY (sa.status = 'disconnected'), sa.created_at DESC
                 LIMIT 1;
             $$;
 
-            GRANT EXECUTE ON FUNCTION public.resolve_social_account_by_external(text, text) TO PUBLIC;
+            GRANT EXECUTE ON FUNCTION resolve_social_account_by_external(text, text) TO PUBLIC;
             """
         )
     )
@@ -46,8 +53,8 @@ def upgrade() -> None:
     # 2. Invite resolution by token hash (bytea)
     op.execute(
         sa.text(
-            """
-            CREATE OR REPLACE FUNCTION public.resolve_invite_by_token_hash(
+            f"""
+            CREATE OR REPLACE FUNCTION resolve_invite_by_token_hash(
                 p_token_hash bytea
             )
             RETURNS TABLE (
@@ -60,16 +67,16 @@ def upgrade() -> None:
             )
             LANGUAGE sql
             SECURITY DEFINER
-            SET search_path = public, pg_temp
+            SET search_path = {q_schema}, pg_temp
             STABLE
             AS $$
                 SELECT i.id, i.workspace_id, i.role, i.expires_at, i.revoked_at, i.accepted_at
-                FROM public.invites i
+                FROM invites i
                 WHERE i.token_hash = p_token_hash
                 LIMIT 1;
             $$;
 
-            GRANT EXECUTE ON FUNCTION public.resolve_invite_by_token_hash(bytea) TO PUBLIC;
+            GRANT EXECUTE ON FUNCTION resolve_invite_by_token_hash(bytea) TO PUBLIC;
             """
         )
     )
@@ -77,8 +84,8 @@ def upgrade() -> None:
     # 3. OAuth state resolution by state hash (bytea)
     op.execute(
         sa.text(
-            """
-            CREATE OR REPLACE FUNCTION public.resolve_oauth_state_by_hash(
+            f"""
+            CREATE OR REPLACE FUNCTION resolve_oauth_state_by_hash(
                 p_state_hash bytea
             )
             RETURNS TABLE (
@@ -91,16 +98,16 @@ def upgrade() -> None:
             )
             LANGUAGE sql
             SECURITY DEFINER
-            SET search_path = public, pg_temp
+            SET search_path = {q_schema}, pg_temp
             STABLE
             AS $$
                 SELECT s.id, s.workspace_id, s.user_id, s.expires_at, s.invalidated_at, s.used_at
-                FROM public.oauth_states s
+                FROM oauth_states s
                 WHERE s.state_hash = p_state_hash
                 LIMIT 1;
             $$;
 
-            GRANT EXECUTE ON FUNCTION public.resolve_oauth_state_by_hash(bytea) TO PUBLIC;
+            GRANT EXECUTE ON FUNCTION resolve_oauth_state_by_hash(bytea) TO PUBLIC;
             """
         )
     )
@@ -108,8 +115,8 @@ def upgrade() -> None:
     # 4. Periodic discovery: due approvals
     op.execute(
         sa.text(
-            """
-            CREATE OR REPLACE FUNCTION public.discover_expired_approval_ids(
+            f"""
+            CREATE OR REPLACE FUNCTION discover_expired_approval_ids(
                 p_now timestamptz,
                 p_limit int DEFAULT 100
             )
@@ -119,18 +126,18 @@ def upgrade() -> None:
             )
             LANGUAGE sql
             SECURITY DEFINER
-            SET search_path = public, pg_temp
+            SET search_path = {q_schema}, pg_temp
             STABLE
             AS $$
                 SELECT a.id, a.workspace_id
-                FROM public.approvals a
+                FROM approvals a
                 WHERE a.status = 'pending'
                   AND a.expires_at <= p_now
                 ORDER BY a.expires_at, a.id
                 LIMIT p_limit;
             $$;
 
-            GRANT EXECUTE ON FUNCTION public.discover_expired_approval_ids(timestamptz, int) TO PUBLIC;
+            GRANT EXECUTE ON FUNCTION discover_expired_approval_ids(timestamptz, int) TO PUBLIC;
             """
         )
     )
@@ -138,8 +145,8 @@ def upgrade() -> None:
     # 5. Periodic discovery: due reply drafts (24h messaging window)
     op.execute(
         sa.text(
-            """
-            CREATE OR REPLACE FUNCTION public.discover_expired_reply_draft_ids(
+            f"""
+            CREATE OR REPLACE FUNCTION discover_expired_reply_draft_ids(
                 p_cutoff timestamptz,
                 p_limit int DEFAULT 100
             )
@@ -149,12 +156,12 @@ def upgrade() -> None:
             )
             LANGUAGE sql
             SECURITY DEFINER
-            SET search_path = public, pg_temp
+            SET search_path = {q_schema}, pg_temp
             STABLE
             AS $$
                 SELECT rd.id, rd.workspace_id
-                FROM public.reply_drafts rd
-                JOIN public.conversations c
+                FROM reply_drafts rd
+                JOIN conversations c
                   ON c.workspace_id = rd.workspace_id
                  AND c.id = rd.conversation_id
                 WHERE rd.status IN ('pending_approval', 'needs_human', 'queued')
@@ -163,7 +170,7 @@ def upgrade() -> None:
                 LIMIT p_limit;
             $$;
 
-            GRANT EXECUTE ON FUNCTION public.discover_expired_reply_draft_ids(timestamptz, int) TO PUBLIC;
+            GRANT EXECUTE ON FUNCTION discover_expired_reply_draft_ids(timestamptz, int) TO PUBLIC;
             """
         )
     )
@@ -171,8 +178,8 @@ def upgrade() -> None:
     # 6. Periodic discovery: due owner command clarifications
     op.execute(
         sa.text(
-            """
-            CREATE OR REPLACE FUNCTION public.discover_expired_command_ids(
+            f"""
+            CREATE OR REPLACE FUNCTION discover_expired_command_ids(
                 p_now timestamptz,
                 p_limit int DEFAULT 100
             )
@@ -182,18 +189,18 @@ def upgrade() -> None:
             )
             LANGUAGE sql
             SECURITY DEFINER
-            SET search_path = public, pg_temp
+            SET search_path = {q_schema}, pg_temp
             STABLE
             AS $$
                 SELECT c.id, c.workspace_id
-                FROM public.owner_commands c
+                FROM owner_commands c
                 WHERE c.status = 'needs_clarification'
                   AND c.expires_at <= p_now
                 ORDER BY c.expires_at, c.id
                 LIMIT p_limit;
             $$;
 
-            GRANT EXECUTE ON FUNCTION public.discover_expired_command_ids(timestamptz, int) TO PUBLIC;
+            GRANT EXECUTE ON FUNCTION discover_expired_command_ids(timestamptz, int) TO PUBLIC;
             """
         )
     )
@@ -201,8 +208,8 @@ def upgrade() -> None:
     # 7. Periodic discovery: stuck operations
     op.execute(
         sa.text(
-            """
-            CREATE OR REPLACE FUNCTION public.discover_stuck_operations(
+            f"""
+            CREATE OR REPLACE FUNCTION discover_stuck_operations(
                 p_cutoff timestamptz,
                 p_limit int DEFAULT 100
             )
@@ -214,18 +221,18 @@ def upgrade() -> None:
             )
             LANGUAGE sql
             SECURITY DEFINER
-            SET search_path = public, pg_temp
+            SET search_path = {q_schema}, pg_temp
             STABLE
             AS $$
                 SELECT o.id, o.workspace_id, o.subject_type, o.status
-                FROM public.operations o
+                FROM operations o
                 WHERE o.status IN ('in_progress', 'outcome_unknown')
                   AND o.updated_at <= p_cutoff
                 ORDER BY o.updated_at, o.id
                 LIMIT p_limit;
             $$;
 
-            GRANT EXECUTE ON FUNCTION public.discover_stuck_operations(timestamptz, int) TO PUBLIC;
+            GRANT EXECUTE ON FUNCTION discover_stuck_operations(timestamptz, int) TO PUBLIC;
             """
         )
     )
@@ -233,8 +240,8 @@ def upgrade() -> None:
     # 8. Periodic discovery: stuck agent sessions
     op.execute(
         sa.text(
-            """
-            CREATE OR REPLACE FUNCTION public.discover_stuck_agent_sessions(
+            f"""
+            CREATE OR REPLACE FUNCTION discover_stuck_agent_sessions(
                 p_cutoff timestamptz,
                 p_limit int DEFAULT 100
             )
@@ -244,29 +251,29 @@ def upgrade() -> None:
             )
             LANGUAGE sql
             SECURITY DEFINER
-            SET search_path = public, pg_temp
+            SET search_path = {q_schema}, pg_temp
             STABLE
             AS $$
                 SELECT s.id, s.workspace_id
-                FROM public.agent_sessions s
+                FROM agent_sessions s
                 WHERE s.status = 'active'
                   AND s.updated_at <= p_cutoff
                 ORDER BY s.updated_at, s.id
                 LIMIT p_limit;
             $$;
 
-            GRANT EXECUTE ON FUNCTION public.discover_stuck_agent_sessions(timestamptz, int) TO PUBLIC;
+            GRANT EXECUTE ON FUNCTION discover_stuck_agent_sessions(timestamptz, int) TO PUBLIC;
             """
         )
     )
 
 
 def downgrade() -> None:
-    op.execute(sa.text("DROP FUNCTION IF EXISTS public.discover_stuck_agent_sessions(timestamptz, int)"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS public.discover_stuck_operations(timestamptz, int)"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS public.discover_expired_command_ids(timestamptz, int)"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS public.discover_expired_reply_draft_ids(timestamptz, int)"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS public.discover_expired_approval_ids(timestamptz, int)"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS public.resolve_oauth_state_by_hash(bytea)"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS public.resolve_invite_by_token_hash(bytea)"))
-    op.execute(sa.text("DROP FUNCTION IF EXISTS public.resolve_social_account_by_external(text, text)"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS discover_stuck_agent_sessions(timestamptz, int)"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS discover_stuck_operations(timestamptz, int)"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS discover_expired_command_ids(timestamptz, int)"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS discover_expired_reply_draft_ids(timestamptz, int)"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS discover_expired_approval_ids(timestamptz, int)"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS resolve_oauth_state_by_hash(bytea)"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS resolve_invite_by_token_hash(bytea)"))
+    op.execute(sa.text("DROP FUNCTION IF EXISTS resolve_social_account_by_external(text, text)"))

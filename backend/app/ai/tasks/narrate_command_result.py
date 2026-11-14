@@ -70,6 +70,7 @@ NARRATE_COMMAND_RESULT: TaskDefinition[NarrateCommandResultInput, NarrateCommand
 @fake_implementation(TASK)
 def _fake_narrate_command_result(
     task_input: NarrateCommandResultInput,
+    _schema: type[BaseModel],
 ) -> NarrateCommandResultOutput:
     """Deterministic, natural-sounding fallback in tests and demo mode."""
     reply = narrate_fallback(

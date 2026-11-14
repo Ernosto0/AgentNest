@@ -73,6 +73,7 @@ class InterpretationResolution:
     params: dict[str, Any]
     correlation_id: uuid.UUID
     target_event: str  # "complete" or "unsupported"
+    has_deterministic_reply: bool = False
 
 
 def _validation(field: str, code: str, **params: Any) -> AppError:
@@ -414,6 +415,7 @@ def finish_interpretation(
             params=res.get("params", {}),
             correlation_id=command.correlation_id,
             target_event=target_event,
+            has_deterministic_reply=bool(res.get("reply_text")),
         )
 
     session.commit()

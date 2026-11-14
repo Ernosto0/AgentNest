@@ -104,7 +104,13 @@ def _deliver_approval_notification(
             WorkspaceMember.user_id == user.id,
         )
     )
-    role = member.role if member else "owner"
+    if member is None:
+        return DeliveryResult(
+            success=False,
+            status="failed",
+            error_message="Recipient is no longer a workspace member",
+        )
+    role = member.role
     ctx = workspace_context(workspace, ActorRef.user(user.id), role)
 
     # 2. Create single-use action tokens bound to user, approval, decision & payload_hash
@@ -300,6 +306,7 @@ def _deliver_owner_question_notification(
     category = category_names.get(question.required_info, question.required_info.title())
 
     q_heading = "Asistanınız Bilgi Bekliyor" if is_tr else "Your Assistant Needs Information"
+    q_ref = f"Q-{str(question.id)[:8]}"
     title = f"{sim_badge}❓ <b>{q_heading}</b>"
     q_body = html.escape(question.body or "")
     lines = [
@@ -307,6 +314,7 @@ def _deliver_owner_question_notification(
         "",
         f"• <b>{'Hesap' if is_tr else 'Account'}:</b> {html.escape(account_name)}",
         f"• <b>{'Kategori' if is_tr else 'Category'}:</b> {html.escape(category)}",
+        f"• <b>{'Referans' if is_tr else 'Ref'}:</b> <code>{q_ref}</code>",
         f"• <b>{'Soru' if is_tr else 'Question'}:</b>\n<blockquote>{q_body}</blockquote>",
     ]
 

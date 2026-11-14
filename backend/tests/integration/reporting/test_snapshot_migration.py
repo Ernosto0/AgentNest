@@ -50,10 +50,17 @@ def test_upgrade_preserves_values_and_marks_legacy_uncertainty(
     report_id = uuid.uuid4()
     cleanup_at = datetime(2026, 10, 21, tzinfo=UTC)
     with Session(isolated) as session:
-        workspace = create_workspace(session, business_category="gym")
-        workspace.created_at = at(DAY, 0)
-        session.flush()
-        workspace_id = workspace.id
+        workspace_id = uuid.uuid4()
+        session.execute(
+            text("""
+            INSERT INTO workspaces
+              (id, name, slug, business_category, market, default_locale, timezone, currency,
+               created_at, updated_at)
+            VALUES (:id, 'Gym Shop', :slug, 'gym', 'global', 'tr', 'Europe/Istanbul', 'TRY',
+                    :ts, :ts)
+        """),
+            {"id": workspace_id, "slug": f"gym-{workspace_id.hex[:12]}", "ts": at(DAY, 0)},
+        )
         session.execute(
             text("""
             INSERT INTO daily_reports

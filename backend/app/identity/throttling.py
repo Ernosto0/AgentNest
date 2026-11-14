@@ -18,6 +18,8 @@ from app.identity.models import LoginThrottle
 THROTTLE_WINDOW_MINUTES = 15
 LOCKOUT_SCHEDULE_SECONDS = (60, 300, 900, 3600)  # 5th attempt: 60s, 6th: 300s, 7th: 900s, 8+: 3600s
 FAILURES_BEFORE_LOCKOUT = 5
+RESET_REQUESTS_BEFORE_LOCKOUT = 5
+RESET_LOCKOUT_SECONDS = 900
 
 
 def hash_identifier(value: str) -> str:
@@ -193,3 +195,89 @@ def record_login_success(
             | ((LoginThrottle.identifier_type == "ip") & (LoginThrottle.identifier_hash == ip_h))
         )
     )
+
+
+def enforce_password_reset_throttle(
+    session: Session,
+    clock: Clock,
+    *,
+    email: str,
+    ip_address: str,
+) -> None:
+    """Rate-limit password reset requests per IP and per normalized email (Serious 12)."""
+    now = clock.now()
+    email_h = hash_identifier(f"pw_reset:{email}")
+    ip_h = hash_identifier(f"pw_reset:{ip_address}")
+
+    existing = list(
+        session.scalars(
+            select(LoginThrottle).where(
+                (
+                    (LoginThrottle.identifier_type == "email")
+                    & (LoginThrottle.identifier_hash == email_h)
+                )
+                | (
+                    (LoginThrottle.identifier_type == "ip")
+                    & (LoginThrottle.identifier_hash == ip_h)
+                )
+            )
+        )
+    )
+    locked = [t for t in existing if t.locked_until and t.locked_until > now]
+    if locked:
+        max_locked = max(t.locked_until for t in locked if t.locked_until is not None)
+        retry_after = max(1, math.ceil((max_locked - now).total_seconds()))
+        audit.record(
+            session,
+            None,
+            "auth.password_reset_throttled",
+            "user",
+            None,
+            {
+                "retry_after": retry_after,
+                "email_sha256": email_h,
+                "ip_sha256": ip_h,
+                "locked_targets": [t.identifier_type for t in locked],
+            },
+            clock=clock,
+        )
+        session.commit()
+        raise AppError(
+            "RATE_LIMITED",
+            headers={"Retry-After": str(retry_after)},
+            retry_after=retry_after,
+        )
+
+    for id_type, id_hash in (("email", email_h), ("ip", ip_h)):
+        row = session.scalars(
+            select(LoginThrottle)
+            .where(
+                (LoginThrottle.identifier_type == id_type)
+                & (LoginThrottle.identifier_hash == id_hash)
+            )
+            .with_for_update()
+        ).first()
+        if row is None:
+            session.add(
+                LoginThrottle(
+                    identifier_type=id_type,
+                    identifier_hash=id_hash,
+                    failed_attempts=1,
+                    first_failed_at=now,
+                    last_failed_at=now,
+                    locked_until=None,
+                )
+            )
+        else:
+            window_expired = now - row.last_failed_at > timedelta(minutes=THROTTLE_WINDOW_MINUTES)
+            if window_expired:
+                row.failed_attempts = 1
+                row.first_failed_at = now
+                row.last_failed_at = now
+                row.locked_until = None
+            else:
+                row.failed_attempts += 1
+                row.last_failed_at = now
+                if row.failed_attempts >= RESET_REQUESTS_BEFORE_LOCKOUT:
+                    row.locked_until = now + timedelta(seconds=RESET_LOCKOUT_SECONDS)
+    session.flush()

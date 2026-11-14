@@ -91,7 +91,7 @@ def request_workspace_deletion(
     session.execute(
         update(AccountAgent)
         .where(AccountAgent.workspace_id == ctx.workspace_id)
-        .values(operating_mode="paused")
+        .values(state="paused")
     )
 
     # 2. Cancel pending/queued reply drafts

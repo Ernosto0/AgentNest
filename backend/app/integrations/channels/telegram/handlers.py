@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.agent import owner_tasks
@@ -28,11 +28,13 @@ from app.content.service import ScheduleRequest
 from app.core.clock import Clock
 from app.core.config import get_settings
 from app.core.context import ActorRef, WorkspaceContext
+from app.core.db import get_session_factory
 from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.identity.models import ChannelLink, User, Workspace, WorkspaceMember
 from app.identity.service import workspace_context
 from app.integrations.channels.telegram.client import TelegramClient
+from app.integrations.channels.telegram.models import TelegramPendingMedia
 from app.integrations.channels.telegram.webhook_format import (
     PhotoSize,
     TelegramMessage,
@@ -49,27 +51,223 @@ _log = get_logger("app.integrations.channels.telegram.handlers")
 MAX_PHOTO_BYTES = 20 * 1024 * 1024  # 20 MB (INV-11)
 PENDING_MEDIA_TTL = timedelta(minutes=15)
 
-# In-memory store for pending intake media waiting for user's next command
-# user_id -> (asset_id, timestamp)
-_PENDING_MEDIA: dict[uuid.UUID, tuple[uuid.UUID, datetime]] = {}
+_QUESTION_REF_RE = re.compile(r"\bQ-([0-9a-f]{8})\b", re.IGNORECASE)
+_QUESTION_HEADINGS = (
+    "Asistanınız Bilgi Bekliyor",
+    "Your Assistant Needs Information",
+)
+_EXPLICIT_COMMAND_TERMS = (
+    "fiyat",
+    "price",
+    "ücret",
+    "tarife",
+    "çalışma saat",
+    "working hours",
+    "saatleri",
+    "durdur",
+    "duraklat",
+    "pause",
+    "resume",
+    "devam et",
+    "story",
+    "gönderi",
+    "yayınla",
+    "publish",
+    "planla",
+    "schedule",
+    "onayla",
+    "reddet",
+    "approve",
+    "reject",
+    "rapor",
+    "özet",
+    "summary",
+    "status",
+    "durum",
+)
 
 
-def set_pending_media(user_id: uuid.UUID, asset_id: uuid.UUID, now: datetime) -> None:
-    """Store pending media intake reference for a user."""
-    _PENDING_MEDIA[user_id] = (asset_id, now)
+def _resolve_workspace_for_pending_media(
+    session: Session,
+    user_id: uuid.UUID,
+) -> uuid.UUID | None:
+    link = session.scalar(
+        select(ChannelLink)
+        .where(
+            ChannelLink.user_id == user_id,
+            ChannelLink.channel == "telegram",
+            ChannelLink.status == "active",
+        )
+        .limit(1)
+    )
+    if link is not None:
+        return link.workspace_id
+    row = session.scalar(
+        select(TelegramPendingMedia).where(TelegramPendingMedia.user_id == user_id).limit(1)
+    )
+    return row.workspace_id if row is not None else None
 
 
-def get_pending_media(user_id: uuid.UUID, now: datetime) -> uuid.UUID | None:
+def set_pending_media(
+    user_id: uuid.UUID,
+    asset_id: uuid.UUID,
+    now: datetime,
+    *,
+    session: Session | None = None,
+    workspace_id: uuid.UUID | None = None,
+) -> None:
+    """Persist pending media intake reference in PostgreSQL across API workers."""
+
+    def _write(db: Session) -> None:
+        ws_id = workspace_id or _resolve_workspace_for_pending_media(db, user_id)
+        if ws_id is None:
+            raise AppError("WORKSPACE_NOT_FOUND")
+        db.execute(
+            delete(TelegramPendingMedia).where(
+                TelegramPendingMedia.workspace_id == ws_id,
+                TelegramPendingMedia.user_id == user_id,
+            )
+        )
+        db.add(
+            TelegramPendingMedia(
+                id=uuid.uuid4(),
+                workspace_id=ws_id,
+                user_id=user_id,
+                media_asset_id=asset_id,
+                expires_at=now + PENDING_MEDIA_TTL,
+                created_at=now,
+            )
+        )
+        db.flush()
+
+    if session is not None:
+        _write(session)
+        return
+
+    with get_session_factory()() as own_session:
+        _write(own_session)
+        own_session.commit()
+
+
+def get_pending_media(
+    user_id: uuid.UUID,
+    now: datetime,
+    *,
+    session: Session | None = None,
+    workspace_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
     """Retrieve and clear pending media intake reference if not expired."""
-    entry = _PENDING_MEDIA.get(user_id)
-    if entry is None:
-        return None
-    asset_id, created_at = entry
-    if now - created_at > PENDING_MEDIA_TTL:
-        _PENDING_MEDIA.pop(user_id, None)
-        return None
-    _PENDING_MEDIA.pop(user_id, None)
-    return asset_id
+
+    def _pop(db: Session) -> uuid.UUID | None:
+        stmt = select(TelegramPendingMedia).where(TelegramPendingMedia.user_id == user_id)
+        if workspace_id is not None:
+            stmt = stmt.where(TelegramPendingMedia.workspace_id == workspace_id)
+        entry = db.scalar(stmt.order_by(TelegramPendingMedia.created_at.desc()).limit(1))
+        if entry is None:
+            return None
+        asset_id = entry.media_asset_id
+        expired = entry.expires_at <= now
+        db.delete(entry)
+        db.flush()
+        return None if expired else asset_id
+
+    if session is not None:
+        return _pop(session)
+
+    with get_session_factory()() as own_session:
+        res = _pop(own_session)
+        own_session.commit()
+        return res
+
+
+def _is_explicit_owner_command(text: str) -> bool:
+    """Return True if message clearly looks like a command rather than a question reply."""
+    stripped = text.strip()
+    if not stripped or stripped.startswith("/"):
+        return True
+    lower = stripped.lower()
+    return any(term in lower for term in _EXPLICIT_COMMAND_TERMS)
+
+
+def _find_question_by_ref(
+    session: Session,
+    workspace_id: uuid.UUID,
+    ref_prefix: str,
+) -> OwnerQuestion | None:
+    """Find workspace OwnerQuestion whose UUID starts with ``ref_prefix`` (8 hex chars)."""
+    prefix = ref_prefix.lower()
+    questions = session.scalars(
+        select(OwnerQuestion)
+        .where(OwnerQuestion.workspace_id == workspace_id)
+        .order_by((OwnerQuestion.state == "pending").desc(), OwnerQuestion.created_at.desc())
+    ).all()
+    for q in questions:
+        if str(q.id).lower().startswith(prefix):
+            return q
+    return None
+
+
+def _resolve_replied_owner_question(
+    session: Session,
+    workspace_id: uuid.UUID,
+    reply_msg: Any,
+) -> tuple[OwnerQuestion | None, bool]:
+    """Resolve the specific OwnerQuestion referenced by a Telegram ``reply_to_message``."""
+    reply_text = (
+        reply_msg.get("text") or reply_msg.get("caption")
+        if isinstance(reply_msg, dict)
+        else getattr(reply_msg, "text", None) or getattr(reply_msg, "caption", None)
+    ) or ""
+    if not reply_text:
+        return None, False
+
+    ref_match = _QUESTION_REF_RE.search(reply_text)
+    if ref_match is not None:
+        return _find_question_by_ref(session, workspace_id, ref_match.group(1)), True
+
+    if not any(heading in reply_text for heading in _QUESTION_HEADINGS):
+        return None, False
+
+    questions = session.scalars(
+        select(OwnerQuestion)
+        .where(OwnerQuestion.workspace_id == workspace_id)
+        .order_by((OwnerQuestion.state == "pending").desc(), OwnerQuestion.created_at.desc())
+    ).all()
+    plain_reply = html.unescape(reply_text)
+    for q in questions:
+        body = (q.body or "").strip()
+        if body and (body in reply_text or body in plain_reply):
+            return q, True
+    return None, True
+
+
+def _send_ambiguous_questions_prompt(
+    tg_client: TelegramClient,
+    chat_id: str,
+    is_tr: bool,
+    pending_questions: list[OwnerQuestion],
+) -> str:
+    """Ask the owner to reply to the specific question instead of guessing."""
+    items = "\n".join(
+        f"• <code>Q-{str(q.id)[:8]}</code> — {html.escape((q.body or '')[:80])}"
+        for q in pending_questions[:5]
+    )
+    if is_tr:
+        msg = (
+            f"⚠️ <b>Birden fazla bekleyen müşteri sorusu var ({len(pending_questions)}).</b>\n\n"
+            f"{items}\n\n"
+            "Lütfen yanıtlamak istediğiniz soruya Telegram'da <b>Yanıtla (Reply)</b> yapın "
+            "veya mesajınıza <code>Q-xxxxxxxx</code> referans kodunu ekleyin."
+        )
+    else:
+        msg = (
+            f"⚠️ <b>Multiple pending customer questions ({len(pending_questions)}).</b>\n\n"
+            f"{items}\n\n"
+            "Please use Telegram <b>Reply</b> on the specific question you want to answer "
+            "or include its <code>Q-xxxxxxxx</code> ref code."
+        )
+    tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+    return "owner_question_ambiguous"
 
 
 def is_reporting_query(text: str) -> bool:
@@ -131,19 +329,27 @@ def handle_linked_message(
     update_id: int | None = None,
 ) -> str:
     """Route an incoming message from an authenticated, linked owner."""
+    chat_id = str(message.chat.id)
+    locale = (getattr(user, "ui_locale", None) or workspace.default_locale or "tr").lower()
+    is_tr = locale.startswith("tr")
+
     member = session.scalar(
         select(WorkspaceMember).where(
             WorkspaceMember.workspace_id == workspace.id,
             WorkspaceMember.user_id == user.id,
         )
     )
-    role = member.role if member else "owner"
+    if member is None:
+        msg = (
+            "Bu çalışma alanına erişim yetkiniz kaldırıldı."
+            if is_tr
+            else "Your access to this workspace has been revoked."
+        )
+        tg_client.send_message(chat_id=chat_id, text=msg)
+        return "forbidden"
+    role = member.role
     actor = ActorRef(type="user", id=str(user.id))
     ctx = workspace_context(workspace, actor, role)
-
-    chat_id = str(message.chat.id)
-    locale = (getattr(user, "ui_locale", None) or workspace.default_locale or "tr").lower()
-    is_tr = locale.startswith("tr")
     now = clock.now()
 
     # -------------------------------------------------------------------------
@@ -167,7 +373,12 @@ def handle_linked_message(
         return "empty"
 
     # Check if user had pending media uploaded previously
-    pending_asset_id = get_pending_media(user.id, now)
+    pending_asset_id = get_pending_media(
+        user.id,
+        now,
+        session=session,
+        workspace_id=ctx.workspace_id,
+    )
 
     # -------------------------------------------------------------------------
     # 2. Reporting Queries (AC-2)
@@ -202,50 +413,65 @@ def handle_linked_message(
     # 2.5 Owner Question Reply (Phase 7.5 / ADR-024)
     # -------------------------------------------------------------------------
     matched_question: OwnerQuestion | None = None
-    if message.reply_to_message and message.reply_to_message.text:
-        reply_text = message.reply_to_message.text
-        if (
-            "Asistanınız Bilgi Bekliyor" in reply_text
-            or "Your Assistant Needs Information" in reply_text
-        ):
-            matched_question = session.scalar(
-                select(OwnerQuestion)
-                .where(
-                    OwnerQuestion.workspace_id == ctx.workspace_id,
-                    OwnerQuestion.state == "pending",
-                    OwnerQuestion.expires_at > now,
-                )
-                .order_by(OwnerQuestion.created_at.desc())
+    if message.reply_to_message:
+        matched_question, is_question_reply = _resolve_replied_owner_question(
+            session, ctx.workspace_id, message.reply_to_message
+        )
+        if is_question_reply and matched_question is None:
+            not_found_msg = (
+                "⚠️ <b>Yanıtladığınız soru bulunamadı.</b>\n\n"
+                "Lütfen güncel bir soru bildirimine yanıt verin."
+                if is_tr
+                else "⚠️ <b>The question you replied to could not be found.</b>\n\n"
+                "Please reply to an active question notification."
             )
-            if matched_question is None:
-                matched_question = session.scalar(
-                    select(OwnerQuestion)
-                    .where(OwnerQuestion.workspace_id == ctx.workspace_id)
-                    .order_by(OwnerQuestion.created_at.desc())
-                )
+            tg_client.send_message(chat_id=chat_id, text=not_found_msg, parse_mode="HTML")
+            return "owner_question_not_found"
 
     prefix_match = re.match(
-        r"^(?:cevap|yanıt|answer|bilgi):\s*(.*)$", raw_text, re.IGNORECASE | re.DOTALL
+        r"^(?:cevap|yanıt|answer|bilgi)(?:\s+(Q-[0-9a-f]{8}))?:\s*(.*)$",
+        raw_text,
+        re.IGNORECASE | re.DOTALL,
     )
     if prefix_match:
-        if matched_question is None:
-            matched_question = session.scalar(
-                select(OwnerQuestion)
-                .where(
-                    OwnerQuestion.workspace_id == ctx.workspace_id,
-                    OwnerQuestion.state == "pending",
-                    OwnerQuestion.expires_at > now,
-                )
-                .order_by(OwnerQuestion.created_at.desc())
-            )
+        ref_code = prefix_match.group(1)
+        body_text = (prefix_match.group(2) or "").strip()
+        if ref_code:
+            matched_question = _find_question_by_ref(session, ctx.workspace_id, ref_code[2:])
             if matched_question is None:
+                not_found_msg = (
+                    f"⚠️ <code>{html.escape(ref_code)}</code> kodlu soru bulunamadı."
+                    if is_tr
+                    else f"⚠️ Question <code>{html.escape(ref_code)}</code> was not found."
+                )
+                tg_client.send_message(chat_id=chat_id, text=not_found_msg, parse_mode="HTML")
+                return "owner_question_not_found"
+        if matched_question is None:
+            pending_questions = list(
+                session.scalars(
+                    select(OwnerQuestion)
+                    .where(
+                        OwnerQuestion.workspace_id == ctx.workspace_id,
+                        OwnerQuestion.state == "pending",
+                        OwnerQuestion.expires_at > now,
+                    )
+                    .order_by(OwnerQuestion.created_at.desc())
+                ).all()
+            )
+            if len(pending_questions) == 1:
+                matched_question = pending_questions[0]
+            elif len(pending_questions) > 1:
+                return _send_ambiguous_questions_prompt(
+                    tg_client, chat_id, is_tr, pending_questions
+                )
+            else:
                 matched_question = session.scalar(
                     select(OwnerQuestion)
                     .where(OwnerQuestion.workspace_id == ctx.workspace_id)
                     .order_by(OwnerQuestion.created_at.desc())
                 )
         if matched_question is not None:
-            answer_text = prefix_match.group(1).strip() or raw_text
+            answer_text = body_text or raw_text
             return _handle_owner_question_answer(
                 session=session,
                 clock=clock,
@@ -271,19 +497,26 @@ def handle_linked_message(
             question=matched_question,
         )
 
-    # If workspace has an active pending owner question and text is not an agent task,
-    # route to owner question answer as informational input
-    if not is_agent_task(raw_text):
-        pending_q = session.scalar(
-            select(OwnerQuestion)
-            .where(
-                OwnerQuestion.workspace_id == ctx.workspace_id,
-                OwnerQuestion.state == "pending",
-                OwnerQuestion.expires_at > now,
-            )
-            .order_by(OwnerQuestion.created_at.desc())
+    # Auto-route un-prefixed text ONLY when not a photo follow-up, command, task, or query,
+    # and ONLY when there is a single unambiguous pending OwnerQuestion.
+    if (
+        pending_asset_id is None
+        and not _is_explicit_owner_command(raw_text)
+        and not is_agent_task(raw_text)
+        and not raw_text.rstrip().endswith("?")
+    ):
+        pending_questions = list(
+            session.scalars(
+                select(OwnerQuestion)
+                .where(
+                    OwnerQuestion.workspace_id == ctx.workspace_id,
+                    OwnerQuestion.state == "pending",
+                    OwnerQuestion.expires_at > now,
+                )
+                .order_by(OwnerQuestion.created_at.desc())
+            ).all()
         )
-        if pending_q is not None:
+        if len(pending_questions) == 1:
             return _handle_owner_question_answer(
                 session=session,
                 clock=clock,
@@ -293,8 +526,10 @@ def handle_linked_message(
                 tg_client=tg_client,
                 chat_id=chat_id,
                 is_tr=is_tr,
-                question=pending_q,
+                question=pending_questions[0],
             )
+        if len(pending_questions) > 1:
+            return _send_ambiguous_questions_prompt(tg_client, chat_id, is_tr, pending_questions)
 
     # -------------------------------------------------------------------------
     # 3. Account Agent Routing (ADR-024)
@@ -376,6 +611,9 @@ def _handle_photo(
         )
         tg_client.send_message(chat_id=chat_id, text=reject_msg, parse_mode="HTML")
         return "photo_rejected_size"
+
+    # Release DB transaction before external Telegram file download calls (INV-TX)
+    session.commit()
 
     # Fetch file info from Telegram
     file_info = tg_client.get_file(best_photo.file_id)
@@ -530,7 +768,13 @@ def _handle_photo(
         return "photo_draft_created"
 
     # Case B: Photo without caption -> Cache as pending intake media
-    set_pending_media(user.id, media_asset.id, clock.now())
+    set_pending_media(
+        user.id,
+        media_asset.id,
+        clock.now(),
+        session=session,
+        workspace_id=ctx.workspace_id,
+    )
     if is_tr:
         confirm = (
             "📷 <b>Fotoğraf Alındı</b>\n\n"
@@ -868,7 +1112,14 @@ def handle_approval_callback(
             WorkspaceMember.user_id == user.id,
         )
     )
-    role = member.role if member else "owner"
+    if member is None:
+        tg_client.answer_callback_query(
+            callback_query.id,
+            text="Çalışma alanı erişiminiz kaldırıldı / Workspace access revoked",
+            show_alert=True,
+        )
+        return "approval_failed"
+    role = member.role
     ctx = workspace_context(workspace, ActorRef.user(user.id), role)
 
     decision_val = "approve" if token_record.decision == "approved" else "reject"

@@ -174,13 +174,15 @@ def upgrade() -> None:
     # 4. Enable & Force Row-Level Security on both Category C tables
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
+        schema = bind.execute(sa.text("SELECT current_schema()")).scalar_one() or "public"
+        q_schema = '"' + str(schema).replace('"', '""') + '"'
         for tbl in ("channel_links", "channel_link_codes"):
-            op.execute(sa.text(f"ALTER TABLE public.{tbl} ENABLE ROW LEVEL SECURITY"))
-            op.execute(sa.text(f"ALTER TABLE public.{tbl} FORCE ROW LEVEL SECURITY"))
+            op.execute(sa.text(f"ALTER TABLE {tbl} ENABLE ROW LEVEL SECURITY"))
+            op.execute(sa.text(f"ALTER TABLE {tbl} FORCE ROW LEVEL SECURITY"))
             op.execute(
                 sa.text(
                     f"""
-                    CREATE POLICY tenant_isolation_policy ON public.{tbl}
+                    CREATE POLICY tenant_isolation_policy ON {tbl}
                         FOR ALL
                         USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
                         WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
@@ -191,8 +193,8 @@ def upgrade() -> None:
         # 5. Narrow pre-context SECURITY DEFINER helper functions
         op.execute(
             sa.text(
-                """
-                CREATE OR REPLACE FUNCTION public.resolve_channel_link_code_by_hash(
+                f"""
+                CREATE OR REPLACE FUNCTION resolve_channel_link_code_by_hash(
                     p_channel text,
                     p_code_hash text
                 )
@@ -206,19 +208,19 @@ def upgrade() -> None:
                 )
                 LANGUAGE sql
                 SECURITY DEFINER
-                SET search_path = public, pg_temp
+                SET search_path = {q_schema}, pg_temp
                 STABLE
                 AS $$
                     SELECT c.id, c.workspace_id, c.user_id, c.channel, c.expires_at, c.used_at
-                    FROM public.channel_link_codes c
+                    FROM channel_link_codes c
                     WHERE c.channel = p_channel
                       AND c.code_hash = p_code_hash
                     LIMIT 1;
                 $$;
 
-                GRANT EXECUTE ON FUNCTION public.resolve_channel_link_code_by_hash(text, text) TO PUBLIC;
+                GRANT EXECUTE ON FUNCTION resolve_channel_link_code_by_hash(text, text) TO PUBLIC;
 
-                CREATE OR REPLACE FUNCTION public.resolve_channel_link_by_channel_user(
+                CREATE OR REPLACE FUNCTION resolve_channel_link_by_channel_user(
                     p_channel text,
                     p_channel_user_id text
                 )
@@ -236,37 +238,37 @@ def upgrade() -> None:
                 )
                 LANGUAGE sql
                 SECURITY DEFINER
-                SET search_path = public, pg_temp
+                SET search_path = {q_schema}, pg_temp
                 STABLE
                 AS $$
                     SELECT l.id, l.workspace_id, l.user_id, l.channel, l.channel_user_id,
                            l.channel_chat_id, l.channel_username, l.status, l.linked_at, l.unlinked_at
-                    FROM public.channel_links l
+                    FROM channel_links l
                     WHERE l.channel = p_channel
                       AND l.channel_user_id = p_channel_user_id
                       AND l.status = 'active'
                     LIMIT 1;
                 $$;
 
-                GRANT EXECUTE ON FUNCTION public.resolve_channel_link_by_channel_user(text, text) TO PUBLIC;
+                GRANT EXECUTE ON FUNCTION resolve_channel_link_by_channel_user(text, text) TO PUBLIC;
                 """
             )
         )
 
         # 6. Runtime privilege grants
         op.execute(
-            """
+            f"""
             DO $$
             BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.channel_links TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.channel_link_codes TO agentnest_app;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_links TO agentnest_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_link_codes TO agentnest_app;
                 END IF;
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.channel_links TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.channel_link_codes TO agentnest_worker;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_links TO agentnest_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_link_codes TO agentnest_worker;
                 END IF;
             END $$;
             """
@@ -278,17 +280,17 @@ def downgrade() -> None:
     if bind.dialect.name == "postgresql":
         op.execute(
             sa.text(
-                "DROP FUNCTION IF EXISTS public.resolve_channel_link_by_channel_user(text, text)"
+                "DROP FUNCTION IF EXISTS resolve_channel_link_by_channel_user(text, text)"
             )
         )
         op.execute(
-            sa.text("DROP FUNCTION IF EXISTS public.resolve_channel_link_code_by_hash(text, text)")
+            sa.text("DROP FUNCTION IF EXISTS resolve_channel_link_code_by_hash(text, text)")
         )
 
         for tbl in ("channel_link_codes", "channel_links"):
-            op.execute(sa.text(f"DROP POLICY IF EXISTS tenant_isolation_policy ON public.{tbl}"))
-            op.execute(sa.text(f"ALTER TABLE public.{tbl} NO FORCE ROW LEVEL SECURITY"))
-            op.execute(sa.text(f"ALTER TABLE public.{tbl} DISABLE ROW LEVEL SECURITY"))
+            op.execute(sa.text(f"DROP POLICY IF EXISTS tenant_isolation_policy ON {tbl}"))
+            op.execute(sa.text(f"ALTER TABLE {tbl} NO FORCE ROW LEVEL SECURITY"))
+            op.execute(sa.text(f"ALTER TABLE {tbl} DISABLE ROW LEVEL SECURITY"))
 
     # Revert agent_owner_tasks check constraint
     op.drop_constraint(

@@ -142,11 +142,11 @@ def upgrade() -> None:
     for table in ("account_insight_daily", "media_insight_snapshots", "audience_snapshots"):
         op.create_index(f"ix_{table}_workspace_id", table, ["workspace_id"])
         op.create_unique_constraint(f"uq_{table}_workspace_id_id", table, ["workspace_id", "id"])
-        op.execute(sa.text(f"ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY"))
-        op.execute(sa.text(f"ALTER TABLE public.{table} FORCE ROW LEVEL SECURITY"))
+        op.execute(sa.text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
+        op.execute(sa.text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY"))
         op.execute(
             sa.text(f"""
-            CREATE POLICY tenant_isolation_policy ON public.{table} FOR ALL
+            CREATE POLICY tenant_isolation_policy ON {table} FOR ALL
             USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
             WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
         """)
@@ -156,7 +156,7 @@ def upgrade() -> None:
                 sa.text(f"""
                 DO $$ BEGIN
                     IF to_regrole('{role}') IS NOT NULL THEN
-                        GRANT SELECT, INSERT, UPDATE, DELETE ON public.{table} TO {role};
+                        GRANT SELECT, INSERT, UPDATE, DELETE ON {table} TO {role};
                     END IF;
                 END $$;
             """)

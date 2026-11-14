@@ -123,12 +123,14 @@ def upgrade() -> None:
     # 3. Row-Level Security
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        op.execute(sa.text("ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY"))
-        op.execute(sa.text("ALTER TABLE public.notification_deliveries FORCE ROW LEVEL SECURITY"))
+        schema = bind.execute(sa.text("SELECT current_schema()")).scalar_one() or "public"
+        q_schema = '"' + str(schema).replace('"', '""') + '"'
+        op.execute(sa.text("ALTER TABLE notification_deliveries ENABLE ROW LEVEL SECURITY"))
+        op.execute(sa.text("ALTER TABLE notification_deliveries FORCE ROW LEVEL SECURITY"))
         op.execute(
             sa.text(
                 """
-                CREATE POLICY tenant_isolation_policy ON public.notification_deliveries
+                CREATE POLICY tenant_isolation_policy ON notification_deliveries
                     FOR ALL
                     USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
                     WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
@@ -138,16 +140,16 @@ def upgrade() -> None:
 
         # 4. Grants
         op.execute(
-            """
+            f"""
             DO $$
             BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.notification_deliveries TO agentnest_app;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE notification_deliveries TO agentnest_app;
                 END IF;
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.notification_deliveries TO agentnest_worker;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE notification_deliveries TO agentnest_worker;
                 END IF;
             END $$;
             """
@@ -158,10 +160,10 @@ def downgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         op.execute(
-            sa.text("DROP POLICY IF EXISTS tenant_isolation_policy ON public.notification_deliveries")
+            sa.text("DROP POLICY IF EXISTS tenant_isolation_policy ON notification_deliveries")
         )
-        op.execute(sa.text("ALTER TABLE public.notification_deliveries NO FORCE ROW LEVEL SECURITY"))
-        op.execute(sa.text("ALTER TABLE public.notification_deliveries DISABLE ROW LEVEL SECURITY"))
+        op.execute(sa.text("ALTER TABLE notification_deliveries NO FORCE ROW LEVEL SECURITY"))
+        op.execute(sa.text("ALTER TABLE notification_deliveries DISABLE ROW LEVEL SECURITY"))
 
     op.drop_index(
         op.f("ix_notification_deliveries_pending"),

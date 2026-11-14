@@ -34,17 +34,22 @@ def _post_handler(kind: str) -> Callable[..., Awaitable[Response]]:
         result = await run_in_threadpool(
             ingest_webhook, db, clock, settings, kind, raw_body, dict(request.headers)
         )
+        if result.status == "invalid_signature":
+            log.warning(
+                "webhook_invalid_signature",
+                kind=kind,
+                body_bytes=len(raw_body),
+            )
+            return JSONResponse({"status": "invalid_signature"}, status_code=401)
         log.info(
             "webhook_received",
             kind=kind,
-            body=raw_body.decode("utf-8", errors="replace"),
+            body_bytes=len(raw_body),
             status=result.status,
             received=result.received,
             duplicates=result.duplicates,
             ignored=result.ignored,
         )
-        if result.status == "invalid_signature":
-            return JSONResponse({"status": "invalid_signature"}, status_code=401)
         return JSONResponse({"status": "ok"})
 
     return receive

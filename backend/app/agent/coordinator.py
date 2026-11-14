@@ -319,6 +319,64 @@ def fresh(
     return step, goal, thread
 
 
+_MAX_PROMPT_BYTES = 32_000
+_MAX_TOTAL_REQUEST_BYTES = 64_000
+
+
+def _encoded_request_sizes(request: LLMStepRequest) -> tuple[int, int]:
+    """Return UTF-8 byte lengths of (prompt_without_tools, full_request)."""
+    prompt_payload = {
+        "system": request.system,
+        "messages": [m.content for m in request.messages],
+        "observations": [
+            {
+                "call_id": o.call_id,
+                "name": o.name,
+                "arguments": o.arguments,
+                "result": o.result,
+            }
+            for o in request.observations
+        ],
+    }
+    full_payload = {
+        **prompt_payload,
+        "tools": [
+            {
+                "name": t.name,
+                "description": t.description,
+                "schema": t.arguments_schema.model_json_schema(),
+                "version": t.version,
+            }
+            for t in request.tools
+        ],
+    }
+    prompt_bytes = len(json.dumps(prompt_payload, ensure_ascii=False).encode("utf-8"))
+    total_bytes = len(json.dumps(full_payload, ensure_ascii=False).encode("utf-8"))
+    return prompt_bytes, total_bytes
+
+
+def _fit_request_budget(request: LLMStepRequest) -> LLMStepRequest | None:
+    """Drop oldest tool observations if needed so long conversations fit budget."""
+    prompt_bytes, total_bytes = _encoded_request_sizes(request)
+    if prompt_bytes <= _MAX_PROMPT_BYTES and total_bytes <= _MAX_TOTAL_REQUEST_BYTES:
+        return request
+    observations = list(request.observations)
+    while observations:
+        observations.pop(0)
+        trimmed = LLMStepRequest(
+            task=request.task,
+            model=request.model,
+            system=request.system,
+            messages=request.messages,
+            tools=request.tools,
+            observations=tuple(observations),
+        )
+        prompt_bytes, total_bytes = _encoded_request_sizes(trimmed)
+        if prompt_bytes <= _MAX_PROMPT_BYTES and total_bytes <= _MAX_TOTAL_REQUEST_BYTES:
+            return trimmed
+    return None
+
+
 def run_activation(
     deps: RunnerDeps,
     workspace_id: uuid.UUID,
@@ -455,32 +513,8 @@ def run_activation(
             tools=broker.available(claimed.context, capabilities=capabilities),
             observations=observations,
         )
-        encoded_request = json.dumps(
-            {
-                "system": request.system,
-                "messages": [m.content for m in request.messages],
-                "tools": [
-                    {
-                        "name": t.name,
-                        "description": t.description,
-                        "schema": t.arguments_schema.model_json_schema(),
-                        "version": t.version,
-                    }
-                    for t in request.tools
-                ],
-                "observations": [
-                    {
-                        "call_id": o.call_id,
-                        "name": o.name,
-                        "arguments": o.arguments,
-                        "result": o.result,
-                    }
-                    for o in request.observations
-                ],
-            },
-            ensure_ascii=False,
-        )
-        if len(encoded_request.encode("utf-8")) > 16000:
+        fitted = _fit_request_budget(request)
+        if fitted is None:
             with deps.session_factory() as db:
                 state = fresh(db, deps, claimed)
                 if state is not None:
@@ -489,6 +523,7 @@ def run_activation(
                     set_state(db, deps, goal, thread, "failed", reason="AGENT_CONTEXT_LIMIT")
                 db.commit()
             return
+        request = fitted
         try:
             outcome = run_step(
                 deps, claimed.context.workspace, claimed.step_id, request, job_id=job_id

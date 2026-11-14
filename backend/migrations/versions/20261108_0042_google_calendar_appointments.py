@@ -407,18 +407,20 @@ def upgrade() -> None:
 
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
+        schema = bind.execute(sa.text("SELECT current_schema()")).scalar_one() or "public"
+        q_schema = '"' + str(schema).replace('"', '""') + '"'
         for table in (
             "calendar_connections",
             "calendar_oauth_states",
             "calendar_appointments",
             "sim_calendar_events",
         ):
-            op.execute(sa.text(f"ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY"))
-            op.execute(sa.text(f"ALTER TABLE public.{table} FORCE ROW LEVEL SECURITY"))
+            op.execute(sa.text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
+            op.execute(sa.text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY"))
             op.execute(
                 sa.text(
                     f"""
-                    CREATE POLICY tenant_isolation_policy ON public.{table}
+                    CREATE POLICY tenant_isolation_policy ON {table}
                         FOR ALL
                         USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
                         WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
@@ -428,8 +430,8 @@ def upgrade() -> None:
 
         op.execute(
             sa.text(
-                """
-                CREATE OR REPLACE FUNCTION public.resolve_calendar_oauth_state_by_hash(
+                f"""
+                CREATE OR REPLACE FUNCTION resolve_calendar_oauth_state_by_hash(
                     p_state_hash bytea
                 )
                 RETURNS TABLE (
@@ -444,49 +446,49 @@ def upgrade() -> None:
                 )
                 LANGUAGE sql
                 SECURITY DEFINER
-                SET search_path = public, pg_temp
+                SET search_path = {q_schema}, pg_temp
                 STABLE
                 AS $$
                     SELECT s.id, s.workspace_id, s.user_id, s.purpose,
                            s.calendar_connection_id, s.expires_at, s.used_at, s.invalidated_at
-                    FROM public.calendar_oauth_states s
+                    FROM calendar_oauth_states s
                     WHERE s.state_hash = p_state_hash
                     LIMIT 1;
                 $$;
 
-                GRANT EXECUTE ON FUNCTION public.resolve_calendar_oauth_state_by_hash(bytea) TO PUBLIC;
+                GRANT EXECUTE ON FUNCTION resolve_calendar_oauth_state_by_hash(bytea) TO PUBLIC;
                 """
             )
         )
 
         op.execute(
-            """
+            f"""
             DO $$
             BEGIN
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_app;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
                     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
-                        public.calendar_connections,
-                        public.calendar_oauth_states,
-                        public.calendar_appointments,
-                        public.sim_calendar_events
+                        calendar_connections,
+                        calendar_oauth_states,
+                        calendar_appointments,
+                        sim_calendar_events
                     TO agentnest_app;
                 END IF;
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA public TO agentnest_worker;
+                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
                     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
-                        public.calendar_connections,
-                        public.calendar_oauth_states,
-                        public.calendar_appointments,
-                        public.sim_calendar_events
+                        calendar_connections,
+                        calendar_oauth_states,
+                        calendar_appointments,
+                        sim_calendar_events
                     TO agentnest_worker;
                 END IF;
                 IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_migrator') THEN
                     GRANT ALL ON TABLE
-                        public.calendar_connections,
-                        public.calendar_oauth_states,
-                        public.calendar_appointments,
-                        public.sim_calendar_events
+                        calendar_connections,
+                        calendar_oauth_states,
+                        calendar_appointments,
+                        sim_calendar_events
                     TO agentnest_migrator;
                 END IF;
             END $$;
@@ -498,7 +500,7 @@ def downgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         op.execute(
-            sa.text("DROP FUNCTION IF EXISTS public.resolve_calendar_oauth_state_by_hash(bytea)")
+            sa.text("DROP FUNCTION IF EXISTS resolve_calendar_oauth_state_by_hash(bytea)")
         )
         for table in (
             "sim_calendar_events",
@@ -507,10 +509,10 @@ def downgrade() -> None:
             "calendar_connections",
         ):
             op.execute(
-                sa.text(f"DROP POLICY IF EXISTS tenant_isolation_policy ON public.{table}")
+                sa.text(f"DROP POLICY IF EXISTS tenant_isolation_policy ON {table}")
             )
-            op.execute(sa.text(f"ALTER TABLE public.{table} NO FORCE ROW LEVEL SECURITY"))
-            op.execute(sa.text(f"ALTER TABLE public.{table} DISABLE ROW LEVEL SECURITY"))
+            op.execute(sa.text(f"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY"))
+            op.execute(sa.text(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY"))
 
     op.drop_constraint(op.f("ck_approvals_subject_type"), "approvals", type_="check")
     op.create_check_constraint(

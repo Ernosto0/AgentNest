@@ -97,6 +97,12 @@ class CalendarEffectPayload(BaseModel):
 class ReconcileCalendarPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
     operation_id: uuid.UUID
+    round_num: int = 1
+
+
+RECONCILE_DELAYS_SECONDS: tuple[int, ...] = (2, 15, 60, 180, 300, 600)
+MAX_RECONCILE_ROUNDS = 8
+RECONCILE_DEADLINE = timedelta(minutes=30)
 
 
 def mock_calendar_allowed(settings: Settings, ctx: WorkspaceContext) -> bool:
@@ -485,8 +491,8 @@ def _load_verified_hours(session: Session, workspace_id: uuid.UUID) -> WeeklyHou
 
 def _day_open_ranges(hours: WeeklyHoursValue | None, local_date: date) -> list[tuple[int, int]]:
     if hours is None:
-        # Default fallback window 09:00-18:00 when no verified hours fact is configured
-        return [(9 * 60, 18 * 60)]
+        # Unverified business hours must never be invented as open slots.
+        return []
     for exc in hours.exceptions:
         if exc.date == local_date:
             if exc.closed:
@@ -495,6 +501,60 @@ def _day_open_ranges(hours: WeeklyHoursValue | None, local_date: date) -> list[t
     day_key = WEEKDAYS[local_date.weekday()]
     day_ranges: list[tuple[str, str]] = getattr(hours, day_key, [])
     return [(time_to_minutes(o), time_to_minutes(c)) for o, c in day_ranges]
+
+
+def _pending_booking_holds(
+    db: Session,
+    clock: Clock,
+    workspace_id: uuid.UUID,
+    window_start: datetime,
+    window_end: datetime,
+    *,
+    exclude_action_id: uuid.UUID | None = None,
+) -> list[BusyInterval]:
+    """Return tentative busy intervals held by pending approvals / queued calendar actions."""
+    now = clock.now()
+    actions = list(
+        db.scalars(
+            select(AgentAction).where(
+                AgentAction.workspace_id == workspace_id,
+                AgentAction.action_type.in_(("calendar.book", "calendar.reschedule")),
+                AgentAction.status.in_(
+                    ("waiting_approval", "authorized", "queued", "in_progress", "outcome_unknown")
+                ),
+            )
+        )
+    )
+    holds: list[BusyInterval] = []
+    for act in actions:
+        if exclude_action_id is not None and act.id == exclude_action_id:
+            continue
+        # Only hold if no expired/decided-rejected approval invalidates a waiting action
+        if act.status == "waiting_approval" and act.approval_id is not None:
+            appr = db.get(Approval, act.approval_id)
+            if appr is None or appr.status != "pending" or appr.expires_at <= now:
+                continue
+        intent = act.content_intent or {}
+        raw_start = (
+            intent.get("start_at")
+            if act.action_type == "calendar.book"
+            else intent.get("new_start_at")
+        )
+        raw_end = (
+            intent.get("end_at")
+            if act.action_type == "calendar.book"
+            else intent.get("new_end_at")
+        )
+        if not raw_start or not raw_end:
+            continue
+        try:
+            s = datetime.fromisoformat(str(raw_start)).astimezone(UTC)
+            e = datetime.fromisoformat(str(raw_end)).astimezone(UTC)
+        except ValueError:
+            continue
+        if s < window_end and e > window_start and e > s:
+            holds.append(BusyInterval(start_at=s, end_at=e))
+    return holds
 
 
 def check_availability(
@@ -531,6 +591,7 @@ def check_availability(
             BusyInterval(start_at=a.start_at.astimezone(UTC), end_at=a.end_at.astimezone(UTC))
             for a in appts
         ]
+        local_busy.extend(_pending_booking_holds(db, clock, workspace_id, window_start, window_end))
         sim_busy: list[BusyInterval] | None = None
         if active_conn.provider_kind == "mock":
             sim_rows = list(
@@ -688,15 +749,19 @@ def _wake(factory: sessionmaker[Session], clock: Clock, action_id: uuid.UUID) ->
             db.commit()
 
 
-def _queue_reconcile(db: Session, clock: Clock, op: Operation) -> None:
+def _queue_reconcile(
+    db: Session, clock: Clock, op: Operation, *, round_num: int = 1
+) -> None:
+    delay_idx = min(max(round_num - 1, 0), len(RECONCILE_DELAYS_SECONDS) - 1)
+    delay = timedelta(seconds=RECONCILE_DELAYS_SECONDS[delay_idx])
     enqueue(
         db,
         "reconcile_calendar_effect",
-        ReconcileCalendarPayload(operation_id=op.id),
+        ReconcileCalendarPayload(operation_id=op.id, round_num=round_num),
         workspace_id=op.workspace_id,
         correlation_id=op.id,
-        run_at=clock.now() + timedelta(seconds=2),
-        dedup_key=f"reconcile_calendar_effect:{op.id}",
+        run_at=clock.now() + delay,
+        dedup_key=f"reconcile_calendar_effect:{op.id}:{round_num}",
         clock=clock,
     )
 
@@ -712,6 +777,74 @@ class _PreparedCalendarOp:
     calendar_ref: CalendarRef
     spec: CalendarEventSpec | None
     external_event_id: str | None
+
+
+def _slot_conflict_in_db(
+    db: Session,
+    clock: Clock,
+    workspace_id: uuid.UUID,
+    conn: CalendarConnection,
+    start_at: datetime,
+    end_at: datetime,
+    *,
+    exclude_appt_id: uuid.UUID | None = None,
+    exclude_action_id: uuid.UUID | None = None,
+) -> bool:
+    """Re-verify business hours, scheduled appointments, pending holds, and mock events."""
+    start_utc = start_at.astimezone(UTC)
+    end_utc = end_at.astimezone(UTC)
+    if end_utc <= start_utc:
+        return True
+    ws = db.get(Workspace, workspace_id)
+    tz, _ = _resolve_workspace_tz(ws.timezone if ws else None)
+    local_s = start_utc.astimezone(tz)
+    local_e = end_utc.astimezone(tz)
+    if local_s.date() != local_e.date() and not (
+        local_e.date() == local_s.date() + timedelta(days=1)
+        and local_e.hour == 0
+        and local_e.minute == 0
+    ):
+        return True
+    hours = _load_verified_hours(db, workspace_id)
+    s_mins = local_s.hour * 60 + local_s.minute
+    e_mins = 1440 if local_e.date() > local_s.date() else local_e.hour * 60 + local_e.minute
+    if not any(o <= s_mins and e_mins <= c for o, c in _day_open_ranges(hours, local_s.date())):
+        return True
+
+    appts = queries.list_appointments_in_window(db, workspace_id, start_utc, end_utc)
+    if any(
+        a.id != exclude_appt_id
+        and a.start_at.astimezone(UTC) < end_utc
+        and a.end_at.astimezone(UTC) > start_utc
+        for a in appts
+    ):
+        return True
+
+    holds = _pending_booking_holds(
+        db,
+        clock,
+        workspace_id,
+        start_utc,
+        end_utc,
+        exclude_action_id=exclude_action_id,
+    )
+    if any(h.start_at < end_utc and h.end_at > start_utc for h in holds):
+        return True
+
+    if conn.provider_kind == "mock":
+        sim_overlap = db.scalar(
+            select(SimCalendarEvent.id).where(
+                SimCalendarEvent.workspace_id == workspace_id,
+                SimCalendarEvent.calendar_connection_id == conn.id,
+                SimCalendarEvent.status == "confirmed",
+                SimCalendarEvent.start_at < end_utc,
+                SimCalendarEvent.end_at > start_utc,
+            )
+        )
+        if sim_overlap is not None:
+            return True
+
+    return False
 
 
 def _prepare(
@@ -813,6 +946,17 @@ def _prepare(
         title = str(intent.get("title") or "Appointment")
         desc = intent.get("description")
         if appt is None:
+            if _slot_conflict_in_db(
+                db,
+                clock,
+                workspace_id,
+                conn,
+                start_at,
+                end_at,
+                exclude_action_id=action.id,
+            ):
+                _terminal(db, clock, action, "failed", "SLOT_UNAVAILABLE")
+                return None
             appt = CalendarAppointment(
                 id=action.payload_ref or new_id(),
                 workspace_id=workspace_id,
@@ -839,8 +983,13 @@ def _prepare(
                 is_simulated=conn.is_simulated,
                 version=1,
             )
-            db.add(appt)
-            db.flush()
+            try:
+                with db.begin_nested():
+                    db.add(appt)
+                    db.flush()
+            except IntegrityError:
+                _terminal(db, clock, action, "failed", "SLOT_UNAVAILABLE")
+                return None
             action.payload_ref = appt.id
         spec = CalendarEventSpec(
             title=appt.title,
@@ -856,6 +1005,18 @@ def _prepare(
             return None
         start_at = datetime.fromisoformat(str(intent["new_start_at"]))
         end_at = datetime.fromisoformat(str(intent["new_end_at"]))
+        if _slot_conflict_in_db(
+            db,
+            clock,
+            workspace_id,
+            conn,
+            start_at,
+            end_at,
+            exclude_appt_id=appt.id,
+            exclude_action_id=action.id,
+        ):
+            _terminal(db, clock, action, "failed", "SLOT_UNAVAILABLE")
+            return None
         spec = CalendarEventSpec(
             title=str(intent.get("title") or appt.title),
             description=intent.get("description", appt.description),
@@ -1023,6 +1184,60 @@ def execute_calendar_action(
     workspace_id: uuid.UUID,
     action_id: uuid.UUID,
 ) -> None:
+    # For external providers (e.g. Google Calendar), verify external busy slots outside any DB TX
+    # so events added while an approval was pending prevent double-booking without holding locks.
+    ext_check: tuple[str, CalendarRef, datetime, datetime] | None = None
+    with factory() as db:
+        set_tenant_context(db, workspace_id)
+        pre_action = db.scalar(
+            select(AgentAction).where(
+                AgentAction.id == action_id, AgentAction.workspace_id == workspace_id
+            )
+        )
+        pre_conn = queries.get_active_connection_for_workspace(db, workspace_id)
+        if (
+            pre_action is not None
+            and pre_action.status in {"queued", "authorized"}
+            and pre_action.action_type in {"calendar.book", "calendar.reschedule"}
+            and pre_conn is not None
+            and pre_conn.status in {"connected", "degraded"}
+            and pre_conn.provider_kind != "mock"
+        ):
+            intent = pre_action.content_intent or {}
+            start_key = "start_at" if pre_action.action_type == "calendar.book" else "new_start_at"
+            end_key = "end_at" if pre_action.action_type == "calendar.book" else "new_end_at"
+            rs = intent.get(start_key)
+            re_ = intent.get(end_key)
+            if rs and re_:
+                ext_check = (
+                    pre_conn.provider_kind,
+                    registry.calendar_ref(pre_conn, settings),
+                    datetime.fromisoformat(str(rs)).astimezone(UTC),
+                    datetime.fromisoformat(str(re_)).astimezone(UTC),
+                )
+    if ext_check is not None:
+        ext_kind, ext_ref, ext_start, ext_end = ext_check
+        ext_provider = registry.get_calendar_provider(
+            ext_kind, settings=settings, session_factory=factory, clock=clock
+        )
+        try:
+            ext_busy = ext_provider.list_busy_intervals(ext_ref, ext_start, ext_end)
+        except CalendarProviderError:
+            ext_busy = []
+        if any(b.start_at < ext_end and b.end_at > ext_start for b in ext_busy):
+            with factory() as db:
+                set_tenant_context(db, workspace_id)
+                act = db.scalar(
+                    select(AgentAction)
+                    .where(AgentAction.id == action_id, AgentAction.workspace_id == workspace_id)
+                    .with_for_update()
+                )
+                if act is not None and act.status in {"queued", "authorized"}:
+                    _terminal(db, clock, act, "failed", "SLOT_UNAVAILABLE")
+                db.commit()
+            _wake(factory, clock, action_id)
+            return
+
     with factory() as db:
         prepared = _prepare(db, clock, settings, workspace_id, action_id)
         db.commit()
@@ -1079,6 +1294,8 @@ def reconcile_calendar_operation(
     settings: Settings,
     workspace_id: uuid.UUID,
     operation_id: uuid.UUID,
+    *,
+    round_num: int = 1,
 ) -> None:
     with factory() as db:
         set_tenant_context(db, workspace_id)
@@ -1104,12 +1321,14 @@ def reconcile_calendar_operation(
     provider = registry.get_calendar_provider(
         provider_kind, settings=settings, session_factory=factory, clock=clock
     )
+    answer: CalendarEventInfo | None = None
+    lookup_error: Exception | None = None
     try:
         answer = provider.find_event_by_operation_key(ref, key)
-    except Exception:
-        return
-    if answer is None:
-        return
+    except Exception as exc:
+        lookup_error = exc
+
+    action_id_to_wake: uuid.UUID | None = None
     with factory() as db:
         set_tenant_context(db, workspace_id)
         op = db.scalar(
@@ -1117,13 +1336,51 @@ def reconcile_calendar_operation(
             .where(Operation.id == operation_id, Operation.workspace_id == workspace_id)
             .with_for_update()
         )
-        if op is not None and op.status == "outcome_unknown":
+        if op is None or op.status != "outcome_unknown":
+            return
+        action = db.scalar(
+            select(AgentAction).where(AgentAction.operation_id == op.id).with_for_update()
+        )
+        if answer is not None:
             _finish(db, clock, op, answer, None)
-            action = db.scalar(select(AgentAction).where(AgentAction.operation_id == op.id))
-            action_id = action.id if action else None
-            db.commit()
-            if action_id:
-                _wake(factory, clock, action_id)
+            action_id_to_wake = action.id if action else None
+        else:
+            now = clock.now()
+            origin = op.started_at or op.created_at
+            past_deadline = (
+                (op.deadline_at is not None and now >= op.deadline_at)
+                or (now - origin >= RECONCILE_DEADLINE)
+                or round_num >= MAX_RECONCILE_ROUNDS
+            )
+            if past_deadline:
+                code = (
+                    "CALENDAR_RECONCILE_FAILED"
+                    if lookup_error is not None
+                    else "OUTCOME_UNCONFIRMED"
+                )
+                set_operation(clock, op, "fail", code=code)
+                if action is not None:
+                    _terminal(db, clock, action, "failed", code)
+                    action_id_to_wake = action.id
+                appt = (
+                    queries.get_appointment_in_workspace(db, workspace_id, op.subject_id, lock=True)
+                    if op.subject_id
+                    else None
+                )
+                if (
+                    appt is not None
+                    and action is not None
+                    and action.action_type == "calendar.book"
+                    and not appt.external_event_id
+                ):
+                    appt.status = "cancelled"
+                    appt.cancelled_at = now
+            else:
+                _queue_reconcile(db, clock, op, round_num=round_num + 1)
+        db.commit()
+
+    if action_id_to_wake is not None:
+        _wake(factory, clock, action_id_to_wake)
 
 
 @job_handler("calendar_effect", CalendarEffectPayload, max_attempts=1)
@@ -1147,4 +1404,5 @@ def reconcile_calendar_job(job: JobContext) -> None:
             get_settings(),
             job.workspace_id,
             job.payload.operation_id,
+            round_num=job.payload.round_num,
         )
