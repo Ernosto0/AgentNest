@@ -564,7 +564,7 @@ def test_ac2_telegram_daily_summary_matches_web_report(
     send_calls = [c for c in mock_tg.calls if c["api_method"] == "sendMessage"]
     assert len(send_calls) == 1
     sent_text = send_calls[0]["body"]["text"]
-    assert f"<b>{expected_inbound_count}</b>" in sent_text
+    assert f"<b>Toplam Gelen:</b> {expected_inbound_count}" in sent_text
     assert "Gelen Mesajlar" in sent_text
 
     # Also verify with "Bugünkü özet"

@@ -23,11 +23,13 @@ from app.core.db import clear_tenant_context, set_tenant_context
 from app.identity.channels import generate_link_code, redeem_link_code
 from app.identity.models import ChannelLink, ChannelLinkCode
 from tests.factories import workspace_with_members
+from tests.helpers.roles import ensure_runtime_roles
 
 
 @contextlib.contextmanager
 def as_role(session: Session, role: str) -> Iterator[None]:
     """Switch connection role locally for the transaction and guarantee RESET ROLE upon exit."""
+    ensure_runtime_roles(session)
     session.execute(text(f"SET LOCAL ROLE {role}"))
     session.execute(text("SET LOCAL search_path = public, pg_temp"))
     try:

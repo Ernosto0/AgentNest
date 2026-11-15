@@ -35,7 +35,7 @@ from app.operations import calendar as calendar_ops
 from app.operations.models import Operation
 from app.owner_requests.models import OwnerQuestion
 from tests.factories import knowledge_ctx, workspace_with_members
-from tests.integration.agent.test_calendar_agent import _setup_calendar_world
+from tests.integration.agent.test_calendar_agent import _setup_calendar_world, open_goal
 from tests.integration.agent.test_dm import deliver, process_inbound, setup
 
 pytestmark = pytest.mark.commits
@@ -145,6 +145,8 @@ def test_serious5_pending_approval_holds_slot_and_db_rejects_overlap(
             select(AgentThread).where(AgentThread.surface == "dm").order_by(AgentThread.created_at)
         ).all()
         assert len(threads) == 2
+        open_goal(db, threads[0])
+        open_goal(db, threads[1])
         ctx_a = BrokerContext(ctx, account_id, threads[0].id, "dm", "customer")
         ctx_b = BrokerContext(ctx, account_id, threads[1].id, "dm", "customer")
 
@@ -383,24 +385,7 @@ def test_serious8_telegram_messages_not_swallowed_and_target_replied_question(
         )
         assert len(threads) == 2
         for thread, req_info in zip(threads, ("exception", "business_policy"), strict=True):
-            if (
-                db.scalar(
-                    select(AgentSession).where(
-                        AgentSession.thread_id == thread.id,
-                        AgentSession.status.in_(ACTIVE_RUN_STATES),
-                    )
-                )
-                is None
-            ):
-                goal = AgentSession(
-                    workspace_id=thread.workspace_id,
-                    thread_id=thread.id,
-                    goal_key=f"event:{thread.event_cursor}",
-                    initiating_event_cursor=thread.event_cursor,
-                )
-                db.add(goal)
-                db.flush()
-                thread.current_goal_key = goal.goal_key
+            thread.current_goal_key = open_goal(db, thread).goal_key
             res = broker.dispatch(
                 db,
                 clock,

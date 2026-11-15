@@ -54,7 +54,15 @@ def test_owner_creates_an_invite_with_a_one_time_link(
     headers = login(client, users["owner"])
 
     invite = _create_invite(client, str(ws.id), headers, role="staff")
-    assert set(invite) == {"id", "role", "expires_at", "invite_path", "invite_url", "created_at"}
+    assert set(invite) == {
+        "id",
+        "role",
+        "email",
+        "expires_at",
+        "invite_path",
+        "invite_url",
+        "created_at",
+    }
     assert invite["role"] == "staff"
     assert invite["invite_path"].startswith("/invite/")
     assert invite["invite_url"] == "http://localhost:8000" + invite["invite_path"]
@@ -83,7 +91,7 @@ def test_pending_invites_are_listed_without_their_token(
     listing = client.get(f"{BASE}/{ws.id}/invites", headers=headers)
     assert listing.status_code == 200
     (item,) = listing.json()["items"]
-    assert set(item) == {"id", "role", "expires_at", "created_at"}
+    assert set(item) == {"id", "role", "email", "expires_at", "created_at"}
     assert item["id"] == invite["id"]
     assert "invite_path" not in item and "invite_url" not in item
     assert _token(invite) not in listing.text  # the token is never re-shown

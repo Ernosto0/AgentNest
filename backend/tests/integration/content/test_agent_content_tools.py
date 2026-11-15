@@ -342,7 +342,7 @@ def test_owner_task_loop_prepares_schedules_waits_for_verified_publish_then_comp
                 name, args = (
                     "content.schedule",
                     {
-                        "content_id": request.observations[0].result["content_id"],
+                        "content_id": request.observations[0].result["data"]["content_id"],
                         "expected_version": 1,
                         "local_date": "2026-01-15",
                         "local_time": "19:00",

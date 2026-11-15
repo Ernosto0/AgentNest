@@ -246,7 +246,7 @@ def test_telegram_reporting_query_exact_matching_counts(
     assert res.action == "reporting_query"
     assert len(mock_tg.calls) == 1
     sent_text = mock_tg.calls[0]["body"]["text"]
-    assert "<b>5</b>" in sent_text
+    assert "<b>Toplam Gelen:</b> 5" in sent_text
     assert "Gelen Mesajlar" in sent_text
 
     # Also test "Bugünkü özet"

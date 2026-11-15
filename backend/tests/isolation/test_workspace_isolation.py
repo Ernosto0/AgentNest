@@ -9,6 +9,14 @@ from tests.isolation.conftest import TwoWorkspaces
 
 WORKSPACE_PREFIX = "/api/v1/workspaces/{workspace_id}"
 PARAM = re.compile(r"\{(\w+)(?::\w+)?\}")
+# Routes the own-workspace guard cannot call blindly. ``cancel-deletion`` and ``deletion-status``
+# answer 404 while no deletion is pending, and ``delete-request`` schedules the workspace for
+# deletion, after which every later request in the loop is answered 404 for a legitimate reason.
+OWN_WORKSPACE_GUARD_SKIPS = {
+    ("POST", WORKSPACE_PREFIX + "/delete-request"),
+    ("POST", WORKSPACE_PREFIX + "/cancel-deletion"),
+    ("GET", WORKSPACE_PREFIX + "/deletion-status"),
+}
 
 
 def workspace_routes(app: FastAPI) -> list[tuple[str, ApiRoute]]:
@@ -76,6 +84,8 @@ def test_the_same_requests_succeed_for_the_member_own_workspace(
     for method, route in workspace_routes(two_workspaces.app):
         if set(PARAM.findall(route.path)) != {"workspace_id"}:
             continue  # routes with sub-resource IDs are checked by their own phases
+        if (method, route.path) in OWN_WORKSPACE_GUARD_SKIPS:
+            continue
         response = two_workspaces.a_client.request(
             method,
             fill(route.path, own_ids),

@@ -66,6 +66,7 @@ def test_meta_exposes_only_public_configuration(client: TestClient) -> None:
         "llm_mode",
         "supported_locales",
         "instagram_providers",
+        "calendar_providers",
         "mock_requires_demo_workspace",
     }
     assert body["supported_locales"] == ["tr", "en"]
