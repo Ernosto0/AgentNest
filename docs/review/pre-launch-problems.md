@@ -1,0 +1,198 @@
+# Pre-Launch Problems
+
+**Reviewed:** 2026-11-15, at commit `f1cc494` on `main`.
+**Companion document:** [pre-launch-feature-recommendations.md](pre-launch-feature-recommendations.md) lists features to add. This file lists things that are broken, missing or inconsistent today.
+
+## How this was checked
+
+- Read the code, the product and operations docs, and the CI history on GitHub.
+- Ran locally: backend `ruff check`, `ruff format --check` and `mypy app`; frontend `lint`, `typecheck`, `i18n:check` and `build`.
+- **Not done:** the full backend and frontend test suites were not run, and the app was not opened live. UI findings (P-13 to P-16) come from fixture screenshots taken on 2026-11-09 in `.tmp/today-fixed-browser/`. Later redesign commits may have changed those screens, so confirm each one in the running app before fixing it.
+
+## Summary
+
+| ID | Problem | Severity |
+|---|---|---|
+| P-01 | CI is red on `main`; tests do not run; Railway deploys anyway | Blocks any launch |
+| P-02 | No recorded end-to-end proof against a real Instagram account | Blocks any launch |
+| P-03 | No recorded eval run against the real LLM | Blocks any launch |
+| P-04 | Pilot onboarding checklist does not match the code | Blocks any launch |
+| P-05 | Comment features cannot work on a real account (scope never requested) | Blocks the comment feature |
+| P-06 | Landing waitlist form may send nothing | Blocks any launch |
+| P-07 | Production runs on a `railway.app` subdomain | Blocks any launch |
+| P-08 | Backups are not part of the Railway setup | Blocks any launch |
+| P-09 | Legal sign-off is open and there is no LICENSE | Blocks real customer data |
+| P-10 | No self-service signup | Blocks public launch |
+| P-11 | No billing, plans or owner-visible usage limits | Blocks public launch |
+| P-12 | No frontend error tracking and no product analytics | Should fix before pilots |
+| P-13 | Today screen is very long on a phone; command box is buried | Polish |
+| P-14 | Seven-day content grid repeats "no story" seven times | Polish |
+| P-15 | Instagram performance chart looks flat | Polish |
+| P-16 | Header search label is cut off on desktop | Polish |
+| P-17 | `index.html` has no favicon, description or share tags | Polish |
+| P-18 | Two lazy-loaded routes are not actually split | Polish |
+| P-19 | Pricing document promises things that are not built | Should fix before selling |
+
+---
+
+## Blocks any launch
+
+### P-01. CI is red on `main`, so the tests do not run, and Railway deploys anyway
+
+**Problem.** None of the last 40 CI runs on `main` succeeded. Each run stops at a lint or format step, so the backend tests, frontend tests, evals and Playwright suite never execute. Railway deploys `main` directly ([.railway/railway.ts](../../.railway/railway.ts)), so untested commits reach production.
+
+**Evidence.**
+- Latest run (commit `f1cc494`): frontend fails at `npm run lint`; backend fails at `ruff format --check`.
+- Frontend, reproduced locally: three `@typescript-eslint/no-explicit-any` errors in [router.tsx](../../frontend/src/app/router.tsx) at lines 9, 13 and 22 (the `lazyNamed` helper).
+- Backend, reproduced locally: `ruff format --check` reports 3 files that would be reformatted.
+- An earlier run (commit `e9a7317`) failed at `mypy app` and at the "regenerate the OpenAPI client" drift check. `mypy` passes locally at `f1cc494`. The OpenAPI drift check has not run since, so its current state is unknown.
+
+**Suggested fix.**
+1. Type the `lazyNamed` helper without `any` (or add a narrow, commented `eslint-disable` if a correct generic is not practical).
+2. Run `uv run ruff format .` in `backend/` and commit the three files.
+3. Push and watch the run through to the end. Fix whatever the later steps reveal, starting with the OpenAPI drift check.
+4. Turn on Railway's "wait for CI" option for the `api`, `worker` and `web` services so a red commit cannot deploy.
+
+### P-02. No recorded end-to-end proof against a real Instagram account
+
+**Problem.** The docs say every Meta fixture is synthetic and that real-account acceptance is still pending: receiving a real DM through a signed webhook, sending an approved reply once, publishing a scheduled image once, the native-app echo superseding a draft, and the revoke-then-reconnect path.
+
+**Evidence.** [phase-07-summary.md](../implementation/phase-summaries/phase-07-summary.md) ("no live success is claimed"), [platform-capabilities.md](../research/platform-capabilities.md) (items V-01, V-02, V-03, V-05, V-08, V-09 open). The local `.env` now points at `meta` and `openai`, so live testing may have started, but nothing in the repository records the result.
+
+**Suggested fix.** Run the six Phase 7 acceptance checks on the founder's own professional account. Save sanitised recordings under `backend/tests/contract/fixtures/meta/` and update `platform-capabilities.md` with dates. Do not onboard a pilot business before these pass.
+
+### P-03. No recorded eval run against the real LLM
+
+**Problem.** All 12 reports in `backend/evals/reports/` are from the `fake` provider. The roadmap lists the real-model quality run (gate G7.5-C) as still needed. Turkish reply quality, grounding and escalation behaviour on the production model are therefore unmeasured.
+
+**Suggested fix.** Run `uv run python -m evals run --all --provider openai` and the account-agent journeys once against `gpt-6-luna`, commit the report, and record cost per run. This also settles OQ-09 (model per task).
+
+### P-04. Pilot onboarding checklist does not match the code
+
+**Problem.** [pilot-onboarding-checklist.md](../operations/pilot-onboarding-checklist.md) is the runbook for the first pilots, and three of its instructions are wrong. Following it in front of a business owner would fail.
+
+| Checklist says | Code has |
+|---|---|
+| `python -m app.cli create-workspace …` and `seed-facts …` | Neither command exists in [cli.py](../../backend/app/cli.py). Available: `seed`, `create-user`, `generate-key`, `simulate-message`, `run-due-jobs`, `check-config` and others. |
+| Invite link `https://agentnest.io/invites/accept?token=…` | The route is `/invite/:token` ([router.tsx:122](../../frontend/src/app/router.tsx#L122)). |
+| Permissions `instagram_basic`, `instagram_manage_messages`, `instagram_manage_comments`, `pages_manage_metadata`, `pages_read_engagement` | The app requests `instagram_business_basic`, `instagram_business_manage_messages`, `instagram_business_content_publish`, `instagram_business_manage_insights` ([oauth.py:14-17](../../backend/app/integrations/instagram/oauth.py#L14-L17)). |
+
+The checklist also requires a linked Facebook Page with admin rights. That is a Facebook Login requirement; check whether it still applies to the Instagram Login flow the code uses.
+
+**Suggested fix.** Either add the two CLI commands or rewrite section 2 around what exists (`create-user`, then the in-app workspace wizard and paste-to-extract). Correct the invite URL and the permission list. Then do one dry run of the whole checklist on a fresh workspace.
+
+### P-05. Comment features cannot work on a real account
+
+**Problem.** The agent has comment tools (`comment.reply`, `comment.hide`, `comment.private_reply` and others) and the UI has a comments queue, but the OAuth flow never asks for a comment permission. Even after the capability gates open, a real account would have no grant.
+
+**Evidence.** [oauth.py:14-17](../../backend/app/integrations/instagram/oauth.py#L14-L17) lists four scopes; none covers comments. Research items R75-01 to R75-06 are open.
+
+**Suggested fix.** This is expected while the capability is gated, but make the state explicit: hide or label the comments queue on real accounts until the scope is added and verified, and add the scope to the App Review package. See F-05 in the companion document.
+
+### P-06. Landing waitlist form may send nothing
+
+**Problem.** The landing form posts to `VITE_WAITLIST_ENDPOINT`, a build-time variable. If it is not set, the form goes into "preview" mode and tells the visitor nothing was sent. The backend has no waitlist endpoint, so an external collector is required.
+
+**Evidence.** [waitlist.ts](../../landing/src/waitlist.ts), [landing/README.md](../../landing/README.md). Whether the variable is set on Railway could not be seen from the repository.
+
+**Suggested fix.** Submit the live form once and confirm the entry arrives. If no collector exists yet, point the variable at a form service or add a small `POST /waitlist` endpoint that emails `OPERATOR_ALERT_EMAIL`. Set `VITE_WAITLIST_WHATSAPP` as a fallback.
+
+### P-07. Production runs on a `railway.app` subdomain
+
+**Problem.** `APP_BASE_URL`, `FRONTEND_ORIGIN` and `META_OAUTH_REDIRECT_URI` all use `web-production-b2f30.up.railway.app`. Business owners are asked to grant Instagram access on a generated hostname, and Meta App Review expects a stable domain with a privacy policy URL. The onboarding checklist already assumes `agentnest.io`.
+
+**Suggested fix.** Decide the product name (OQ-10), register the domain, attach it in Railway, and update the three variables plus the redirect URI in the Meta dashboard in one change.
+
+### P-08. Backups are not part of the Railway setup
+
+**Problem.** The backup, restore and restore-drill tooling in `scripts/` was built for the single-VPS deployment. [.railway/railway.ts](../../.railway/railway.ts) defines only `Postgres`, `api`, `worker` and `web`; nothing runs `backup.py` there.
+
+**Suggested fix.** Confirm what Railway's Postgres plan backs up and how long it keeps it. If that is not enough, add a scheduled service that runs `scripts/backup.py` to R2, and repeat the restore drill on Railway before real customer data arrives.
+
+### P-09. Legal sign-off is open and there is no LICENSE
+
+**Problem.** Gate 3 requires counsel to review hosting region and cross-border transfer (OQ-04), retention periods (OQ-12) and the automation disclosure (OQ-13). All three are still on provisional defaults. The repository has no `LICENSE` file (OQ-02), and the legal entity for Meta Business Verification is undecided (OQ-05).
+
+**Evidence.** [open-questions.md](../research/open-questions.md) lists nothing under "Resolved". [phase-08-summary.md](../implementation/phase-summaries/phase-08-summary.md) marks the legal artifacts "offline drafted".
+
+**Suggested fix.** Book the legal review now; it has the longest lead time of anything on this list. Keep the repository private until the license is chosen.
+
+---
+
+## Blocks public (self-service) launch
+
+These do not stop assisted pilots, where the founder sets up each business in person.
+
+### P-10. No self-service signup
+
+**Problem.** The auth API has login, logout, password reset and invite acceptance, but no registration endpoint ([identity/router.py](../../backend/app/identity/router.py)). A new owner can only get an account through the CLI or an invite.
+
+**Suggested fix.** Add email signup with verification, then route the new user into the existing workspace wizard. Protect it with the existing login throttling. Not needed for the first 10 to 15 pilots.
+
+### P-11. No billing, plans or owner-visible usage limits
+
+**Problem.** No plan or subscription model exists in the code. The only limit is the global `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`, and the owner sees it only as a line in System Health after it is exhausted. The pricing document promises monthly reply quotas with warnings at 80% and 100%.
+
+**Suggested fix.** For pilots, keep manual invoicing as planned. Before selling tiers, add a per-workspace plan record, a monthly reply counter, and the two warning notifications. Payment integration (iyzico or PayTR) can follow.
+
+### P-12. No frontend error tracking and no product analytics
+
+**Problem.** Sentry is wired into the backend only. A crash in the owner's browser is invisible. There is also no usage analytics, so the pilot metric "daily active owners" in [vision.md](../product/vision.md) can only be approximated from sessions.
+
+**Suggested fix.** Add the Sentry browser SDK with the same DSN policy and PII scrubbing as the backend. Add one privacy-friendly analytics tool to the landing page and, if counsel agrees, to the app.
+
+---
+
+## Polish
+
+Findings P-13 to P-16 are from the 2026-11-09 screenshots; verify before acting.
+
+### P-13. Today screen is very long on a phone, and the command box is buried
+
+**Problem.** At 390 px the Today screen is about 4,300 px tall with more than ten sections. The "ask your assistant" command box, which is the product's most distinctive control, comes sixth, after the content grid and the performance card.
+
+**Suggested fix.** On phones, keep "waiting for you", the command box and today's three numbers at the top. Collapse the rest behind section headers or move it to the pages that already own it (Content, Reports).
+
+### P-14. Seven-day content grid repeats "no story" seven times
+
+**Problem.** Every day cell shows the same "+ no story" prompt, followed by a separate "no story planned" card that says the same thing again. The owner still has to design the story image, so the prompt asks for work the product cannot help with yet.
+
+**Suggested fix.** Show the prompt once for the whole week. Revisit after story template cards exist (F-07).
+
+### P-15. Instagram performance chart looks flat
+
+**Problem.** Reach and views share one vertical axis, so both lines look almost horizontal even when the cards above report +15% and +22%.
+
+**Suggested fix.** Scale the axis to the data range instead of starting at zero, or draw each metric as its own small sparkline inside its card.
+
+### P-16. Header search label is cut off on desktop
+
+**Problem.** At 1440 px the command-palette trigger reads "Git…" next to the shortcut hint.
+
+**Suggested fix.** Give the trigger a minimum width or drop the label and keep the icon plus shortcut.
+
+### P-17. `index.html` has no favicon, description or share tags
+
+**Problem.** [frontend/index.html](../../frontend/index.html) contains only a title, a viewport tag and a fixed white `theme-color`. There is no favicon link, no meta description, no Open Graph tags and no web app manifest. The white theme colour is wrong in dark mode.
+
+**Suggested fix.** Add the icon set, description and share tags. Add the manifest as part of F-01.
+
+### P-18. Two lazy-loaded routes are not actually split
+
+**Problem.** The build warns that `WorkPages.tsx` and `NotFoundPage.tsx` are imported both lazily (by the router) and statically (by `ConversationPage`, `InboxWorkspace`, `CategoryPage`, `MetricItems`, `WorkspaceGate`), so they stay in the main chunk.
+
+**Suggested fix.** Import them lazily everywhere or statically everywhere. The size effect is small; the point is a build with no warnings.
+
+### P-19. Pricing document promises things that are not built
+
+**Problem.** [pricing-and-unit-economics.md](../product/pricing-and-unit-economics.md) lists these as tier features: WhatsApp owner channel, up to three Instagram accounts, data export, Russian and German replies, comment automation on real accounts, and quota warnings. None exists in a usable form today.
+
+**Suggested fix.** Mark each row "planned" or remove it until it ships. Sell only what a pilot owner can use on day one.
+
+---
+
+## What passed
+
+- Backend `ruff check` and `mypy app` (347 source files): clean.
+- Frontend `typecheck` and `i18n:check` (2,269 keys in `tr` and `en`): clean.
+- Frontend production build: succeeds.
