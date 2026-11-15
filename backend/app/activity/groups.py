@@ -134,6 +134,7 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "auth.password_change_failed",
         "auth.password_changed",
         "auth.password_reset_requested",
+        "auth.password_reset_throttled",
         "auth.password_reset_completed",
         "auth.session_revoked",
         "auth.sessions_revoked_all",

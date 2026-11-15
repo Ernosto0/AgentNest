@@ -101,6 +101,7 @@ RULES: dict[str, Rule] = {
     # System and security
     "auth.login_failed": Rule("warning"),
     "auth.login_throttled": Rule("warning"),
+    "auth.password_reset_throttled": Rule("warning"),
     "auth.password_change_failed": Rule("warning"),
     "meta.deauthorized": Rule("warning"),
     "operation.started": Rule(routine=True),
