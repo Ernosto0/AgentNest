@@ -416,9 +416,7 @@ def test_serious8_telegram_messages_not_swallowed_and_target_replied_question(
             )
             assert res.ok, res
 
-        questions = list(
-            db.scalars(select(OwnerQuestion).order_by(OwnerQuestion.created_at.asc()))
-        )
+        questions = list(db.scalars(select(OwnerQuestion).order_by(OwnerQuestion.created_at.asc())))
         assert len(questions) == 2
         q1_id, q2_id = questions[0].id, questions[1].id
 

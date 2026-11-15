@@ -541,9 +541,7 @@ def _pending_booking_holds(
             else intent.get("new_start_at")
         )
         raw_end = (
-            intent.get("end_at")
-            if act.action_type == "calendar.book"
-            else intent.get("new_end_at")
+            intent.get("end_at") if act.action_type == "calendar.book" else intent.get("new_end_at")
         )
         if not raw_start or not raw_end:
             continue
@@ -749,9 +747,7 @@ def _wake(factory: sessionmaker[Session], clock: Clock, action_id: uuid.UUID) ->
             db.commit()
 
 
-def _queue_reconcile(
-    db: Session, clock: Clock, op: Operation, *, round_num: int = 1
-) -> None:
+def _queue_reconcile(db: Session, clock: Clock, op: Operation, *, round_num: int = 1) -> None:
     delay_idx = min(max(round_num - 1, 0), len(RECONCILE_DELAYS_SECONDS) - 1)
     delay = timedelta(seconds=RECONCILE_DELAYS_SECONDS[delay_idx])
     enqueue(
