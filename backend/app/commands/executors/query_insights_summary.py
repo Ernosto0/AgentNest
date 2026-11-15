@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from app.commands.narrator import narrate_fallback
 from app.commands.results import CommandResult, ExecContext
+from app.core.narrator import narrate_fallback
 from app.insights import service
 from app.integrations.instagram import queries
 

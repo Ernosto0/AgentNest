@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from app.commands.narrator import narrate_fallback
+from app.core.narrator import narrate_fallback
 from app.integrations.channels.base import ChannelRecipient
 
 

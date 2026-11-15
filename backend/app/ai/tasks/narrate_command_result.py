@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.ai.prompt import data_section, json_section
 from app.ai.runner import TaskDefinition
-from app.commands.narrator import narrate_fallback, validate_metrics_grounding
+from app.core.narrator import narrate_fallback, validate_metrics_grounding
 from app.integrations.llm.base import LLMMessage
 from app.integrations.llm.fake import fake_implementation
 

@@ -814,7 +814,7 @@ def _handle_reporting_query(
         or re.search(r"how\s+many\s+(?:dms|messages|dm)", raw_text.lower())
     )
 
-    from app.commands.narrator import narrate_fallback
+    from app.core.narrator import narrate_fallback
 
     natural_sentence = narrate_fallback(
         message_key="command.activity_summary",

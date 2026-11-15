@@ -477,8 +477,11 @@ forbidden_modules = [
     "app.operations.backup_restore",
     "app.operations.transitions",
 ]
-# The router is the one place that touches the API layer, through its shared dependencies.
-ignore_imports = ["app.reporting.router -> app.api.deps"]
+# The routers are the places that touch the API layer, through its shared dependencies.
+ignore_imports = [
+    "app.reporting.router -> app.api.deps",
+    "app.reporting.home_router -> app.api.deps",
+]
 
 [[tool.importlinter.contracts]]
 name = "only executors, the API, the demo and the worker reach reporting"

@@ -20,12 +20,12 @@ from sqlalchemy.orm import Session
 from app.agent.models import AccountAgent
 from app.approvals import service as approvals_service
 from app.approvals.action_tokens import ActionTokenService
-from app.commands.narrator import validate_metrics_grounding
 from app.core.clock import FrozenClock
 from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
 from app.core.db import set_tenant_context
 from app.core.email import email_outbox
+from app.core.narrator import validate_metrics_grounding
 from app.core.security import hash_password
 from app.identity import invites
 from app.identity.channels import ChannelLinkService

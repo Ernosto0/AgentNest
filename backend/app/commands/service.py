@@ -388,7 +388,7 @@ def finish_interpretation(
 
     resolution: InterpretationResolution | None = None
     if command.result and command.status in ("interpreting", "executing"):
-        from app.commands.narrator import narrate_fallback
+        from app.core.narrator import narrate_fallback
 
         res = dict(command.result)
         natural = narrate_fallback(
@@ -454,6 +454,7 @@ def finalize_interpretation(
     command.completed_at = clock.now()
 
     found = _requester_context(session, command)
+    notify_ctx: WorkspaceContext | None = None
     if found is not None:
         ctx, _, _ = found
         audit_name = "command.executed" if target_event == "complete" else "command.interpreted"
@@ -469,23 +470,27 @@ def finalize_interpretation(
         )
 
         if command.channel == "telegram":
-            _notify_telegram_completion(session, ctx, command)
+            notify_ctx = ctx
 
     session.commit()
+    if notify_ctx is not None:
+        _notify_telegram_completion(session, clock, notify_ctx, command)
 
 
 def _notify_telegram_completion(
     session: Session,
+    clock: Clock,
     ctx: WorkspaceContext,
     command: OwnerCommand,
 ) -> None:
+    """Best-effort Telegram message through the channel registry. Runs after the commit so no
+    external call happens inside the transaction."""
     try:
         from sqlalchemy import select
 
         from app.identity.models import ChannelLink
         from app.integrations.channels.base import ChannelRecipient
-        from app.integrations.channels.formatting import format_command_for_telegram
-        from app.integrations.channels.telegram.client import TelegramClient
+        from app.integrations.channels.registry import get_channel
 
         link = session.scalar(
             select(ChannelLink).where(
@@ -502,18 +507,12 @@ def _notify_telegram_completion(
             user_id=command.user_id,
             workspace_id=command.workspace_id,
             channel="telegram",
+            channel_user_id=link.channel_user_id,
             channel_chat_id=link.channel_user_id,
             ui_locale=ctx.locale or "tr",
             timezone=ctx.timezone,
         )
-        msg, reply_markup = format_command_for_telegram(command, recipient)
-        tg_client = TelegramClient()
-        tg_client.send_message(
-            chat_id=link.channel_user_id,
-            text=msg,
-            parse_mode="HTML",
-            reply_markup=reply_markup,
-        )
+        get_channel("telegram").render_command_result(session, clock, command, recipient)
     except Exception as exc:
         _log.warning("telegram_command_notify_failed", error=str(exc))
 
@@ -898,7 +897,7 @@ def on_approval_decided(
         _complete(session, clock, ctx, command, result)
 
     if command.result:
-        from app.commands.narrator import narrate_fallback
+        from app.core.narrator import narrate_fallback
 
         res = command.result
         natural = narrate_fallback(
