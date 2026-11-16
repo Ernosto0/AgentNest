@@ -156,7 +156,7 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 - `agent_runs.input_snapshot` is nulled after 30 days; a run that is still `queued` or `running` keeps it.
 - `messages.text` (age: `provider_timestamp`, the clock every report uses) and `reply_drafts.text`, `template`, `suggestion_text` (age: `created_at`) are nulled after 365 days. This retention redaction is a narrowly sanctioned privacy write under INV-17/ADR-022 (explicit account-erasure workflows are separately bounded below): the row, its direction, time, flags and links stay, so no report count changes. A report is a stored row of its own and is not touched; regenerating a day after the cleanup counts the same messages, except `integration_errors`, which reads failed `inbound_events` rows and so loses them after 90 days.
 - Notifications are deleted 90 days after they were read; an unread notification is never deleted.
-- `waitlist_entries` (global table fed by the public landing form, migration `0046`) are deleted after `RETENTION_WAITLIST_DAYS` (365); the count is `waitlist_deleted` in the audit entry.
+- `waitlist_entries` (global table fed by the public landing form, migration `0049`) are deleted after `RETENTION_WAITLIST_DAYS` (365); the count is `waitlist_deleted` in the audit entry.
 - Jobs: `succeeded` and `cancelled` after 7 days, `dead` after 90 days (age: `finished_at`). `queued` and `running` jobs are never touched.
 - The run writes one system-level audit entry, `retention.cleanup_ran`, whose metadata holds only the row counts of each rule.
 

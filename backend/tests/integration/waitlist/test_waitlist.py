@@ -235,7 +235,7 @@ def test_delete_on_request_removes_the_entry(db_session: Session) -> None:
 # --- migration -----------------------------------------------------------------------------------
 
 
-def test_migration_0046_upgrades_and_downgrades_cleanly(engine: Engine) -> None:
+def test_migration_0049_upgrades_and_downgrades_cleanly(engine: Engine) -> None:
     schema = "waitlist_mig_" + uuid.uuid4().hex
     with engine.begin() as connection:
         connection.execute(text(f'CREATE SCHEMA "{schema}"'))
@@ -247,10 +247,10 @@ def test_migration_0046_upgrades_and_downgrades_cleanly(engine: Engine) -> None:
         "sqlalchemy.url", url.render_as_string(hide_password=False).replace("%", "%%")
     )
     try:
-        command.upgrade(config, "0045")
+        command.upgrade(config, "0048")
         with isolated.connect() as connection:
             assert connection.scalar(text("SELECT to_regclass('waitlist_entries')")) is None
-        command.upgrade(config, "0046")
+        command.upgrade(config, "0049")
         with isolated.begin() as connection:
             connection.execute(
                 text(
@@ -259,10 +259,10 @@ def test_migration_0046_upgrades_and_downgrades_cleanly(engine: Engine) -> None:
                 ),
                 {"id": uuid.uuid4()},
             )
-        command.downgrade(config, "0045")
+        command.downgrade(config, "0048")
         with isolated.connect() as connection:
             assert connection.scalar(text("SELECT to_regclass('waitlist_entries')")) is None
-        command.upgrade(config, "0046")  # and back up again
+        command.upgrade(config, "0049")  # and back up again
     finally:
         isolated.dispose()
         with engine.begin() as connection:

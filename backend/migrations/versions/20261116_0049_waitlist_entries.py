@@ -1,7 +1,7 @@
 """Add the pilot waitlist table for the public landing form.
 
-Revision ID: 0046
-Revises: 0045
+Revision ID: 0049
+Revises: 0048
 Create Date: 2026-11-16 12:00:00.000000
 
 P-06: ``POST /api/v1/waitlist`` stores one row per normalized email. The table is global (no
@@ -14,8 +14,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "0046"
-down_revision: str | None = "0045"
+revision: str = "0049"
+down_revision: str | None = "0048"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
