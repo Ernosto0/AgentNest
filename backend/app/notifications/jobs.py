@@ -119,8 +119,11 @@ def deliver_channel_notification(ctx: JobContext) -> None:
             )
         )
         link = session.get(ChannelLink, channel_link_id) if channel_link_id else None
-        if member is None or user is None or not user.is_active or (
-            channel_name != "web" and (link is None or link.status != "active")
+        if (
+            member is None
+            or user is None
+            or not user.is_active
+            or (channel_name != "web" and (link is None or link.status != "active"))
         ):
             delivery.status = "failed"
             delivery.last_error = "recipient_not_member_or_unlinked"

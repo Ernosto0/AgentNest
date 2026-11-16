@@ -336,6 +336,7 @@
   "errors.RATE_LIMITED.what": "Çok fazla başarısız deneme yapıldı. Lütfen daha sonra tekrar deneyin.",
   "errors.RATE_LIMITED.next": "Yeniden denemeden önce kilitleme süresinin bitmesini bekleyin.",
   "activity.auth.login_throttled": "Giriş denemeleri sınırlandırıldı",
+  "activity.auth.password_reset_throttled": "Şifre sıfırlama talepleri sınırlandırıldı",
   "activity.auth.password_change_failed": "Şifre değiştirme başarısız",
   "activity.auth.password_changed": "Şifre değiştirildi",
   "activity.auth.session_revoked": "Oturum kapatıldı",

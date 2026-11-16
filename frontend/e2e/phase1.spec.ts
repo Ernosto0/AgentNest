@@ -4,6 +4,7 @@ import {
   hasHorizontalScroll,
   loginViaUi,
   navLink,
+  openSettings,
   resetLocale,
   workspaceIds,
 } from "./helpers";
@@ -19,7 +20,8 @@ test.afterEach(async ({ request }) => {
 
 test("owner: Turkish shell with simulation banner, English switch, workspace switch, sign out", async ({
   page,
-}) => {
+}, testInfo) => {
+  const phone = testInfo.project.name.startsWith("mobile"); // bottom tabs; desktop has a sidebar
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
   await loginViaUi(page, OWNER);
@@ -29,21 +31,21 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   await page.getByRole("link", { name: /Gölkent Fitness & Pilates/ }).click();
 
   // Home shell in Turkish, with the simulation banner.
-  await expect(page.getByRole("heading", { name: "Ana sayfa", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Merhaba, /, level: 1 })).toBeVisible();
   const banner = page.getByTestId("simulation-banner");
   await expect(banner).toBeVisible();
   await expect(banner).toContainText("Demo çalışma alanı");
-  for (const label of ["Bug\u00fcn", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
+  // "More" is a phone tab; the desktop sidebar lists its destinations instead.
+  for (const label of ["Bugün", "Gelen kutusu", "İçerik", "Onaylar", ...(phone ? ["Daha fazla"] : ["Ayarlar"])]) {
     await expect(navLink(page, label)).toBeVisible();
   }
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
 
   // More → Settings → Language → English: the strings change.
-  await navLink(page, "Daha fazla").click();
-  await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
-  await expect(page.getByRole("heading", { name: "Dil" })).toBeVisible();
+  await openSettings(page);
+  await expect(page.getByRole("group", { name: "Arayüz dili" })).toBeVisible();
   await chooseLanguage(page, "English");
-  await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
   await expect(banner).toContainText("Demo workspace");
   await expect(navLink(page, "Inbox")).toBeVisible();
   await expect(navLink(page, "Gelen kutusu")).toHaveCount(0);
@@ -51,21 +53,21 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
 
   // The choice is saved on the account: it survives a reload.
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
 
   // Switch to the other demo workspace (still a demo: the banner stays).
-  await page.getByLabel("Workspace").selectOption({ label: "Harbor Café & Bakery" });
-  await expect(page.getByLabel("Workspace").locator("option:checked")).toHaveText(
+  await page.getByRole("combobox", { name: "Workspace" }).selectOption({ label: "Harbor Café & Bakery" });
+  await expect(page.getByRole("combobox", { name: "Workspace" }).locator("option:checked")).toHaveText(
     "Harbor Café & Bakery",
   );
   await navLink(page, "Today").click();
-  await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Hello, /, level: 1 })).toBeVisible();
   await expect(page.getByRole("main").getByText("Harbor Café & Bakery", { exact: true }).filter({ visible: true }).last()).toBeVisible();
   await expect(banner).toBeVisible();
 
   // Sign out.
-  await navLink(page, "More").click();
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await openSettings(page); // the account section has the sign-out button
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/); // the session is really gone
@@ -89,7 +91,7 @@ test("a deep link asks for sign-in first and then returns to the page", async ({
   await loginViaUi(page, OWNER);
   await expect(page).toHaveURL(new RegExp(`/w/${golkent}/inbox$`));
   await expect(page.getByRole("heading", { name: "Gelen kutusu", level: 1 })).toBeVisible();
-  await expect(page.getByRole("tablist", { name: "Konuşmaları filtrele" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Konuşmaları filtrele" })).toBeVisible();
 });
 
 test("tenant isolation: the other user lists only their workspace and gets 'not found' elsewhere", async ({
@@ -158,10 +160,9 @@ test("every main screen fits a 360x740 phone without horizontal scroll, in both 
   };
   for (const language of ["tr", "en"] as const) {
     if (language === "en") {
-      await navLink(page, "Daha fazla").click();
-      await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
-      await page.getByRole("button", { name: "English" }).click();
-      await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+      await openSettings(page);
+      await chooseLanguage(page, "English");
+      await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
       expect(await hasHorizontalScroll(page), "en: settings").toBe(false);
     }
     for (const label of screens[language]) {

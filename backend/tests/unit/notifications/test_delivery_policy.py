@@ -534,6 +534,21 @@ def test_deliver_channel_notification_failure_records_error(
 
     clock = FrozenClock(datetime(2026, 11, 4, 14, 0, 0, tzinfo=UTC))
 
+    # The worker only delivers to a member with an active link on the channel.
+    link = ChannelLink(
+        id=uuid.uuid4(),
+        workspace_id=ws.id,
+        user_id=owner.id,
+        channel="telegram",
+        channel_user_id="tg_fail_1",
+        channel_chat_id="chat_fail_1",
+        channel_username="owner_bot",
+        status="active",
+        linked_at=clock.now(),
+    )
+    db_session.add(link)
+    db_session.flush()
+
     notif = Notification(
         id=uuid.uuid4(),
         workspace_id=ws.id,
@@ -553,6 +568,7 @@ def test_deliver_channel_notification_failure_records_error(
         notification_id=notif.id,
         recipient_user_id=owner.id,
         channel="telegram",
+        channel_link_id=link.id,
         status="pending",
         attempt_count=0,
     )

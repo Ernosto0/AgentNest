@@ -100,8 +100,8 @@ test("E: the command answer equals the report; every number opens a list of that
   await signInToWorkspace(page, OWNER, GYM);
   await say(page, "Bugün kaç DM geldi?");
   const answer = page.getByTestId("command-result");
-  await expect(answer).toContainText("gelen mesaj:", { timeout: 15_000 });
-  const asked = Number(/gelen mesaj: (\d+)/.exec(await answer.innerText())![1]);
+  await expect(answer).toContainText("gelen mesaj aldık", { timeout: 15_000 });
+  const asked = Number(/toplam (\d+) gelen mesaj/.exec(await answer.innerText())![1]);
   const report = await dailyReport(request, workspaceId);
   expect(asked).toBe(metricValue(report, "inbound_messages")); // AC-E4 in the browser
   expect(asked).toBe(2);

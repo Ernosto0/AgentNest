@@ -55,6 +55,14 @@ class CommandEnv:
         response = self.env.call(role, "GET", f"/commands/{command_id}")
         assert response.status_code == 200, response.text
         body: dict[str, Any] = response.json()
+        # The conversational narration (INV-08) is added to the result as ``reply_text`` (and
+        # mirrored into ``params``). These suites assert the structured result; the narration
+        # has its own tests (tests/unit/commands/test_narrator.py).
+        result = body.get("result")
+        if isinstance(result, dict):
+            result.pop("reply_text", None)
+            if isinstance(result.get("params"), dict):
+                result["params"].pop("reply_text", None)
         return body
 
     def run(self, role: Role, text: str) -> dict[str, Any]:

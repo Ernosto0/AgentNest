@@ -51,7 +51,7 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
               <span
                 aria-hidden="true"
                 className={`font-heading text-lg leading-6 font-bold tabular-nums ${
-                  day.isToday ? "text-on-action" : empty ? "text-secondary/80" : "text-primary"
+                  day.isToday ? "text-on-action" : empty ? "text-secondary" : "text-primary"
                 }`}
               >
                 {dayNumber}
@@ -75,7 +75,7 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
                   className={`flex size-7 items-center justify-center rounded-full outline-none transition-colors after:absolute after:inset-0 after:rounded-xl after:content-[''] ${
                     day.isToday
                       ? "text-on-action/80 group-hover/day:bg-on-action/15 group-hover/day:text-on-action"
-                      : "text-secondary/70 group-hover/day:bg-surface group-hover/day:text-action"
+                      : "text-secondary group-hover/day:bg-surface group-hover/day:text-action"
                   }`}
                 >
                   <PlusIcon className="text-base transition-transform group-hover/day:scale-110" />

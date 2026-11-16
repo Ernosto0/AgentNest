@@ -376,7 +376,7 @@
       "signedIn": "Oturum açılış: {{date}}",
       "ip": "IP {{ip}}",
       "signOut": "Oturumu kapat",
-      "signOutDevice": "{{device}} oturumunu kapat",
+      "signOutDevice": "Oturumu kapat: {{device}}",
       "signOutOthers": "Diğer cihazlardan çıkış yap",
       "onlyThis": "Başka cihazda açık oturum yok.",
       "unrecognised": "Tanımadığınız bir cihaz mı var? Oturumunu kapatın ve şifrenizi değiştirin.",

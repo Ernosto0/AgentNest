@@ -36,9 +36,17 @@ def test_the_invite_response_models_are_allow_lists(app: FastAPI) -> None:
     schemas = app.openapi()["components"]["schemas"]
     expected = {
         # Shown once, to the person who created it: the link is the only place the token lives.
-        "InviteOut": {"id", "role", "expires_at", "invite_path", "invite_url", "created_at"},
+        "InviteOut": {
+            "id",
+            "role",
+            "email",
+            "expires_at",
+            "invite_path",
+            "invite_url",
+            "created_at",
+        },
         # The listing never repeats the link.
-        "PendingInviteOut": {"id", "role", "expires_at", "created_at"},
+        "PendingInviteOut": {"id", "role", "email", "expires_at", "created_at"},
         "InviteAcceptOut": {"workspace_id", "workspace_name", "role"},
     }
     for name, fields in expected.items():

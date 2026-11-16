@@ -107,12 +107,12 @@ describe("Signed-in devices", () => {
     renderApp(`/w/${WS_GOLKENT}/more/settings`);
     const panel = await sessionsPanel();
 
-    await user.click(await panel.findByRole("button", { name: "Safari · iOS oturumunu kapat" }));
+    await user.click(await panel.findByRole("button", { name: "Oturumu kapat: Safari · iOS" }));
     let dialog = within(await screen.findByRole("dialog", { name: "Safari · iOS oturumu kapatılsın mı?" }));
     await user.click(dialog.getByRole("button", { name: "Vazgeç" }));
     expect(requests.some((r) => r.method === "DELETE")).toBe(false);
 
-    await user.click(panel.getByRole("button", { name: "Safari · iOS oturumunu kapat" }));
+    await user.click(panel.getByRole("button", { name: "Oturumu kapat: Safari · iOS" }));
     dialog = within(await screen.findByRole("dialog"));
     await user.click(dialog.getByRole("button", { name: "Oturumu kapat" }));
 
@@ -153,7 +153,7 @@ describe("Signed-in devices", () => {
     renderApp(`/w/${WS_GOLKENT}/more/settings`);
     const panel = await sessionsPanel();
 
-    await user.click(await panel.findByRole("button", { name: "Safari · iOS oturumunu kapat" }));
+    await user.click(await panel.findByRole("button", { name: "Oturumu kapat: Safari · iOS" }));
     await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Oturumu kapat" }));
     expect(await panel.findByText("Bir şeyler ters gitti.")).toBeInTheDocument();
     expect(panel.getByText("Safari · iOS")).toBeInTheDocument();

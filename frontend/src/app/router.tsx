@@ -1,25 +1,32 @@
 import { lazy, Suspense, type ComponentType, type ReactElement } from "react";
+import {
+  CommentThreadPage,
+  MemoryPage,
+  QuestionPage,
+  TaskPage,
+} from "@/features/agent-work/WorkPages";
 import { InboxWorkspace } from "@/features/inbox/InboxWorkspace";
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router-dom";
+import { NotFoundPage } from "./NotFoundPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { WorkspaceGate } from "@/features/workspaces/WorkspaceGate";
 
 const routePreloaders: Array<() => Promise<unknown>> = [];
 
-function lazyNamed<T extends Record<string, ComponentType<any>>>(
-  loader: () => Promise<T>,
-  name: keyof T,
-) {
-  let Resolved: ComponentType<any> | null = null;
-  const load = async () => {
+function lazyNamed<K extends string, P extends object>(
+  loader: () => Promise<Record<K, ComponentType<P>>>,
+  name: K,
+): ComponentType<P> {
+  let Resolved: ComponentType<P> | null = null;
+  const load = async (): Promise<{ default: ComponentType<P> }> => {
     const mod = await loader();
-    const Component = mod[name]!;
+    const Component: ComponentType<P> = mod[name];
     Resolved = Component;
     return { default: Component };
   };
   routePreloaders.push(load);
-  const Lazy = lazy(load);
-  return function LazyRoute(props: any) {
+  const Lazy: ComponentType<P> = lazy(load);
+  return function LazyRoute(props: P) {
     if (Resolved) {
       const Comp = Resolved;
       return <Comp {...props} />;
@@ -36,13 +43,6 @@ function wrapLazy(element: ReactElement) {
   return <Suspense fallback={null}>{element}</Suspense>;
 }
 
-const QuestionPage = lazyNamed(() => import("@/features/agent-work/WorkPages"), "QuestionPage");
-const MemoryPage = lazyNamed(() => import("@/features/agent-work/WorkPages"), "MemoryPage");
-const CommentThreadPage = lazyNamed(
-  () => import("@/features/agent-work/WorkPages"),
-  "CommentThreadPage",
-);
-const TaskPage = lazyNamed(() => import("@/features/agent-work/WorkPages"), "TaskPage");
 const AgentPage = lazyNamed(() => import("@/features/agent/AgentPage"), "AgentPage");
 const NotificationCenter = lazyNamed(
   () => import("@/features/notifications/NotificationCenter"),
@@ -111,7 +111,6 @@ const DataDeletionInfoPage = lazyNamed(
   () => import("@/features/legal/DataDeletionInfoPage"),
   "DataDeletionInfoPage",
 );
-const NotFoundPage = lazyNamed(() => import("./NotFoundPage"), "NotFoundPage");
 
 export const appRoutes: RouteObject[] = [
   { path: "/login", element: wrapLazy(<LoginPage />) },
@@ -134,12 +133,12 @@ export const appRoutes: RouteObject[] = [
             { path: "inbox", element: wrapLazy(<InboxPage />) },
             { path: "inbox/:conversationId", element: wrapLazy(<ConversationPage />) },
             { path: "more/agent/questions", element: wrapLazy(<InboxPage />) },
-            { path: "more/agent/questions/:questionId", element: wrapLazy(<QuestionPage />) },
+            { path: "more/agent/questions/:questionId", element: <QuestionPage /> },
             { path: "more/agent/comments", element: wrapLazy(<InboxPage />) },
-            { path: "more/agent/comments/:threadId", element: wrapLazy(<CommentThreadPage />) },
+            { path: "more/agent/comments/:threadId", element: <CommentThreadPage /> },
           ] },
-          { path: "more/agent/memory/:customerId", element: wrapLazy(<MemoryPage />) },
-          { path: "more/agent/tasks/:taskId", element: wrapLazy(<TaskPage />) },
+          { path: "more/agent/memory/:customerId", element: <MemoryPage /> },
+          { path: "more/agent/tasks/:taskId", element: <TaskPage /> },
           { path: "content", element: wrapLazy(<ContentPage />) },
           { path: "content/:id", element: wrapLazy(<ContentDetailPage />) },
           { path: "approvals", element: wrapLazy(<ApprovalsList />) },
@@ -159,12 +158,12 @@ export const appRoutes: RouteObject[] = [
           { path: "more/notifications", element: wrapLazy(<NotificationCenter />) },
           { path: "more/dev", element: wrapLazy(<DevPanel />) },
           { path: "more/knowledge/:category", element: wrapLazy(<CategoryPage />) },
-          { path: "*", element: wrapLazy(<NotFoundPage embedded />) },
+          { path: "*", element: <NotFoundPage embedded /> },
         ],
       },
     ],
   },
-  { path: "*", element: wrapLazy(<NotFoundPage />) },
+  { path: "*", element: <NotFoundPage /> },
 ];
 
 export const createAppRouter = () => createBrowserRouter(appRoutes);

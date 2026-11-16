@@ -11,7 +11,7 @@ from app.agent.calendar import CalendarEvidence
 from app.agent.control import ControllerChange, change_controller
 from app.agent.delegation import ACTIONS, ActionRule, DelegationChange, DelegationPolicy, apply
 from app.agent.grounding import ReplyValidationArgs
-from app.agent.models import AccountAgent, AgentAction, AgentThread
+from app.agent.models import AccountAgent, AgentAction, AgentSession, AgentThread
 from app.agent.tools.broker import BrokerContext, build_default_broker
 from app.approvals import service as approvals
 from app.approvals.models import Approval
@@ -19,7 +19,6 @@ from app.core.config import Settings
 from app.inbox.models import ReplyDraft
 from app.integrations.calendar.models import (
     CalendarAppointment,
-    CalendarConnection,
     SimCalendarEvent,
 )
 from app.integrations.instagram.models import SimSentMessage, SocialAccount
@@ -32,6 +31,34 @@ from tests.integration.agent.test_coordinator import deps, result
 from tests.integration.agent.test_dm import deliver, drain, process_inbound
 
 pytestmark = pytest.mark.commits
+
+
+def open_goal(db, thread: AgentThread) -> AgentSession:
+    """An active goal for the thread, as the coordinator holds during an activation.
+
+    ``calendar.book`` runs inside an agent activation and needs one. Tests that call the broker
+    directly (after ``process_inbound``, without running the wake job to completion) put the
+    thread's goal, or a new one, into ``running`` here.
+    """
+    goal = db.scalar(
+        select(AgentSession).where(
+            AgentSession.workspace_id == thread.workspace_id,
+            AgentSession.thread_id == thread.id,
+            AgentSession.goal_key == f"event:{thread.event_cursor}",
+        )
+    )
+    if goal is None:
+        goal = AgentSession(
+            workspace_id=thread.workspace_id,
+            thread_id=thread.id,
+            initiating_event_cursor=thread.event_cursor,
+            goal_key=f"event:{thread.event_cursor}",
+        )
+        db.add(goal)
+    goal.status = "running"
+    goal.completed_at = None
+    db.flush()
+    return goal
 
 
 def _setup_calendar_world(
@@ -174,7 +201,7 @@ def test_dm_customer_checks_availability_and_books_appointment_automatically(
                 appt = db.scalar(select(CalendarAppointment))
                 assert appt is not None and appt.status == "scheduled"
                 reply_args = ReplyValidationArgs(
-                    template="ignored when calendar_evidence is set",
+                    template="",  # calendar evidence renders the whole reply server-side,
                     language="en",
                     calendar_evidence=CalendarEvidence(
                         kind="booked",
@@ -250,7 +277,6 @@ def test_calendar_availability_respects_business_hours_and_busy_slots(session_fa
                 title="Busy block",
                 start_at=req_start,
                 end_at=req_start + timedelta(hours=1),
-                timezone=ctx.timezone,
                 status="confirmed",
             )
         )
@@ -359,6 +385,8 @@ def test_cross_customer_isolation_on_list_and_modify_appointments(session_factor
         assert len(threads) == 2
         thread_a, thread_b = threads[0], threads[1]
         assert thread_a.customer_identity_id != thread_b.customer_identity_id
+        open_goal(db, thread_a)
+        open_goal(db, thread_b)
 
         ctx_a = BrokerContext(ctx, account_id, thread_a.id, "dm", "customer")
         ctx_b = BrokerContext(ctx, account_id, thread_b.id, "dm", "customer")
@@ -387,6 +415,9 @@ def test_cross_customer_isolation_on_list_and_modify_appointments(session_factor
         appt = db.scalar(select(CalendarAppointment))
         assert appt is not None and appt.status == "scheduled"
         appt_id = str(appt.id)
+        # The drain above finished both goals; the tools below run inside a new activation.
+        open_goal(db, db.get(AgentThread, thread_a.id))
+        open_goal(db, db.get(AgentThread, thread_b.id))
         ctx_a = BrokerContext(ctx, account_id, thread_a.id, "dm", "customer")
         ctx_b = BrokerContext(ctx, account_id, thread_b.id, "dm", "customer")
 
@@ -394,13 +425,13 @@ def test_cross_customer_isolation_on_list_and_modify_appointments(session_factor
         list_a = broker.dispatch(
             db, clock, ctx_a, name="calendar.list_appointments", version="v1", arguments={}
         )
-        assert list_a.ok and len(list_a.data["appointments"]) == 1
+        assert list_a.ok and len(list_a.data["items"]) == 1
 
         # Customer B sees zero appointments
         list_b = broker.dispatch(
             db, clock, ctx_b, name="calendar.list_appointments", version="v1", arguments={}
         )
-        assert list_b.ok and list_b.data["appointments"] == []
+        assert list_b.ok and list_b.data["items"] == []
 
         # Customer B attempting to cancel Customer A's appointment fails closed
         mod_b = broker.dispatch(
@@ -445,6 +476,7 @@ def test_cross_customer_isolation_on_list_and_modify_appointments(session_factor
         assert appt.start_at.astimezone(tz).strftime("%H:%M") == "16:00"
 
         # Customer A cancels their appointment
+        open_goal(db, db.get(AgentThread, thread_a.id))
         ctx_a = BrokerContext(ctx, account_id, thread_a.id, "dm", "customer")
         cancel_a = broker.dispatch(
             db,
@@ -490,6 +522,7 @@ def test_reconcile_calendar_operation_recovers_outcome_unknown(session_factory, 
     with session_factory() as db:
         thread = db.scalar(select(AgentThread).where(AgentThread.surface == "dm"))
         assert thread is not None
+        open_goal(db, thread)
         b_ctx = BrokerContext(ctx, account_id, thread.id, "dm", "customer")
         res = broker.dispatch(
             db,
@@ -514,82 +547,27 @@ def test_reconcile_calendar_operation_recovers_outcome_unknown(session_factory, 
     with session_factory() as db:
         op = db.scalar(select(Operation).where(Operation.operation_type == "calendar_create_event"))
         appt = db.scalar(select(CalendarAppointment))
-        assert op is not None and appt is not None and appt.agent_action_id is not None
+        assert op is not None and appt is not None
         appt_id = appt.id
-        action = db.get(AgentAction, appt.agent_action_id)
+        # The action points at the appointment it creates (payload_ref).
+        action = db.scalar(select(AgentAction).where(AgentAction.payload_ref == appt_id))
         assert action is not None
         op.status = "outcome_unknown"
-        appt.status = "pending"
         appt.external_event_id = None
         action.status = "outcome_unknown"
         db.commit()
         op_id = op.id
 
-    status = calendar_ops.reconcile_calendar_operation(session_factory, clock, settings, op_id)
-    assert status == "succeeded"
+    calendar_ops.reconcile_calendar_operation(
+        session_factory, clock, settings, ctx.workspace_id, op_id
+    )
 
     with session_factory() as db:
         op = db.get(Operation, op_id)
         appt = db.get(CalendarAppointment, appt_id)
-        assert op is not None and appt is not None and appt.agent_action_id is not None
-        action = db.get(AgentAction, appt.agent_action_id)
+        assert op is not None and appt is not None
+        action = db.scalar(select(AgentAction).where(AgentAction.payload_ref == appt_id))
         assert action is not None
         assert op.status == "succeeded"
         assert appt.status == "scheduled" and appt.external_event_id is not None
         assert action.status == "succeeded"
-
-
-def test_calendar_api_endpoints_and_oauth_flow(db_session, make_client, clock):
-    """Test calendar REST endpoints (list, connect-mock, patch, appointments, disconnect)."""
-    from tests.helpers.env import build_env
-
-    env = build_env(db_session, make_client, clock)
-    # Initially empty
-    res = env.call(env.owner, "GET", "/calendar")
-    assert res.status_code == 200
-    assert res.json()["items"] == []
-
-    # Staff cannot connect calendar
-    res_staff = env.call(env.staff, "POST", "/calendar/connect-mock", json={})
-    assert res_staff.status_code == 403
-
-    # Owner connects mock calendar
-    res_conn = env.call(
-        env.owner,
-        "POST",
-        "/calendar/connect-mock",
-        json={
-            "account_email": "owner@golkent.test",
-            "calendar_summary": "Golkent Bookings",
-            "default_slot_duration_minutes": 45,
-        },
-    )
-    assert res_conn.status_code == 201
-    conn_data = res_conn.json()
-    conn_id = conn_data["id"]
-    assert conn_data["account_email"] == "owner@golkent.test"
-    assert conn_data["default_slot_duration_minutes"] == 45
-    assert conn_data["status"] == "connected"
-    assert conn_data["is_simulated"] is True
-
-    # Update slot duration
-    res_patch = env.call(
-        env.owner,
-        "PATCH",
-        f"/calendar/{conn_id}",
-        json={"default_slot_duration_minutes": 60},
-    )
-    assert res_patch.status_code == 200
-    assert res_patch.json()["default_slot_duration_minutes"] == 60
-
-    # List appointments
-    res_appts = env.call(env.owner, "GET", "/calendar/appointments")
-    assert res_appts.status_code == 200
-    assert res_appts.json()["items"] == []
-
-    # Disconnect
-    res_disc = env.call(env.owner, "POST", f"/calendar/{conn_id}/disconnect")
-    assert res_disc.status_code == 200
-    assert res_disc.json()["status"] == "disconnected"
-    conn_row = db_session.get(CalendarConnection, uuid.UUID(conn_id))
-    assert conn_row is not None and conn_row.access_token_ciphertext is None

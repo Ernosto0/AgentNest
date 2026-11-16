@@ -44,7 +44,7 @@ def execute(ec: ExecContext, resolution: dict[str, Any]) -> CommandResult:
     report_date = local_date_of(start if period == "yesterday" else now, ec.ctx.timezone)
     link = {"target": "report", "date": report_date.isoformat()}
 
-    from app.commands.narrator import narrate_fallback
+    from app.core.narrator import narrate_fallback
 
     reply_text = narrate_fallback(
         message_key="command.activity_summary",

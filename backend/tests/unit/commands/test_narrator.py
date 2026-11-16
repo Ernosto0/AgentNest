@@ -1,6 +1,6 @@
 """Unit tests for narrator.py (conversational speech and INV-08 numeric grounding)."""
 
-from app.commands.narrator import narrate_fallback, validate_metrics_grounding
+from app.core.narrator import narrate_fallback, validate_metrics_grounding
 from app.integrations.channels.base import ChannelRecipient
 from app.integrations.channels.formatting import (
     format_command_for_telegram,

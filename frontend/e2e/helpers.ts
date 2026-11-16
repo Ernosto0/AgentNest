@@ -61,6 +61,29 @@ export function navLink(page: Page, label: string) {
     .getByRole("link", { name: label, exact: true });
 }
 
+/**
+ * Open the "More" screen. On phones it is a bottom tab; the desktop sidebar has no "More" tab
+ * (it lists some destinations directly), so there the screen is opened by its address.
+ */
+export async function goToMore(page: Page) {
+  const tab = page
+    .getByRole("navigation", { name: /^(Ana gezinme|Main navigation)$/ })
+    .getByRole("link", { name: /^(Daha fazla|More)$/ });
+  if ((await tab.count()) > 0) {
+    await tab.click();
+    return;
+  }
+  const base = /^\/w\/[^/]+/.exec(new URL(page.url()).pathname);
+  if (!base) throw new Error(`Not inside a workspace: ${page.url()}`);
+  await page.goto(`${base[0]}/more`);
+}
+
+/** Open the Settings screen (see ``goToMore``). */
+export async function openSettings(page: Page) {
+  await goToMore(page);
+  await page.getByRole("main").getByRole("link", { name: /^(Ayarlar|Settings)$/ }).click();
+}
+
 /** True when the page overflows horizontally (the document is wider than the viewport). */
 export async function hasHorizontalScroll(page: Page): Promise<boolean> {
   return page.evaluate(
@@ -101,7 +124,7 @@ export async function signInToWorkspace(page: Page, email: string, workspaceName
   await page.goto("/login");
   await loginViaUi(page, email);
   await page.getByRole("link", { name: workspaceName }).click();
-  await expect(page.getByRole("heading", { name: /^(Ana sayfa|Home)$/, level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^(Merhaba|Hello), /, level: 1 })).toBeVisible();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -141,7 +164,7 @@ export function localFields(minutesAhead: number, timeZone = IST): { date: strin
 /** Type a command into the command bar on the home page and send it. */
 export async function say(page: Page, text: string) {
   await page.getByLabel("Komut").fill(text);
-  await page.getByRole("button", { name: "Gönder" }).click();
+  await page.getByRole("button", { name: "Gönder", exact: true }).click();
 }
 
 /** The status badge of the open content item (`data-status` is the server state it renders). */
@@ -300,7 +323,7 @@ export async function ownerSetup(
 
 /** Open an entry of the More menu by its (Turkish) name. */
 export async function openMore(page: Page, linkName: string | RegExp) {
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   // Exact: the notification bell is also a link named "Bildirimler, N okunmamış bildirim".
   await page.getByRole("main").getByRole("link", { name: linkName, exact: typeof linkName === "string" }).click();
 }
@@ -394,6 +417,10 @@ export async function chooseLanguage(page: Page, name: "English" | "Türkçe") {
   const saved = page.waitForResponse(
     (response) => response.url().includes("/api/v1/auth/me") && response.request().method() === "PATCH",
   );
-  await page.getByRole("button", { name }).click();
+  // The interface language is a radio group on the Settings screen; click its visible label.
+  await page
+    .getByRole("group", { name: /^(Arayüz dili|Interface language)$/ })
+    .getByText(name, { exact: true })
+    .click();
   expect((await saved).ok()).toBe(true);
 }

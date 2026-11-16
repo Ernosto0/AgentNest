@@ -192,6 +192,8 @@ def test_seed_refuses_to_run_in_production(
     production = Settings(
         _env_file=None,
         app_env="production",
+        cookie_secure=True,
+        demo_tools_enabled=False,
         secret_key="p" * 48,
         database_url="postgresql+psycopg://u:p@db.internal:5432/agentnest",
         llm_provider="openai",

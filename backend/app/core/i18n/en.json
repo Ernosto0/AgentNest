@@ -336,6 +336,7 @@
   "errors.RATE_LIMITED.what": "Too many failed attempts. Please try again later.",
   "errors.RATE_LIMITED.next": "Wait for the lockout period to end before attempting again.",
   "activity.auth.login_throttled": "Sign-in attempts throttled",
+  "activity.auth.password_reset_throttled": "Password reset requests throttled",
   "activity.auth.password_change_failed": "Password change failed",
   "activity.auth.password_changed": "Password changed",
   "activity.auth.session_revoked": "Session revoked",

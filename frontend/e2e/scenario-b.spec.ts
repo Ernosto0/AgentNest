@@ -1,5 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectNoHorizontalScroll, hasHorizontalScroll, navLink, reseedDemo, signInToWorkspace } from "./helpers";
+import {
+  expectNoHorizontalScroll,
+  goToMore,
+  hasHorizontalScroll,
+  navLink,
+  reseedDemo,
+  signInToWorkspace,
+} from "./helpers";
 
 // Scenario B: a simulated customer writes, the assistant drafts a grounded reply, the owner
 // approves it, and it is "sent" through the simulated Instagram
@@ -18,7 +25,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function simulate(page: Page, script: string) {
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   await page.getByRole("link", { name: "Geliştirici araçları" }).click();
   await page.locator(`button[data-script="${script}"]`).click();
 }
@@ -87,7 +94,7 @@ test("B7: an injection attempt never yields a sendable discount", async ({ page 
 
 test("a reply sent through a timeout is checked, then confirmed by the echo", async ({ page }) => {
   await signInToWorkspace(page, OWNER, GYM);
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   await page.getByRole("link", { name: "Geliştirici araçları" }).click();
   await page.getByLabel("İşlem").selectOption("send");
   await page.getByLabel("Hata").selectOption("timeout_after_success");

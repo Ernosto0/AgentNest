@@ -29,4 +29,8 @@ done
 
 # RunAs-group sudo policy differs between runners. Drop root through setpriv instead;
 # retain the original user and supplementary groups, changing only the primary group.
-sudo --preserve-env setpriv --reuid="$(id -u)" --regid="$gid" --init-groups env "PATH=$PATH" "$@"
+# sudo resets the environment on hosted runners (--preserve-env is ignored, so HOME would be
+# /root and uv could not create its cache), so re-apply the whole current environment
+# explicitly through env(1).
+mapfile -d '' current_env < <(env -0)
+sudo setpriv --reuid="$(id -u)" --regid="$gid" --init-groups env "${current_env[@]}" "$@"

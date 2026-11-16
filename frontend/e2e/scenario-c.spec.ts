@@ -3,6 +3,7 @@ import {
   SAMPLE_FEED,
   attachImage,
   expectNoHorizontalScroll,
+  goToMore,
   hasHorizontalScroll,
   localFields,
   navLink,
@@ -30,7 +31,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function openPricing(page: Page) {
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   // Exact: a command result may also show an "İşletme bilgilerini aç" link.
   await page.getByRole("main").getByRole("link", { name: "İşletme bilgileri", exact: true }).click();
   await page.getByRole("link", { name: /Fiyatlar/ }).click();
@@ -41,7 +42,7 @@ test("C1/C2: a price command is confirmed and becomes a new fact version with it
   page,
 }) => {
   await signInToWorkspace(page, OWNER, GYM);
-  await expect(page.getByTestId("ai-mode")).toHaveText("Çevrimdışı demo yapay zekâsı");
+  await expect(page.getByTestId("ai-mode")).toContainText("Çevrimdışı yapay zekâ");
   expect(await hasHorizontalScroll(page)).toBe(false);
 
   await say(page, "Aylık üyelik artık 7.000 TL");
@@ -111,7 +112,7 @@ test("a request to publish is refused with a pointer to Content and nothing to a
 test("a question is answered from the verified fact", async ({ page }) => {
   await signInToWorkspace(page, OWNER, GYM);
   await say(page, "Aylık üyelik ne kadar?");
-  await expect(page.getByTestId("command-result")).toContainText("Aylık üyelik: 6.000 ₺ / ay", {
+  await expect(page.getByTestId("command-result")).toContainText("Aylık üyelik bilgisi şu anda 6.000 ₺ / ay olarak kayıtlı", {
     timeout: 15_000,
   });
 });
@@ -151,7 +152,7 @@ test("a staff confirmation becomes a suggestion for the owner, not a change", as
 
 test("A6: pasted text yields suggestions with excerpts and changes no fact", async ({ page }) => {
   await signInToWorkspace(page, OWNER, GYM);
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   await page.getByRole("main").getByRole("link", { name: "İşletme bilgileri", exact: true }).click();
 
   await page.getByTestId("open-paste-extract").click();

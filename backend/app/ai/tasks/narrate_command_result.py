@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.ai.prompt import data_section, json_section
 from app.ai.runner import TaskDefinition
-from app.commands.narrator import narrate_fallback, validate_metrics_grounding
+from app.core.narrator import narrate_fallback, validate_metrics_grounding
 from app.integrations.llm.base import LLMMessage
 from app.integrations.llm.fake import fake_implementation
 
@@ -79,7 +79,6 @@ def _fake_narrate_command_result(
         user_locale=task_input.user_locale,
         user_query=task_input.user_query,
     )
-    if not reply:
-        # Generic fallback
-        reply = f"Operation completed: {task_input.message_key}"
-    return NarrateCommandResultOutput(reply_text=reply)
+    # No sentence for this key: return an empty narration, so the caller keeps the localized
+    # catalog text instead of showing a raw message key to the owner.
+    return NarrateCommandResultOutput(reply_text=reply or "")

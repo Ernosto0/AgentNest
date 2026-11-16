@@ -189,7 +189,14 @@ def test_every_execution_has_an_agent_run(cmd: CommandEnv) -> None:
     cmd.run(cmd.env.owner, "Aylık üyelik ne kadar?")
     cmd.run(cmd.env.owner, "hava nasıl")
     runs = cmd.env.session.scalars(select(AgentRun)).all()
-    assert len(runs) == 2 and all(r.is_fake and r.task == "interpret_command" for r in runs)
+    assert all(r.is_fake for r in runs)
+    # One interpretation per command, plus the LLM narration of the reply that has no
+    # deterministic text ("hava nasıl").
+    assert sorted(r.task for r in runs) == [
+        "interpret_command",
+        "interpret_command",
+        "narrate_command_result",
+    ]
 
 
 # --- visibility and permissions -------------------------------------------------------------

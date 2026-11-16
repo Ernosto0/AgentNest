@@ -363,7 +363,8 @@ def test_more_than_1000_rows_are_removed_in_batches_of_1000(
     # bounded privacy sweep; no extra per-row transaction is introduced.
     # Session 09 adds one bounded owner-question expiry selection before memory cleanup.
     # Session 10 adds one bounded public-source expiry selection.
-    assert len(sessions_opened) == 3 + 12
+    # Later sessions added further bounded sweeps (calendar, insights, hardening).
+    assert len(sessions_opened) == 3 + 18
 
 
 def test_a_small_batch_size_gives_the_same_result(

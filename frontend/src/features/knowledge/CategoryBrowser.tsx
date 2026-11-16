@@ -83,7 +83,7 @@ export function CategoryBrowser({
                 <h3 id={`knowledge-group-${group.id}`} className="text-xs font-semibold tracking-wide text-secondary uppercase">
                   {t(`knowledge.group.${group.id}.title`)}
                 </h3>
-                <p className="text-xs text-secondary/80">{t(`knowledge.group.${group.id}.hint`)}</p>
+                <p className="text-xs text-secondary">{t(`knowledge.group.${group.id}.hint`)}</p>
               </div>
               <ul aria-label={t(`knowledge.group.${group.id}.title`)} className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
                 {group.categories.map((category) => {
@@ -178,7 +178,7 @@ function SearchResults({
                   <span className="line-clamp-2 text-metadata [overflow-wrap:anywhere] whitespace-pre-line text-secondary">
                     {hit.kind === "fact" ? hit.fact.display : pickLabel(hit.item.description, i18n.language)}
                   </span>
-                  <span className="text-xs text-secondary/80">{t(`knowledge.category.${category}`)}</span>
+                  <span className="text-xs text-secondary">{t(`knowledge.category.${category}`)}</span>
                 </span>
                 <ChevronRightIcon aria-hidden="true" className="mt-1 shrink-0 text-lg text-secondary/50 group-hover:text-primary" />
               </Link>

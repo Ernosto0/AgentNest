@@ -5,6 +5,7 @@ import {
   chooseLanguage,
   expectNoHorizontalScroll,
   navLink,
+  openSettings,
   ownerSetup,
   reseedDemo,
   resetLocale,
@@ -41,8 +42,8 @@ const SCREENS: Screen[] = [
   {
     name: "Home",
     path: "",
-    tr: { heading: "Ana sayfa", text: "Sizi bekleyenler" },
-    en: { heading: "Home", text: "Waiting for you" },
+    tr: { heading: "Merhaba, Demo Sahip", text: "Sizi bekleyenler" },
+    en: { heading: "Hello, Demo Sahip", text: "Waiting for you" },
   },
   {
     name: "Inbox",
@@ -77,8 +78,8 @@ const SCREENS: Screen[] = [
   {
     name: "Activity",
     path: "/more/activity",
-    tr: { heading: "Etkinlik", text: "en yeniden eskiye" },
-    en: { heading: "Activity", text: "newest first" },
+    tr: { heading: "Etkinlik", text: "gün gün neler olduğu" },
+    en: { heading: "Activity", text: "day by day" },
   },
   {
     name: "Notifications",
@@ -143,10 +144,9 @@ test("X3: tr to en to tr on every main screen, with no raw keys on screen", asyn
   for (const screen of SCREENS) await expectScreen(page, screen, "tr", base);
 
   // The switch itself, in the Settings screen (the choice is saved on the account).
-  await navLink(page, "Daha fazla").click();
-  await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
+  await openSettings(page);
   await chooseLanguage(page, "English");
-  await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
   await expect(navLink(page, "Inbox")).toBeVisible();
 
   for (const screen of SCREENS) await expectScreen(page, screen, "en", base);
@@ -154,7 +154,7 @@ test("X3: tr to en to tr on every main screen, with no raw keys on screen", asyn
   // And back: the Turkish strings return.
   await page.goto(`${base}/more/settings`);
   await chooseLanguage(page, "Türkçe");
-  await expect(page.getByRole("heading", { name: "Dil" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Arayüz dili" })).toBeVisible();
   await expect(navLink(page, "Gelen kutusu")).toBeVisible();
   for (const screen of SCREENS) await expectScreen(page, screen, "tr", base);
 });
