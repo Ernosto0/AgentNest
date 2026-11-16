@@ -17,10 +17,12 @@ from sqlalchemy.orm import Session
 from app.core.db import clear_tenant_context, set_tenant_context
 from app.notifications.models import PushSubscription
 from tests.factories import workspace_with_members
+from tests.helpers.roles import ensure_runtime_roles
 
 
 @contextlib.contextmanager
 def as_role(session: Session, role: str) -> Iterator[None]:
+    ensure_runtime_roles(session)  # a fresh cluster (CI) has no runtime roles yet
     session.execute(text(f"SET LOCAL ROLE {role}"))
     session.execute(text("SET LOCAL search_path = public, pg_temp"))
     try:
@@ -44,6 +46,7 @@ def subscription(workspace_id: uuid.UUID, user_id: uuid.UUID, endpoint: str) -> 
 
 @pytest.mark.invariant("INV-01")
 def test_the_table_has_forced_rls_and_the_tenant_policy(db_session: Session) -> None:
+    ensure_runtime_roles(db_session)  # grants exist only once the roles are provisioned
     row = db_session.execute(
         text(
             "SELECT relrowsecurity, relforcerowsecurity FROM pg_class "
@@ -70,7 +73,7 @@ def test_the_table_has_forced_rls_and_the_tenant_policy(db_session: Session) -> 
             )
         ).scalars()
     )
-    assert {"agentnest_app", "agentnest_worker"} <= grants or not grants  # roles are optional
+    assert {"agentnest_app", "agentnest_worker"} <= grants
 
 
 @pytest.mark.invariant("INV-01")
