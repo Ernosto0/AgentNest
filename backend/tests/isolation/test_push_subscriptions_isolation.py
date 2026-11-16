@@ -22,7 +22,7 @@ from tests.helpers.roles import ensure_runtime_roles
 
 @contextlib.contextmanager
 def as_role(session: Session, role: str) -> Iterator[None]:
-    ensure_runtime_roles(session)  # a fresh cluster (CI) has no runtime roles yet
+    ensure_runtime_roles(session)
     session.execute(text(f"SET LOCAL ROLE {role}"))
     session.execute(text("SET LOCAL search_path = public, pg_temp"))
     try:
@@ -46,7 +46,6 @@ def subscription(workspace_id: uuid.UUID, user_id: uuid.UUID, endpoint: str) -> 
 
 @pytest.mark.invariant("INV-01")
 def test_the_table_has_forced_rls_and_the_tenant_policy(db_session: Session) -> None:
-    ensure_runtime_roles(db_session)  # grants exist only once the roles are provisioned
     row = db_session.execute(
         text(
             "SELECT relrowsecurity, relforcerowsecurity FROM pg_class "
@@ -65,6 +64,7 @@ def test_the_table_has_forced_rls_and_the_tenant_policy(db_session: Session) -> 
         .all()
     )
     assert policy == ["tenant_isolation_policy"]
+    ensure_runtime_roles(db_session)
     grants = set(
         db_session.execute(
             text(

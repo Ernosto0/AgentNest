@@ -22,7 +22,7 @@ from tests.helpers.roles import ensure_runtime_roles
 
 @contextlib.contextmanager
 def as_role(session: Session, role: str) -> Iterator[None]:
-    ensure_runtime_roles(session)  # a fresh cluster (CI) has no runtime roles yet
+    ensure_runtime_roles(session)
     session.execute(text(f"SET LOCAL ROLE {role}"))
     session.execute(text("SET LOCAL search_path = public, pg_temp"))
     try:
