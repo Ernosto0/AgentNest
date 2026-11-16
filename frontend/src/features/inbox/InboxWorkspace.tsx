@@ -32,15 +32,17 @@ function useTabCounts(ws: string): Partial<Record<Section, number>> {
 
 /**
  * Comments need a provider grant the Instagram connection may not have (the OAuth scopes include no
- * comment permission yet). The account's own capability flags decide, the same gate the agent uses;
- * while accounts are loading or absent nothing changes.
+ * comment permission yet). The account's own capability flags decide, the same gate the agent uses:
+ * a real connection reports every `comment_*` capability as false. While accounts are loading or
+ * absent, or an account reports no comment flags at all, nothing changes.
  */
 function useCommentsUnavailable(ws: string): boolean {
   const accounts = useSocialAccounts(ws);
   if (!accounts.isSuccess || accounts.data.length === 0) return false;
-  return !accounts.data.some((account) =>
-    Object.entries(account.capabilities).some(([key, on]) => key.startsWith("comment_") && on === true),
-  );
+  return accounts.data.every((account) => {
+    const flags = Object.entries(account.capabilities).filter(([key]) => key.startsWith("comment_"));
+    return flags.length > 0 && flags.every(([, on]) => on !== true);
+  });
 }
 
 function SectionTab({ to, current, icon, label, count, note }: { to: string; current: boolean; icon: ReactNode; label: string; count?: number; note?: string }) {

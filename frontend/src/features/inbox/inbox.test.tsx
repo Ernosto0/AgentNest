@@ -560,7 +560,16 @@ describe("inbox", () => {
       routes({
         [`GET ${BASE}/conversations`]: () => json({ items: [], next_cursor: null }),
         [`GET ${BASE}/social-accounts`]: () =>
-          json({ items: [socialAccount({ provider_kind: "meta", is_simulated: false })], next_cursor: null }),
+          json({
+            items: [
+              socialAccount({
+                provider_kind: "meta",
+                is_simulated: false,
+                capabilities: { messaging: true, comment_read: false, comment_reply: false, comment_moderate: false, comment_private_reply: false },
+              }),
+            ],
+            next_cursor: null,
+          }),
       }),
     );
     renderApp(`/w/${WS_GOLKENT}/inbox?section=comments`);
