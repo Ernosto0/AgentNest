@@ -17,6 +17,7 @@ from app.inbox.webhooks_router import create_webhooks_router
 from app.knowledge.templates import validate_templates
 from app.operations.meta_callbacks_router import router as meta_callbacks_router
 from app.operations.oauth_router import router as oauth_router
+from app.waitlist.cors import WaitlistCORSMiddleware
 
 
 def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
@@ -48,6 +49,8 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
             allow_methods=["*"],
             allow_headers=["*"],
         )
+    if settings.landing_origin_list:  # the landing page posts the waitlist form cross-origin
+        app.add_middleware(WaitlistCORSMiddleware, origins=list(settings.landing_origin_list))
     app.add_middleware(RequestIdMiddleware)  # outermost: wraps every response
 
     register_error_handlers(app)

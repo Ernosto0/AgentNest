@@ -539,6 +539,7 @@ Downgrade to `0018` refuses any agent thread, event, delegation, session, step, 
 | Inbound event payloads | Webhooks | Status only (the retention job nulls `payload`) | Payload nulled after 30 days; rows deleted after 90 (implemented, Phase 6) |
 | Agent run input snapshots | AI runner | No | Nulled after 30 days (implemented, Phase 6; a `queued` or `running` run keeps it) |
 | Audit logs | All services | Never | 2 years in the policy; **no purge in Phase 6** (needs an ADR with the Phase 8 DB privileges) |
+| Pilot waitlist (`waitlist_entries`, migration `0046`; global, no workspace) | Public landing form (`POST /api/v1/waitlist`) | Insert only; a repeated email is ignored | Deleted 365 days after the request (`RETENTION_WAITLIST_DAYS`), or on request (`waitlist-delete`) |
 | Notifications | Services | `read_at` only | Deleted 90 days after they were read; an unread one is never deleted (implemented, Phase 6) |
 | Jobs | Queue | Status | Succeeded/cancelled deleted after 7 days; dead after 90 (implemented, Phase 6) |
 | Report generations / contributing evidence | Reporting | Immutable after creation; regeneration inserts a new generation | Lifetime of workspace; no copied source text or payloads |

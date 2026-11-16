@@ -85,6 +85,7 @@ Notes:
 - Staff manual replies are sent without separate approval, because a human wrote them. Owners can restrict this later (deferred).
 - Role changes and membership removal take effect immediately: sessions remain, but the membership checks fail.
 - **Invites (Phase 6):** an invite token is a random `secrets.token_urlsafe(32)` value shown once at creation; only its SHA-256 is stored (`invites.token_hash`), and it expires after 7 days and is single-use and revocable. Accepting an invite works signed in or signed out (a new user is created and signed in), so `POST /api/v1/invites/accept` is exempt from the CSRF header exactly like login (it is in `CSRF_EXEMPT_PATHS`).
+- **Public waitlist (P-06):** `POST /api/v1/waitlist` takes no session, so it is in `CSRF_EXEMPT_PATHS`. It stores one row per normalized email, is rate-limited per IP and per email (5 per 15 minutes, via the login-throttle table with a `waitlist:` namespace, hashed identifiers only), answers a repeated email exactly like a new one (no enumeration), never logs the email (a 12-character hash tag instead), and emails the operator only after the commit. Cross-origin access for the landing page is limited to this one path, to the origins in `LANDING_ORIGINS`, without credentials; the rest of the API stays same-origin.
 
 ## 4. Prompt injection and untrusted content
 See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**:
@@ -143,6 +144,7 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 | `agent_runs.input_snapshot` | 30 days, then nulled |
 | Message text (`messages.text`, `reply_drafts.text/template/suggestion_text`) | 365 days, then text nulled (metadata kept for reports) |
 | Notifications | 90 days after read |
+| Pilot waitlist (`waitlist_entries`: email, optional business name, Instagram handle, city) | 365 days (`RETENTION_WAITLIST_DAYS`); on request with `python -m app.cli waitlist-delete --email ...` |
 | Jobs | succeeded/cancelled: 7 days; dead: 90 days |
 | Audit logs | 2 years (**not enforced in Phase 6**: audit rows are never deleted, see below) |
 | Daily reports and contributing evidence | lifetime of workspace; immutable aggregates and content-free membership/measurements, never copied message text or webhook payloads |
@@ -154,6 +156,7 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 - `agent_runs.input_snapshot` is nulled after 30 days; a run that is still `queued` or `running` keeps it.
 - `messages.text` (age: `provider_timestamp`, the clock every report uses) and `reply_drafts.text`, `template`, `suggestion_text` (age: `created_at`) are nulled after 365 days. This retention redaction is a narrowly sanctioned privacy write under INV-17/ADR-022 (explicit account-erasure workflows are separately bounded below): the row, its direction, time, flags and links stay, so no report count changes. A report is a stored row of its own and is not touched; regenerating a day after the cleanup counts the same messages, except `integration_errors`, which reads failed `inbound_events` rows and so loses them after 90 days.
 - Notifications are deleted 90 days after they were read; an unread notification is never deleted.
+- `waitlist_entries` (global table fed by the public landing form, migration `0046`) are deleted after `RETENTION_WAITLIST_DAYS` (365); the count is `waitlist_deleted` in the audit entry.
 - Jobs: `succeeded` and `cancelled` after 7 days, `dead` after 90 days (age: `finished_at`). `queued` and `running` jobs are never touched.
 - The run writes one system-level audit entry, `retention.cleanup_ran`, whose metadata holds only the row counts of each rule.
 

@@ -33,6 +33,8 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | `GET /readyz` | DB reachable, migrations at head. |
 | `GET /api/v1/meta` | Public non-secret config for the SPA: `{product_name, demo_tools_enabled, llm_mode: "fake"\|"real", supported_locales, instagram_providers: ("mock"\|"meta")[], mock_requires_demo_workspace: bool}`. `llm_mode` derives from `LLM_PROVIDER`. Providers are deterministic (`mock`, then `meta`, enabled entries only). Mock requires `workspace.is_demo` in production; production startup also requires permitted simulated workspaces. Outside production mock is allowed on non-demo workspaces even if demo tools are off. `demo_tools_enabled` does not control account eligibility. |
 
+| `POST /api/v1/waitlist` | Public, no session, exempt from `X-CSRF-Token` (`CSRF_EXEMPT_PATHS`). `{email, business_name?, category?, instagram_handle?, city?, locale?: "tr"\|"en"}` → 202 `{status: "received"}`. Email is normalized (trimmed, lower-cased) and validated; unknown fields → 422. Idempotent per normalized email: a repeated email changes nothing, sends nothing and answers identically. Rate-limited per client IP and per email through the login-throttle table (5 requests per 15 minutes, then 429 `RATE_LIMITED` with `Retry-After`). A new entry emails `OPERATOR_ALERT_EMAIL` after the commit (best effort; a mail failure never fails the request). CORS: only this path answers the origins in `LANDING_ORIGINS`, without credentials. The email is never logged in plain text. |
+
 ### 2.2 Auth and identity (Phase 1; invites Phase 6)
 | Method & path | Request → Response |
 |---|---|
