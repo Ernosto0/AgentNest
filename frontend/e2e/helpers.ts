@@ -71,6 +71,9 @@ export async function goToMore(page: Page) {
     .getByRole("link", { name: /^(Daha fazla|More)$/ });
   if ((await tab.count()) > 0) {
     await tab.click();
+    // Wait for the screen itself: Today also has a "Settings" link in its assistant card, and the
+    // next click must not land on it while the navigation is still in flight.
+    await expect(page).toHaveURL(/\/more\/?$/);
     return;
   }
   const base = /^\/w\/[^/]+/.exec(new URL(page.url()).pathname);
