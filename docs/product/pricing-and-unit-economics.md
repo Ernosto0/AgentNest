@@ -2,6 +2,9 @@
 
 **Purpose:** Define the cost structure (COGS), unit economics, packaging, and pricing tiers for the AgentNest hosted SaaS across both the **Türkiye** (high-touch, TRY) and **Global** (self-service, USD) markets, while respecting the open-source core boundary ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) and open questions ([OQ-01, OQ-06, OQ-09](../research/open-questions.md)).
 
+> [!IMPORTANT]
+> **What is built today (checked against the code, 2026-11-16).** A tier row marked **Planned** is not built and must not be sold or promised to a pilot. Sell only what an owner can use on day one: one Instagram account per workspace, the mobile web app, Telegram owner control, Turkish and English replies, grounded DM drafts with approval, scheduled posts and the daily report. Plans, per-plan quotas and billing do not exist in the code yet (no plan field, no monthly reply counter), so every limit below (replies per month, seats, posts per month, per-plan retention, trial reply cap) is a pricing design that is **not enforced**; pilots are managed by hand (§6, stage 1). The findings per feature are in [§8](#8-what-the-code-supports-today-p-19-check).
+
 ---
 
 ## 1. Pricing Philosophy & Value Anchor
@@ -77,12 +80,12 @@ AgentNest is architected as a lean modular monolith ([ADR-001](../architecture/d
 | Channel / API | Provider Fee | Notes & Cost Optimization |
 |---|---|---|
 | **Instagram Graph API** (DMs, Comments, Publishing) | **\$0.00** | Free. Rate-guarded at 50 publishes/day (`PUBLISH_DAILY_LIMIT=50`). |
-| **Mobile Web App (PWA)** | **\$0.00** | Primary interface; zero per-notification cost. |
+| **Mobile Web App** | **\$0.00** | Primary interface; zero per-notification cost. The app is a responsive website; installing it as a PWA (manifest, push) is **planned** (F-01). |
 | **Telegram Bot API** (Phase 9 Owner Channel) | **\$0.00** | 100% free inline approval buttons, media uploads, and alerts. |
-| **WhatsApp Business Cloud API** (Optional Owner Channel) | **\$0.00** inside 24h window<br>**~\$0.005–\$0.04** per utility template outside window | Per [platform-capabilities.md §2](../research/platform-capabilities.md), replies and utility messages sent **within 24 hours of an owner's message/button tap are free**. Only proactive utility templates sent >24h after the owner's last interaction incur Meta's per-message fee (~\$0.50–\$2.50/mo per active owner). |
+| **WhatsApp Business Cloud API** (Optional Owner Channel, **planned**: not built) | **\$0.00** inside 24h window<br>**~\$0.005–\$0.04** per utility template outside window | Per [platform-capabilities.md §2](../research/platform-capabilities.md), replies and utility messages sent **within 24 hours of an owner's message/button tap are free**. Only proactive utility templates sent >24h after the owner's last interaction incur Meta's per-message fee (~\$0.50–\$2.50/mo per active owner). |
 
 > [!IMPORTANT]
-> **WhatsApp Margin Protection Rule:**
+> **WhatsApp Margin Protection Rule (applies once the WhatsApp owner channel is built; today it is planned):**
 > Keep **Web + Telegram** in the base Starter tier (\$0 messaging COGS), and include **WhatsApp Owner Control** in the **Growth / İşletme** tier. Additionally, sending the daily 21:00 summary with a quick-reply button (*"Günü Onayla"*) naturally refreshes the 24-hour WhatsApp service window each day, keeping daytime approval cards at **\$0.00** Meta fee.
 
 ---
@@ -122,17 +125,17 @@ Target: Local studios, gyms, salons, cafés, and clinics in Bucak, Burdur, and A
 |---|---|---|---|
 | **Monthly Price (Monthly Billing)** | **1.490 ₺ / ay** | **2.490 ₺ / ay** | **4.490 ₺ / ay** |
 | **Annual Price (2 Months Free)** | **1.240 ₺ / ay** *(14.900 ₺/yıl)* | **2.075 ₺ / ay** *(24.900 ₺/yıl)* | **3.740 ₺ / ay** *(44.900 ₺/yıl)* |
-| **Connected Instagram Accounts** | 1 Profesyonel Hesap | 1 Profesyonel Hesap | 3 Profesyonel Hesaba Kadar |
+| **Connected Instagram Accounts** | 1 Profesyonel Hesap | 1 Profesyonel Hesap | 3 Profesyonel Hesaba Kadar (**Planned**: bugün çalışma alanı başına 1 hesap) |
 | **Team Members (`owner`/`manager`/`staff`)** | 2 Kullanıcı (Sahip + 1 Personel) | 5 Kullanıcı | 15 Kullanıcı |
 | **Verified Business Knowledge Ledger** | Sınırsız bilgi kartı + Fiyat doğrulayıcı | Sınırsız bilgi kartı + Fiyat doğrulayıcı | Sınırsız + Şubeler arası şablon |
 | **AI DM Replies & Drafts** | **500 yanıt / ay** | **2.500 yanıt / ay** | **7.500 yanıt / ay** |
-| **Comment Automation ("Fiyat?" → Özel Yanıt)** | — | **Dahil** (Yorum yönetimi + DM'den özel yanıt) | **Dahil** |
+| **Comment Automation ("Fiyat?" → Özel Yanıt)** | — | **Planned**: gerçek hesapta henüz çalışmaz (Yorum yönetimi + DM'den özel yanıt) | **Planned** |
 | **Autonomous Account Agent (Phase 7.5)** | Temel (Taslak + Düşük riskli oto-yanıt) | **Tam Otonom Ajan** (Müşteri hafızası, kişilik, sahibiyle soru-cevap) | **Tam Otonom Ajan** + Öncelikli kota |
 | **Scheduled Posts & Stories** | 15 paylaşım / ay | 50 paylaşım / ay | 150 paylaşım / ay (50/gün hesabına kadar) |
 | **Auto-Hold on Price Change** | Dahil | Dahil | Dahil |
-| **Owner Control Channels** | Mobil Web + **Telegram** | Mobil Web + Telegram + **WhatsApp** | Mobil Web + Telegram + **WhatsApp** |
-| **Reply Languages** | Türkçe (`tr`) | Türkçe + İngilizce (`tr`, `en` — turist desteği) | Çok dilli (`tr`, `en` + yakında `ru`, `de`) |
-| **Daily Honest Activity Report** | Günlük özet + 90 gün kayıt | Günlük özet + 1 yıl tam denetim kaydı | Günlük özet + 2 yıl denetim + Dışa aktarım |
+| **Owner Control Channels** | Mobil Web + **Telegram** | Mobil Web + Telegram + **WhatsApp** (**Planned**) | Mobil Web + Telegram + **WhatsApp** (**Planned**) |
+| **Reply Languages** | Türkçe (`tr`) | Türkçe + İngilizce (`tr`, `en` — turist desteği) | `tr`, `en` (`ru`, `de` **Planned**) |
+| **Daily Honest Activity Report** | Günlük özet + 90 gün kayıt (plan başına süre **Planned**) | Günlük özet + 1 yıl tam denetim kaydı (plan başına süre **Planned**) | Günlük özet + 2 yıl denetim + Dışa aktarım (**Planned**: bugün yalnızca tek müşteri/konuşma dışa aktarımı) |
 | **Onboarding & Support** | Hızlı metin yapıştırma + E-posta/Destek | **30 dk görüntülü birlikte kurulum** + WhatsApp destek hattı | **Birebir kurulum** + Öncelikli SLA desteği |
 
 ### 3.3 Assisted Setup Fee ("Anahtar Teslim Kurulum")
@@ -149,19 +152,22 @@ For the global English-speaking market ([idea.md §2.2](../idea.md)), onboarding
 |---|---|---|---|
 | **Monthly Price** | **\$29 / mo** | **\$59 / mo** | **\$119 / mo** |
 | **Annual Price (~20% off)** | **\$24 / mo** *(\$288/yr)* | **\$49 / mo** *(\$588/yr)* | **\$99 / mo** *(\$1,188/yr)* |
-| **Instagram Professional Accounts** | 1 Account | 1 Account | Up to 3 Accounts |
+| **Instagram Professional Accounts** | 1 Account | 1 Account | Up to 3 Accounts (**Planned**: 1 per workspace today) |
 | **Workspace Seats (`owner`/`manager`/`staff`)** | 2 Seats | 5 Seats | 15 Seats |
 | **AI DM Replies & Drafts** | **500 / mo** | **2,500 / mo** | **10,000 / mo** |
-| **Comment Moderation & Private Replies** | — | **Included** | **Included** |
+| **Comment Moderation & Private Replies** | — | **Planned**: not working on real accounts yet | **Planned** |
 | **Phase 7.5 Account Agent & Customer Memory** | Standard (Grounded drafts + FAQ auto-reply) | **Full Account Agent** (Multi-turn memory, persona, owner Q&A) | **Full Account Agent** |
 | **Scheduled Feed & Story Posts** | 20 / mo | Unlimited *(up to Meta 50/24h limit)* | Unlimited *(up to Meta 50/24h limit)* |
 | **Verified Fact Ledger & Claim Validator** | Included | Included | Included |
 | **Auto-Hold Scheduled Posts on Price Change** | Included | Included | Included |
-| **Owner Notification & Approval Channels** | Mobile Web + **Telegram** | Mobile Web + Telegram + **WhatsApp** | Mobile Web + Telegram + **WhatsApp** |
-| **Reply Languages** | 1 Language (`en` or `tr`) | Bilingual (`en` + `tr`) | All supported languages |
-| **Audit Log & Message Retention** | 90 days | 365 days | 2 years + JSON/CSV data export |
+| **Owner Notification & Approval Channels** | Mobile Web + **Telegram** | Mobile Web + Telegram + **WhatsApp** (**Planned**) | Mobile Web + Telegram + **WhatsApp** (**Planned**) |
+| **Reply Languages** | 1 Language (`en` or `tr`) | Bilingual (`en` + `tr`) | `en` + `tr` (more languages, e.g. `ru`, `de`: **Planned**) |
+| **Audit Log & Message Retention** | 90 days | 365 days | 2 years + JSON/CSV data export (**Planned**: only per-customer/per-conversation export today) |
 
 ### Trial & Overage Policy (Global & Türkiye)
+
+> **Planned, not built.** There is no monthly reply counter, no trial cap, no 80%/100% usage notification and no grace buffer. Today the only usage limit is the daily model-call cap per workspace (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`). Do not promise quota warnings to pilots.
+
 1. **14-Day Free Trial (Self-Service):** Users can explore the full simulated workspace immediately with zero credentials (`is_simulated`), paste their bio/price list, and connect their real Instagram account for a 14-day trial (capped at 100 live AI replies during trial).
 2. **Soft Overages (No Surprise Bills):** Small businesses hate unexpected usage invoices. If a workspace reaches 100% of its monthly AI reply quota:
    - We send an owner notification at **80%** and **100%** usage.
@@ -177,10 +183,10 @@ Per [ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.
 | Capability | Self-Hosted Open-Source Core | AgentNest Hosted SaaS |
 |---|---|---|
 | **Price** | Free (bring your own VPS, S3, OpenAI key) | **₺1,490–₺4,490/mo** or **\$29–\$119/mo** |
-| **Meta App Review & Business Verification** | **Self-hoster must apply**, submit screencasts, verify a legal business entity with Meta, and maintain compliance | **Instant 1-click OAuth** via AgentNest's verified Meta App |
+| **Meta App Review & Business Verification** | **Self-hoster must apply**, submit screencasts, verify a legal business entity with Meta, and maintain compliance | **Instant 1-click OAuth** via AgentNest's verified Meta App (after Meta App Review is granted; pilots use tester roles until then) |
 | **WhatsApp & Telegram Bot Setup** | Self-hoster must register bots, webhooks, and Meta Cloud API numbers | **Pre-configured & managed** |
 | **Hosting, TLS, Postgres & S3 Media** | Self-managed Docker Compose, SSH deploys, S3 buckets | **Fully managed**, zero maintenance |
-| **Encrypted Off-Site Backups & Restore Drills** | Self-hoster configures `BACKUP_ENCRYPTION_KEY` & S3 | **Automated nightly AES-256-GCM backups** (35-day retention) |
+| **Encrypted Off-Site Backups & Restore Drills** | Self-hoster configures `BACKUP_ENCRYPTION_KEY` & S3 | **Automated nightly AES-256-GCM backups** (35-day retention; the tooling exists, scheduling it on Railway is still open, P-08) |
 | **Assisted Onboarding & Support** | Community docs only | **30-minute assisted setup** + WhatsApp/Email support |
 
 > **Key Takeaway:** For a non-technical Pilates studio, salon, or café owner, completing Meta App Review and managing a Linux VPS with PostgreSQL backups is a non-starter. Even for technical agencies, Meta App Review + Business Verification takes weeks, making the **\$29–\$59/mo** hosted plan vastly cheaper than their own engineering time.
@@ -212,3 +218,19 @@ Assuming **Stage S4 Infrastructure** fixed costs of **~\$120/month** (VPS/Railwa
 | **15 Pilot Studios** | 10 Kurucu (₺990) + 5 İşletme (₺2,490) | **~\$650 / mo** (₺22,350) | ~\$175 / mo | **+\$475 / mo** (~₺16,300) | **73%** |
 | **50 TR Businesses** | 20 Başlangıç + 25 İşletme + 5 Stüdyo | **~\$3,320 / mo** (₺114,500) | ~\$360 / mo | **+\$2,960 / mo** (~₺102,000) | **89%** |
 | **100 TR + 100 Global** | 100 TR (avg ₺2,100) + 100 Global (avg \$48) | **~\$10,900 / mo** (~₺375,000) | ~\$1,150 / mo | **+\$9,750 / mo** (~₺335,000) | **89.4%** |
+
+---
+
+## 8. What the code supports today (P-19 check)
+
+Checked against the code on 2026-11-16. "Planned" in the tables above means the finding is "not built" or "built but not usable on a real account".
+
+| Tier feature | Finding in the code | Status |
+|---|---|---|
+| WhatsApp owner channel | `backend/app/integrations/channels/registry.py` registers only Telegram. The only WhatsApp code is a text formatter (`format_command_for_whatsapp` in `channels/formatting.py`) that nothing calls; there is no adapter, webhook, link flow or number registration. | Planned |
+| Up to three Instagram accounts | `social_accounts` has a unique partial index `uq_social_accounts_active_workspace`: one non-disconnected account per workspace. A second connection is refused by the database. | Planned (needs a schema change) |
+| Data export | Owner-only per-conversation and per-customer JSON export exists (`/workspaces/{ws}/conversations/{id}/export`, customer export; `app/operations/data_rights.py`) as a data-rights tool. No whole-workspace or audit-log JSON/CSV export. | Planned (only the narrow data-rights export exists) |
+| Russian and German replies | `SUPPORTED_LOCALES` and `LOCALES` are `("tr", "en")`; reply text templates exist for `tr` and `en` only. `inbox/language.py` detects `de`, `fr`, `es`, `it`, `pt` only to hand those conversations to a person instead of answering in the wrong language. Russian is not even detected. | Planned |
+| Comment automation on real accounts | The OAuth flow requests no comment scope (`SCOPES` in `integrations/instagram/oauth.py`), and `compute_capabilities` sets every `comment_*` capability to false for real connections. Comment tools and the comments queue work on the simulated (mock) provider only. The inbox now shows the Comments tab as "not available yet" on such accounts. Needs `instagram_business_manage_comments` added to the scopes and to Meta App Review. | Planned |
+| Quota warnings (80% and 100%, grace buffer) | No monthly reply counter and no usage notification type exist (`notifications/catalog.py`). Only the daily model-call cap (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`, default 500) and the 50-per-day publish limit are enforced. | Planned |
+| Per-plan limits (replies per month, seats, posts per month, trial cap, retention per plan, plan field, billing) | No plan, subscription or per-workspace quota exists. Retention values are global settings, audit rows are never purged. | Not enforced; manual in pilot stage 1 |
