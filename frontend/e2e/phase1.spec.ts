@@ -4,6 +4,7 @@ import {
   hasHorizontalScroll,
   loginViaUi,
   navLink,
+  openSettings,
   resetLocale,
   workspaceIds,
 } from "./helpers";
@@ -19,7 +20,8 @@ test.afterEach(async ({ request }) => {
 
 test("owner: Turkish shell with simulation banner, English switch, workspace switch, sign out", async ({
   page,
-}) => {
+}, testInfo) => {
+  const phone = testInfo.project.name.startsWith("mobile"); // bottom tabs; desktop has a sidebar
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
   await loginViaUi(page, OWNER);
@@ -33,14 +35,14 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   const banner = page.getByTestId("simulation-banner");
   await expect(banner).toBeVisible();
   await expect(banner).toContainText("Demo çalışma alanı");
-  for (const label of ["Bug\u00fcn", "Gelen kutusu", "İçerik", "Onaylar", "Daha fazla"]) {
+  // "More" is a phone tab; the desktop sidebar lists its destinations instead.
+  for (const label of ["Bugün", "Gelen kutusu", "İçerik", "Onaylar", ...(phone ? ["Daha fazla"] : ["Ayarlar"])]) {
     await expect(navLink(page, label)).toBeVisible();
   }
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
 
   // More → Settings → Language → English: the strings change.
-  await navLink(page, "Daha fazla").click();
-  await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
+  await openSettings(page);
   await expect(page.getByRole("group", { name: "Arayüz dili" })).toBeVisible();
   await chooseLanguage(page, "English");
   await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
@@ -64,8 +66,8 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   await expect(banner).toBeVisible();
 
   // Sign out.
-  await navLink(page, "More").click();
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await openSettings(page); // the account section has the sign-out button
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/); // the session is really gone
@@ -158,8 +160,7 @@ test("every main screen fits a 360x740 phone without horizontal scroll, in both 
   };
   for (const language of ["tr", "en"] as const) {
     if (language === "en") {
-      await navLink(page, "Daha fazla").click();
-      await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
+      await openSettings(page);
       await chooseLanguage(page, "English");
       await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
       expect(await hasHorizontalScroll(page), "en: settings").toBe(false);

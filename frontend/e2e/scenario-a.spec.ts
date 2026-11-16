@@ -1,5 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectNoHorizontalScroll, hasHorizontalScroll, navLink, reseedDemo, signInToWorkspace } from "./helpers";
+import {
+  expectNoHorizontalScroll,
+  goToMore,
+  hasHorizontalScroll,
+  navLink,
+  reseedDemo,
+  signInToWorkspace,
+} from "./helpers";
 
 // Scenario A: business onboarding and knowledge (docs/product/acceptance-criteria.md AC-A1…A5).
 // All strings are the Turkish ones: the demo users' account language is Turkish.
@@ -17,7 +24,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function openKnowledge(page: Page) {
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   await page.getByRole("main").getByRole("link", { name: "İşletme bilgileri" }).click();
   await expect(page.getByRole("heading", { name: "İşletme bilgileri", level: 1 })).toBeVisible();
 }

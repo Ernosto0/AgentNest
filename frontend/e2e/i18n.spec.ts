@@ -5,6 +5,7 @@ import {
   chooseLanguage,
   expectNoHorizontalScroll,
   navLink,
+  openSettings,
   ownerSetup,
   reseedDemo,
   resetLocale,
@@ -143,8 +144,7 @@ test("X3: tr to en to tr on every main screen, with no raw keys on screen", asyn
   for (const screen of SCREENS) await expectScreen(page, screen, "tr", base);
 
   // The switch itself, in the Settings screen (the choice is saved on the account).
-  await navLink(page, "Daha fazla").click();
-  await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
+  await openSettings(page);
   await chooseLanguage(page, "English");
   await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
   await expect(navLink(page, "Inbox")).toBeVisible();

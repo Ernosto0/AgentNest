@@ -3,6 +3,7 @@ import {
   SAMPLE_FEED,
   attachImage,
   expectNoHorizontalScroll,
+  goToMore,
   hasHorizontalScroll,
   localFields,
   navLink,
@@ -30,7 +31,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function openPricing(page: Page) {
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   // Exact: a command result may also show an "İşletme bilgilerini aç" link.
   await page.getByRole("main").getByRole("link", { name: "İşletme bilgileri", exact: true }).click();
   await page.getByRole("link", { name: /Fiyatlar/ }).click();
@@ -151,7 +152,7 @@ test("a staff confirmation becomes a suggestion for the owner, not a change", as
 
 test("A6: pasted text yields suggestions with excerpts and changes no fact", async ({ page }) => {
   await signInToWorkspace(page, OWNER, GYM);
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   await page.getByRole("main").getByRole("link", { name: "İşletme bilgileri", exact: true }).click();
 
   await page.getByTestId("open-paste-extract").click();

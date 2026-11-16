@@ -61,6 +61,29 @@ export function navLink(page: Page, label: string) {
     .getByRole("link", { name: label, exact: true });
 }
 
+/**
+ * Open the "More" screen. On phones it is a bottom tab; the desktop sidebar has no "More" tab
+ * (it lists some destinations directly), so there the screen is opened by its address.
+ */
+export async function goToMore(page: Page) {
+  const tab = page
+    .getByRole("navigation", { name: /^(Ana gezinme|Main navigation)$/ })
+    .getByRole("link", { name: /^(Daha fazla|More)$/ });
+  if ((await tab.count()) > 0) {
+    await tab.click();
+    return;
+  }
+  const base = /^\/w\/[^/]+/.exec(new URL(page.url()).pathname);
+  if (!base) throw new Error(`Not inside a workspace: ${page.url()}`);
+  await page.goto(`${base[0]}/more`);
+}
+
+/** Open the Settings screen (see ``goToMore``). */
+export async function openSettings(page: Page) {
+  await goToMore(page);
+  await page.getByRole("main").getByRole("link", { name: /^(Ayarlar|Settings)$/ }).click();
+}
+
 /** True when the page overflows horizontally (the document is wider than the viewport). */
 export async function hasHorizontalScroll(page: Page): Promise<boolean> {
   return page.evaluate(
@@ -300,7 +323,7 @@ export async function ownerSetup(
 
 /** Open an entry of the More menu by its (Turkish) name. */
 export async function openMore(page: Page, linkName: string | RegExp) {
-  await navLink(page, "Daha fazla").click();
+  await goToMore(page);
   // Exact: the notification bell is also a link named "Bildirimler, N okunmamış bildirim".
   await page.getByRole("main").getByRole("link", { name: linkName, exact: typeof linkName === "string" }).click();
 }
