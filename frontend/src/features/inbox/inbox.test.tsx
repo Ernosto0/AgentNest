@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Conversation, ConversationDetail, ReplyDraft } from "@/api/types";
 import { approval, HASH } from "@/test/aiFixtures";
+import { socialAccount } from "@/test/contentFixtures";
 import { ME, READINESS, WS_GOLKENT, workspace } from "@/test/fixtures";
 import { json, mockApi, type RecordedRequest } from "@/test/mockApi";
 import { renderApp } from "@/test/renderApp";
@@ -552,6 +553,33 @@ describe("inbox", () => {
     const tab = await screen.findByRole("link", { name: "Yorumlar" });
     await waitFor(() => expect(tab).toHaveAccessibleDescription("3 bekleyen"));
     expect(screen.getByRole("link", { name: "Mesajlar" })).not.toHaveAccessibleDescription();
+  });
+
+  it("labels the Comments tab and explains why when the connection has no comment access", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations`]: () => json({ items: [], next_cursor: null }),
+        [`GET ${BASE}/social-accounts`]: () =>
+          json({ items: [socialAccount({ provider_kind: "meta", is_simulated: false })], next_cursor: null }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox?section=comments`);
+    expect(await screen.findByRole("link", { name: "Yorumlar Henüz yok" })).toBeInTheDocument();
+    const note = await screen.findByTestId("comments-unavailable");
+    expect(within(note).getByText("Yorumlar henüz kullanılamıyor")).toBeInTheDocument();
+  });
+
+  it("keeps the Comments list when an account has comment access", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations`]: () => json({ items: [], next_cursor: null }),
+        [`GET ${BASE}/social-accounts`]: () =>
+          json({ items: [socialAccount({ capabilities: { messaging: true, comment_reply: true } })], next_cursor: null }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox?section=comments`);
+    expect(await screen.findByRole("link", { name: "Yorumlar" })).toBeInTheDocument();
+    expect(screen.queryByTestId("comments-unavailable")).not.toBeInTheDocument();
   });
 
   it("teaches what each attention reason means while nothing is selected", async () => {
