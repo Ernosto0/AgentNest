@@ -216,7 +216,7 @@ test("G3: five failed sends make the account unstable (amber banner); a health c
   // Load Home afresh (as the owner would after the notification): the in-page navigation right
   // after the health check sometimes did not render in WebKit for several seconds.
   await page.goto(`/w/${env.workspaceId}`);
-  await expect(page.getByRole("heading", { name: "Ana sayfa", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Merhaba, /, level: 1 })).toBeVisible();
   await expect(page.getByTestId("home-attention")).toBeVisible({
     timeout: 15_000,
   });

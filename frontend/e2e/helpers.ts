@@ -101,7 +101,7 @@ export async function signInToWorkspace(page: Page, email: string, workspaceName
   await page.goto("/login");
   await loginViaUi(page, email);
   await page.getByRole("link", { name: workspaceName }).click();
-  await expect(page.getByRole("heading", { name: /^(Ana sayfa|Home)$/, level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^(Merhaba|Hello), /, level: 1 })).toBeVisible();
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -121,6 +121,10 @@ test.describe("signed in as the owner of the gym", () => {
     await page.goto(`${base}/approvals`);
     await page.locator("[data-approval-id]").first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await check(page, "approval sheet");
+    // A modal sheet hides the page behind it from the accessibility tree, so the page's own
+    // level-1 heading is not there; the sheet's heading says it has rendered.
+    await expect(page.getByRole("dialog").getByRole("heading").first()).toBeVisible();
+    await expectNoHorizontalScroll(page, "approval sheet");
+    await audit(page, "approval sheet");
   });
 });

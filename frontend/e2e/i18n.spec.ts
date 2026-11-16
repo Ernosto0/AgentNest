@@ -41,8 +41,8 @@ const SCREENS: Screen[] = [
   {
     name: "Home",
     path: "",
-    tr: { heading: "Ana sayfa", text: "Sizi bekleyenler" },
-    en: { heading: "Home", text: "Waiting for you" },
+    tr: { heading: "Merhaba, Demo Sahip", text: "Sizi bekleyenler" },
+    en: { heading: "Hello, Demo Sahip", text: "Waiting for you" },
   },
   {
     name: "Inbox",
@@ -77,8 +77,8 @@ const SCREENS: Screen[] = [
   {
     name: "Activity",
     path: "/more/activity",
-    tr: { heading: "Etkinlik", text: "en yeniden eskiye" },
-    en: { heading: "Activity", text: "newest first" },
+    tr: { heading: "Etkinlik", text: "gün gün neler olduğu" },
+    en: { heading: "Activity", text: "day by day" },
   },
   {
     name: "Notifications",

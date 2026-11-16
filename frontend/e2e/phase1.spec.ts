@@ -29,7 +29,7 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   await page.getByRole("link", { name: /Gölkent Fitness & Pilates/ }).click();
 
   // Home shell in Turkish, with the simulation banner.
-  await expect(page.getByRole("heading", { name: "Ana sayfa", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Merhaba, /, level: 1 })).toBeVisible();
   const banner = page.getByTestId("simulation-banner");
   await expect(banner).toBeVisible();
   await expect(banner).toContainText("Demo çalışma alanı");
@@ -89,7 +89,7 @@ test("a deep link asks for sign-in first and then returns to the page", async ({
   await loginViaUi(page, OWNER);
   await expect(page).toHaveURL(new RegExp(`/w/${golkent}/inbox$`));
   await expect(page.getByRole("heading", { name: "Gelen kutusu", level: 1 })).toBeVisible();
-  await expect(page.getByRole("tablist", { name: "Konuşmaları filtrele" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Konuşmaları filtrele" })).toBeVisible();
 });
 
 test("tenant isolation: the other user lists only their workspace and gets 'not found' elsewhere", async ({
