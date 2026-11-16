@@ -62,7 +62,6 @@ export interface ScheduledDay {
   stories: ContentItem[];
   posts: ContentItem[];
   total: number;
-  hasStoryGap: boolean;
   isToday: boolean;
   isTomorrow: boolean;
 }
@@ -105,7 +104,6 @@ export function useScheduledWeek(ws: string, timezone: string) {
       stories,
       posts,
       total: dayItems.length,
-      hasStoryGap: stories.length === 0,
       isToday: dayStr === today,
       isTomorrow: dayStr === tomorrow,
     });

@@ -41,7 +41,7 @@ Workspace switching preserves safe section/list context: inbox/content lists, ap
 
 ### Core daily-work behavior (2026-11-07)
 
-Desktop navigation is Today, Inbox, Content, Approvals; Assistant, Business knowledge, Reports; Activity and Settings. Notifications use the header bell. Phones retain five tabs and a workspace/notifications header; More provides **Go to…** destination search. Keyboard destination search remains available with Ctrl/Cmd+K.
+Desktop navigation is Today, Inbox, Content, Approvals; Assistant, Business knowledge, Reports; Activity and Settings. Notifications use the header bell. Phones retain five tabs and a workspace/notifications header; More provides **Go to page…** destination search. Keyboard destination search remains available with Ctrl/Cmd+K.
 
 Inbox contains **Messages, Comments, Questions**. `/inbox` defaults to Messages; `section` selects a tab. Existing `/more/agent/comments[/ID]` and `/more/agent/questions[/ID]` links retain their paths and select the corresponding Inbox view. At 1200 px and above a 320 px list stays beside the detail; narrower widths use list-to-detail navigation. Back retains route filters and mounted list position. Public comments mount no private message, customer-memory or owner-question views.
 

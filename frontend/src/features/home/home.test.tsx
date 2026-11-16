@@ -238,7 +238,12 @@ describe("Home: upcoming content and failures", () => {
     expect(empty).toHaveTextContent("Planlanmış içerik yok.");
     expect(within(empty).getByRole("button", { name: "Üret" })).toBeInTheDocument();
     expect(screen.getByTestId("week-summary")).toHaveTextContent("Gelecek 7 gün: 0 gönderi · 0 hikaye");
-    await userEvent.setup().click(within(empty).getByRole("button", { name: "Hikaye hazırla" }));
+    // The story prompt appears once for the week, not in the empty card and not per day.
+    expect(within(empty).queryByRole("button", { name: "Hikaye hazırla" })).toBeNull();
+    const prompt = screen.getByTestId("week-story-prompt");
+    expect(prompt).toHaveTextContent("Bu hafta için planlanmış hikaye yok.");
+    expect(screen.getAllByRole("button", { name: "Hikaye hazırla" })).toHaveLength(1);
+    await userEvent.setup().click(within(prompt).getByRole("button", { name: "Hikaye hazırla" }));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
@@ -457,16 +462,60 @@ describe("Home: week calendar", () => {
     const week = await screen.findByTestId("week-strip");
     expect(within(week).getAllByRole("listitem")).toHaveLength(7);
     expect(screen.getByTestId("week-summary")).toHaveTextContent("Gelecek 7 gün: 1 gönderi · 1 hikaye");
-    // Six days have no story; the day with one does not offer another.
-    const gaps = within(week).getAllByRole("button", { name: /Hikaye yok: hikaye hazırla/ });
-    expect(gaps).toHaveLength(6);
+    // A week that has a story makes no prompt; the strip itself holds no buttons at all.
+    expect(screen.queryByTestId("week-story-prompt")).toBeNull();
+    expect(within(week).queryAllByRole("button")).toHaveLength(0);
     expect(within(week).getByText(/1 gönderi, 1 hikaye/)).toBeInTheDocument();
     const list = screen.getByTestId("upcoming-list");
     expect(within(list).getByText("Sabah Hikayesi")).toBeInTheDocument();
     expect(within(list).getAllByText("Hikaye").length).toBeGreaterThan(0);
+  });
 
-    await userEvent.setup().click(gaps[0]!);
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  it("offers the story prompt once when the week has posts but no story", async () => {
+    const soon = new Date(Date.now() + 3600_000).toISOString();
+    const post = contentItem({ id: "c5000000-0000-4000-8000-000000000503", status: "scheduled", title: "Kampanya", scheduled_at: soon });
+    mockApi(routes({ ...reportWith([]), [`GET ${BASE}/content-items`]: () => json({ items: [post], next_cursor: null }) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+    await screen.findByTestId("week-strip");
+    expect(screen.getAllByTestId("week-story-prompt")).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Hikaye hazırla" })).toHaveLength(1);
+    expect(screen.queryByTestId("upcoming-empty")).toBeNull();
+  });
+});
+
+describe("Home: phone layout", () => {
+  const phone = () =>
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("max-width: 767.98px"),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+
+  it("folds the week and the performance card behind their headings on phones", async () => {
+    phone();
+    const acc = socialAccount({ id: "a1000000-0000-4000-8000-000000000001", username: "kadikoy_yoga", status: "connected", is_simulated: true });
+    mockApi(routes({ ...reportWith(FULL_METRICS), ...accounts(acc) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+
+    const upcoming = await screen.findByTestId("home-upcoming");
+    const insights = await screen.findByTestId("insights-performance-card");
+    // What needs the owner stays open: the assistant box and today's numbers are not folded.
+    expect(await screen.findByTestId("agent-status-card")).toBeInTheDocument();
+    expect(screen.queryByTestId("week-strip")).toBeNull();
+    expect(screen.queryByTestId("insights-kpis")).toBeNull();
+
+    const user = userEvent.setup();
+    const weekToggle = within(upcoming).getByRole("button", { name: tr.home.upNext.title });
+    expect(weekToggle).toHaveAttribute("aria-expanded", "false");
+    await user.click(weekToggle);
+    expect(await within(upcoming).findByTestId("week-strip")).toBeInTheDocument();
+    expect(weekToggle).toHaveAttribute("aria-expanded", "true");
+    await user.click(weekToggle);
+    expect(screen.queryByTestId("week-strip")).toBeNull();
+
+    await user.click(within(insights).getByRole("button", { name: tr.home.insights.title }));
+    expect(await within(insights).findByTestId("insights-kpis")).toBeInTheDocument();
   });
 });
 
@@ -602,6 +651,12 @@ describe("Home: instagram insights card", () => {
     expect(within(kpis).getByText("+15%")).toBeInTheDocument();
     // The trend has a table equivalent for assistive technology.
     expect(within(card).getByRole("table", { name: "Günlük Eğilim" })).toBeInTheDocument();
+    // Reach and views each get their own axis, fitted to the data (not both from zero), with both ends labelled.
+    const reach = within(card).getByTestId("trend-reach");
+    const views = within(card).getByTestId("trend-views");
+    expect(reach).toHaveTextContent("Erişim");
+    expect(reach).toHaveTextContent(/^Erişim190130$/);
+    expect(views).toHaveTextContent(/^Görüntülenme330270$/);
 
     // Toggle to 28d
     await userEvent.setup().click(within(card).getByRole("button", { name: "28 Gün" }));

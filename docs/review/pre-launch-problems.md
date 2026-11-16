@@ -155,11 +155,15 @@ Findings P-13 to P-16 are from the 2026-11-09 screenshots; verify before acting.
 
 **Suggested fix.** On phones, keep "waiting for you", the command box and today's three numbers at the top. Collapse the rest behind section headers or move it to the pages that already own it (Content, Reports).
 
+**Status (2026-11-16, PR #3):** done. Redesign commits had already cut the phone page to about 2,900 px with the order waiting items, numbers, assistant box. PR #3 folds upcoming content and Instagram performance behind their headings on phones (about 2,100 px; the Content and Reports links stay visible). Desktop is unchanged.
+
 ### P-14. Seven-day content grid repeats "no story" seven times
 
 **Problem.** Every day cell shows the same "+ no story" prompt, followed by a separate "no story planned" card that says the same thing again. The owner still has to design the story image, so the prompt asks for work the product cannot help with yet.
 
 **Suggested fix.** Show the prompt once for the whole week. Revisit after story template cards exist (F-07).
+
+**Status (2026-11-16, PR #3):** done. The per-day "No story" text was already reduced to a "+" icon and the duplicate card was gone when a plan existed. PR #3 removes the per-day buttons and the second draft button in the empty card; a week with no story shows one prompt. Revisit after F-07.
 
 ### P-15. Instagram performance chart looks flat
 
@@ -167,11 +171,15 @@ Findings P-13 to P-16 are from the 2026-11-09 screenshots; verify before acting.
 
 **Suggested fix.** Scale the axis to the data range instead of starting at zero, or draw each metric as its own small sparkline inside its card.
 
+**Status (2026-11-16, PR #3):** done. Reach and views are two stacked lines, each on its own fitted axis with both ends labelled, so a non-zero baseline is stated. Chosen over per-KPI sparklines because it keeps the shared hover crosshair and the screen-reader table.
+
 ### P-16. Header search label is cut off on desktop
 
 **Problem.** At 1440 px the command-palette trigger reads "Git…" next to the shortcut hint.
 
 **Suggested fix.** Give the trigger a minimum width or drop the label and keep the icon plus shortcut.
+
+**Status (2026-11-16, PR #3):** done. The label was not truncated: "Git…" is the whole Turkish label. It is now "Sayfaya git…" / "Go to page…" with a 240 px minimum width from 1200 px; below that it is icon only.
 
 ### P-17. `index.html` has no favicon, description or share tags
 

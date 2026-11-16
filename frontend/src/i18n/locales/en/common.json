@@ -151,8 +151,7 @@
       "today": "Today",
       "tomorrow": "Tomorrow",
       "dayCounts": "{{posts}} posts, {{stories}} stories",
-      "gapAction": "No story: draft one",
-      "gapLegend": "No story yet"
+      "noStories": "No stories planned for this week."
     },
     "activity": {
       "title": "Agent activity",
@@ -823,7 +822,7 @@
     "expandNavigation": "Expand navigation labels",
     "breadcrumb": "Page context",
     "destinations": "Go to",
-    "openLauncher": "Go to…",
+    "openLauncher": "Go to page…",
     "launcherTitle": "Go to a page",
     "launcherHint": "Find a destination in this workspace. This navigates pages; it does not search records or run commands.",
     "filterDestinations": "Filter destinations",

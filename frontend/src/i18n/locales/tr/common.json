@@ -151,8 +151,7 @@
       "today": "Bugün",
       "tomorrow": "Yarın",
       "dayCounts": "{{posts}} gönderi, {{stories}} hikaye",
-      "gapAction": "Hikaye yok: hikaye hazırla",
-      "gapLegend": "Henüz hikaye yok"
+      "noStories": "Bu hafta için planlanmış hikaye yok."
     },
     "activity": {
       "title": "Asistan hareketleri",
@@ -823,7 +822,7 @@
     "expandNavigation": "Gezinme etiketlerini aç",
     "breadcrumb": "Sayfa konumu",
     "destinations": "Sayfaya git",
-    "openLauncher": "Git…",
+    "openLauncher": "Sayfaya git…",
     "launcherTitle": "Bir sayfaya git",
     "launcherHint": "Bu çalışma alanında bir hedef bulun. Sayfalar arasında gezinir; kayıtlarda arama yapmaz veya komut çalıştırmaz.",
     "filterDestinations": "Hedefleri filtrele",
