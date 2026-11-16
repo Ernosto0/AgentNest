@@ -44,6 +44,16 @@ The test for inclusion: **is it needed to demonstrate the core value loop credib
 - Optional (OQ-01): Telegram owner channel.
 - Phase 7.5: one account agent with explicit action-level delegation, durable multi-turn DM/comment handling, bounded customer memory and personality, owner questions, moderation/private replies and existing image-content tools. Its offline work is independently demonstrable; real comment capabilities remain disabled until evidenced.
 
+### Feature Phase 1: before the first pilot (in scope since 2026-11-15)
+
+Planned in [features-phase-1-before-first-pilot/sessions.md](../implementation/features-phase-1-before-first-pilot/sessions.md); source: [pre-launch-feature-recommendations.md](../review/pre-launch-feature-recommendations.md) §4, step 1. These three exist to remove the two biggest pilot risks: owners not trusting the assistant, and owners not seeing approvals (RK-03).
+
+| Capability | Included scope | Explicitly excluded |
+|---|---|---|
+| **F-02 "Try your assistant" test chat** | The owner (and manager) types as a customer in a sandbox and sees the draft the assistant would produce, its decision (`auto`, `approval_required`, `human_required`, `blocked`), the reason, and the facts used with their verified dates. Works before any Instagram account is connected. Everything is `is_simulated`, is never sent, and never counts in reports, queues, notifications or customer memory. Rate-limited per workspace. Backend in Session 01, screen (last onboarding step and a button on the Assistant page) in Session 02 | Staff access, test chat for comments or content, saving test chats as approved answers, changing draft quality or prompts |
+| **F-01 Installable app and Web Push** (moved here from §4 Deferred) | Web manifest and icons, a push-only service worker (no offline cache), a `web_push` owner channel for approvals, owner questions and failures through the existing delivery policy, per-type opt-in, an iOS "Add to Home Screen" guide. Payloads carry no customer message text | Approve or reject buttons inside a notification, offline mode, a native app |
+| **D-01 Visible "never invents a price" guarantee** | The verified-fact source beside every placeholder-derived value in drafts and approvals (web and Telegram), and an "unverified values sent: 0" line in the daily report computed from claim-validator results | Any change to the claim validator's rules |
+
 ## 4. Deferred (with reason and trigger)
 
 | Feature | Reason for deferral | Revisit trigger |
@@ -59,7 +69,6 @@ The test for inclusion: **is it needed to demonstrate the core value loop credib
 | Multiple Instagram accounts per workspace, agencies | Complexity; not the target segment | Market evidence |
 | CRM, lead pipeline, booking integrations | Scope explosion | Strong pilot demand |
 | Multi-agent / autonomous campaigns | Contradicts the trust model at this stage | Proven trust + concrete use case |
-| PWA install + Web Push | Depends on OQ-01 | After S1 demo |
 | Additional reply languages (ru, de) | Tourism segment later | OQ-11 |
 
 ## 5. Scope guardrails for implementers

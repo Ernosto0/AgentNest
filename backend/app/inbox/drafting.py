@@ -33,6 +33,7 @@ from app.knowledge.approved_answers import AnswerView
 from app.knowledge.claims import ClaimIssue, ClaimReport, length_issue, validate_claims
 from app.knowledge.render import RenderResult, render
 from app.knowledge.service import UsableFact
+from app.knowledge.sources import span_records
 
 MAX_REPLY_BYTES = 1000  # Instagram's text limit for a direct message
 LLM_ERRORS = ("LLM_BUDGET_EXCEEDED", "LLM_OUTPUT_INVALID", "LLM_REFUSED", "LLM_UNAVAILABLE")
@@ -175,16 +176,7 @@ def _validation(checked: _Checked | None, passed: bool) -> dict[str, Any]:
         "passed": passed,
         "issues": [i.to_dict() for i in checked.issues]
         + [{"code": e.code, "span": None, "text": e.key or ""} for e in checked.rendered.errors],
-        "rendered": [
-            {
-                "key": s.key,
-                "fact_id": str(s.fact_id),
-                "version": s.version,
-                "span": [s.start, s.end],
-                "display": s.display,
-            }
-            for s in checked.rendered.spans
-        ],
+        "rendered": span_records(checked.rendered.spans),
     }
 
 

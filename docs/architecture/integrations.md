@@ -144,7 +144,7 @@ Contract and behaviour: [ADR-009](decisions/ADR-009-llm-provider-abstraction.md)
 
 ```python
 class OwnerChannel(Protocol):
-    name: Literal["web", "telegram", "whatsapp"]
+    name: Literal["web", "telegram", "web_push", "whatsapp"]
     def deliver_notification(
         self,
         db: Session,
@@ -207,6 +207,17 @@ sequenceDiagram
 - Commands: `POST /commands`. Results: polled command resource. Notifications: `notifications` table + bell. Approvals: approval screens.
 - `deliver_notification()` is a no-op beyond the stored notification.
 
+### 5.2a Web Push (Feature Phase 1, F-01)
+A phone or browser notification for the owner. `WebPushChannel` (`app.integrations.channels.web_push`) implements `OwnerChannel`; `registry.get_channel("web_push")` imports it lazily, so web-only operation never loads `pywebpush`. Only the registry imports the package (import-linter), only `sender.py` imports `pywebpush`/`py_vapid`, and the package cannot import any module that holds customer text.
+
+- **What is pushed:** `approval.requested` (approvals), `owner_question.requested` and `owner_question.window_closed` (questions), `content.failed`, `reply.failed` and `account.needs_reauth` (failures). The list and the category of each type are `notifications/catalog.py` `PUSH_TYPES`. Anything else stays in the app.
+- **Who gets it:** a user who opted into the type's category (`push_preferences`, off by default; `GET/PUT /…/push-subscriptions/preferences`) and has at least one active device (`push_subscriptions`, registered by the browser through `POST /…/push-subscriptions`). Nobody else in the workspace, and no device of another workspace, is used. A device whose user is no longer an active member is not pushed to.
+- **Flow:** `notify()` calls `push_dispatch.dispatch_web_push` in the notification's own transaction. When the checks above pass, `dispatch_channel_notification` evaluates `delivery_policy` for channel `web_push` (the Telegram quiet-hours window 22:00 to 08:00 in the workspace timezone; critical severity, `account.needs_reauth` and an approval expiring within 2 hours bypass it), writes a `notification_deliveries` row (`pending`, or `skipped_quiet_hours` with nothing sent: a held push is not replayed in the morning, it stays in the in-app list) and, if delivering now, enqueues `deliver_channel_notification`. The worker claims the row, calls `WebPushChannel.deliver_notification` **outside any transaction** (the adapter ends its read transaction before the first send), then records the result.
+- **Result:** delivered when at least one device accepted the push (`last_success_at` is set on those devices). A 404 or 410 from the push service revokes that device (`revoked_at`, audit `push_subscription.revoked` by the system actor with `reason`), so the next notification no longer attempts it. 5xx, 429 and timeouts leave the row `pending` and the job retries with backoff (5, 30, 120 s; three attempts), then `failed` and a dead job. No device, opt-out and membership loss are terminal `failed` rows with a fixed `last_error`. A retry re-sends to devices that already got the push; the shared `tag` makes the device replace rather than stack the notification.
+- **Payload and SSRF rules:** [security-and-privacy.md §7.2](security-and-privacy.md) (no customer text; allowlist, public addresses, no redirects, short timeout). Approve and reject are not available from a push.
+- **Client:** `frontend/public/sw.js` shows the payload (plain text) and opens the same-origin `url`. The opt-in lives in Settings next to Telegram; the app offers it once, after the owner's first approval; on iOS Safari outside an installed app it shows an "Add to Home Screen" guide instead, because iOS delivers pushes only to an installed web app (iOS 16.4 or later).
+- **Not verified offline:** delivery through a real push service to a real Android or iOS device. See the Session 04 report for the manual steps.
+
 ### 5.3 Telegram (Phase 9)
 - **Inbound Endpoint:** `POST /webhooks/telegram` router in `app.api.v1.webhooks`. Enforces `X-Telegram-Bot-Api-Secret-Token` matching `TELEGRAM_WEBHOOK_SECRET` (returns HTTP 401 on mismatch when configured).
 - **Update Deduplication (`INV-06`):** Durable ledger `telegram_updates` (`migration 0040`). Duplicate `update_id` deliveries return status `duplicate` without re-executing actions or dispatching duplicate outbound API calls.
@@ -214,6 +225,8 @@ sequenceDiagram
 - **Outbound Notifications:** Formatted using Telegram HTML parse mode (`<b>`, `<i>`, `<blockquote>`), simulation warning banner (`[SİMÜLASYON]` per `INV-09`), inline action buttons (`act:<token>`), and deep link (`/approvals`).
 - **Media Ingestion (`INV-11`, `AC-3`):** Photos downloaded via `getFile` up to a strict 20 MB ceiling. Files exceeding 20 MB are rejected immediately before storage intake, generating a user alert and an audit record (`media.rejected`). Ingested photos attach to subsequent commands or immediately create draft story items (`ContentItem`, type `story_image`). Free-text captions (e.g. *"bu story'yi 19:00'da paylaş"*) create drafts with schedule proposals that require explicit owner approval (`INV-04`); free text never auto-schedules or publishes directly.
 - **Domain Queries (`AC-2`):** Inbound natural language reporting questions (e.g., *"Bugün kaç DM geldi?"*, *"Bugünkü özet"*) route directly to `get_daily_summary`, returning identical counts and metrics to the web dashboard.
+- **Fact sources in reply approvals (D-01):** the approval message for a reply draft lists, under the proposed reply, one compact line per verified fact the reply quotes: `• <b>6.000 ₺ / ay</b> — from: Monthly membership, verified 2026-11-03` (`kaynak:` / `doğrulandı` for a Turkish recipient; the date is the day in the workspace timezone that the rendered fact version was verified, or "verification date not recorded"). The mapping is the server's (`knowledge/sources.py`, the same one the web draft view uses). All database text is HTML-escaped, a value is clipped to 40 characters and a label to 60, and lines that would take the message over a 3,900-character budget (Telegram's limit is 4,096) are dropped and replaced by "+N more". A reply with no placeholders has no such block. Customer data rules are unchanged (the message already showed the customer's handle and the last inbound text, trimmed to 200 characters).
+- **Daily summary (D-01):** "Bugünkü özet" / "Today's summary" ends with "Replies sent" and "Replies with unverified values sent" from the daily report's metrics ([workflows.md §F.1](workflows.md)); both are shown at zero. The report is not pushed to Telegram on a schedule.
 - **Architectural Isolation (`AC-4`):** Strictly enforced via import linter. Only `app.integrations.channels.registry` and `app.api.v1.webhooks` import `app.integrations.channels.telegram`. Core modules (`app.commands`, `app.approvals`, `app.inbox`, `app.policy`, `app.identity`, etc.) have zero dependencies on the Telegram adapter.
 
 ### 5.4 WhatsApp (deferred, OQ-01)

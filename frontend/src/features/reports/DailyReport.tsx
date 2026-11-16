@@ -107,10 +107,14 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
   });
   // The server decides which sections are worth showing (all-zero ones are left out of its
   // summary); the rows are the metrics with something to say.
-  const sections = report.summary.sections.map((section) => ({
-    ...section,
-    metrics: report.metrics.filter((metric) => metric.section === section.section && hasValue(metric)),
-  }));
+  const guarantee = guaranteeMetrics(report.metrics);
+  const shown = (metric: ReportMetric) => !guarantee || (metric.key !== "replies_sent" && metric.key !== "unverified_values_sent");
+  const sections = report.summary.sections
+    .map((section) => ({
+      ...section,
+      metrics: report.metrics.filter((metric) => metric.section === section.section && hasValue(metric) && shown(metric)),
+    }))
+    .filter((section) => !guarantee || section.metrics.length > 0);
 
   return (
     <>
@@ -139,6 +143,8 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
         </p>
       ) : null}
 
+      {guarantee ? <GuaranteeCard replies={guarantee.replies} unverified={guarantee.unverified} /> : null}
+
       {report.summary.empty ? (
         <EmptyState title={report.summary.text} description={t("reports.emptyHint")} />
       ) : (
@@ -156,6 +162,50 @@ function ReportBody({ report }: { report: NonNullable<ReturnType<typeof useDaily
         ))}</div>
       )}
     </>
+  );
+}
+
+/** The two numbers of the guarantee, or null for a report saved before the metric existed. */
+function guaranteeMetrics(metrics: ReportMetric[]) {
+  const replies = metrics.find((metric) => metric.key === "replies_sent");
+  const unverified = metrics.find((metric) => metric.key === "unverified_values_sent");
+  return replies && unverified ? { replies, unverified } : null;
+}
+
+/**
+ * "Replies sent" and "unverified values sent" (D-01). Both are shown even at zero: a zero is the
+ * point. The numbers come from the server (the claim validator's stored results), never from here;
+ * above zero, the number links to the replies it counts.
+ */
+function GuaranteeCard({ replies, unverified }: { replies: ReportMetric; unverified: ReportMetric }) {
+  const { t, i18n } = useTranslation();
+  const sent = replies.value ?? 0;
+  const bad = unverified.value ?? 0;
+  const line = (metric: ReportMetric, value: number, label: string, tone: string) => {
+    const number = formatValue(value, i18n.language);
+    return (
+      <li className="flex min-h-12 flex-wrap items-center justify-between gap-3 py-2" data-testid={`guarantee-${metric.key}`}>
+        <span className="font-medium text-primary">{label}</span>
+        {value > 0 && metric.link.route ? (
+          <Link to={metric.link.route} className={`${LINK} ${tone}`} aria-label={`${label}: ${number}`}>
+            {number}
+          </Link>
+        ) : (
+          <span className={`type-metric font-semibold ${tone}`}>{number}</span>
+        )}
+      </li>
+    );
+  };
+  return (
+    <Card aria-labelledby="report-guarantee" className="min-w-0 p-5" data-testid="report-guarantee" data-unverified={bad}>
+      <h2 id="report-guarantee" className="pb-1 text-lg font-heading font-bold text-primary">{t("reports.guarantee.title")}</h2>
+      <p className="pb-3 text-body text-secondary border-b border-border/60">{t("reports.guarantee.hint")}</p>
+      <ul className="divide-y divide-border/60">
+        {line(replies, sent, t("reports.metrics.replies_sent"), "text-primary")}
+        {line(unverified, bad, bad > 0 ? t("reports.guarantee.unverifiedSome") : t("reports.guarantee.unverified"), bad > 0 ? "text-danger" : "text-success")}
+      </ul>
+      {bad > 0 ? <p role="status" className="mt-2 text-body font-medium text-danger">{t("reports.guarantee.alert")}</p> : null}
+    </Card>
   );
 }
 

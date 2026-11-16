@@ -6,73 +6,25 @@ dispatches the notification outside database transactions, and records the deliv
 
 from __future__ import annotations
 
-import uuid
-
-from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
-from app.core.clock import Clock
 from app.core.db import set_tenant_context
+from app.core.errors import RetryableError
 from app.core.logging import get_logger
 from app.identity.models import ChannelLink, User, Workspace, WorkspaceMember
 from app.integrations.channels.base import ChannelRecipient, DeliveryResult
 from app.integrations.channels.registry import get_channel
-from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, job_handler
-from app.notifications.delivery_policy import evaluate_delivery_policy
+from app.notifications.delivery_ledger import (  # noqa: F401  (dispatch is re-exported)
+    DeliverChannelNotificationPayload,
+    dispatch_channel_notification,
+)
 from app.notifications.models import (
     DELIVERY_STATUSES,
-    Notification,
     NotificationDelivery,
 )
 
 _log = get_logger("app.notifications.jobs")
-
-
-class DeliverChannelNotificationPayload(BaseModel):
-    """Payload for external owner channel notification delivery."""
-
-    delivery_id: uuid.UUID
-
-
-def dispatch_channel_notification(
-    session: Session,
-    clock: Clock,
-    *,
-    workspace_id: uuid.UUID,
-    notification: Notification,
-    recipient: ChannelRecipient,
-    channel: str = "telegram",
-    channel_link_id: uuid.UUID | None = None,
-    correlation_id: uuid.UUID | None = None,
-) -> NotificationDelivery:
-    """Evaluate delivery policy, record a delivery ledger entry, and enqueue if eligible."""
-    decision = evaluate_delivery_policy(notification, recipient, clock, channel=channel)
-
-    delivery = NotificationDelivery(
-        workspace_id=workspace_id,
-        notification_id=notification.id,
-        recipient_user_id=recipient.user_id,
-        channel=channel,
-        channel_link_id=channel_link_id,
-        status=decision.status,
-        attempt_count=0,
-    )
-    session.add(delivery)
-    session.flush()
-
-    if decision.should_deliver:
-        enqueue(
-            session,
-            "deliver_channel_notification",
-            DeliverChannelNotificationPayload(delivery_id=delivery.id),
-            workspace_id=workspace_id,
-            correlation_id=correlation_id,
-            clock=clock,
-        )
-
-    return delivery
 
 
 @job_handler(
@@ -119,11 +71,13 @@ def deliver_channel_notification(ctx: JobContext) -> None:
             )
         )
         link = session.get(ChannelLink, channel_link_id) if channel_link_id else None
+        # Web and Web Push are tied to the user and their devices, not to a chat link.
+        needs_link = channel_name not in ("web", "web_push")
         if (
             member is None
             or user is None
             or not user.is_active
-            or (channel_name != "web" and (link is None or link.status != "active"))
+            or (needs_link and (link is None or link.status != "active"))
         ):
             delivery.status = "failed"
             delivery.last_error = "recipient_not_member_or_unlinked"
@@ -169,7 +123,14 @@ def deliver_channel_notification(ctx: JobContext) -> None:
             error_message=str(exc),
         )
 
-    # 3. Short transaction: record delivery result
+    # 3. Short transaction: record delivery result. A channel marks a transient failure with
+    # ``metadata["retryable"]`` and a failure that a retry cannot fix (nothing to send to, no
+    # opt-in) with ``metadata["terminal"]``; Telegram sets neither, so it behaves as before.
+    will_retry = (
+        not result.success
+        and bool(result.metadata.get("retryable"))
+        and ctx.attempt < ctx.max_attempts
+    )
     with ctx.session_factory() as session:
         if ctx.workspace_id is not None:
             set_tenant_context(session, ctx.workspace_id)
@@ -180,10 +141,17 @@ def deliver_channel_notification(ctx: JobContext) -> None:
             delivery.status = result.status if result.status in DELIVERY_STATUSES else "delivered"
             delivery.sent_at = result.delivered_at or ctx.clock.now()
             delivery.last_error = None
+        elif will_retry:
+            # A transient failure (push service 5xx, 429, timeout): the row stays pending so the
+            # retry re-claims it; only the last attempt marks it failed.
+            delivery.last_error = result.error_message
         else:
             delivery.status = result.status if result.status in DELIVERY_STATUSES else "failed"
             delivery.last_error = result.error_message
         session.commit()
 
-    if not result.success and result.status == "failed":
+    if not result.success and result.metadata.get("retryable"):
+        # The worker retries with backoff and, on the last attempt, marks the job dead.
+        raise RetryableError("CHANNEL_DELIVERY_RETRY", result.error_message)
+    if not result.success and result.status == "failed" and not result.metadata.get("terminal"):
         raise RuntimeError(f"Channel delivery failed for {delivery_id}: {result.error_message}")

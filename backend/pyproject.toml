@@ -26,6 +26,7 @@ dependencies = [
     "certifi>=2026.10.18",
     "sentry-sdk>=2.0",
     "opentelemetry-api>=1.45.2",
+    "pywebpush>=2.5.0",
 ]
 
 [dependency-groups]
@@ -66,6 +67,10 @@ files = ["app"]
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["pywebpush", "py_vapid"]  # no stubs or py.typed; only the web push sender imports them
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -533,5 +538,61 @@ source_modules = [
 forbidden_modules = ["app.integrations.channels.telegram"]
 allow_indirect_imports = true
 
+[[tool.importlinter.contracts]]
+id = "web-push-registry-only"
+name = "only channel registry imports the web push channel adapter (F-01)"
+type = "forbidden"
+source_modules = [
+    "app.commands",
+    "app.approvals",
+    "app.inbox",
+    "app.policy",
+    "app.identity",
+    "app.knowledge",
+    "app.core",
+    "app.audit",
+    "app.jobs",
+    "app.ai",
+    "app.notifications",
+    "app.operations",
+    "app.content",
+    "app.reporting",
+    "app.activity",
+    "app.retention",
+    "app.api",
+    "app.owner_requests",
+    "app.integrations.channels.base",
+    "app.integrations.channels.telegram",
+]
+forbidden_modules = ["app.integrations.channels.web_push"]
+allow_indirect_imports = true
 
+[[tool.importlinter.contracts]]
+id = "web-push-library-only-in-sender"
+name = "only the web push sender imports pywebpush and py_vapid (F-01)"
+type = "forbidden"
+source_modules = ["app"]
+forbidden_modules = ["pywebpush", "py_vapid"]
+ignore_imports = [
+    "app.integrations.channels.web_push.sender -> pywebpush",
+    "app.integrations.channels.web_push.sender -> py_vapid",
+]
 
+[[tool.importlinter.contracts]]
+id = "web-push-no-customer-text"
+name = "the web push channel never reaches customer text (F-01, security-and-privacy.md)"
+type = "forbidden"
+source_modules = ["app.integrations.channels.web_push"]
+forbidden_modules = [
+    "app.inbox",
+    "app.ai",
+    "app.knowledge",
+    "app.content",
+    "app.commands",
+    "app.approvals",
+    "app.owner_requests",
+    "app.memory",
+    "app.agent",
+    "app.api",
+]
+allow_indirect_imports = true

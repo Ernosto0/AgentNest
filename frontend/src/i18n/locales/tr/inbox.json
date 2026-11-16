@@ -67,6 +67,7 @@
     "draft": {
       "source": "Kaynak: {{label}}, doğrulandı (sürüm {{version}})",
       "sourceUnversioned": "Kaynak: {{label}}, doğrulanmış bilgi",
+      "sourceOn": "Kaynak: {{label}}, doğrulandı {{date}}",
       "reasons": "Neden sizin onayınız gerekiyor",
       "suggestionTitle": "Önerilen metin (gönderilmedi)",
       "useSuggestion": "Yanıtım olarak kullan",
@@ -281,6 +282,17 @@
       "confirmTitle": "Demo sıfırlansın mı?",
       "confirmBody": "Bu çalışma alanındaki her şey silinir ve tohum verisinden yeniden oluşturulur: konuşmalar, içerikler, taslaklar ve değiştirdiğiniz ayarlar. Diğer çalışma alanlarına dokunulmaz.",
       "confirm": "Evet, sıfırla"
+    },
+    "push": {
+      "title": "Anlık bildirim aboneliği (geliştirici testi)",
+      "hint": "Bu tarayıcıyı Web Push için kaydeder; saklanan abonelik kontrol edilebilir. Henüz bir şey gönderilmez.",
+      "subscribe": "Bu cihazı abone et",
+      "unsubscribe": "Bu cihazı kaldır",
+      "unsupported": "Bu tarayıcı anlık bildirim alamıyor (service worker ve Push API gerekir; iPhone'da önce uygulamayı ana ekrana ekleyin).",
+      "disabled": "Sunucuda VAPID anahtarları tanımlı değil, bu yüzden anlık bildirim kapalı.",
+      "denied": "Bu site için bildirimler tarayıcı ayarlarında engellenmiş.",
+      "subscribed": "Abone olundu: {{label}}",
+      "removed": "Bu cihaz kaldırıldı."
     }
   }
 }

@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { Approval } from "@/api/types";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { FactsUsed } from "@/components/FactsUsed";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { actionLabelKey } from "@/features/agent/hooks";
@@ -40,6 +41,8 @@ export function AgentApprovalBody({ approval }: { approval: Approval }) {
           {a.text}
         </div>
       ) : null}
+
+      <FactsUsed facts={a.facts_used ?? []} timeZone={workspace.timezone} />
 
       {a.content ? (
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm break-words rounded-control border border-border bg-surface-subtle p-3.5">

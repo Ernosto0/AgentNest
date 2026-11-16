@@ -30,7 +30,7 @@ const PANEL_ICON: Record<Panel, ReactNode> = {
  */
 export function AgentPage() {
   const { t } = useTranslation();
-  const { workspace } = useCurrentWorkspace();
+  const { workspace, role } = useCurrentWorkspace();
   const accounts = useSocialAccounts(workspace.id);
   const [params, setParams] = useSearchParams();
   const raw = params.get("panel");
@@ -70,6 +70,15 @@ export function AgentPage() {
         <div className="min-w-0 flex-1 basis-80">
           <h1 className="type-page break-words text-primary">{t("agent.title")}</h1>
           <p className="mt-1.5 max-w-prose text-body text-secondary">{t(`agent.intro.${panel}`)}</p>
+          {role !== "staff" ? (
+            <Link
+              to={`/w/${workspace.id}/more/agent/test`}
+              className={`mt-3 inline-flex min-h-11 items-center gap-2 rounded-control border border-action/40 bg-surface px-4 text-body font-semibold text-action hover:bg-assistant ${FOCUS}`}
+            >
+              <ChatIcon aria-hidden="true" />
+              {t("testChat.open")}
+            </Link>
+          ) : null}
         </div>
         <nav aria-label={t("agent.title")} className="w-full md:w-auto">
           <div className="grid grid-cols-4 gap-1 rounded-xl bg-surface-subtle p-1 ring-1 ring-border/70 ring-inset md:flex">

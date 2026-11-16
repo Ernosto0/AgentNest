@@ -14,6 +14,7 @@ import { useConnectMock, useReconnectMock, useSocialAccounts } from "@/features/
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { AccountStatusBadge } from "./AccountStatusBadge";
 import { Channels } from "./Channels";
+import { PushSettings } from "./PushSettings";
 import {
   useCalendarConnections,
   useConnectGoogleCalendar,
@@ -168,6 +169,7 @@ export function Connections() {
       <div className="min-w-0 flex flex-col gap-6">
         <CalendarSection owner={owner} />
         <Channels />
+        <PushSettings />
       </div>
       </div>
     </div>

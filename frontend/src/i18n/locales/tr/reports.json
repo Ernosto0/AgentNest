@@ -17,6 +17,13 @@
     "minutes": "{{value}} dk",
     "noItems": "Bu sayının arkasında kayıt yok",
     "loadMore": "Daha fazla göster",
+    "guarantee": {
+      "title": "Uydurma bilgi yok",
+      "hint": "Asistan fiyat, saat ve iletişim bilgilerini yalnızca sizin doğruladığınız bilgilerden alabilir. Gönderilen her yanıt, sizin yazdıklarınız dahil, kontrol edilir.",
+      "unverified": "Gönderilen doğrulanmamış değer",
+      "unverifiedSome": "Doğrulanmamış değer içeren yanıtlar",
+      "alert": "Hangi yanıtlar olduğunu görmek için sayıya dokunun. Yanıtları kontrol edip bilgiyi ya da ifadeyi düzeltin."
+    },
     "metrics": {
       "inbound_messages": "Gelen mesaj",
       "conversations_with_inbound": "Yeni mesaj gelen konuşma",
@@ -24,6 +31,7 @@
       "replies_sent": "Gönderilen yanıt",
       "replies_sent_auto": "Otomatik gönderilen yanıt",
       "replies_sent_approved": "Onayla gönderilen yanıt",
+      "unverified_values_sent": "Doğrulanmamış değer içeren yanıtlar",
       "replies_sent_by_owner": "Sizin yazdığınız yanıt",
       "native_replies": "Instagram uygulamasında verilen yanıt",
       "escalations": "Size yönlendirilen konuşma",

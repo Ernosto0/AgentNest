@@ -106,6 +106,8 @@ def test_old_snapshot_never_gains_new_metric_keys(env: Env) -> None:
     assert response.json()["definitions_version"] == "1"
     assert response.json()["metrics"][0]["value"] == 7
     assert all(not m["key"].startswith("agent_") for m in response.json()["metrics"])
+    # Nor the guarantee metric: a report saved before it existed is never shown as "0 unverified".
+    assert all(m["key"] != "unverified_values_sent" for m in response.json()["metrics"])
     assert (
         env.call(
             env.owner,
@@ -114,7 +116,7 @@ def test_old_snapshot_never_gains_new_metric_keys(env: Env) -> None:
         ).status_code
         == 404
     )
-    assert DEFINITIONS_VERSION == "2"
+    assert DEFINITIONS_VERSION == "3"
     assert "agent_unknown_now_v1" in BY_KEY
     assert env.session.scalar(select(DailyReport).where(DailyReport.id == snapshot.id)).metrics == {
         "inbound_messages": {"value": 7}

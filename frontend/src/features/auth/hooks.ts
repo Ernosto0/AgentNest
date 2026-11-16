@@ -3,6 +3,7 @@ import { api, setCsrfToken, unwrap } from "@/api/client";
 import { AppError } from "@/api/errors";
 import type { AuthSession, Me, Meta } from "@/api/types";
 import type { Language } from "@/i18n";
+import { forgetThisDevice } from "@/pwa/push";
 
 export const meKey = ["me"] as const;
 export const metaKey = ["meta"] as const;
@@ -48,7 +49,13 @@ export function useLogin() {
 export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation<void, AppError>({
-    mutationFn: () => unwrap<void>(api.POST("/api/v1/auth/logout")),
+    mutationFn: async () => {
+      // Push hygiene first, while the session still works: this phone must not keep buzzing
+      // for someone who has signed out (best effort; it never blocks signing out).
+      const me = queryClient.getQueryData<Me | null>(meKey);
+      if (me) await forgetThisDevice(me.user.id, me.memberships.map((m) => m.workspace_id));
+      await unwrap<void>(api.POST("/api/v1/auth/logout"));
+    },
     onSettled: () => {
       setCsrfToken(null);
       queryClient.clear(); // nothing from this session may linger in memory

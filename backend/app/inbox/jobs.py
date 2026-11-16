@@ -8,11 +8,12 @@ from app.ai.runtime import runner_deps
 from app.core.clock import Clock
 from app.core.config import get_settings
 from app.core.errors import RetryableError
-from app.inbox import expiry, processing, reply_workflow
+from app.inbox import expiry, processing, reply_workflow, sandbox
 from app.inbox.context import DraftContext, DraftSkip, prepare
 from app.inbox.drafting import failed_plan, make_plan
 from app.inbox.models import InboundEvent
 from app.inbox.payloads import (
+    AssistantTestDraftPayload,
     DraftReplyPayload,
     ExpireReplyDraftsPayload,
     ProcessInboundEventPayload,
@@ -127,6 +128,50 @@ def draft_reply(job: JobContext) -> None:
         raise RescheduleJob(
             job.clock.now() + timedelta(seconds=get_settings().reply_debounce_seconds)
         )
+
+
+def _on_test_draft_dead(job: JobContext, error_code: str) -> None:
+    """The model stayed unavailable through every retry: the test chat shows what a real
+    customer would get, a person answers (rule R10)."""
+    payload = job.payload
+    if not isinstance(payload, AssistantTestDraftPayload) or job.workspace_id is None:
+        return
+    with job.session_factory() as session:
+        prepared = sandbox.prepare(session, job.clock, job.workspace_id, payload.turn_id)
+        session.commit()
+    if prepared is None:
+        return
+    with job.session_factory() as session:
+        sandbox.apply_plan(session, job.clock, prepared, failed_plan(prepared, "LLM_UNAVAILABLE"))
+        session.commit()
+
+
+@job_handler(
+    "assistant_test_draft",
+    AssistantTestDraftPayload,
+    max_attempts=3,
+    timeout=DRAFT_TIMEOUT_SECONDS,
+    on_dead=_on_test_draft_dead,
+    backoff=(10, 60, 300),
+)
+def assistant_test_draft(job: JobContext) -> None:
+    """The owner's test chat (F-02): the real drafting pipeline, a sandbox result. Three phases
+    like ``draft_reply``; the model is called in the middle with **no transaction open**. Nothing
+    is approved, queued for sending, notified or remembered (see ``inbox.sandbox``)."""
+    payload = job.payload
+    if not isinstance(payload, AssistantTestDraftPayload) or job.workspace_id is None:
+        return
+    with job.session_factory() as session:  # [T1] read-only
+        prepared = sandbox.prepare(session, job.clock, job.workspace_id, payload.turn_id)
+        session.commit()
+    if prepared is None:  # reset, answered or gone: nothing to do
+        return
+    plan = make_plan(  # no transaction is open here
+        runner_deps(job.session_factory, job.clock), prepared, job.correlation_id, job.job_id
+    )
+    with job.session_factory() as session:  # [T3]
+        sandbox.apply_plan(session, job.clock, prepared, plan)
+        session.commit()
 
 
 @job_handler("expire_reply_drafts", ExpireReplyDraftsPayload, max_attempts=1)

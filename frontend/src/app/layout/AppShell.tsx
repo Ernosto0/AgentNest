@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { MagnifierIcon, MenuIcon } from "@/components/icons";
 import { useMeta } from "@/features/auth/hooks";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
+import { PushPrompt } from "@/features/notifications/PushPrompt";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { WorkspaceSwitcher } from "@/features/workspaces/WorkspaceSwitcher";
 import { DestinationLauncher } from "./DestinationLauncher";
@@ -86,6 +87,7 @@ export function AppShell() {
         </div>
       </header>
       <SimulationBanner offline={meta.data?.llm_mode === "fake"} />
+      <PushPrompt />
       <main id="main" tabIndex={-1} data-content-width={context.width} className={`mx-auto w-full min-w-0 flex-1 px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none md:px-6 md:pb-10 min-[1200px]:px-8 ${context.width === "reading" ? "max-w-6xl" : "max-w-[1440px]"}`}>
         <nav aria-label={t("shell.breadcrumb")} className="mb-5 text-metadata text-secondary">
           <ol className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">

@@ -1,0 +1,132 @@
+{
+  "factsUsed": {
+    "title": "Facts used",
+    "line": "from: {{label}}, verified {{date}}",
+    "lineNoDate": "from: {{label}}, verification date unknown",
+    "none": "No saved business facts were used."
+  },
+  "testChat": {
+    "title": "Try your assistant",
+    "intro": "Write the way a customer would. You will see the reply your assistant would give, which facts it used and what would happen next.",
+    "simulatedNote": "Practice only: nothing here is sent to anyone, reaches Instagram or counts in your reports.",
+    "open": "Try your assistant",
+    "back": "Back to the assistant",
+    "staffOnly": "Only owners and managers can try the assistant.",
+    "customerLabel": "You, as a customer",
+    "assistantLabel": "Your assistant",
+    "writing": "Your assistant is writing…",
+    "suggestionsTitle": "Not sure what to write? Tap a question",
+    "emptyTitle": "Ask your assistant something",
+    "emptyHint": "Pick a question below or write your own.",
+    "messageLabel": "Customer message",
+    "placeholder": "For example: What time do you open?",
+    "counter": "{{count}} of {{max}} characters",
+    "send": "Send test message",
+    "sending": "Sending…",
+    "reset": "Start over",
+    "resetting": "Clearing…",
+    "loading": "Loading your test conversation…",
+    "retry": "Try again",
+    "noReply": "The assistant would not send a reply to this message by itself.",
+    "reasonsTitle": "Why",
+    "suggestionTitle": "Wording to start from (not sent)",
+    "suggestionHint": "Highlighted values are not verified, so the assistant would not state them.",
+    "decision": {
+      "auto": {
+        "title": "Would be sent automatically",
+        "detail": "With your current settings the assistant would send this reply by itself."
+      },
+      "approval_required": {
+        "title": "Would wait for your approval",
+        "detail": "You would see this as a draft and decide before anything is sent."
+      },
+      "human_required": {
+        "title": "A person would be asked to answer",
+        "detail": "The assistant would not answer this itself. It would ask you."
+      },
+      "blocked": {
+        "title": "Would not be sent",
+        "detail": "No reply would go out for this message."
+      }
+    },
+    "reasonFallback": "The assistant’s rules asked for a person to check this.",
+    "reason": {
+      "POLICY_REQUIRES_APPROVAL": "Your settings ask you to approve replies before they are sent.",
+      "POLICY_AUTO": "Your settings let the assistant send this kind of reply by itself.",
+      "AUTOMATION_OFF": "Automatic replies are turned off for this topic.",
+      "READINESS_NOT_READY": "Setup is not finished yet, so replies wait for your approval.",
+      "AUTO_RATE_GUARD": "Many automatic replies went out recently, so this one waits for you.",
+      "CONTAINS_PRICING": "The reply contains a price, and your pricing setting asks you to check it.",
+      "CONTAINS_HOURS": "The reply contains opening hours, and your hours setting asks you to check it.",
+      "CONTAINS_LOCATION_CONTACT": "The reply contains an address or contact detail, and your setting asks you to check it.",
+      "CONTAINS_SERVICES": "The reply describes your services, and your services setting asks you to check it.",
+      "CONTAINS_BOOKING": "The reply contains booking details, and your booking setting asks you to check it.",
+      "CONTAINS_PROMOTIONS": "The reply contains a promotion, and your promotions setting asks you to check it.",
+      "CONTAINS_GENERAL_FAQ": "The reply answers a common question, and your setting asks you to check it.",
+      "HUMAN_TAKEOVER": "You are handling this conversation yourself.",
+      "CONTROLLER_CHANGED": "The assistant’s settings changed, so this needs a fresh look.",
+      "LANGUAGE_UNSUPPORTED": "The message is in a language the assistant does not answer yet.",
+      "INTENT_COMPLAINT": "This sounds like a complaint. Complaints are always answered by a person.",
+      "INTENT_REFUND_REQUEST": "This sounds like a refund request. Refunds are always decided by a person.",
+      "INTENT_DISCOUNT_REQUEST": "This sounds like a request for a discount. Discounts are always decided by a person.",
+      "INTENT_SENSITIVE": "This is a sensitive topic, so a person should answer.",
+      "INTENT_UNSUPPORTED": "The assistant is not set up to answer this kind of message.",
+      "FLAG_COMPLAINT": "The message mentions a complaint.",
+      "FLAG_REFUND": "The message mentions a refund.",
+      "FLAG_DISCOUNT": "The message asks for a discount.",
+      "FLAG_LEGAL": "The message touches a legal topic.",
+      "FLAG_HEALTH_SAFETY": "The message touches health or safety.",
+      "FLAG_ABUSIVE": "The message contains abusive language.",
+      "FLAG_PERSONAL_DATA": "The message contains personal data.",
+      "ESCALATION_KEYWORD": "The message contains one of the words you set for handing over to a person.",
+      "MODEL_REQUESTED_HUMAN": "The assistant was not sure how to answer and asked for a person.",
+      "FACT_NOT_USABLE": "The answer needs business information that is missing or not verified yet. The assistant never guesses prices, hours or contact details.",
+      "GROUNDING_FAILED": "The draft contained a value that is not one of your verified facts, so it was held back.",
+      "LLM_UNAVAILABLE": "The assistant could not write a reply right now.",
+      "LLM_BUDGET_EXCEEDED": "The assistant’s daily limit is reached.",
+      "LLM_OUTPUT_INVALID": "The assistant’s answer could not be used.",
+      "LLM_REFUSED": "The assistant declined to answer this message.",
+      "ATTACHMENT_ONLY": "The message has only a photo or a file.",
+      "INJECTION_SUSPECTED": "The message looks like an attempt to give the assistant instructions, so a person should read it."
+    },
+    "quota": {
+      "hour_one": "{{count}} test message left this hour",
+      "hour_other": "{{count}} test messages left this hour",
+      "day_one": "{{count}} test message left today",
+      "day_other": "{{count}} test messages left today",
+      "none": "You have used the test messages for now. Please try again later."
+    },
+    "rateLimited": {
+      "title": "Slow down a little",
+      "body": "You have sent many test messages in a short time. Each one uses the assistant, so there is a limit.",
+      "retry": "Try again in about {{minutes}} min."
+    },
+    "wizard": {
+      "intro": "Your workspace is ready. Try a few customer messages, or skip this and do it later from the Assistant page.",
+      "noKnowledge": "You have not added your business details yet, so most answers will say that you are needed. Add your details next, then try again.",
+      "skip": "Skip for now",
+      "continue": "Continue to business details"
+    },
+    "suggest": {
+      "hours": "What time are you open?",
+      "priceGeneral": "How much does it cost?",
+      "priceItem": "How much is {{item}}?",
+      "location": "Where are you located?",
+      "booking": "How can I book?",
+      "contact": "What is your phone number?",
+      "serviceItem": "Do you offer {{item}}?",
+      "complaint": "I am not happy with my last visit and want to complain.",
+      "category": {
+        "beauty_wellness": "Do you have an appointment free tomorrow?",
+        "food_beverage": "Do you do deliveries?",
+        "retail": "Do you have this in stock?",
+        "fitness": "Can I try a class before I join?",
+        "health_clinic": "Can I get an appointment this week?",
+        "education": "When does the next course start?",
+        "hospitality": "Do you have a room free this weekend?",
+        "services": "Can you give me a quote?",
+        "other": "Can you tell me more about what you offer?"
+      }
+    }
+  }
+}

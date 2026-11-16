@@ -223,6 +223,9 @@ def _prepare(
     )
     if account is None or draft.text is None or draft.approval_id is None:
         return _fail_queued(session, clock, ctx, draft, "SEND_PRECONDITION")
+    if _simulated_to_real(draft, conversation, account):
+        # INV-09: simulated content never reaches a real provider, whatever else is true of it.
+        return _fail_queued(session, clock, ctx, draft, "SIMULATED_TO_REAL_ACCOUNT")
     now = clock.now()
     window_end = (
         conversation.last_inbound_at + MESSAGING_WINDOW if conversation.last_inbound_at else None
@@ -321,6 +324,13 @@ def _prepare(
     )
 
 
+def _simulated_to_real(
+    draft: ReplyDraft, conversation: Conversation, account: SocialAccount
+) -> bool:
+    """A simulated draft or conversation about to go through a real (non-mock) account."""
+    return (draft.is_simulated or conversation.is_simulated) and not account.is_simulated
+
+
 def _get_or_create_operation(
     session: Session,
     clock: Clock,
@@ -329,6 +339,9 @@ def _get_or_create_operation(
     window_end: datetime,
     correlation_id: uuid.UUID | None,
 ) -> Operation:
+    if draft.is_simulated and not account.is_simulated:
+        # The ledger refuses it too: a ``send_reply`` operation is never written for it.
+        raise RuntimeError("a simulated draft cannot be sent through a real account")
     key = f"send_reply:{draft.id}"
     session.execute(
         pg_insert(Operation)

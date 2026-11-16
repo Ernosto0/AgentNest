@@ -582,6 +582,14 @@
       "what": "Instagram'a şu anda ulaşılamıyor.",
       "next": "Otomatik olarak yeniden denenecek."
     },
+    "TEST_CHAT_RATE_LIMITED": {
+      "what": "Kısa sürede çok sayıda deneme mesajı gönderdiniz.",
+      "next": "Biraz bekleyip tekrar deneyin. Her deneme mesajı asistanı kullanır; bu yüzden bir sınır var."
+    },
+    "WEB_PUSH_NOT_CONFIGURED": {
+      "what": "Telefon bildirimleri bu sunucuda henüz kurulu değil.",
+      "next": "AgentNest'i yöneten kişiden bildirimleri açmasını isteyin."
+    },
     "PROVIDER_RATE_LIMITED": {
       "what": "Instagram yavaşlamamızı istedi.",
       "next": "Otomatik olarak yeniden denenecek."
@@ -843,12 +851,13 @@
     "inviteFieldsRequired": "Adınızı, e-posta adresinizi ve parolanızı girin.",
     "existingAccount": "Zaten hesabınız var mı?",
     "noMembershipHint": "Bir çalışma alanı oluşturun veya mevcut bir alana katılmak için sahibinden davet bağlantısı isteyin.",
-    "wizardIntro": "İşletmenizin temel bilgilerini üç adımda hazırlayın.",
+    "wizardIntro": "İşletmenizin temel bilgilerini üç adımda hazırlayın, ardından asistanınızı deneyin.",
     "setupProgress": "Kurulum adımları",
     "steps": {
       "name": "İşletmeniz",
       "category": "İşletme türü",
-      "locale": "Bölge ve dil"
+      "locale": "Bölge ve dil",
+      "try": "Deneme"
     },
     "nameHint": "En fazla 100 karakter. Bu ad çalışma alanında görünür.",
     "nameRequired": "Devam etmek için işletmenizin adını girin.",

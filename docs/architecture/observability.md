@@ -68,6 +68,7 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `ACCOUNT_NEEDS_REAUTH` | — | no | Instagram connection must be renewed / open Instagram connection and reconnect |
 | `ACCOUNT_MISMATCH` | 400 | — | A different Instagram account was authorised / sign in with the original account |
 | `CAPABILITY_MISSING` | — | no | Permission for this action was not granted / reconnect and allow it |
+| `TEST_CHAT_RATE_LIMITED` | 429 | yes | Too many test messages in a short time / wait a little (`Retry-After`); the owner test chat is limited per workspace |
 | `PROVIDER_UNAVAILABLE` | — | yes | Instagram is not reachable / we will retry automatically |
 | `PROVIDER_RATE_LIMITED` | — | yes | Instagram asked us to slow down / we will retry automatically |
 | `PROVIDER_REJECTED` | — | no | Instagram rejected the request (detail) |
@@ -165,7 +166,7 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 | Area | Actions |
 |---|---|
 | Public comments | `comment.source_ingested`, `comment.media_changed` | Same-transaction source/version/state IDs only; public bodies remain in domain tables. |
-| Auth & members | `auth.login`, `auth.logout`, `auth.login_failed` (system-level, no workspace), `workspace.created`, `workspace.updated`, `member.invited`, `member.invite_revoked`, `member.joined`, `member.role_changed`, `member.removed` |
+| Auth & members | `auth.login`, `auth.logout`, `auth.login_failed` (system-level, no workspace), `workspace.created`, `workspace.updated`, `member.invited`, `member.invite_revoked`, `member.joined`, `member.role_changed`, `member.removed`, `push_subscription.created`, `push_subscription.revoked` (F-01; ids only, never the endpoint or keys; revoked by the user, or by the system actor with `reason` `subscription_gone` or an `endpoint_*` code when the push service answered 404/410 or the endpoint can never be allowed) |
 | Knowledge | `fact.created`, `fact.updated`, `fact.verified`, `fact.archived`, `fact.restored`, `fact_candidate.created`, `fact_candidate.accepted`, `fact_candidate.rejected`, `knowledge.extraction_requested` (character count and an injection flag, never the text), `approved_answer.created/updated/archived`, `policy.updated`, `policy.reviewed` |
 | Commands | `command.received`, `command.interpreted`, `command.executed`, `command.failed`, `command.cancelled`, `command.expired` |
 | Approvals | `approval.requested`, `approval.approved`, `approval.granted` (a decision by someone other than the requester that is not a self-approval), `approval.rejected`, `approval.expired`, `approval.cancelled` |

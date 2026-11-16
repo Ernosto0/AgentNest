@@ -21,6 +21,7 @@ from app.inbox.models import Message
 from app.knowledge.claims import length_issue, validate_claims
 from app.knowledge.models import BusinessFact
 from app.knowledge.render import RenderResult, placeholder_keys, render
+from app.knowledge.sources import span_records
 
 
 class FactEvidence(BaseModel):
@@ -72,6 +73,10 @@ class GroundedReply:
     facts: tuple[tuple[uuid.UUID, int], ...] = ()
     customer_source: uuid.UUID | None = None
     errors: tuple[str, ...] = field(default=())
+    # The rendered placeholders (``knowledge.sources.span_records`` form), for the draft's record.
+    rendered: tuple[dict[str, object], ...] = field(default=())
+    # True only for a template reply: the claim validator ran on its text and found nothing.
+    claims_checked: bool = False
 
     @property
     def valid(self) -> bool:
@@ -202,4 +207,9 @@ def validate_reply(
         return GroundedReply(errors=tuple(sorted({issue.code for issue in claims.issues})))
     if length_issue(rendered.text, max_bytes=1000) or not rendered.text.strip():
         return GroundedReply(errors=("REPLY_LENGTH_INVALID",))
-    return GroundedReply(rendered.text, rendered.used)
+    return GroundedReply(
+        rendered.text,
+        rendered.used,
+        rendered=tuple(span_records(rendered.spans)),
+        claims_checked=True,
+    )

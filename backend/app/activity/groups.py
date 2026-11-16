@@ -125,6 +125,8 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "member.joined",
         "member.role_changed",
         "member.removed",
+        "push_subscription.created",
+        "push_subscription.revoked",
     ),
     "system": (
         "auth.login",

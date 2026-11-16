@@ -237,9 +237,75 @@ def prepare(
     workspace = session.get(Workspace, workspace_id)
     if account is None or workspace is None:
         return DraftSkip("conversation_missing")
-    settings = WorkspaceSettings.model_validate(workspace.settings)
+    gathered = gather_workspace_inputs(
+        session,
+        clock,
+        ctx,
+        workspace,
+        [m.text for m in reversed(unanswered) if m.text],
+    )
+    last_inbound = conversation.last_inbound_at
 
-    texts_newest_first = [m.text for m in reversed(unanswered) if m.text]
+    return DraftContext(
+        ctx=ctx,
+        workspace_id=workspace_id,
+        conversation_id=conversation_id,
+        social_account_id=account.id,
+        account_status=account.status,
+        account_capabilities=dict(account.capabilities),
+        handling_mode=conversation.handling_mode,
+        is_simulated=conversation.is_simulated,
+        requested=requested,
+        unanswered=[
+            InboundText(m.id, m.text, len(m.attachments or []), m.provider_timestamp)
+            for m in unanswered
+        ],
+        covers_through_message_id=newest.id,
+        history=_history(session, conversation),
+        language=gathered.language,
+        facts=gathered.facts,
+        price_disclosure=gathered.price_disclosure,
+        controller_cutover_generation=controller.cutover_generation
+        if controller is not None
+        else 0,
+        approved_answers=gathered.approved_answers,
+        brand_voice=gathered.brand_voice,
+        escalation_keywords=gathered.escalation_keywords,
+        disclosure=gathered.disclosure,
+        window_end=last_inbound + MESSAGING_WINDOW if last_inbound else None,
+        readiness_level=gathered.readiness_level,
+        auto_replies_last_hour=_auto_replies_last_hour(session, clock, conversation),
+        usable_keys=frozenset(f.key for f in gathered.facts),
+        unusable_keys=frozenset(gathered.unusable_keys),
+    )
+
+
+@dataclass(frozen=True)
+class WorkspaceDraftInputs:
+    """What drafting needs from the *workspace* (not from a conversation): the reply language,
+    the usable facts and approved answers, the voice, the escalation words and the notice."""
+
+    language: ReplyLanguage
+    facts: list[UsableFact]
+    unusable_keys: set[str]
+    approved_answers: list[approved_answers.AnswerView]
+    price_disclosure: str
+    brand_voice: str | None
+    escalation_keywords: list[str]
+    disclosure: Disclosure
+    readiness_level: str
+
+
+def gather_workspace_inputs(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    workspace: Workspace,
+    texts_newest_first: list[str],
+) -> WorkspaceDraftInputs:
+    """Shared by the real drafting job (``prepare``) and the owner's test chat, so that both are
+    answered from exactly the same facts, rules and language choice."""
+    settings = WorkspaceSettings.model_validate(workspace.settings)
     language = choose_reply_language(
         texts_newest_first,
         default_locale=workspace.default_locale,
@@ -262,31 +328,12 @@ def prepare(
     voice_fact = _fact(usable, "brand.voice_guidelines")
     keywords_fact = _fact(usable, "escalation.keywords")
     suffix = settings.disclosure_text.model_dump().get(language.code or workspace.default_locale)
-    last_inbound = conversation.last_inbound_at
-
-    return DraftContext(
-        ctx=ctx,
-        workspace_id=workspace_id,
-        conversation_id=conversation_id,
-        social_account_id=account.id,
-        account_status=account.status,
-        account_capabilities=dict(account.capabilities),
-        handling_mode=conversation.handling_mode,
-        is_simulated=conversation.is_simulated,
-        requested=requested,
-        unanswered=[
-            InboundText(m.id, m.text, len(m.attachments or []), m.provider_timestamp)
-            for m in unanswered
-        ],
-        covers_through_message_id=newest.id,
-        history=_history(session, conversation),
+    return WorkspaceDraftInputs(
         language=language,
         facts=usable,
-        price_disclosure=price_disclosure,
-        controller_cutover_generation=controller.cutover_generation
-        if controller is not None
-        else 0,
+        unusable_keys=unusable,
         approved_answers=answers,
+        price_disclosure=price_disclosure,
         brand_voice=_localized(voice_fact.value, language.code or "tr") if voice_fact else None,
         escalation_keywords=[
             str(k) for k in (keywords_fact.value.get("items", []) if keywords_fact else [])
@@ -295,11 +342,7 @@ def prepare(
             settings.disclosure_enabled,
             suffix or DEFAULT_DISCLOSURE.get(language.code or workspace.default_locale, ""),
         ),
-        window_end=last_inbound + MESSAGING_WINDOW if last_inbound else None,
         readiness_level=readiness_module.readiness(session, clock, ctx).level,
-        auto_replies_last_hour=_auto_replies_last_hour(session, clock, conversation),
-        usable_keys=frozenset(f.key for f in usable),
-        unusable_keys=frozenset(unusable),
     )
 
 

@@ -1,6 +1,6 @@
 """Channel registry for owner communication channels (ADR-012 §5.1).
 
-Maintains a registry of available owner channels (e.g. "web", "telegram").
+Maintains a registry of available owner channels (e.g. "web", "telegram", "web_push").
 Provides lazy resolution so Telegram is only loaded when registered or requested,
 avoiding heavy imports during normal web-only operation.
 """
@@ -54,6 +54,15 @@ def get_channel(name: str) -> OwnerChannel:
             raise KeyError(
                 f"Channel '{name}' is not registered and telegram adapter is not available"
             ) from None
+
+    # Web Push (F-01): the adapter is imported only when a delivery for it runs, so web-only
+    # operation never loads pywebpush.
+    if name == "web_push":
+        from app.integrations.channels.web_push.adapter import WebPushChannel
+
+        wp: OwnerChannel = cast(OwnerChannel, WebPushChannel())
+        _REGISTRY["web_push"] = wp
+        return wp
 
     raise KeyError(f"Unknown owner channel: '{name}'. Available: {list_registered_channels()}")
 

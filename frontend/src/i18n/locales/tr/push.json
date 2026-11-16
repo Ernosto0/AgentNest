@@ -1,0 +1,61 @@
+{
+  "push": {
+    "prompt": {
+      "label": "Telefon bildirimleri",
+      "title": "Bir şey kararınızı beklediğinde bildirim alın",
+      "body": "İlk onayınızı verdiniz. Bildirimleri açarsanız bir sonraki onay sizi beklediğinde haber veririz. Bildirimlerde müşterilerinizin mesajları hiçbir zaman görünmez.",
+      "enable": "Bildirimleri aç",
+      "enabling": "Açılıyor…",
+      "later": "Şimdi değil",
+      "done": "Bu cihaz için bildirimler açık. Hangi konularda haber alacağınızı Ayarlar'dan seçebilirsiniz.",
+      "close": "Kapat",
+      "settings": "Bildirim ayarları"
+    },
+    "ios": {
+      "title": "Bildirim almak için AgentNest'i Ana Ekran'a ekleyin",
+      "step1": "Safari'de Paylaş düğmesine dokunun.",
+      "step2": "\"Ana Ekrana Ekle\"yi seçin.",
+      "step3": "AgentNest'i yeni Ana Ekran simgesinden açın ve bildirimleri orada açın.",
+      "note": "iPhone ve iPad, bildirimleri yalnızca Ana Ekran'a eklenmiş uygulamalara iletir (iOS 16.4 veya üzeri).",
+      "dismiss": "Anladım"
+    },
+    "outcome": {
+      "denied": "Bu site için bildirimler engellenmiş. Tarayıcı ayarlarından izin verin, sonra tekrar deneyin.",
+      "unsupported": "Bu tarayıcı bildirim alamıyor.",
+      "disabled": "Bu sunucuda bildirimler kurulu değil."
+    },
+    "settings": {
+      "title": "Telefon bildirimleri",
+      "intro": "Bir şey sizi beklediğinde bu telefona veya bilgisayara bildirim gelsin. Bildirimlerde müşteri mesajları hiçbir zaman yer almaz.",
+      "deviceTitle": "Bu cihaz",
+      "deviceOn": "Bu cihaz için bildirimler açık.",
+      "deviceOff": "Bu cihaz için bildirimler kapalı.",
+      "enable": "Bu cihazda aç",
+      "disable": "Bu cihazda kapat",
+      "working": "Lütfen bekleyin…",
+      "denied": "Bu site için bildirimler tarayıcınızda engellenmiş. Tarayıcı ayarlarından izin verin, sonra buraya dönün.",
+      "unsupported": "Bu tarayıcı bildirim alamıyor. Android'de Chrome veya Edge kullanın, iPhone'da ise AgentNest'i Ana Ekran'dan açın.",
+      "typesTitle": "Şunlardan haber ver",
+      "types": {
+        "approvals": {
+          "label": "Beni bekleyen onaylar",
+          "hint": "Kararınızı bekleyen yanıtlar ve paylaşımlar."
+        },
+        "questions": {
+          "label": "Asistanımın soruları",
+          "hint": "Asistan sizden bilgi istediğinde."
+        },
+        "failures": {
+          "label": "Sorunlar",
+          "hint": "Başarısız olan bir paylaşım veya yanıt, ya da yeniden bağlanması gereken bir Instagram hesabı."
+        }
+      },
+      "quiet": "22:00 ile 08:00 arasında (işletme saati) yalnızca acil bildirimler gönderilir: yeniden bağlanması gereken bir Instagram hesabı veya süresi dolmak üzere olan bir onay.",
+      "devicesTitle": "Cihazlarınız",
+      "devicesNone": "Henüz hiçbir cihazda bildirim açık değil.",
+      "lastSent": "Son bildirim: {{time}}",
+      "neverSent": "Henüz bildirim gönderilmedi",
+      "remove": "Kaldır"
+    }
+  }
+}

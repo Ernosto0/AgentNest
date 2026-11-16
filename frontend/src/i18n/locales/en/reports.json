@@ -17,6 +17,13 @@
     "minutes": "{{value}} min",
     "noItems": "There are no records behind this number",
     "loadMore": "Show more",
+    "guarantee": {
+      "title": "Never an invented number",
+      "hint": "The assistant may only quote prices, hours and contact details from facts you verified. Each reply that is sent is checked, including the ones you write yourself.",
+      "unverified": "Unverified values sent",
+      "unverifiedSome": "Replies that contained unverified values",
+      "alert": "Open the number to see which replies. Check them and correct the fact or the wording."
+    },
     "metrics": {
       "inbound_messages": "Messages received",
       "conversations_with_inbound": "Conversations with a new message",
@@ -24,6 +31,7 @@
       "replies_sent": "Replies sent",
       "replies_sent_auto": "Replies sent automatically",
       "replies_sent_approved": "Replies sent after approval",
+      "unverified_values_sent": "Replies with unverified values",
       "replies_sent_by_owner": "Replies you wrote",
       "native_replies": "Replies given in the Instagram app",
       "escalations": "Conversations handed to you",

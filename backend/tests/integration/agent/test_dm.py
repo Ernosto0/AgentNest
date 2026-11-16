@@ -176,6 +176,11 @@ def test_signed_multi_turn_agent_sends_and_observes_verified_ledger(
             row.origin == "agent" and row.status == "sent" for row in db.scalars(select(ReplyDraft))
         )
         assert not db.scalars(select(Approval).where(Approval.status == "pending")).all()
+        # A template reply keeps the claim validator's result with the draft, so the report's
+        # "unverified values sent" can read it (D-01).
+        for draft in db.scalars(select(ReplyDraft)):
+            assert draft.validation["passed"] is True
+            assert draft.validation["issues"] == [] and draft.validation["rendered"] == []
 
 
 @pytest.mark.parametrize("mode", ["ask", "off"])

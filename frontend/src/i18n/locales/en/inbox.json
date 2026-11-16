@@ -67,6 +67,7 @@
     "draft": {
       "source": "Source: {{label}}, verified (version {{version}})",
       "sourceUnversioned": "Source: {{label}}, verified fact",
+      "sourceOn": "Source: {{label}}, verified {{date}}",
       "reasons": "Why this needs you",
       "suggestionTitle": "Suggested wording (not sent)",
       "useSuggestion": "Use as my reply",
@@ -281,6 +282,17 @@
       "confirmTitle": "Reset the demo?",
       "confirmBody": "Everything in this workspace is deleted and recreated from the seed data: conversations, content, drafts and settings you changed. Other workspaces are not touched.",
       "confirm": "Yes, reset"
+    },
+    "push": {
+      "title": "Push subscription (developer test)",
+      "hint": "Registers this browser for Web Push so the stored subscription can be checked. Nothing is sent yet.",
+      "subscribe": "Subscribe this device",
+      "unsubscribe": "Remove this device",
+      "unsupported": "This browser cannot receive push messages (it needs a service worker and the Push API; on iPhone, install the app first).",
+      "disabled": "The server has no VAPID keys configured, so push is off.",
+      "denied": "Notifications are blocked for this site in the browser settings.",
+      "subscribed": "Subscribed: {{label}}",
+      "removed": "This device was removed."
     }
   }
 }

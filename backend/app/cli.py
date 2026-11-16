@@ -1,7 +1,8 @@
 """Command line: ``python -m app.cli <command>``.
 
-Commands: ``seed [--reset]``, ``create-user``, ``generate-key``, ``export-openapi``,
-``simulate-message``, ``simulate-native-reply``, ``run-due-jobs`` (the developer simulator),
+Commands: ``seed [--reset]``, ``create-user``, ``generate-key``, ``generate-vapid-keys``,
+``export-openapi``, ``simulate-message``, ``simulate-native-reply``, ``run-due-jobs`` (the
+developer simulator),
 ``check-config``, ``migration-status``, ``post-restore-reconcile``, and ``verify-db-roles``.
 Machine-readable output goes to stdout; logs go to stderr.
 """
@@ -22,7 +23,11 @@ from app.core.config import ConfigError, Settings, get_settings, validate_produc
 from app.core.db import check_readiness, get_session_factory, migration_head, migration_revisions
 from app.core.errors import AppError
 from app.core.logging import configure_logging
-from app.core.security import generate_encryption_key, generate_secret_key
+from app.core.security import (
+    generate_encryption_key,
+    generate_secret_key,
+    generate_vapid_keys,
+)
 from app.demo import simulator
 from app.demo.seed import SeedError, seed
 from app.identity import repository as identity_repo
@@ -96,6 +101,19 @@ def cmd_generate_key(args: argparse.Namespace) -> int:
     default_id = "b1" if args.kind == "backup-encryption" else "k1"
     key_id = args.key_id or default_id
     print(generate_encryption_key(key_id))
+    return 0
+
+
+def cmd_generate_vapid_keys(args: argparse.Namespace) -> int:
+    """Print a new Web Push (VAPID) key pair as ``.env`` lines. Nothing is stored or logged."""
+    public, private = generate_vapid_keys()
+    print(f"WEB_PUSH_VAPID_PUBLIC_KEY={public}")
+    print(f"WEB_PUSH_VAPID_PRIVATE_KEY={private}")
+    print(
+        "# Also set WEB_PUSH_SUBJECT (mailto:you@example.com or an https:// URL). Keep the "
+        "private key secret; replacing the pair invalidates every existing subscription.",
+        file=sys.stderr,
+    )
     return 0
 
 
@@ -402,6 +420,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="key id for --kind token-encryption (default k1) or backup-encryption (default b1)",
     )
     p_key.set_defaults(func=cmd_generate_key)
+
+    p_vapid = sub.add_parser(
+        "generate-vapid-keys", help="print a new Web Push (VAPID) key pair as .env lines"
+    )
+    p_vapid.set_defaults(func=cmd_generate_vapid_keys)
 
     p_api = sub.add_parser("export-openapi", help="print the OpenAPI document as JSON")
     p_api.add_argument("-o", "--output", help="write UTF-8 to this file instead of stdout")

@@ -27,6 +27,16 @@
 | 8.5 | [Complete application UI and UX redesign](phases/phase-8.5-ui-redesign.md) | Warm workspace design system; all app routes, tabs, editors, states and public presentation; desktop/mobile layouts and accessibility | Stable Phase 7.5 frontend; integrate delivered Phase 8 UI contracts before final acceptance | Owner completes daily work across the redesigned app on Windows and a phone; all routes and critical states verified |
 | 9 | [Owner messaging channel](phases/phase-09-owner-channel.md) | Telegram (provisional) via the channel abstraction | 8 + OQ-01; web presentation reuses Phase 8.5 | Owner receives an approval in Telegram and approves with a button |
 
+**Feature phases (2026-11-15):** after the [pre-launch review](../review/pre-launch-feature-recommendations.md) the next product features are grouped into five feature phases that follow Phase 9 and sit outside the numbered phases above.
+
+| Feature phase | Features | Status |
+|---|---|---|
+| [Feature Phase 1: before the first pilot](features-phase-1-before-first-pilot/sessions.md) | F-02 test chat, F-01 installable app and Web Push, D-01 visible "never invents a price" guarantee | **Implemented offline; stopped for review** (2026-11-16). Sessions 01 to 05 are done, see [the phase summary](phase-summaries/features-phase-1-summary.md) and the session reports ([s01](features-phase-1-before-first-pilot/s01-report.md), [s02](features-phase-1-before-first-pilot/s02-report.md), [s03](features-phase-1-before-first-pilot/s03-report.md), [s04](features-phase-1-before-first-pilot/s04-report.md), [s05](features-phase-1-before-first-pilot/s05-report.md)). Nothing is committed. Still open: real-device checks (push, maskable icon), the Telegram delivery wiring question, and the failures that were already in the tree before this phase. Next migration `0049` |
+| [Feature Phase 2: during pilots](features-phase-2-during-pilots/sessions.md) | See its plan | Planned |
+| [Feature Phase 3: after App Review](features-phase-3-after-app-review/sessions.md) | See its plan | Planned |
+| [Feature Phase 4: before self-service](features-phase-4-before-self-service/sessions.md) | See its plan | Planned |
+| [Feature Phase 5: on demand](features-phase-5-on-demand/sessions.md) | See its plan | Planned |
+
 ```mermaid
 flowchart LR
   P1[1 Foundation] --> P2[2 Knowledge] --> P3[3 AI, commands, approvals] --> P4[4 Inbox] --> P5[5 Content] --> P6[6 Reports & demo]

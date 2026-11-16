@@ -38,6 +38,11 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS` | empty (= default) | optional | Per-task overrides |
 | `LLM_TIMEOUT_SECONDS` | `30` | `30` | Default; per-task values in code |
 | `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` | `500` | per plan | Budget guard |
+| `TEST_CHAT_MAX_MESSAGES_PER_HOUR` | `20` | `20` | Owner test chat (F-02): messages per workspace per rolling hour; over it the API answers 429 `TEST_CHAT_RATE_LIMITED` |
+| `TEST_CHAT_MAX_MESSAGES_PER_DAY` | `60` | `60` | Same, per rolling 24 h. Each message is one LLM call that also counts against `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` |
+| `WEB_PUSH_VAPID_PUBLIC_KEY` | empty | set with the other two | Web Push (F-01). The public VAPID key (unpadded base64url, 65-byte P-256 point), served to the app by `GET /…/push-subscriptions/config`. All three `WEB_PUSH_*` values empty = push off (the config endpoint answers `enabled: false`, subscribing is 409). Set only some = the app refuses to start. Replacing the pair invalidates every stored subscription (browsers must re-subscribe) |
+| `WEB_PUSH_VAPID_PRIVATE_KEY` 🔒 | empty | set with the other two | The matching private key (unpadded base64url, 32 bytes). Never returned, logged or put in a job. Startup checks that it matches the public key. Generate the pair once with `uv run python -m app.cli generate-vapid-keys`, which prints both as `.env` lines on stdout |
+| `WEB_PUSH_SUBJECT` | empty | set with the other two | VAPID contact (RFC 8292): `mailto:ops@example.com` or an `https://` URL. Push services use it to reach the operator. Web Push also needs `TOKEN_ENCRYPTION_KEYS` (subscription keys are stored encrypted) |
 | `LLM_REASONING_EFFORT` | `low` | `low` | `` (off) \| `minimal` \| `low` \| `medium` \| `high`. Reasoning tokens count against each task's `max_output_tokens` |
 | `LLM_PRICE_TABLE` | empty | optional JSON | `{"<model>": {"input_per_mtok": 0.0, "output_per_mtok": 0.0}}` (USD). Cost estimates in evals and system health; unpriced models have no estimate |
 
@@ -154,6 +159,7 @@ Manual Phase 7 probes read process environment variables directly, not applicati
 | Variable | dev | prod | Description |
 |---|---|---|---|
 | `VITE_API_BASE_URL` | empty (uses the Vite proxy) | empty (same origin) | Never put secrets in `VITE_*` variables |
+| `VITE_ENABLE_SW` | unset | not needed | `true` registers the push-only service worker (`/sw.js`) on a dev server. Production builds always register it. It has no fetch handler and no cache. |
 
 ## Landing page (`landing/`, build time)
 

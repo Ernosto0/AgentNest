@@ -19,6 +19,8 @@ from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.db import get_db
 from app.core.errors import AppError
+from app.inbox.schemas import FactSourceOut
+from app.inbox.views import facts_used_out
 from app.integrations.instagram.queries import get_account_in_workspace
 
 router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["agent"])
@@ -242,6 +244,8 @@ class ExactActionPreview(BaseModel):
     target_version: int | None = None
     target_ref: str | None = None
     content: dict[str, object] | None = None
+    # A reply's verified values and where each comes from (D-01); empty for other actions.
+    facts_used: list[FactSourceOut] = []
     is_simulated: bool
 
 
@@ -268,6 +272,7 @@ def exact_action(
     text = None
     target_text = None
     target_version = None
+    facts_used: list[FactSourceOut] = []
     if action.action_type == "dm.send":
         draft = db.scalar(
             select(ReplyDraft).where(
@@ -275,6 +280,8 @@ def exact_action(
             )
         )
         text = draft.text if draft else None
+        if draft is not None:
+            facts_used = facts_used_out(db, ctx, draft)
     elif action.action_type == "comment.private_reply":
         private = db.scalar(
             select(PrivateReplyOpportunity).where(
@@ -320,6 +327,7 @@ def exact_action(
         target_text=target_text,
         target_version=target_version,
         content=projected.content.model_dump(mode="json") if projected.content else None,
+        facts_used=facts_used,
         is_simulated=account.is_simulated,
     )
 

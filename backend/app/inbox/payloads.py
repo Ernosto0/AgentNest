@@ -41,3 +41,9 @@ class SendReplyPayload(_Payload):
 
 class ExpireReplyDraftsPayload(_Payload):
     pass
+
+
+class AssistantTestDraftPayload(_Payload):
+    """The owner's test chat: draft the answer to one test message (an id, never its text)."""
+
+    turn_id: uuid.UUID

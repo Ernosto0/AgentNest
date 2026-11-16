@@ -298,6 +298,13 @@ def get_daily_summary(session: Session, clock: Clock, ctx: WorkspaceContext) -> 
         "new_conversations": int(report.value("new_conversations") or 0),
         "pending_approvals": int(report.value("pending_approvals_now") or 0),
         "replies_sent": int(report.value("replies_sent") or 0),
+        # From the claim validator's stored results for the replies sent (D-01); a report that
+        # predates the metric has no such key, and then it is None, never a made-up 0.
+        "unverified_values_sent": (
+            int(report.value("unverified_values_sent") or 0)
+            if "unverified_values_sent" in report.metrics
+            else None
+        ),
         "is_simulated": bool(report.has_simulated_data),
     }
 

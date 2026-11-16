@@ -87,6 +87,53 @@ describe("daily report", () => {
     expect(screen.getByRole("heading", { name: "Sorunlar" })).toBeInTheDocument();
   });
 
+  it("always shows replies sent and unverified values sent, even at zero (D-01)", async () => {
+    const base = report(TODAY);
+    mockApi(
+      routes({
+        [`GET ${REPORT_BASE}`]: () =>
+          json({
+            ...base,
+            metrics: [...base.metrics.filter((m) => m.key !== "replies_sent"), metric("replies_sent", 12, "messages", TODAY), metric("unverified_values_sent", 0, "messages", TODAY)],
+          }),
+      }),
+    );
+    renderApp(REPORT_URL);
+    const card = await screen.findByTestId("report-guarantee");
+    expect(card).toHaveAttribute("data-unverified", "0");
+    expect(within(card).getByTestId("guarantee-replies_sent")).toHaveTextContent("Gönderilen yanıt12");
+    // 12 replies link to their records; zero unverified values is plain text with nothing to open.
+    expect(within(card).getByRole("link", { name: "Gönderilen yanıt: 12" })).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/reports/${TODAY}/replies_sent`);
+    expect(within(card).getByTestId("guarantee-unverified_values_sent")).toHaveTextContent("Gönderilen doğrulanmamış değer0");
+    expect(within(card).queryByRole("link", { name: /doğrulanmamış/ })).toBeNull();
+    expect(within(card).queryByRole("status")).toBeNull();
+  });
+
+  it("links a nonzero unverified count to the replies behind it and says what to do", async () => {
+    const base = report(TODAY);
+    mockApi(
+      routes({
+        [`GET ${REPORT_BASE}`]: () =>
+          json({ ...base, metrics: [...base.metrics, metric("unverified_values_sent", 2, "messages", TODAY)] }),
+      }),
+    );
+    renderApp(REPORT_URL);
+    const card = await screen.findByTestId("report-guarantee");
+    expect(card).toHaveAttribute("data-unverified", "2");
+    const link = within(card).getByRole("link", { name: "Doğrulanmamış değer içeren yanıtlar: 2" });
+    expect(link).toHaveAttribute("href", `/w/${WS_GOLKENT}/more/reports/${TODAY}/unverified_values_sent`);
+    expect(within(card).getByRole("status")).toHaveTextContent("Hangi yanıtlar olduğunu görmek için sayıya dokunun");
+    // Not repeated as a row of the messages section.
+    expect(screen.getAllByRole("link", { name: /Doğrulanmamış değer içeren yanıtlar: 2/ })).toHaveLength(1);
+  });
+
+  it("shows no guarantee for a saved report from before the metric existed", async () => {
+    mockApi(routes({ [`GET ${REPORT_BASE}`]: () => json(report(YESTERDAY)) }));
+    renderApp(`${REPORT_URL}?date=${YESTERDAY}`);
+    await screen.findByRole("link", { name: "Gelen mesaj: 15" });
+    expect(screen.queryByTestId("report-guarantee")).toBeNull();
+  });
+
   it("says when the day is not over and shows the badge only for simulated data (AC-E5)", async () => {
     mockApi(
       routes({

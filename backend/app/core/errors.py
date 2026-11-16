@@ -41,6 +41,8 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "LINK_CODE_USED": ErrorSpec(409),
     "LINK_CODE_EXPIRED": ErrorSpec(410),
     "TOO_MANY_ACTIVE_CODES": ErrorSpec(429, retryable=True),
+    "TEST_CHAT_RATE_LIMITED": ErrorSpec(429, retryable=True),
+    "WEB_PUSH_NOT_CONFIGURED": ErrorSpec(409),
     "ACCOUNT_MISMATCH": ErrorSpec(409),
     "LAST_OWNER_REQUIRED": ErrorSpec(409),
     "REPORT_EVIDENCE_UNAVAILABLE": ErrorSpec(409),

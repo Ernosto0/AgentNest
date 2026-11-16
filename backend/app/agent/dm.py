@@ -173,6 +173,16 @@ def send(
         template=proposal.template,
         text=validated.text,
         validation={
+            # The claim validator's result for the text that is sent, in the shape of every other
+            # reply draft (``validate_reply`` ran it on a template reply and it passed). Server-
+            # written replies (calendar, owner answer, clarification) were not claim-validated, so
+            # they carry no result. The report's "unverified values sent" and the fact sources of
+            # the draft views read this (D-01).
+            **(
+                {"passed": True, "issues": [], "rendered": list(validated.rendered)}
+                if validated.claims_checked
+                else {}
+            ),
             "agent_proposal": proposal.model_dump(mode="json"),
             "ownership_generation": thread.ownership_generation,
             "cursor": thread.event_cursor,
