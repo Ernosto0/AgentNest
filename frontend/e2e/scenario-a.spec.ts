@@ -37,10 +37,10 @@ test("A1: Home shows the workspace, its readiness and the simulation banner", as
   await expect(simulation).toContainText("Simülasyon etiketli işlemler gerçek Instagram'a gönderilmez.");
   await expect(simulation).toContainText("Gerçek Instagram bağlantıları gerçek hesabınızda işlem yapar.");
   await expect(page.getByTestId("simulated-badge").first()).toBeVisible();
-  // The seeded gym has a simulated Instagram account and a reviewed automation setup: fully ready.
-  await expect(page.getByTestId("readiness-level")).toHaveText("Hazır");
-  await expect(page.getByTestId("readiness-level")).toHaveAttribute("data-level", "ready");
-  await expect(page.locator('[data-requirement="account_connected"]')).toHaveCount(0); // done items are hidden
+  // The seeded gym has a simulated Instagram account and a reviewed automation setup: fully
+  // ready. Home shows the readiness card only while something is open, so it is not there.
+  await expect(page.getByTestId("readiness-level")).toHaveCount(0);
+  await expect(page.locator('[data-requirement="account_connected"]')).toHaveCount(0);
   expect(await hasHorizontalScroll(page)).toBe(false);
 });
 
@@ -50,7 +50,7 @@ test("A2: facts are grouped by category with status, source and verification dat
 
   const pricingRow = page.locator('[data-category="pricing"]');
   await expect(pricingRow).toContainText("Fiyatlar");
-  await expect(pricingRow).toContainText("Doğrulanmamış"); // the student price
+  await expect(pricingRow).toContainText("1 incelenecek"); // the student price
   expect(await hasHorizontalScroll(page)).toBe(false);
 
   await pricingRow.click();
@@ -88,7 +88,7 @@ test("A3: the owner verifies the student price and sees the new version in the h
 test("A4: the bio discrepancy is explained and rejected, and Home shows what is left", async ({ page }) => {
   await signInToWorkspace(page, OWNER, GYM);
   await openKnowledge(page);
-  await expect(page.getByRole("link", { name: /Öneriler/ })).toContainText("1 öneri sizi bekliyor");
+  await expect(page.getByRole("link", { name: /Öneriler/ })).toHaveAttribute("aria-label", "Öneriler: 1");
 
   await page.getByRole("link", { name: /Öneriler/ }).click();
   const card = page.getByTestId("candidate-pricing.membership_monthly");
@@ -100,7 +100,7 @@ test("A4: the bio discrepancy is explained and rejected, and Home shows what is 
   await expect(page.getByText("İncelenecek öneri yok")).toBeVisible();
 
   await navLink(page, "Bug\u00fcn").click();
-  await expect(page.getByTestId("readiness-level")).toHaveText("Hazır");
+  await expect(page.getByTestId("readiness-level")).toHaveCount(0); // ready: the card is hidden
   await expect(page.locator('[data-requirement="account_connected"]')).toHaveCount(0);
   await expect(page.locator('[data-requirement="automation_reviewed"]')).toHaveCount(0);
   await expect(page.locator('[data-requirement="business_name"]')).toHaveCount(0); // done items are hidden

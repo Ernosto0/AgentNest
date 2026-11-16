@@ -146,7 +146,7 @@ test("X3: tr to en to tr on every main screen, with no raw keys on screen", asyn
   await navLink(page, "Daha fazla").click();
   await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
   await chooseLanguage(page, "English");
-  await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
   await expect(navLink(page, "Inbox")).toBeVisible();
 
   for (const screen of SCREENS) await expectScreen(page, screen, "en", base);
@@ -154,7 +154,7 @@ test("X3: tr to en to tr on every main screen, with no raw keys on screen", asyn
   // And back: the Turkish strings return.
   await page.goto(`${base}/more/settings`);
   await chooseLanguage(page, "Türkçe");
-  await expect(page.getByRole("heading", { name: "Dil" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Arayüz dili" })).toBeVisible();
   await expect(navLink(page, "Gelen kutusu")).toBeVisible();
   for (const screen of SCREENS) await expectScreen(page, screen, "tr", base);
 });

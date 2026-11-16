@@ -69,7 +69,8 @@ test("F6: invalid media fails at once, says why, and offers to edit and send aga
 
   // The way forward: edit and send again takes the owner to the editor.
   await detail.getByRole("button", { name: "Düzenle ve yeniden gönder" }).click();
-  await expect(page.getByLabel("Başlık")).toBeFocused();
+  // The editor moves focus to the text (the caption), the first thing to change.
+  await expect(page.locator("#content-editor textarea").first()).toBeFocused();
 
   // Nothing reached the simulated Instagram.
   expect(await simulatorPublished(request, env.workspaceId)).toHaveLength(SEEDED_PUBLISHED_POSTS);

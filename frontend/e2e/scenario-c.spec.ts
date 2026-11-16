@@ -41,7 +41,7 @@ test("C1/C2: a price command is confirmed and becomes a new fact version with it
   page,
 }) => {
   await signInToWorkspace(page, OWNER, GYM);
-  await expect(page.getByTestId("ai-mode")).toHaveText("Çevrimdışı demo yapay zekâsı");
+  await expect(page.getByTestId("ai-mode")).toContainText("Çevrimdışı yapay zekâ");
   expect(await hasHorizontalScroll(page)).toBe(false);
 
   await say(page, "Aylık üyelik artık 7.000 TL");
@@ -111,7 +111,7 @@ test("a request to publish is refused with a pointer to Content and nothing to a
 test("a question is answered from the verified fact", async ({ page }) => {
   await signInToWorkspace(page, OWNER, GYM);
   await say(page, "Aylık üyelik ne kadar?");
-  await expect(page.getByTestId("command-result")).toContainText("Aylık üyelik: 6.000 ₺ / ay", {
+  await expect(page.getByTestId("command-result")).toContainText("Aylık üyelik bilgisi şu anda 6.000 ₺ / ay olarak kayıtlı", {
     timeout: 15_000,
   });
 });

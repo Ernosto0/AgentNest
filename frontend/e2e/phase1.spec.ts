@@ -41,9 +41,9 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
   // More → Settings → Language → English: the strings change.
   await navLink(page, "Daha fazla").click();
   await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
-  await expect(page.getByRole("heading", { name: "Dil" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Arayüz dili" })).toBeVisible();
   await chooseLanguage(page, "English");
-  await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
   await expect(banner).toContainText("Demo workspace");
   await expect(navLink(page, "Inbox")).toBeVisible();
   await expect(navLink(page, "Gelen kutusu")).toHaveCount(0);
@@ -51,15 +51,15 @@ test("owner: Turkish shell with simulation banner, English switch, workspace swi
 
   // The choice is saved on the account: it survives a reload.
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
 
   // Switch to the other demo workspace (still a demo: the banner stays).
-  await page.getByLabel("Workspace").selectOption({ label: "Harbor Café & Bakery" });
-  await expect(page.getByLabel("Workspace").locator("option:checked")).toHaveText(
+  await page.getByRole("combobox", { name: "Workspace" }).selectOption({ label: "Harbor Café & Bakery" });
+  await expect(page.getByRole("combobox", { name: "Workspace" }).locator("option:checked")).toHaveText(
     "Harbor Café & Bakery",
   );
   await navLink(page, "Today").click();
-  await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Hello, /, level: 1 })).toBeVisible();
   await expect(page.getByRole("main").getByText("Harbor Café & Bakery", { exact: true }).filter({ visible: true }).last()).toBeVisible();
   await expect(banner).toBeVisible();
 
@@ -160,8 +160,8 @@ test("every main screen fits a 360x740 phone without horizontal scroll, in both 
     if (language === "en") {
       await navLink(page, "Daha fazla").click();
       await page.getByRole("main").getByRole("link", { name: "Ayarlar" }).click();
-      await page.getByRole("button", { name: "English" }).click();
-      await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+      await chooseLanguage(page, "English");
+      await expect(page.getByRole("group", { name: "Interface language" })).toBeVisible();
       expect(await hasHorizontalScroll(page), "en: settings").toBe(false);
     }
     for (const label of screens[language]) {

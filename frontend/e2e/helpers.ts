@@ -141,7 +141,7 @@ export function localFields(minutesAhead: number, timeZone = IST): { date: strin
 /** Type a command into the command bar on the home page and send it. */
 export async function say(page: Page, text: string) {
   await page.getByLabel("Komut").fill(text);
-  await page.getByRole("button", { name: "Gönder" }).click();
+  await page.getByRole("button", { name: "Gönder", exact: true }).click();
 }
 
 /** The status badge of the open content item (`data-status` is the server state it renders). */
@@ -394,6 +394,10 @@ export async function chooseLanguage(page: Page, name: "English" | "Türkçe") {
   const saved = page.waitForResponse(
     (response) => response.url().includes("/api/v1/auth/me") && response.request().method() === "PATCH",
   );
-  await page.getByRole("button", { name }).click();
+  // The interface language is a radio group on the Settings screen; click its visible label.
+  await page
+    .getByRole("group", { name: /^(Arayüz dili|Interface language)$/ })
+    .getByText(name, { exact: true })
+    .click();
   expect((await saved).ok()).toBe(true);
 }
