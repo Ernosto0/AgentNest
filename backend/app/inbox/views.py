@@ -16,13 +16,14 @@ from app.inbox.models import Conversation, Message, ReplyDraft
 from app.inbox.schemas import (
     ApprovalStateOut,
     ConversationOut,
+    FactSourceOut,
     MessageOut,
     RenderedFactOut,
     ReplyDraftOut,
     ValidationIssueOut,
     ValidationOut,
 )
-from app.knowledge.models import BusinessFact
+from app.knowledge.sources import FactSource, fact_sources, unique_sources
 
 PREVIEW_CHARS = 80
 
@@ -121,35 +122,49 @@ def approval_state(
     )
 
 
+def _facts_used_out(sources: list[FactSource]) -> list[FactSourceOut]:
+    return [
+        FactSourceOut(
+            key=source.key,
+            label=source.label,
+            display=source.display,
+            verified_at=source.verified_at,
+        )
+        for source in unique_sources(sources)
+    ]
+
+
+def facts_used_out(
+    session: Session, ctx: WorkspaceContext, draft: ReplyDraft
+) -> list[FactSourceOut]:
+    """The verified facts a stored reply quotes, each once, with its source (D-01). Server-side
+    for every view of a reply (inbox, approvals, agent approvals)."""
+    sources = fact_sources(
+        session, ctx.workspace_id, draft.validation.get("rendered", []), draft.language or "tr"
+    )
+    return _facts_used_out(sources)
+
+
 def draft_out(
     session: Session, ctx: WorkspaceContext, draft: ReplyDraft, conversation: Conversation
 ) -> ReplyDraftOut:
     language = draft.language or "tr"
-    rendered = list(draft.validation.get("rendered", []))
-    fact_ids = [uuid.UUID(r["fact_id"]) for r in rendered]
-    facts = (
-        {
-            f.id: f
-            for f in session.scalars(
-                select(BusinessFact).where(
-                    BusinessFact.workspace_id == ctx.workspace_id, BusinessFact.id.in_(fact_ids)
-                )
-            )
-        }
-        if fact_ids
-        else {}
+    sources = fact_sources(
+        session, ctx.workspace_id, draft.validation.get("rendered", []), language
     )
     rendered_facts = [
         RenderedFactOut(
-            fact_id=uuid.UUID(r["fact_id"]),
-            key=r["key"],
-            label=_label(facts.get(uuid.UUID(r["fact_id"])), language, r["key"]),
-            display=r["display"],
-            version=int(r["version"]),
-            span=[int(x) for x in r["span"]],
+            fact_id=source.fact_id,
+            key=source.key,
+            label=source.label,
+            display=source.display,
+            version=source.version,
+            span=[int(x) for x in span["span"]],
+            verified_at=source.verified_at,
         )
-        for r in rendered
+        for source, span in zip(sources, draft.validation.get("rendered", []), strict=True)
     ]
+    facts_used = _facts_used_out(sources)
     return ReplyDraftOut(
         id=draft.id,
         conversation_id=draft.conversation_id,
@@ -161,6 +176,7 @@ def draft_out(
         text=None if draft.validation.get("privacy_redacted") else draft.text,
         suggestion_text=None if draft.validation.get("privacy_redacted") else draft.suggestion_text,
         rendered_facts=rendered_facts,
+        facts_used=facts_used,
         validation=ValidationOut(
             passed=bool(draft.validation.get("passed")),
             issues=[issue_out(i) for i in draft.validation.get("issues", [])],
@@ -175,9 +191,3 @@ def draft_out(
         created_at=draft.created_at,
         is_simulated=draft.is_simulated,
     )
-
-
-def _label(fact: BusinessFact | None, language: str, fallback: str) -> str:
-    if fact is None:
-        return fallback
-    return fact.label.get(language) or fact.label.get("tr") or fact.label.get("en") or fallback

@@ -36,7 +36,7 @@ describe("workspace wizard", () => {
     "GET /api/v1/auth/me": () => json(ME),
   };
 
-  it("walks name, category and market, then creates the workspace and lands on the checklist", async () => {
+  it("walks name, category and market, creates the workspace, then lets the owner skip trying the assistant", async () => {
     const user = userEvent.setup();
     const requests = mockApi({
       ...base,
@@ -46,6 +46,7 @@ describe("workspace wizard", () => {
       [`GET /api/v1/workspaces/${created.id}/facts/template`]: () => json([]),
       [`GET /api/v1/workspaces/${created.id}/readiness`]: () => json({ level: "not_ready", requirements: [] }),
       [`GET /api/v1/workspaces/${created.id}/fact-candidates`]: () => json({ items: [], next_cursor: null }),
+      [`GET /api/v1/workspaces/${created.id}/assistant/test-chat`]: () => json({ items: [], remaining_this_hour: 20, remaining_today: 60 }),
     });
     const { router } = renderApp("/workspaces/new");
 
@@ -70,6 +71,12 @@ describe("workspace wizard", () => {
 
     await user.click(screen.getByRole("button", { name: "Çalışma alanı oluştur" }));
 
+    // The last step runs after creation and is skippable: nothing navigates until the owner chooses.
+    expect(await screen.findByRole("heading", { name: "Asistanınızı deneyin" })).toBeVisible();
+    expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Deneme");
+    expect(await screen.findByTestId("suggestions")).toBeVisible();
+    expect(router.state.location.pathname).toBe("/workspaces/new");
+    await user.click(screen.getByRole("button", { name: "Şimdilik geç" }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/w/${created.id}/more/knowledge`));
     const post = requests.find((r) => r.method === "POST");
     expect(post?.body).toEqual({
@@ -81,6 +88,39 @@ describe("workspace wizard", () => {
       currency: "TRY",
     });
     expect(post?.headers.get("x-csrf-token")).toBe("csrf-token-for-tests");
+  });
+
+  it("lets the owner try the assistant right after creation and then continue to business details", async () => {
+    const user = userEvent.setup();
+    let sent = false;
+    const chatPath = `/api/v1/workspaces/${created.id}/assistant/test-chat`;
+    const turn = { id: "70000000-0000-4000-8000-000000000001", status: "pending", customer_text: "Saat kaçta açıksınız?", created_at: "2026-11-15T09:00:00Z", completed_at: null, draft: null, is_simulated: true };
+    const requests = mockApi({
+      ...base,
+      "POST /api/v1/workspaces": () => json(created, 201),
+      [`GET /api/v1/workspaces/${created.id}`]: () => json(created),
+      [`GET /api/v1/workspaces/${created.id}/facts`]: () => json({ items: [], next_cursor: null }),
+      [`GET /api/v1/workspaces/${created.id}/facts/template`]: () => json([]),
+      [`GET /api/v1/workspaces/${created.id}/readiness`]: () => json({ level: "not_ready", requirements: [] }),
+      [`GET /api/v1/workspaces/${created.id}/fact-candidates`]: () => json({ items: [], next_cursor: null }),
+      [`GET ${chatPath}`]: () => json({ items: sent ? [turn] : [], remaining_this_hour: 19, remaining_today: 59 }),
+      [`POST ${chatPath}/messages`]: () => { sent = true; return json(turn, 202); },
+    });
+    const { router } = renderApp("/workspaces/new");
+    await user.type(await screen.findByLabelText("İşletme adı"), "Lale Pilates");
+    await user.click(screen.getByRole("button", { name: "Devam" }));
+    await user.click(screen.getByRole("radio", { name: "Spor salonu, pilates ve yoga" }));
+    await user.click(screen.getByRole("button", { name: "Devam" }));
+    await user.click(screen.getByRole("button", { name: "Çalışma alanı oluştur" }));
+
+    expect(await screen.findByText(/İşletme bilgilerinizi henüz eklemediniz/)).toBeVisible();
+    await user.click(await screen.findByRole("button", { name: "Saat kaçta açıksınız?" }));
+    expect(await screen.findByText("Asistanınız yazıyor…")).toBeVisible();
+    expect(screen.getByTestId("simulated-badge")).toBeVisible();
+    expect(requests.find((r) => r.path === `${chatPath}/messages`)?.body).toEqual({ text: "Saat kaçta açıksınız?" });
+    expect(router.state.location.pathname).toBe("/workspaces/new");
+    await user.click(screen.getByRole("button", { name: "İşletme bilgilerine devam et" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/w/${created.id}/more/knowledge`));
   });
 
   it("is offered from the workspace picker", async () => {

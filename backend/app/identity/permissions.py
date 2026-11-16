@@ -29,6 +29,7 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
     "agent.delegation.manage": _OWNER_ONLY,
     "agent.control": _OWNER_ONLY,
     "agent.activity.view": _OWNER_MANAGER,
+    "assistant.test": _OWNER_MANAGER,
     "comments.view": _ALL,
     "comments.approve": _OWNER_MANAGER,
     "comments.moderate": _OWNER_MANAGER,

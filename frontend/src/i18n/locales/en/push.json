@@ -1,0 +1,61 @@
+{
+  "push": {
+    "prompt": {
+      "label": "Phone notifications",
+      "title": "Get a notification when something needs your decision",
+      "body": "You have just approved your first item. Turn on notifications and we will tell you when the next one is waiting. Notifications never show your customers' messages.",
+      "enable": "Turn on notifications",
+      "enabling": "Turning on…",
+      "later": "Not now",
+      "done": "Notifications are on for this device. You can choose what to be told about in Settings.",
+      "close": "Close",
+      "settings": "Notification settings"
+    },
+    "ios": {
+      "title": "Add AgentNest to your Home Screen to get notifications",
+      "step1": "Tap the Share button in Safari.",
+      "step2": "Choose \"Add to Home Screen\".",
+      "step3": "Open AgentNest from the new Home Screen icon and turn on notifications there.",
+      "note": "An iPhone or iPad delivers notifications only to apps added to the Home Screen (iOS 16.4 or later).",
+      "dismiss": "Got it"
+    },
+    "outcome": {
+      "denied": "Notifications are blocked for this site. Allow them in your browser settings, then try again.",
+      "unsupported": "This browser cannot receive notifications.",
+      "disabled": "Notifications are not set up on this server."
+    },
+    "settings": {
+      "title": "Phone notifications",
+      "intro": "Get a notification on this phone or computer when something needs you. Notifications never include customer messages.",
+      "deviceTitle": "This device",
+      "deviceOn": "Notifications are on for this device.",
+      "deviceOff": "Notifications are off for this device.",
+      "enable": "Turn on for this device",
+      "disable": "Turn off for this device",
+      "working": "Please wait…",
+      "denied": "Notifications are blocked for this site in your browser. Allow them in the browser settings, then come back here.",
+      "unsupported": "This browser cannot receive notifications. Use Chrome or Edge on Android, or open AgentNest from the Home Screen on an iPhone.",
+      "typesTitle": "Tell me about",
+      "types": {
+        "approvals": {
+          "label": "Approvals waiting for me",
+          "hint": "Replies and posts that need your decision."
+        },
+        "questions": {
+          "label": "Questions from my assistant",
+          "hint": "When the assistant needs information from you."
+        },
+        "failures": {
+          "label": "Problems",
+          "hint": "A post or reply that failed, or an Instagram account that must be reconnected."
+        }
+      },
+      "quiet": "Between 22:00 and 08:00 (workspace time) only urgent notifications are sent: an Instagram account that must be reconnected, or an approval about to expire.",
+      "devicesTitle": "Your devices",
+      "devicesNone": "No device has notifications turned on yet.",
+      "lastSent": "Last notification: {{time}}",
+      "neverSent": "No notification sent yet",
+      "remove": "Remove"
+    }
+  }
+}

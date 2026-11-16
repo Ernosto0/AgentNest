@@ -27,6 +27,7 @@ from app.inbox.models import Conversation, Message, ReplyDraft
 from app.integrations.instagram.models import SimContainer, SimPublishedMedia, SocialAccount
 from app.knowledge.models import ApprovedAnswer
 from app.notifications import service as notifications_service
+from app.notifications.models import PushSubscription
 from app.operations.models import Operation
 from tests.factories import (
     create_candidate,
@@ -80,6 +81,17 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
         db_session, clock, b_ctx, recipient_user_id=b_users["owner"].id, type="report.daily_ready"
     )
     assert b_notification is not None
+    b_push = PushSubscription(
+        workspace_id=b.id,
+        user_id=b_users["owner"].id,
+        endpoint="https://push.example.com/isolation-b",
+        endpoint_hash="isolation-b",
+        p256dh_ciphertext=b"x" * 40,
+        auth_ciphertext=b"y" * 40,
+        key_id="k1",
+    )
+    db_session.add(b_push)
+    db_session.flush()
     b_command = OwnerCommand(
         workspace_id=b.id,
         user_id=b_users["owner"].id,
@@ -267,6 +279,7 @@ def two_workspaces(app: FastAPI, client: TestClient, db_session: Session) -> Two
             "candidate_id": str(b_candidate.id),
             "approval_id": str(b_approval.id),
             "notification_id": str(b_notification.id),
+            "subscription_id": str(b_push.id),
             "command_id": str(b_command.id),
             "run_id": str(b_run.id),
             "account_id": str(b_account.id),

@@ -581,6 +581,14 @@
       "what": "Instagram is not reachable right now.",
       "next": "We will try again automatically."
     },
+    "TEST_CHAT_RATE_LIMITED": {
+      "what": "You have sent many test messages in a short time.",
+      "next": "Wait a little and try again. Each test message uses the assistant, so there is a limit."
+    },
+    "WEB_PUSH_NOT_CONFIGURED": {
+      "what": "Phone notifications are not set up on this server yet.",
+      "next": "Ask the person who runs AgentNest to turn them on."
+    },
     "PROVIDER_RATE_LIMITED": {
       "what": "Instagram asked us to slow down.",
       "next": "We will try again automatically."
@@ -842,12 +850,13 @@
     "inviteFieldsRequired": "Enter your name, email and password.",
     "existingAccount": "Already have an account?",
     "noMembershipHint": "Create a workspace or ask its owner for an invite link to join an existing one.",
-    "wizardIntro": "Set up the basics for your business in three steps.",
+    "wizardIntro": "Set up the basics for your business in three steps, then try your assistant.",
     "setupProgress": "Setup steps",
     "steps": {
       "name": "Your business",
       "category": "Business type",
-      "locale": "Region and language"
+      "locale": "Region and language",
+      "try": "Try it"
     },
     "nameHint": "Up to 100 characters. This name appears in your workspace.",
     "nameRequired": "Enter your business name to continue.",

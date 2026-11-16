@@ -5,8 +5,10 @@ import json
 import httpx
 import pytest
 from pydantic import SecretStr
+from sqlalchemy import update
 
 from app.core.security import TokenKeyRing, account_token_aad
+from app.inbox.models import Conversation, ReplyDraft
 from app.integrations.instagram import registry
 from app.integrations.instagram.meta import MetaInstagramProvider
 from app.operations.health_check import run_health_check
@@ -32,6 +34,9 @@ def configure(inbox: InboxEnv):
     account.token_ciphertext, account.token_key_id = TokenKeyRing(KEYS, "k1").encrypt(
         TOKEN, aad=account_token_aad(account.workspace_id, account.id)
     )
+    # The rows now belong to a real account: simulated rows are refused for one (INV-09).
+    for model in (Conversation, ReplyDraft):
+        inbox.session.execute(update(model).values(is_simulated=False))
     inbox.session.commit()
     return cfg
 

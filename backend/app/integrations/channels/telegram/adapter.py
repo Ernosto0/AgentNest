@@ -41,6 +41,62 @@ def _format_time_tz(dt: datetime, tz_name: str | None) -> str:
     return dt.strftime("%Y-%m-%d %H:%M")
 
 
+TELEGRAM_TEXT_BUDGET = 3900  # the API limit is 4096 characters (markup counts here: conservative)
+FACT_LABEL_CHARS = 60
+FACT_DISPLAY_CHARS = 40
+EXPIRY_LINE_CHARS = 80
+MORE_LINE_CHARS = 24  # room for the "+N more" line
+
+
+def _format_date_tz(dt: datetime, tz_name: str | None) -> str:
+    """The calendar day in the workspace timezone, ``2026-11-03`` (INV-19)."""
+    return _format_time_tz(dt, tz_name)[:10]
+
+
+def _clip(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+def _fact_source_lines(
+    session: Session, draft: Any, tz_name: str | None, is_tr: bool, budget: int
+) -> list[str]:
+    """One compact line per verified fact the reply quotes: the value, where it comes from and
+    when it was verified (D-01). The mapping is the server's (``knowledge.sources``); lines that
+    do not fit ``budget`` characters are dropped, with a count of what was left out. All text from
+    the database is HTML-escaped."""
+    from app.knowledge.sources import fact_sources, unique_sources
+
+    rendered = (draft.validation or {}).get("rendered", []) if draft else []
+    if not rendered:
+        return []
+    sources = unique_sources(
+        fact_sources(session, draft.workspace_id, rendered, "tr" if is_tr else "en")
+    )
+    title = "Değerlerin kaynağı" if is_tr else "Where the values come from"
+    verified = "doğrulandı" if is_tr else "verified"
+    unknown = "doğrulama tarihi kayıtlı değil" if is_tr else "verification date not recorded"
+    lines: list[str] = []
+    used = len(title) + 8
+    for index, source in enumerate(sources):
+        when = (
+            f"{verified} {_format_date_tz(source.verified_at, tz_name)}"
+            if source.verified_at
+            else unknown
+        )
+        line = (
+            f"• <b>{html.escape(_clip(source.display, FACT_DISPLAY_CHARS))}</b> — "
+            f"{'kaynak' if is_tr else 'from'}: "
+            f"{html.escape(_clip(source.label, FACT_LABEL_CHARS))}, {when}"
+        )
+        if used + len(line) + 1 > budget - MORE_LINE_CHARS:
+            left = len(sources) - index
+            lines.append(f"+{left} " + ("değer daha" if is_tr else "more"))
+            break
+        lines.append(line)
+        used += len(line) + 1
+    return [f"<b>{title}:</b>", *lines] if lines else []
+
+
 def _format_notification_text(notification: Notification) -> str:
     icon = SEVERITY_ICONS.get(notification.severity, "ℹ️")
     raw_title = (
@@ -165,6 +221,12 @@ def _deliver_approval_notification(
         proposed = draft.text if draft and draft.text else str(approval.summary.get("text", ""))
         rep_label = "Önerilen Yanıt" if is_tr else "Proposed Reply"
         lines.append(f"• <b>{rep_label}:</b>\n<blockquote>{html.escape(proposed)}</blockquote>")
+        # Telegram caps a message at 4096 characters; the expiry line follows, so keep room for it.
+        room = TELEGRAM_TEXT_BUDGET - len("\n".join(lines)) - EXPIRY_LINE_CHARS
+        fact_lines = _fact_source_lines(session, draft, recipient.timezone, is_tr, room)
+        if fact_lines:
+            lines.append("")
+            lines.extend(fact_lines)
 
     elif approval.subject_type == "content_item":
         from app.content.models import ContentItem

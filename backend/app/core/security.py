@@ -10,6 +10,8 @@ import uuid
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 MIN_PASSWORD_LENGTH = 10
@@ -94,6 +96,42 @@ def generate_secret_key() -> str:
 def generate_encryption_key(key_id: str = "k1") -> str:
     """``key_id:base64(32 random bytes)``, the TOKEN_ENCRYPTION_KEYS entry format (ADR-017)."""
     return f"{key_id}:{base64.b64encode(secrets.token_bytes(32)).decode()}"
+
+
+def _b64url_decode(value: str) -> bytes:
+    return base64.urlsafe_b64decode(value.strip() + "=" * (-len(value.strip()) % 4))
+
+
+def _b64url_encode(value: bytes) -> str:
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
+
+
+def generate_vapid_keys() -> tuple[str, str]:
+    """A new VAPID pair (RFC 8292): (public, private), both unpadded URL-safe base64.
+
+    The public key is the 65-byte uncompressed P-256 point (what ``applicationServerKey``
+    expects); the private key is the raw 32-byte scalar (what ``pywebpush`` accepts).
+    """
+    key = ec.generate_private_key(ec.SECP256R1())
+    public = key.public_key().public_bytes(
+        serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint
+    )
+    private = key.private_numbers().private_value.to_bytes(32, "big")
+    return _b64url_encode(public), _b64url_encode(private)
+
+
+def vapid_keys_match(public: str, private: str) -> bool:
+    """True when ``private`` is a valid P-256 scalar whose public point is ``public``."""
+    try:
+        scalar = int.from_bytes(_b64url_decode(private), "big")
+        derived = (
+            ec.derive_private_key(scalar, ec.SECP256R1())
+            .public_key()
+            .public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)
+        )
+        return hmac.compare_digest(derived, _b64url_decode(public))
+    except (binascii.Error, ValueError):
+        return False
 
 
 class TokenCryptoError(ValueError):

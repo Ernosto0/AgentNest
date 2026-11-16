@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/Layout";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { PushTest } from "./PushTest";
 
 const OPERATIONS = [
   "send",
@@ -306,6 +307,8 @@ export function DevPanel() {
           ))}
         </ul>
       </div>
+
+      <PushTest workspaceId={workspace.id} />
 
       <div className="flex min-w-0 flex-col gap-4 border-t border-border pt-6 xl:col-span-2">
         <h2 className="text-base font-heading font-semibold text-primary">{t("devPanel.reset.title")}</h2>

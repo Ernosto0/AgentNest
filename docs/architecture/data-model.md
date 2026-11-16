@@ -384,6 +384,26 @@ Index: `(conversation_id, provider_timestamp)`.
 
 Constraint: `unique (conversation_id) where status in ('pending_approval','needs_human','queued','sending','outcome_unknown')` (at most one open draft per conversation).
 
+**`assistant_test_turns`** (Feature Phase 1, migration `0046`)
+The owner's test-chat sandbox ([api-design.md §2.6a](api-design.md)). One row per test customer message and the draft it got. Deliberately **not** `conversations`/`messages`/`reply_drafts`: those hang off a `social_accounts` row, and a test chat must work before an account is connected and must never be linked to a real one. Nothing reads this table except the test chat itself.
+| Column | Type | Notes |
+|---|---|---|
+| id, workspace_id | uuid | composite FK `(workspace_id, agent_run_id)` → `agent_runs`; RLS enabled and forced |
+| user_id | uuid not null | FK `users`, cascade: a member sees only their own turns |
+| status | text not null | `pending`, `ready`, `reset` |
+| customer_text | text null | the test message; null after reset |
+| language, intent, source | text null | as `reply_drafts` |
+| flags, decision_reasons | text[] not null default '{}' | |
+| draft_text | text null | what the assistant would send; null when a person must answer |
+| suggestion_text | text null | wording withheld by policy or failed grounding |
+| decision | text null | `auto`, `approval_required`, `human_required`, `blocked`; **required when `status = ready`** |
+| facts_used | jsonb not null default '[]' | `[{key, label, display, verified_at}]` |
+| agent_run_id | uuid null | the LLM run (counts against the daily budget) |
+| is_simulated | boolean not null default true | **check: always true** (INV-09) |
+| created_at, completed_at, reset_at | timestamptz | |
+
+Indexes: `(workspace_id, created_at)` (rate limit), `(workspace_id, user_id, created_at)`. A reset scrubs the content and keeps the row so the rate limit cannot be reset with the chat; turns older than 2 days are deleted by the next test-chat message of that workspace (or with the workspace).
+
 ### 3.6 Content and media (Phase 5)
 
 **`media_assets`**
@@ -462,7 +482,11 @@ The facts a text states are recorded in `fact_references` (`referrer_type = 'con
 
 **`notifications`**: `id`, `workspace_id`, `recipient_user_id` (FK users), `type`, `severity` (`info`, `attention`, `critical`), `params` jsonb, `subject_type`, `subject_id`, `dedup_key` (`unique (recipient_user_id, dedup_key) where read_at is null and dedup_key is not null`), `is_simulated`, `read_at`.
 
-**`notification_deliveries`** (Phase 9): `id`, `notification_id`, `channel`, `status` (`pending`, `sent`, `failed`), `attempts`, `external_ref`, `delivered_at`.
+**`notification_deliveries`** (Phase 9; tenant): `id`, `workspace_id`, `notification_id`, `recipient_user_id`, `channel` (`web`, `telegram`, `web_push`; `web_push` since migration `0048`), `channel_link_id` (Telegram only), `status` (`pending`, `delivered`, `failed`, `skipped_quiet_hours`), `attempt_count`, `last_error` (a fixed reason code for `web_push`, never a URL or key), `sent_at`. This is the delivery ledger: one row per recipient per channel, written in the transaction that creates the notification, with the status the quiet-hours policy chose.
+
+**`push_preferences`** (Feature Phase 1, F-01 part 2; migration `0048`; tenant, RLS enabled and forced): a user's Web Push opt-in per category. `id`, `workspace_id`, `user_id` (FK users, cascade), `category` (`approvals`, `questions`, `failures`; the mapping from notification types is `notifications/catalog.py` `PUSH_TYPES`), `enabled`, `created_at`, `updated_at`. `unique (workspace_id, user_id, category)`. No row means off: push is opt-in, and a user changes only their own rows.
+
+**`push_subscriptions`** (Feature Phase 1, F-01; migration `0047`; tenant, RLS enabled and forced): one browser or phone a user can be notified on. `id`, `workspace_id`, `user_id` (FK users, cascade), `endpoint` (the push service URL as the browser sent it, https only; never returned by the API), `endpoint_hash` (sha256 hex), `p256dh_ciphertext` and `auth_ciphertext` (the message-encryption keys, AES-256-GCM with the token key ring, AAD `push:<part>:<workspace_id>:<id>`, so a copied blob does not open; plaintext only inside the sender), `key_id` (ring key that wrote both), `device_label` (a short label such as "Chrome on Android"; the raw user agent is not stored), `last_success_at` (set by the Web Push channel when a push service accepts a message), `revoked_at`, `created_at`, `updated_at`. `unique (workspace_id, user_id, endpoint_hash)` (one row per device per user per workspace; a re-subscribe refreshes the keys and revives a revoked row). A user keeps at most 10 active rows per workspace (the oldest is revoked). The same endpoint subscribed by another user of the same workspace revokes the previous user's row, so a shared phone never pushes to whoever signed in last. Rows are kept after unsubscribe (`revoked_at`); keys are not covered by the token key rotation job, so retired `TOKEN_ENCRYPTION_KEYS` entries must stay until devices re-subscribe.
 
 **`channel_links`** (Phase 9, user-level, not tenant): `id`, `user_id`, `channel`, `external_user_id`, `external_chat_id`, `default_workspace_id`, `status` (`active`, `revoked`), `linked_at`, `revoked_at`. `unique (channel, external_user_id) where status='active'`.
 

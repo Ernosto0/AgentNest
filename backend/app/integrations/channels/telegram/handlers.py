@@ -793,6 +793,26 @@ def _handle_photo(
     return "photo_cached"
 
 
+def _guarantee_lines(summary: dict[str, Any], is_tr: bool) -> str:
+    """ "Replies sent" and "Unverified values sent" (D-01), from the daily report's metrics. Both
+    are shown even when they are zero; nothing is shown if the report has no such number."""
+    unverified = summary.get("unverified_values_sent")
+    if unverified is None:
+        return ""
+    sent = int(summary.get("replies_sent") or 0)
+    if is_tr:
+        lines = [
+            f"• <b>Gönderilen yanıtlar:</b> {sent}",
+            f"• <b>Doğrulanmamış değer gönderilen yanıt:</b> {unverified}",
+        ]
+    else:
+        lines = [
+            f"• <b>Replies sent:</b> {sent}",
+            f"• <b>Replies with unverified values sent:</b> {unverified}",
+        ]
+    return "\n".join(lines)
+
+
 def _handle_reporting_query(
     session: Session,
     clock: Clock,
@@ -833,6 +853,8 @@ def _handle_reporting_query(
         user_query=raw_text,
     )
 
+    guarantee = _guarantee_lines(summary, is_tr)
+
     if is_tr:
         if is_dm_count_question:
             text = (
@@ -872,6 +894,8 @@ def _handle_reporting_query(
                 f"• <b>Pending Approvals:</b> {approvals}"
             )
 
+    if guarantee and not is_dm_count_question:
+        text += "\n\n" + guarantee
     tg_client.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
     return "reporting_query"
 

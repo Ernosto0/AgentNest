@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, unwrap } from "@/api/client";
 import { AppError } from "@/api/errors";
-import type { Approval, Command } from "@/api/types";
+import type { Approval, Command, Me } from "@/api/types";
+import { meKey } from "@/features/auth/hooks";
+import { notePushOpportunity } from "@/pwa/push";
 
 export const commandKey = (workspaceId: string, commandId: string) =>
   ["command", workspaceId, commandId] as const;
@@ -104,6 +106,7 @@ export interface DecisionInput {
 
 /** Decide with the hash the user was shown: any change since then is a 409 `APPROVAL_STALE`. */
 export function useDecideApproval(workspaceId: string) {
+  const queryClient = useQueryClient();
   const refresh = useRefreshAfterDecision(workspaceId);
   return useMutation<Approval, AppError, DecisionInput>({
     mutationFn: ({ approval, decision, note }) =>
@@ -113,6 +116,11 @@ export function useDecideApproval(workspaceId: string) {
           body: { decision, payload_hash: approval.payload_hash, note: note ?? null },
         }),
       ),
+    onSuccess: (_approval, { decision }) => {
+      // The first approval is when the app offers phone notifications (not on first load).
+      const userId = queryClient.getQueryData<Me | null>(meKey)?.user.id;
+      if (decision === "approve" && userId) notePushOpportunity(userId, workspaceId);
+    },
     // Success or a 409, the server state moved: show what it is now.
     onSettled: () => refresh(),
   });

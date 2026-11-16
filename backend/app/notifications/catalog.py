@@ -107,6 +107,20 @@ _SPECS = (
 
 CATALOG: dict[str, NotificationSpec] = {spec.type: spec for spec in _SPECS}
 
+# Web Push (F-01): the notification types a phone is pushed for, and the preference category each
+# belongs to. A user opts in per category (Settings), never per message. A type that is not listed
+# here is never pushed, however its severity reads. The push payload is built from a fixed template
+# per type (``integrations/channels/web_push/payloads.py``) and never from ``params``.
+PUSH_CATEGORIES = ("approvals", "questions", "failures")
+PUSH_TYPES: dict[str, str] = {
+    "approval.requested": "approvals",
+    "owner_question.requested": "questions",
+    "owner_question.window_closed": "questions",
+    "content.failed": "failures",
+    "reply.failed": "failures",
+    "account.needs_reauth": "failures",
+}
+
 FRONTEND_FILE = (
     Path(__file__).resolve().parents[3]
     / "frontend"

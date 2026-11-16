@@ -22,6 +22,7 @@ EXPECTED: dict[str, tuple[bool, bool, bool]] = {
     "agent.delegation.manage": (True, False, False),
     "agent.control": (True, False, False),
     "agent.activity.view": (True, True, False),
+    "assistant.test": (True, True, False),
     "comments.view": (True, True, True),
     "comments.approve": (True, True, False),
     "comments.moderate": (True, True, False),

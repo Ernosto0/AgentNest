@@ -1165,6 +1165,216 @@
         "title": "ApprovedAnswerPatch",
         "type": "object"
       },
+      "AssistantChatDraftOut": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "auto",
+              "approval_required",
+              "human_required",
+              "blocked"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "facts_used": {
+            "items": {
+              "$ref": "#/components/schemas/FactUsedOut"
+            },
+            "title": "Facts Used",
+            "type": "array"
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intent"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "suggestion_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion Text"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "text",
+          "suggestion_text",
+          "decision",
+          "reasons",
+          "facts_used",
+          "language",
+          "intent",
+          "flags"
+        ],
+        "title": "AssistantChatDraftOut",
+        "type": "object"
+      },
+      "AssistantChatMessageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "AssistantChatMessageIn",
+        "type": "object"
+      },
+      "AssistantChatOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantChatTurnOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "remaining_this_hour": {
+            "title": "Remaining This Hour",
+            "type": "integer"
+          },
+          "remaining_today": {
+            "title": "Remaining Today",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "remaining_this_hour",
+          "remaining_today"
+        ],
+        "title": "AssistantChatOut",
+        "type": "object"
+      },
+      "AssistantChatResetOut": {
+        "properties": {
+          "cleared": {
+            "title": "Cleared",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cleared"
+        ],
+        "title": "AssistantChatResetOut",
+        "type": "object"
+      },
+      "AssistantChatTurnOut": {
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "customer_text": {
+            "title": "Customer Text",
+            "type": "string"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssistantChatDraftOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_simulated": {
+            "const": true,
+            "default": true,
+            "title": "Is Simulated",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "ready"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "customer_text",
+          "created_at",
+          "completed_at",
+          "draft"
+        ],
+        "title": "AssistantChatTurnOut",
+        "type": "object"
+      },
       "AudienceOut": {
         "properties": {
           "best_posting_window": {
@@ -3994,6 +4204,14 @@
             ],
             "title": "Content"
           },
+          "facts_used": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FactSourceOut"
+            },
+            "title": "Facts Used",
+            "type": "array"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -4521,6 +4739,43 @@
         "title": "FactPatch",
         "type": "object"
       },
+      "FactSourceOut": {
+        "description": "One verified fact a reply quotes, once, with where it comes from (D-01). The same shape as\nthe test chat's ``facts_used``: the client shows it as it is.",
+        "properties": {
+          "display": {
+            "title": "Display",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "display",
+          "verified_at"
+        ],
+        "title": "FactSourceOut",
+        "type": "object"
+      },
       "FactTransition": {
         "additionalProperties": false,
         "description": "Body of verify / archive / restore.",
@@ -4547,6 +4802,42 @@
           "expected_version"
         ],
         "title": "FactTransition",
+        "type": "object"
+      },
+      "FactUsedOut": {
+        "properties": {
+          "display": {
+            "title": "Display",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "display",
+          "verified_at"
+        ],
+        "title": "FactUsedOut",
         "type": "object"
       },
       "FailureRuleIn": {
@@ -7465,6 +7756,217 @@
         "title": "PublishedMediaOut",
         "type": "object"
       },
+      "PushConfigOut": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "public_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Public Key"
+          }
+        },
+        "required": [
+          "enabled",
+          "public_key"
+        ],
+        "title": "PushConfigOut",
+        "type": "object"
+      },
+      "PushDeviceList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PushDeviceOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PushDeviceList",
+        "type": "object"
+      },
+      "PushDeviceOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "created_at",
+          "last_success_at"
+        ],
+        "title": "PushDeviceOut",
+        "type": "object"
+      },
+      "PushKeysIn": {
+        "additionalProperties": false,
+        "properties": {
+          "auth": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Auth",
+            "type": "string"
+          },
+          "p256dh": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "P256Dh",
+            "type": "string"
+          }
+        },
+        "required": [
+          "p256dh",
+          "auth"
+        ],
+        "title": "PushKeysIn",
+        "type": "object"
+      },
+      "PushPreferencesIn": {
+        "additionalProperties": false,
+        "description": "Only the categories sent are changed.",
+        "properties": {
+          "approvals": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approvals"
+          },
+          "failures": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failures"
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions"
+          }
+        },
+        "title": "PushPreferencesIn",
+        "type": "object"
+      },
+      "PushPreferencesOut": {
+        "description": "Opt-in per category; ``false`` until the user switches it on.",
+        "properties": {
+          "approvals": {
+            "title": "Approvals",
+            "type": "boolean"
+          },
+          "failures": {
+            "title": "Failures",
+            "type": "boolean"
+          },
+          "questions": {
+            "title": "Questions",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approvals",
+          "questions",
+          "failures"
+        ],
+        "title": "PushPreferencesOut",
+        "type": "object"
+      },
+      "PushSubscribeIn": {
+        "additionalProperties": false,
+        "description": "The shape of the browser's ``PushSubscription.toJSON()``.",
+        "properties": {
+          "endpoint": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "expirationTime": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expirationtime"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeysIn"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "title": "PushSubscribeIn",
+        "type": "object"
+      },
       "QuestionOut": {
         "properties": {
           "answer_id": {
@@ -7714,6 +8216,18 @@
             "title": "Span",
             "type": "array"
           },
+          "verified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
           "version": {
             "title": "Version",
             "type": "integer"
@@ -7725,7 +8239,8 @@
           "label",
           "display",
           "version",
-          "span"
+          "span",
+          "verified_at"
         ],
         "title": "RenderedFactOut",
         "type": "object"
@@ -7773,6 +8288,13 @@
               "type": "string"
             },
             "title": "Decision Reasons",
+            "type": "array"
+          },
+          "facts_used": {
+            "items": {
+              "$ref": "#/components/schemas/FactSourceOut"
+            },
+            "title": "Facts Used",
             "type": "array"
           },
           "failure_code": {
@@ -7897,6 +8419,7 @@
           "text",
           "suggestion_text",
           "rendered_facts",
+          "facts_used",
           "validation",
           "decision",
           "decision_reasons",
@@ -14907,6 +15430,148 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/assistant/test-chat": {
+      "get": {
+        "description": "The chat so far. A turn is ``pending`` until its draft is ready: poll this.",
+        "operationId": "get_test_chat_api_v1_workspaces__workspace_id__assistant_test_chat_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantChatOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Test Chat",
+        "tags": [
+          "assistant"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/assistant/test-chat/messages": {
+      "post": {
+        "description": "A test customer message. Returns the ``pending`` turn at once (202); its ``id`` is the run\nid: poll ``GET`` until the turn is ``ready``. 429 ``TEST_CHAT_RATE_LIMITED`` over the limits.",
+        "operationId": "send_test_message_api_v1_workspaces__workspace_id__assistant_test_chat_messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantChatMessageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantChatTurnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Send Test Message",
+        "tags": [
+          "assistant"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/assistant/test-chat/reset": {
+      "post": {
+        "description": "Clear the signed-in user's chat. Does not give back any of the rate limit.",
+        "operationId": "reset_test_chat_api_v1_workspaces__workspace_id__assistant_test_chat_reset_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantChatResetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Test Chat",
+        "tags": [
+          "assistant"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/automation-policies": {
       "get": {
         "operationId": "get_policies_api_v1_workspaces__workspace_id__automation_policies_get",
@@ -18556,6 +19221,288 @@
         "summary": "Get Operation",
         "tags": [
           "operations"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/push-subscriptions": {
+      "get": {
+        "description": "The signed-in user's own devices.",
+        "operationId": "list_devices_api_v1_workspaces__workspace_id__push_subscriptions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushDeviceList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Devices",
+        "tags": [
+          "push"
+        ]
+      },
+      "post": {
+        "description": "Register this device (201), or refresh it when the same endpoint is already registered\nfor this user (200). 409 ``WEB_PUSH_NOT_CONFIGURED`` when the server has no VAPID keys.",
+        "operationId": "subscribe_api_v1_workspaces__workspace_id__push_subscriptions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscribeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushDeviceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Subscribe",
+        "tags": [
+          "push"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/push-subscriptions/config": {
+      "get": {
+        "description": "Whether push is available and the public key to subscribe with. Safe when unconfigured.",
+        "operationId": "push_config_api_v1_workspaces__workspace_id__push_subscriptions_config_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushConfigOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Push Config",
+        "tags": [
+          "push"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/push-subscriptions/preferences": {
+      "get": {
+        "description": "The signed-in user's own opt-in per category.",
+        "operationId": "get_preferences_api_v1_workspaces__workspace_id__push_subscriptions_preferences_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Preferences",
+        "tags": [
+          "push"
+        ]
+      },
+      "put": {
+        "description": "Change the signed-in user's own opt-in (only the categories sent).",
+        "operationId": "put_preferences_api_v1_workspaces__workspace_id__push_subscriptions_preferences_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushPreferencesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Preferences",
+        "tags": [
+          "push"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/push-subscriptions/{subscription_id}": {
+      "delete": {
+        "operationId": "unsubscribe_api_v1_workspaces__workspace_id__push_subscriptions__subscription_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscription_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Subscription Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unsubscribe",
+        "tags": [
+          "push"
         ]
       }
     },

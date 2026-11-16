@@ -50,8 +50,10 @@ function draft(overrides: Partial<ReplyDraft> = {}): ReplyDraft {
         display: "6.000 ₺ / ay",
         version: 1,
         span: [start, start + "6.000 ₺ / ay".length],
+        verified_at: "2026-11-03T09:00:00Z",
       },
     ],
+    facts_used: [{ key: "pricing.membership_monthly", label: "Aylık üyelik", display: "6.000 ₺ / ay", verified_at: "2026-11-03T09:00:00Z" }],
     validation: { passed: true, issues: [] },
     decision: "approval_required",
     decision_reasons: ["POLICY_REQUIRES_APPROVAL"],
@@ -139,7 +141,7 @@ describe("inbox", () => {
     const card = await screen.findByTestId("draft-card");
     expect(within(card).getByTestId("draft-text")).toHaveTextContent("Merhaba! Aylık üyelik ücretimiz 6.000 ₺ / ay.");
     await user.click(within(card).getByTestId("fact-chip"));
-    expect(await within(card).findByText(/Kaynak: Aylık üyelik, doğrulandı/)).toBeInTheDocument();
+    expect(await within(card).findByText(/Kaynak: Aylık üyelik, doğrulandı 3 Kas/)).toBeInTheDocument();
     expect(within(card).getByText("Otomatik gönderim kapalı")).toBeInTheDocument();
     expect(within(card).getByTestId("simulated-badge")).toBeInTheDocument();
 
@@ -150,6 +152,47 @@ describe("inbox", () => {
       payload_hash: HASH,
       note: null,
     });
+  });
+
+  it("shows the fact source beside every value of the draft, from the server's mapping (D-01)", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(
+            detail(
+              draft({
+                facts_used: [
+                  { key: "pricing.membership_monthly", label: "Aylık üyelik", display: "6.000 ₺ / ay", verified_at: "2026-11-03T09:00:00Z" },
+                  { key: "contact.phone", label: "Telefon", display: "0555 000 00 00", verified_at: null },
+                ],
+              }),
+            ),
+          ),
+        [`GET ${BASE}/approvals/${APPROVAL_ID}`]: () => json(approval({ id: APPROVAL_ID, action: "reply.send", kind: "authorization" })),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const card = await screen.findByTestId("draft-card");
+    const list = await within(card).findByTestId("facts-used");
+    const rows = within(list).getAllByTestId("fact-used");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("6.000 ₺ / ay");
+    expect(rows[0]).toHaveTextContent("kaynak: Aylık üyelik, doğrulama tarihi 3 Kas");
+    expect(rows[1]).toHaveTextContent("Telefon");
+    expect(rows[1]).not.toHaveTextContent("doğrulama tarihi 3 Kas");
+  });
+
+  it("shows no fact list for a reply that quotes no fact", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () =>
+          json(detail(draft({ rendered_facts: [], facts_used: [], text: "Merhaba! Nasıl yardımcı olabilirim?" }))),
+        [`GET ${BASE}/approvals/${APPROVAL_ID}`]: () => json(approval({ id: APPROVAL_ID, action: "reply.send", kind: "authorization" })),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const card = await screen.findByTestId("draft-card");
+    expect(within(card).queryByTestId("facts-used")).not.toBeInTheDocument();
   });
 
   it("offers no decision to someone who may not approve", async () => {
@@ -290,6 +333,7 @@ describe("inbox", () => {
                 text: null,
                 suggestion_text: "Özür dileriz, sizi arayacağız.",
                 rendered_facts: [],
+                facts_used: [],
                 decision_reasons: ["INTENT_COMPLAINT", "FLAG_REFUND"],
                 approval_id: null,
               }),

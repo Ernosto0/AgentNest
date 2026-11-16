@@ -151,7 +151,16 @@ def test_exact_sources_stale_versions_foreign_ids_and_internal_keys_fail(db_sess
     good = proposal(
         "We offer {{fact:custom.services}}.", fact_sources=[FactEvidence(id=service.id, version=1)]
     )
-    assert validate_reply(db_session, clock, context, good).facts == ((service.id, 1),)
+    grounded = validate_reply(db_session, clock, context, good)
+    assert grounded.facts == ((service.id, 1),)
+    # The claim validator ran on the text, and the rendered placeholders are kept in the stored
+    # form the draft views and the report read (D-01).
+    assert grounded.claims_checked is True
+    (record,) = grounded.rendered
+    assert record["key"] == "custom.services" and record["fact_id"] == str(service.id)
+    assert record["version"] == 1
+    start, end = record["span"]  # type: ignore[misc]
+    assert grounded.text[start:end] == record["display"]
     forged = good.model_copy(update={"fact_sources": [FactEvidence(id=uuid.uuid4(), version=1)]})
     assert not validate_reply(db_session, clock, context, forged).valid
     service.current_version = 2

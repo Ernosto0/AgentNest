@@ -40,6 +40,11 @@ const BACKGROUND: [RegExp, () => Response][] = [
     /^GET \/api\/v1\/workspaces\/[^/]+\/notifications$/,
     () => json({ items: [], unread_count: 0, next_cursor: null }),
   ],
+  // Push is off unless a test turns it on: the settings and the prompt then render nothing.
+  [
+    /^GET \/api\/v1\/workspaces\/[^/]+\/push-subscriptions\/config$/,
+    () => json({ enabled: false, public_key: null }),
+  ],
   [/^GET \/api\/v1\/workspaces\/[^/]+\/home\/attention$/, () => json({ drafts: 0, unanswered_comments: 0 })],
   // Home reads these background feeds; a test that cares about them overrides the route.
   [/^GET \/api\/v1\/workspaces\/[^/]+\/social-accounts$/, () => json({ items: [], next_cursor: null })],

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReplyDraft } from "@/api/types";
 import { ClockIcon } from "@/components/icons";
+import { formatVerifiedDate } from "@/components/formatVerifiedDate";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useWindowMinutes } from "./hooks";
 
@@ -10,12 +11,16 @@ export interface ChipFact {
   display: string;
   label: string;
   version?: number | null;
+  /** When the fact version behind the value was verified (server-provided). */
+  verified_at?: string | null;
 }
 
 /** A value taken from a verified fact. Tapping it shows where it comes from. */
 export function FactChip({ fact }: { fact: ChipFact }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
   const [open, setOpen] = useState(false);
+  const date = fact.verified_at ? formatVerifiedDate(fact.verified_at, i18n.language, workspace.timezone) : "";
   return (
     <span className="relative inline-block">
       <button
@@ -32,9 +37,11 @@ export function FactChip({ fact }: { fact: ChipFact }) {
           role="status"
           className="absolute top-full left-0 z-20 mt-1.5 w-60 rounded-control bg-navigation p-2.5 text-metadata font-normal text-navigation-text shadow-sm border border-navigation-selected/20"
         >
-          {fact.version == null
-            ? t("convo.draft.sourceUnversioned", { label: fact.label })
-            : t("convo.draft.source", { label: fact.label, version: fact.version })}
+          {date
+            ? t("convo.draft.sourceOn", { label: fact.label, date })
+            : fact.version == null
+              ? t("convo.draft.sourceUnversioned", { label: fact.label })
+              : t("convo.draft.source", { label: fact.label, version: fact.version })}
         </span>
       ) : null}
     </span>

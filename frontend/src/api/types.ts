@@ -89,3 +89,8 @@ export type ChannelLinkCodeRequest = Schemas["ChannelLinkCodeRequest"];
 // Google Calendar & appointments integration
 export type CalendarConnection = Schemas["CalendarConnectionOut"];
 export type CalendarAppointment = Schemas["CalendarAppointmentOut"];
+
+// Web Push owner channel (F-01)
+export type PushConfig = Schemas["PushConfigOut"];
+export type PushDevice = Schemas["PushDeviceOut"];
+export type PushPreferences = Schemas["PushPreferencesOut"];

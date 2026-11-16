@@ -14,7 +14,7 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
-from app.core.security import TokenCryptoError, TokenKeyRing
+from app.core.security import TokenCryptoError, TokenKeyRing, vapid_keys_match
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -47,6 +47,7 @@ _SECRET_FIELDS = frozenset(
         "telegram_bot_token",
         "telegram_webhook_secret",
         "google_client_secret",
+        "web_push_vapid_private_key",
     }
 )
 
@@ -103,6 +104,10 @@ class Settings(BaseSettings):
     llm_model_extract_facts: str = ""
     llm_timeout_seconds: float = Field(default=30.0, gt=0)
     llm_max_calls_per_workspace_per_day: int = Field(default=500, ge=1)
+    # The owner's "try your assistant" chat (F-02). Every message is an LLM call that counts
+    # against the daily budget above, so it has its own, much tighter, per-workspace limits.
+    test_chat_max_messages_per_hour: int = Field(default=20, ge=1)
+    test_chat_max_messages_per_day: int = Field(default=60, ge=1)
     # Reasoning models spend output tokens on reasoning; keep it low for short structured tasks.
     llm_reasoning_effort: Literal["", "minimal", "low", "medium", "high"] = "low"
     # Optional JSON ``{"<model>": {"input_per_mtok": 0.0, "output_per_mtok": 0.0}}`` (USD) for
@@ -189,6 +194,13 @@ class Settings(BaseSettings):
     telegram_bot_token: SecretStr | None = None
     telegram_webhook_secret: SecretStr | None = None
 
+    # --- Owner notifications: Web Push (F-01). All three empty = push is off. ---
+    # VAPID keys are generated once by ``uv run python -m app.cli generate-vapid-keys``. The public
+    # key is served to the SPA; the private key never leaves the server and is never logged.
+    web_push_vapid_public_key: str = ""
+    web_push_vapid_private_key: SecretStr = SecretStr("")
+    web_push_subject: str = ""  # "mailto:ops@example.com" or an https:// URL (RFC 8292)
+
     # --- Google Calendar Integration ---
     calendar_enabled_providers: str = "mock"
     google_client_id: str = ""
@@ -225,6 +237,7 @@ class Settings(BaseSettings):
     def safety_problems(self) -> list[str]:
         """Provider/storage safety applies everywhere; production has extra deployment checks."""
         problems = self._instagram_problems() + self._calendar_problems()
+        problems += self._web_push_problems()
         keys = self.token_encryption_keys.get_secret_value()
         if (
             keys
@@ -320,6 +333,42 @@ class Settings(BaseSettings):
             problems.append(
                 "TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_USERNAME must be set when "
                 "TELEGRAM_WEBHOOK_SECRET is configured."
+            )
+        return problems
+
+    @property
+    def web_push_enabled(self) -> bool:
+        """Push is on only when the VAPID pair and subject are set (``safety_problems`` checks)."""
+        return bool(
+            self.web_push_vapid_public_key.strip()
+            and self.web_push_vapid_private_key.get_secret_value().strip()
+            and self.web_push_subject.strip()
+        )
+
+    def _web_push_problems(self) -> list[str]:
+        """All three or none; the pair must match; subscriptions need the token key ring."""
+        public = self.web_push_vapid_public_key.strip()
+        private = self.web_push_vapid_private_key.get_secret_value().strip()
+        subject = self.web_push_subject.strip()
+        if not (public or private or subject):
+            return []
+        if not (public and private and subject):
+            return [
+                "WEB_PUSH_VAPID_PUBLIC_KEY, WEB_PUSH_VAPID_PRIVATE_KEY and WEB_PUSH_SUBJECT "
+                "must be set together."
+            ]
+        problems: list[str] = []
+        if not (subject.startswith("mailto:") or subject.startswith("https://")):
+            problems.append("WEB_PUSH_SUBJECT must start with 'mailto:' or 'https://'.")
+        if not vapid_keys_match(public, private):
+            problems.append(
+                "WEB_PUSH_VAPID_PUBLIC_KEY and WEB_PUSH_VAPID_PRIVATE_KEY are not a valid "
+                "matching pair (generate one with 'generate-vapid-keys')."
+            )
+        if not self.token_encryption_keys.get_secret_value():
+            problems.append(
+                "TOKEN_ENCRYPTION_KEYS must be set when Web Push is configured "
+                "(subscription keys are stored encrypted)."
             )
         return problems
 

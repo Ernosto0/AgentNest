@@ -21,6 +21,53 @@ function routes(items: ReturnType<typeof approval>[], extra: Record<string, () =
 }
 
 describe("approvals screen", () => {
+  it("shows where each value of a reply comes from in the approval, from the server's mapping (D-01)", async () => {
+    const DRAFT = "d1000000-0000-4000-8000-000000000009";
+    const pending = approval({
+      id: "a0000000-0000-4000-8000-000000000009",
+      action: "reply.send",
+      kind: "authorization",
+      summary: {},
+      subject: { type: "reply_draft", id: DRAFT, version: 1, status: "pending_approval", link: { target: "reply_draft", id: DRAFT } },
+    });
+    mockApi(
+      routes([pending], {
+        [`GET ${BASE}/reply-drafts/${DRAFT}`]: () =>
+          json({
+            id: DRAFT,
+            conversation_id: "c1000000-0000-4000-8000-000000000001",
+            status: "pending_approval",
+            source: "ai",
+            language: "tr",
+            intent: "pricing",
+            flags: [],
+            text: "Üyelik 6.000 ₺ / ay.",
+            suggestion_text: null,
+            rendered_facts: [],
+            facts_used: [
+              { key: "pricing.membership_monthly", label: "Aylık üyelik", display: "6.000 ₺ / ay", verified_at: "2026-11-03T09:00:00Z" },
+            ],
+            validation: { passed: true, issues: [] },
+            decision: "approval_required",
+            decision_reasons: [],
+            approval_id: pending.id,
+            approval_state: null,
+            version: 1,
+            failure_code: null,
+            window_ends_at: null,
+            created_at: "2026-11-03T10:00:00Z",
+            is_simulated: false,
+          }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/approvals`);
+    await userEvent.setup().click(await screen.findByRole("button", { name: /Yanıt gönderme/ }));
+    const body = await screen.findByTestId("reply-approval-body");
+    const row = await within(body).findByTestId("fact-used");
+    expect(row).toHaveTextContent("6.000 ₺ / ay");
+    expect(row).toHaveTextContent("kaynak: Aylık üyelik, doğrulama tarihi 3 Kas");
+  });
+
   it("lists what is pending and teaches when there is nothing", async () => {
     mockApi(routes([]));
     renderApp(`/w/${WS_GOLKENT}/approvals`);

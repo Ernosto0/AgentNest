@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { Approval } from "@/api/types";
+import { FactsUsed } from "@/components/FactsUsed";
 import { DraftText, ReasonChips } from "@/features/inbox/DraftParts";
 import { useReplyDraft } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -20,6 +21,7 @@ export function ReplyApprovalBody({ approval }: { approval: Approval }) {
     >
       <div className="rounded-control border border-border bg-surface-subtle p-3.5 shadow-2xs">
         <DraftText draft={draft.data} />
+        <FactsUsed facts={draft.data.facts_used} timeZone={workspace.timezone} className="mt-3 border-t border-border/60 pt-3" />
       </div>
       <ReasonChips reasons={draft.data.decision_reasons} />
       <div>

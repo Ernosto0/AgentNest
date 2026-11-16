@@ -44,6 +44,18 @@ class RenderedFactOut(BaseModel):
     display: str
     version: int
     span: list[int]
+    # When the fact version this value was rendered from was verified (``None``: not recorded).
+    verified_at: datetime | None
+
+
+class FactSourceOut(BaseModel):
+    """One verified fact a reply quotes, once, with where it comes from (D-01). The same shape as
+    the test chat's ``facts_used``: the client shows it as it is."""
+
+    key: str
+    label: str
+    display: str
+    verified_at: datetime | None
 
 
 class ValidationIssueOut(BaseModel):
@@ -81,6 +93,7 @@ class ReplyDraftOut(BaseModel):
     text: str | None
     suggestion_text: str | None
     rendered_facts: list[RenderedFactOut]
+    facts_used: list[FactSourceOut]
     validation: ValidationOut
     decision: str
     decision_reasons: list[str]

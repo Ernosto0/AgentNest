@@ -6,7 +6,9 @@ import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { AlertIcon, BookIcon, CheckIcon, HandIcon, InfoIcon, PencilIcon, SendIcon, SparkIcon, XIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
+import { FactsUsed } from "@/components/FactsUsed";
 import { useDecideApproval } from "@/features/commands/hooks";
+import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { ApprovalStateNote, DraftText, ReasonChips } from "./DraftParts";
 import { useApproval, useCancelDraft, useEditDraft } from "./hooks";
 
@@ -58,6 +60,7 @@ export function DraftCard({
   onUseSuggestion?: (text: string) => void;
 }) {
   const { t } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
   const pending = draft.status === "pending_approval";
   const approval = useApproval(workspaceId, pending ? draft.approval_id : null);
   const decide = useDecideApproval(workspaceId);
@@ -98,6 +101,7 @@ export function DraftCard({
       {draft.text !== null && !editing ? (
         <div className="rounded-xl border border-action/10 bg-surface px-4 py-3">
           <DraftText draft={draft} />
+          <FactsUsed facts={draft.facts_used} timeZone={workspace.timezone} className="mt-3 border-t border-border/60 pt-3" />
         </div>
       ) : null}
       {draft.text === null && draft.suggestion_text ? (

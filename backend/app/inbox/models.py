@@ -291,3 +291,63 @@ class ReplyDraft(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
     created_by_actor_id: Mapped[str | None] = mapped_column(Text)
     client_request_id: Mapped[str | None] = mapped_column(Text)
     is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+
+
+TEST_CHAT_STATUSES = ("pending", "ready", "reset")
+
+
+class AssistantTestTurn(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """One customer message of the owner's "try your assistant" chat and the draft it got.
+
+    A **sandbox**, kept out of ``conversations``/``messages``/``reply_drafts`` on purpose: those
+    tables hang off a ``social_accounts`` row, and a test chat must work before any account is
+    connected and must never be linked to a real one. Nothing here can be approved, sent, counted
+    in a report or remembered about a customer, because none of that machinery reads this table.
+    ``is_simulated`` is always true (a check constraint; INV-09). A reset scrubs the content and
+    keeps the row, so the per-workspace rate limit cannot be reset along with the chat.
+    """
+
+    __tablename__ = "assistant_test_turns"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "agent_run_id"], ["agent_runs.workspace_id", "agent_runs.id"]
+        ),
+        CheckConstraint(_in("status", TEST_CHAT_STATUSES), name="status"),
+        CheckConstraint(f"decision IS NULL OR {_in('decision', DRAFT_DECISIONS)}", name="decision"),
+        CheckConstraint("status <> 'ready' OR decision IS NOT NULL", name="ready_has_decision"),
+        CheckConstraint("is_simulated", name="always_simulated"),
+        Index("ix_assistant_test_turns_workspace_created", "workspace_id", "created_at"),
+        Index("ix_assistant_test_turns_user_created", "workspace_id", "user_id", "created_at"),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    customer_text: Mapped[str | None] = mapped_column(Text)
+    language: Mapped[str | None] = mapped_column(Text)
+    intent: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str | None] = mapped_column(Text)
+    flags: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=sql_text("'{}'")
+    )
+    # What the assistant would send (``auto``/``approval_required``), with the disclosure notice
+    # where one applies. Withheld wording (a person must answer) is only the suggestion.
+    draft_text: Mapped[str | None] = mapped_column(Text)
+    suggestion_text: Mapped[str | None] = mapped_column(Text)
+    decision: Mapped[str | None] = mapped_column(Text)
+    decision_reasons: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default=sql_text("'{}'")
+    )
+    # [{key, label, display, verified_at}] for every fact the wording quotes.
+    facts_used: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, nullable=False, server_default=sql_text("'[]'::jsonb")
+    )
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column()
+    is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reset_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

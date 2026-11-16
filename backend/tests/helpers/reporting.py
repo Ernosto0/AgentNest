@@ -40,6 +40,7 @@ EXPECTED: dict[str, int | float] = {
     "replies_sent_auto": 13,
     "replies_sent_approved": 12,
     "replies_sent_by_owner": 14,
+    "unverified_values_sent": 19,
     "native_replies": 5,
     "escalations": 7,
     "missed_conversations": 11,
@@ -53,6 +54,17 @@ EXPECTED: dict[str, int | float] = {
     "content_on_hold_now": 16,
     "fact_changes": 17,
     "integration_errors": 18,
+}
+# What the claim validator stored for a reply with a value that is not a verified fact.
+UNVERIFIED_AI: dict[str, Any] = {
+    "passed": False,
+    "issues": [{"code": "MONEY", "span": [10, 16], "text": "999 TL"}],
+    "rendered": [],
+}
+UNVERIFIED_OWNER: dict[str, Any] = {
+    "passed": False,
+    "issues": [{"code": "NUMBER", "span": [3, 7], "text": "4500", "matches_verified": False}],
+    "rendered": [],
 }
 EXPECTED_BREAKDOWN = {"command.update_fact": 1, "content.publish": 1, "reply.send": 2}
 # The answered inbound bursts behind the median, in minutes.
@@ -167,6 +179,7 @@ class Builder:
         decision: str,
         status: str = "sent",
         created_at: datetime,
+        validation: dict[str, Any] | None = None,
     ) -> ReplyDraft:
         draft = ReplyDraft(
             workspace_id=self.workspace.id,
@@ -178,6 +191,7 @@ class Builder:
             created_by_actor_type="system",
             is_simulated=self.simulated,
             created_at=created_at,
+            **({} if validation is None else {"validation": validation}),
         )
         self.session.add(draft)
         self.session.flush()
@@ -191,9 +205,17 @@ class Builder:
         *,
         source: str,
         decision: str,
+        validation: dict[str, Any] | None = None,
     ) -> Message:
         """A draft and the outbound message that sent it."""
-        draft = self.draft(conversation, covers, source=source, decision=decision, created_at=when)
+        draft = self.draft(
+            conversation,
+            covers,
+            source=source,
+            decision=decision,
+            created_at=when,
+            validation=validation,
+        )
         return self.message(conversation, "outbound", when, draft=draft)
 
     # -- other tables ---------------------------------------------------------------------
@@ -379,13 +401,17 @@ def build_day(
     # F1: outbound-only filler (its one inbound message is three days old).
     f1 = b.conversation(old)
     anchor = b.message(f1, "inbound", t(10, 0, day=d - timedelta(days=3)))
-    for source, decision, count in [
-        ("ai", "auto", 11),
-        ("ai", "approval_required", 9),
-        ("owner", "approval_required", 10),
+    # The stored claim-validator result decides "unverified_values_sent": the 9 approved and the
+    # 10 owner replies carry a value that is not a verified fact (19), the 11 automatic ones none.
+    for source, decision, count, validation in [
+        ("ai", "auto", 11, None),
+        ("ai", "approval_required", 9, UNVERIFIED_AI),
+        ("owner", "approval_required", 10, UNVERIFIED_OWNER),
     ]:
         for i in range(count):
-            b.reply(f1, anchor, t(19, i, 30), source=source, decision=decision)
+            b.reply(
+                f1, anchor, t(19, i, 30), source=source, decision=decision, validation=validation
+            )
 
     # Window ended in the period: 11 conversations with no reply (the first at the very start).
     for i in range(11):

@@ -1,0 +1,132 @@
+{
+  "factsUsed": {
+    "title": "Kullanılan bilgiler",
+    "line": "kaynak: {{label}}, doğrulama tarihi {{date}}",
+    "lineNoDate": "kaynak: {{label}}, doğrulama tarihi bilinmiyor",
+    "none": "Kayıtlı işletme bilgisi kullanılmadı."
+  },
+  "testChat": {
+    "title": "Asistanınızı deneyin",
+    "intro": "Bir müşteri gibi yazın. Asistanınızın vereceği yanıtı, hangi bilgileri kullandığını ve sonrasında ne olacağını görürsünüz.",
+    "simulatedNote": "Yalnızca deneme: burada yazılanlar kimseye gönderilmez, Instagram’a ulaşmaz ve raporlarınıza sayılmaz.",
+    "open": "Asistanınızı deneyin",
+    "back": "Asistana dön",
+    "staffOnly": "Asistanı yalnızca sahipler ve yöneticiler deneyebilir.",
+    "customerLabel": "Siz, müşteri olarak",
+    "assistantLabel": "Asistanınız",
+    "writing": "Asistanınız yazıyor…",
+    "suggestionsTitle": "Ne yazacağınızı bilmiyor musunuz? Bir soruya dokunun",
+    "emptyTitle": "Asistanınıza bir şey sorun",
+    "emptyHint": "Aşağıdan bir soru seçin veya kendi sorunuzu yazın.",
+    "messageLabel": "Müşteri mesajı",
+    "placeholder": "Örneğin: Saat kaçta açılıyorsunuz?",
+    "counter": "{{count}} / {{max}} karakter",
+    "send": "Deneme mesajı gönder",
+    "sending": "Gönderiliyor…",
+    "reset": "Baştan başla",
+    "resetting": "Temizleniyor…",
+    "loading": "Deneme konuşmanız yükleniyor…",
+    "retry": "Tekrar dene",
+    "noReply": "Asistan bu mesaja kendi başına yanıt göndermezdi.",
+    "reasonsTitle": "Neden",
+    "suggestionTitle": "Başlangıç için önerilen ifade (gönderilmez)",
+    "suggestionHint": "Vurgulanan değerler doğrulanmadığı için asistan bunları yazmazdı.",
+    "decision": {
+      "auto": {
+        "title": "Kendiliğinden gönderilirdi",
+        "detail": "Mevcut ayarlarınızla asistan bu yanıtı kendisi gönderirdi."
+      },
+      "approval_required": {
+        "title": "Onayınızı beklerdi",
+        "detail": "Bunu taslak olarak görürdünüz ve hiçbir şey gitmeden önce siz karar verirdiniz."
+      },
+      "human_required": {
+        "title": "Bir kişiden yanıt istenirdi",
+        "detail": "Asistan bunu kendisi yanıtlamazdı. Size sorardı."
+      },
+      "blocked": {
+        "title": "Gönderilmezdi",
+        "detail": "Bu mesaja hiçbir yanıt gitmezdi."
+      }
+    },
+    "reasonFallback": "Asistanın kuralları, bunu bir kişinin kontrol etmesini istedi.",
+    "reason": {
+      "POLICY_REQUIRES_APPROVAL": "Ayarlarınız, yanıtların gönderilmeden önce sizin onayınızı istiyor.",
+      "POLICY_AUTO": "Ayarlarınız, asistanın bu tür yanıtları kendisinin göndermesine izin veriyor.",
+      "AUTOMATION_OFF": "Bu konuda otomatik yanıt kapalı.",
+      "READINESS_NOT_READY": "Kurulum henüz bitmedi; bu yüzden yanıtlar onayınızı bekler.",
+      "AUTO_RATE_GUARD": "Yakın zamanda çok sayıda otomatik yanıt gitti; bu yüzden bu yanıt sizi bekler.",
+      "CONTAINS_PRICING": "Yanıtta fiyat var ve fiyat ayarınız bunu sizin kontrol etmenizi istiyor.",
+      "CONTAINS_HOURS": "Yanıtta çalışma saatleri var ve saat ayarınız bunu sizin kontrol etmenizi istiyor.",
+      "CONTAINS_LOCATION_CONTACT": "Yanıtta adres veya iletişim bilgisi var ve ayarınız bunu sizin kontrol etmenizi istiyor.",
+      "CONTAINS_SERVICES": "Yanıt hizmetlerinizi anlatıyor ve hizmet ayarınız bunu sizin kontrol etmenizi istiyor.",
+      "CONTAINS_BOOKING": "Yanıtta randevu bilgisi var ve randevu ayarınız bunu sizin kontrol etmenizi istiyor.",
+      "CONTAINS_PROMOTIONS": "Yanıtta bir kampanya var ve kampanya ayarınız bunu sizin kontrol etmenizi istiyor.",
+      "CONTAINS_GENERAL_FAQ": "Yanıt sık sorulan bir soruyu yanıtlıyor ve ayarınız bunu sizin kontrol etmenizi istiyor.",
+      "HUMAN_TAKEOVER": "Bu konuşmayı siz yürütüyorsunuz.",
+      "CONTROLLER_CHANGED": "Asistanın ayarları değişti; bu yüzden yeniden bakılması gerekiyor.",
+      "LANGUAGE_UNSUPPORTED": "Mesaj, asistanın henüz yanıtlamadığı bir dilde.",
+      "INTENT_COMPLAINT": "Bu bir şikâyete benziyor. Şikâyetleri her zaman bir kişi yanıtlar.",
+      "INTENT_REFUND_REQUEST": "Bu bir iade talebine benziyor. İadeye her zaman bir kişi karar verir.",
+      "INTENT_DISCOUNT_REQUEST": "Bu bir indirim talebine benziyor. İndirime her zaman bir kişi karar verir.",
+      "INTENT_SENSITIVE": "Bu hassas bir konu; bu yüzden bir kişinin yanıtlaması gerekir.",
+      "INTENT_UNSUPPORTED": "Asistan bu tür bir mesajı yanıtlayacak şekilde ayarlanmadı.",
+      "FLAG_COMPLAINT": "Mesajda bir şikâyetten söz ediliyor.",
+      "FLAG_REFUND": "Mesajda bir iadeden söz ediliyor.",
+      "FLAG_DISCOUNT": "Mesajda indirim isteniyor.",
+      "FLAG_LEGAL": "Mesaj hukuki bir konuya değiniyor.",
+      "FLAG_HEALTH_SAFETY": "Mesaj sağlık veya güvenlik konusuna değiniyor.",
+      "FLAG_ABUSIVE": "Mesajda hakaret içeren bir dil var.",
+      "FLAG_PERSONAL_DATA": "Mesajda kişisel veri var.",
+      "ESCALATION_KEYWORD": "Mesajda, bir kişiye devretmek için belirlediğiniz sözcüklerden biri var.",
+      "MODEL_REQUESTED_HUMAN": "Asistan nasıl yanıtlayacağından emin olmadı ve bir kişiden yardım istedi.",
+      "FACT_NOT_USABLE": "Yanıt için eksik veya henüz doğrulanmamış işletme bilgisi gerekiyor. Asistan fiyatı, saati veya iletişim bilgisini asla tahmin etmez.",
+      "GROUNDING_FAILED": "Taslakta doğrulanmış bilgileriniz arasında olmayan bir değer vardı; bu yüzden tutuldu.",
+      "LLM_UNAVAILABLE": "Asistan şu an yanıt yazamadı.",
+      "LLM_BUDGET_EXCEEDED": "Asistanın günlük sınırına ulaşıldı.",
+      "LLM_OUTPUT_INVALID": "Asistanın yanıtı kullanılamadı.",
+      "LLM_REFUSED": "Asistan bu mesajı yanıtlamayı reddetti.",
+      "ATTACHMENT_ONLY": "Mesajda yalnızca bir fotoğraf veya dosya var.",
+      "INJECTION_SUSPECTED": "Mesaj, asistana talimat vermeye çalışıyor gibi görünüyor; bu yüzden bir kişinin okuması gerekir."
+    },
+    "quota": {
+      "hour_one": "Bu saat için {{count}} deneme mesajı hakkınız kaldı",
+      "hour_other": "Bu saat için {{count}} deneme mesajı hakkınız kaldı",
+      "day_one": "Bugün için {{count}} deneme mesajı hakkınız kaldı",
+      "day_other": "Bugün için {{count}} deneme mesajı hakkınız kaldı",
+      "none": "Deneme mesajı hakkınız şimdilik doldu. Lütfen daha sonra tekrar deneyin."
+    },
+    "rateLimited": {
+      "title": "Biraz yavaşlayın",
+      "body": "Kısa sürede çok sayıda deneme mesajı gönderdiniz. Her biri asistanı kullanır; bu yüzden bir sınır var.",
+      "retry": "Yaklaşık {{minutes}} dakika sonra tekrar deneyin."
+    },
+    "wizard": {
+      "intro": "Çalışma alanınız hazır. Birkaç müşteri mesajı deneyin ya da bunu atlayıp daha sonra Asistan sayfasından yapın.",
+      "noKnowledge": "İşletme bilgilerinizi henüz eklemediniz; bu yüzden yanıtların çoğu sizin gerektiğinizi söyleyecek. Sırada bilgilerinizi eklemek var, ardından tekrar deneyin.",
+      "skip": "Şimdilik geç",
+      "continue": "İşletme bilgilerine devam et"
+    },
+    "suggest": {
+      "hours": "Saat kaçta açıksınız?",
+      "priceGeneral": "Fiyatlarınız nedir?",
+      "priceItem": "{{item}} ne kadar?",
+      "location": "Neredesiniz?",
+      "booking": "Nasıl randevu alabilirim?",
+      "contact": "Telefon numaranız nedir?",
+      "serviceItem": "{{item}} hizmetiniz var mı?",
+      "complaint": "Son ziyaretimden memnun kalmadım, şikâyetçiyim.",
+      "category": {
+        "beauty_wellness": "Yarın için boş randevunuz var mı?",
+        "food_beverage": "Eve servisiniz var mı?",
+        "retail": "Bu ürün stokta var mı?",
+        "fitness": "Üye olmadan önce deneme dersine katılabilir miyim?",
+        "health_clinic": "Bu hafta randevu alabilir miyim?",
+        "education": "Bir sonraki kurs ne zaman başlıyor?",
+        "hospitality": "Bu hafta sonu boş odanız var mı?",
+        "services": "Bana fiyat teklifi verebilir misiniz?",
+        "other": "Neler sunduğunuz hakkında biraz bilgi verir misiniz?"
+      }
+    }
+  }
+}

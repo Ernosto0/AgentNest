@@ -1311,6 +1311,67 @@ export interface paths {
         patch: operations["update_answer_api_v1_workspaces__workspace_id__approved_answers__answer_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/assistant/test-chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Test Chat
+         * @description The chat so far. A turn is ``pending`` until its draft is ready: poll this.
+         */
+        get: operations["get_test_chat_api_v1_workspaces__workspace_id__assistant_test_chat_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/assistant/test-chat/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Test Message
+         * @description A test customer message. Returns the ``pending`` turn at once (202); its ``id`` is the run
+         *     id: poll ``GET`` until the turn is ``ready``. 429 ``TEST_CHAT_RATE_LIMITED`` over the limits.
+         */
+        post: operations["send_test_message_api_v1_workspaces__workspace_id__assistant_test_chat_messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/assistant/test-chat/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Test Chat
+         * @description Clear the signed-in user's chat. Does not give back any of the rate limit.
+         */
+        post: operations["reset_test_chat_api_v1_workspaces__workspace_id__assistant_test_chat_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/automation-policies": {
         parameters: {
             query?: never;
@@ -2354,6 +2415,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/push-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Devices
+         * @description The signed-in user's own devices.
+         */
+        get: operations["list_devices_api_v1_workspaces__workspace_id__push_subscriptions_get"];
+        put?: never;
+        /**
+         * Subscribe
+         * @description Register this device (201), or refresh it when the same endpoint is already registered
+         *     for this user (200). 409 ``WEB_PUSH_NOT_CONFIGURED`` when the server has no VAPID keys.
+         */
+        post: operations["subscribe_api_v1_workspaces__workspace_id__push_subscriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/push-subscriptions/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Push Config
+         * @description Whether push is available and the public key to subscribe with. Safe when unconfigured.
+         */
+        get: operations["push_config_api_v1_workspaces__workspace_id__push_subscriptions_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/push-subscriptions/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Preferences
+         * @description The signed-in user's own opt-in per category.
+         */
+        get: operations["get_preferences_api_v1_workspaces__workspace_id__push_subscriptions_preferences_get"];
+        /**
+         * Put Preferences
+         * @description Change the signed-in user's own opt-in (only the categories sent).
+         */
+        put: operations["put_preferences_api_v1_workspaces__workspace_id__push_subscriptions_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/push-subscriptions/{subscription_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unsubscribe */
+        delete: operations["unsubscribe_api_v1_workspaces__workspace_id__push_subscriptions__subscription_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/readiness": {
         parameters: {
             query?: never;
@@ -3152,6 +3299,76 @@ export interface components {
             status?: ("active" | "archived") | null;
             /** Title */
             title?: string | null;
+        };
+        /** AssistantChatDraftOut */
+        AssistantChatDraftOut: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "auto" | "approval_required" | "human_required" | "blocked";
+            /** Facts Used */
+            facts_used: components["schemas"]["FactUsedOut"][];
+            /** Flags */
+            flags: string[];
+            /** Intent */
+            intent: string | null;
+            /** Language */
+            language: string | null;
+            /** Reasons */
+            reasons: string[];
+            /** Suggestion Text */
+            suggestion_text: string | null;
+            /** Text */
+            text: string | null;
+        };
+        /** AssistantChatMessageIn */
+        AssistantChatMessageIn: {
+            /** Text */
+            text: string;
+        };
+        /** AssistantChatOut */
+        AssistantChatOut: {
+            /** Items */
+            items: components["schemas"]["AssistantChatTurnOut"][];
+            /** Remaining This Hour */
+            remaining_this_hour: number;
+            /** Remaining Today */
+            remaining_today: number;
+        };
+        /** AssistantChatResetOut */
+        AssistantChatResetOut: {
+            /** Cleared */
+            cleared: number;
+        };
+        /** AssistantChatTurnOut */
+        AssistantChatTurnOut: {
+            /** Completed At */
+            completed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Customer Text */
+            customer_text: string;
+            draft: components["schemas"]["AssistantChatDraftOut"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Is Simulated
+             * @default true
+             * @constant
+             */
+            is_simulated: true;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "ready";
         };
         /** AudienceOut */
         AudienceOut: {
@@ -4100,6 +4317,11 @@ export interface components {
                 [key: string]: unknown;
             } | null;
             /**
+             * Facts Used
+             * @default []
+             */
+            facts_used: components["schemas"]["FactSourceOut"][];
+            /**
              * Id
              * Format: uuid
              */
@@ -4271,6 +4493,21 @@ export interface components {
             } | null;
         };
         /**
+         * FactSourceOut
+         * @description One verified fact a reply quotes, once, with where it comes from (D-01). The same shape as
+         *     the test chat's ``facts_used``: the client shows it as it is.
+         */
+        FactSourceOut: {
+            /** Display */
+            display: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Verified At */
+            verified_at: string | null;
+        };
+        /**
          * FactTransition
          * @description Body of verify / archive / restore.
          */
@@ -4279,6 +4516,17 @@ export interface components {
             expected_version: number;
             /** Reason */
             reason?: string | null;
+        };
+        /** FactUsedOut */
+        FactUsedOut: {
+            /** Display */
+            display: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Verified At */
+            verified_at: string | null;
         };
         /** FailureRuleIn */
         FailureRuleIn: {
@@ -5291,6 +5539,79 @@ export interface components {
              */
             published_at: string;
         };
+        /** PushConfigOut */
+        PushConfigOut: {
+            /** Enabled */
+            enabled: boolean;
+            /** Public Key */
+            public_key: string | null;
+        };
+        /** PushDeviceList */
+        PushDeviceList: {
+            /** Items */
+            items: components["schemas"]["PushDeviceOut"][];
+        };
+        /** PushDeviceOut */
+        PushDeviceOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Last Success At */
+            last_success_at: string | null;
+        };
+        /** PushKeysIn */
+        PushKeysIn: {
+            /** Auth */
+            auth: string;
+            /** P256Dh */
+            p256dh: string;
+        };
+        /**
+         * PushPreferencesIn
+         * @description Only the categories sent are changed.
+         */
+        PushPreferencesIn: {
+            /** Approvals */
+            approvals?: boolean | null;
+            /** Failures */
+            failures?: boolean | null;
+            /** Questions */
+            questions?: boolean | null;
+        };
+        /**
+         * PushPreferencesOut
+         * @description Opt-in per category; ``false`` until the user switches it on.
+         */
+        PushPreferencesOut: {
+            /** Approvals */
+            approvals: boolean;
+            /** Failures */
+            failures: boolean;
+            /** Questions */
+            questions: boolean;
+        };
+        /**
+         * PushSubscribeIn
+         * @description The shape of the browser's ``PushSubscription.toJSON()``.
+         */
+        PushSubscribeIn: {
+            /** Endpoint */
+            endpoint: string;
+            /** Expirationtime */
+            expirationTime?: number | null;
+            keys: components["schemas"]["PushKeysIn"];
+            /** Label */
+            label?: string | null;
+        };
         /** QuestionOut */
         QuestionOut: {
             /** Answer Id */
@@ -5388,6 +5709,8 @@ export interface components {
             label: string;
             /** Span */
             span: number[];
+            /** Verified At */
+            verified_at: string | null;
             /** Version */
             version: number;
         };
@@ -5410,6 +5733,8 @@ export interface components {
             decision: string;
             /** Decision Reasons */
             decision_reasons: string[];
+            /** Facts Used */
+            facts_used: components["schemas"]["FactSourceOut"][];
             /** Failure Code */
             failure_code: string | null;
             /** Flags */
@@ -8850,6 +9175,103 @@ export interface operations {
             };
         };
     };
+    get_test_chat_api_v1_workspaces__workspace_id__assistant_test_chat_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantChatOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_test_message_api_v1_workspaces__workspace_id__assistant_test_chat_messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantChatMessageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantChatTurnOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_test_chat_api_v1_workspaces__workspace_id__assistant_test_chat_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantChatResetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_policies_api_v1_workspaces__workspace_id__automation_policies_get: {
         parameters: {
             query?: never;
@@ -11034,6 +11456,199 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OperationOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_devices_api_v1_workspaces__workspace_id__push_subscriptions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushDeviceList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    subscribe_api_v1_workspaces__workspace_id__push_subscriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscribeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushDeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_config_api_v1_workspaces__workspace_id__push_subscriptions_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushConfigOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_preferences_api_v1_workspaces__workspace_id__push_subscriptions_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushPreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_preferences_api_v1_workspaces__workspace_id__push_subscriptions_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushPreferencesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushPreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsubscribe_api_v1_workspaces__workspace_id__push_subscriptions__subscription_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subscription_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

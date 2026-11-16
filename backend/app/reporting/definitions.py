@@ -41,6 +41,7 @@ from sqlalchemy import (
     tuple_,
     union_all,
 )
+from sqlalchemy.dialects.postgresql import JSONPATH
 from sqlalchemy.orm import Session, aliased
 
 from app.agent.models import AgentAction
@@ -53,7 +54,7 @@ from app.integrations.instagram.models import SocialAccount
 from app.operations.models import Operation
 from app.owner_requests.models import OwnerQuestion
 
-DEFINITIONS_VERSION = "2"
+DEFINITIONS_VERSION = "3"
 
 # The 24 h customer-service window of Instagram messaging. Kept equal to
 # ``app.inbox.context.MESSAGING_WINDOW`` by a test, so reporting need not import the inbox logic.
@@ -225,6 +226,50 @@ def replies_sent_by_owner(
     session: Session, ctx: WorkspaceContext, start: datetime, end: datetime, now: datetime
 ) -> Select[Any]:
     return _replies_by_draft(ctx, start, end, ReplyDraft.source == "owner")
+
+
+# The claim codes of ``validate_claims``: a value of these kinds in a reply that is not a rendered
+# fact. ``TOO_LONG`` is a length problem, not a claim.
+CLAIM_CODES = (
+    "MONEY",
+    "PERCENT",
+    "DISCOUNT_WORD",
+    "TIME",
+    "DATE",
+    "PHONE",
+    "EMAIL",
+    "URL",
+    "NUMBER",
+)
+_UNMATCHED_CLAIM = (
+    "$.issues[*] ? ("
+    + " || ".join(f'@.code == "{code}"' for code in CLAIM_CODES)
+    + ") ? (!exists(@.matches_verified) || @.matches_verified == false)"
+)
+
+
+def unverified_values_sent(
+    session: Session, ctx: WorkspaceContext, start: datetime, end: datetime, now: datetime
+) -> Select[Any]:
+    """Sent replies in which the claim validator found a value that is not a verified fact.
+
+    Read from the validator's result stored with the reply's draft (``reply_drafts.validation``),
+    never recomputed and never a constant (D-01). A reply counts once, however many values it holds
+    (the drill-down lists records). It counts when its stored result lists a claim issue that does
+    not equal a verified value (a person's own text that matches one is not unverified), or when a
+    reply the assistant wrote (``ai`` or ``approved_answer``) was sent although its stored result
+    says it did not pass. A reply with no stored result (no draft; server-written agent replies,
+    which are not claim-validated; a draft whose validation was erased by retention) cannot be
+    judged and is in ``replies_sent`` only.
+    """
+    unmatched = func.jsonb_path_exists(
+        ReplyDraft.validation, cast(literal(_UNMATCHED_CLAIM, Text), JSONPATH)
+    )
+    failed_assistant_reply = and_(
+        ReplyDraft.source.in_(("ai", "approved_answer")),
+        ReplyDraft.validation["passed"].astext == "false",
+    )
+    return _replies_by_draft(ctx, start, end, or_(unmatched, failed_assistant_reply))
 
 
 def native_replies(
@@ -665,6 +710,7 @@ DEFINITIONS: tuple[Definition, ...] = (
     _d("replies_sent_auto", "period", "messages", replies_sent_auto, inbox=True),
     _d("replies_sent_approved", "period", "messages", replies_sent_approved, inbox=True),
     _d("replies_sent_by_owner", "period", "messages", replies_sent_by_owner, inbox=True),
+    _d("unverified_values_sent", "period", "messages", unverified_values_sent, inbox=True),
     _d("native_replies", "period", "messages", native_replies, inbox=True),
     _d("escalations", "period", "messages", escalations, inbox=True),
     _d("missed_conversations", "period", "messages", missed_conversations, inbox=True),

@@ -37,9 +37,9 @@ def scenario(db_session: Session) -> Scenario:
 # --- registry -----------------------------------------------------------------------------------
 
 
-def test_registry_preserves_twenty_legacy_metrics_and_adds_four_agent_metrics() -> None:
-    assert DEFINITIONS_VERSION == "2"
-    assert len(KEYS) == len(set(KEYS)) == 24
+def test_registry_has_the_legacy_agent_and_guarantee_metrics() -> None:
+    assert DEFINITIONS_VERSION == "3"
+    assert len(KEYS) == len(set(KEYS)) == 25
     assert set(KEYS) == set(EXPECTED)
     kinds = {d.key: d.kind for d in DEFINITIONS}
     assert {k for k, kind in kinds.items() if kind == "snapshot"} == {
@@ -65,6 +65,7 @@ def test_inbox_metrics_are_the_ones_staff_may_see() -> None:
         "replies_sent_auto",
         "replies_sent_approved",
         "replies_sent_by_owner",
+        "unverified_values_sent",
         "native_replies",
         "escalations",
         "missed_conversations",
@@ -109,7 +110,7 @@ def test_ac_e1_every_metric_has_its_exact_known_value(
     metrics = _compute(db_session, scenario)
 
     assert [m.key for m in metrics.metrics] == list(KEYS)
-    assert metrics.definitions_version == "2"
+    assert metrics.definitions_version == "3"
     for key, expected in EXPECTED.items():
         assert metrics.value(key) == expected, key
     # The fixture is built so that no two metrics share a value.
