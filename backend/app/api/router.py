@@ -34,6 +34,7 @@ from app.operations.data_rights_router import router as data_rights_router
 from app.operations.router import router as operations_router
 from app.operations.system_health_router import router as system_health_router
 from app.owner_requests.router import router as owner_requests_router
+from app.plans.router import router as plans_router
 from app.policy.router import router as policy_router
 from app.reporting.home_router import router as home_router
 from app.reporting.router import router as reports_router
@@ -120,3 +121,5 @@ api_router.include_router(home_router)
 
 api_router.include_router(manual_comments_router)
 api_router.include_router(channels_router)
+
+api_router.include_router(plans_router)
