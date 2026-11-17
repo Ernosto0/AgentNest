@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, unwrap } from "@/api/client";
 import { PublicShell } from "@/app/layout/PublicShell";
 import { Button } from "@/components/Button";
@@ -27,7 +27,7 @@ export function SignupPage() {
       email, password, name, accepted_terms_version: meta.data!.terms_version,
       ui_locale: i18n.language === "en" ? "en" : "tr",
     } })),
-    onSuccess: () => navigate("/check-email", { replace: true }),
+    onSuccess: () => navigate("/check-email", { replace: true, state: { email } }),
   });
   if (me.data) return <Navigate to={me.data.user.email_verified ? "/" : "/check-email"} replace />;
   if (meta.data && !meta.data.signup_enabled) return <Navigate to="/login" replace />;
@@ -55,7 +55,8 @@ export function CheckEmailPage() {
   const meta = useMeta();
   const me = useMe();
   const logout = useLogout();
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const [email, setEmail] = useState((location.state as { email?: string } | null)?.email ?? "");
   const resend = useMutation({ mutationFn: () => unwrap(api.POST("/api/v1/auth/resend-verification", { body: { email: me.data?.user.email ?? email } })) });
   if (me.data?.user.email_verified) return <Navigate to="/workspaces/new" replace />;
   return <PublicShell title={t("signup.checkTitle")} description={t("signup.checkBody")}>
