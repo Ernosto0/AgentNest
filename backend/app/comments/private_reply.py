@@ -17,6 +17,7 @@ from app.core.clock import Clock
 from app.inbox.models import Conversation
 from app.integrations.instagram.base import MOCK_PRIVATE_REPLY_WINDOW
 from app.jobs.queue import enqueue
+from app.plans import service as usage
 
 
 class PrivateReplyArgs(BaseModel):
@@ -176,6 +177,10 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
     validated = validate_reply(db, clock, ctx, request.reply)
     if not validated.valid:
         return {"valid": False, "errors": list(validated.errors)}
+    if not usage.consume(
+        db, clock, thread.workspace_id, f"private:{thread.id}:{thread.event_cursor}"
+    ):
+        return {"status": "quota_paused", "reason": usage.PAUSED_REASON}
     body = {
         "comment_id": str(comment.id),
         "comment_version": comment.version,

@@ -162,7 +162,7 @@ The same pipeline (`interpret_command` → deterministic resolution → answer, 
 | R7 | Model output `needs_human = true` or `can_answer = false` | human_required | `MODEL_REQUESTED_HUMAN` |
 | R8 | A fact needed by the intent is not usable (missing, unverified, contested, expired) | human_required | `FACT_NOT_USABLE` |
 | R9 | Claim validation failed after one regeneration | human_required | `GROUNDING_FAILED` |
-| R10 | LLM unavailable / budget exceeded / output invalid | human_required | `LLM_UNAVAILABLE` / `LLM_BUDGET_EXCEEDED` / `LLM_OUTPUT_INVALID` |
+| R10 | LLM unavailable / budget exceeded / output invalid / monthly reply allowance used up (no model call is made) | human_required | `LLM_UNAVAILABLE` / `LLM_BUDGET_EXCEEDED` / `LLM_OUTPUT_INVALID` / `REPLY_QUOTA_PAUSED` |
 | R11 | Attachment-only inbound | human_required | `ATTACHMENT_ONLY` |
 | R12 | Injection heuristics matched | approval_required (at least) | `INJECTION_SUSPECTED` |
 | R13 | Automation policy for the intent's action class = `off` | human_required | `AUTOMATION_OFF` |

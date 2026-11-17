@@ -3,7 +3,8 @@
 Commands: ``seed [--reset]``, ``create-user``, ``generate-key``, ``generate-vapid-keys``,
 ``export-openapi``, ``simulate-message``, ``simulate-native-reply``, ``run-due-jobs`` (the
 developer simulator),
-``check-config``, ``migration-status``, ``post-restore-reconcile``, and ``verify-db-roles``.
+``check-config``, ``migration-status``, ``post-restore-reconcile``, ``verify-db-roles`` and the
+operator plan commands ``plan-usage``, ``plan-set``, ``plan-reset`` and ``plan-extend``.
 Machine-readable output goes to stdout; logs go to stderr.
 """
 
@@ -42,6 +43,7 @@ from app.operations.backup_restore import (
     provision_database_roles,
     verify_database_roles,
 )
+from app.plans.cli import register as register_plan_commands
 from app.waitlist import service as waitlist_service
 
 
@@ -574,6 +576,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional maximum poll iterations before exit (for offline testing)",
     )
     p_poll.set_defaults(func=cmd_telegram_poll)
+    register_plan_commands(sub)
     return parser
 
 

@@ -145,6 +145,8 @@ These do not stop assisted pilots, where the founder sets up each business in pe
 
 **Suggested fix.** For pilots, keep manual invoicing as planned. Before selling tiers, add a per-workspace plan record, a monthly reply counter, and the two warning notifications. Payment integration (iyzico or PayTR) can follow.
 
+**Status (2026-11-17, PR #7):** partial: everything except taking payment is done. Each workspace has a plan (`starter` 500, `growth` 2,500, `pro` 7,500 AI replies per month; default `growth`, status `trial`, period from creation; per-workspace quota override), a concurrency-safe monthly counter (row lock plus an idempotent ledger, migration `0051`), warnings at 80% and 100% (once per period, owners and managers, every channel, tr/en), a 10% grace and then a pause: no model call, inbound DMs still stored and announced, a needs-human draft with reason `REPLY_QUOTA_PAUSED`, drafting resumes by itself on a plan change or the next period. Owners and managers see a usage meter in Settings and a notice on Today from 80%. Operator CLI: `plan-usage`, `plan-set`, `plan-reset`, `plan-extend`. The counting rule is in `app/plans/service.py` and [data-model.md](../architecture/data-model.md). **Still open:** payment (iyzico or PayTR), a self-service upgrade, the 100-reply trial cap and every other per-plan limit (seats, posts, retention); the plan `status` is stored but changes nothing. Pricing doc updated.
+
 ### P-12. No frontend error tracking and no product analytics
 
 **Problem.** Sentry is wired into the backend only. A crash in the owner's browser is invisible. There is also no usage analytics, so the pilot metric "daily active owners" in [vision.md](../product/vision.md) can only be approximated from sessions.

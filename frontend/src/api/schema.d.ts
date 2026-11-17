@@ -2787,6 +2787,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Usage */
+        get: operations["get_usage_api_v1_workspaces__workspace_id__usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -6296,6 +6313,44 @@ export interface components {
         UpdateCalendarSettingsIn: {
             /** Default Slot Duration Minutes */
             default_slot_duration_minutes: number;
+        };
+        /** UsageOut */
+        UsageOut: {
+            /** Grace Limit */
+            grace_limit: number;
+            /** Monthly Quota */
+            monthly_quota: number;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /**
+             * Plan
+             * @enum {string}
+             */
+            plan: "starter" | "growth" | "pro";
+            /** Quota */
+            quota: number;
+            /** Quota Override */
+            quota_override: number | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "normal" | "warning" | "grace" | "paused";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "trial" | "active" | "past_due" | "cancelled";
+            /** Used */
+            used: number;
         };
         /** UserOut */
         UserOut: {
@@ -12346,6 +12401,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemHealthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_usage_api_v1_workspaces__workspace_id__usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageOut"];
                 };
             };
             /** @description Validation Error */

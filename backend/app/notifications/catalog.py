@@ -28,6 +28,9 @@ class NotificationSpec:
 
 
 _SPECS = (
+    NotificationSpec("quota.warning", ATTENTION, "system_health.view", "quota.warning:{period_id}"),
+    NotificationSpec("quota.grace", ATTENTION, "system_health.view", "quota.grace:{period_id}"),
+    NotificationSpec("quota.paused", ATTENTION, "system_health.view", "quota.paused:{period_id}"),
     NotificationSpec(
         "owner_question.requested",
         ATTENTION,
@@ -113,6 +116,9 @@ CATALOG: dict[str, NotificationSpec] = {spec.type: spec for spec in _SPECS}
 # per type (``integrations/channels/web_push/payloads.py``) and never from ``params``.
 PUSH_CATEGORIES = ("approvals", "questions", "failures")
 PUSH_TYPES: dict[str, str] = {
+    "quota.warning": "failures",
+    "quota.grace": "failures",
+    "quota.paused": "failures",
     "approval.requested": "approvals",
     "owner_question.requested": "questions",
     "owner_question.window_closed": "questions",

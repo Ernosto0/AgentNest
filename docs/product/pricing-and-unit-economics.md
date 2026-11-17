@@ -3,7 +3,7 @@
 **Purpose:** Define the cost structure (COGS), unit economics, packaging, and pricing tiers for the AgentNest hosted SaaS across both the **Türkiye** (high-touch, TRY) and **Global** (self-service, USD) markets, while respecting the open-source core boundary ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) and open questions ([OQ-01, OQ-06, OQ-09](../research/open-questions.md)).
 
 > [!IMPORTANT]
-> **What is built today (checked against the code, 2026-11-16).** A tier row marked **Planned** is not built and must not be sold or promised to a pilot. Sell only what an owner can use on day one: one Instagram account per workspace, the mobile web app, Telegram owner control, Turkish and English replies, grounded DM drafts with approval, scheduled posts and the daily report. Plans, per-plan quotas and billing do not exist in the code yet (no plan field, no monthly reply counter), so every limit below (replies per month, seats, posts per month, per-plan retention, trial reply cap) is a pricing design that is **not enforced**; pilots are managed by hand (§6, stage 1). The findings per feature are in [§8](#8-what-the-code-supports-today-p-19-check).
+> **What is built today (checked against the code, 2026-11-16).** A tier row marked **Planned** is not built and must not be sold or promised to a pilot. Sell only what an owner can use on day one: one Instagram account per workspace, the mobile web app, Telegram owner control, Turkish and English replies, grounded DM drafts with approval, scheduled posts and the daily report. Each workspace has a plan (`starter` 500, `growth` 2,500 or `pro` 7,500 AI replies per month; default `growth` on trial), a monthly reply counter and warnings at 80% and 100% with a 10% grace buffer (built, P-11; the operator sets the plan with the CLI, see §4 and §8). Billing does not exist in the code, and the other limits below (seats, posts per month, per-plan retention, the 100-reply trial cap) are a pricing design that is **not enforced**; pilots are managed by hand (§6, stage 1). The findings per feature are in [§8](#8-what-the-code-supports-today-p-19-check).
 
 ---
 
@@ -166,13 +166,13 @@ For the global English-speaking market ([idea.md §2.2](../idea.md)), onboarding
 
 ### Trial & Overage Policy (Global & Türkiye)
 
-> **Planned, not built.** There is no monthly reply counter, no trial cap, no 80%/100% usage notification and no grace buffer. Today the only usage limit is the daily model-call cap per workspace (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`). Do not promise quota warnings to pilots.
+> **Built (P-11), except the trial cap and self-service upgrade.** Every workspace has a monthly AI reply quota (the plan's, or an operator override), a counter, warnings at 80% and 100%, a 10% grace buffer and a pause afterwards, all described below and in [§8](#8-what-the-code-supports-today-p-19-check). **Not built:** the 100-reply cap during the 14-day trial (a trial workspace gets its plan's full quota), the one-tap plan upgrade (the operator changes the plan with `python -m app.cli plan-set`), and any billing. The daily model-call cap per workspace (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`) remains a separate safety net.
 
 1. **14-Day Free Trial (Self-Service):** Users can explore the full simulated workspace immediately with zero credentials (`is_simulated`), paste their bio/price list, and connect their real Instagram account for a 14-day trial (capped at 100 live AI replies during trial).
 2. **Soft Overages (No Surprise Bills):** Small businesses hate unexpected usage invoices. If a workspace reaches 100% of its monthly AI reply quota:
-   - We send an owner notification at **80%** and **100%** usage.
+   - We send an owner notification at **80%** and **100%** usage (once per period, to owners and managers, through every channel they use).
    - We provide a **10% grace buffer** so active customer conversations are never abruptly dropped mid-day.
-   - After the grace buffer, incoming DMs still appear in the Inbox and trigger human notifications, while AI drafting pauses until the next billing cycle or a one-tap plan upgrade.
+   - After the grace buffer, incoming DMs still appear in the Inbox and trigger human notifications, while AI drafting pauses until the next billing cycle or a plan change (today the operator changes the plan; a one-tap upgrade is **Planned**). What counts: every customer reply draft the AI prepares (direct message, public comment reply, private reply), once per draft, whether it is then approved, edited, auto-sent or discarded; manual replies, owner commands, content drafts and the test chat do not count. The USD Scale tier (10,000) is not a separate tier in code: set `plan-set --plan pro --quota 10000`.
 
 ---
 
@@ -199,10 +199,10 @@ Do not build complex billing engineering before paid pilot validation ([mvp-scop
 
 1. **Stage 1 — Assisted Pilots (Workspaces 1–15, Türkiye):**
    - **Billing method:** Manual invoicing (*E-Arşiv Fatura* via GİB portal or Paraşüt) + **EFT/Havale** or a static **iyzico Link / PayTR Link** sent over WhatsApp.
-   - **Code changes required:** **Zero.** Manage workspace limits via environment/operator CLI.
+   - **Code changes required:** **Zero.** Manage workspace limits with the operator CLI (`plan-usage`, `plan-set`, `plan-reset`, `plan-extend`).
 2. **Stage 2 — Commercial Türkiye Rollout (Workspaces 15–100):**
    - **Billing provider:** **iyzico** (Subscription API with saved cards in TRY) or **PayTR**.
-   - **Code changes required:** Add optional `app/hosted/billing` module ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) storing `subscription_plan`, `billing_status`, and per-workspace `monthly_ai_quota` override.
+   - **Code changes required:** Add optional `app/hosted/billing` module ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) storing the billing provider's customer and subscription ids and driving the existing plan fields (`workspace_plans.plan`, `status`, `quota_override`) from webhooks.
 3. **Stage 3 — Global Self-Service Launch:**
    - **Billing provider:** **Lemon Squeezy** or **Paddle** (acts as Merchant of Record, automatically handling EU VAT, UK VAT, and US state sales taxes without requiring local tax registrations in every country), or **Stripe Billing** if operating through a US/UK/Estonian entity.
 
@@ -232,5 +232,5 @@ Checked against the code on 2026-11-16. "Planned" in the tables above means the 
 | Data export | Owner-only per-conversation and per-customer JSON export exists (`/workspaces/{ws}/conversations/{id}/export`, customer export; `app/operations/data_rights.py`) as a data-rights tool. No whole-workspace or audit-log JSON/CSV export. | Planned (only the narrow data-rights export exists) |
 | Russian and German replies | `SUPPORTED_LOCALES` and `LOCALES` are `("tr", "en")`; reply text templates exist for `tr` and `en` only. `inbox/language.py` detects `de`, `fr`, `es`, `it`, `pt` only to hand those conversations to a person instead of answering in the wrong language. Russian is not even detected. | Planned |
 | Comment automation on real accounts | The OAuth flow requests no comment scope (`SCOPES` in `integrations/instagram/oauth.py`), and `compute_capabilities` sets every `comment_*` capability to false for real connections. Comment tools and the comments queue work on the simulated (mock) provider only. The inbox now shows the Comments tab as "not available yet" on such accounts. Needs `instagram_business_manage_comments` added to the scopes and to Meta App Review. | Planned |
-| Quota warnings (80% and 100%, grace buffer) | No monthly reply counter and no usage notification type exist (`notifications/catalog.py`). Only the daily model-call cap (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`, default 500) and the 50-per-day publish limit are enforced. | Planned |
-| Per-plan limits (replies per month, seats, posts per month, trial cap, retention per plan, plan field, billing) | No plan, subscription or per-workspace quota exists. Retention values are global settings, audit rows are never purged. | Not enforced; manual in pilot stage 1 |
+| Quota warnings (80% and 100%, grace buffer) and the monthly AI reply quota | `workspace_plans` and `reply_usage` (migration `0051`), `app/plans/` and the types `quota.warning`, `quota.grace` and `quota.paused` in `notifications/catalog.py`. Counted per AI reply draft under a row lock, rolled over monthly, warned once per period; at 110% drafting pauses (no model call, a needs-human draft with reason `REPLY_QUOTA_PAUSED`) while inbound messages still arrive and notify. Owners and managers see it in Settings and on Today. The daily model-call cap and the 50-per-day publish limit are separate and still enforced. | Built (P-11) |
+| Per-plan limits other than replies per month (seats, posts per month, trial cap, retention per plan, billing) | The plan field and the reply quota exist (previous row); nothing else is per plan, and there is no billing. Retention values are global settings, audit rows are never purged. The plan's `status` (trial, active, past_due, cancelled) is stored and shown but does not change behaviour. | Not enforced; manual in pilot stage 1 |

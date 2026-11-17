@@ -622,6 +622,62 @@ def test_telegram_channel_deliver_notification_success(
     assert "⚠️" in call["body"]["text"]  # Attention icon
 
 
+@pytest.mark.parametrize(
+    ("locale", "kind", "title"),
+    [
+        ("en", "quota.warning", "80% of your AI reply allowance is used"),
+        ("tr", "quota.grace", "Yapay zeka yanıt hakkınıza ulaşıldı"),
+        ("tr", "quota.paused", "Yapay zeka yanıtları duraklatıldı"),
+    ],
+)
+def test_telegram_channel_delivers_the_fixed_quota_texts_in_the_recipients_language(
+    db_session: Session,
+    clock: FrozenClock,
+    mock_tg: MockTelegramHandler,
+    mock_tg_client: TelegramClient,
+    locale: str,
+    kind: str,
+    title: str,
+) -> None:
+    ws, users = workspace_with_members(db_session)
+    owner = users["owner"]
+    set_tenant_context(db_session, ws.id)
+    notif = Notification(
+        workspace_id=ws.id,
+        recipient_user_id=owner.id,
+        type=kind,
+        severity="attention",
+        params={"used": 80, "quota": 100, "period_end": "2026-02-15T12:00:00+00:00"},
+    )
+    db_session.add(notif)
+    db_session.flush()
+    delivery = NotificationDelivery(
+        workspace_id=ws.id,
+        notification_id=notif.id,
+        recipient_user_id=owner.id,
+        channel="telegram",
+        status="pending",
+    )
+    db_session.add(delivery)
+    db_session.flush()
+    recipient = ChannelRecipient(
+        user_id=owner.id,
+        workspace_id=ws.id,
+        channel="telegram",
+        channel_chat_id="998877",
+        ui_locale=locale,
+    )
+
+    result = TelegramChannel(client=mock_tg_client).deliver_notification(
+        db_session, clock, delivery, recipient
+    )
+
+    assert result.success is True
+    (call,) = mock_tg.calls
+    assert title in call["body"]["text"]
+    assert "</b>\n\n" in call["body"]["text"]  # a bold title, a blank line, then the body
+
+
 def test_telegram_channel_deliver_notification_missing_chat_id(
     db_session: Session,
     clock: FrozenClock,

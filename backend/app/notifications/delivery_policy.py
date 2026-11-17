@@ -30,6 +30,9 @@ IMMEDIATE_TYPES: frozenset[str] = frozenset(
 
 QUIET_HOURS_TYPES: frozenset[str] = frozenset(
     {
+        "quota.warning",
+        "quota.grace",
+        "quota.paused",
         "report.daily_ready",
         "content.scheduled",
         "content.on_hold",

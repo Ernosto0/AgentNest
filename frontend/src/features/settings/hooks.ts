@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
-import type { CalendarAppointment, CalendarConnection, ChannelLink, ChannelLinkCode, Invite, Member, PendingInvite, Role, SocialAccount, SystemHealth } from "@/api/types";
+import type { CalendarAppointment, CalendarConnection, ChannelLink, ChannelLinkCode, Invite, Member, PendingInvite, ReplyUsage, Role, SocialAccount, SystemHealth } from "@/api/types";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 export const systemHealthKey = (ws: string) => ["system-health", ws] as const;
@@ -22,6 +22,27 @@ export function useSystemHealth(ws: string) {
           params: { path: { workspace_id: ws } },
         }),
       ),
+    retry: false,
+  });
+}
+
+/**
+ * The plan and this period's AI reply usage. Owners and managers only (the API's
+ * `system_health.view`); for anyone else nothing is fetched. Refreshed in the background so the
+ * meter follows drafting without a reload.
+ */
+export function useReplyUsage() {
+  const { workspace, role } = useCurrentWorkspace();
+  return useQuery<ReplyUsage, AppError>({
+    queryKey: ["reply-usage", workspace.id],
+    enabled: role === "owner" || role === "manager",
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/workspaces/{workspace_id}/usage", {
+          params: { path: { workspace_id: workspace.id } },
+        }),
+      ),
+    refetchInterval: 60_000,
     retry: false,
   });
 }

@@ -66,6 +66,7 @@ Checked on a fresh workspace:
 - **Automation disclosure (OQ-13).** The disclosure is on by default and is appended **only to replies the assistant sends on its own**: `Bu yanıt otomatik olarak hazırlanmıştır.` (English: `This reply was prepared automatically.`). A reply the owner approves or writes is sent without it. The text can be changed under workspace settings. There is no `— Otomatik yanıt` suffix.
 - **Publishing limit.** At most 50 posts per 24 hours per account (`PUBLISH_DAILY_LIMIT`, Meta's own ceiling).
 - **Cost guard.** At most 500 model calls per workspace per day (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`).
+- **Monthly AI reply allowance.** Every workspace starts on the `growth` plan, status `trial` (2,500 AI reply drafts per month, 10% grace, warnings at 80% and 100% to the owner and managers, then AI drafting pauses while messages still arrive). The operator changes it: `python -m app.cli plan-usage --workspace <slug>` shows the numbers, `plan-set --workspace <slug> --plan starter|growth|pro [--quota N | --clear-override] [--status trial|active|past_due|cancelled]` changes the plan, `plan-reset` starts a fresh period now, `plan-extend --days N` moves the period end. The owner sees it in Settings (Plan and AI replies) and on Today from 80%.
 
 ---
 

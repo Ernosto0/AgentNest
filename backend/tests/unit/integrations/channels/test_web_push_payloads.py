@@ -123,6 +123,8 @@ def test_the_links_point_to_the_right_pages() -> None:
     assert deep_link(make("content.failed", {})) == f"{base}/content"
     assert deep_link(make("reply.failed", {"conversation_id": v})) == f"{base}/inbox/{v}"
     assert deep_link(make("account.needs_reauth", {})) == f"{base}/more/settings/connections"
+    for kind in ("quota.warning", "quota.grace", "quota.paused"):
+        assert deep_link(make(kind)) == f"{base}/more/settings#usage"
 
 
 def test_every_supported_type_has_text_in_both_languages_and_a_category() -> None:
