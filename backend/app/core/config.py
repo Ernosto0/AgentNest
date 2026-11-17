@@ -85,6 +85,8 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:8000"
     product_name: str = "AgentNest"
     cookie_secure: bool = False
+    signup_enabled: bool = False
+    email_outbox_dir: str = ""  # Optional local capture, ignored in production and with SMTP.
     session_ttl_hours: int = Field(default=336, ge=1)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_format: Literal["console", "json"] = "console"

@@ -469,5 +469,9 @@
   "activity.state.degraded": "Unreliable",
   "activity.state.needs_reauth": "Needs renewal",
   "activity.state.disconnected": "Disconnected",
-  "activity.state.approved": "Approved"
+  "activity.state.approved": "Approved",
+  "errors.EMAIL_NOT_VERIFIED.what": "Your email is not verified.",
+  "errors.EMAIL_NOT_VERIFIED.next": "Verify your email before continuing.",
+  "errors.EMAIL_VERIFICATION_TOKEN_INVALID.what": "This verification link is invalid or expired.",
+  "errors.EMAIL_VERIFICATION_TOKEN_INVALID.next": "Request a new verification email."
 }

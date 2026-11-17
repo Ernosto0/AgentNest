@@ -37,8 +37,12 @@ Permissions refer to the matrix in [security-and-privacy.md §3](security-and-pr
 | Method & path | Request → Response |
 |---|---|
 | `POST /api/v1/auth/login` | `{email, password}` → 204 + session cookie. 401 `INVALID_CREDENTIALS` (generic). |
+| Unverified sessions | A user who registered but has not verified the email can log in, but only `GET /auth/me` (memberships empty), `POST /auth/logout`, `GET /meta` and the verification endpoints work; every other authenticated route answers 403 `EMAIL_NOT_VERIFIED`. CLI, seed and invited users are verified. |
+| `POST /api/v1/auth/register` | `{email, password, name, accepted_terms_version, ui_locale?}` → 202 with no body, the same answer whether or not the email already has an account (existing address: a "you already have an account" email instead of a verification link). 404 when `SIGNUP_ENABLED=false`; 429 `RATE_LIMITED` (per email and per IP); 400 `PASSWORD_TOO_WEAK`; 422 for a terms version that is not the current `terms_version` from `GET /meta`. The terms version and time are stored on the user. |
+| `POST /api/v1/auth/resend-verification` | `{email}` → 202, always generic; sends a new link (the older one stops working) only to an existing unverified account. 404 when signup is off; throttled like register. |
+| `POST /api/v1/auth/verify-email` | `{token}` → 204. Single-use, signed, 24 h token from the email. 400 `EMAIL_VERIFICATION_TOKEN_INVALID` for unknown, used, expired or tampered tokens. Still works when signup is switched off. |
 | `POST /api/v1/auth/logout` | → 204. |
-| `GET /api/v1/auth/me` | → `{user: {id, email, display_name, ui_locale}, csrf_token, memberships: [{workspace_id, workspace_name, role, is_demo}]}` |
+| `GET /api/v1/auth/me` | → `{user: {id, email, display_name, ui_locale, email_verified}, csrf_token, memberships: [{workspace_id, workspace_name, role, is_demo}]}` |
 | `PATCH /api/v1/auth/me` | `{display_name?, ui_locale?}` |
 | `GET /api/v1/workspaces` | memberships list |
 | `POST /api/v1/workspaces` | `{name, business_category, market, default_locale, timezone, currency}` → workspace |

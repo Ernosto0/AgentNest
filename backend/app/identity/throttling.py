@@ -197,17 +197,18 @@ def record_login_success(
     )
 
 
-def enforce_password_reset_throttle(
+def _enforce_email_throttle(
     session: Session,
     clock: Clock,
     *,
+    purpose: str,
     email: str,
     ip_address: str,
 ) -> None:
-    """Rate-limit password reset requests per IP and per normalized email (Serious 12)."""
+    """Rate-limit email requests using separate persistent email/IP buckets."""
     now = clock.now()
-    email_h = hash_identifier(f"pw_reset:{email}")
-    ip_h = hash_identifier(f"pw_reset:{ip_address}")
+    email_h = hash_identifier(f"{purpose}:{email.strip().lower()}")
+    ip_h = hash_identifier(f"{purpose}:{ip_address}")
 
     existing = list(
         session.scalars(
@@ -230,7 +231,9 @@ def enforce_password_reset_throttle(
         audit.record(
             session,
             None,
-            "auth.password_reset_throttled",
+            "auth.password_reset_throttled"
+            if purpose == "pw_reset"
+            else f"auth.{purpose}_throttled",
             "user",
             None,
             {
@@ -281,3 +284,28 @@ def enforce_password_reset_throttle(
                 if row.failed_attempts >= RESET_REQUESTS_BEFORE_LOCKOUT:
                     row.locked_until = now + timedelta(seconds=RESET_LOCKOUT_SECONDS)
     session.flush()
+
+
+def enforce_password_reset_throttle(
+    session: Session, clock: Clock, *, email: str, ip_address: str
+) -> None:
+    _enforce_email_throttle(session, clock, purpose="pw_reset", email=email, ip_address=ip_address)
+
+
+def enforce_signup_throttle(
+    session: Session, clock: Clock, *, email: str, ip_address: str, purpose: str
+) -> None:
+    # Serialize creation as well as increments across processes, including the first request.
+    # A shared IP lock also prevents concurrent registration/resend from losing increments.
+    from sqlalchemy import text
+
+    session.execute(
+        text("SELECT pg_advisory_xact_lock(:key)"),
+        {"key": int(hash_identifier(f"{purpose}:{ip_address}")[:15], 16)},
+    )
+    session.execute(
+        text("SELECT pg_advisory_xact_lock(:key)"),
+        {"key": int(hash_identifier(f"{purpose}:{email.strip().lower()}")[:15], 16)},
+    )
+    _enforce_email_throttle(session, clock, purpose=purpose, email=email, ip_address=ip_address)
+    session.commit()

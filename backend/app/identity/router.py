@@ -9,6 +9,7 @@ from app.api.deps import (
     SESSION_COOKIE,
     clear_session_cookie,
     current_auth,
+    current_auth_unverified_ok,
     get_app_settings,
     get_clock,
     optional_auth,
@@ -22,7 +23,7 @@ from app.core.db import get_db
 from app.core.errors import AppError
 from app.identity import invites as invites_service
 from app.identity import repository as repo
-from app.identity import service, throttling
+from app.identity import service, signup, throttling
 from app.identity.models import Invite, User, Workspace, WorkspaceMember
 from app.identity.schemas import (
     InviteAccept,
@@ -40,9 +41,11 @@ from app.identity.schemas import (
     PasswordResetConfirm,
     PasswordResetRequest,
     PendingInviteOut,
+    RegisterRequest,
     RevokeAllSessionsRequest,
     SessionOut,
     UserOut,
+    VerificationRequest,
     WorkspaceCreate,
     WorkspaceOut,
     WorkspacePatch,
@@ -91,11 +94,67 @@ def _me(db: Session, auth: AuthenticatedSession) -> MeResponse:
     return MeResponse(
         user=_user_out(auth.user),
         csrf_token=auth.session.csrf_token,
-        memberships=[_membership_out(m, w) for m, w in repo.list_memberships(db, auth.user.id)],
+        memberships=[_membership_out(m, w) for m, w in repo.list_memberships(db, auth.user.id)]
+        if auth.user.email_verified
+        else [],
     )
 
 
 # --- /auth ----------------------------------------------------------------------------------
+
+
+def require_signup(settings: Settings = Depends(get_app_settings)) -> None:
+    if not settings.signup_enabled:
+        raise AppError("NOT_FOUND")
+
+
+@auth_router.post("/register", status_code=202, dependencies=[Depends(require_signup)])
+def register(
+    body: RegisterRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+    clock: Clock = Depends(get_clock),
+) -> None:
+    throttling.enforce_signup_throttle(
+        db,
+        clock,
+        email=body.email,
+        ip_address=extract_client_ip(request, settings),
+        purpose="register",
+    )
+    signup.register(db, clock, settings, body, background_tasks)
+
+
+@auth_router.post("/resend-verification", status_code=202, dependencies=[Depends(require_signup)])
+def resend_verification(
+    body: PasswordResetRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+    clock: Clock = Depends(get_clock),
+) -> None:
+    throttling.enforce_signup_throttle(
+        db,
+        clock,
+        email=body.email,
+        ip_address=extract_client_ip(request, settings),
+        purpose="resend_verification",
+    )
+    signup.resend(db, clock, settings, body.email, background_tasks)
+
+
+@auth_router.post("/verify-email", status_code=204)
+def verify_email(
+    body: VerificationRequest,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+    clock: Clock = Depends(get_clock),
+) -> None:
+    # Issued links remain usable when signup is subsequently disabled.
+    signup.verify(db, clock, settings, body.token)
 
 
 @auth_router.post("/login", status_code=204)
@@ -126,7 +185,7 @@ def login(
 @auth_router.post("/logout", status_code=204)
 def logout(
     response: Response,
-    auth: AuthenticatedSession = Depends(current_auth),
+    auth: AuthenticatedSession = Depends(current_auth_unverified_ok),
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_app_settings),
     clock: Clock = Depends(get_clock),
@@ -137,7 +196,7 @@ def logout(
 
 @auth_router.get("/me", response_model=MeResponse)
 def get_me(
-    auth: AuthenticatedSession = Depends(current_auth), db: Session = Depends(get_db)
+    auth: AuthenticatedSession = Depends(current_auth_unverified_ok), db: Session = Depends(get_db)
 ) -> MeResponse:
     return _me(db, auth)
 

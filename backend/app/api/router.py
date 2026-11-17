@@ -20,6 +20,7 @@ from app.content.router import router as content_router
 from app.core.config import Settings
 from app.core.db import check_readiness
 from app.core.i18n import SUPPORTED_LOCALES
+from app.identity.legal import TERMS_VERSION
 from app.identity.router import auth_router, invites_router, workspaces_router
 from app.inbox.router import router as inbox_router
 from app.inbox.sandbox_router import router as assistant_test_chat_router
@@ -47,6 +48,8 @@ api_router.include_router(owner_requests_router)
 
 
 class MetaResponse(BaseModel):
+    signup_enabled: bool
+    terms_version: str
     product_name: str
     demo_tools_enabled: bool
     llm_mode: str
@@ -77,6 +80,8 @@ def readyz() -> JSONResponse:
 def meta(settings: Settings = Depends(get_app_settings)) -> MetaResponse:
     """Public, non-secret configuration for the SPA."""
     return MetaResponse(
+        signup_enabled=settings.signup_enabled,
+        terms_version=TERMS_VERSION,
         product_name=settings.product_name,
         demo_tools_enabled=settings.demo_tools_enabled,
         llm_mode="fake" if settings.llm_provider == "fake" else "real",

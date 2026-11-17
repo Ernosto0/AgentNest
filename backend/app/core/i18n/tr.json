@@ -469,5 +469,9 @@
   "activity.state.degraded": "Kararsız",
   "activity.state.needs_reauth": "Yenilenmeli",
   "activity.state.disconnected": "Bağlantı kesildi",
-  "activity.state.approved": "Onaylandı"
+  "activity.state.approved": "Onaylandı",
+  "errors.EMAIL_NOT_VERIFIED.what": "E-postanız doğrulanmadı.",
+  "errors.EMAIL_NOT_VERIFIED.next": "Devam etmeden önce e-postanızı doğrulayın.",
+  "errors.EMAIL_VERIFICATION_TOKEN_INVALID.what": "Doğrulama bağlantısı geçersiz veya süresi dolmuş.",
+  "errors.EMAIL_VERIFICATION_TOKEN_INVALID.next": "Yeni bir doğrulama e-postası isteyin."
 }

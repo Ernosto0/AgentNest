@@ -17,6 +17,8 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `APP_BASE_URL` | `http://localhost:8000` | `https://<domain>` | Absolute URLs (OAuth redirect, invites) |
 | `COOKIE_SECURE` | `false` | `true` (enforced) | Session cookie Secure flag |
 | `SESSION_TTL_HOURS` | `336` | `336` | Sliding session lifetime (14 days) |
+| `SIGNUP_ENABLED` | `false` | `false` until public launch | Self-service signup (`POST /auth/register`, `/auth/resend-verification`, email verification). Off: both endpoints return 404 and the login page hides the signup link; links already issued still verify. Exposed to the SPA as `signup_enabled` on `GET /api/v1/meta`. Needs `SMTP_URL` and `MAIL_FROM` to send the verification email |
+| `EMAIL_OUTBOX_DIR` | empty | leave empty | Development/test only: also writes each outgoing email as a JSON file here (used by the Playwright signup journey). Ignored when `SMTP_URL` is set or `APP_ENV` is production |
 | `LOG_LEVEL` | `INFO` | `INFO` | |
 | `LOG_FORMAT` | `console` | `json` | |
 | `DEMO_TOOLS_ENABLED` | `true` | must be `false` | Mounts `/api/v1/dev/*` and the dev panel |
