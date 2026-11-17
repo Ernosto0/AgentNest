@@ -22,6 +22,10 @@ export const RESULT_MESSAGE_KEYS = [
   "brand_voice_missing",
   // Content commands (api-design §2.4, P5-03b).
   "draft_created",
+  "price_card_started",
+  "price_card_no_price",
+  "price_card_not_a_price",
+  "price_card_fact_unusable",
   "content_cancelled",
   "content_rescheduled",
   "agent_paused_until",

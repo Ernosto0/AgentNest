@@ -13,6 +13,7 @@ from app.agent.models import ACTIVE_RUN_STATES, AgentAction, AgentEvent, AgentSe
 from app.agent.repository import admit_action, scoped_account, scoped_thread
 from app.agent.tools.broker import BrokerContext, ToolInputError
 from app.comments.models import PublicComment, PublicCommentAction, PublicMedia
+from app.comments.ownership import media_ownership_ok
 from app.core.canonical import payload_hash
 from app.core.clock import Clock
 from app.jobs.queue import enqueue
@@ -111,7 +112,11 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
             PublicMedia.social_account_id == thread.social_account_id,
         )
     )
-    if media is None or media.state == "deleted" or media.ownership_state != "verified_synthetic":
+    if (
+        media is None
+        or media.state == "deleted"
+        or not media_ownership_ok(media, comment.is_simulated)
+    ):
         raise ToolInputError("media ownership unavailable")
     effect_name = "reply" if isinstance(request, PublicReplyArgs) else request.effect
     if (effect_name in {"reply", "hide", "delete"} and comment.state != "visible") or (
@@ -262,7 +267,7 @@ def revalidate(db: Session, clock: Clock, action: AgentAction) -> bool:
         or comment.version != subject.comment_version
         or media.version != subject.media_version
         or media.state == "deleted"
-        or media.ownership_state != "verified_synthetic"
+        or not media_ownership_ok(media, comment.is_simulated)
         or comment.is_owner
     ):
         return False

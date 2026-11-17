@@ -61,6 +61,9 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `FACT_CHANGED_MEANWHILE` | — | — | The fact changed before confirmation, so nothing was overwritten / check the current value and repeat the command. Recorded as the command's `error_code`; never an HTTP error, because the decision itself succeeded |
 | `GROUNDING_FAILED` | — | — | The draft contained values not matching verified facts / edit or write the reply |
 | `CONTENT_VALIDATION_FAILED` | 422 | — | Content cannot be submitted / fix the listed items (§4.2). The problem document's top-level `errors` lists them (`{code, field, params, message}`) and `params.warnings` the non-blocking ones |
+| `TEMPLATE_FACT_NOT_USABLE` | 422 | — | Referenced keys are not verified/usable; verify the listed facts |
+| `TEMPLATE_FACT_TYPE_MISMATCH` | 422 | — | Wrong value type; select a fact of the accepted type |
+| `TEMPLATE_TEXT_UNGROUNDED` | 422 | — | Critical value or invalid placeholder in the named field; use verified placeholders |
 | `MEDIA_INVALID` | 422 | — | The file is not a supported image / upload a JPEG or PNG |
 | `MEDIA_TOO_LARGE` | 413 | — | The file exceeds 8 MB |
 | `MESSAGING_WINDOW_CLOSED` | — | no | Instagram allows replies only within 24 h / reply in the Instagram app |
@@ -99,7 +102,7 @@ Reason codes are not errors. They explain *why* something was decided or changed
 | Content hold (`content_items.hold_reason`) | `FACT_CHANGED`, `ACCOUNT_UNAVAILABLE`, `APPROVAL_EXPIRED` |
 | Approval cancellation (`approvals.cancel_reason`) | `SUBJECT_EDITED`, `SUPERSEDED`, `FACT_CHANGED`, `WITHDRAWN`, `SUBJECT_CANCELLED` |
 | Draft supersession | `NEW_INBOUND`, `OWNER_REPLIED_NATIVELY`, `OWNER_REPLIED`, `FACT_CHANGED`, `REGENERATED` |
-| Inbound event ignore (`inbound_events.ignore_reason`) | `UNKNOWN_ACCOUNT`, `ACCOUNT_DISCONNECTED`, `UNSUPPORTED_EVENT` |
+| Inbound event ignore (`inbound_events.ignore_reason`) | `UNKNOWN_ACCOUNT`, `ACCOUNT_DISCONNECTED`, `UNSUPPORTED_EVENT`, `PUBLIC_SOURCE_CONFLICT`, `COMMENT_AUTOMATION_OFF` |
 
 ### 4.2 Content submission item codes (G17)
 Item codes are not error codes: they are the entries of `errors` (blocking) and `warnings` in a `CONTENT_VALIDATION_FAILED` response, in the dry run `POST /content-items/{id}/validate` and in a submitted item's `validation.warnings`. Each has a text in both languages under `content.issue.<CODE>` (a test enforces it). The rules are in [workflows.md §E step 4.1](workflows.md); `content/validation.py` is the single source.
@@ -176,8 +179,9 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 | Commands | `command.received`, `command.interpreted`, `command.executed`, `command.failed`, `command.cancelled`, `command.expired` |
 | Approvals | `approval.requested`, `approval.approved`, `approval.granted` (a decision by someone other than the requester that is not a self-approval), `approval.rejected`, `approval.expired`, `approval.cancelled` |
 | Inbox | `message.received`, `message.native_reply_recorded`, `message.transcribed`, `message.transcription_failed`, `message.image_described` (metadata: provider, model, `looks_like`, `has_visible_text`, `injection_suspected`, `image_bytes`; never the text), `message.image_description_failed` (metadata: reason code), `reply_draft.created` (metadata: decision, reasons, status, intent, `transcript_based`), `reply_draft.edited`, `reply_draft.<status>` (one entry per draft status change: `pending_approval`, `needs_human`, `queued`, `sending`, `outcome_unknown`, `sent`, `failed`, `rejected`, `expired`, `superseded`, `cancelled`, `blocked`), `reply.sent`, `reply.failed`, `reply.outcome_unknown`, `reply.outcome_unconfirmed`, `reply.late_confirmation`, `conversation.takeover`, `conversation.release` |
-| Content | `content.created`, `content.generated`, `content.updated`, `content.submitted`, `content.scheduled`, `content.on_hold`, `content.cancelled`, `content.rejected`, `content.publishing`, `content.retry_scheduled`, `content.published`, `content.failed`, `media.uploaded`, `media.rejected`, `media.deleted` |
-| Operations & accounts | `operation.started`, `operation.succeeded`, `operation.failed`, `operation.outcome_unknown`, `operation.reconciled`, `social_account.connected`, `social_account.degraded`, `social_account.needs_reauth`, `social_account.disconnected`, `account.reconnected`, `social_account.token_refreshed` (implemented offline in Phase 7 Session 3) |
+| Template images | `content.template_image_rerendered`, `content.template_image_failed` |
+| Content | `content.created`, `content.generated`, `content.updated`, `content.submitted`, `content.scheduled`, `content.on_hold`, `content.cancelled`, `content.rejected`, `content.publishing`, `content.retry_scheduled`, `content.published`, `content.failed`, `media.uploaded`, `media.rejected`, `media.deleted`, `media.template_rendered`, `brand.updated` |
+| Operations & accounts | `operation.started`, `operation.succeeded`, `operation.failed`, `operation.outcome_unknown`, `operation.reconciled`, `social_account.connected`, `social_account.degraded`, `social_account.needs_reauth`, `social_account.disconnected`, `account.reconnected`, `account.comment_automation_changed`, `social_account.token_refreshed` (implemented offline in Phase 7 Session 3) |
 | Account agent | `agent.event_recorded`, `agent.action_proposed`, `agent.session_transition`, `agent.thread_transition`, `agent.step_transition`, `agent.action_transition`, `agent.delegation_applied`, `agent.delegation_suggested`, `agent.delegation_suggestion_previewed`, `agent.delegation_suggestion_accepted` (the same transaction also writes `policy.updated`), `agent.delegation_suggestion_dismissed`, `agent.action_authorized`, `agent.action_cancelled`, `agent.content_applied`, `agent.state_changed`, `agent.personality_changed` (Phase 7.5, ID/version/reason metadata only) |
 | Customer memory | `memory.written`, `memory.corrected`, `memory.forgotten`, `memory.erased` (identity ID, generation and revision only; never customer/source bodies) |
 | System | `webhook.signature_invalid`, `report.generated`, `retention.cleanup_ran`, `demo.reset` (on the **new** workspace; metadata `previous_workspace_id`), `demo.failure_rule_set` |
@@ -237,3 +241,10 @@ group with TR/EN labels. Metadata holds source/version/state/thread IDs only. Th
 summary includes `public_sources_nulled`, counted from changed comment/caption sources;
 account-first locks and a fresh source reread prevent an old retention candidate from
 erasing a newly committed edit. Receipts remain durable dedup evidence after payload erasure.
+
+`account.comment_automation_changed` belongs to `accounts`: metadata contains boolean `from`/`to`, no token or comment content; unchanged requests write no duplicate audit. Inbound comment opt-out uses `COMMENT_AUTOMATION_OFF`, retaining an empty payload.
+
+Template audit metadata: `brand.updated` records the effective colours and logo media id,
+atomically with brand settings. `media.template_rendered` records template, format and
+`facts:[{fact_id,key,version}]`, atomically with the asset and ordinary `media.uploaded`.
+It contains no free text, rendered values or storage credentials.

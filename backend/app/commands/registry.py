@@ -17,6 +17,7 @@ from app.ai.schemas import (
     AgentPauseUntil,
     ContentCancelScheduled,
     ContentCreateDraft,
+    ContentMakePriceCard,
     ContentReschedule,
     QueryActivitySummary,
     QueryContentStatus,
@@ -33,6 +34,7 @@ from app.commands.executors import (
     agent_pause_until,
     content_cancel,
     content_create_draft,
+    content_make_price_card,
     content_reschedule,
     query_activity_summary,
     query_content_status,
@@ -206,6 +208,21 @@ REGISTRY: dict[str, CommandSpec] = {
             approval_permission="content.approve",
         ),
         CommandSpec(
+            type="content.make_price_card",
+            mutating=True,
+            required_permission="content.edit",
+            params_model=ContentMakePriceCard,
+            executor=content_make_price_card.execute,
+            confirmation_summary_builder=plain_summary,
+            description="Make a draft price card from a verified price, after confirmation.",
+            parameters={
+                "fact_key": "the money fact key from business_facts; never a price value",
+                "format": "story | feed | null (story)",
+            },
+            approval_action="command.make_price_card",
+            approval_permission="content.edit",
+        ),
+        CommandSpec(
             type="content.reschedule",
             mutating=True,
             required_permission="content.approve",
@@ -265,7 +282,10 @@ def describe_registry() -> list[RegistryEntry]:
             type="clarify",
             description="The instruction is ambiguous (for example which price). Do not guess.",
             parameters={
-                "intent": "knowledge.update_fact | query.fact | knowledge.update_brand_voice",
+                "intent": (
+                    "knowledge.update_fact | query.fact | knowledge.update_brand_voice"
+                    " | content.make_price_card"
+                ),
                 "candidate_fact_keys": "plausible keys from business_facts",
                 "raw_value_text": "the value as typed, if any",
             },

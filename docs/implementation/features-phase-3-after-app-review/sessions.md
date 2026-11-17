@@ -1,6 +1,6 @@
 # Feature Phase 3: After App Review
 
-**Status:** Planned. Nothing in this file is implemented yet.
+**Status:** Sessions 01-04 implemented and verified offline; stopped for review (2026-11-17). Track A (01-02) and Track B (03-04) were built in parallel worktrees and merged by the orchestrator; see the [merge report](merge-report.md) and the [phase summary](../phase-summaries/features-phase-3-summary.md) for checks, known environment failures and the live items that are still pending (all Meta comment live evidence, `subscribed_apps` for `comments`, App Review). Nothing committed.
 **Source:** [pre-launch-feature-recommendations.md](../../review/pre-launch-feature-recommendations.md) §4, step 3.
 **Features:** F-05 (comment-to-DM on real accounts), F-07 (story and post template images).
 **Sessions:** 4. Track A (sessions 01–02) and Track B (sessions 03–04) are independent. Track B can start before App Review finishes.

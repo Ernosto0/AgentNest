@@ -660,9 +660,31 @@
     "EMAIL_VERIFICATION_TOKEN_INVALID": {
       "what": "This verification link is invalid or expired.",
       "next": "Request a new verification email."
+    },
+    "TEMPLATE_FACT_NOT_USABLE": {
+      "what": "A fact on this template is not verified or not usable right now.",
+      "next": "Verify it in your business information, then try again."
+    },
+    "TEMPLATE_FACT_TYPE_MISMATCH": {
+      "what": "This template cannot use that information.",
+      "next": "Choose a price for a price card, or the opening hours for an hours card."
+    },
+    "TEMPLATE_TEXT_UNGROUNDED": {
+      "what": "The text contains a price, time, phone number or link that is not a verified fact.",
+      "next": "Remove it or insert it as a fact placeholder instead."
+    },
+    "TEMPLATE_IMAGE_STALE": {
+      "what": "The image shows an old value.",
+      "next": "Re-render the image with the current value."
     }
   },
   "connections": {
+    "commentAutomation": "Comment-to-DM (private replies)",
+    "commentOn": "On",
+    "commentOff": "Off",
+    "commentExplanation": "One private reply per customer, approval by default, within 7 days of the comment.",
+    "commentEnable": "Turn on",
+    "commentDisable": "Turn off",
     "title": "Instagram connection",
     "intro": "Your account's connection status and what it can do. If the connection drops, replies and posts wait. After reconnecting, review and approve held posts again.",
     "none": "No Instagram account is connected.",
@@ -684,6 +706,7 @@
     "ownerOnly": "Only the owner can change this.",
     "connectInstagram": "Connect with Instagram",
     "reconnectInstagram": "Reconnect with Instagram",
+    "commentsReconnectHint": "Reconnect with Instagram to grant comment permission. To turn comment-to-DM on afterwards, use the switch here.",
     "oauthConnected": "Instagram account connected.",
     "dismiss": "Dismiss",
     "unavailable": "No connection provider is available for this workspace.",
@@ -1005,5 +1028,17 @@
     "version": "Document version: {{version}}",
     "termsBody": "AgentNest helps you manage your business account and proposed customer communications. You must be authorized to connect and manage the accounts you use. Keep your login details secure.",
     "termsResponsibility": "You are responsible for the business information you provide and actions you authorize. Use the service lawfully and respect your customers’ privacy. See the Privacy Policy for how data is handled."
+  },
+  "brand": {
+    "title": "Brand",
+    "primary": "Primary colour",
+    "accent": "Accent colour",
+    "picker": "Choose {{name}}",
+    "invalid": "Enter a hex colour such as #1a2b3c.",
+    "logo": "Logo",
+    "remove": "Remove logo",
+    "save": "Save brand",
+    "saved": "Brand saved.",
+    "readOnly": "An owner or manager can edit the brand."
   }
 }

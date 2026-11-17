@@ -10,7 +10,7 @@ from app.integrations.instagram.base import NormalizedInboundEvent
 
 class CommentEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    schema_version: Literal["synthetic-comment-v1"] = Field(
+    schema_version: Literal["synthetic-comment-v1", "provider-comment-v1"] = Field(
         default="synthetic-comment-v1", alias="schema"
     )
     id: str = Field(min_length=1, max_length=200)

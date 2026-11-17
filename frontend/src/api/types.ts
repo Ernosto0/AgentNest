@@ -63,6 +63,13 @@ export type ContentGeneration = Schemas["GenerationOut"];
 export type ContentCreateBody = Schemas["ContentCreate"];
 export type ContentPatchBody = Schemas["ContentPatch"];
 export type MediaAsset = Schemas["MediaAssetOut"];
+export type TemplateImage = Schemas["TemplateImageOut"];
+export type TemplateImageState = Schemas["TemplateImageStateOut"];
+export type TemplateBody =
+  | Schemas["PriceCard"]
+  | Schemas["HoursCard"]
+  | Schemas["ServicesList"]
+  | Schemas["Announcement"];
 
 // Phase 6: activity feed and the daily report.
 export type ActivityEntry = Schemas["ActivityEntryOut"];

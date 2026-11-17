@@ -568,6 +568,71 @@
         "title": "AiRunCount",
         "type": "object"
       },
+      "Announcement": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "maxLength": 1600,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "date_line": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Line"
+          },
+          "format": {
+            "enum": [
+              "story",
+              "feed"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "headline": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Headline",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tr",
+                  "en"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "template": {
+            "const": "announcement",
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "format",
+          "template",
+          "headline",
+          "body"
+        ],
+        "title": "Announcement",
+        "type": "object"
+      },
       "AnswerFromMessageIn": {
         "additionalProperties": false,
         "properties": {
@@ -804,6 +869,7 @@
               "command.update_fact",
               "command.update_brand_voice",
               "command.cancel_content",
+              "command.make_price_card",
               "command.reschedule_content",
               "command.pause_agent",
               "reply.send",
@@ -1567,6 +1633,133 @@
           "file"
         ],
         "title": "Body_upload_media_api_v1_workspaces__workspace_id__media_post",
+        "type": "object"
+      },
+      "BrandInput": {
+        "additionalProperties": false,
+        "properties": {
+          "accent_color": {
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "title": "Accent Color",
+            "type": "string"
+          },
+          "logo_media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Media Asset Id"
+          },
+          "primary_color": {
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "title": "Primary Color",
+            "type": "string"
+          }
+        },
+        "required": [
+          "primary_color",
+          "accent_color",
+          "logo_media_asset_id"
+        ],
+        "title": "BrandInput",
+        "type": "object"
+      },
+      "BrandOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accent_color": {
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "title": "Accent Color",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "logo_height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Height"
+          },
+          "logo_media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Media Asset Id"
+          },
+          "logo_width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Width"
+          },
+          "primary_color": {
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "title": "Primary Color",
+            "type": "string"
+          }
+        },
+        "required": [
+          "primary_color",
+          "accent_color",
+          "logo_media_asset_id",
+          "is_default"
+        ],
+        "title": "BrandOut",
+        "type": "object"
+      },
+      "BrandRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "accent_color": {
+            "title": "Accent Color",
+            "type": "string"
+          },
+          "logo_media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Media Asset Id"
+          },
+          "primary_color": {
+            "title": "Primary Color",
+            "type": "string"
+          }
+        },
+        "required": [
+          "primary_color",
+          "accent_color",
+          "logo_media_asset_id"
+        ],
+        "title": "BrandRecord",
         "type": "object"
       },
       "CalendarAppointmentListOut": {
@@ -2454,6 +2647,20 @@
         "title": "CommandResultOut",
         "type": "object"
       },
+      "CommentAutomationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "CommentAutomationRequest",
+        "type": "object"
+      },
       "CommentEvent": {
         "additionalProperties": false,
         "properties": {
@@ -2530,8 +2737,11 @@
             "type": "string"
           },
           "schema": {
-            "const": "synthetic-comment-v1",
             "default": "synthetic-comment-v1",
+            "enum": [
+              "synthetic-comment-v1",
+              "provider-comment-v1"
+            ],
             "title": "Schema",
             "type": "string"
           },
@@ -3274,6 +3484,16 @@
             "title": "Status",
             "type": "string"
           },
+          "template_image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateImageStateOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -3303,6 +3523,7 @@
           }
         },
         "required": [
+          "template_image",
           "id",
           "content_type",
           "status",
@@ -5000,6 +5221,31 @@
         "title": "FactTransition",
         "type": "object"
       },
+      "FactUse": {
+        "additionalProperties": false,
+        "properties": {
+          "fact_id": {
+            "format": "uuid",
+            "title": "Fact Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fact_id",
+          "key",
+          "version"
+        ],
+        "title": "FactUse",
+        "type": "object"
+      },
       "FactUsedOut": {
         "properties": {
           "display": {
@@ -5257,6 +5503,51 @@
           "unanswered_comments"
         ],
         "title": "HomeAttentionOut",
+        "type": "object"
+      },
+      "HoursCard": {
+        "additionalProperties": false,
+        "properties": {
+          "fact_key": {
+            "const": "hours.weekly",
+            "default": "hours.weekly",
+            "title": "Fact Key",
+            "type": "string"
+          },
+          "format": {
+            "enum": [
+              "story",
+              "feed"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tr",
+                  "en"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "template": {
+            "const": "hours_card",
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "format",
+          "template"
+        ],
+        "title": "HoursCard",
         "type": "object"
       },
       "ImageDescriptionOut": {
@@ -8161,6 +8452,51 @@
         "title": "PolicyItem",
         "type": "object"
       },
+      "PriceCard": {
+        "additionalProperties": false,
+        "properties": {
+          "fact_key": {
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)+$",
+            "title": "Fact Key",
+            "type": "string"
+          },
+          "format": {
+            "enum": [
+              "story",
+              "feed"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tr",
+                  "en"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "template": {
+            "const": "price_card",
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "format",
+          "template",
+          "fact_key"
+        ],
+        "title": "PriceCard",
+        "type": "object"
+      },
       "PriceInputOut": {
         "properties": {
           "amount": {
@@ -8728,6 +9064,67 @@
         "title": "RegisterRequest",
         "type": "object"
       },
+      "RenderRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "brand": {
+            "$ref": "#/components/schemas/BrandRecord"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/FactUse"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "format": {
+            "enum": [
+              "story",
+              "feed"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "language": {
+            "enum": [
+              "tr",
+              "en"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "rendered_at": {
+            "format": "date-time",
+            "title": "Rendered At",
+            "type": "string"
+          },
+          "renderer_version": {
+            "default": "1",
+            "title": "Renderer Version",
+            "type": "string"
+          },
+          "template": {
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template",
+          "format",
+          "language",
+          "facts",
+          "inputs",
+          "brand",
+          "rendered_at"
+        ],
+        "title": "RenderRecord",
+        "type": "object"
+      },
       "RenderedFactOut": {
         "properties": {
           "display": {
@@ -9214,6 +9611,56 @@
         "title": "ScriptOut",
         "type": "object"
       },
+      "ServicesList": {
+        "additionalProperties": false,
+        "properties": {
+          "fact_keys": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)+$",
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 2,
+            "title": "Fact Keys",
+            "type": "array"
+          },
+          "format": {
+            "enum": [
+              "story",
+              "feed"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tr",
+                  "en"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "template": {
+            "const": "services_list",
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "format",
+          "template",
+          "fact_keys"
+        ],
+        "title": "ServicesList",
+        "type": "object"
+      },
       "SessionOut": {
         "properties": {
           "created_at": {
@@ -9305,6 +9752,11 @@
             "additionalProperties": true,
             "title": "Capabilities",
             "type": "object"
+          },
+          "comment_automation_enabled": {
+            "default": false,
+            "title": "Comment Automation Enabled",
+            "type": "boolean"
           },
           "connection_expires_at": {
             "anyOf": [
@@ -10129,6 +10581,197 @@
           "next_cursor"
         ],
         "title": "TaskSelectionPage",
+        "type": "object"
+      },
+      "TemplateImageFactOut": {
+        "properties": {
+          "current_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Version"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Label",
+            "type": "object"
+          },
+          "recorded_version": {
+            "title": "Recorded Version",
+            "type": "integer"
+          },
+          "usable": {
+            "title": "Usable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "recorded_version",
+          "current_version",
+          "usable"
+        ],
+        "title": "TemplateImageFactOut",
+        "type": "object"
+      },
+      "TemplateImageOut": {
+        "properties": {
+          "byte_size": {
+            "title": "Byte Size",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mime_type": {
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "original_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Filename"
+          },
+          "rejection_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Code"
+          },
+          "render_record": {
+            "$ref": "#/components/schemas/RenderRecord"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "width",
+          "height",
+          "mime_type",
+          "byte_size",
+          "original_filename",
+          "rejection_code",
+          "created_at",
+          "render_record"
+        ],
+        "title": "TemplateImageOut",
+        "type": "object"
+      },
+      "TemplateImageRerenderIn": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "TemplateImageRerenderIn",
+        "type": "object"
+      },
+      "TemplateImageStateOut": {
+        "properties": {
+          "can_rerender": {
+            "title": "Can Rerender",
+            "type": "boolean"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateImageFactOut"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "format": {
+            "enum": [
+              "story",
+              "feed"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "language": {
+            "enum": [
+              "tr",
+              "en"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "rendered_at": {
+            "format": "date-time",
+            "title": "Rendered At",
+            "type": "string"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "template": {
+            "enum": [
+              "price_card",
+              "hours_card",
+              "services_list",
+              "announcement"
+            ],
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template",
+          "format",
+          "language",
+          "rendered_at",
+          "facts",
+          "stale",
+          "can_rerender"
+        ],
+        "title": "TemplateImageStateOut",
         "type": "object"
       },
       "TemplateItemOut": {
@@ -14165,6 +14808,69 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comment-automation": {
+      "put": {
+        "operationId": "set_comment_automation_api_v1_workspaces__workspace_id__accounts__account_id__comment_automation_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentAutomationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialAccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Comment Automation",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments": {
       "get": {
         "operationId": "account_comments_api_v1_workspaces__workspace_id__accounts__account_id__comments_get",
@@ -16198,6 +16904,7 @@
                     "command.update_fact",
                     "command.update_brand_voice",
                     "command.cancel_content",
+                    "command.make_price_card",
                     "command.reschedule_content",
                     "command.pause_agent",
                     "reply.send",
@@ -16888,6 +17595,100 @@
         "summary": "Review Policies",
         "tags": [
           "automation"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/brand": {
+      "get": {
+        "operationId": "get_brand_api_v1_workspaces__workspace_id__brand_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Brand",
+        "tags": [
+          "content"
+        ]
+      },
+      "put": {
+        "operationId": "put_brand_api_v1_workspaces__workspace_id__brand_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrandInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Brand",
+        "tags": [
+          "content"
         ]
       }
     },
@@ -18256,6 +19057,69 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/template-image/rerender": {
+      "post": {
+        "operationId": "rerender_image_api_v1_workspaces__workspace_id__content_items__content_id__template_image_rerender_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "content_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Content Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateImageRerenderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rerender Image",
+        "tags": [
+          "content"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/validate": {
       "post": {
         "description": "A dry run of the claim validation and every submit rule. Changes nothing.",
@@ -18322,6 +19186,202 @@
           }
         },
         "summary": "Validate Content Item",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/content/template-images": {
+      "post": {
+        "operationId": "create_api_v1_workspaces__workspace_id__content_template_images_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "discriminator": {
+                  "mapping": {
+                    "announcement": "#/components/schemas/Announcement",
+                    "hours_card": "#/components/schemas/HoursCard",
+                    "price_card": "#/components/schemas/PriceCard",
+                    "services_list": "#/components/schemas/ServicesList"
+                  },
+                  "propertyName": "template"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/PriceCard"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HoursCard"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ServicesList"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Announcement"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateImageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/content/template-images/preview": {
+      "post": {
+        "operationId": "preview_api_v1_workspaces__workspace_id__content_template_images_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "discriminator": {
+                  "mapping": {
+                    "announcement": "#/components/schemas/Announcement",
+                    "hours_card": "#/components/schemas/HoursCard",
+                    "price_card": "#/components/schemas/PriceCard",
+                    "services_list": "#/components/schemas/ServicesList"
+                  },
+                  "propertyName": "template"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/PriceCard"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HoursCard"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ServicesList"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Announcement"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/content/templates": {
+      "get": {
+        "operationId": "templates_api_v1_workspaces__workspace_id__content_templates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Templates Api V1 Workspaces  Workspace Id  Content Templates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Templates",
         "tags": [
           "content"
         ]

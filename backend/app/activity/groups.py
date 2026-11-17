@@ -68,6 +68,8 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "approval.cancelled",
     ),
     "content": (
+        "content.template_image_rerendered",
+        "content.template_image_failed",
         "content.created",
         "content.generated",
         "content.updated",
@@ -83,6 +85,8 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "media.uploaded",
         "media.rejected",
         "media.deleted",
+        "media.template_rendered",
+        "brand.updated",
     ),
     "knowledge": (
         "fact.created",
@@ -109,6 +113,7 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "command.expired",
     ),
     "accounts": (
+        "account.comment_automation_changed",
         "social_account.connected",
         "social_account.degraded",
         "social_account.needs_reauth",

@@ -1,5 +1,7 @@
 # Session 16 Meta comment contract evidence
 
+> **Superseded in part (2026-11-17):** the Meta pages listed below were readable on 2026-11-17 and the answers are recorded in [platform-capabilities.md §1.8](platform-capabilities.md). This file stays as the dated record of the 2026-10-29 attempt and of the offline scaffold.
+
 Checked **2026-10-29**, Europe/Istanbul. Status: **externally pending**.
 No authenticated request, webhook capture, account mutation or paid evaluation occurred.
 This refresh does not reconfirm the older 2026-10-15 documentation claims.

@@ -660,9 +660,31 @@
     "EMAIL_VERIFICATION_TOKEN_INVALID": {
       "what": "Doğrulama bağlantısı geçersiz veya süresi dolmuş.",
       "next": "Yeni bir doğrulama e-postası isteyin."
+    },
+    "TEMPLATE_FACT_NOT_USABLE": {
+      "what": "Bu şablondaki bir bilgi doğrulanmamış veya şu anda kullanılamıyor.",
+      "next": "İşletme bilgilerinizde doğrulayın, sonra tekrar deneyin."
+    },
+    "TEMPLATE_FACT_TYPE_MISMATCH": {
+      "what": "Bu şablon o bilgiyi kullanamaz.",
+      "next": "Fiyat kartı için bir fiyat, saat kartı için çalışma saatlerini seçin."
+    },
+    "TEMPLATE_TEXT_UNGROUNDED": {
+      "what": "Metinde doğrulanmış bir bilgi olmayan fiyat, saat, telefon veya bağlantı var.",
+      "next": "Kaldırın ya da bunun yerine bir bilgi yer tutucusu ekleyin."
+    },
+    "TEMPLATE_IMAGE_STALE": {
+      "what": "Görsel eski bir değeri gösteriyor.",
+      "next": "Görseli güncel değerle yeniden oluşturun."
     }
   },
   "connections": {
+    "commentAutomation": "Yorumdan DM’ye (özel yanıtlar)",
+    "commentOn": "Açık",
+    "commentOff": "Kapalı",
+    "commentExplanation": "Müşteri başına bir özel yanıt; varsayılan olarak onay gerekir. Yorumdan sonraki 7 gün içinde gönderilir.",
+    "commentEnable": "Aç",
+    "commentDisable": "Kapat",
     "title": "Instagram bağlantısı",
     "intro": "Hesabınızın bağlantı durumu ve neler yapabildiği. Bağlantı koparsa yanıtlar ve gönderiler bekler. Yeniden bağlandıktan sonra beklemeye alınan gönderileri gözden geçirip tekrar onaylayın.",
     "none": "Bağlı bir Instagram hesabı yok.",
@@ -684,6 +706,7 @@
     "ownerOnly": "Bunu yalnızca sahip değiştirebilir.",
     "connectInstagram": "Instagram ile bağlan",
     "reconnectInstagram": "Instagram ile bağlantıyı yenile",
+    "commentsReconnectHint": "Yorum iznini vermek için Instagram bağlantısını yenileyin. Ardından yorumdan DM’ye özelliğini buradaki anahtarla açabilirsiniz.",
     "oauthConnected": "Instagram hesabı bağlandı.",
     "dismiss": "Kapat",
     "unavailable": "Bu çalışma alanı için kullanılabilir bağlantı sağlayıcısı yok.",
@@ -1005,5 +1028,17 @@
     "version": "Belge sürümü: {{version}}",
     "termsBody": "AgentNest, işletme hesabınızı ve önerilen müşteri iletişimlerini yönetmenize yardımcı olur. Kullandığınız hesapları bağlamaya ve yönetmeye yetkili olmalısınız. Giriş bilgilerinizi güvenli tutun.",
     "termsResponsibility": "Sağladığınız işletme bilgilerinden ve yetkilendirdiğiniz işlemlerden siz sorumlusunuz. Hizmeti hukuka uygun kullanın ve müşterilerinizin gizliliğine saygı gösterin. Verilerin işlenmesi hakkında Gizlilik Politikasını inceleyin."
+  },
+  "brand": {
+    "title": "Marka",
+    "primary": "Ana renk",
+    "accent": "Vurgu rengi",
+    "picker": "{{name}} seç",
+    "invalid": "#1a2b3c gibi bir hex renk girin.",
+    "logo": "Logo",
+    "remove": "Logoyu kaldır",
+    "save": "Markayı kaydet",
+    "saved": "Marka kaydedildi.",
+    "readOnly": "Markayı işletme sahibi veya yönetici düzenleyebilir."
   }
 }

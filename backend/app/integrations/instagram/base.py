@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from typing import Any, Literal, Protocol
 
 ProviderKind = Literal["mock", "meta"]
+META_PRIVATE_REPLY_WINDOW = timedelta(days=7) - timedelta(minutes=10)
 MOCK_PRIVATE_REPLY_WINDOW = timedelta(days=7)  # Provisional simulator fixture only.
 EventType = Literal["message", "echo", "delete", "reaction", "read", "postback", "other", "comment"]
 

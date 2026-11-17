@@ -12,7 +12,7 @@ from app.agent.models import AgentAction
 from app.approvals.models import Approval
 from app.audit.service import record
 from app.comments.models import PrivateReplyOpportunity, PublicComment
-from app.comments.private_reply import eligibility
+from app.comments.private_reply import eligibility, real_refusal
 from app.core.clock import Clock
 from app.core.config import Settings, get_settings
 from app.core.errors import AppError
@@ -24,6 +24,7 @@ from app.integrations.instagram.errors import (
     ProviderInvalidRequest,
     ProviderOutcomeUnknown,
 )
+from app.integrations.instagram.oauth import COMMENTS_SCOPE
 from app.integrations.instagram.registry import account_ref, get_provider
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, job_handler
@@ -96,7 +97,7 @@ def _queue_reconcile(db: Session, clock: Clock, op: Operation) -> None:
 
 def _prepare(
     db: Session, clock: Clock, settings: Settings, workspace_id: uuid.UUID, action_id: uuid.UUID
-) -> tuple[uuid.UUID, str, AccountRef, str, str] | None:
+) -> tuple[uuid.UUID, str, AccountRef, str, str, str] | None:
     candidate = db.scalar(
         select(AgentAction).where(
             AgentAction.id == action_id, AgentAction.workspace_id == workspace_id
@@ -136,15 +137,30 @@ def _prepare(
             action.status, row.status = op.status, op.status
             return None
     account = queries.get_account_in_workspace(db, workspace_id, action.social_account_id)
-    if account is None or account.provider_kind != "mock":
-        _terminal(db, clock, action, row, "failed", "PRIVATE_REPLY_NOT_VERIFIED")
+    if account is None or account.provider_kind not in settings.instagram_providers:
+        _terminal(db, clock, action, row, "cancelled", "CAPABILITY_MISSING")
         return None
     if (
         account.status not in {"connected", "degraded"}
         or account.capabilities.get("comment_private_reply") is not True
+        or (
+            account.provider_kind == "meta"
+            and (
+                "meta" not in settings.instagram_providers
+                or not account.comment_automation_enabled
+                or account.capabilities.get("comments_permission") is not True
+                or COMMENTS_SCOPE not in account.granted_scopes
+            )
+        )
     ):
         _terminal(db, clock, action, row, "cancelled", "CAPABILITY_MISSING")
         return None
+    if account.provider_kind == "meta":
+        source = db.get(PublicComment, row.comment_id)
+        reason = real_refusal(db, clock, source, exclude=row.id) if source else None
+        if reason:
+            _terminal(db, clock, action, row, "cancelled", reason)
+            return None
     try:
         fence_action(
             db,
@@ -210,7 +226,14 @@ def _prepare(
     op.started_at = clock.now()
     op.provider_ref = {"comment_id": source.external_id, "comment_version": row.comment_version}
     action.status = "in_progress"
-    return op.id, key, account_ref(account, settings), source.external_id, row.text
+    return (
+        op.id,
+        key,
+        account_ref(account, settings),
+        source.external_id,
+        row.text,
+        account.provider_kind,
+    )
 
 
 def _finish(
@@ -278,8 +301,8 @@ def execute(
     if prepared is None:
         _wake(factory, clock, action_id)
         return
-    operation_id, key, account, comment_id, text = prepared
-    provider = get_provider("mock", settings=settings, session_factory=factory, clock=clock)
+    operation_id, key, account, comment_id, text, kind = prepared
+    provider = get_provider(kind, settings=settings, session_factory=factory, clock=clock)
     answer = None
     error = None
     try:
@@ -314,10 +337,11 @@ def reconcile(
         if op is None or op.status != "outcome_unknown":
             return
         account = queries.get_account_in_workspace(db, workspace_id, op.social_account_id)
-        if account is None or account.provider_kind != "mock":
+        if account is None or account.provider_kind not in settings.instagram_providers:
             return
         ref, key = account_ref(account, settings), op.idempotency_key
-    provider = get_provider("mock", settings=settings, session_factory=factory, clock=clock)
+        kind = account.provider_kind
+    provider = get_provider(kind, settings=settings, session_factory=factory, clock=clock)
     try:
         answer = provider.find_private_reply(ref, key)
     except Exception:

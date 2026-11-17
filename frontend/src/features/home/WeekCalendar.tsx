@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/Button";
-import { PlusIcon } from "@/components/icons";
+import { ImageIcon, PlusIcon } from "@/components/icons";
 import type { ScheduledDay } from "./hooks";
 
 /**
@@ -8,7 +8,15 @@ import type { ScheduledDay } from "./hooks";
  * scheduled. A week with no story at all offers to draft one, once for the whole week: the
  * sheet does not take a date, so a button per day would only repeat the same action.
  */
-export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onDraftStory: () => void }) {
+export function WeekCalendar({
+  days,
+  onDraftStory,
+  onTemplateStory,
+}: {
+  days: ScheduledDay[];
+  onDraftStory: () => void;
+  onTemplateStory?: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const weekHasStory = days.some((day) => day.stories.length > 0);
 
@@ -86,10 +94,18 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
       {weekHasStory ? null : (
         <div data-testid="week-story-prompt" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl bg-surface-subtle/60 py-1 pr-1 pl-3">
           <p className="text-metadata text-secondary">{t("home.week.noStories")}</p>
-          <Button variant="secondary" onClick={onDraftStory} className="px-3">
-            <PlusIcon />
-            {t("home.upNext.draftStory")}
-          </Button>
+          <div className="flex flex-wrap items-center gap-1">
+            <Button variant="secondary" onClick={onDraftStory} className="px-3">
+              <PlusIcon />
+              {t("home.upNext.draftStory")}
+            </Button>
+            {onTemplateStory ? (
+              <Button variant="secondary" onClick={onTemplateStory} className="px-3">
+                <ImageIcon />
+                {t("content.actions.storyFromTemplate")}
+              </Button>
+            ) : null}
+          </div>
         </div>
       )}
     </div>

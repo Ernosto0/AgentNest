@@ -40,6 +40,7 @@ from app.content import grounding, service, transitions
 from app.content.models import ContentItem
 from app.content.payload import GenerateContentPayload, generate_job_key
 from app.content.schemas import empty_validation
+from app.content.templates.link import merge_references, render_references
 from app.core.clock import Clock
 from app.core.context import ActorRef, WorkspaceContext
 from app.identity import service as identity_service
@@ -498,7 +499,13 @@ def store(session: Session, clock: Clock, prepared: Prepared, proposal: ContentP
     if item.visual_notes is None and proposal.visual_notes.strip():
         changes["visual_notes"] = proposal.visual_notes.strip()
     transitions.apply(session, clock, ctx, item, "edit", **changes)
-    impact.replace_references(session, ctx, SUBJECT_TYPE, item.id, checked.references)
+    impact.replace_references(
+        session,
+        ctx,
+        SUBJECT_TYPE,
+        item.id,
+        merge_references(checked.references, render_references(session, ctx, item.media_asset_id)),
+    )
     _mark_stored(run, clock)
     _audit(
         session,

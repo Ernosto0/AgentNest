@@ -32,6 +32,7 @@ APPROVAL_ACTIONS = (
     "command.update_fact",
     "command.update_brand_voice",
     "command.cancel_content",
+    "command.make_price_card",
     "command.reschedule_content",
     "command.pause_agent",
     "reply.send",

@@ -290,3 +290,19 @@ agent_resume_due job resumes only that exact paused version/epoch, and rechecks 
 confirming owner remains active and an owner. Manual resume, another pause, controller or config
 change makes the old timer a no-op. No new grant or delegated authority is created.
 
+
+
+### F-07: price-card command
+
+`content.make_price_card` / `ContentMakePriceCard` names a money fact key and nullable
+story/feed format (null means story). Interpret-command prompt v3 keeps TR/EN examples and
+refuses combined publishing/approval requests. The fake grammar matches money labels; an
+explicitly typed fact key is passed to the same fail-closed resolver (including wrong types).
+The model supplies no price. Ambiguity asks which fact, preserving format. The confirmation
+summary displays the verified formatted price; the immutable payload binds its fact ID/key/version,
+format and workspace language. Both request and decision need content.edit; staff can create
+this draft but cannot approve its publication. The executor rechecks the current fact version
+and full usability, then stages one idempotent draft (`command:{command_id}`) and render job
+in the decision transaction. Pillow/storage run later outside that transaction. A changed fact
+refuses with FACT_CHANGED_MEANWHILE; unusable facts refuse with TEMPLATE_FACT_NOT_USABLE.
+A rendered draft stays draft and requires the ordinary content submission and approval.

@@ -1,5 +1,6 @@
 """Read model of content items: the API shape (api-design.md section 2.7)."""
 
+import uuid
 from typing import Any, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -19,12 +20,15 @@ from app.content.schemas import (
     ContentValidationOut,
     GenerationOut,
     ScheduleLocalOut,
+    TemplateImageStateOut,
 )
 from app.content.service import Checked
-from app.content.transitions import CANCELLABLE_STATUSES
+from app.content.templates import link
+from app.content.transitions import CANCELLABLE_STATUSES, EDITABLE_STATUSES
 from app.core.context import WorkspaceContext
 from app.core.i18n import t
 from app.identity.models import User
+from app.identity.permissions import has_permission
 
 
 def check_item_out(raw: dict[str, Any], locale: str | None = None) -> ContentCheckItemOut:
@@ -151,9 +155,32 @@ def media_deleted(session: Session, ctx: WorkspaceContext, item: ContentItem) ->
     return status == "deleted"
 
 
-def item_out(session: Session, ctx: WorkspaceContext, item: ContentItem) -> ContentItemOut:
+def item_out(
+    session: Session,
+    ctx: WorkspaceContext,
+    item: ContentItem,
+    *,
+    template_states: dict[uuid.UUID, dict[str, Any]] | None = None,
+) -> ContentItemOut:
+    if template_states is None:
+        template_states = link.states(
+            session,
+            ctx,
+            link.records(session, ctx, [item.media_asset_id] if item.media_asset_id else []),
+        )
+    state = template_states.get(item.media_asset_id) if item.media_asset_id else None
+    template_image = (
+        TemplateImageStateOut(
+            **state,
+            can_rerender=item.status in EDITABLE_STATUSES
+            and has_permission(ctx.role, "content.edit"),
+        )
+        if state
+        else None
+    )
     summary = hooks.get().operation_summary(session, ctx, item)
     return ContentItemOut(
+        template_image=template_image,
         id=item.id,
         content_type=cast(Any, item.content_type),
         status=cast(Any, item.status),

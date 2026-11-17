@@ -13,6 +13,7 @@ const ACCOUNT_ID = "a1000000-0000-4000-8000-000000000001";
 function account(overrides: Partial<SocialAccount> = {}): SocialAccount {
   return {
     id: ACCOUNT_ID,
+    comment_automation_enabled: false,
     platform: "instagram",
     provider_kind: "mock",
     username: "golkent.demo",

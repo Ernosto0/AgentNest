@@ -65,9 +65,9 @@ def _ranges_text(ranges: list[list[str]] | list[tuple[str, str]]) -> str:
     return " & ".join(f"{opens}{RANGE_DASH}{closes}" for opens, closes in ranges)
 
 
-def format_weekly_hours(
+def weekly_hours_parts(
     value: dict[str, Any], locale: str, fallback_locale: str = DEFAULT_LOCALE
-) -> str:
+) -> tuple[list[str], list[str]]:
     """Group consecutive days with the same hours: ``Pzt–Cum 07:00–23:00, Cmt …, Paz kapalı``."""
     loc = normalize_locale(locale)
     names = Locale.parse(_babel(loc)).days["format"]["abbreviated"]  # index 0 = Monday
@@ -83,13 +83,20 @@ def format_weekly_hours(
     for first, last, ranges in runs:
         label = names[first] if first == last else f"{names[first]}{RANGE_DASH}{names[last]}"
         parts.append(f"{label} {_ranges_text(ranges) if ranges else closed}")
-    text = ", ".join(parts)
     exceptions = []
     for exception in value.get("exceptions", []):
         when = format_date(date.fromisoformat(exception["date"]), "d MMM", locale=_babel(loc))
         what = closed if exception.get("closed", True) else _ranges_text(exception["ranges"])
         note = _localized(exception.get("note"), loc, fallback_locale)
         exceptions.append(f"{when}: {what}" + (f" ({note})" if note else ""))
+    return parts, exceptions
+
+
+def format_weekly_hours(
+    value: dict[str, Any], locale: str, fallback_locale: str = DEFAULT_LOCALE
+) -> str:
+    parts, exceptions = weekly_hours_parts(value, locale, fallback_locale)
+    text = ", ".join(parts)
     if exceptions:
         text += " · " + ", ".join(exceptions)
     return text

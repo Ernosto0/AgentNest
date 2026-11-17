@@ -222,9 +222,13 @@ def complete_callback(
                     session.add(account)
             if account is None:
                 raise AppError("CONFLICT_STATE")
+            if purpose != "reconnect":
+                account.comment_automation_enabled = False
             account.username = profile.username
             account.capabilities = oauth.compute_capabilities(
-                exchanged.granted_scopes, settings.meta_stories_enabled
+                exchanged.granted_scopes,
+                settings.meta_stories_enabled,
+                account.comment_automation_enabled,
             )
             account.granted_scopes = exchanged.granted_scopes
             ring = TokenKeyRing(

@@ -14,6 +14,7 @@ from app.agent.repository import scoped_account
 from app.api.deps import get_clock, require_membership
 from app.audit.service import record
 from app.comments.models import PublicMedia
+from app.comments.ownership import media_ownership_ok
 from app.comments.reservations import unresolved
 from app.comments.router import comment_scope
 from app.core.canonical import payload_hash
@@ -102,7 +103,7 @@ def moderate(
         raise AppError("CONFLICT_STATE", entity="social_account", status="unavailable")
     if (
         media is None
-        or media.ownership_state != "verified_synthetic"
+        or not media_ownership_ok(media, account.is_simulated)
         or media.state == "deleted"
         or target.is_owner
     ):

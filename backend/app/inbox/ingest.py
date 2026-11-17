@@ -46,11 +46,17 @@ class IngestResult:
     ignored: int = 0
 
 
+def _is_provider_comment(event: NormalizedInboundEvent) -> bool:
+    return event.raw_item.get("schema") == "provider-comment-v1"
+
+
 def dedup_key(event: NormalizedInboundEvent) -> str:
     """``ig:{account}:mid:{mid}`` for messages and echoes; a content hash for the rest."""
     account = event.account_id or "unknown"
     if event.mid and event.event_type in ("message", "echo"):
         return f"ig:{account}:mid:{event.mid}"
+    if event.mid and event.event_type == "comment" and _is_provider_comment(event):
+        return f"ig:{account}:comment:{event.mid}"
     if event.mid and event.event_type == "delete":
         return f"ig:{account}:delete:{event.mid}"
     digest = hashlib.sha256(
@@ -142,6 +148,22 @@ def _store(
     elif event.event_type == "other":
         status, ignore_reason = "ignored", "UNSUPPORTED_EVENT"
 
+    redact_comment = (
+        event.event_type == "comment"
+        and provider_kind == "meta"
+        and (account is None or not account.comment_automation_enabled)
+    )
+    if (
+        event.event_type == "comment"
+        and provider_kind == "meta"
+        and account is not None
+        and (
+            not account.comment_automation_enabled
+            or account.status not in {"connected", "degraded"}
+            or account.capabilities.get("comments_permission") is not True
+        )
+    ):
+        status, ignore_reason = "ignored", "COMMENT_AUTOMATION_OFF"
     event_id = new_id()
     correlation_id = uuid.uuid4()
     inserted = session.scalar(
@@ -153,7 +175,7 @@ def _store(
             provider_kind=provider_kind,
             dedup_key=dedup_key(event),
             event_type=event.event_type,
-            payload=event.raw_item,
+            payload={} if redact_comment else event.raw_item,
             status=status,
             ignore_reason=ignore_reason,
             correlation_id=correlation_id,

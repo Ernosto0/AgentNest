@@ -36,6 +36,8 @@ export const noContent = () => new Response(null, { status: 204 });
 
 /** Requests every screen makes in the background; a test overrides them to assert on them. */
 const BACKGROUND: [RegExp, () => Response][] = [
+  // Neutral brand until a test overrides it.
+  [/^GET \/api\/v1\/workspaces\/[^/]+\/brand$/, () => json({ primary_color: "#f4f4f5", accent_color: "#3f3f46", logo_media_asset_id: null, is_default: true, logo_width: null, logo_height: null })],
   [
     /^GET \/api\/v1\/workspaces\/[^/]+\/notifications$/,
     () => json({ items: [], unread_count: 0, next_cursor: null }),

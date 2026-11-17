@@ -98,7 +98,8 @@
         "SCHEDULE_TOO_FAR": "A post can be scheduled at most 60 days ahead.",
         "SCHEDULE_TIME_NONEXISTENT": "There is no {{local_time}} on {{local_date}} in {{timezoneLabel}} (the clocks skip that hour). Choose another time.",
         "SCHEDULE_TOO_SOON_FOR_APPROVAL": "Someone has to approve this before it is published. Choose a time at least {{minutes}} minutes from now.",
-        "PUBLISH_QUOTA_FORECAST_EXCEEDED": "Too many posts are already scheduled around this time. Choose another time."
+        "PUBLISH_QUOTA_FORECAST_EXCEEDED": "Too many posts are already scheduled around this time. Choose another time.",
+        "TEMPLATE_IMAGE_STALE": "The image shows an old value ({{keys}}). Re-render it with the current value."
       }
     },
     "media": {
@@ -134,7 +135,10 @@
       "saveFirst": "Save your changes first.",
       "waitGeneration": "It cannot be scheduled while the text is being prepared.",
       "editResend": "Edit and send again",
-      "edit": "Edit"
+      "edit": "Edit",
+      "fromTemplate": "Make an image from a template",
+      "newFromTemplate": "New from a template",
+      "storyFromTemplate": "Story from a template"
     },
     "generate": {
       "title": "New content",
@@ -266,6 +270,7 @@
       "openConnection": "Check the connection"
     },
     "capability": {
+      "comments_permission": "Comment permission",
       "title": "Permissions",
       "messaging": "Messaging",
       "publish_feed_image": "Publishing feed posts",
@@ -361,6 +366,56 @@
       "emptyHint": "When you schedule a draft, it appears here on its day.",
       "reviewDrafts": "Review drafts ({{count}})",
       "capped": "Only the first {{count}} scheduled items are loaded. Days after {{day}} may hold more."
+    },
+    "template": {
+      "title": "Image from a template",
+      "intro": "Pick a template. Prices and hours come from your verified business information; they are never typed in here.",
+      "templatesLabel": "Template",
+      "formatLabel": "Format",
+      "format": {
+        "story": "Story (9:16)",
+        "feed": "Post (4:5)"
+      },
+      "names": {
+        "price_card": "Price card",
+        "hours_card": "Opening hours",
+        "services_list": "Services and prices",
+        "announcement": "Announcement"
+      },
+      "fields": "Fields",
+      "priceLabel": "Price",
+      "priceChoose": "Choose a price",
+      "noPrices": "You have no verified prices yet. Verify a price in your business information first.",
+      "servicesLabel": "Services and prices (2 to 6)",
+      "servicesCount": "{{count}} selected",
+      "servicesHint": "Choose between 2 and 6 verified prices.",
+      "hoursReady": "Uses your verified opening hours.",
+      "hoursMissing": "Your opening hours are not verified yet. Verify them first.",
+      "openKnowledge": "Open business information",
+      "headline": "Headline",
+      "body": "Text",
+      "dateLine": "Date line (optional)",
+      "counter": "{{count}} / {{max}}",
+      "announcementHint": "Do not type prices, times or phone numbers. Insert them as facts (a fact placeholder such as fact:pricing.monthly_membership in double braces); typed values are refused.",
+      "previewLabel": "Preview",
+      "previewEmpty": "Fill in the fields to see the preview.",
+      "previewLoading": "Preparing the preview…",
+      "previewFailed": "The preview could not be prepared.",
+      "previewAlt": "Preview of the template image",
+      "use": "Use this image",
+      "using": "Saving…",
+      "close": "Close",
+      "savedDraft": "Saved as a draft. Nothing is published.",
+      "openDraft": "Open the draft",
+      "madeFrom": "Made from a template: {{template}}",
+      "stale": {
+        "title": "This image shows an old value",
+        "body": "{{facts}} changed or is no longer verified since this image was made. Re-render it with the current value before it goes out.",
+        "rerender": "Re-render with the new value",
+        "rerendering": "Rendering…",
+        "holdHint": "Re-render the image first; the item then needs approval again.",
+        "done": "A new image was made. The item is a draft again and needs approval again before it can be scheduled."
+      }
     }
   }
 }

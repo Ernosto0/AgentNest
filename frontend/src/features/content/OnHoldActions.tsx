@@ -24,6 +24,7 @@ export function OnHoldActions({ item, onEdit }: { item: ContentItem; onEdit: () 
   const { t } = useTranslation();
   const { workspace, role } = useCurrentWorkspace();
   const canApprove = role === "owner" || role === "manager";
+  const staleImage = item.template_image?.stale === true; // re-render it first: re-approving would be refused
   const [reapproving, setReapproving] = useState(false);
   const reason = isKnown(item.hold_reason) ? item.hold_reason : "unknown";
   const base = `/w/${workspace.id}`;
@@ -70,7 +71,7 @@ export function OnHoldActions({ item, onEdit }: { item: ContentItem; onEdit: () 
         <Button variant="secondary" onClick={onEdit} className="shadow-xs">
           {t("content.actions.edit")}
         </Button>
-        {canApprove ? (
+        {canApprove && !staleImage ? (
           <Button onClick={() => setReapproving(true)} className="shadow-xs">
             {t("content.hold.reapprove")}
           </Button>

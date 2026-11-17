@@ -65,7 +65,7 @@ def test_the_interpretation_is_recorded_as_a_fake_agent_run(cmd: CommandEnv) -> 
         "fake",
         True,
     )
-    assert run.prompt_version == "v2" and run.repair_attempts == 0
+    assert run.prompt_version == "v3" and run.repair_attempts == 0
     assert run.output is not None and run.output["interpretation"]["fact_key"] == MONTHLY
     stored = cmd.env.session.get(OwnerCommand, command["id"])
     assert stored is not None and stored.agent_run_id == run.id

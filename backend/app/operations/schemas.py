@@ -15,6 +15,7 @@ class SocialAccountOut(BaseModel):
     provider_kind: str
     username: str | None
     status: str
+    comment_automation_enabled: bool = False
     capabilities: dict[str, Any]
     connection_expires_at: datetime | None
     last_error_code: str | None

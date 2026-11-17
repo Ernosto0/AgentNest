@@ -163,6 +163,8 @@ class Settings(BaseSettings):
     meta_graph_api_version: str = "v25.0"
     meta_oauth_redirect_uri: str = "http://localhost:8000/oauth/instagram/callback"
     meta_stories_enabled: bool = True
+    meta_request_comment_scope: bool = True
+    comment_private_reply_limit_scope: Literal["commenter", "comment"] = "commenter"
     insights_enabled: bool = Field(default=True)
     token_encryption_keys: SecretStr = SecretStr("")
     token_encryption_active_key_id: str = ""

@@ -14,6 +14,7 @@ EXPECTED: dict[str, tuple[bool, bool, bool]] = {
     "owner_questions.propose": (True, True, True),
     "memory.correct": (True, True, False),
     "memory.forget": (True, True, False),
+    "brand.manage": (True, True, False),
     "workspace.manage": (True, False, False),
     "members.manage": (True, False, False),
     "integrations.manage": (True, False, False),

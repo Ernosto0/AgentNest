@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from app.core.i18n import t
+
 _METRIC_AFTER_CUES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("replies_auto", re.compile(r"^\s*(?:otomatik|automatically)\b", re.IGNORECASE)),
     (
@@ -182,6 +184,13 @@ def narrate_fallback(
         if locale == "tr":
             return f"'{title}' içeriğinizin güncel durumu: {status_label}."
         return f"Your post '{title}' is currently {status_label}."
+    if key in {
+        "price_card_started",
+        "price_card_no_price",
+        "price_card_not_a_price",
+        "price_card_fact_unusable",
+    }:
+        return t(f"command.{key}", locale, **params)
     if key == "draft_created":
         title = params.get("title", "")
         if locale == "tr":

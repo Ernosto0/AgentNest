@@ -2,7 +2,7 @@ import { useId, useState, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import type { ContentType } from "@/api/types";
 import { Button } from "@/components/Button";
-import { PlusIcon, SparkIcon } from "@/components/icons";
+import { ImageIcon, PlusIcon, SparkIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { useSocialAccounts } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -18,7 +18,16 @@ const TYPES: readonly ContentType[] = ["feed_image", "story_image"];
  * it filled in (nothing is generated until the owner sends it there); an empty brief opens the
  * sheet as before. A blank draft is the quieter alternative, so the AI is never the only way in.
  */
-export function ContentComposer({ onStart, inputRef }: { onStart: StartContent; inputRef?: Ref<HTMLInputElement> }) {
+export function ContentComposer({
+  onStart,
+  onTemplate,
+  inputRef,
+}: {
+  onStart: StartContent;
+  /** Start a new draft from a template image (the type is the composer's feed or story choice). */
+  onTemplate?: (type: ContentType) => void;
+  inputRef?: Ref<HTMLInputElement>;
+}) {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const accounts = useSocialAccounts(workspace.id);
@@ -93,6 +102,12 @@ export function ContentComposer({ onStart, inputRef }: { onStart: StartContent; 
               <PlusIcon className="text-base" />
               <span>{t("content.actions.blankDraft")}</span>
             </Button>
+            {onTemplate ? (
+              <Button variant="ghost" onClick={() => onTemplate(type)} className="flex-1 px-3 whitespace-nowrap hover:bg-surface/70 sm:flex-none">
+                <ImageIcon className="text-base" />
+                <span>{t("content.actions.newFromTemplate")}</span>
+              </Button>
+            ) : null}
           </div>
         </div>
       </form>

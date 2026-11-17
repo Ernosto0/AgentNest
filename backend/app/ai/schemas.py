@@ -149,6 +149,12 @@ class ContentCreateDraft(BaseModel):
     notes: str | None
 
 
+class ContentMakePriceCard(BaseModel):
+    type: Literal["content.make_price_card"]
+    fact_key: str
+    format: Literal["story", "feed"] | None
+
+
 class ContentCancelScheduled(BaseModel):
     type: Literal["content.cancel_scheduled"]
     content_ref: ContentRef
@@ -175,9 +181,15 @@ class Clarify(BaseModel):
     candidates; the model's wording is never displayed."""
 
     type: Literal["clarify"]
-    intent: Literal["knowledge.update_fact", "query.fact", "knowledge.update_brand_voice"]
+    intent: Literal[
+        "knowledge.update_fact",
+        "query.fact",
+        "knowledge.update_brand_voice",
+        "content.make_price_card",
+    ]
     candidate_fact_keys: list[str]
     raw_value_text: str | None
+    format: Literal["story", "feed"] | None = None
 
 
 UnsupportedReason = Literal[
@@ -204,6 +216,7 @@ CommandInterpretation = (
     | QueryContentStatus
     | QueryExplainFailure
     | ContentCreateDraft
+    | ContentMakePriceCard
     | ContentCancelScheduled
     | ContentReschedule
     | AgentPauseUntil
@@ -223,6 +236,7 @@ INTERPRETATION_TYPES = frozenset(
         "query.explain_failure",
         "content.create_draft",
         "content.cancel_scheduled",
+        "content.make_price_card",
         "content.reschedule",
         "agent.pause_until",
         "clarify",

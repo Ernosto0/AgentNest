@@ -133,7 +133,7 @@ export function taskByAction(tasks: { id: string; actions: { action_id: string }
  */
 export const CAPABILITY_GROUPS: { key: "messaging" | "comments" | "publishing"; icon: Icon; capabilities: string[] }[] = [
   { key: "messaging", icon: ChatIcon, capabilities: ["messaging"] },
-  { key: "comments", icon: CommentIcon, capabilities: ["comment_read", "comment_reply", "comment_private_reply", "comment_moderate"] },
+  { key: "comments", icon: CommentIcon, capabilities: ["comments_permission", "comment_read", "comment_reply", "comment_private_reply", "comment_moderate"] },
   { key: "publishing", icon: ImageIcon, capabilities: ["publish_feed_image", "publish_story_image"] },
 ];
 export const KNOWN_CAPABILITIES = new Set(CAPABILITY_GROUPS.flatMap((g) => g.capabilities));

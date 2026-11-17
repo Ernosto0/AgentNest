@@ -1,7 +1,7 @@
 """Session 06 tests: Tenant policies and isolation verification (P8-03, ADR-025 §1.3).
 
 Proves:
-1. Complete Category C schema coverage: all 52 strictly tenant-scoped tables have
+1. Complete Category C schema coverage: all 63 strictly tenant-scoped tables have
    FORCE ROW LEVEL SECURITY and tenant_isolation_policy defined.
 2. Category A (global/identity) and Category B (bootstrap/hybrid) tables are not
    blocked by tenant RLS.
@@ -96,8 +96,8 @@ def test_all_category_c_tables_have_forced_rls(session_factory: sessionmaker[Ses
         ).all()
         policies_by_table = {r[0]: r[1] for r in pol_rows}
 
-        assert len(CATEGORY_C_TABLES) == 62, (
-            f"Expected 62 Category C tables, got {len(CATEGORY_C_TABLES)}"
+        assert len(CATEGORY_C_TABLES) == 63, (
+            f"Expected 63 Category C tables, got {len(CATEGORY_C_TABLES)}"
         )
 
         missing_rls = []

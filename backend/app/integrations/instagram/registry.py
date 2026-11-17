@@ -58,7 +58,7 @@ def get_webhook_codec(kind: str, settings: Settings) -> WebhookCodec:
             settings.mock_instagram_app_secret.get_secret_value(), synthetic_comments=True
         )
     if kind == "meta":
-        return WebhookCodec(settings.meta_app_secret.get_secret_value())
+        return WebhookCodec(settings.meta_app_secret.get_secret_value(), live_comments=True)
     raise ProviderNotEnabled(kind)
 
 

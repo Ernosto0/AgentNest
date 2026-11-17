@@ -79,6 +79,7 @@ CATEGORY_C_TABLES: tuple[str, ...] = (
     "customer_summary_versions",
     "daily_reports",
     "delegation_suggestions",
+    "workspace_brand_settings",
     "fact_candidates",
     "fact_references",
     "fact_save_tokens",

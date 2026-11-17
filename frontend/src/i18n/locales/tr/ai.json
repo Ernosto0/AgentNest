@@ -33,7 +33,14 @@
         "open": "İçeriği aç"
       },
       "pauseUntil": "Asistan {{when}} tarihine kadar duraklatılacak.",
-      "timezone": "Saat dilimi: {{timezone}}"
+      "timezone": "Saat dilimi: {{timezone}}",
+      "makePriceCard": {
+        "title": "Bu fiyat kartı yapılsın mı?",
+        "price": "Fiyat",
+        "format": "Biçim",
+        "consequence": "Yalnızca görselli bir taslak oluşturulur. Hiçbir şey onaylanmaz, zamanlanmaz veya yayınlanmaz.",
+        "approve": "Evet, taslağı yap"
+      }
     },
     "clarify": {
       "which_fact": "Hangi bilgiyi kastettiniz?",
@@ -78,7 +85,11 @@
       "content_failure_title": "“{{title}}” neden yayınlanmadı?",
       "content_rescheduled": "{{title}} için yeni zaman: {{when}}.",
       "agent_paused_until": "Asistan {{when}} tarihine kadar duraklatıldı.",
-      "management_refused": "Değişiklik uygulanamadı. Güncel durumu ve zamanı kontrol edip yeniden deneyin."
+      "management_refused": "Değişiklik uygulanamadı. Güncel durumu ve zamanı kontrol edip yeniden deneyin.",
+      "price_card_started": "“{{title}}” taslağı oluşturuldu. Fiyat kartı doğrulanmış fiyattan çiziliyor; birazdan taslağı açın.",
+      "price_card_no_price": "Kart için doğrulanmış bir fiyat bulamadım. Fiyatı İşletme bilgileri altında doğrulayın.",
+      "price_card_not_a_price": "{{label}} bir fiyat değil, bu yüzden fiyat kartına konamaz.",
+      "price_card_fact_unusable": "{{label}} şu anda kullanılamıyor. Önce İşletme bilgileri altında doğrulayın."
     },
     "period": {
       "today": "Bugün",
@@ -146,7 +157,8 @@
       "calendar_reschedule": "Randevu saatini değiştirme",
       "calendar_cancel": "Randevuyu iptal etme",
       "command_reschedule_content": "İçerik zamanını değiştir",
-      "command_pause_agent": "Asistanı duraklat"
+      "command_pause_agent": "Asistanı duraklat",
+      "command_make_price_card": "Fiyat kartı taslağı"
     },
     "status": {
       "pending": "Bekliyor",

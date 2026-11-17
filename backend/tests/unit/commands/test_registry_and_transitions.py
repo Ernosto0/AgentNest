@@ -24,6 +24,7 @@ def test_no_command_type_can_approve_publish_or_send() -> None:
         "knowledge.update_fact",
         "knowledge.update_brand_voice",
         "content.cancel_scheduled",
+        "content.make_price_card",
         "content.reschedule",
         "agent.pause_until",
     }

@@ -48,7 +48,7 @@ def _walk(node: Any, path: str = "$") -> list[str]:
             if sorted(node.get("required", [])) != sorted(props):
                 problems.append(f"{path}: every property must be required")
         for key, value in node.items():
-            if key in FORBIDDEN:
+            if key in FORBIDDEN and not path.endswith(".properties"):
                 problems.append(f"{path}: forbidden keyword {key!r}")
             problems += _walk(value, f"{path}.{key}")
     elif isinstance(node, list):
@@ -89,6 +89,7 @@ def test_the_interpretation_is_a_union_of_closed_types() -> None:
         "query.explain_failure",
         "content.create_draft",
         "content.cancel_scheduled",
+        "content.make_price_card",
         "content.reschedule",
         "agent.pause_until",
         "clarify",
@@ -132,3 +133,14 @@ def test_known_types_parse_to_their_models() -> None:
     assert InterpretCommandOutput.model_validate(
         {"interpretation": {"type": "query.fact", "fact_key": "a.b"}}
     ).interpretation == QueryFact(type="query.fact", fact_key="a.b")
+
+
+def test_property_named_format_is_not_a_schema_keyword():
+    schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {"format": {"type": "string"}},
+        "required": ["format"],
+    }
+    assert _walk(schema) == []
+    assert _walk({"type": "string", "format": "date"})

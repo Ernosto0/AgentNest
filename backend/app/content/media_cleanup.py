@@ -26,7 +26,7 @@ from sqlalchemy import ColumnElement, and_, exists, or_, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.audit import service as audit
-from app.content.models import ContentItem, MediaAsset
+from app.content.models import ContentItem, MediaAsset, WorkspaceBrandSettings
 from app.core.clock import Clock, FrozenClock
 from app.core.config import Settings, get_settings
 from app.core.context import ActorRef
@@ -77,7 +77,17 @@ def eligible(settings: Settings, now: datetime) -> ColumnElement[bool]:
         MediaAsset.created_at < now - timedelta(days=settings.retention_media_orphan_days),
     )
     only_old_published = and_(references, ~still_needed)
-    return and_(MediaAsset.status.in_(("uploaded", "ready")), or_(orphan, only_old_published))
+    logo = (
+        select(WorkspaceBrandSettings.id)
+        .where(
+            WorkspaceBrandSettings.workspace_id == MediaAsset.workspace_id,
+            WorkspaceBrandSettings.logo_media_asset_id == MediaAsset.id,
+        )
+        .exists()
+    )
+    return and_(
+        ~logo, MediaAsset.status.in_(("uploaded", "ready")), or_(orphan, only_old_published)
+    )
 
 
 def run_media_cleanup(

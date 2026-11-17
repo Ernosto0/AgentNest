@@ -67,13 +67,30 @@ Planned in [features-phase-2-during-pilots/sessions.md](../implementation/featur
 | **D-05 Visible learning loop** (Feature Phase 2) | After an owner answers an assistant question the app and Telegram offer "Save this as a verified fact?" (one tap through the existing candidate accept path; a price, hours, phone, e-mail or URL needs the typed editor) and the Assistant page shows "Learned N things from you this month" | Auto-verifying anything, expiring unsaved candidates, counting hand-typed or staff-proposed facts |
 | **D-04 Manage by chat** (Feature Phase 2) | Two more confirmed commands: `content.reschedule` (an existing pending-approval, scheduled or held item moves to a new time; old and new local times are shown) and `agent.pause_until` (pause the account assistant until a local time, with an automatic resume job). Turkish and English interpretation; hash-bound, single-use, expiring confirmation; owner-only for pause. On phones the command box is first on Today | Scheduling new drafts or publishing by free text, legacy-policy pause, changing other automation settings, free-text approval, indefinite pause |
 
+### Feature Phase 3, Track A: comment-to-DM on real accounts (in scope since 2026-11-17)
+
+Planned in [features-phase-3-after-app-review/sessions.md](../implementation/features-phase-3-after-app-review/sessions.md); source: [pre-launch-feature-recommendations.md](../review/pre-launch-feature-recommendations.md) §4, step 3. Moved here from §4 Deferred ("Real-account comment automation before capability acceptance"). Sessions 01 (research and permission request) and 02 (the real path) are implemented and verified offline; every live result is **pending**.
+
+| Capability | Included scope | Explicitly excluded |
+|---|---|---|
+| **F-05 Comment-to-DM on real accounts** | The OAuth flow requests `instagram_business_manage_comments`; an existing connection shows "reconnect to enable comments"; the permission is recorded as `granted_scopes` and the derived capability `comments_permission`. Session 02: the real Meta comment webhook and private-reply path behind a per-account flag that is off by default, a verified-answer private reply through the existing draft, claim-validator, approval and delegation path, deterministic enforcement of Meta's 7-day and one-message limits with reason codes, a skipped-by-default live probe harness, and a rollout runbook. R75-01 to R75-06 are answered or carried forward in [platform-capabilities.md §1.8](../research/platform-capabilities.md). | Enabling comment actions without the permission, the per-account flag **and** a passing live probe on a dev-mode account (mock results never count as live evidence); comment moderation (hide, delete) on real accounts until its own evidence; any unapproved or invented price in a reply; automatic resend of an unknown outcome; public availability before Meta grants Advanced Access (pilots run on Standard Access with role users) |
+
+**Gate.** A real account may use comment automation only when (1) its `granted_scopes` include `instagram_business_manage_comments`, (2) the account's capability flag is on, (3) the owner's delegation for the action is not `off`, and (4) the live evidence for the matching R75 items is recorded. Until then the Comments tab on real accounts stays labelled "Not yet". Live results are "pending" until recorded.
+
+**Session 02 implementation:** the default-off persisted `social_accounts.comment_automation_enabled` flag (owner-only switch in Connections) exists. Only the actual granted scope plus the flag derive the real `comment_read` and `comment_private_reply` capabilities; public replies and moderation stay disabled on real accounts. Offline ledger, approval and claim-validator tests never satisfy the live gate (**pending**).
+
+### Feature Phase 3, Track B: template images (in scope since 2026-11-17)
+
+| Feature | In scope | Follow-up |
+|---|---|---|
+| **F-07 Template images** | Deterministic price, hours, services and announcement cards; story/feed sizes; workspace colours/logo; verified fact keys resolved at render time with immutable version evidence; a template picker with live preview in content creation and the Today story prompt; rendered items carry the fact versions used, so a price change holds them; re-render creates a new draft version that needs fresh approval; a confirmed `content.make_price_card` command (TR/EN) | AI image generation; free text with prices, times, phones or URLs on a card; automatic approval or publishing of a rendered image |
+
 ## 4. Deferred (with reason and trigger)
 
 | Feature | Reason for deferral | Revisit trigger |
 |---|---|---|
-| **Real-account comment automation before capability acceptance** | Phase 7.5 builds an offline signed mock path; Meta access, eligibility and actual result semantics remain capability gates. | R75 research, App Review if required, and authentic live evidence |
 | WhatsApp owner channel | Cost, verification, policy uncertainty | OQ-01 |
-| Story/post **image generation** (template cards) | Not core to the trust loop; design effort | OQ-15 after pilots |
+| Story/post **AI image generation** | Not core to the trust loop; model and design effort | OQ-15 after pilots |
 | Video/Reels/carousels | Transcoding and validation complexity | Pilot demand |
 | Website and profile import | SSRF-safe fetching, scraping quality | Self-service onboarding stage |
 | Human Agent tag (7-day replies) | Requires separate permission; human-only | Pilot demand for late replies |

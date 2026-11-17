@@ -23,6 +23,7 @@ from app.ai.schemas import (
     CommandInterpretation,
     ContentCancelScheduled,
     ContentCreateDraft,
+    ContentMakePriceCard,
     ContentRef,
     ContentReschedule,
     NormalizedBoolean,
@@ -188,6 +189,7 @@ def _fact_question(
     raw_value_text: str | None,
     locale: str,
     workspace_locale: str,
+    format: str | None = None,
 ) -> Outcome:
     if not candidates:
         return UnsupportedOutcome("other")
@@ -196,7 +198,11 @@ def _fact_question(
         question_key="command.clarify.which_fact",
         params={"raw": raw_value_text},
         options=_fact_options(candidates, locale=locale, workspace_locale=workspace_locale),
-        pending={"intent": intent, "raw_value_text": raw_value_text},
+        pending={
+            "intent": intent,
+            "raw_value_text": raw_value_text,
+            **({"format": format} if intent == "content.make_price_card" else {}),
+        },
     )
 
 
@@ -692,8 +698,13 @@ def resolve(
     """Turn the model's proposal into an outcome. Anything not in the registry is
     ``unsupported``; there is no branch here that can approve, publish or send."""
     from app.commands.manage import resolve_pause, resolve_reschedule
+    from app.commands.price_card import resolve_price_card
 
     match interpretation:
+        case ContentMakePriceCard():
+            return resolve_price_card(
+                interpretation.fact_key, interpretation.format, facts, user_locale, workspace_locale
+            )
         case ContentReschedule():
             return resolve_reschedule(interpretation, content, user_locale)
         case AgentPauseUntil():
@@ -781,12 +792,21 @@ def _resolve_model_clarification(
         if found is not None:
             seen.setdefault(found.key, found)
     candidates = list(seen.values())
+    if clarify.intent == "content.make_price_card":
+        candidates = [f for f in candidates if f.value_type == "money"]
+        if not candidates:
+            candidates = [f for f in facts if f.value_type == "money" and f.status == "verified"]
+        if not candidates:
+            from app.commands.price_card import resolve_price_card
+
+            return resolve_price_card("", None, facts, user_locale, workspace_locale)
     if len(candidates) == 1:  # nothing to ask: continue with the only candidate
         return _continue_with_fact(
             candidates[0].key,
             clarify.intent,
             clarify.raw_value_text,
             facts,
+            format=clarify.format,
             user_locale=user_locale,
             workspace_locale=workspace_locale,
             currency=currency,
@@ -794,6 +814,7 @@ def _resolve_model_clarification(
     return _fact_question(
         candidates,
         intent=clarify.intent,
+        format=clarify.format,
         raw_value_text=clarify.raw_value_text,
         locale=user_locale,
         workspace_locale=workspace_locale,
@@ -809,7 +830,12 @@ def _continue_with_fact(
     user_locale: str,
     workspace_locale: str,
     currency: str,
+    format: str | None = None,
 ) -> Outcome:
+    if intent == "content.make_price_card":
+        from app.commands.price_card import resolve_price_card
+
+        return resolve_price_card(fact_key, format, facts, user_locale, workspace_locale)
     if intent == "query.fact":
         fact = _by_key(facts, fact_key)
         if fact is None:
@@ -865,6 +891,7 @@ def resolve_choice(
             str(pending.get("intent", "")),
             pending.get("raw_value_text"),
             facts,
+            format=pending.get("format"),
             user_locale=user_locale,
             workspace_locale=workspace_locale,
             currency=currency,

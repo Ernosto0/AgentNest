@@ -14,6 +14,7 @@ const RECONNECT = "Yeniden bağlan (simülasyon)";
 function account(overrides: Partial<SocialAccount> = {}): SocialAccount {
   return {
     id: ACCOUNT_ID,
+    comment_automation_enabled: false,
     platform: "instagram",
     provider_kind: "mock",
     username: "golkent.demo",
@@ -47,6 +48,44 @@ const PAGE = (ws: string) => `/w/${ws}/more/settings/connections`;
 const META = { product_name: "AgentNest", demo_tools_enabled: false, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["meta", "mock"], mock_requires_demo_workspace: false };
 
 describe("Instagram authorization", () => {
+  it.each(["connected", "degraded", "needs_reauth"])("offers one comments reconnect for a real %s account with legacy capabilities", async (status) => {
+    const assign = vi.fn(); vi.stubGlobal("location", { assign });
+    const requests = mockApi(routes(WS_GOLKENT, () => [account({ provider_kind: "meta", is_simulated: false, status })], {
+      "GET /api/v1/meta": () => json(META),
+      [`POST /api/v1/workspaces/${WS_GOLKENT}/social-accounts/instagram/connect`]: () => json({ authorize_url: "https://www.instagram.com/oauth/authorize?state=synthetic" }),
+    }));
+    renderApp(PAGE(WS_GOLKENT));
+    expect(await screen.findByText(/Yorum iznini vermek için Instagram bağlantısını yenileyin/)).toBeInTheDocument();
+    const buttons = screen.getAllByRole("button", { name: "Instagram ile bağlantıyı yenile" });
+    expect(buttons).toHaveLength(1);
+    await userEvent.click(buttons[0]!);
+    await waitFor(() => expect(assign).toHaveBeenCalledOnce());
+    expect(requests.find((r) => r.path.endsWith("/instagram/connect"))?.body).toEqual({ purpose: "reconnect", social_account_id: ACCOUNT_ID });
+  });
+
+  it.each([
+    { provider_kind: "meta", status: "connected", capabilities: { comments_permission: true } },
+    { provider_kind: "mock", status: "connected" },
+    { provider_kind: "mock", status: "needs_reauth" },
+    { provider_kind: "meta", status: "disconnected" },
+  ])("does not offer comments consent for $provider_kind / $status / $capabilities", async (overrides) => {
+    mockApi(routes(WS_GOLKENT, () => [account(overrides)], { "GET /api/v1/meta": () => json(META) }));
+    renderApp(PAGE(WS_GOLKENT));
+    if (overrides.status === "disconnected") await screen.findByText("Bağlı bir Instagram hesabı yok.");
+    else await screen.findByTestId("account-capabilities");
+    expect(screen.queryByText(/Yorum iznini vermek için Instagram bağlantısını yenileyin/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Instagram ile bağlantıyı yenile" })).not.toBeInTheDocument();
+    if (overrides.capabilities?.comments_permission) expect(screen.getByTestId("account-capabilities")).toHaveTextContent("Yorum izni");
+  });
+
+  it("explains comments consent to non-owners without offering reconnect", async () => {
+    mockApi(routes(WS_HARBOR, () => [account({ provider_kind: "meta", status: "connected", is_simulated: false })], { "GET /api/v1/meta": () => json(META) }));
+    renderApp(PAGE(WS_HARBOR));
+    expect(await screen.findByText(/Yorum iznini vermek için Instagram bağlantısını yenileyin/)).toBeInTheDocument();
+    expect(screen.getAllByText("Bunu yalnızca sahip değiştirebilir.").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Instagram ile bağlantıyı yenile" })).not.toBeInTheDocument();
+  });
+
   it.each([false, true])("uses workspace policy, independent of demo tools (demo required: %s)", async (required) => {
     mockApi(routes(WS_PRIVATE, () => [], { "GET /api/v1/meta": () => json({ ...META, mock_requires_demo_workspace: required }) }));
     renderApp(PAGE(WS_PRIVATE));
@@ -376,5 +415,35 @@ describe("the menus", () => {
       "href",
       `/w/${WS_GOLKENT}/more/settings/system-health`,
     );
+  });
+});
+
+
+describe("Real comment-to-DM setting", () => {
+  it("lets an owner enable and disable private replies", async () => {
+    let current = account({ provider_kind: "meta", is_simulated: false, status: "connected", capabilities: { comments_permission: true } });
+    const requests = mockApi(routes(WS_GOLKENT, () => [current], {
+      "GET /api/v1/meta": () => json(META),
+      [`PUT /api/v1/workspaces/${WS_GOLKENT}/accounts/${ACCOUNT_ID}/comment-automation`]: () => {
+        current = { ...current, comment_automation_enabled: !current.comment_automation_enabled };
+        return json(current);
+      },
+    }));
+    renderApp(PAGE(WS_GOLKENT));
+    const toggle = await screen.findByRole("switch", { name: "Yorumdan DM’ye (özel yanıtlar)" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    await userEvent.click(toggle);
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "true"));
+    await userEvent.click(toggle);
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "false"));
+    expect(requests.filter((r) => r.method === "PUT").map((r) => r.body)).toEqual([{ enabled: true }, { enabled: false }]);
+  });
+
+  it("shows state to a non-owner without a switch", async () => {
+    mockApi(routes(WS_HARBOR, () => [account({ provider_kind: "meta", status: "connected", comment_automation_enabled: true, capabilities: { comments_permission: true } })]));
+    renderApp(PAGE(WS_HARBOR));
+    expect(await screen.findByText("Yorumdan DM’ye (özel yanıtlar)")).toBeInTheDocument();
+    expect(screen.getByText("Açık")).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Yorumdan DM’ye (özel yanıtlar)" })).not.toBeInTheDocument();
   });
 });

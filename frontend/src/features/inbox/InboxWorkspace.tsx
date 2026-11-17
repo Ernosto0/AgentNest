@@ -31,8 +31,8 @@ function useTabCounts(ws: string): Partial<Record<Section, number>> {
 }
 
 /**
- * Comments need a provider grant the Instagram connection may not have (the OAuth scopes include no
- * comment permission yet). The account's own capability flags decide, the same gate the agent uses:
+ * Comment actions require more than OAuth consent. The account's own capability flags decide,
+ * the same gate the agent uses:
  * a real connection reports every `comment_*` capability as false. While accounts are loading or
  * absent, or an account reports no comment flags at all, nothing changes.
  */
@@ -87,6 +87,15 @@ export function InboxWorkspace() {
   const detail = Boolean(conversationId || questionId || threadId);
   const counts = useTabCounts(workspace.id);
   const commentsUnavailable = useCommentsUnavailable(workspace.id);
+  const accounts = useSocialAccounts(workspace.id);
+  const commentsNeedReconnect = accounts.data?.some((account) =>
+    account.provider_kind === "meta" && account.status !== "disconnected" &&
+    account.capabilities.comments_permission !== true,
+  ) === true;
+  const commentsNeedEnable = accounts.data?.some((account) =>
+    account.provider_kind === "meta" && account.status !== "disconnected" &&
+    account.capabilities.comments_permission === true,
+  ) === true;
   const list = useRef<HTMLDivElement>(null);
   const scroll = useRef(0);
   const positions = useRef(new Map<string, number>());
@@ -130,7 +139,7 @@ export function InboxWorkspace() {
         onScroll={event => positions.current.set(filterKey, event.currentTarget.scrollTop)}
         className={`${PANE} lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto lg:overscroll-contain ${detail ? "hidden lg:block" : ""}`}
       >
-        {section === "messages" ? <ConversationList activeId={conversationId} /> : section === "comments" ? (commentsUnavailable ? <PaneEmpty testId="comments-unavailable" icon={<CommentIcon />} title={t("convo.commentsUnavailableTitle")} hint={t("convo.commentsUnavailableHint")} /> : <CommentsPage />) : <QuestionsPage />}
+        {section === "messages" ? <ConversationList activeId={conversationId} /> : section === "comments" ? (commentsUnavailable ? <PaneEmpty testId="comments-unavailable" icon={<CommentIcon />} title={t("convo.commentsUnavailableTitle")} hint={t(commentsNeedReconnect ? "convo.commentsUnavailableReconnectHint" : commentsNeedEnable ? "convo.commentsUnavailableEnableHint" : "convo.commentsUnavailableHint")} /> : <CommentsPage />) : <QuestionsPage />}
       </div>
       <div className={`min-w-0 ${detail ? "" : "hidden lg:block"}`}><Outlet key={location.pathname} /></div>
     </div>

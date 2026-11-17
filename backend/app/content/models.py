@@ -70,6 +70,7 @@ class MediaAsset(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )
+    render_record: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
@@ -151,3 +152,23 @@ class ContentItem(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
     is_simulated: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=sql_text("false")
     )
+
+
+class WorkspaceBrandSettings(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
+    """One effective palette and optional existing media logo per workspace."""
+
+    __tablename__ = "workspace_brand_settings"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint("workspace_id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "logo_media_asset_id"],
+            ["media_assets.workspace_id", "media_assets.id"],
+        ),
+        CheckConstraint("primary_color ~ '^#[0-9a-f]{6}$'", name="primary_color"),
+        CheckConstraint("accent_color ~ '^#[0-9a-f]{6}$'", name="accent_color"),
+    )
+
+    primary_color: Mapped[str] = mapped_column(Text, nullable=False)
+    accent_color: Mapped[str] = mapped_column(Text, nullable=False)
+    logo_media_asset_id: Mapped[uuid.UUID | None] = mapped_column()

@@ -14,6 +14,7 @@ import { AgentApprovalBody } from "./AgentApprovalBody";
 import { CancelContentSummary } from "./CancelContentSummary";
 import { ChangeSummary, ImpactSummary } from "./ChangeSummary";
 import { ContentApprovalBody } from "./ContentApprovalBody";
+import { PriceCardSummary } from "./PriceCardSummary";
 import { ReplyApprovalBody } from "./ReplyApprovalBody";
 import { actionKey, isStaleFor } from "./format";
 
@@ -84,6 +85,7 @@ export function ApprovalDetailSheet({
   const isPublish = approval.action === "content.publish" && !isAgent;
   const management = ["command.reschedule_content", "command.pause_agent"].includes(approval.action);
   const isCancel = approval.action === "command.cancel_content";
+  const isPriceCard = approval.action === "command.make_price_card";
   // A publish approval is decided on what it covers, so the item is read first.
   const content = useContentItem(workspace.id, approval.subject.id, isPublish);
   const cannotApprove =
@@ -172,7 +174,8 @@ export function ApprovalDetailSheet({
         ) : null}
         {isCancel ? <CancelContentSummary summary={approval.summary} /> : null}
         {management ? <ManagementSummary action={approval.action} summary={approval.summary} /> : null}
-        {isPublish || isAgent || management ? null : (
+        {isPriceCard ? <PriceCardSummary summary={approval.summary} /> : null}
+        {isPublish || isAgent || management || isPriceCard ? null : (
           <>
             {isCancel ? null : (
               <ChangeSummary

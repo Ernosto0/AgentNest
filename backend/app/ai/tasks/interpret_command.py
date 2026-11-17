@@ -24,6 +24,7 @@ from app.ai.schemas import (
     ContentCancelScheduled,
     ContentCreateDraft,
     ContentKind,
+    ContentMakePriceCard,
     ContentRef,
     ContentReschedule,
     FactCatalogEntry,
@@ -120,7 +121,7 @@ def snapshot(task_input: InterpretCommandInput) -> dict[str, Any]:
 
 INTERPRET_COMMAND: TaskDefinition[InterpretCommandInput, InterpretCommandOutput] = TaskDefinition(
     name=TASK,
-    prompt_version="v2",
+    prompt_version="v3",
     output_schema=InterpretCommandOutput,
     max_output_tokens=800,
     timeout_s=30,
@@ -460,6 +461,46 @@ def _interpret_content(
     return None
 
 
+def _interpret_price_card(
+    task_input: InterpretCommandInput, folded: str
+) -> ContentMakePriceCard | Clarify | None:
+    if not re.search(r"fiyat kart\w*|price card", folded) or not re.search(
+        r"\b(yap\w*|hazirla\w*|olustur\w*|make|create|prepare)\b", folded
+    ):
+        return None
+    if any(pattern.search(folded) for _, pattern in _UNSUPPORTED):
+        return None
+    # An explicitly typed fact key is a name, never a supplied price. Resolution still
+    # checks existence, type and usability (including wrong-type/adversarial proposals).
+    explicit = re.search(r"\b[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+\b", folded)
+    if explicit:
+        return ContentMakePriceCard(
+            type="content.make_price_card",
+            fact_key=explicit.group(),
+            format="feed" if re.search(r"\b(feed|post|gonderi)\b", folded) else None,
+        )
+    money = [f for f in task_input.fact_catalog if f.value_type == "money"]
+    matches = match_facts(folded, money)
+    format = "feed" if re.search(r"\b(feed|post|gonderi)\b", folded) else None
+    if len(matches) == 1:
+        return ContentMakePriceCard(
+            type="content.make_price_card", fact_key=matches[0].key, format=format
+        )
+    if money:
+        return Clarify(
+            type="clarify",
+            intent="content.make_price_card",
+            format=format,
+            candidate_fact_keys=[
+                f.key for f in (matches or [f for f in money if f.status == "verified"])
+            ],
+            raw_value_text=None,
+        )
+    return ContentMakePriceCard(
+        type="content.make_price_card", fact_key="pricing.missing", format=format
+    )
+
+
 def _interpret_management(
     task_input: InterpretCommandInput, folded: str
 ) -> InterpretCommandOutput | None:
@@ -505,6 +546,9 @@ def fake_interpret_command(
         return InterpretCommandOutput(
             interpretation=QueryPendingApprovals(type="query.pending_approvals")
         )
+    price_card = _interpret_price_card(task_input, folded)
+    if price_card is not None:
+        return InterpretCommandOutput(interpretation=price_card)
     management = _interpret_management(task_input, folded)
     if management is not None:
         return management

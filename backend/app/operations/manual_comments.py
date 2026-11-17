@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.agent.repository import scoped_account
 from app.audit.service import record
 from app.comments.models import PublicComment, PublicMedia
+from app.comments.ownership import media_ownership_ok
 from app.core.clock import Clock
 from app.core.config import Settings, get_settings
 from app.identity.models import User, Workspace, WorkspaceMember
@@ -174,7 +175,7 @@ def execute(
             and target.version == op.provider_ref.get("comment_version")
             and media is not None
             and media.version == op.provider_ref.get("media_version")
-            and media.ownership_state == "verified_synthetic"
+            and media_ownership_ok(media, account.is_simulated)
             and media.state != "deleted"
             and target.state == ("hidden" if effect == "unhide" else "visible")
             and op.deadline_at is not None

@@ -32,7 +32,7 @@ export const SCHEDULE_ITEM_CODES: readonly string[] = [
 ];
 
 /** Capabilities an account can hold (plan.md G4); an unknown one is shown as its own name. */
-export const CAPABILITY_KEYS = ["messaging", "publish_feed_image", "publish_story_image"] as const;
+export const CAPABILITY_KEYS = ["messaging", "publish_feed_image", "publish_story_image", "comments_permission"] as const;
 
 export function capabilityLabel(capability: string, t: TFunction): string {
   return (CAPABILITY_KEYS as readonly string[]).includes(capability)

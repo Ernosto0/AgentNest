@@ -156,7 +156,10 @@ def _apply(db: Session, clock: Clock, account: SocialAccount, value: CommentEven
         if value.media_deleted:
             media.state, media.caption = "deleted", None
         elif value.media_verified:
-            media.state, media.ownership_state = "visible", "verified_synthetic"
+            media.state = "visible"
+            media.ownership_state = (
+                "verified_provider" if account.provider_kind == "meta" else "verified_synthetic"
+            )
             media.caption = value.media_caption
         record(
             db,

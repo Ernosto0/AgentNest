@@ -16,7 +16,7 @@ import { WeekCalendar } from "./WeekCalendar";
 
 const NEXT_SHOWN = 4;
 
-export type CreateContent = (mode: NewContentMode, type?: "feed_image" | "story_image") => void;
+export type CreateContent = (mode: NewContentMode | "template", type?: "feed_image" | "story_image") => void;
 
 /**
  * Upcoming content: the week at a glance and the next scheduled items as visual cards.
@@ -32,6 +32,7 @@ export function UpcomingPanel({ onCreate, className = "" }: { onCreate: CreateCo
   const capped = week.items.length >= SCHEDULED_WEEK_LIMIT;
   const next = week.items.slice(0, NEXT_SHOWN);
   const draftStory = () => onCreate("blank", "story_image");
+  const templateStory = () => onCreate("template", "story_image");
   // On phones the week folds away behind its heading; "All content" stays one tap away.
   const fold = useFoldOnPhone();
 
@@ -62,7 +63,7 @@ export function UpcomingPanel({ onCreate, className = "" }: { onCreate: CreateCo
 
           {week.isSuccess ? (
             <>
-              <WeekCalendar days={week.days} onDraftStory={draftStory} />
+              <WeekCalendar days={week.days} onDraftStory={draftStory} onTemplateStory={templateStory} />
 
               {next.length === 0 ? (
                 <div

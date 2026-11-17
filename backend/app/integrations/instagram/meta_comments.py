@@ -7,29 +7,19 @@ Instagram even when a caller accidentally supplies a real account reference.
 """
 
 from datetime import datetime, timedelta
-from typing import Literal
 
 import httpx
-from pydantic import Field
 
 from app.core.clock import Clock
 from app.integrations.instagram.base import AccountRef, PrivateReplyResult, PublicEffectResult
 from app.integrations.instagram.errors import ProviderInvalidRequest
-from app.integrations.instagram.meta import ID, Comment, MetaInstagramProvider, Shape, _identifier
-
-
-class CommentMedia(ID):
-    owner: ID
-
-
-class CommentSuccess(Shape):
-    success: Literal[True]
-
-
-class PrivateSent(Shape):
-    message_id: str = Field(min_length=1)
-    # Never infer this from a comment author, username or ordinary send response.
-    recipient_id: str | None = Field(default=None, min_length=1)
+from app.integrations.instagram.meta import (
+    ID,
+    Comment,
+    CommentSuccess,
+    MetaInstagramProvider,
+    _identifier,
+)
 
 
 class SyntheticMetaCommentProvider(MetaInstagramProvider):
@@ -39,14 +29,6 @@ class SyntheticMetaCommentProvider(MetaInstagramProvider):
         if type(transport) is not httpx.MockTransport:
             raise ValueError("Synthetic comments require an exact MockTransport")
         super().__init__(clock, "synthetic-only", api_version, transport=transport)
-
-    def _owned_media(self, account: AccountRef, media_id: str) -> None:
-        media = self._shape(
-            CommentMedia,
-            self._request(account, _identifier(media_id), params={"fields": "id,owner"}),
-        )
-        if media.id != media_id or media.owner.id != account.external_account_id:
-            raise ProviderInvalidRequest("COMMENT_MEDIA_NOT_OWNED")
 
     def read_comments(self, account: AccountRef, media_id: str) -> list[Comment]:
         self._owned_media(account, media_id)
@@ -59,26 +41,6 @@ class SyntheticMetaCommentProvider(MetaInstagramProvider):
         if any(value.media.id != media_id for value in comments):
             raise ProviderInvalidRequest("COMMENT_MEDIA_MISMATCH")
         return comments
-
-    def read_comment(self, account: AccountRef, comment_id: str) -> Comment:
-        value = self._shape(
-            Comment,
-            self._request(
-                account,
-                _identifier(comment_id),
-                params={"fields": "id,media,timestamp,text,hidden"},
-            ),
-        )
-        if value.id != comment_id:
-            raise ProviderInvalidRequest("COMMENT_TARGET_MISMATCH")
-        self._owned_media(account, value.media.id)
-        return value
-
-    @staticmethod
-    def _text(text: str | None) -> str:
-        if not text or not text.strip() or len(text.encode("utf-8")) > 1000:
-            raise ProviderInvalidRequest("INVALID_COMMENT_REPLY")
-        return text
 
     def perform_comment_effect(
         self,
@@ -128,28 +90,6 @@ class SyntheticMetaCommentProvider(MetaInstagramProvider):
         # No remote idempotency/readback contract binds our local operation key.
         # Current visible state or a 404 cannot attribute an effect to this operation.
         return None
-
-    def send_private_reply(
-        self, account: AccountRef, comment_id: str, text: str, operation_key: str
-    ) -> PrivateReplyResult:
-        self._text(text)
-        if not operation_key:
-            raise ProviderInvalidRequest("INVALID_COMMENT_ACTION")
-        comment = self.read_comment(account, comment_id)
-        # Seven days is ONLY the conservative synthetic mock assumption (R75-04).
-        self._private_deadline(comment.timestamp)
-        value = self._shape(
-            PrivateSent,
-            self._request(
-                account,
-                f"{_identifier(account.external_account_id)}/messages",
-                method="POST",
-                body={"recipient": {"comment_id": comment_id}, "message": {"text": text}},
-                ambiguous=True,
-            ),
-            ambiguous=True,
-        )
-        return PrivateReplyResult(value.message_id, value.recipient_id)
 
     def _private_deadline(self, posted_at: datetime) -> None:
         if not posted_at <= self._clock.now() < posted_at + timedelta(days=7):

@@ -184,7 +184,7 @@ def test_as_dict_carries_the_localised_message_only_when_asked() -> None:
 
 
 def test_every_item_code_has_a_text_in_both_languages() -> None:
-    assert len(set(v.ALL_CODES)) == len(v.ALL_CODES) == 16
+    assert len(set(v.ALL_CODES)) == len(v.ALL_CODES) == 17
     for locale in ("tr", "en"):
         keys = catalog_keys(locale)
         for code in v.ALL_CODES:

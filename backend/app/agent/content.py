@@ -18,6 +18,7 @@ from app.agent.tools.broker import BrokerContext, ToolInputError
 from app.content import grounding, scheduling, service, transitions
 from app.content.models import ContentItem, MediaAsset
 from app.content.payload import approval_payload, approval_summary
+from app.content.templates.link import merge_references, render_references
 from app.core.canonical import canonical_json, payload_hash
 from app.core.clock import Clock
 from app.core.config import get_settings
@@ -549,7 +550,10 @@ def execute(db: Session, clock: Clock, action: AgentAction) -> None:
             ctx,
             "content_item",
             item.id,
-            sorted(set(claims.references) | set(rendered.facts if rendered else ())),
+            merge_references(
+                sorted(set(claims.references) | set(rendered.facts if rendered else ())),
+                render_references(db, ctx, item.media_asset_id),
+            ),
         )
         action.payload_ref = item.id
         task.read_refs = {
@@ -648,7 +652,10 @@ def execute(db: Session, clock: Clock, action: AgentAction) -> None:
                     ctx,
                     "content_item",
                     item.id,
-                    [(uuid.UUID(fid), ver) for fid, ver in intent["fact_refs"]],
+                    merge_references(
+                        [(uuid.UUID(fid), ver) for fid, ver in intent["fact_refs"]],
+                        render_references(db, ctx, item.media_asset_id),
+                    ),
                 )
                 service.enqueue_publish(db, clock, item)
                 action.status = "queued"

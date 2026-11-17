@@ -10,6 +10,7 @@ from pydantic import SecretStr
 from app.integrations.instagram.errors import ProviderAuthError, ProviderTransientError
 from app.integrations.instagram.oauth import (
     COMMENT_CAPABILITIES,
+    COMMENTS_SCOPE,
     SCOPES,
     build_authorize_url,
     compute_capabilities,
@@ -19,6 +20,14 @@ from app.integrations.instagram.oauth import (
 
 def test_authorize_and_capabilities(settings):
     query = parse_qs(urlsplit(build_authorize_url(settings, "opaque-state")).query)
+    assert SCOPES == (
+        "instagram_business_basic",
+        "instagram_business_manage_messages",
+        "instagram_business_content_publish",
+        "instagram_business_manage_insights",
+        COMMENTS_SCOPE,
+    )
+    assert COMMENTS_SCOPE in query["scope"][0].split(",")
     assert query["state"] == ["opaque-state"]
     assert query["scope"] == [",".join(SCOPES)]
     assert not any(compute_capabilities([], True).values())
@@ -26,8 +35,21 @@ def test_authorize_and_capabilities(settings):
         "messaging": False,
         "publish_feed_image": True,
         "publish_story_image": False,
+        "comments_permission": False,
         **dict.fromkeys(COMMENT_CAPABILITIES, False),
     }
+
+
+@pytest.mark.parametrize("comments_granted", [False, True])
+@pytest.mark.parametrize("stories_enabled", [False, True])
+def test_comment_consent_does_not_enable_actions(comments_granted, stories_enabled):
+    scopes = list(SCOPES) if comments_granted else list(SCOPES[:-1])
+    capabilities = compute_capabilities(scopes, stories_enabled)
+    assert capabilities["comments_permission"] is comments_granted
+    assert all(capabilities[key] is False for key in COMMENT_CAPABILITIES)
+    assert capabilities["messaging"] is True
+    assert capabilities["publish_feed_image"] is True
+    assert capabilities["publish_story_image"] is stories_enabled
 
 
 @pytest.mark.parametrize("wrapped", [False, True])

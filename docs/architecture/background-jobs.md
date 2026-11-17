@@ -190,3 +190,18 @@ the shared resume service. Duplicate/stale jobs or revoked owner access are no-o
 change conservatively leaves the account paused; the owner can resume explicitly. Existing
 agent.state_changed audit and controller cleanup apply. No external calls.
 
+
+
+### render_template_image (F-07)
+
+Payload `RenderTemplateImagePayload`: `{content_id, version, template_input}`; typed
+TemplateInput contains fact keys and format/language, never fact values. Workspace is the job's
+workspace_id. Dedup key `render_template_image:{content_id}`, max_attempts=3.
+T1 reads a workspace-scoped draft; gone/non-draft/version-changed/already-attached drafts are
+no-ops. A system WorkspaceContext reads usable facts and commits the render snapshot. Pillow
+and media storage execute without an open DB transaction. T3 uses a fresh session, locks and
+rechecks the draft, and attaches via the normal versioned content edit. Replayed jobs cannot
+attach twice. Owner changes at T3 discard the asset to orphan cleanup and audit the code.
+Deterministic TEMPLATE_* refusals terminate without retries; content.template_image_failed
+records code only. on_dead writes the same audit action. Success uses the normal content.updated
+audit, references the immutable render fact versions, stays draft, and never publishes/approves.

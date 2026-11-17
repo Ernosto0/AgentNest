@@ -261,6 +261,12 @@ def _deliver_approval_notification(
             time_label = "Planlanan Zaman" if is_tr else "Scheduled Time"
             lines.append(f"• <b>{time_label}:</b> {sched_str}")
 
+    elif approval.action == "command.make_price_card":
+        heading = "Fiyat kartı oluştur" if is_tr else "Make a price card"
+        lines.append(f"{sim_badge}<b>{heading}</b>")
+        lines.append(html.escape(str(approval.summary.get("label", ""))))
+        lines.append(html.escape(str(approval.summary.get("price_formatted", ""))))
+        lines.append("Yalnızca taslak oluşturulur." if is_tr else "Creates a draft only.")
     elif approval.action in ("command.reschedule_content", "command.pause_agent"):
         pause = approval.action == "command.pause_agent"
         heading = (

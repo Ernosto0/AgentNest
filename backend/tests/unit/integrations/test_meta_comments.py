@@ -57,7 +57,7 @@ def test_scaffold_cannot_use_real_transport(clock):
         SyntheticMetaCommentProvider(clock, "v25.0", transport=httpx.HTTPTransport())
 
 
-def test_production_default_blocks_all_comment_paths_without_network(clock):
+def test_production_blocks_public_comment_paths_without_network(clock):
     def forbidden(request):
         pytest.fail("disabled production capability made an HTTP request")
 
@@ -65,11 +65,8 @@ def test_production_default_blocks_all_comment_paths_without_network(clock):
     account = API(clock).account
     for call in (
         lambda: provider.read_comments(account, "media-1"),
-        lambda: provider.read_comment(account, "comment-1"),
         lambda: provider.perform_comment_effect(account, "comment-1", "reply", "Hi", "op"),
-        lambda: provider.send_private_reply(account, "comment-1", "Hi", "op"),
         lambda: provider.find_comment_effect(account, "op"),
-        lambda: provider.find_private_reply(account, "op"),
     ):
         with pytest.raises(ProviderInvalidRequest, match="NOT_VERIFIED"):
             call()

@@ -143,6 +143,11 @@ The owner's "try your assistant" sandbox. **Owner and manager only** (`assistant
 ### 2.7 Content and media (Phase 5)
 | Method & path | Request → Response |
 |---|---|
+| `GET /…/brand` | `settings.view`: effective `{primary_color, accent_color, logo_media_asset_id, is_default, logo_width, logo_height}` |
+| `PUT /…/brand` | `brand.manage` (owner/manager): strict `{primary_color, accent_color, logo_media_asset_id}`; colours accept `#RRGGBB` case-insensitively and store lowercase; null clears logo. Non-ready/foreign logo → 404. Audits `brand.updated` |
+| `GET /…/content/templates` | `content.edit`: catalog with stable ids `price_card`, `hours_card`, `services_list`, `announcement`, TR/EN labels, story 1080×1920 and feed 1080×1350 formats, typed fields, length/item limits and accepted fact value types |
+| `POST /…/content/template-images/preview` | `content.edit`: discriminated template input → processed `image/jpeg`; no asset or stored object |
+| `POST /…/content/template-images` | Same input/permission → 201 normal media fields plus `render_record`; ready baseline JPEG through the upload validation/storage path; audits `media.uploaded` and `media.template_rendered` atomically |
 | `POST /…/media` | multipart `file` → 201 `MediaAsset {id, status, width, height, mime_type, byte_size, original_filename, rejection_code, created_at}` (`content.edit`). The upload is validated and always re-encoded as a baseline sRGB JPEG without EXIF ([ADR-015](decisions/ADR-015-media-storage.md)); `status` is `ready`. 413 `MEDIA_TOO_LARGE` (`params.limit_bytes`); 422 `MEDIA_INVALID` (`params.reason`: `EMPTY_FILE`, `NOT_AN_IMAGE`, `CORRUPT_IMAGE`, `TOO_MANY_PIXELS`); a missing `file` part is 422 `VALIDATION_FAILED`. A rejected upload stores nothing |
 | `GET /…/media/{id}/content` | authenticated binary stream of the stored JPEG (any member; never a bucket URL). Headers: `Content-Type: image/jpeg`, `X-Content-Type-Options: nosniff`, `Cache-Control: private, max-age=3600`, `Content-Disposition: inline`, `ETag` (the sha256). A foreign, deleted or unknown id is 404 |
 | `GET /…/content-items?tab=&status=&limit=` | `{items: ContentItem[], next_cursor}` (any member). `tab` is `drafts` (`draft`, `pending_approval`), `scheduled` (`scheduled`, `publishing`, `retry_scheduled`; next to go out first), `published` (newest first) or `problems` (`on_hold`, `failed`, `rejected`); `cancelled` items are in no tab and are found with `status=cancelled`. `status` may be combined with `tab`. Otherwise newest change first. `limit` 1–100 (default 50); like the other lists, `next_cursor` is always null for now. An unknown `tab`/`status` → 422 |
@@ -193,12 +198,13 @@ Disconnect accepts optional `{delete_conversation_data: false}`. Tokens are clea
 
 | Method & path | Notes |
 |---|---|
-| `GET /…/social-accounts` | `[{id, platform, provider_kind, username, status, capabilities, connection_expires_at, last_error_code, degraded_until, is_simulated}]` (no token fields; the expiry is named `connection_expires_at` so the response-schema secret scan stays strict) |
+| `GET /…/social-accounts` | `[{id, platform, provider_kind, username, status, comment_automation_enabled, capabilities, connection_expires_at, last_error_code, degraded_until, is_simulated}]` (no token fields; the expiry is named `connection_expires_at` so the response-schema secret scan stays strict) |
 | `POST /…/social-accounts/mock` | connect a simulated account (only if `mock` is enabled and allowed for the workspace) |
 | `POST /…/social-accounts/instagram/connect` | → `{authorize_url}` (Phase 7) |
 | `GET /oauth/instagram/callback` | Authenticated OAuth callback; 303 redirect to the fixed SPA connection status route (safe known-state result), or safe 400 for invalid state without a workspace. OpenAPI declares 303 with no JSON response body. |
 | `POST /…/social-accounts/{id}/reconnect` | `integrations.manage`; **mock accounts only** (a real account reconnects through OAuth, Phase 7). `needs_reauth → connected` for the same external account, audit `account.reconnected`, enqueues `resume_account` (queued replies are sent). Returns the account. A foreign id → 404; another provider, or an account that is not `needs_reauth` → 409 `CONFLICT_STATE`; mock provider not enabled → 403 |
 | `POST /…/social-accounts/{id}/disconnect` | |
+| `PUT /api/v1/workspaces/{workspace_id}/accounts/{account_id}/comment-automation` | Owner only, `{enabled: boolean}`; returns whitelisted account. Foreign ID 404; mock 409 (`real_account_required`); enabling without connected/degraded status and actual comment permission 409 (`comments_permission_missing`). Row-locked capability recomputation; same-transaction audit only on change. Idempotent. |
 | `GET /webhooks/instagram` | Meta verification handshake |
 | `POST /webhooks/instagram` | signed Meta webhooks (Phase 7) |
 | `POST /webhooks/instagram/mock` | signed simulated webhooks (Phase 4; mounted only when `mock` is enabled) |
@@ -291,3 +297,58 @@ expected_config_version, advances version/epoch, and overrides an earlier automa
 (this is only for the confirmed command: `change_state(..., repause=True)`; `POST /agent/pause`
 on an already paused agent still returns `CONFLICT_STATE`).
 
+
+
+#### Template image inputs and refusal errors (F-07)
+
+All new routes above use `/workspaces/{workspace_id}/…`, foreign workspace IDs → 404.
+Template inputs reject extra fields and coercions. Common: `template`, `format` (`story`/`feed`),
+optional `language` (`tr`/`en`, defaults to workspace locale). `price_card` takes one `fact_key`
+(money); `hours_card` takes `fact_key="hours.weekly"` (weekly_hours); `services_list` takes 2–6
+`fact_keys` (money). `announcement` takes `headline` (1–180), `body` (1–1600), optional
+`date_line` (max 120); NFC and control-character cleanup preserve Turkish case. Free text
+may use `{{fact:key}}` placeholders. Critical values outside trusted spans are refused by
+the existing claim validator. All facts are read via `usable_facts` at render time.
+
+422 refusal errors: `TEMPLATE_FACT_NOT_USABLE` (`params.keys`: missing, unverified, contested,
+archived or out-of-window keys), `TEMPLATE_FACT_TYPE_MISMATCH` (`params.keys`,
+`accepted_value_types`), `TEMPLATE_TEXT_UNGROUNDED` (`params.fields`: invalid placeholder or
+unbacked claim). Refusal creates no asset/object. Size/image errors use the existing media
+codes. Drawing/storage I/O occurs after the read transaction ends. PNG rendering is internally
+deterministic with bundled OFL Noto Sans Regular/Bold; persisted/preview bytes are stripped JPEG.
+Render evidence: `{renderer_version,template,format,language,facts:[{fact_id,key,version}],inputs,
+brand:{primary_color,accent_color,logo_media_asset_id},rendered_at}`. Session 04 links this
+record to content items and applies price-change holds.
+
+
+### F-07 template images in content (Feature Phase 3 Session 04)
+
+`ContentItemOut.template_image` is null for uploads and absent media. Otherwise it is:
+`{template: price_card|hours_card|services_list|announcement, format: story|feed,
+language: tr|en, rendered_at: datetime, facts: [{key, label: {tr?, en?},
+recorded_version: int, current_version: int|null, usable: bool}], stale: bool,
+can_rerender: bool}`. Read-time usability means verified status; submit and reapprove
+also check validity windows and contested facts using Clock. Rendered versions override
+caption reference versions. List reads batch render records and facts for the page.
+
+`POST /workspaces/{workspace_id}/content-items/{content_id}/template-image/rerender`
+requires `content.edit`, body `{expected_version: int >= 1}`, returns `ContentItemOut` (200).
+Foreign/unknown items return 404; version mismatches return `VERSION_CONFLICT` (409);
+non-editable items or items without a template return `CONFLICT_STATE` (409).
+A new asset is attached through the normal edit path: version + 1, draft, pending approval
+cancelled and queued publishing cancelled. No approval or publishing is automatic.
+Submit/reapprove reject outdated or unusable image facts with `CONTENT_VALIDATION_FAILED`
+and blocking issue `TEMPLATE_IMAGE_STALE` (`params.keys`: fact keys).
+
+Command `content.make_price_card` accepts `{type, fact_key, format: story|feed|null}`;
+no model-supplied price field exists. Clarification intent includes this command and carries
+nullable format. A money fact is resolved deterministically; missing/ambiguous facts clarify
+or refuse, wrong types/unverified facts refuse. Confirmation action `command.make_price_card`
+requires `content.edit` (including staff); its hash-bound payload contains fact ID, key,
+version, format and workspace language. Summary contains label, key, verified price_formatted,
+format, content_type, template and is_simulated=false. Confirming stages a draft without media
+and queues rendering; it never approves or publishes the content.
+Result keys: `command.price_card_started {title,label}`, `command.price_card_no_price`,
+`command.price_card_not_a_price {label}`, `command.price_card_fact_unusable {label}`.
+Refusal codes: `NOT_FOUND`, `TEMPLATE_FACT_TYPE_MISMATCH`, `TEMPLATE_FACT_NOT_USABLE`,
+`FACT_CHANGED_MEANWHILE` (fact changed after the card).

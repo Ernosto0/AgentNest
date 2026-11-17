@@ -38,6 +38,7 @@ const DELETING = {
 function instagram(overrides: Partial<SocialAccount> = {}): SocialAccount {
   return {
     id: "acc-1",
+    comment_automation_enabled: false,
     platform: "instagram",
     provider_kind: "mock",
     username: "golkent.demo",

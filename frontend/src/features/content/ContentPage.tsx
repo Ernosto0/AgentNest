@@ -10,6 +10,7 @@ import { ContentComposer } from "./ContentComposer";
 import { GenerateSheet, type NewContentMode } from "./GenerateSheet";
 import { LIST_LIMIT, useAllContentTabs } from "./hooks";
 import { LibraryView, type TabList } from "./LibraryView";
+import { TemplateImageSheet, type CardFormat } from "./TemplateImageSheet";
 import { tabItems } from "./presentation";
 import { CONTENT_TABS, isContentTab, tabOfStatusParam } from "./status";
 
@@ -64,6 +65,7 @@ export function ContentPage() {
 
   // One sheet for every way in: the composer, its blank-draft action and the empty states.
   const [sheet, setSheet] = useState<Sheet | null>(null);
+  const [templateFormat, setTemplateFormat] = useState<CardFormat | null>(null);
   const composerInput = useRef<HTMLInputElement>(null);
   const focusComposer = () => {
     const input = composerInput.current;
@@ -80,7 +82,11 @@ export function ContentPage() {
         action={<ViewSwitch view={view} onChange={setView} />}
       />
 
-      <ContentComposer inputRef={composerInput} onStart={(mode, type, objective) => setSheet({ mode, type, objective })} />
+      <ContentComposer
+        inputRef={composerInput}
+        onStart={(mode, type, objective) => setSheet({ mode, type, objective })}
+        onTemplate={(type) => setTemplateFormat(type === "story_image" ? "story" : "feed")}
+      />
 
       {view === "agenda" ? (
         <AgendaView draftCount={lists.drafts.items?.length ?? 0} onWrite={focusComposer} />
@@ -88,6 +94,7 @@ export function ContentPage() {
         <LibraryView tab={tab} onTab={setTab} lists={lists} onWrite={focusComposer} />
       )}
 
+      {templateFormat ? <TemplateImageSheet initialFormat={templateFormat} onClose={() => setTemplateFormat(null)} /> : null}
       {sheet ? (
         <GenerateSheet
           initialMode={sheet.mode}

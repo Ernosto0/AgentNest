@@ -22,7 +22,7 @@ import re
 import uuid
 import warnings
 from dataclasses import dataclass
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 from PIL import Image, ImageCms, ImageOps, UnidentifiedImageError
 from sqlalchemy import select
@@ -185,17 +185,26 @@ def ingest(
     Raises ``MEDIA_TOO_LARGE`` (413) or ``MEDIA_INVALID`` (422); both leave no asset and no
     stored object behind, only the audit entry.
     """
-    limit = settings.media_max_image_bytes
+    return ingest_bytes(
+        db, clock, settings, storage, ctx, file.read(settings.media_max_image_bytes + 1), filename
+    )
+
+
+def ingest_bytes(
+    db: Session,
+    clock: Clock,
+    settings: Settings,
+    storage: MediaStorage,
+    ctx: WorkspaceContext,
+    raw: bytes,
+    filename: str | None,
+    *,
+    render_record: dict[str, Any] | None = None,
+) -> MediaAsset:
+    """The same bounded validation/storage path for uploads and generated template bytes."""
+    db.commit()  # end membership/read transactions before Pillow and storage I/O
     name = sanitize_filename(filename)
-    raw = file.read(limit + 1)
-    if len(raw) > limit:
-        _reject(db, clock, ctx, reason=REASON_TOO_LARGE, filename=name, byte_size=None)
-        raise AppError("MEDIA_TOO_LARGE", limit_bytes=limit)
-    try:
-        processed = process_image(raw)
-    except MediaRejected as rejected:
-        _reject(db, clock, ctx, reason=rejected.reason, filename=name, byte_size=len(raw))
-        raise AppError("MEDIA_INVALID", reason=rejected.reason) from rejected
+    processed = validate_bytes(db, clock, settings, ctx, raw, name)
 
     now = clock.now()
     media_id = new_id()
@@ -217,6 +226,7 @@ def ingest(
             height=processed.height,
             sha256=processed.sha256,
             status="ready",
+            render_record=render_record,
             created_by_user_id=user_id,
             created_at=now,
             updated_at=now,
@@ -237,12 +247,45 @@ def ingest(
             },
             clock=clock,
         )
+        if render_record is not None:
+            audit.record(
+                db,
+                ctx,
+                "media.template_rendered",
+                "media_asset",
+                asset.id,
+                {key: render_record[key] for key in ("template", "format", "facts")},
+                clock=clock,
+            )
         db.commit()
     except BaseException:
         db.rollback()
         storage.delete(key)
         raise
     return asset
+
+
+def validate_bytes(
+    db: Session,
+    clock: Clock,
+    settings: Settings,
+    ctx: WorkspaceContext,
+    raw: bytes,
+    filename: str | None,
+) -> ProcessedImage:
+    """Shared size and image guards, including preview (which stores nothing)."""
+    limit = settings.media_max_image_bytes
+    name = sanitize_filename(filename)
+    if len(raw) > limit:
+        _reject(db, clock, ctx, reason=REASON_TOO_LARGE, filename=name, byte_size=None)
+        raise AppError("MEDIA_TOO_LARGE", limit_bytes=limit)
+    try:
+        processed = process_image(raw)
+    except MediaRejected as rejected:
+        _reject(db, clock, ctx, reason=rejected.reason, filename=name, byte_size=len(raw))
+        raise AppError("MEDIA_INVALID", reason=rejected.reason) from rejected
+
+    return processed
 
 
 def get_asset(db: Session, ctx: WorkspaceContext, media_id: uuid.UUID) -> MediaAsset:

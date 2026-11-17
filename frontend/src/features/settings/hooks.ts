@@ -429,3 +429,42 @@ export function useDisconnectCalendar(ws: string) {
       ]),
   });
 }
+
+
+export function useCommentAutomation(ws: string) {
+  const client = useQueryClient();
+  return useMutation<SocialAccount, AppError, { accountId: string; enabled: boolean }>({
+    mutationFn: ({ accountId, enabled }) => unwrap(
+      api.PUT("/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comment-automation", {
+        params: { path: { workspace_id: ws, account_id: accountId } },
+        body: { enabled },
+      }),
+    ),
+    onSuccess: () => Promise.all(
+      ["social-accounts", "agent", "activity", "comments"].map((name) =>
+        client.invalidateQueries({ queryKey: [name, ws] }),
+      ),
+    ),
+  });
+}
+
+
+export function useBrand(ws: string) {
+  return useQuery({
+    queryKey: ["brand", ws],
+    queryFn: () => unwrap(api.GET("/api/v1/workspaces/{workspace_id}/brand", {
+      params: { path: { workspace_id: ws } },
+    })),
+  });
+}
+
+export function useSaveBrand(ws: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: import("@/api/schema").components["schemas"]["BrandInput"]) =>
+      unwrap(api.PUT("/api/v1/workspaces/{workspace_id}/brand", {
+        params: { path: { workspace_id: ws } }, body,
+      })),
+    onSuccess: (data) => client.setQueryData(["brand", ws], data),
+  });
+}

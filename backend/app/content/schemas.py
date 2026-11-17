@@ -167,7 +167,30 @@ class GenerationOut(BaseModel):
     error_code: str | None = None
 
 
+class TemplateImageFactOut(BaseModel):
+    key: str
+    label: dict[str, str]
+    recorded_version: int
+    current_version: int | None
+    usable: bool
+
+
+class TemplateImageStateOut(BaseModel):
+    template: Literal["price_card", "hours_card", "services_list", "announcement"]
+    format: Literal["story", "feed"]
+    language: Literal["tr", "en"]
+    rendered_at: datetime
+    facts: list[TemplateImageFactOut]
+    stale: bool
+    can_rerender: bool
+
+
+class TemplateImageRerenderIn(BaseModel):
+    expected_version: int = Field(ge=1)
+
+
 class ContentItemOut(BaseModel):
+    template_image: TemplateImageStateOut | None
     id: uuid.UUID
     content_type: ContentType
     status: ContentStatus

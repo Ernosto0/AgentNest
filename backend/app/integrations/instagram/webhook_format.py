@@ -3,8 +3,8 @@
 The messaging simulator uses the baseline Meta-format messaging fixtures, signs them with
 the app secret and submits the raw bytes to the same ingestion function as a real webhook.
 Comment fixtures are explicitly synthetic/provisional and enabled only by the mock codec;
-they are not authentic Meta recordings. The Meta adapter reuses ``verify`` and ``parse``
-with synthetic comment parsing disabled.
+they are not authentic Meta recordings. The Meta codec separately handles documented
+Instagram Login comment changes with synthetic comment parsing disabled.
 """
 
 import hashlib
@@ -53,9 +53,12 @@ class WebhookCodec:
     The mock provider and the Meta adapter (Phase 7) both delegate to it.
     """
 
-    def __init__(self, secret: str, *, synthetic_comments: bool = False) -> None:
+    def __init__(
+        self, secret: str, *, synthetic_comments: bool = False, live_comments: bool = False
+    ) -> None:
         self._secret = secret
         self._synthetic_comments = synthetic_comments
+        self._live_comments = live_comments
 
     def verify_signature(self, raw_body: bytes, signature_header: str | None) -> bool:
         return verify(raw_body, signature_header, self._secret)
@@ -63,7 +66,9 @@ class WebhookCodec:
     def parse_webhook(self, payload: Any) -> list[NormalizedInboundEvent]:
         from app.comments.codec import parse as parse_comments
 
-        return parse(payload) + (parse_comments(payload) if self._synthetic_comments else [])
+        return parse(payload, live_comments=self._live_comments) + (
+            parse_comments(payload) if self._synthetic_comments else []
+        )
 
 
 # --- building -------------------------------------------------------------------------------
@@ -317,7 +322,7 @@ def _normalize(item: dict[str, Any], entry_id: str | None) -> NormalizedInboundE
     )
 
 
-def parse(payload: Any) -> list[NormalizedInboundEvent]:
+def parse(payload: Any, *, live_comments: bool = False) -> list[NormalizedInboundEvent]:
     """One normalised event per ``entry[].messaging[]`` or ``entry[].changes[]`` item. Unknown
     shapes become ``other`` (stored and ignored); a payload that is not an Instagram event yields no
     events."""
@@ -337,9 +342,44 @@ def parse(payload: Any) -> list[NormalizedInboundEvent]:
         if isinstance(changes, list):
             for change in changes:
                 if isinstance(change, dict):
+                    if live_comments and change.get("field") == "comments":
+                        event = _comment(entry, change.get("value"))
+                        if event is not None:
+                            events.append(event)
+                        continue
                     val = change.get("value")
                     if isinstance(val, dict):
                         items.append(val)
         for item in items:
             events.append(_normalize(item, entry_id))
     return events
+
+
+def _comment(entry: dict[str, Any], value: Any) -> NormalizedInboundEvent | None:
+    from app.comments.codec import normalize
+
+    if not isinstance(value, dict):
+        return None
+    account, comment_id, media = _id(entry), _id(value), _id(value.get("media"))
+    timestamp = _timestamp(entry.get("time"))
+    if not account or not comment_id or not media or timestamp is None:
+        return None
+    parent = value.get("parent_id")
+    if parent is not None and (not isinstance(parent, str) or not parent):
+        return None
+    return normalize(
+        account,
+        {
+            "schema": "provider-comment-v1",
+            "id": comment_id,
+            "media_id": media,
+            "root_id": parent or comment_id,
+            "parent_id": parent,
+            "author_id": _id(value.get("from")),
+            "text": value.get("text"),
+            "state": "visible",
+            "version": 1,
+            "timestamp": timestamp,
+            "media_verified": True,
+        },
+    )

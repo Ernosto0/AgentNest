@@ -5,6 +5,7 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { AlertIcon, ClockIcon } from "@/components/icons";
 import { ManagementSummary } from "@/features/approvals/ManagementSummary";
 import { CancelContentSummary } from "@/features/approvals/CancelContentSummary";
+import { PriceCardSummary } from "@/features/approvals/PriceCardSummary";
 import { ChangeSummary, ImpactSummary } from "@/features/approvals/ChangeSummary";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useCancelCommand, useDecideApproval } from "./hooks";
@@ -24,6 +25,7 @@ export function ConfirmationCard({ command }: { command: Command }) {
   // The card is generic over the action: a content cancel names an item, not a fact.
   const management = ["command.reschedule_content", "command.pause_agent"].includes(approval.action);
   const cancelContent = approval.action === "command.cancel_content";
+  const priceCard = approval.action === "command.make_price_card";
 
   const expires = new Date(approval.expires_at).toLocaleTimeString(i18n.language, {
     hour: "2-digit",
@@ -35,7 +37,7 @@ export function ConfirmationCard({ command }: { command: Command }) {
 
   return (
     <section
-      aria-label={cancelContent ? t("command.confirm.cancelContent.title") : t("command.confirm.title")}
+      aria-label={cancelContent ? t("command.confirm.cancelContent.title") : priceCard ? t("command.confirm.makePriceCard.title") : t("command.confirm.title")}
       className="flex flex-col gap-4 rounded-xl border border-attention/30 bg-attention-subtle/30 p-4 sm:p-5 shadow-2xs"
       data-testid="confirmation-card"
       data-payload-hash={approval.payload_hash}
@@ -44,7 +46,7 @@ export function ConfirmationCard({ command }: { command: Command }) {
         <div className="flex items-center gap-2">
           <AlertIcon className="text-lg text-attention shrink-0" />
           <h3 className="font-heading text-base font-bold text-primary">
-            {cancelContent ? t("command.confirm.cancelContent.title") : t("command.confirm.title")}
+            {cancelContent ? t("command.confirm.cancelContent.title") : priceCard ? t("command.confirm.makePriceCard.title") : t("command.confirm.title")}
           </h3>
         </div>
         <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs font-medium text-secondary shadow-2xs">
@@ -53,7 +55,9 @@ export function ConfirmationCard({ command }: { command: Command }) {
         </div>
       </div>
 
-      {management ? <ManagementSummary action={approval.action} summary={approval.summary} /> : cancelContent ? (
+      {management ? <ManagementSummary action={approval.action} summary={approval.summary} /> : priceCard ? (
+        <PriceCardSummary summary={approval.summary} />
+      ) : cancelContent ? (
         <CancelContentSummary summary={approval.summary} />
       ) : (
         <>
@@ -66,7 +70,7 @@ export function ConfirmationCard({ command }: { command: Command }) {
         </>
       )}
 
-      {role === "staff" && !cancelContent ? (
+      {role === "staff" && !cancelContent && !priceCard ? (
         <p className="rounded-xl bg-surface p-3.5 text-body text-primary border border-border shadow-2xs">
           {t("command.confirm.staffNote")}
         </p>
@@ -84,7 +88,9 @@ export function ConfirmationCard({ command }: { command: Command }) {
             ? t("command.confirm.deciding")
             : cancelContent
               ? t("command.confirm.cancelContent.approve")
-              : t("command.confirm.approve")}
+              : priceCard
+                ? t("command.confirm.makePriceCard.approve")
+                : t("command.confirm.approve")}
         </Button>
         <Button variant="secondary" disabled={busy} onClick={() => withdraw.mutate(command.id)} className="rounded-lg">
           {t("command.confirm.withdraw")}

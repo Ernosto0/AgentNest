@@ -66,7 +66,14 @@ def process_inbound_event(
         from app.comments.codec import CommentEvent
         from app.comments.service import apply
 
-        if account.provider_kind != "mock" or not event.payload:
+        if account.provider_kind == "meta" and (
+            not account.comment_automation_enabled
+            or account.status not in {"connected", "degraded"}
+            or account.capabilities.get("comments_permission") is not True
+        ):
+            event.status, event.ignore_reason = "ignored", "COMMENT_AUTOMATION_OFF"
+            event.payload = {}
+        elif account.provider_kind not in {"mock", "meta"} or not event.payload:
             event.status, event.ignore_reason = "ignored", "UNSUPPORTED_EVENT"
         else:
             accepted = apply(session, clock, account, CommentEvent.model_validate(event.payload))

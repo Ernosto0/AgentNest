@@ -8,10 +8,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit.models import AuditLog
+from app.content import validation
 from app.core.clock import FrozenClock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
+from app.inbox import service as inbox_service
+from app.inbox.models import Conversation
 from app.integrations.instagram import queries
 from app.integrations.instagram.models import SocialAccount
 from app.knowledge import readiness as readiness_module
@@ -56,6 +59,36 @@ def reconnect(env: Env, account_id: uuid.UUID, role: str = "owner"):  # type: ig
 
 
 # --- database constraints ---------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("comments_permission", [None, False, True])
+def test_comment_consent_does_not_change_legacy_messaging_or_publishing(env, comments_permission):
+    capabilities = {"messaging": True, "publish_feed_image": True}
+    if comments_permission is not None:
+        capabilities["comments_permission"] = comments_permission
+    account = new_account(env.session, env, provider_kind="meta", capabilities=capabilities)
+    conversation = Conversation(
+        workspace_id=env.workspace.id,
+        social_account_id=account.id,
+        customer_external_id="legacy-customer",
+        last_inbound_at=env.clock.now(),
+    )
+    env.session.add(conversation)
+    env.session.flush()
+    assert inbox_service._check_sendable(env.session, env.clock, env.ctx(env.owner), conversation)
+    result = validation.validate_submission(
+        validation.SubmitFacts(
+            content_type="feed_image",
+            caption="Hello",
+            overlay_text_suggestions=[],
+            media=validation.MediaFacts("ready", 1080, 1350),
+            claim_issues=[],
+            schedule_error=None,
+            account=validation.AccountFacts(True, account.capabilities),
+            quota_exceeded=False,
+        )
+    )
+    assert result.ok
 
 
 def test_one_active_account_per_workspace(env: Env) -> None:
@@ -163,6 +196,7 @@ def test_the_response_has_no_credential_fields(env: Env) -> None:
         "username",
         "status",
         "capabilities",
+        "comment_automation_enabled",
         "connection_expires_at",
         "last_error_code",
         "degraded_until",

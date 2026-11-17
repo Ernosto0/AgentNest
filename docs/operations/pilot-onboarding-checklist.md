@@ -120,12 +120,13 @@ Now connect the business Instagram account to AgentNest. The owner signs in with
      - Mesajlarınızı yönetme ve yanıtlama (`instagram_business_manage_messages`)
      - Gönderi ve hikâye paylaşma (`instagram_business_content_publish`)
      - Hesap istatistiklerini görme (`instagram_business_manage_insights`)
-   - Yorumlara erişim **istenmez** (henüz eklenmedi, bkz. aşağıdaki not). **İzin Ver (Allow)** butonuna dokunun.
+     - Yorumları yönetme (`instagram_business_manage_comments`)
+   - **İzin Ver (Allow)** butonuna dokunun. Yorum izni, yorum otomasyonunu tek başına etkinleştirmez (aşağıdaki not).
 4. **Bağlantı Başarısını Doğrulama:**
    - Ekran AgentNest'e geri döner; durum **bağlı** ve Instagram kullanıcı adınız görünür.
-   - **Yapabildikleri** satırında *Mesajlaşma* ve *Gönderi yayınlama* yazar. Yorumlar bu listede **yoktur**; bu beklenen durumdur.
+   - **Yapabildikleri** satırında verilen izinlere göre *Mesajlaşma*, *Gönderi yayınlama* ve *Yorum izni* görünür. *Yorum izni* yorum otomasyonunun açık olduğu anlamına gelmez.
 
-> **Not (yorumlar):** Instagram yorumlarını okumak ve yanıtlamak için `instagram_business_manage_comments` izni gerekir; uygulama bunu henüz istemez ve Meta App Review paketinde de eklenmesi gerekir. Bu nedenle gerçek hesaplarda **Gelen kutusu -> Yorumlar** sekmesi *Henüz yok* etiketi taşır ve "Yorumlar henüz kullanılamıyor" der. Pilot sahibine yorum yanıtı vaat etmeyin.
+> **Not (yorumlar):** Uygulama artık `instagram_business_manage_comments` iznini ister; yalnızca Meta'nın gerçekten verdiği izin `comments_permission` olarak kaydedilir. Önceden bağlanan gerçek hesaplarda izin yoksa **Ayarlar -> Bağlantılar** ekranı bağlantıyı yenileme notu ve sahibine **Instagram ile bağlantıyı yenile** butonunu gösterir. Mevcut mesajlaşma ve paylaşım etkilenmez. İzin verilse de R75 kanıtları ve Session 02 hesap bazlı etkinleştirme kapısı tamamlanana kadar yorum eylemleri kapalıdır; **Gelen kutusu -> Yorumlar** *Henüz yok* olarak kalır. Meta App Review onayı / geliştirme hesabı izni ve canlı kanıtlar ayrıca doğrulanmalıdır; pilot sahibine yorum yanıtı vaat etmeyin.
 
 ---
 
@@ -141,12 +142,13 @@ Now connect the business Instagram account to AgentNest. The owner signs in with
      - Manage and reply to your messages (`instagram_business_manage_messages`)
      - Publish posts and stories (`instagram_business_content_publish`)
      - View account insights (`instagram_business_manage_insights`)
-   - Comment access is **not** requested yet (see the note below). Tap **Allow**.
+     - Manage comments (`instagram_business_manage_comments`)
+   - Tap **Allow**. Comment permission alone does not enable comment automation (see below).
 4. **Confirm connection status:**
    - You are redirected back to AgentNest; the status reads **connected** with your handle.
-   - The **Capabilities** line lists *Messaging* and *Publishing*. Comments are **not** listed; that is expected.
+   - The **Capabilities** line lists *Messaging*, *Publishing* and *Comment permission* according to the actual grants. *Comment permission* does not mean comment automation is enabled.
 
-> **Note (comments):** reading and answering Instagram comments needs the `instagram_business_manage_comments` permission. The app does not request it yet, and it still has to be added to the code and to the Meta App Review package ([meta-app-review-package.md](meta-app-review-package.md)). Until then, on real accounts **Inbox -> Comments** carries a *Not yet* label and says comments are not available. Do not promise comment replies to a pilot owner.
+> **Note (comments):** the app now requests `instagram_business_manage_comments`; only Meta's actual grant is recorded as `comments_permission`. Existing real accounts without the grant show a reconnect note in **Settings -> Connections**, with **Reconnect with Instagram** for the owner. Messaging and publishing keep working. Comment actions stay disabled even with consent until R75 evidence and Session 02 per-account activation are complete; **Inbox -> Comments** keeps its *Not yet* label. Meta App Review approval / development-account permission and live evidence must be verified separately; do not promise comment replies to a pilot owner. See the [App Review package](meta-app-review-package.md).
 
 ---
 
@@ -191,3 +193,8 @@ The business owner must know how to pause, override, or immediately disconnect A
 - **Emergency Contact:** `ops@agentnest.io` / WhatsApp Destek Hattı: `+90 (5XX) XXX XX XX` (placeholders until the domain and numbers are decided, P-07).
 - **SLA:** 15-minute response time for active pilot businesses during pilot hours (08:00 - 22:00 TRT).
 - **Incident Playbook:** Check **Daha fazla -> Sistem durumu** (connection, delivery and background jobs) first. On the server, `python -m app.cli check-config` and `migration-status` confirm configuration; `python -m app.cli post-restore-reconcile` is only for after a database restore (it re-applies erasure tombstones and fences stale operations), not for routine incidents.
+
+### Feature Phase 3 comment-to-DM / yorumdan DM
+
+- [ ] Owner reconnects to grant comment permission, completes manual subscription/readback and live gate, then enables **Comment-to-DM (private replies)** in Connections; activates the agent with **Ask** delegation and a verified fact. Follow [the rollout](account-agent-rollout.md#real-account-comment-to-dm-rollout-feature-phase-3). Live evidence pending; public moderation stays off.
+- [ ] Hesap sahibi yorum izni için bağlantıyı yeniler; manuel aboneliği ve canlı kanıtları tamamladıktan sonra Bağlantılar'da **Yorumdan DM’ye (özel yanıtlar)** ayarını açar. Asistanı doğrulanmış bilgiyle ve **Sor** yetkisiyle etkinleştirir. Canlı sonuçlar bekleniyor; herkese açık yanıt ve moderasyon kapalıdır.

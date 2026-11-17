@@ -23,6 +23,7 @@ const ACTIONS = [
   "command_cancel_content",
   "command_reschedule_content",
   "command_pause_agent",
+  "command_make_price_card",
   "reply_send",
   "content_publish",
 ];

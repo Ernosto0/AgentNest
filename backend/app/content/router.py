@@ -28,6 +28,7 @@ from app.content.schemas import (
     ValidateIn,
 )
 from app.content.service import ScheduleRequest
+from app.content.templates import link
 from app.content.views import check_out, item_out
 from app.core.clock import Clock
 from app.core.config import Settings
@@ -110,7 +111,10 @@ def list_content_items(
     db: Session = Depends(get_db),
 ) -> Page[ContentItemOut]:
     items = service.list_items(db, ctx, tab=tab, status=status, limit=limit)
-    return Page(items=[item_out(db, ctx, item) for item in items])
+    states = link.states(
+        db, ctx, link.records(db, ctx, [i.media_asset_id for i in items if i.media_asset_id])
+    )
+    return Page(items=[item_out(db, ctx, item, template_states=states) for item in items])
 
 
 @router.post("/content-items", response_model=ContentItemOut, status_code=201)

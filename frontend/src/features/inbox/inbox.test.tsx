@@ -621,7 +621,7 @@ describe("inbox", () => {
     expect(screen.getByRole("link", { name: "Mesajlar" })).not.toHaveAccessibleDescription();
   });
 
-  it("labels the Comments tab and explains why when the connection has no comment access", async () => {
+  it.each([undefined, false, true])("keeps Comments unavailable with permission=%s and gives the appropriate hint", async (commentsPermission) => {
     mockApi(
       routes({
         [`GET ${BASE}/conversations`]: () => json({ items: [], next_cursor: null }),
@@ -631,7 +631,7 @@ describe("inbox", () => {
               socialAccount({
                 provider_kind: "meta",
                 is_simulated: false,
-                capabilities: { messaging: true, comment_read: false, comment_reply: false, comment_moderate: false, comment_private_reply: false },
+                capabilities: { messaging: true, comment_read: false, comment_reply: false, comment_moderate: false, comment_private_reply: false, ...(commentsPermission === undefined ? {} : { comments_permission: commentsPermission }) },
               }),
             ],
             next_cursor: null,
@@ -641,15 +641,22 @@ describe("inbox", () => {
     renderApp(`/w/${WS_GOLKENT}/inbox?section=comments`);
     expect(await screen.findByRole("link", { name: "Yorumlar Henüz yok" })).toBeInTheDocument();
     const note = await screen.findByTestId("comments-unavailable");
+    if (commentsPermission === true) {
+      expect(note).toHaveTextContent("Yorumdan DM’ye özelliğini açın");
+      expect(note).not.toHaveTextContent("Instagram bağlantısını yenileyin");
+    } else {
+      expect(note).toHaveTextContent("Ayarlar > Bağlantılar");
+      expect(note).toHaveTextContent("Instagram bağlantısını yenileyin");
+    }
     expect(within(note).getByText("Yorumlar henüz kullanılamıyor")).toBeInTheDocument();
   });
 
-  it("keeps the Comments list when an account has comment access", async () => {
+  it.each(["comment_read", "comment_private_reply", "comment_reply"])("keeps the Comments list with %s access", async (capability) => {
     mockApi(
       routes({
         [`GET ${BASE}/conversations`]: () => json({ items: [], next_cursor: null }),
         [`GET ${BASE}/social-accounts`]: () =>
-          json({ items: [socialAccount({ capabilities: { messaging: true, comment_reply: true } })], next_cursor: null }),
+          json({ items: [socialAccount({ provider_kind: "meta", capabilities: { messaging: true, [capability]: true } })], next_cursor: null }),
       }),
     );
     renderApp(`/w/${WS_GOLKENT}/inbox?section=comments`);

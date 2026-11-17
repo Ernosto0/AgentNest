@@ -51,6 +51,9 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "REPORT_SOURCES_RETAINED_OUT": ErrorSpec(409),
     # Submitting content: the blocking item codes are in params.errors / the problem's ``errors``.
     "CONTENT_VALIDATION_FAILED": ErrorSpec(422),
+    "TEMPLATE_FACT_NOT_USABLE": ErrorSpec(422),
+    "TEMPLATE_FACT_TYPE_MISMATCH": ErrorSpec(422),
+    "TEMPLATE_TEXT_UNGROUNDED": ErrorSpec(422),
     "MEDIA_INVALID": ErrorSpec(422),
     "MEDIA_TOO_LARGE": ErrorSpec(413),
     # Not API errors: why a publish failed (``content_items.last_error_code``, shown by

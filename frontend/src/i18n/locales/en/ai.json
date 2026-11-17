@@ -33,7 +33,14 @@
         "open": "Open the content"
       },
       "pauseUntil": "The assistant will be paused until {{when}}.",
-      "timezone": "Timezone: {{timezone}}"
+      "timezone": "Timezone: {{timezone}}",
+      "makePriceCard": {
+        "title": "Make this price card?",
+        "price": "Price",
+        "format": "Format",
+        "consequence": "Only a draft with the image is created. Nothing is approved, scheduled or published.",
+        "approve": "Yes, make the draft"
+      }
     },
     "clarify": {
       "which_fact": "Which information did you mean?",
@@ -78,7 +85,11 @@
       "content_failure_title": "Why “{{title}}” is not out",
       "content_rescheduled": "{{title}} is now scheduled for {{when}}.",
       "agent_paused_until": "Assistant paused until {{when}}.",
-      "management_refused": "The change could not be applied. Check the current state and time, then try again."
+      "management_refused": "The change could not be applied. Check the current state and time, then try again.",
+      "price_card_started": "Draft “{{title}}” created. The price card is being drawn from the verified price; open the draft in a moment.",
+      "price_card_no_price": "I could not find a verified price for a card. Verify the price under Business information.",
+      "price_card_not_a_price": "{{label}} is not a price, so it cannot go on a price card.",
+      "price_card_fact_unusable": "{{label}} cannot be used right now. Verify it first under Business information."
     },
     "period": {
       "today": "Today",
@@ -146,7 +157,8 @@
       "calendar_reschedule": "Reschedule appointment",
       "calendar_cancel": "Cancel appointment",
       "command_reschedule_content": "Reschedule content",
-      "command_pause_agent": "Pause assistant"
+      "command_pause_agent": "Pause assistant",
+      "command_make_price_card": "Price card draft"
     },
     "status": {
       "pending": "Pending",

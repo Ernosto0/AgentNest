@@ -229,6 +229,8 @@
     "tabWaiting_other": "{{count}} waiting",
     "commentsEmptyHint": "Public comments on your posts appear here.",
     "commentsUnavailableTab": "Not yet",
+    "commentsUnavailableReconnectHint": "Reconnect Instagram in Settings > Connections to grant comment permission. Comments will appear here once comment automation is enabled. Messages and publishing are not affected.",
+    "commentsUnavailableEnableHint": "Comment permission is granted. Turn on Comment-to-DM in Settings > Connections to read comments and send private replies. Messages and publishing are not affected.",
     "commentsUnavailableTitle": "Comments are not available yet",
     "commentsUnavailableHint": "Your Instagram connection does not include comments yet, so none are read or answered. Messages and publishing are not affected. Comments will appear here once access is added.",
     "sectionIntro": {

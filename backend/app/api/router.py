@@ -18,6 +18,7 @@ from app.commands.router import router as commands_router
 from app.comments.manual import router as manual_comments_router
 from app.comments.router import router as comments_router
 from app.content.router import router as content_router
+from app.content.templates.router import router as template_images_router
 from app.core.config import Settings
 from app.core.db import check_readiness
 from app.core.i18n import SUPPORTED_LOCALES
@@ -30,6 +31,7 @@ from app.knowledge.router import router as knowledge_router
 from app.memory.router import router as memory_router
 from app.notifications.push_router import router as push_router
 from app.notifications.router import router as notifications_router
+from app.operations.accounts_router import comment_automation_router
 from app.operations.accounts_router import router as social_accounts_router
 from app.operations.calendar_router import router as calendar_router
 from app.operations.data_rights_router import router as data_rights_router
@@ -109,6 +111,7 @@ api_router.include_router(commands_router)
 api_router.include_router(notifications_router)
 api_router.include_router(push_router)
 api_router.include_router(social_accounts_router)
+api_router.include_router(comment_automation_router)
 api_router.include_router(calendar_router)
 api_router.include_router(operations_router)
 api_router.include_router(data_rights_router)
@@ -117,6 +120,7 @@ api_router.include_router(policy_router)
 api_router.include_router(inbox_router)
 api_router.include_router(assistant_test_chat_router)
 api_router.include_router(content_router)
+api_router.include_router(template_images_router)
 api_router.include_router(reports_router)
 api_router.include_router(missed_reports_router)
 api_router.include_router(activity_router)

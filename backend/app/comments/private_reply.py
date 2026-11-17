@@ -1,9 +1,9 @@
-"""One-shot, mock-only comment-to-private-reply admission and identity evidence."""
+"""One-shot comment-to-private-reply admission and identity evidence."""
 
 import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import or_, select, true
 from sqlalchemy.orm import Session
 
 from app.agent.delegation import authorize_action
@@ -12,10 +12,14 @@ from app.agent.models import ACTIVE_RUN_STATES, AgentAction, AgentEvent, AgentSe
 from app.agent.repository import admit_action, scoped_account, scoped_thread
 from app.agent.tools.broker import BrokerContext, ToolInputError
 from app.comments.models import PrivateReplyOpportunity, PublicComment, PublicMedia
+from app.comments.ownership import media_ownership_ok
+from app.comments.private_reply_rules import refusal
 from app.core.canonical import payload_hash
 from app.core.clock import Clock
+from app.core.config import get_settings
 from app.inbox.models import Conversation
-from app.integrations.instagram.base import MOCK_PRIVATE_REPLY_WINDOW
+from app.integrations.instagram.base import META_PRIVATE_REPLY_WINDOW, MOCK_PRIVATE_REPLY_WINDOW
+from app.integrations.instagram.models import SocialAccount
 from app.jobs.queue import enqueue
 from app.plans import service as usage
 
@@ -78,8 +82,15 @@ def eligibility(db: Session, clock: Clock, action: AgentAction) -> bool:
         or comment.is_owner
         or media.version != row.media_version
         or media.state != "visible"
-        or media.ownership_state != "verified_synthetic"
+        or not media_ownership_ok(media, comment.is_simulated)
         or clock.now() >= row.eligibility_expires_at
+    ):
+        return False
+    account = db.get(SocialAccount, action.social_account_id)
+    if (
+        account is not None
+        and account.provider_kind == "meta"
+        and real_refusal(db, clock, comment, exclude=row.id)
     ):
         return False
     workspace = db.get(Workspace, action.workspace_id)
@@ -106,6 +117,17 @@ def eligibility(db: Session, clock: Clock, action: AgentAction) -> bool:
 def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> dict[str, object]:
     request = PrivateReplyArgs.model_validate(args)
     scoped_account(db, ctx.workspace.workspace_id, ctx.account_id, lock=True)
+    account = db.get(SocialAccount, ctx.account_id)
+    real = account is not None and account.provider_kind == "meta"
+    if (
+        account is not None
+        and real
+        and (
+            not account.comment_automation_enabled
+            or account.capabilities.get("comment_private_reply") is not True
+        )
+    ):
+        raise ToolInputError("CAPABILITY_MISSING")
     thread = scoped_thread(db, ctx.workspace.workspace_id, ctx.account_id, ctx.thread_id, lock=True)
     if ctx.surface != "comment" or thread.surface != "comment" or thread.handling_mode != "agent":
         raise ToolInputError("public thread unavailable")
@@ -152,6 +174,10 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
             PrivateReplyOpportunity.comment_id == comment.id,
         )
     )
+    if real:
+        reason = real_refusal(db, clock, comment, comment_used=prior is not None)
+        if reason:
+            raise ToolInputError(reason)
     if prior is not None:
         existing = db.get(AgentAction, prior.agent_action_id)
         if existing is None:
@@ -159,7 +185,8 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
         return result(db, existing)
     media = db.get(PublicMedia, comment.media_id)
     expires = (
-        comment.provider_timestamp + MOCK_PRIVATE_REPLY_WINDOW
+        comment.provider_timestamp
+        + (META_PRIVATE_REPLY_WINDOW if real else MOCK_PRIVATE_REPLY_WINDOW)
         if comment.provider_timestamp
         else None
     )
@@ -169,7 +196,7 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
         or comment.is_owner
         or media is None
         or media.state != "visible"
-        or media.ownership_state != "verified_synthetic"
+        or not media_ownership_ok(media, comment.is_simulated)
         or expires is None
         or clock.now() >= expires
     ):
@@ -310,3 +337,40 @@ def dm_source_context(db: Session, conversation: Conversation) -> dict[str, obje
         "post_caption": display_text(media.caption, 320),
         "provider_identity_evidence": str(row.id),
     }
+
+
+def real_refusal(
+    db: Session,
+    clock: Clock,
+    comment: PublicComment,
+    *,
+    exclude: uuid.UUID | None = None,
+    comment_used: bool = False,
+) -> str | None:
+    used = db.scalar(
+        select(PrivateReplyOpportunity.id)
+        .join(PublicComment, PublicComment.id == PrivateReplyOpportunity.comment_id)
+        .where(
+            PrivateReplyOpportunity.workspace_id == comment.workspace_id,
+            PrivateReplyOpportunity.social_account_id == comment.social_account_id,
+            PublicComment.workspace_id == comment.workspace_id,
+            PublicComment.social_account_id == comment.social_account_id,
+            PublicComment.author_external_id == comment.author_external_id,
+            PrivateReplyOpportunity.id != exclude if exclude else true(),
+            or_(
+                PrivateReplyOpportunity.status.in_(("succeeded", "outcome_unknown")),
+                (PrivateReplyOpportunity.status == "reserved")
+                & (PrivateReplyOpportunity.eligibility_expires_at > clock.now()),
+            ),
+        )
+        .limit(1)
+    )
+    return refusal(
+        now=clock.now(),
+        posted_at=comment.provider_timestamp,
+        author_id=comment.author_external_id,
+        parent_id=str(comment.parent_id) if comment.parent_id else None,
+        comment_used=comment_used,
+        commenter_used=used is not None,
+        limit_scope=get_settings().comment_private_reply_limit_scope,
+    )

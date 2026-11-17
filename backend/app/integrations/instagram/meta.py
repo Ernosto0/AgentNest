@@ -18,6 +18,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationErro
 from app.core.clock import Clock
 from app.core.logging import get_logger
 from app.integrations.instagram.base import (
+    META_PRIVATE_REPLY_WINDOW,
     AccountInsightsMetric,
     AccountProfile,
     AccountRef,
@@ -76,12 +77,26 @@ class Media(ID):
 
 
 class Comment(ID):
-    """Provisional typed shape; only the synthetic-only scaffold can construct it."""
+    """Documented comment read shape; authentic live evidence remains pending."""
 
     media: ID
     timestamp: AwareDatetime
     text: str | None = None
     hidden: bool | None = None
+
+
+class CommentMedia(ID):
+    owner: ID
+
+
+class CommentSuccess(Shape):
+    success: Literal[True]
+
+
+class PrivateSent(Shape):
+    message_id: str = Field(min_length=1)
+    # Never infer this from a comment author, username or ordinary send response.
+    recipient_id: str | None = Field(default=None, min_length=1)
 
 
 class Refreshed(Shape):
@@ -161,8 +176,33 @@ class MetaInstagramProvider:
     def read_comments(self, account: AccountRef, media_id: str) -> list[Comment]:
         raise ProviderInvalidRequest("COMMENT_READ_NOT_VERIFIED")
 
+    def _owned_media(self, account: AccountRef, media_id: str) -> None:
+        media = self._shape(
+            CommentMedia,
+            self._request(account, _identifier(media_id), params={"fields": "id,owner"}),
+        )
+        if media.id != media_id or media.owner.id != account.external_account_id:
+            raise ProviderInvalidRequest("COMMENT_MEDIA_NOT_OWNED")
+
     def read_comment(self, account: AccountRef, comment_id: str) -> Comment:
-        raise ProviderInvalidRequest("COMMENT_READ_NOT_VERIFIED")
+        value = self._shape(
+            Comment,
+            self._request(
+                account,
+                _identifier(comment_id),
+                params={"fields": "id,media,timestamp,text,hidden"},
+            ),
+        )
+        if value.id != comment_id:
+            raise ProviderInvalidRequest("COMMENT_TARGET_MISMATCH")
+        self._owned_media(account, value.media.id)
+        return value
+
+    @staticmethod
+    def _text(text: str | None) -> str:
+        if not text or not text.strip() or len(text.encode("utf-8")) > 1000:
+            raise ProviderInvalidRequest("INVALID_COMMENT_REPLY")
+        return text
 
     def perform_comment_effect(
         self,
@@ -182,12 +222,34 @@ class MetaInstagramProvider:
     def send_private_reply(
         self, account: AccountRef, comment_id: str, text: str, operation_key: str
     ) -> PrivateReplyResult:
-        raise ProviderInvalidRequest("PRIVATE_REPLY_NOT_VERIFIED")
+        self._text(text)
+        if not operation_key:
+            raise ProviderInvalidRequest("INVALID_COMMENT_ACTION")
+        comment = self.read_comment(account, comment_id)
+        if comment.hidden is True:
+            raise ProviderInvalidRequest("PRIVATE_REPLY_INELIGIBLE")
+        self._private_deadline(comment.timestamp)
+        value = self._shape(
+            PrivateSent,
+            self._request(
+                account,
+                f"{_identifier(account.external_account_id)}/messages",
+                method="POST",
+                body={"recipient": {"comment_id": comment_id}, "message": {"text": text}},
+                ambiguous=True,
+            ),
+            ambiguous=True,
+        )
+        return PrivateReplyResult(value.message_id, value.recipient_id)
+
+    def _private_deadline(self, posted_at: datetime) -> None:
+        if not posted_at <= self._clock.now() < posted_at + META_PRIVATE_REPLY_WINDOW:
+            raise ProviderInvalidRequest("PRIVATE_REPLY_EXPIRED")
 
     def find_private_reply(
         self, account: AccountRef, operation_key: str
     ) -> PrivateReplyResult | None:
-        raise ProviderInvalidRequest("PRIVATE_REPLY_LOOKUP_NOT_VERIFIED")
+        return None
 
     def __init__(
         self,
@@ -200,7 +262,7 @@ class MetaInstagramProvider:
         if not re.fullmatch(r"v\d+\.\d+", api_version):
             raise ValueError("Invalid Meta API version")
         self._clock = clock
-        self._codec = WebhookCodec(app_secret)
+        self._codec = WebhookCodec(app_secret, live_comments=True)
         self._version = api_version
         self._transport = transport
         # httpx logs request URLs at INFO (refresh has a mandatory query token).

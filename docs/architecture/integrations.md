@@ -65,11 +65,12 @@ For Meta sends and publishes, malformed successful responses (invalid JSON, miss
 ### 3.2 Capabilities
 `social_accounts.capabilities` is computed at connect and refresh:
 - `messaging`: scope `instagram_business_manage_messages` granted.
+- Meta `comments_permission`: true only when returned `granted_scopes` includes `instagram_business_manage_comments`, now requested as the fifth OAuth scope. This records consent; the separately stored owner opt-in is also required for comment read/private reply. Existing stored JSON is not migrated: a missing key means permission not granted. Active real accounts without it show an owner reconnect action in Connections (non-owners see the owner-only notice); mock accounts are unchanged.
 - `publish_feed_image`, `publish_story_image`: scope `instagram_business_content_publish` granted (story: pending V-03; mock: true). These are the only publishing capability names: an earlier build used `content_publish` for mock accounts, and migration `0011` rewrote those rows to the two documented names (keeping their value). `MOCK_CAPABILITIES = {messaging, publish_feed_image, publish_story_image}` (plan G4).
-- Meta `comment_read`, `comment_reply`, `comment_moderate`, `comment_private_reply`:
-  explicitly false until R75-01..06 evidence permits each capability. Returned
-  `instagram_business_manage_comments` alone cannot enable them. OAuth consent and
-  subscriptions remain unchanged. Mock effects use separate synthetic capabilities.
+- Meta `comment_read` and `comment_private_reply` require actual comment scope plus the
+  persisted owner opt-in. Public `comment_reply` and `comment_moderate` remain false.
+  Live rollout still requires the R75 evidence below; subscriptions remain manual.
+  Mock effects use separate synthetic capabilities.
 
 The policy engine (R1) and the content submit validation check capabilities. Missing capability → `CAPABILITY_MISSING`.
 
@@ -93,13 +94,14 @@ The policy engine (R1) and the content submit validation check capabilities. Mis
 
 ### 3.4 Meta adapter (`MetaInstagramProvider`): Phase 7
 
-**Phase 7.5 Session 16:** default comment reads/effects/lookups stay disabled.
-`SyntheticMetaCommentProvider` requires an exact `httpx.MockTransport` and is never
-constructed by the registry. Its provisional fixture contract covers ownership,
-pagination, public/moderation/private shapes and deadlines, without operation-key
-readback evidence. Generic transient mutation responses are unknown unless a definitive
-rejection applies. See [research evidence](../research/meta-comments-session16.md).
-No real comment webhook parser is enabled.
+**Feature Phase 3 Session 02:** real individual comment reads and private sends now
+reuse the transport from the synthetic scaffold, behind account capability checks in
+application admission and execution. Public listing/effects/lookups remain disabled.
+`SyntheticMetaCommentProvider` still requires exact `httpx.MockTransport` and is never
+constructed by the registry. The Meta codec parses documented comments; all fixtures
+and live acceptance remain pending. Generic transient mutation responses are unknown
+unless a definitive rejection applies, and private sends have no remote readback.
+See [research evidence](../research/meta-comments-session16.md).
 
 **Offline Session 2 implementation:** profile, send, outbound lookup, containers/status/publish/media/quota and refresh are implemented with fixture transports. All current Meta fixtures are explicitly synthetic offline contracts, not recordings. Gate 2/V-05 and all live acceptance remain pending; the error mapping must be checked against authentic sanitized responses before live use. OAuth and refresh scheduling are implemented offline in Session 3; live response verification remains pending.
 
@@ -109,7 +111,7 @@ No real comment webhook parser is enabled.
 - Mapping precedence is 5xx ambiguity, auth, closed window, rate limit, permission, media errors, explicit retryable rejection and remaining request rejection. `Retry-After` supports numeric seconds and HTTP dates relative to the injected clock; malformed or greater-than-signed-32-bit delays return no hint. Numeric codes/subcodes follow the provisional Session 2 I4 table; provider message text is inspected only for a closed-window classification and is never retained in errors or logs.
 - **OAuth connect flow:**
   1. `POST /social-accounts/instagram/connect` → the server creates a `state` (random, stored hashed with workspace, user and expiry 10 min) → returns the authorize URL (`https://www.instagram.com/oauth/authorize`, scopes `instagram_business_basic,instagram_business_manage_messages,instagram_business_content_publish`).
-  2. `GET /oauth/instagram/callback?code&state` → verify state (single use, same user session) → exchange the code (server-side) → exchange for a long-lived token (server-side) → `get_account_profile` → encrypt the token → upsert `social_accounts(meta, connected, capabilities, granted_scopes, token_expires_at)` → subscribe the app to webhooks for the account if required (V-01) → audit `social_account.connected` → redirect to the SPA settings page with a status.
+  2. `GET /oauth/instagram/callback?code&state` → verify state (single use, same user session) → exchange the code (server-side) → exchange for a long-lived token (server-side) → `get_account_profile` → encrypt the token → upsert `social_accounts(meta, connected, capabilities, granted_scopes, token_expires_at)` → subscriptions remain a manual operator step (V-01) → audit `social_account.connected` → redirect to the SPA settings page with a status.
   3. Reconnect for an existing account verifies the same `external_account_id`; a mismatch → error `ACCOUNT_MISMATCH`.
 - **Webhook endpoint:** `GET /webhooks/instagram` for the verification handshake (`hub.verify_token == META_WEBHOOK_VERIFY_TOKEN` → echo `hub.challenge`). `POST` with signature verification against `META_APP_SECRET`.
 - **Send:** `POST /{ig_id}/messages` with `recipient.id` and `message.text`.
@@ -241,3 +243,15 @@ Same contract. Additional constraints: per-message pricing, free-form only withi
 Contract and rules: [ADR-015](decisions/ADR-015-media-storage.md). Backends `local` (default), `s3` (Phase 7). The real Meta adapter requires `public_fetch_url()` to return an Internet-reachable URL. The local backend returns `localmedia:{key}?exp=<unix seconds>`, an opaque reference only the mock provider resolves; `integrations/storage/registry.py` builds the backend from `MEDIA_STORAGE_BACKEND`.
 
 Phase 7 Session 1 adds the S3 backend: private objects, explicit credentials, SigV4 presigned GET URLs, validated keys, and no SDK retries. Owners still read media through the authenticated API. Meta requires S3 in development/test as well as production until secured local-media tunnel serving is specified and implemented; `MEDIA_PUBLIC_BASE_URL` is reserved. The S3 endpoint is optional for AWS; set the bucket's actual AWS region instead of the `auto` default used for R2. Offline stub tests prove storage behavior; V-09 remains pending live verification.
+
+### Real-account comment-to-DM (Feature Phase 3)
+
+The Meta codec alone parses `entry[].changes[]` with `field=comments`: value `id`, `from.id`, `text`, `media.id`, optional `parent_id`; account is `entry.id`, timestamp is `entry.time` in seconds. Usernames are discarded. Malformed comments are dropped without payload logging and do not also become `other`. Normalized `provider-comment-v1` uses the existing CommentEvent contract; stable account/comment dedup ignores delivery-time changes. Mock synthetic parsing is unchanged.
+
+The persisted `social_accounts.comment_automation_enabled` defaults false and is independent of OAuth capabilities JSON. Actual scope plus opt-in derive `comment_read` and `comment_private_reply` only. Off accounts store empty ignored comment payloads (`COMMENT_AUTOMATION_OFF`); processing and execution recheck opt-in. Signed own-account webhook evidence marks media `verified_provider`; mocks accept only `verified_synthetic`. Provider readback independently verifies the media owner before private sending.
+
+Real `read_comment` and `send_private_reply` use the existing operations executor; public reads/listing and reply/moderation mutations stay `*_NOT_VERIFIED`. GET comment fields `id,media,timestamp,text,hidden`, GET media `id,owner`, then POST `/{ig-user-id}/messages` with `recipient.comment_id` and `message.text` (1–1000 UTF-8 bytes). Ambiguous POST is outcome unknown; there is no private-reply remote readback and no automatic resend. Reads and writes happen outside DB transactions after write-ahead admission.
+
+The pure real-account rules enforce a 7-day minus 10-minute window, no parent, known author and strict one-per-commenter admission. They reuse verified-placeholder drafts, delegation and approval (Ask by default), and revalidate before dispatch. Count semantics and reply eligibility are ASSUMED-strict pending live evidence. The [rollout rule table](../operations/account-agent-rollout.md#real-account-comment-to-dm-rollout-feature-phase-3) defines reason codes and rollback.
+
+Subscriptions remain manual: POST `https://graph.instagram.com/<version>/<ig-user-id>/subscribed_apps?subscribed_fields=comments`, then GET the same subscribed_apps endpoint with the account token. App Live/Advanced Access prerequisites and whether `comments` is accepted for this app remain a live gate. No application subscription effect was added.

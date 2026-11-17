@@ -301,6 +301,7 @@ Constraint: `unique (workspace_id, subject_type, subject_id) where status = 'pen
 | status | text not null | `connected`, `needs_reauth`, `degraded`, `disconnected` |
 | capabilities | jsonb not null | e.g., `{"messaging": true, "publish_feed_image": true, "publish_story_image": true}` |
 | granted_scopes | text[] not null default '{}' | |
+| comment_automation_enabled | boolean not null default false | Owner opt-in, preserved across reconnect; fresh connect/disconnected-row reuse resets false. Migration 0059. |
 | token_ciphertext | bytea null | AES-GCM; `CHECK (provider_kind = 'meta' OR token_ciphertext IS NULL)` |
 | token_key_id | text null | |
 | token_expires_at / token_refreshed_at | timestamptz null | |
@@ -665,7 +666,7 @@ scoped constraints. Downgrade refuses when any owner-question evidence exists.
 ## Phase 7.5 Session 10: public sources (0026)
 
 `public_media` owns account-scoped provider IDs, ownership state (`unverified` or
-`verified_synthetic`), caption, provider timestamp/revision, local version and terminal
+`verified_synthetic` for mock, `verified_provider` for signed own-account Meta webhooks), caption, provider timestamp/revision, local version and terminal
 provider-deleted state. A comment cannot establish media ownership through another
 account's rows. Missing post details remain unknown. `public_threads` maps one root
 provider-comment ID to one media/account. `public_comments` stores provider ID, scoped
@@ -752,3 +753,31 @@ Revision `0057`, parent `0056`, extends `approvals.action` CHECK with
 existing jobs and account config_version/controller_epoch. Downgrade restores the prior CHECK
 and intentionally refuses if new-action approval rows exist, preserving audit/approval history.
 
+
+
+### Workspace brand and template images (F-07, migration 0058)
+
+`workspace_brand_settings` is a Category C tenant table (63 tables total), with ENABLE and FORCE
+RLS and `tenant_isolation_policy`; app/worker/migrator role grants match the other tenant tables.
+Columns: UUID `id` PK, unique `workspace_id` FK workspaces ON DELETE CASCADE, Text
+`primary_color` and `accent_color` (lowercase `#rrggbb`, database CHECK), nullable
+`logo_media_asset_id` with composite FK `(workspace_id, logo_media_asset_id)` to
+`media_assets(workspace_id, id)`, `created_at`, `updated_at` (UTC, injected Clock).
+No row means neutral colours `#f4f4f5` / `#3f3f46`, no logo. A saved logo must be ready;
+media cleanup retains it until removed/replaced.
+
+`media_assets.render_record` is nullable JSONB, absent for ordinary uploads. Template assets
+store renderer version `1`, template/format/language, first-use unique `{fact_id,key,version}`
+entries, non-fact inputs, brand snapshot and Clock `rendered_at`. `RenderRecord.fact_references()`
+provides `(fact_id, version)` pairs for Session 04 content impact tracking. The generic upload
+response does not expose this column. Render records describe the snapshot at render time;
+Session 04 must recheck facts when attaching/submitting the content.
+
+
+### Feature Phase 3 Session 04: migration 0060
+
+Revision `0060` (`20261117_0060_price_card_command.py`, parent `0059`) adds
+`command.make_price_card` to the full `ck_approvals_action` set. Downgrade restores the
+previous set and refuses while approval history uses the new action. No tenant tables or
+columns are added. Existing `fact_references` link content items to `media_assets.render_record`
+fact IDs and recorded versions; image versions take precedence over caption grounding.

@@ -21,6 +21,7 @@ import {
 } from "./limits";
 import { blockingIssueMessage, checkMessage } from "./messages";
 import { MediaUpload } from "./MediaUpload";
+import { TemplateImageSheet } from "./TemplateImageSheet";
 import { editVoidsApproval, isEditable } from "./status";
 
 interface Edits {
@@ -209,6 +210,7 @@ export function ContentEditor({
   const [conflict, setConflict] = useState(false);
   const [saved, setSaved] = useState(false);
   const [checks, setChecks] = useState<ContentValidation | null>(null);
+  const [templateOpen, setTemplateOpen] = useState(false);
 
   const isStory = item.content_type === "story_image";
   const title = edits.title ?? item.title;
@@ -317,6 +319,18 @@ export function ContentEditor({
         warnings={mediaWarnings}
         disabled={busy}
       />
+      <div>
+        <Button variant="secondary" disabled={busy} onClick={() => setTemplateOpen(true)} className="shadow-xs">
+          {t("content.actions.fromTemplate")}
+        </Button>
+      </div>
+      {templateOpen ? (
+        <TemplateImageSheet
+          initialFormat={isStory ? "story" : "feed"}
+          onClose={() => setTemplateOpen(false)}
+          onAttach={(asset) => attachMedia(asset.id)}
+        />
+      ) : null}
 
       {isStory ? (
         <fieldset className="flex flex-col gap-2.5">

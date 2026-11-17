@@ -11,6 +11,7 @@ from typing import Any
 
 from sqlalchemy import (
     ARRAY,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -102,6 +103,9 @@ class SocialAccount(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, B
     )
     granted_scopes: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=text("'{}'")
+    )
+    comment_automation_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false"), default=False
     )
     token_ciphertext: Mapped[bytes | None] = mapped_column(LargeBinary)
     token_key_id: Mapped[str | None] = mapped_column(Text)

@@ -37,6 +37,7 @@ from app.content.payload import (
     approval_summary,
     publish_job_key,
 )
+from app.content.templates.link import merge_references, records, render_references
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
@@ -48,6 +49,7 @@ from app.integrations.instagram import queries as accounts
 from app.integrations.instagram.models import SocialAccount
 from app.jobs.queue import cancel_queued, enqueue
 from app.knowledge import impact
+from app.knowledge.service import usable_facts
 
 SUBJECT_TYPE = transitions.SUBJECT_TYPE
 SUBJECT_EDITED = "SUBJECT_EDITED"
@@ -190,7 +192,13 @@ def create_draft(
         if winner is None:
             raise
         return winner, False
-    impact.replace_references(session, ctx, SUBJECT_TYPE, item.id, checked.references)
+    impact.replace_references(
+        session,
+        ctx,
+        SUBJECT_TYPE,
+        item.id,
+        merge_references(checked.references, render_references(session, ctx, item.media_asset_id)),
+    )
     audit.record(
         session,
         ctx,
@@ -216,6 +224,7 @@ def update(
     *,
     expected_version: int,
     fields: Mapping[str, Any],
+    rerender_details: Mapping[str, Any] | None = None,
 ) -> ContentItem:
     """Apply the edits in ``fields`` (only the keys present are touched). Commits.
 
@@ -289,7 +298,24 @@ def update(
         validation=checked.report,
         **changed,
     )
-    impact.replace_references(session, ctx, SUBJECT_TYPE, item.id, checked.references)
+    impact.replace_references(
+        session,
+        ctx,
+        SUBJECT_TYPE,
+        item.id,
+        merge_references(checked.references, render_references(session, ctx, item.media_asset_id)),
+    )
+    if rerender_details is not None:
+        audit.record(
+            session,
+            ctx,
+            "content.template_image_rerendered",
+            SUBJECT_TYPE,
+            item.id,
+            dict(rerender_details),
+            is_simulated=item.is_simulated,
+            clock=clock,
+        )
     session.commit()
     return item
 
@@ -423,6 +449,7 @@ def _check(
             settings.publish_daily_limit,
         )
 
+    usable_versions = {(f.fact_id, f.version) for f in usable_facts(session, clock, ctx)}
     result = validation.validate_submission(
         validation.SubmitFacts(
             content_type=item.content_type,
@@ -441,6 +468,14 @@ def _check(
                 else None
             ),
             quota_exceeded=quota_exceeded,
+            stale_template_keys=tuple(
+                used.key
+                for record in records(
+                    session, ctx, [item.media_asset_id] if item.media_asset_id else []
+                ).values()
+                for used in record.facts
+                if (used.fact_id, used.version) not in usable_versions
+            ),
         )
     )
     return Checked(claims, result, resolved, account, asset)
@@ -637,7 +672,15 @@ def apply_submit(
         transitions.apply(session, clock, ctx, item, "submit", approval_id=approval.id, **changes)
     # The facts the text states *now*: a value typed before its fact was verified is grounded
     # only at this check, and a later change of that fact must reach the scheduled item.
-    impact.replace_references(session, ctx, SUBJECT_TYPE, item.id, ready.claims.references)
+    impact.replace_references(
+        session,
+        ctx,
+        SUBJECT_TYPE,
+        item.id,
+        merge_references(
+            ready.claims.references, render_references(session, ctx, item.media_asset_id)
+        ),
+    )
     return item
 
 
@@ -687,7 +730,15 @@ def reapprove(
         approval_id=approval.id,
         **_schedule_changes(ready),
     )
-    impact.replace_references(session, ctx, SUBJECT_TYPE, item.id, ready.claims.references)
+    impact.replace_references(
+        session,
+        ctx,
+        SUBJECT_TYPE,
+        item.id,
+        merge_references(
+            ready.claims.references, render_references(session, ctx, item.media_asset_id)
+        ),
+    )
     enqueue_publish(session, clock, item)
     session.commit()
     return item

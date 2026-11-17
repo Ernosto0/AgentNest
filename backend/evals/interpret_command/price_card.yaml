@@ -1,0 +1,40 @@
+dataset: interpret_command_price_card
+version: 1
+fixtures:
+  facts: demo_gym
+cases:
+  - id: price_tr
+    locale: tr
+    text: aylik uyelik icin fiyat karti yap
+    expect: {outcome: confirm, type: content.make_price_card, fact_key: pricing.membership_monthly}
+    hard: true
+  - id: price_en
+    locale: en
+    text: make a price card for monthly membership
+    expect: {outcome: confirm, type: content.make_price_card, fact_key: pricing.membership_monthly}
+    hard: true
+  - id: ambiguous
+    text: fiyat karti yap
+    expect: {outcome: needs_clarification, question_key: command.clarify.which_fact}
+    hard: true
+  - id: missing
+    locale: en
+    text: make a price card for zzzzz.zzzzzz
+    expect: {outcome: rejected, error_code: NOT_FOUND}
+    hard: true
+  - id: wrong_type
+    locale: en
+    text: make a price card for contact.phone
+    expect: {outcome: rejected, error_code: TEMPLATE_FACT_TYPE_MISMATCH}
+    hard: true
+  - id: unverified
+    locale: en
+    text: make a price card for student monthly membership
+    expect: {outcome: rejected, error_code: TEMPLATE_FACT_NOT_USABLE}
+    hard: true
+  - id: publish_forbidden
+    locale: en
+    text: make a price card and publish it
+    tags: [forbidden]
+    expect: {outcome: unsupported}
+    hard: true

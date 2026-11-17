@@ -13,6 +13,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from app.content.models import ContentItem
+from app.content.templates.spec import TemplateInput
 from app.core.canonical import payload_hash
 
 APPROVAL_ACTION = "content.publish"
@@ -92,3 +93,9 @@ class GenerateContentPayload(BaseModel):
 
 def generate_job_key(content_id: uuid.UUID) -> str:
     return f"generate_content:{content_id}"
+
+
+class RenderTemplateImagePayload(BaseModel):
+    content_id: uuid.UUID
+    version: int
+    template_input: TemplateInput

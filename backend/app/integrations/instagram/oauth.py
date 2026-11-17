@@ -10,15 +10,18 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from app.core.config import Settings
 from app.integrations.instagram.errors import ProviderAuthError, ProviderTransientError
 
+COMMENTS_SCOPE = "instagram_business_manage_comments"
+
 SCOPES = (
     "instagram_business_basic",
     "instagram_business_manage_messages",
     "instagram_business_content_publish",
     "instagram_business_manage_insights",
+    COMMENTS_SCOPE,
 )
 
-# R75-01..06: requesting or receiving manage_comments does not establish support.
-# Consent expansion and real webhook/effect activation remain separate research gates.
+# OAuth requests comment consent; comments_permission records the actual grant only.
+# Only opted-in accounts can read comments or privately reply; public effects stay off.
 COMMENT_CAPABILITIES = (
     "comment_read",
     "comment_reply",
@@ -59,18 +62,23 @@ def build_authorize_url(settings: Settings, state: str) -> str:
             "client_id": settings.meta_app_id,
             "redirect_uri": settings.meta_oauth_redirect_uri,
             "response_type": "code",
-            "scope": ",".join(SCOPES),
+            "scope": ",".join(SCOPES if settings.meta_request_comment_scope else SCOPES[:-1]),
             "state": state,
         }
     )
 
 
-def compute_capabilities(granted_scopes: list[str], stories_enabled: bool) -> dict[str, bool]:
+def compute_capabilities(
+    granted_scopes: list[str], stories_enabled: bool, comment_automation_enabled: bool = False
+) -> dict[str, bool]:
     return {
         "messaging": SCOPES[1] in granted_scopes,
         "publish_feed_image": SCOPES[2] in granted_scopes,
         "publish_story_image": SCOPES[2] in granted_scopes and stories_enabled,
+        "comments_permission": COMMENTS_SCOPE in granted_scopes,
         **dict.fromkeys(COMMENT_CAPABILITIES, False),
+        "comment_read": COMMENTS_SCOPE in granted_scopes and comment_automation_enabled,
+        "comment_private_reply": COMMENTS_SCOPE in granted_scopes and comment_automation_enabled,
     }
 
 

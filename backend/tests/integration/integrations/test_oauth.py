@@ -31,7 +31,12 @@ KEYS = "k1:a2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2s="
 
 
 @pytest.fixture
-def flow(env, settings, app, shared_session_factory, monkeypatch):
+def granted_scopes():
+    return [oauth.SCOPES[1]]
+
+
+@pytest.fixture
+def flow(env, settings, app, shared_session_factory, monkeypatch, granted_scopes):
     cfg = settings.model_copy(
         update={
             "instagram_enabled_providers": "meta",
@@ -59,7 +64,7 @@ def flow(env, settings, app, shared_session_factory, monkeypatch):
                 json={
                     "access_token": "synthetic-short",
                     "user_id": "exchange-alias-456",
-                    "permissions": [oauth.SCOPES[1]],
+                    "permissions": granted_scopes,
                 },
             )
         if request.url.path == "/access_token":
@@ -120,6 +125,7 @@ def test_connect_consumes_before_exchange_encrypts_and_whitelists_response(env, 
         "messaging": True,
         "publish_feed_image": False,
         "publish_story_image": False,
+        "comments_permission": False,
         "comment_read": False,
         "comment_reply": False,
         "comment_moderate": False,
@@ -238,6 +244,48 @@ def test_reconnect_same_external_only_and_resume_job(env, flow, external):
         assert env.session.scalar(
             select(AuditLog.id).where(AuditLog.action == "account.reconnected")
         )
+
+
+@pytest.mark.parametrize("status", ["connected", "needs_reauth"])
+@pytest.mark.parametrize("comments_granted", [False, True])
+@pytest.mark.parametrize("flag", [False, True])
+def test_reconnect_records_actual_comment_consent(
+    env, flow, granted_scopes, status, comments_granted, flag
+):
+    legacy = {"messaging": True, "publish_feed_image": True, "publish_story_image": True}
+    account = SocialAccount(
+        workspace_id=env.workspace.id,
+        provider_kind="meta",
+        external_account_id="123",
+        status=status,
+        capabilities=legacy,
+        comment_automation_enabled=flag,
+        granted_scopes=list(oauth.SCOPES[:3]),
+    )
+    env.session.add(account)
+    env.session.commit()
+    # Old JSON stays readable through SocialAccountOut without a backfill.
+    response = env.call(env.owner, "GET", "/social-accounts")
+    assert response.status_code == 200
+    stored = response.json()["items"][0]["capabilities"]
+    assert stored == legacy
+    assert stored.get("comments_permission") is not True
+    granted_scopes[:] = list(oauth.SCOPES[:3])
+    if comments_granted:
+        granted_scopes.append(oauth.COMMENTS_SCOPE)
+    raw = start(env, purpose="reconnect", social_account_id=str(account.id))
+    assert callback(env, raw).headers["location"].endswith("oauth=connected")
+    env.session.refresh(account)
+    assert account.granted_scopes == sorted(granted_scopes)
+    assert account.capabilities["comments_permission"] is comments_granted
+    assert account.comment_automation_enabled is flag
+    assert account.capabilities["comment_read"] is (flag and comments_granted)
+    assert account.capabilities["comment_private_reply"] is (flag and comments_granted)
+    assert (
+        not account.capabilities["comment_reply"] and not account.capabilities["comment_moderate"]
+    )
+    assert account.capabilities["messaging"] is True
+    assert account.capabilities["publish_feed_image"] is True
 
 
 def test_tenant_foreign_key_for_oauth_reconnect(env, flow):
@@ -420,3 +468,25 @@ def test_external_account_connected_elsewhere_is_safe_conflict(env, flow):
     env.session.commit()
     raw = start(env)
     assert "code=CONFLICT_STATE" in callback(env, raw).headers["location"]
+
+
+@pytest.mark.parametrize("reuse", [False, True])
+def test_fresh_connection_resets_comment_flag(env, flow, granted_scopes, reuse):
+    granted_scopes[:] = list(oauth.SCOPES)
+    if reuse:
+        account = SocialAccount(
+            workspace_id=env.workspace.id,
+            provider_kind="meta",
+            external_account_id="123",
+            status="disconnected",
+            comment_automation_enabled=True,
+        )
+        env.session.add(account)
+        env.session.commit()
+    raw = start(env)
+    assert callback(env, raw).headers["location"].endswith("oauth=connected")
+    env.session.expire_all()
+    account = env.session.scalar(select(SocialAccount))
+    assert account.comment_automation_enabled is False
+    assert account.capabilities["comments_permission"] is True
+    assert account.capabilities["comment_private_reply"] is False

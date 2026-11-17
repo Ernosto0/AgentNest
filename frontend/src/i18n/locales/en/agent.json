@@ -247,6 +247,7 @@
       "label": {
         "messaging": "Direct messages",
         "comment_read": "Read comments",
+        "comments_permission": "Comment permission",
         "comment_reply": "Reply publicly to comments",
         "comment_private_reply": "Reply privately to comments",
         "comment_moderate": "Hide, show and delete comments",

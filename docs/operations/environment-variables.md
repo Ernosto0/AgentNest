@@ -204,3 +204,19 @@ Manual Phase 7 probes read process environment variables directly, not applicati
 | `LANDING_CONNECT_SRC` | empty (same origin only) | when `VITE_WAITLIST_ENDPOINT` is on another origin | Runtime variable of the landing container (`landing/Caddyfile`): extra origin allowed in the page's CSP `connect-src`, e.g. the API origin `https://api.example.com`. |
 
 **Phase 7 provider/storage checks (all environments):** enabling `meta` requires the Meta app ID/secret, an explicitly configured webhook verification token, OAuth redirect URI, a valid encryption key ring and S3. A supplied key ring is validated even when Meta is disabled. Selecting S3 requires bucket, region and explicit access/secret keys; endpoint is optional for AWS. `MEDIA_PUBLIC_BASE_URL` is reserved until secured public local-media serving exists and does not allow Meta with local storage. Mock/local defaults still require no external credentials. S3 presigned GET TTLs are restricted to 1 through 604800 seconds. Live verification and both phase gates remain pending.
+
+### Feature Phase 3 real-account comment-to-DM
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `META_REQUEST_COMMENT_SCOPE` | `true` | Request the fifth `instagram_business_manage_comments` OAuth scope. False omits it without changing the original four or actual-grant capability derivation. |
+| `COMMENT_PRIVATE_REPLY_LIMIT_SCOPE` | `commenter` | Validated enum `commenter` (ASSUMED-strict one per customer/account ever) or `comment` (relaxed only after live evidence). |
+| `META_LIVE_ACCESS_TOKEN`, `META_LIVE_IG_USER_ID` | empty | Explicit credentials for optional `meta_comments_live` probes. Never exported by CI (the workflow sets credentials empty). |
+| `META_LIVE_COMMENT_ID` | empty | Exact disposable target for read and first private reply; same target must already have been sent for the repeat-denial probe. |
+| `META_LIVE_COMMENT_ID_SAME_COMMENTER` | empty | Independently verified second comment from the same customer, for limit research. |
+| `META_LIVE_COMMENT_EFFECT` | empty | Must equal `private_reply` for mutations. Public effects remain unavailable in the legacy harness. |
+| `META_LIVE_COMMENT_SEND` | empty | Must equal `YES_SEND_REAL_MESSAGE` for any mutating new comment probe. |
+| `META_LIVE_COMMENT_LIMIT_PROBES` | empty | Additional `YES_SEND_REAL_MESSAGE` opt-in for repeat and second-comment tests. |
+| `META_LIVE_PROBE_RECORD` | empty | Optional append-only JSONL path for sanitized HTTP codes, booleans/counts and truncated SHA-256 recipient hash. No raw tokens, IDs, names or text. |
+
+All live results remain pending. No network client is constructed without both credentials; CI always skips the new marker. No automatic webhook subscription is performed; see [rollout](account-agent-rollout.md#real-account-comment-to-dm-rollout-feature-phase-3).

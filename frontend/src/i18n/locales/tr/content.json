@@ -98,7 +98,8 @@
         "SCHEDULE_TOO_FAR": "En fazla 60 gün sonrasına zamanlanabilir.",
         "SCHEDULE_TIME_NONEXISTENT": "{{timezoneLabel}} için {{local_date}} günü saat {{local_time}} diye bir saat yok (saatler o saati atlıyor). Başka bir saat seçin.",
         "SCHEDULE_TOO_SOON_FOR_APPROVAL": "Yayından önce birinin onaylaması gerekir. Şu andan en az {{minutes}} dakika sonrasını seçin.",
-        "PUBLISH_QUOTA_FORECAST_EXCEEDED": "Bu saatin çevresinde zaten çok fazla gönderi zamanlanmış. Başka bir saat seçin."
+        "PUBLISH_QUOTA_FORECAST_EXCEEDED": "Bu saatin çevresinde zaten çok fazla gönderi zamanlanmış. Başka bir saat seçin.",
+        "TEMPLATE_IMAGE_STALE": "Görsel eski bir değeri gösteriyor ({{keys}}). Güncel değerle yeniden oluşturun."
       }
     },
     "media": {
@@ -134,7 +135,10 @@
       "saveFirst": "Önce değişiklikleri kaydedin.",
       "waitGeneration": "Metin hazırlanırken zamanlanamaz.",
       "editResend": "Düzenle ve yeniden gönder",
-      "edit": "Düzenle"
+      "edit": "Düzenle",
+      "fromTemplate": "Şablondan görsel oluştur",
+      "newFromTemplate": "Şablondan yeni",
+      "storyFromTemplate": "Şablondan story"
     },
     "generate": {
       "title": "Yeni içerik",
@@ -266,6 +270,7 @@
       "openConnection": "Bağlantıyı kontrol et"
     },
     "capability": {
+      "comments_permission": "Yorum izni",
       "title": "İzinler",
       "messaging": "Mesajlaşma",
       "publish_feed_image": "Gönderi yayınlama",
@@ -361,6 +366,56 @@
       "emptyHint": "Bir taslağı zamanladığınızda burada kendi gününde görünür.",
       "reviewDrafts": "Taslaklara bakın ({{count}})",
       "capped": "Yalnızca ilk {{count}} zamanlanmış içerik yüklendi. {{day}} sonrasındaki günlerde başkaları da olabilir."
+    },
+    "template": {
+      "title": "Şablondan görsel",
+      "intro": "Bir şablon seçin. Fiyat ve saatler doğrulanmış işletme bilgilerinizden gelir; burada elle yazılmaz.",
+      "templatesLabel": "Şablon",
+      "formatLabel": "Biçim",
+      "format": {
+        "story": "Story (9:16)",
+        "feed": "Gönderi (4:5)"
+      },
+      "names": {
+        "price_card": "Fiyat kartı",
+        "hours_card": "Çalışma saatleri",
+        "services_list": "Hizmetler ve fiyatlar",
+        "announcement": "Duyuru"
+      },
+      "fields": "Alanlar",
+      "priceLabel": "Fiyat",
+      "priceChoose": "Bir fiyat seçin",
+      "noPrices": "Henüz doğrulanmış fiyatınız yok. Önce işletme bilgilerinizde bir fiyatı doğrulayın.",
+      "servicesLabel": "Hizmetler ve fiyatlar (2 ile 6 arası)",
+      "servicesCount": "{{count}} seçili",
+      "servicesHint": "Doğrulanmış 2 ile 6 fiyat seçin.",
+      "hoursReady": "Doğrulanmış çalışma saatleriniz kullanılır.",
+      "hoursMissing": "Çalışma saatleriniz henüz doğrulanmadı. Önce onları doğrulayın.",
+      "openKnowledge": "İşletme bilgilerini aç",
+      "headline": "Başlık",
+      "body": "Metin",
+      "dateLine": "Tarih satırı (isteğe bağlı)",
+      "counter": "{{count}} / {{max}}",
+      "announcementHint": "Fiyat, saat veya telefon yazmayın. Bunları bilgi olarak ekleyin (çift süslü parantez içinde fact:pricing.aylik_uyelik gibi bir yer tutucu); elle yazılan değerler reddedilir.",
+      "previewLabel": "Önizleme",
+      "previewEmpty": "Önizlemeyi görmek için alanları doldurun.",
+      "previewLoading": "Önizleme hazırlanıyor…",
+      "previewFailed": "Önizleme hazırlanamadı.",
+      "previewAlt": "Şablon görselinin önizlemesi",
+      "use": "Bu görseli kullan",
+      "using": "Kaydediliyor…",
+      "close": "Kapat",
+      "savedDraft": "Taslak olarak kaydedildi. Hiçbir şey yayınlanmadı.",
+      "openDraft": "Taslağı aç",
+      "madeFrom": "Şablondan yapıldı: {{template}}",
+      "stale": {
+        "title": "Bu görsel eski bir değeri gösteriyor",
+        "body": "{{facts}}, bu görsel yapıldığından beri değişti veya artık doğrulanmış değil. Yayınlanmadan önce güncel değerle yeniden oluşturun.",
+        "rerender": "Yeni değerle yeniden oluştur",
+        "rerendering": "Oluşturuluyor…",
+        "holdHint": "Önce görseli yeniden oluşturun; ardından içerik yeniden onay ister.",
+        "done": "Yeni görsel yapıldı. İçerik yeniden taslak oldu; zamanlanmadan önce yeniden onay gerekir."
+      }
     }
   }
 }

@@ -16,6 +16,7 @@ import { FailureDetail } from "./FailureDetail";
 import { isGenerating, useContentItem } from "./hooks";
 import { OnHoldActions } from "./OnHoldActions";
 import { ScheduleSheet } from "./ScheduleSheet";
+import { TemplateImageNotice } from "./TemplateImageNotice";
 import { contentBadge } from "./status";
 
 const SLOW_AFTER_MS = 30_000;
@@ -166,6 +167,7 @@ function ContentDetail() {
       <GenerationNotice item={item} />
       <ContentStatusPanel item={item} />
       <FailureDetail item={item} onEdit={focusEditor} />
+      <TemplateImageNotice item={item} />
       <div className="flex min-w-0 flex-wrap items-end gap-4">
         <div className="flex min-w-0 flex-col gap-2"><span className="font-medium">{t("agent.account")}</span><span className="min-h-11 break-all py-2.5 text-form">{account?.username ? `@${account.username}` : t("core.noAccount")}</span></div>
         <div className="flex flex-col gap-2"><span className="font-medium">{t("core.typeLabel")}</span><span className="min-h-11 py-2.5">{t(`content.type.${item.content_type}`)}</span></div>

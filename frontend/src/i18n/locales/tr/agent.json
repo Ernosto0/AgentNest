@@ -247,6 +247,7 @@
       "label": {
         "messaging": "Doğrudan mesajlar",
         "comment_read": "Yorumları okuma",
+        "comments_permission": "Yorum izni",
         "comment_reply": "Yorumlara herkese açık yanıt",
         "comment_private_reply": "Yorumlara özel yanıt",
         "comment_moderate": "Yorumları gizleme, gösterme ve silme",

@@ -92,6 +92,7 @@ RULES: dict[str, Rule] = {
     "social_account.needs_reauth": Rule("warning"),
     "social_account.token_refreshed": Rule("success", routine=True),
     "account.reconnected": Rule("success"),
+    "account.comment_automation_changed": Rule("success"),
     "calendar.connected": Rule("success"),
     "calendar.degraded": Rule("warning"),
     "calendar.needs_reauth": Rule("warning"),

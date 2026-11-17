@@ -868,6 +868,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comment-automation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Comment Automation */
+        put: operations["set_comment_automation_api_v1_workspaces__workspace_id__accounts__account_id__comment_automation_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/accounts/{account_id}/comments": {
         parameters: {
             query?: never;
@@ -1482,6 +1499,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/brand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Brand */
+        get: operations["get_brand_api_v1_workspaces__workspace_id__brand_get"];
+        /** Put Brand */
+        put: operations["put_brand_api_v1_workspaces__workspace_id__brand_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/calendar": {
         parameters: {
             query?: never;
@@ -1858,6 +1893,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/template-image/rerender": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rerender Image */
+        post: operations["rerender_image_api_v1_workspaces__workspace_id__content_items__content_id__template_image_rerender_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/content-items/{content_id}/validate": {
         parameters: {
             query?: never;
@@ -1872,6 +1924,57 @@ export interface paths {
          * @description A dry run of the claim validation and every submit rule. Changes nothing.
          */
         post: operations["validate_content_item_api_v1_workspaces__workspace_id__content_items__content_id__validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/content/template-images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_workspaces__workspace_id__content_template_images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/content/template-images/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview */
+        post: operations["preview_api_v1_workspaces__workspace_id__content_template_images_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/content/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Templates */
+        get: operations["templates_api_v1_workspaces__workspace_id__content_templates_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3280,6 +3383,27 @@ export interface components {
             /** Task */
             task: string;
         };
+        /** Announcement */
+        Announcement: {
+            /** Body */
+            body: string;
+            /** Date Line */
+            date_line?: string | null;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "story" | "feed";
+            /** Headline */
+            headline: string;
+            /** Language */
+            language?: ("tr" | "en") | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "announcement";
+        };
         /** AnswerFromMessageIn */
         AnswerFromMessageIn: {
             /** Answer Template */
@@ -3358,7 +3482,7 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "command.reschedule_content" | "command.pause_agent" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel" | "calendar.book" | "calendar.reschedule" | "calendar.cancel";
+            action: "command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "command.make_price_card" | "command.reschedule_content" | "command.pause_agent" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel" | "calendar.book" | "calendar.reschedule" | "calendar.cancel";
             /** Can Decide */
             can_decide: boolean;
             /** Cancel Reason */
@@ -3606,6 +3730,39 @@ export interface components {
         Body_upload_media_api_v1_workspaces__workspace_id__media_post: {
             /** File */
             file: string;
+        };
+        /** BrandInput */
+        BrandInput: {
+            /** Accent Color */
+            accent_color: string;
+            /** Logo Media Asset Id */
+            logo_media_asset_id: string | null;
+            /** Primary Color */
+            primary_color: string;
+        };
+        /** BrandOut */
+        BrandOut: {
+            /** Accent Color */
+            accent_color: string;
+            /** Is Default */
+            is_default: boolean;
+            /** Logo Height */
+            logo_height?: number | null;
+            /** Logo Media Asset Id */
+            logo_media_asset_id: string | null;
+            /** Logo Width */
+            logo_width?: number | null;
+            /** Primary Color */
+            primary_color: string;
+        };
+        /** BrandRecord */
+        BrandRecord: {
+            /** Accent Color */
+            accent_color: string;
+            /** Logo Media Asset Id */
+            logo_media_asset_id: string | null;
+            /** Primary Color */
+            primary_color: string;
         };
         /** CalendarAppointmentListOut */
         CalendarAppointmentListOut: {
@@ -3921,6 +4078,11 @@ export interface components {
             /** Reply Text */
             reply_text?: string | null;
         };
+        /** CommentAutomationRequest */
+        CommentAutomationRequest: {
+            /** Enabled */
+            enabled: boolean;
+        };
         /** CommentEvent */
         CommentEvent: {
             /** Author Id */
@@ -3953,9 +4115,9 @@ export interface components {
             /**
              * Schema
              * @default synthetic-comment-v1
-             * @constant
+             * @enum {string}
              */
-            schema: "synthetic-comment-v1";
+            schema: "synthetic-comment-v1" | "provider-comment-v1";
             /**
              * State
              * @default visible
@@ -4190,6 +4352,7 @@ export interface components {
              * @enum {string}
              */
             status: "draft" | "pending_approval" | "scheduled" | "publishing" | "retry_scheduled" | "on_hold" | "published" | "rejected" | "failed" | "cancelled";
+            template_image: components["schemas"]["TemplateImageStateOut"] | null;
             /** Title */
             title: string;
             /**
@@ -4760,6 +4923,18 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** FactUse */
+        FactUse: {
+            /**
+             * Fact Id
+             * Format: uuid
+             */
+            fact_id: string;
+            /** Key */
+            key: string;
+            /** Version */
+            version: number;
+        };
         /** FactUsedOut */
         FactUsedOut: {
             /** Display */
@@ -4847,6 +5022,27 @@ export interface components {
             drafts: number | null;
             /** Unanswered Comments */
             unanswered_comments: number;
+        };
+        /** HoursCard */
+        HoursCard: {
+            /**
+             * Fact Key
+             * @default hours.weekly
+             * @constant
+             */
+            fact_key: "hours.weekly";
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "story" | "feed";
+            /** Language */
+            language?: ("tr" | "en") | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "hours_card";
         };
         /**
          * ImageDescriptionOut
@@ -5864,6 +6060,23 @@ export interface components {
              */
             mode: "auto" | "approval" | "off";
         };
+        /** PriceCard */
+        PriceCard: {
+            /** Fact Key */
+            fact_key: string;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "story" | "feed";
+            /** Language */
+            language?: ("tr" | "en") | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "price_card";
+        };
         /** PriceInputOut */
         PriceInputOut: {
             /** Amount */
@@ -6070,6 +6283,38 @@ export interface components {
              */
             ui_locale: "tr" | "en";
         };
+        /** RenderRecord */
+        RenderRecord: {
+            brand: components["schemas"]["BrandRecord"];
+            /** Facts */
+            facts: components["schemas"]["FactUse"][];
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "story" | "feed";
+            /** Inputs */
+            inputs: {
+                [key: string]: unknown;
+            };
+            /**
+             * Language
+             * @enum {string}
+             */
+            language: "tr" | "en";
+            /**
+             * Rendered At
+             * Format: date-time
+             */
+            rendered_at: string;
+            /**
+             * Renderer Version
+             * @default 1
+             */
+            renderer_version: string;
+            /** Template */
+            template: string;
+        };
         /** RenderedFactOut */
         RenderedFactOut: {
             /** Display */
@@ -6236,6 +6481,23 @@ export interface components {
             /** Text */
             text: string | null;
         };
+        /** ServicesList */
+        ServicesList: {
+            /** Fact Keys */
+            fact_keys: string[];
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "story" | "feed";
+            /** Language */
+            language?: ("tr" | "en") | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            template: "services_list";
+        };
         /** SessionOut */
         SessionOut: {
             /**
@@ -6283,6 +6545,11 @@ export interface components {
             capabilities: {
                 [key: string]: unknown;
             };
+            /**
+             * Comment Automation Enabled
+             * @default false
+             */
+            comment_automation_enabled: boolean;
             /** Connection Expires At */
             connection_expires_at: string | null;
             /** Degraded Until */
@@ -6584,6 +6851,83 @@ export interface components {
             items: components["schemas"]["TaskSelectionOut"][];
             /** Next Cursor */
             next_cursor: string | null;
+        };
+        /** TemplateImageFactOut */
+        TemplateImageFactOut: {
+            /** Current Version */
+            current_version: number | null;
+            /** Key */
+            key: string;
+            /** Label */
+            label: {
+                [key: string]: string;
+            };
+            /** Recorded Version */
+            recorded_version: number;
+            /** Usable */
+            usable: boolean;
+        };
+        /** TemplateImageOut */
+        TemplateImageOut: {
+            /** Byte Size */
+            byte_size: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Height */
+            height: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Original Filename */
+            original_filename: string | null;
+            /** Rejection Code */
+            rejection_code: string | null;
+            render_record: components["schemas"]["RenderRecord"];
+            /** Status */
+            status: string;
+            /** Width */
+            width: number;
+        };
+        /** TemplateImageRerenderIn */
+        TemplateImageRerenderIn: {
+            /** Expected Version */
+            expected_version: number;
+        };
+        /** TemplateImageStateOut */
+        TemplateImageStateOut: {
+            /** Can Rerender */
+            can_rerender: boolean;
+            /** Facts */
+            facts: components["schemas"]["TemplateImageFactOut"][];
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "story" | "feed";
+            /**
+             * Language
+             * @enum {string}
+             */
+            language: "tr" | "en";
+            /**
+             * Rendered At
+             * Format: date-time
+             */
+            rendered_at: string;
+            /** Stale */
+            stale: boolean;
+            /**
+             * Template
+             * @enum {string}
+             */
+            template: "price_card" | "hours_card" | "services_list" | "announcement";
         };
         /** TemplateItemOut */
         TemplateItemOut: {
@@ -8775,6 +9119,42 @@ export interface operations {
             };
         };
     };
+    set_comment_automation_api_v1_workspaces__workspace_id__accounts__account_id__comment_automation_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentAutomationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialAccountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     account_comments_api_v1_workspaces__workspace_id__accounts__account_id__comments_get: {
         parameters: {
             query?: {
@@ -9626,7 +10006,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: ("pending" | "approved" | "rejected" | "expired" | "cancelled") | null;
-                action?: ("command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "command.reschedule_content" | "command.pause_agent" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel" | "calendar.book" | "calendar.reschedule" | "calendar.cancel") | null;
+                action?: ("command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "command.make_price_card" | "command.reschedule_content" | "command.pause_agent" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel" | "calendar.book" | "calendar.reschedule" | "calendar.cancel") | null;
                 limit?: number;
             };
             header?: never;
@@ -10046,6 +10426,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PoliciesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_brand_api_v1_workspaces__workspace_id__brand_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_brand_api_v1_workspaces__workspace_id__brand_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrandInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandOut"];
                 };
             };
             /** @description Validation Error */
@@ -10865,6 +11311,42 @@ export interface operations {
             };
         };
     };
+    rerender_image_api_v1_workspaces__workspace_id__content_items__content_id__template_image_rerender_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateImageRerenderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     validate_content_item_api_v1_workspaces__workspace_id__content_items__content_id__validate_post: {
         parameters: {
             query?: never;
@@ -10888,6 +11370,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentValidationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_v1_workspaces__workspace_id__content_template_images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceCard"] | components["schemas"]["HoursCard"] | components["schemas"]["ServicesList"] | components["schemas"]["Announcement"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateImageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_api_v1_workspaces__workspace_id__content_template_images_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceCard"] | components["schemas"]["HoursCard"] | components["schemas"]["ServicesList"] | components["schemas"]["Announcement"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    templates_api_v1_workspaces__workspace_id__content_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
             /** @description Validation Error */

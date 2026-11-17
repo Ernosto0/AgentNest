@@ -229,6 +229,8 @@
     "tabWaiting_other": "{{count}} bekleyen",
     "commentsEmptyHint": "Gönderilerinize gelen herkese açık yorumlar burada görünür.",
     "commentsUnavailableTab": "Henüz yok",
+    "commentsUnavailableReconnectHint": "Yorum iznini vermek için Ayarlar > Bağlantılar bölümünde Instagram bağlantısını yenileyin. Yorum otomasyonu etkinleştirildiğinde yorumlar burada görünür. Mesajlar ve paylaşım etkilenmez.",
+    "commentsUnavailableEnableHint": "Yorum izni verildi. Yorumları okumak ve özel yanıt göndermek için Ayarlar > Bağlantılar bölümünde Yorumdan DM’ye özelliğini açın. Mesajlar ve paylaşım etkilenmez.",
     "commentsUnavailableTitle": "Yorumlar henüz kullanılamıyor",
     "commentsUnavailableHint": "Instagram bağlantınız henüz yorumlara erişim içermiyor, bu yüzden yorumlar okunmuyor ve yanıtlanmıyor. Mesajlar ve paylaşım etkilenmez. Erişim eklendiğinde yorumlar burada görünür.",
     "sectionIntro": {

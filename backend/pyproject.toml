@@ -80,6 +80,7 @@ markers = [
     "commits: test performs real commits (queue/concurrency); tables are truncated afterwards",
     "invariant(id): test proves the named invariant (INV-nn)",
     "meta_live: needs live Meta credentials (never run in CI)",
+    "meta_comments_live: explicit manual Meta comment probes (never run in CI)",
     "telegram_live: needs live Telegram credentials (never run in CI)",
 ]
 

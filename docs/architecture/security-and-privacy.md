@@ -60,6 +60,7 @@ Authentication: [ADR-013](decisions/ADR-013-authentication-and-tenancy.md). Pass
 | Permission | owner | manager | staff |
 |---|:-:|:-:|:-:|
 | `workspace.manage` (settings, delete) | ✓ | | |
+| `brand.manage` (colours and logo) | ✓ | ✓ | |
 | `members.manage` | ✓ | | |
 | `integrations.manage` (connect/disconnect) | ✓ | | |
 | `automation.manage` (automation policies) | ✓ | | |

@@ -17,6 +17,7 @@ import { Channels } from "./Channels";
 import { PushSettings } from "./PushSettings";
 import {
   useCalendarConnections,
+  useCommentAutomation,
   useConnectGoogleCalendar,
   useConnectInstagram,
   useConnectMockCalendar,
@@ -356,6 +357,7 @@ function AccountCard({
   const { workspace, role } = useCurrentWorkspace();
   const reconnect = useReconnectMock(workspace.id);
   const disconnect = useDisconnectAccount(workspace.id);
+  const comments = useCommentAutomation(workspace.id);
   const instagram = useConnectInstagram(workspace.id);
   const errorText = useErrorText();
   const localTime = useLocalTime();
@@ -373,7 +375,9 @@ function AccountCard({
     .filter(([, granted]) => granted === true)
     .map(([name]) => capabilityLabel(name, t))
     .join(", ");
-  const canReconnect = account.status === "needs_reauth";
+  const needsCommentsPermission = account.provider_kind === "meta" &&
+    account.status !== "disconnected" && account.capabilities.comments_permission !== true;
+  const canReconnect = account.status === "needs_reauth" || needsCommentsPermission;
 
   return (
     <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 sm:p-6">
@@ -420,6 +424,28 @@ function AccountCard({
         </p>
       </div>
 
+      {account.provider_kind === "meta" && account.capabilities.comments_permission === true ? (
+        <div className="flex flex-col gap-2 rounded-control border border-border p-3.5">
+          <p className="font-semibold">{t("connections.commentAutomation")}</p>
+          <p className="text-sm">{t(account.comment_automation_enabled ? "connections.commentOn" : "connections.commentOff")}</p>
+          <p className="text-sm text-secondary">{t("connections.commentExplanation")}</p>
+          {owner ? (
+            <Button
+              role="switch"
+              aria-checked={account.comment_automation_enabled === true}
+              aria-label={t("connections.commentAutomation")}
+              disabled={comments.isPending || (!account.comment_automation_enabled && !["connected", "degraded"].includes(account.status))}
+              onClick={() => comments.mutate({ accountId: account.id, enabled: !account.comment_automation_enabled })}
+            >
+              {t(account.comment_automation_enabled ? "connections.commentDisable" : "connections.commentEnable")}
+            </Button>
+          ) : <p className="text-sm text-secondary">{t("connections.ownerOnly")}</p>}
+          {comments.error ? <ErrorMessage error={comments.error} /> : null}
+        </div>
+      ) : null}
+      {needsCommentsPermission ? (
+        <p className="text-sm text-secondary">{t("connections.commentsReconnectHint")}</p>
+      ) : null}
       {canReconnect ? (
         owner ? (
           account.provider_kind === "mock" ? (

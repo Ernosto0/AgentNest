@@ -10,6 +10,7 @@ import { TextField } from "@/components/TextField";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useUpdateWorkspace } from "@/features/workspaces/hooks";
 import { timezoneOptions } from "@/features/workspaces/wizardDefaults";
+import { BrandSection } from "./BrandSection";
 import { useMembers } from "./hooks";
 import { DetailRow, LinkRow, PanelTitle, SettingsPanel, SettingsSection, TEXT_ACTION } from "./SettingsParts";
 import { currencyLabel, timezoneLabel, timezoneOffset } from "./workspaceLabels";
@@ -26,6 +27,7 @@ export function WorkspaceSection() {
   return (
     <SettingsSection id="workspace" title={t("settings.nav.workspace")} description={t("settings.workspace.description")}>
       <WorkspaceDetails canEdit={role === "owner"} />
+      <BrandSection />
 
       <SettingsPanel aria-label={t("settings.workspace.adminTitle")}>
         <LinkRow

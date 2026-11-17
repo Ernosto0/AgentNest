@@ -16,6 +16,7 @@ from app.core.i18n import t
 
 # --- codes ------------------------------------------------------------------------------------
 
+TEMPLATE_IMAGE_STALE = "TEMPLATE_IMAGE_STALE"
 CONTENT_MEDIA_REQUIRED = "CONTENT_MEDIA_REQUIRED"
 MEDIA_NOT_READY = "MEDIA_NOT_READY"
 CAPTION_REQUIRED = "CAPTION_REQUIRED"
@@ -35,6 +36,7 @@ STORY_ASPECT_NOT_9_16 = "STORY_ASPECT_NOT_9_16"
 OVERLAY_TOO_LONG = "OVERLAY_TOO_LONG"
 
 ERROR_CODES = (
+    TEMPLATE_IMAGE_STALE,
     CONTENT_MEDIA_REQUIRED,
     MEDIA_NOT_READY,
     CAPTION_REQUIRED,
@@ -106,6 +108,7 @@ class SubmitFacts:
     schedule_error: Issue | None
     account: AccountFacts | None  # ``None``: no usable account in the workspace
     quota_exceeded: bool
+    stale_template_keys: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -139,6 +142,10 @@ def validate_submission(facts: SubmitFacts) -> SubmitValidation:
     warnings: list[Issue] = []
     is_story = facts.content_type == "story_image"
 
+    if facts.stale_template_keys:
+        errors.append(
+            Issue(TEMPLATE_IMAGE_STALE, "media_asset_id", {"keys": list(facts.stale_template_keys)})
+        )
     # Media: both formats are image posts.
     if facts.media is None:
         errors.append(Issue(CONTENT_MEDIA_REQUIRED, "media_asset_id"))

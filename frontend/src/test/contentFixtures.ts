@@ -28,6 +28,7 @@ export function contentItem(overrides: Partial<ContentItem> = {}): ContentItem {
     social_account_id: null,
     media_asset_id: null,
     media_deleted: false,
+    template_image: null,
     scheduled_at: null,
     schedule_local: null,
     approval_id: null,
@@ -81,6 +82,7 @@ export const ACCOUNT_ID = "a7000000-0000-4000-8000-000000000001";
 export function socialAccount(overrides: Partial<SocialAccount> = {}): SocialAccount {
   return {
     id: ACCOUNT_ID,
+    comment_automation_enabled: false,
     platform: "instagram",
     provider_kind: "mock",
     username: "golkent.fitness",

@@ -21,6 +21,7 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
     "owner_questions.propose": _ALL,
     "memory.correct": _OWNER_MANAGER,
     "memory.forget": _OWNER_MANAGER,
+    "brand.manage": _OWNER_MANAGER,
     "workspace.manage": _OWNER_ONLY,
     "members.manage": _OWNER_ONLY,
     "integrations.manage": _OWNER_ONLY,
