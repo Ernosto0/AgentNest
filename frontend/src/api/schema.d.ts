@@ -401,6 +401,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/waitlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join Waitlist
+         * @description Store a pilot request once per email and tell the operator. A repeated email answers the
+         *     same way and sends nothing, so the response never reveals whether an email was already known.
+         */
+        post: operations["join_waitlist_api_v1_waitlist_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/meta/data-deletion": {
         parameters: {
             query?: never;
@@ -6360,6 +6381,37 @@ export interface components {
             /** Version */
             version: number;
         };
+        /**
+         * WaitlistRequest
+         * @description Email is required. The landing form also sends optional context for the operator.
+         */
+        WaitlistRequest: {
+            /** Business Name */
+            business_name?: string | null;
+            /** Category */
+            category?: string | null;
+            /** City */
+            city?: string | null;
+            /** Email */
+            email: string;
+            /** Instagram Handle */
+            instagram_handle?: string | null;
+            /**
+             * Locale
+             * @default tr
+             * @enum {string}
+             */
+            locale: "tr" | "en";
+        };
+        /** WaitlistResponse */
+        WaitlistResponse: {
+            /**
+             * Status
+             * @default received
+             * @constant
+             */
+            status: "received";
+        };
         /** WebhooksHealth */
         WebhooksHealth: {
             /** Failed 24H */
@@ -7266,6 +7318,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetaResponse"];
+                };
+            };
+        };
+    };
+    join_waitlist_api_v1_waitlist_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaitlistRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

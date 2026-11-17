@@ -160,6 +160,9 @@
     "tabWaiting_one": "{{count}} bekleyen",
     "tabWaiting_other": "{{count}} bekleyen",
     "commentsEmptyHint": "Gönderilerinize gelen herkese açık yorumlar burada görünür.",
+    "commentsUnavailableTab": "Henüz yok",
+    "commentsUnavailableTitle": "Yorumlar henüz kullanılamıyor",
+    "commentsUnavailableHint": "Instagram bağlantınız henüz yorumlara erişim içermiyor, bu yüzden yorumlar okunmuyor ve yanıtlanmıyor. Mesajlar ve paylaşım etkilenmez. Erişim eklendiğinde yorumlar burada görünür.",
     "sectionIntro": {
       "messages": "Müşteri mesajları ve sizi bekleyen yanıtlar.",
       "comments": "Gönderilerinize gelen herkese açık yorumlar ve asistanın bunlarla ilgili yaptıkları.",

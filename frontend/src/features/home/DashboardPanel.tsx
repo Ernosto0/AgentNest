@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRightIcon } from "@/components/icons";
+import { ChevronDownIcon, ChevronRightIcon } from "@/components/icons";
 
 /** Shared focus ring for dashboard links and controls. */
 export const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
@@ -25,6 +25,8 @@ export function Panel({
   );
 }
 
+export type FoldToggle = { open: boolean; onToggle: () => void; contentId: string };
+
 /** Title row: optional icon tile, heading, a line of context and one trailing action. */
 export function PanelHeading({
   id,
@@ -34,6 +36,7 @@ export function PanelHeading({
   action,
   iconTone = "neutral",
   wrap = false,
+  toggle,
 }: {
   id: string;
   icon?: ReactNode;
@@ -43,6 +46,8 @@ export function PanelHeading({
   iconTone?: "neutral" | "assistant";
   /** Let a wide action group (filters, toggles) drop below the title on narrow screens. */
   wrap?: boolean;
+  /** Phones: the title becomes the control that opens and closes the section. */
+  toggle?: FoldToggle;
 }) {
   return (
     <div className={`flex min-w-0 justify-between gap-x-4 gap-y-2 ${wrap ? "flex-wrap items-center" : "items-start"}`}>
@@ -59,7 +64,20 @@ export function PanelHeading({
         ) : null}
         <div className="min-w-0">
           <h2 id={id} className="font-heading text-base leading-snug font-semibold tracking-tight text-primary">
-            {title}
+            {toggle ? (
+              <button
+                type="button"
+                aria-expanded={toggle.open}
+                aria-controls={toggle.contentId}
+                onClick={toggle.onToggle}
+                className={`-my-2 flex min-h-11 items-center gap-1.5 rounded-control text-left font-[inherit] ${FOCUS}`}
+              >
+                {title}
+                <ChevronDownIcon aria-hidden="true" className={`shrink-0 text-lg text-secondary transition-transform ${toggle.open ? "rotate-180" : ""}`} />
+              </button>
+            ) : (
+              title
+            )}
           </h2>
           {meta ? <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-5 text-secondary">{meta}</div> : null}
         </div>

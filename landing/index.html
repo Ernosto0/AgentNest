@@ -8,7 +8,9 @@
       name="description"
       content="Instagram’da zaman kazanın, müşteri mesajlarını gözden kaçırmayın. AgentNest işletmenizin bilgileriyle yanıt hazırlar, paylaşımlarınızı planlar. Kontrol sizde kalır."
     />
-    <meta name="theme-color" content="#f7f8f3" />
+    <!-- Per OS scheme until the page loads; App.tsx then sets both to the visitor's chosen theme. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f8f3" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d1410" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AgentNest" />
     <meta property="og:title" content="Instagram işletmenizi büyütsün, vaktinizi tüketmesin. · AgentNest" />
@@ -19,7 +21,14 @@
     <meta property="og:locale" content="tr_TR" />
     <meta property="og:locale:alternate" content="en_GB" />
     <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Instagram işletmenizi büyütsün, vaktinizi tüketmesin. · AgentNest" />
+    <meta
+      name="twitter:description"
+      content="AgentNest müşteri mesajlarına işletmenizin bilgileriyle yanıt hazırlar, paylaşımlarınızı planlar ve önemli konuları size getirir. Kontrol her zaman sizde kalır."
+    />
+    <link rel="icon" href="./favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <!-- Before first paint: apply the saved theme, light by default. External so a strict CSP can block inline scripts. -->
     <script src="./theme.js"></script>
   </head>

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { Copy, Lang } from './copy'
 import { AlertIcon, ArrowRightIcon, CheckIcon, ChatIcon, buttonLarge, buttonPrimary } from './ui'
-import { getWhatsAppContactUrl, submitWaitlist, type SubmitResult } from './waitlist'
+import { getWhatsAppContactUrl, isValidEmail, submitWaitlist, type SubmitResult } from './waitlist'
 
 type Props = { t: Copy['form']; pilot: Copy['pilot']; lang: Lang }
 
@@ -32,6 +32,7 @@ export function WaitlistForm({ t, pilot, lang }: Props) {
     event.preventDefault()
     const next: typeof errors = {}
     for (const { id } of fields) if (!values[id].trim()) next[id] = t.required
+    if (!next.contact && !isValidEmail(values.contact)) next.contact = t.invalidEmail
     if (!consent) next.consent = t.consentRequired
     setErrors(next)
     const firstInvalid = Object.keys(next)[0]
@@ -46,7 +47,7 @@ export function WaitlistForm({ t, pilot, lang }: Props) {
         business: values.business.trim(),
         category: selectedCategory,
         instagram: values.instagram.trim().replace(/^@/, ''),
-        contact: values.contact.trim(),
+        email: values.contact.trim(),
         city: values.city.trim(),
         lang,
       })

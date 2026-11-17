@@ -5,22 +5,39 @@ import type { SocialAccount } from "@/api/types";
 import { AlertIcon, ChartIcon, InfoIcon, LinkIcon, SpinnerIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { FOCUS, InlineNotice, Panel, PanelHeading, PanelLink, SkeletonRows } from "./DashboardPanel";
+import { useFoldOnPhone } from "./useFoldOnPhone";
 import { useInsightsSummary, type InsightsSummary } from "./hooks";
 
 type Range = "7d" | "28d";
 type Series = "reach" | "views";
 
-const SERIES: { key: Series; swatch: string; dot: string; dashed: boolean }[] = [
-  { key: "reach", swatch: "h-0.5 w-4 rounded-full bg-chart-1", dot: "bg-chart-1", dashed: false },
-  { key: "views", swatch: "h-0 w-4 border-t-2 border-dashed border-chart-2", dot: "bg-chart-2", dashed: true },
+const SERIES: { key: Series; swatch: string; dot: string; stroke: string }[] = [
+  { key: "reach", swatch: "h-0.5 w-4 rounded-full bg-chart-1", dot: "bg-chart-1", stroke: "var(--an-chart-1)" },
+  { key: "views", swatch: "h-0.5 w-4 rounded-full bg-chart-2", dot: "bg-chart-2", stroke: "var(--an-chart-2)" },
 ];
 
 /** The smallest 1/2/5 × 10ⁿ step at or above `value`, so axis labels are round numbers. */
-function niceCeiling(value: number): number {
+function niceStep(value: number): number {
   if (value <= 1) return 1;
   const magnitude = 10 ** Math.floor(Math.log10(value));
   const step = [1, 2, 5, 10].find((f) => f * magnitude >= value)!;
   return step * magnitude;
+}
+
+/**
+ * One series gets its own vertical range, fitted to its data with a little headroom and rounded
+ * to round labels. Reach and views differ by a factor of two or more, so on a shared zero-based
+ * axis the smaller one looks flat. The axis labels show both ends, so a baseline above zero is
+ * stated, never implied.
+ */
+function axisFor(values: number[]): { lo: number; hi: number } {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min;
+  const step = niceStep(Math.max(span, max * 0.05, 1) / 4);
+  const lo = Math.max(0, Math.floor((min - span * 0.1) / step) * step);
+  const hi = Math.max(lo + step, Math.ceil((max + span * 0.1) / step) * step);
+  return { lo, hi };
 }
 
 function DeltaPill({ delta, range }: { delta: number | null | undefined; range: Range }) {
@@ -39,9 +56,9 @@ function DeltaPill({ delta, range }: { delta: number | null | undefined; range: 
 }
 
 /**
- * Daily reach and views on one shared count axis (same unit). Hover or touch shows a crosshair
- * with both values; a visually hidden table carries the same numbers for assistive technology.
- * Series without any data are neither drawn nor listed in the legend.
+ * Daily reach and views as two stacked lines, each on its own axis (see `axisFor`), sharing one
+ * time axis. Hover or touch shows a crosshair with both values; a visually hidden table carries
+ * the same numbers for assistive technology. Series without any data are not drawn.
  */
 function TrendChart({ points }: { points: InsightsSummary["sparkline"] }) {
   const { t, i18n } = useTranslation();
@@ -52,17 +69,18 @@ function TrendChart({ points }: { points: InsightsSummary["sparkline"] }) {
   const dateLabel = (date: string) =>
     new Date(`${date}T12:00:00Z`).toLocaleDateString(i18n.language, { day: "numeric", month: "short", timeZone: "UTC" });
   const series = SERIES.filter((s) => points.some((p) => p[s.key] !== null));
-  const max = niceCeiling(Math.max(...points.map((p) => Math.max(p.reach ?? 0, p.views ?? 0))));
-  const ticks = Number.isInteger(max / 2) ? [max, max / 2, 0] : [max, 0];
+  const axes = Object.fromEntries(
+    series.map((s) => [s.key, axisFor(points.flatMap((p) => (p[s.key] === null ? [] : [p[s.key]!])))]),
+  ) as Record<Series, { lo: number; hi: number }>;
   const x = (i: number) => (i / (points.length - 1)) * 100;
-  const y = (v: number) => 4 + (1 - v / max) * 92;
+  const y = (key: Series, v: number) => 6 + (1 - (v - axes[key].lo) / (axes[key].hi - axes[key].lo)) * 88;
   const path = (key: Series) =>
     points
       .map((p, i) => {
         const value = p[key];
         if (value === null) return "";
         const prev = i > 0 ? points[i - 1]![key] : null;
-        return `${prev !== null && i > 0 ? "L" : "M"} ${x(i).toFixed(2)},${y(value).toFixed(2)}`;
+        return `${prev !== null && i > 0 ? "L" : "M"} ${x(i).toFixed(2)},${y(key, value).toFixed(2)}`;
       })
       .join(" ");
 
@@ -80,73 +98,65 @@ function TrendChart({ points }: { points: InsightsSummary["sparkline"] }) {
 
   return (
     <figure className="flex min-w-0 flex-col gap-2">
-      <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-secondary">
-        <span className="font-semibold text-primary">{t("home.insights.trendTitle")}</span>
-        <span className="flex items-center gap-3">
-          {series.map((s) => (
-            <span key={s.key} className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className={s.swatch} />
+      <figcaption className="text-xs font-semibold text-primary">{t("home.insights.trendTitle")}</figcaption>
+      <div aria-hidden="true" className="relative flex flex-col gap-3">
+        {series.map((s) => (
+          <div key={s.key} data-testid={`trend-${s.key}`} className="flex flex-col gap-1">
+            <span className="inline-flex items-center gap-1.5 pl-9 text-xs text-secondary">
+              <span className={s.swatch} />
               {t(`home.insights.${s.key}`)}
             </span>
-          ))}
-        </span>
-      </figcaption>
-      <div aria-hidden="true" className="relative h-32">
-        {ticks.map((tick) => (
-          <div key={tick} className="absolute inset-x-0 flex items-center gap-2" style={{ top: `${y(tick)}%`, transform: "translateY(-50%)" }}>
-            <span className="w-7 shrink-0 text-right text-[0.6875rem] text-secondary tabular-nums">{fmt.format(tick)}</span>
-            <span className={`h-px flex-1 ${tick === 0 ? "bg-border" : "border-t border-dashed border-border"}`} />
+            <div className="relative h-14">
+              {[axes[s.key].hi, axes[s.key].lo].map((tick, index) => (
+                <div key={index} className="absolute inset-x-0 flex items-center gap-2" style={{ top: `${y(s.key, tick)}%`, transform: "translateY(-50%)" }}>
+                  <span className="w-7 shrink-0 text-right text-[0.6875rem] text-secondary tabular-nums">{fmt.format(tick)}</span>
+                  <span className={`h-px flex-1 ${index === 1 ? "bg-border" : "border-t border-dashed border-border"}`} />
+                </div>
+              ))}
+              <div className="absolute inset-y-0 right-0 left-9">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
+                  <path
+                    d={path(s.key)}
+                    fill="none"
+                    stroke={s.stroke}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  {active !== null ? (
+                    <line x1={x(active)} x2={x(active)} y1="0" y2="100" stroke="var(--an-text-secondary)" strokeOpacity="0.35" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  ) : null}
+                </svg>
+                {points.map((p, i) =>
+                  p[s.key] !== null && (markAll || isolated(s.key, i)) && i !== active ? (
+                    <span
+                      key={p.date}
+                      className={`pointer-events-none absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${s.dot}`}
+                      style={{ left: `${x(i)}%`, top: `${y(s.key, p[s.key]!)}%` }}
+                    />
+                  ) : null,
+                )}
+                {point && point[s.key] !== null ? (
+                  <span
+                    className={`pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${s.dot}`}
+                    style={{ left: `${x(active!)}%`, top: `${y(s.key, point[s.key]!)}%` }}
+                  />
+                ) : null}
+              </div>
+            </div>
           </div>
         ))}
+        {/* One touch layer over both charts so the crosshair and the tooltip stay in step. */}
         <div
           className="absolute inset-y-0 right-0 left-9 touch-pan-y"
           onPointerMove={onPointer}
           onPointerDown={onPointer}
           onPointerLeave={() => setActive(null)}
         >
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
-            {series.map((s) => (
-              <path
-                key={s.key}
-                d={path(s.key)}
-                fill="none"
-                stroke={s.key === "reach" ? "var(--an-chart-1)" : "var(--an-chart-2)"}
-                strokeWidth="2"
-                strokeDasharray={s.dashed ? "5 4" : undefined}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-            {active !== null ? (
-              <line x1={x(active)} x2={x(active)} y1="0" y2="96" stroke="var(--an-text-secondary)" strokeOpacity="0.35" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-            ) : null}
-          </svg>
-          {series.flatMap((s) =>
-            points.map((p, i) =>
-              p[s.key] !== null && (markAll || isolated(s.key, i)) && i !== active ? (
-                <span
-                  key={`${s.key}-${p.date}`}
-                  className={`pointer-events-none absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${s.dot}`}
-                  style={{ left: `${x(i)}%`, top: `${y(p[s.key]!)}%` }}
-                />
-              ) : null,
-            ),
-          )}
-          {point
-            ? series.map((s) =>
-                point[s.key] === null ? null : (
-                  <span
-                    key={s.key}
-                    className={`pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${s.dot}`}
-                    style={{ left: `${x(active!)}%`, top: `${y(point[s.key]!)}%` }}
-                  />
-                ),
-              )
-            : null}
           {point ? (
             <div
-              className="pointer-events-none absolute top-1 z-10 min-w-32 rounded-lg bg-navigation px-3 py-2 text-xs text-navigation-text shadow-float"
+              className="pointer-events-none absolute top-0 z-10 min-w-32 rounded-lg bg-navigation px-3 py-2 text-xs text-navigation-text shadow-float"
               style={{ left: `${x(active!)}%`, transform: `translateX(${flip ? "calc(-100% - 0.5rem)" : "0.5rem"})` }}
             >
               <p className="mb-1 font-semibold text-white">{dateLabel(point.date)}</p>
@@ -226,6 +236,8 @@ export function InsightsPerformanceCard({
   const activeAccount = activeAccounts.find((a) => a.id === selectedId) ?? activeAccounts[0];
   const summaryQuery = useInsightsSummary(workspaceId, activeAccount?.id, range);
   const summary = summaryQuery.data;
+  // On phones the card folds to its heading and the link to the full reports.
+  const fold = useFoldOnPhone();
 
   if (activeAccounts.length === 0) return null;
 
@@ -357,11 +369,12 @@ export function InsightsPerformanceCard({
         id="home-insights-title"
         icon={<ChartIcon />}
         title={t("home.insights.title")}
+        toggle={fold.foldable ? { open: fold.open, onToggle: fold.toggle, contentId: "home-insights-body" } : undefined}
         wrap
         meta={activeAccount?.is_simulated ? <SimulatedBadge compact /> : undefined}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            {activeAccounts.length > 1 ? (
+            {activeAccounts.length > 1 && !fold.folded ? (
               <select
                 aria-label={t("home.insights.account")}
                 value={activeAccount?.id}
@@ -375,15 +388,17 @@ export function InsightsPerformanceCard({
                 ))}
               </select>
             ) : null}
-            <div className="inline-flex rounded-lg bg-surface-subtle p-0.5">
-              {segment("7d", t("home.insights.range7d"))}
-              {segment("28d", t("home.insights.range28d"))}
-            </div>
+            {fold.folded ? null : (
+              <div className="inline-flex rounded-lg bg-surface-subtle p-0.5">
+                {segment("7d", t("home.insights.range7d"))}
+                {segment("28d", t("home.insights.range28d"))}
+              </div>
+            )}
             <PanelLink to={`/w/${workspaceId}/more/reports`}>{t("home.insights.fullReportsLink")}</PanelLink>
           </div>
         }
       />
-      {body}
+      {fold.folded ? null : <div id="home-insights-body">{body}</div>}
     </Panel>
   );
 }
