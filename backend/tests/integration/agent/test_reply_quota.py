@@ -15,14 +15,15 @@ from app.agent.dm import send
 from app.agent.grounding import ReplyValidationArgs
 from app.agent.models import AgentSession, AgentThread
 from app.agent.tools.broker import BrokerContext
-from app.inbox.models import Conversation, Message, ReplyDraft
+from app.inbox.models import Conversation, InboundEvent, Message, ReplyDraft
+from app.inbox.processing import process_inbound_event
 from app.integrations.instagram.models import SimSentMessage
 from app.integrations.llm.fake import FakeLLMProvider
 from app.jobs.models import Job
 from app.notifications.models import Notification
 from app.plans import service
 from tests.integration.agent.test_coordinator import deps, result
-from tests.integration.agent.test_dm import deliver, drain, process_inbound, reply, setup
+from tests.integration.agent.test_dm import deliver, drain, reply, setup
 
 pytestmark = pytest.mark.commits
 
@@ -119,8 +120,12 @@ def test_the_last_slot_goes_to_one_draft_only(session_factory, clock):
     set_plan(session_factory, clock, workspace_id, quota=100, used=109)
     deliver(session_factory, clock, world, customer="customer-one")
     deliver(session_factory, clock, world, customer="customer-two")
-    process_inbound(session_factory, clock)
-    process_inbound(session_factory, clock)
+    # Store both messages without running any queued job (a wake job would draft and spend
+    # the slot before the test proposes anything).
+    with session_factory() as db:
+        for event in db.scalars(select(InboundEvent)).all():
+            process_inbound_event(db, clock, workspace_id, event.id, debounce_seconds=0)
+        db.commit()
     with session_factory() as db:
         threads = list(db.scalars(select(AgentThread)))
         assert len(threads) == 2
