@@ -47,6 +47,7 @@ from app.jobs.models import Job
 from app.notifications.models import Notification
 from app.owner_requests.models import OwnerAnswer, OwnerQuestion
 from app.reporting.models import ReportSourceGap
+from app.waitlist.models import WaitlistEntry
 
 BATCH_SIZE = 1000
 
@@ -74,6 +75,8 @@ class RetentionCounts:
     transcripts_nulled: int = 0
     # Feature Phase 2 (F-03): what a model wrote about a customer's picture, likewise
     image_descriptions_nulled: int = 0
+    # Global (not workspace) personal data: the pilot waitlist from the public landing page
+    waitlist_deleted: int = 0
 
     def as_dict(self) -> dict[str, int]:
         return asdict(self)
@@ -474,6 +477,13 @@ def run_retention(
         )
     )
 
+    # Pilot waitlist (global table, personal data): deleted after RETENTION_WAITLIST_DAYS.
+    waitlist = run(
+        _delete_rows(
+            WaitlistEntry, WaitlistEntry.created_at < cutoff(settings.retention_waitlist_days)
+        )
+    )
+
     # Jobs by status. ``finished_at`` is set for every finished job; the fallback is a safety net.
     finished = func.coalesce(Job.finished_at, Job.updated_at)
     jobs_done = run(
@@ -509,4 +519,5 @@ def run_retention(
         agent_actions_scrubbed=agent_actions_scrubbed,
         transcripts_nulled=transcripts,
         image_descriptions_nulled=image_descriptions,
+        waitlist_deleted=waitlist,
     )

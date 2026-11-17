@@ -17,6 +17,7 @@ import app.approvals.models  # noqa: F401  # isort: skip
 import app.audit.models  # noqa: F401  # isort: skip
 import app.commands.models  # noqa: F401  # isort: skip
 import app.content.models  # noqa: F401  # isort: skip
+import app.plans.models  # noqa: F401  # isort: skip
 import app.identity.models  # noqa: F401  # isort: skip
 import app.inbox.models  # noqa: F401  # isort: skip
 import app.integrations.calendar.models  # noqa: F401  # isort: skip
@@ -29,6 +30,7 @@ import app.operations.models  # noqa: F401  # isort: skip
 import app.policy.models  # noqa: F401  # isort: skip
 import app.reporting.models  # noqa: F401  # isort: skip
 import app.insights.models  # noqa: F401  # isort: skip
+import app.waitlist.models  # noqa: F401  # isort: skip
 
 config = context.config
 target_metadata = Base.metadata

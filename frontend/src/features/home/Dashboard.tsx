@@ -6,6 +6,7 @@ import { useSocialAccounts } from "@/features/inbox/hooks";
 import { useDailyReport } from "@/features/reports/hooks";
 import { DelegationSuggestionCard } from "@/features/agent/DelegationSuggestionCard";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { UsageNotice } from "@/features/settings/UsageNotice";
 import { AppointmentsCard } from "./AppointmentsCard";
 import { AssistantPanel } from "./AssistantPanel";
 import { AttentionPanel } from "./AttentionPanel";
@@ -25,9 +26,8 @@ import { UpcomingPanel, type CreateContent } from "./UpcomingPanel";
  * readiness and, while readiness is complete, Instagram performance. Open readiness requirements
  * are tall, so performance then moves to a full-width band below to keep the columns balanced.
  *
- * Phones: one column ordered by urgency: blocking notices, then the assistant panel with its
- * command box on top (P-13), then what waits for the owner and the numbers. The column wrappers
- * use `display: contents` below `lg`, so the flex `order` utilities can interleave their children.
+ * Phones: one column ordered by urgency. The column wrappers use `display: contents` below `lg`,
+ * so the flex `order` utilities can interleave their children.
  */
 export function Dashboard({ onCreate }: { onCreate: CreateContent }) {
   const { workspace, role } = useCurrentWorkspace();
@@ -45,9 +45,9 @@ export function Dashboard({ onCreate }: { onCreate: CreateContent }) {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-5">
-      <div className="-order-2 flex flex-col gap-4 empty:hidden lg:order-none lg:gap-5">
-        <Banners accounts={activeAccounts} canReconnect={isOwner} />
-      </div>
+      <Banners accounts={activeAccounts} canReconnect={isOwner} />
+      <UsageNotice />
+
 
       <div className="order-2 lg:order-none">
         <TodayPulse report={report.data} yesterday={yesterday.data} pending={report.isPending} failed={report.isError} />
@@ -59,7 +59,7 @@ export function Dashboard({ onCreate }: { onCreate: CreateContent }) {
             <DelegationSuggestionCard />
           </div>
           <AssistantPanel
-            className="-order-1 lg:order-none"
+            className="order-3 lg:order-none"
             accounts={activeAccounts}
             overviews={overviews}
             canControl={isOwner}

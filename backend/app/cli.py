@@ -3,7 +3,8 @@
 Commands: ``seed [--reset]``, ``create-user``, ``generate-key``, ``generate-vapid-keys``,
 ``export-openapi``, ``simulate-message``, ``simulate-native-reply``, ``run-due-jobs`` (the
 developer simulator),
-``check-config``, ``migration-status``, ``post-restore-reconcile``, and ``verify-db-roles``.
+``check-config``, ``migration-status``, ``post-restore-reconcile``, ``verify-db-roles`` and the
+operator plan commands ``plan-usage``, ``plan-set``, ``plan-reset`` and ``plan-extend``.
 Machine-readable output goes to stdout; logs go to stderr.
 """
 
@@ -42,6 +43,8 @@ from app.operations.backup_restore import (
     provision_database_roles,
     verify_database_roles,
 )
+from app.plans.cli import register as register_plan_commands
+from app.waitlist import service as waitlist_service
 
 
 def cmd_seed(args: argparse.Namespace) -> int:
@@ -92,6 +95,34 @@ def cmd_create_user(args: argparse.Namespace) -> int:
         return 1
     print(f"Created user {user.email} ({user.id})")
     return 0
+
+
+def cmd_waitlist_list(args: argparse.Namespace) -> int:
+    with get_session_factory()() as session:
+        entries = waitlist_service.list_entries(session)
+        for entry in entries:
+            print(
+                "	".join(
+                    [
+                        entry.created_at.strftime("%Y-%m-%d %H:%M"),
+                        entry.email,
+                        entry.business_name or "-",
+                        entry.category or "-",
+                        entry.instagram_handle or "-",
+                        entry.city or "-",
+                        entry.locale,
+                    ]
+                )
+            )
+    print(f"{len(entries)} waitlist entries", file=sys.stderr)
+    return 0
+
+
+def cmd_waitlist_delete(args: argparse.Namespace) -> int:
+    with get_session_factory()() as session:
+        removed = waitlist_service.delete_by_email(session, args.email)
+    print(f"Deleted {removed} waitlist entr{'y' if removed == 1 else 'ies'}")
+    return 0 if removed else 1
 
 
 def cmd_generate_key(args: argparse.Namespace) -> int:
@@ -404,6 +435,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_user.add_argument("--password", help="omit to be prompted (keeps it out of shell history)")
     p_user.set_defaults(func=cmd_create_user)
 
+    p_wl = sub.add_parser("waitlist-list", help="print the pilot waitlist (tab-separated)")
+    p_wl.set_defaults(func=cmd_waitlist_list)
+
+    p_wl_del = sub.add_parser(
+        "waitlist-delete", help="delete a waitlist entry on the person's request"
+    )
+    p_wl_del.add_argument("--email", required=True)
+    p_wl_del.set_defaults(func=cmd_waitlist_delete)
+
     p_key = sub.add_parser("generate-key", help="print a new random key")
     p_key.add_argument(
         "--kind",
@@ -536,6 +576,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional maximum poll iterations before exit (for offline testing)",
     )
     p_poll.set_defaults(func=cmd_telegram_poll)
+    register_plan_commands(sub)
     return parser
 
 

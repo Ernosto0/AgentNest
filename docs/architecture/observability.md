@@ -147,6 +147,9 @@ The kinds exist from P5-04. The publish executor (P5-06) produces `content.publi
 | `content.published` | info | `content.approve` + author | `content.published:{content_id}:v{version}` | publish executor |
 | `content.failed` | attention | `content.approve` + author | `content.failed:{content_id}:v{version}` | publish executor |
 | `conversation.needs_human` | attention | `reply.approve` | `needs-human:{conversation_id}` | inbound processing (takeover), reply workflow (escalation) |
+| `quota.warning` | attention | `system_health.view` (owner, manager) | `quota.warning:{period_id}` | `plans.service.warnings` (80% of the monthly AI reply quota; once per period) |
+| `quota.grace` | attention | `system_health.view` | `quota.grace:{period_id}` | `plans.service.warnings` (100%; drafting continues up to 110%) |
+| `quota.paused` | attention | `system_health.view` | `quota.paused:{period_id}` | `plans.service.warnings` (110%; AI drafting paused until the next period or a plan change) |
 | `reply.failed` | attention | `reply.approve` | `reply-failed:{draft_id}` | `operations.resolution.notify_reply_failed` |
 | `knowledge.fact_changed` | info | `knowledge.verify`, not the person who changed it | `fact:{fact_id}:v{version}` | `knowledge.impact` |
 | `knowledge.promotion_expired` | attention | `knowledge.verify` | `promotion-expired:{fact_id}:{valid_until}` | `knowledge.promotion_notices` (daily job, 09:00 workspace-local) |

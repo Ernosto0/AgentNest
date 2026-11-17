@@ -207,6 +207,7 @@
       "GROUNDING_FAILED": "The draft contained unverified values",
       "LLM_UNAVAILABLE": "The assistant is unavailable",
       "LLM_BUDGET_EXCEEDED": "Daily assistant limit reached",
+      "REPLY_QUOTA_PAUSED": "Monthly AI reply allowance used up (drafting is paused)",
       "LLM_OUTPUT_INVALID": "The assistant's answer was invalid",
       "LLM_REFUSED": "The assistant declined",
       "ATTACHMENT_ONLY": "Only a photo or file",
@@ -227,6 +228,9 @@
     "tabWaiting_one": "{{count}} waiting",
     "tabWaiting_other": "{{count}} waiting",
     "commentsEmptyHint": "Public comments on your posts appear here.",
+    "commentsUnavailableTab": "Not yet",
+    "commentsUnavailableTitle": "Comments are not available yet",
+    "commentsUnavailableHint": "Your Instagram connection does not include comments yet, so none are read or answered. Messages and publishing are not affected. Comments will appear here once access is added.",
     "sectionIntro": {
       "messages": "Customer messages and the replies waiting for you.",
       "comments": "Public comments on your posts and how the assistant handles them.",

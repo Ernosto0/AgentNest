@@ -7,7 +7,7 @@ import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { CommentsPage, QuestionsPage } from "@/features/agent-work/WorkPages";
 import { ConversationList } from "./ConversationList";
 import { useSocialAccounts } from "./hooks";
-import { FOCUS, PANE } from "./InboxParts";
+import { FOCUS, PANE, PaneEmpty } from "./InboxParts";
 
 type Section = "messages" | "comments" | "questions";
 
@@ -30,7 +30,22 @@ function useTabCounts(ws: string): Partial<Record<Section, number>> {
   };
 }
 
-function SectionTab({ to, current, icon, label, count }: { to: string; current: boolean; icon: ReactNode; label: string; count?: number }) {
+/**
+ * Comments need a provider grant the Instagram connection may not have (the OAuth scopes include no
+ * comment permission yet). The account's own capability flags decide, the same gate the agent uses:
+ * a real connection reports every `comment_*` capability as false. While accounts are loading or
+ * absent, or an account reports no comment flags at all, nothing changes.
+ */
+function useCommentsUnavailable(ws: string): boolean {
+  const accounts = useSocialAccounts(ws);
+  if (!accounts.isSuccess || accounts.data.length === 0) return false;
+  return accounts.data.every((account) => {
+    const flags = Object.entries(account.capabilities).filter(([key]) => key.startsWith("comment_"));
+    return flags.length > 0 && flags.every(([, on]) => on !== true);
+  });
+}
+
+function SectionTab({ to, current, icon, label, count, note }: { to: string; current: boolean; icon: ReactNode; label: string; count?: number; note?: string }) {
   const { t } = useTranslation();
   const countId = useId();
   const shown = count !== undefined && count > 0;
@@ -55,6 +70,7 @@ function SectionTab({ to, current, icon, label, count }: { to: string; current: 
           <span id={countId} className="sr-only">{t("convo.tabWaiting", { count })}</span>
         </>
       ) : null}
+      {note ? <>{" "}<span className="rounded-full bg-surface-subtle px-2 text-xs leading-5 font-medium text-secondary ring-1 ring-border/70 ring-inset">{note}</span></> : null}
     </Link>
   );
 }
@@ -70,6 +86,7 @@ export function InboxWorkspace() {
   const section: Section = conversationId ? "messages" : location.pathname.includes("/comments") ? "comments" : location.pathname.includes("/questions") ? "questions" : raw === "comments" || raw === "questions" ? raw : "messages";
   const detail = Boolean(conversationId || questionId || threadId);
   const counts = useTabCounts(workspace.id);
+  const commentsUnavailable = useCommentsUnavailable(workspace.id);
   const list = useRef<HTMLDivElement>(null);
   const scroll = useRef(0);
   const positions = useRef(new Map<string, number>());
@@ -100,7 +117,7 @@ export function InboxWorkspace() {
       <nav aria-label={t("core.inbox")} className="w-full sm:w-auto">
         <div className="flex gap-1 rounded-xl bg-surface-subtle p-1 ring-1 ring-border/70 ring-inset">
           {tabs.map(({ name, icon }) => (
-            <SectionTab key={name} to={target(name)} current={section === name} icon={icon} label={t(`core.${name}`)} count={counts[name]} />
+            <SectionTab key={name} to={target(name)} current={section === name} icon={icon} label={t(`core.${name}`)} count={name === "comments" && commentsUnavailable ? undefined : counts[name]} note={name === "comments" && commentsUnavailable ? t("convo.commentsUnavailableTab") : undefined} />
           ))}
         </div>
       </nav>
@@ -113,7 +130,7 @@ export function InboxWorkspace() {
         onScroll={event => positions.current.set(filterKey, event.currentTarget.scrollTop)}
         className={`${PANE} lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto lg:overscroll-contain ${detail ? "hidden lg:block" : ""}`}
       >
-        {section === "messages" ? <ConversationList activeId={conversationId} /> : section === "comments" ? <CommentsPage /> : <QuestionsPage />}
+        {section === "messages" ? <ConversationList activeId={conversationId} /> : section === "comments" ? (commentsUnavailable ? <PaneEmpty testId="comments-unavailable" icon={<CommentIcon />} title={t("convo.commentsUnavailableTitle")} hint={t("convo.commentsUnavailableHint")} /> : <CommentsPage />) : <QuestionsPage />}
       </div>
       <div className={`min-w-0 ${detail ? "" : "hidden lg:block"}`}><Outlet key={location.pathname} /></div>
     </div>

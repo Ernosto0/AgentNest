@@ -17,10 +17,12 @@ from sqlalchemy.orm import Session
 from app.core.db import clear_tenant_context, set_tenant_context
 from app.notifications.models import PushPreference
 from tests.factories import workspace_with_members
+from tests.helpers.roles import ensure_runtime_roles
 
 
 @contextlib.contextmanager
 def as_role(session: Session, role: str) -> Iterator[None]:
+    ensure_runtime_roles(session)
     session.execute(text(f"SET LOCAL ROLE {role}"))
     session.execute(text("SET LOCAL search_path = public, pg_temp"))
     try:

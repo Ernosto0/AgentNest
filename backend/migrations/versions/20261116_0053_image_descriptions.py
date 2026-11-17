@@ -8,8 +8,8 @@ as message text. Composite FK to ``messages`` (cascade), forced RLS on ``app.wor
 
 Also lets ``agent_runs.task`` hold ``describe_image``.
 
-Revision ID: 0050
-Revises: 0049
+Revision ID: 0053
+Revises: 0052
 Create Date: 2026-11-16 18:00:00.000000
 """
 
@@ -18,8 +18,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0050"
-down_revision: str | None = "0049"
+revision: str = "0053"
+down_revision: str | None = "0052"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

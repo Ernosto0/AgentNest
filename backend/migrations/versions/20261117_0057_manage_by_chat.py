@@ -1,9 +1,9 @@
-"""Confirmed management command actions. Revision 0056, parent 0055."""
+"""Confirmed management command actions. Revision 0057, parent 0056."""
 
 from alembic import op
 
-revision = "0056"
-down_revision = "0055"
+revision = "0057"
+down_revision = "0056"
 branch_labels = None
 depends_on = None
 

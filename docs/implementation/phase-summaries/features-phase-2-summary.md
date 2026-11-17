@@ -4,7 +4,7 @@
 - **Specification:** [features-phase-2-during-pilots/sessions.md](../features-phase-2-during-pilots/sessions.md), source [pre-launch-feature-recommendations.md](../../review/pre-launch-feature-recommendations.md) §4 step 2 plus D-04 and D-05
 - **Sessions executed:** 01 to 08. Reports in [features-phase-2-during-pilots/](../features-phase-2-during-pilots/): [s01](../features-phase-2-during-pilots/s01-report.md), [s02](../features-phase-2-during-pilots/s02-report.md), [s03](../features-phase-2-during-pilots/s03-report.md), [s04](../features-phase-2-during-pilots/s04-report.md), [s05](../features-phase-2-during-pilots/s05-report.md), [s06](../features-phase-2-during-pilots/s06-report.md), [s07](../features-phase-2-during-pilots/s07-report.md), [merge-04-07](../features-phase-2-during-pilots/merge-04-07-report.md), [s08](../features-phase-2-during-pilots/s08-report.md). Sessions 01 to 03 ran in order in the main tree; 04 to 07 ran in parallel worktrees and were merged by hand; 08 was started by a Codex run and finished by Claude. Session order was not changed by pilot feedback (there was none yet).
 - **Baseline Git commit:** `20a0551` (`main`). **Nothing is committed**: all eight sessions are uncommitted on `main` (see section 8).
-- **Alembic migration head:** `20261117_0056_manage_by_chat.py` (revision `0056`). The next free migration is `0057`. Chain: `0048 -> 0049 (S01) -> 0050 (S03) -> 0052 (S04) -> 0053 (S05) -> 0055 (S07) -> 0056 (S08)`. Revisions 0051 and 0054 do not exist (they were reserved for other sessions and not used); `alembic heads` shows one head.
+- **Alembic migration head:** `20261117_0057_manage_by_chat.py` (revision `0057`). The next free migration is `0058`. Chain: `0048 -> 0049 (waitlist) -> 0050 (signup) -> 0051 (plans) -> 0052 (S01) -> 0053 (S03) -> 0054 (S04) -> 0055 (S05) -> 0056 (S07) -> 0057 (S08)`. `0049`-`0051` came from main (PRs #5-#7), which landed while this phase was built; on merging with main the phase's migrations were renumbered from `0049, 0050, 0052, 0053, 0055, 0056` to `0052`-`0057`. The session reports keep the numbers they were written with. `alembic heads` shows one head.
 - **Status:** **Implemented and verified offline. Stopped for review.** Nothing was run against a real Instagram account, a real phone, a real Telegram bot or a real model. Everything that depends on those is listed in section 7 as pending.
 - **Date:** 2026-11-17
 
@@ -26,7 +26,7 @@ The phase adds what pilots will ask for once the first owners are using the assi
 ## 2. What changed, by feature
 
 ### 2.1 F-03 voice notes (Sessions 01 and 02)
-- **Parsing and storage (S01):** `webhook_format.py` normalises attachment types and builds `audio_attachment`; table `message_transcripts` (migration `0049`, RLS forced; one row per message, `pending|succeeded|failed`, `reason_code`, `source = "transcript"`, text, language, provider, model, duration, `is_simulated`). Nothing is written to `messages.text`.
+- **Parsing and storage (S01):** `webhook_format.py` normalises attachment types and builds `audio_attachment`; table `message_transcripts` (migration `0052`, RLS forced; one row per message, `pending|succeeded|failed`, `reason_code`, `source = "transcript"`, text, language, provider, model, duration, `is_simulated`). Nothing is written to `messages.text`.
 - **Job:** `transcribe_voice_note` (`{message_id}`, 3 attempts, backoff 10/60/300 s). Download and transcription run with no transaction open. A permanent failure is recorded and the job succeeds; a dead job stays visible.
 - **Provider interface:** `app/integrations/transcription/` (own interface, not part of `LLMProvider`): `fake` (fixtures, refuses real audio), `openai` (`audio.transcriptions.create`, audio only), and `HttpsAudioFetcher` (https, port 443, Instagram/Facebook CDN host allowlist, public addresses only, no redirects, no Authorization header, size and type caps). Settings `TRANSCRIPTION_PROVIDER` (`auto|off|fake|openai`), `TRANSCRIPTION_MODEL` (`gpt-4o-mini-transcribe`), size, duration, timeout and a per-workspace daily cap (200).
 - **Privacy:** the audio is never stored. The transcript follows message text: nulled at 365 days, erased on provider delete, conversation, customer and account erasure, included in the data-subject export. `sub-processor-register.md`, the privacy policy and the KVKK template were updated.
@@ -37,7 +37,7 @@ The phase adds what pilots will ask for once the first owners are using the assi
 - **Tests:** `test_transcription.py` (47), `test_voice_transcription.py` (31), `test_voice_reply_path.py` (28), `test_dm_transcript.py` (2), `test_transcript_context.py` (6), `test_transcript_retention.py` (3), `test_message_transcripts_isolation.py` (6), R18 policy tests, frontend `inbox.test.tsx` and `approvals.test.tsx` additions.
 
 ### 2.2 F-03 images (Session 03)
-- **Job:** `describe_message_image` (`{message_id, attachment_index}`), up to 3 images per message, table `message_image_descriptions` (migration `0050`, RLS forced), `IMAGE_DESCRIPTION_*` settings and `LLM_MODEL_DESCRIBE_IMAGE`.
+- **Job:** `describe_message_image` (`{message_id, attachment_index}`), up to 3 images per message, table `message_image_descriptions` (migration `0053`, RLS forced), `IMAGE_DESCRIPTION_*` settings and `LLM_MODEL_DESCRIBE_IMAGE`.
 - **Task:** `describe_image` (tool-less vision task, prompt v1): `looks_like` (`product|price_screenshot|location|other`), `description`, `visible_text`. The LLM abstraction gained `LLMImage`; `TaskDefinition.store_output=false` keeps the one copy of the words where retention reaches it. Image download in `app/integrations/vision/` with the voice-note rules.
 - **No automatic answer.** The conversation, drafting and attention are untouched; a photo with no words stays `ATTACHMENT_ONLY`. Descriptions are screened for injection (`injection_suspected` is shown as a warning), shown as plain text and never become facts, candidates or prompt input.
 - **Privacy:** the image is never stored; the words are nulled at 365 days and erased with the message. Sub-processor register updated (images to OpenAI).
@@ -46,12 +46,12 @@ The phase adds what pilots will ask for once the first owners are using the assi
 
 ### 2.3 F-04 story replies and mentions (Session 04)
 - **Story context** (`inbox/stories.py`, read-only): a reply's story ID is matched to a published `story_image` of the same workspace and account; its title, objective and overlay lines go to `draft_reply` as a labelled `<story_context>` section, with placeholders reduced to `[name]`. "No longer live" after 24 hours. A story we did not publish is drafted as before.
-- **Mention thank-you:** an approved answer with the new intent `story_mention` (one per language, migration `0052` extends two CHECK constraints). A plain mention with a template is answered with that template, claim-validated, class `reply.story_mention`, approval required by default; no model call. Without a template the old person-handled path holds.
+- **Mention thank-you:** an approved answer with the new intent `story_mention` (one per language, migration `0054` extends two CHECK constraints). A plain mention with a template is answered with that template, claim-validated, class `reply.story_mention`, approval required by default; no model call. Without a template the old person-handled path holds.
 - **UI:** `StoryNote` (our own story with its stored picture, "a story we have no details for", "Mentioned you in their story"); the provider story URL is never shown. Two demo scripts.
 - **Tests:** `test_story_context.py` (33), `test_stories.py`, `evals/draft_reply/stories.yaml` (4), policy and automation tests.
 
 ### 2.4 D-02 approval ladder (Session 05)
-- **Job** `delegation_suggestion` (weekly, from Monday 09:00 workspace time), table `delegation_suggestions` (migration `0053`, RLS forced, unique per workspace and week), settings `DELEGATION_SUGGESTION_WINDOW_DAYS=28`, `_MIN_UNCHANGED=20`, `_COOLDOWN_DAYS=30`.
+- **Job** `delegation_suggestion` (weekly, from Monday 09:00 workspace time), table `delegation_suggestions` (migration `0055`, RLS forced, unique per workspace and week), settings `DELEGATION_SUGGESTION_WINDOW_DAYS=28`, `_MIN_UNCHANGED=20`, `_COOLDOWN_DAYS=30`.
 - **Evidence:** only sent, unedited, assistant-written, non-simulated drafts that a signed-in owner approved with a version- and hash-bound approval. Only `hours`, `location_contact` and `services` are suggestible, only on `approval` and only when readiness allows `auto`. Price, booking, promotion, FAQ and greeting are never suggested.
 - **Confirmation:** the existing `POST .../delegation/preview` then `/apply` with the suggestion's `suggestion_id`; apply re-checks everything. "Not now" records a cool-down. One `delegation_suggestion` notification, never pushed.
 - **API:** `GET /delegation-suggestions`, `POST /delegation-suggestions/{id}/dismiss`. **UI:** `DelegationSuggestionCard` on Today and the Assistant page.
@@ -64,7 +64,7 @@ The phase adds what pilots will ask for once the first owners are using the assi
 - **Tests:** `test_missed_customers.py` (22), frontend `missed.test.tsx` (2).
 
 ### 2.6 D-05 learning loop (Session 07)
-- **Candidate for every owner answer** to a customer-reply question (unverified, `source_type=owner_answer`); one tap on the web or on Telegram (`fsv:` callback, single-use token table `fact_save_tokens`, migration `0055`, SECURITY DEFINER lookup) accepts it through the existing path. Text carrying a price, hours, phone, e-mail or URL needs the typed editor in Suggestions (`owner_answer_requires_editor`).
+- **Candidate for every owner answer** to a customer-reply question (unverified, `source_type=owner_answer`); one tap on the web or on Telegram (`fsv:` callback, single-use token table `fact_save_tokens`, migration `0056`, SECURITY DEFINER lookup) accepts it through the existing path. Text carrying a price, hours, phone, e-mail or URL needs the typed editor in Suggestions (`owner_answer_requires_editor`).
 - **"Learned this month":** `GET /learning/month`; a fact counts once, in the month its history first holds an accepted owner-answer candidate.
 - **Fence fix:** accepting or rejecting the answer's own candidate no longer voids the answer as evidence (`knowledge/learning.py`).
 - **Tests:** `test_owner_answer_learning.py` (25), frontend `learning.test.tsx` (6).
@@ -111,7 +111,7 @@ Full detail and exact commands: [s08-report.md](../features-phase-2-during-pilot
 | Evals, fake provider (`python -m evals run --all`) | interpret_command 77/77, extract_fact_candidates 12/12, draft_reply 86/86, draft_content 26/26; 0 hard failures |
 | Frontend `lint`, `typecheck`, `i18n:check`, `build` | pass (2581 keys) |
 | Frontend `npm.cmd test` | 56 files, 833 tests passed |
-| Migration `upgrade head`, `downgrade 0055`, `upgrade head` | pass |
+| Migration `upgrade head`, `downgrade 0056`, `upgrade head` | pass |
 | `frontend/openapi.json` against a fresh export | identical |
 
 **Not caused by this phase:** the two environment failures above (a `.env` CORS and public-URL setting), the demo-flag-dependent tests, and the order-dependent invite test. Not run: Playwright (`npm run e2e`), `tests/browser` (no tests), anything against a real provider or device.
@@ -130,7 +130,7 @@ Full detail and exact commands: [s08-report.md](../features-phase-2-during-pilot
 8. **S08, the pause command may re-pause** an already paused account (a `repause` flag on the shared state service); the HTTP endpoint is unchanged. The reschedule confirmation self-approves the new schedule as the deciding human (the existing `self_approve` submit path), because the confirmation card is that approval.
 9. **S08, P-13 is not done** (its status in `docs/review/pre-launch-problems.md` is unchanged). Only the command-box-first part was done for Today on phones. The collapsing or moving of the other sections that P-13 asks for was left to the UI polish session. Where the brief asked to verify P-13 and skip if done, it was not done, so the command box was moved here.
 10. **Prompt numbering.** `draft_reply` is at `v4` (S02's `v3` and S04's story rule merged); `interpret_command` is at `v2`.
-11. **Session order.** The briefs allowed 04 to 07 in any order; 04 to 07 ran in parallel worktrees from `20a0551` and were re-chained at merge (`0052`, `0053`, `0055`).
+11. **Session order.** The briefs allowed 04 to 07 in any order; 04 to 07 ran in parallel worktrees from `20a0551` and were re-chained at merge (then `0052`, `0053`, `0055`; `0054`-`0056` after the merge with main).
 
 ---
 

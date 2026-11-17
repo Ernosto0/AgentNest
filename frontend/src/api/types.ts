@@ -83,6 +83,9 @@ export type AccountHealth = Schemas["AccountHealth"];
 export type HealthCheckResult = Schemas["HealthCheckOut"];
 export type ResetResult = Schemas["ResetOut"];
 
+// Plans: the monthly AI reply allowance (owner and manager).
+export type ReplyUsage = Schemas["UsageOut"];
+
 // Phase 9: Owner messaging channels (ADR-012, Session 02)
 export type ChannelLink = Schemas["ChannelLinkOut"];
 export type ChannelLinkCode = Schemas["ChannelLinkCodeOut"];

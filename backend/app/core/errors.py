@@ -19,6 +19,8 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "RATE_LIMITED": ErrorSpec(429, retryable=True),
     "OWNER_QUESTION_CLOSED": ErrorSpec(409),
     "AUTH_REQUIRED": ErrorSpec(401),
+    "EMAIL_NOT_VERIFIED": ErrorSpec(403),
+    "EMAIL_VERIFICATION_TOKEN_INVALID": ErrorSpec(400),
     "INVALID_CREDENTIALS": ErrorSpec(401),
     "CSRF_FAILED": ErrorSpec(403),
     "FORBIDDEN": ErrorSpec(403),

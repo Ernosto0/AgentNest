@@ -1,7 +1,7 @@
 """Approval-ladder suggestions: one weekly "send this topic automatically?" proposal (D-02).
 
-Revision ID: 0053
-Revises: 0052
+Revision ID: 0055
+Revises: 0054
 Create Date: 2026-11-16 00:00:00.000000
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "0053"
-down_revision: str | None = "0052"
+revision: str = "0055"
+down_revision: str | None = "0054"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

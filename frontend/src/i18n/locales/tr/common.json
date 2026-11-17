@@ -151,8 +151,7 @@
       "today": "Bugün",
       "tomorrow": "Yarın",
       "dayCounts": "{{posts}} gönderi, {{stories}} hikaye",
-      "gapAction": "Hikaye yok: hikaye hazırla",
-      "gapLegend": "Henüz hikaye yok"
+      "noStories": "Bu hafta için planlanmış hikaye yok."
     },
     "activity": {
       "title": "Asistan hareketleri",
@@ -653,6 +652,14 @@
     "OWNER_QUESTION_CLOSED": {
       "what": "Bu bilgi talebi kapal?.",
       "next": "En g?ncel talebi a??n."
+    },
+    "EMAIL_NOT_VERIFIED": {
+      "what": "E-postanız doğrulanmadı.",
+      "next": "Devam etmeden önce e-postanızı doğrulayın."
+    },
+    "EMAIL_VERIFICATION_TOKEN_INVALID": {
+      "what": "Doğrulama bağlantısı geçersiz veya süresi dolmuş.",
+      "next": "Yeni bir doğrulama e-postası isteyin."
     }
   },
   "connections": {
@@ -823,7 +830,7 @@
     "expandNavigation": "Gezinme etiketlerini aç",
     "breadcrumb": "Sayfa konumu",
     "destinations": "Sayfaya git",
-    "openLauncher": "Git…",
+    "openLauncher": "Sayfaya git…",
     "launcherTitle": "Bir sayfaya git",
     "launcherHint": "Bu çalışma alanında bir hedef bulun. Sayfalar arasında gezinir; kayıtlarda arama yapmaz veya komut çalıştırmaz.",
     "filterDestinations": "Hedefleri filtrele",
@@ -942,5 +949,61 @@
     "typeLabel": "Biçim",
     "allAccounts": "Tüm hesaplar",
     "completedRequirements": "Tamamlanan gereksinimler ({{count}})"
+  },
+  "usage": {
+    "title": "Plan ve yapay zeka yanıtları",
+    "description": "Asistanın bu ay kaç müşteri yanıtı hazırladığı ve planınızın yanıt hakkı.",
+    "plan": "Plan",
+    "customQuota": "Çalışma alanınız için özel yanıt hakkı tanımlı",
+    "plans": {
+      "starter": "Başlangıç",
+      "growth": "İşletme",
+      "pro": "Stüdyo & Şube"
+    },
+    "status": {
+      "trial": "Deneme",
+      "active": "Aktif",
+      "past_due": "Ödemesi gecikmiş",
+      "cancelled": "İptal edilmiş"
+    },
+    "repliesThisPeriod": "Bu dönemki yapay zeka yanıtları",
+    "used": "{{used}} / {{quota}} yanıt",
+    "periodEnds": "Dönem sonu",
+    "state": {
+      "normal": "Yapay zeka taslakları kullanılabilir.",
+      "warning": "Bu ayki yapay zeka yanıt hakkınızın %80'i kullanıldı.",
+      "grace": "Aylık yanıt hakkı doldu. Taslaklar %10 ek hakla devam eder, ardından duraklar.",
+      "paused": "Yapay zeka yanıtları duraklatıldı: yanıt hakkı ve %10 ek hak doldu. Yeni mesajlar gelen kutunuza düşmeye devam eder, kendiniz yanıtlayabilirsiniz. Taslaklar yeni dönemde veya plan değişince devam eder."
+    },
+    "details": "Plan ve kullanımı gör",
+    "rule": "Asistanın hazırladığı her müşteri yanıtı taslağı, siz düzenleseniz veya silseniz bile bir kez sayılır. Kendi yazdığınız yanıtlar, komutlar ve içerik taslakları sayılmaz.",
+    "notifications": {
+      "warning": "Bu ayki yapay zeka yanıt hakkınızın %80'i kullanıldı.",
+      "grace": "Yapay zeka yanıt hakkınız doldu. Taslaklar %10 ek hakla devam ediyor.",
+      "paused": "Yapay zeka yanıtları duraklatıldı: yanıt hakkı ve %10 ek hak doldu. Yeni dönem veya plan değişikliğine kadar yeni mesajları kendiniz yanıtlayın."
+    }
+  },
+  "signup": {
+    "title": "Hesap oluştur",
+    "subtitle": "İşletme hesabınızı açın. Çalışma alanı oluşturmadan önce e-postanızı doğrulayın.",
+    "name": "Adınız",
+    "passwordHint": "En az 10 karakter kullanın ve yaygın şifrelerden kaçının.",
+    "accept": "Kullanım Koşullarını ve Gizlilik Politikasını kabul ediyorum.",
+    "terms": "Kullanım Koşulları",
+    "checkTitle": "E-postanızı kontrol edin",
+    "checkBody": "Bu adres kayıt e-postası alabiliyorsa yönergeleri gönderdik. Spam klasörünü de kontrol edin. Zaten hesabınız varsa giriş yapın veya şifrenizi sıfırlayın.",
+    "resend": "Doğrulama e-postasını yeniden gönder",
+    "resent": "Uygunsa yeni bağlantı gönderildi. Yalnızca en son bağlantı geçerlidir.",
+    "closed": "Yeni kayıtlar ve doğrulama e-postalarının yeniden gönderimi şu anda kapalı. Önceden gönderilen bağlantılar geçerlidir.",
+    "refresh": "E-postamı doğruladım",
+    "logout": "Çıkış yap",
+    "verifyTitle": "E-postanızı doğrulayın",
+    "verifyBody": "Oluşturduğunuz hesabın e-posta adresini doğrulayın.",
+    "verify": "E-postayı doğrula",
+    "verified": "E-postanız doğrulandı.",
+    "continue": "Giriş yap ve çalışma alanını oluştur",
+    "version": "Belge sürümü: {{version}}",
+    "termsBody": "AgentNest, işletme hesabınızı ve önerilen müşteri iletişimlerini yönetmenize yardımcı olur. Kullandığınız hesapları bağlamaya ve yönetmeye yetkili olmalısınız. Giriş bilgilerinizi güvenli tutun.",
+    "termsResponsibility": "Sağladığınız işletme bilgilerinden ve yetkilendirdiğiniz işlemlerden siz sorumlusunuz. Hizmeti hukuka uygun kullanın ve müşterilerinizin gizliliğine saygı gösterin. Verilerin işlenmesi hakkında Gizlilik Politikasını inceleyin."
   }
 }

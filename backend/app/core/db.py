@@ -101,6 +101,7 @@ CATEGORY_C_TABLES: tuple[str, ...] = (
     "public_media",
     "public_threads",
     "reply_drafts",
+    "reply_usage",
     "report_items",
     "report_source_gaps",
     "sim_comment_effects",
@@ -113,6 +114,7 @@ CATEGORY_C_TABLES: tuple[str, ...] = (
     "sim_sent_messages",
     "social_accounts",
     "telegram_pending_media",
+    "workspace_plans",
 )
 
 

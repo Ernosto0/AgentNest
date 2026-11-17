@@ -7,8 +7,8 @@
 
 Both are replaced CHECK constraints; no table or row changes.
 
-Revision ID: 0052
-Revises: 0050
+Revision ID: 0054
+Revises: 0053
 Create Date: 2026-11-16 12:00:00.000000
 """
 
@@ -16,8 +16,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0052"
-down_revision: str | None = "0050"
+revision: str = "0054"
+down_revision: str | None = "0053"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

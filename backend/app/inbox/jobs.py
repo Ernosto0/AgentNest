@@ -1,5 +1,6 @@
 """Inbox jobs (background-jobs.md). Imported by ``app.handlers.load_handlers``."""
 
+import uuid
 from datetime import timedelta
 
 from sqlalchemy.orm import Session
@@ -10,7 +11,7 @@ from app.core.config import get_settings
 from app.core.errors import RetryableError
 from app.inbox import expiry, processing, reply_workflow, sandbox
 from app.inbox.context import TRANSCRIPT_POLL_SECONDS, DraftContext, DraftSkip, prepare
-from app.inbox.drafting import failed_plan, make_plan
+from app.inbox.drafting import DraftPlan, failed_plan, make_plan
 from app.inbox.models import InboundEvent
 from app.inbox.payloads import (
     AssistantTestDraftPayload,
@@ -21,6 +22,7 @@ from app.inbox.payloads import (
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, RescheduleJob, job_handler
 from app.jobs.scheduler import register_periodic
+from app.plans import service as usage
 
 # Two model calls (the call and one regeneration), each with its own repair call, at 30 s.
 DRAFT_TIMEOUT_SECONDS = 150
@@ -117,23 +119,59 @@ def draft_reply(job: JobContext) -> None:
             # TRANSCRIPT_WAIT_LIMIT). The attempt is given back: this is not a failure.
             raise RescheduleJob(job.clock.now() + timedelta(seconds=TRANSCRIPT_POLL_SECONDS))
         return
-    plan = make_plan(  # no transaction is open here
-        runner_deps(job.session_factory, job.clock), prepared, job.correlation_id, job.job_id
-    )
-    with job.session_factory() as session:  # [T3]
-        draft = reply_workflow.persist_plan(
-            session, job.clock, prepared, plan, correlation_id=job.correlation_id
+    # The monthly allowance (plans). A slot is reserved before the model is called; when
+    # drafting is paused no model call is made and the message waits for a person, with the
+    # reason on a needs-human draft: the inbound message itself is already stored and notified.
+    with job.session_factory() as session:
+        ticket = usage.reserve(
+            session,
+            job.clock,
+            job.workspace_id,
+            f"legacy:{job.job_id}:{prepared.covers_through_message_id}",
         )
-        # Checked while T3 still holds the conversation lock: a customer message cannot be
-        # stored between this answer and the commit.
-        newer = draft is None and reply_workflow.newer_inbound_arrived(session, prepared)
+        ticket_id = ticket.id if ticket is not None else None
         session.commit()
+    if ticket_id is None:
+        plan = failed_plan(prepared, usage.PAUSED_REASON)
+    else:
+        plan = make_plan(  # no transaction is open here
+            runner_deps(job.session_factory, job.clock), prepared, job.correlation_id, job.job_id
+        )
+    newer = _store_draft(job, prepared, plan, ticket_id)
+    if newer is None:  # the slot was taken by another draft while this model call ran
+        newer = _store_draft(job, prepared, failed_plan(prepared, usage.PAUSED_REASON), None)
     if newer:
         # The customer wrote again while the model ran. This job's dedup key kept that
         # message's own enqueue from creating a second job, so this job must run again.
         raise RescheduleJob(
             job.clock.now() + timedelta(seconds=get_settings().reply_debounce_seconds)
         )
+
+
+def _store_draft(
+    job: JobContext, prepared: DraftContext, plan: DraftPlan, ticket_id: uuid.UUID | None
+) -> bool | None:
+    """[T3] Store the draft and count it in the same transaction. Returns whether a newer
+    customer message made the plan obsolete, or ``None`` when the allowance ran out meanwhile
+    (nothing was stored)."""
+    with job.session_factory() as session:
+        draft = reply_workflow.persist_plan(
+            session, job.clock, prepared, plan, correlation_id=job.correlation_id
+        )
+        if ticket_id is not None and not usage.finish(
+            session,
+            job.clock,
+            prepared.workspace_id,
+            ticket_id,
+            produced=draft is not None and bool(plan.text or plan.suggestion_text),
+        ):
+            session.rollback()
+            return None
+        # Checked while T3 still holds the conversation lock: a customer message cannot be
+        # stored between this answer and the commit.
+        newer = draft is None and reply_workflow.newer_inbound_arrived(session, prepared)
+        session.commit()
+        return newer
 
 
 def _on_test_draft_dead(job: JobContext, error_code: str) -> None:

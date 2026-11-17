@@ -241,6 +241,9 @@ def accept_invite(
         raise AppError("INVITE_INVALID")
 
     if signed_in_user is not None:
+        if not signed_in_user.email_verified:
+            # The invite link is not proof that this account owns its email address.
+            raise AppError("EMAIL_NOT_VERIFIED")
         user = signed_in_user
         session_token = None
     else:
@@ -277,6 +280,9 @@ def accept_invite(
             password_hash=hash_password(password),
             display_name=display_name.strip(),
             ui_locale="tr",
+            # Following the emailed invite link proves control of the address.
+            email_verified=True,
+            email_verified_at=now,
         )
         repo.add_user(session, user)
         session_token = generate_token()

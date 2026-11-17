@@ -63,6 +63,15 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     display_name: Mapped[str] = mapped_column(Text, nullable=False)
     ui_locale: Mapped[str] = mapped_column(Text, nullable=False, server_default="tr")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    # Trusted provisioning (CLI, seed, invite) stays verified; registration explicitly opts out.
+    email_verified: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("true")
+    )
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    accepted_terms_version: Mapped[str | None] = mapped_column(Text)
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    verification_token_hash: Mapped[bytes | None] = mapped_column(LargeBinary, unique=True)
+    verification_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 

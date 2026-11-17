@@ -351,9 +351,13 @@ class SecurityScanner:
 
         expected_exemptions = {
             "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/resend-verification",
+            "/api/v1/auth/verify-email",
             "/api/v1/auth/password-reset/request",
             "/api/v1/auth/password-reset/confirm",
             "/api/v1/invites/accept",
+            "/api/v1/waitlist",
             "/api/v1/webhooks/meta/deauthorize",
             "/api/v1/webhooks/meta/data-deletion",
             "/api/v1/webhooks/telegram",

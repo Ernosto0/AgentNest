@@ -17,10 +17,12 @@ from sqlalchemy.orm import Session
 from app.core.db import clear_tenant_context, set_tenant_context
 from app.notifications.models import PushSubscription
 from tests.factories import workspace_with_members
+from tests.helpers.roles import ensure_runtime_roles
 
 
 @contextlib.contextmanager
 def as_role(session: Session, role: str) -> Iterator[None]:
+    ensure_runtime_roles(session)
     session.execute(text(f"SET LOCAL ROLE {role}"))
     session.execute(text("SET LOCAL search_path = public, pg_temp"))
     try:
@@ -62,6 +64,7 @@ def test_the_table_has_forced_rls_and_the_tenant_policy(db_session: Session) -> 
         .all()
     )
     assert policy == ["tenant_isolation_policy"]
+    ensure_runtime_roles(db_session)
     grants = set(
         db_session.execute(
             text(
@@ -70,7 +73,7 @@ def test_the_table_has_forced_rls_and_the_tenant_policy(db_session: Session) -> 
             )
         ).scalars()
     )
-    assert {"agentnest_app", "agentnest_worker"} <= grants or not grants  # roles are optional
+    assert {"agentnest_app", "agentnest_worker"} <= grants
 
 
 @pytest.mark.invariant("INV-01")

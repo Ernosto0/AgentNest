@@ -1,7 +1,7 @@
 # Turnkey Pilot Assisted Onboarding Walkthrough & Runbook
 
 - **Target Phase / Task:** Phase 8 Session 16 (`P8-10`, `Gate 3`, `OQ-03`, `OQ-05`, `OQ-08`, `OQ-13`, [ADR-013](../architecture/decisions/ADR-013-authentication-and-tenancy.md), [ADR-024](../architecture/decisions/ADR-024-account-agent-and-delegated-autonomy.md))
-- **Status:** Complete Production Runbook (Turkish & English Step-by-Step Operator & Owner Guide)
+- **Status:** Runbook, dry-run verified on 2026-11-16 against a fresh local database (mock Instagram provider, fake LLM). The real Meta consent screen (section 4) cannot be exercised locally; it is checked against Meta's documentation and must be confirmed on the first real pilot.
 - **Target Workload:** First 1–5 Assisted Pilot Businesses (e.g. Pilates Studio, Fitness Center, Beauty Salon)
 - **Execution Mode:** Assisted (Operator pair-onboarding with business owner in person or via video call)
 
@@ -13,138 +13,154 @@ Before initiating the onboarding session, the operator and business owner must v
 
 | Requirement | Turkish Description | Verification Method |
 |---|---|---|
-| **Instagram Account Type** | Instagram Profesyonel (İşletme veya İçerik Üretici) hesabı | In Instagram App: `Settings -> Account type and tools` must show *Switch to personal account* (confirming it is already Professional). |
-| **Connected Facebook Page** | Instagram hesabına bağlı Facebook Sayfası | In Instagram App: `Settings -> Business -> Connect or create a Facebook Page`. Must be linked to an active Page. |
-| **Page Admin Permissions** | İşletme sahibinin Facebook Sayfasında Yönetici (Admin) yetkisi | In Facebook Business Suite: Owner's personal Facebook account must have full control / Admin role on the Page. |
-| **Meta App Tester Role** | Meta Geliştirici panelinde Test Kullanıcısı kaydı (OQ-03) | Operator adds owner's Facebook account or Instagram handle to `Meta Developer Portal -> App Roles -> Testers`. Owner accepts invitation at `facebook.com/developer`. |
-| **Business Facts Inventory** | Doğrulanmış işletme bilgileri (çalışma saatleri, fiyatlar, adres) | Owner prepares working hours, service pricing, address/directions, and appointment booking rules in advance. |
+| **Instagram Account Type** | Instagram Profesyonel (İşletme veya İçerik Üretici) hesabı | In the Instagram app: `Settings and activity -> Account type and tools` must offer *Switch to personal account* (this confirms the account is already Professional). A personal account must first be switched to Professional (Business or Creator). |
+| **Facebook Page** | **Gerekmez.** | AgentNest connects with *Instagram API with Instagram Login* (Business Login for Instagram). Meta's documentation states that this setup "does not require a Facebook Page to be linked to the Instagram professional account", so the owner needs neither a linked Page nor Page admin rights. Do not ask for them. |
+| **Meta App Tester Role** | Meta Geliştirici panelinde Instagram Test Kullanıcısı (OQ-03) | While the app is in development mode (before App Review), the operator adds the owner's Instagram account in `Meta Developer Portal -> App roles -> Roles -> Instagram Testers`. The owner accepts the invitation in the Instagram app (`Settings -> Apps and websites -> Tester invites`; Meta moves these menu names now and then). Until the invitation is accepted, the consent screen in section 4 fails. |
+| **Business Facts Inventory** | Doğrulanmış işletme bilgileri (çalışma saatleri, fiyatlar, adres) | Owner prepares working hours, service pricing, address/directions, a phone number, and how customers book. These are the facts the assistant may quote (section 2.2). |
 | **Legal Documentation** | KVKK Aydınlatma Metni ve Veri İşleme Sözleşmesi (DPA) | Operator delivers `docs/legal/kvkk-aydinlatma-metni-template.md` and `docs/legal/dpa-template.md` to owner for review. |
+| **Server health (operator, before the visit)** | — | `curl https://<app-host>/readyz` answers `{"status":"ok"}`; on the server `python -m app.cli check-config` and `python -m app.cli migration-status` report no problem. The worker must be running: without it drafts stay at *Hazırlanıyor…* and nothing is sent. |
 
 ---
 
 ## 2. Workspace Initialization & Fact Seeding (Operator Walkthrough)
 
-### 2.1 Provision Workspace & Verified Facts
-The operator provisions the tenant workspace via CLI on the production server or API:
+There is no `create-workspace` or `seed-facts` command. The workspace is created in the app, with the same wizard an owner would use, and the facts are entered in the app. This keeps one tested path for operator-assisted and self-service setup.
 
-```bash
-# 1. Create workspace
-python -m app.cli create-workspace \
-  --name "Gölkent Pilates & Wellness" \
-  --slug "golkent-pilates" \
-  --language "tr"
+### 2.1 Create the operator account and the workspace
 
-# 2. Seed verified business facts
-python -m app.cli seed-facts --workspace-slug "golkent-pilates" --facts-file /path/to/golkent-facts.json
-```
+1. **Operator account (once, on the server).** Run it with no `--password` so the password is prompted and stays out of the shell history:
+   ```bash
+   python -m app.cli create-user --email operator@example.com --display-name "Operator" --locale tr
+   ```
+   The password needs at least 10 characters. Sign in at `https://<app-host>/login`.
+2. **Create the workspace.** On the workspace list tap **Çalışma alanı oluştur** (Create workspace) and complete the three steps: business name (for example `Gölkent Pilates & Wellness`), business type, then market, business language (`Türkçe`/`English`), time zone and currency. A Turkish business gets `Europe/Istanbul` and `TRY` by default. The wizard ends on **İşletme bilgileri** (Business knowledge) of the new workspace. The operator is its first owner.
 
-Sample `golkent-facts.json` verifying factual grounding:
-```json
-{
-  "hours.weekdays": "08:00 - 21:00",
-  "hours.saturday": "09:00 - 18:00",
-  "hours.sunday": "Kapalı",
-  "location.address": "Atatürk Cad. No: 45 Kat: 2, Çankaya, Ankara",
-  "location.parking": "Binamızın arkasında 2 saat ücretsiz açık otopark mevcuttur.",
-  "pricing.reformer_single": "800 TL",
-  "pricing.reformer_pack_10": "4.800 TL (10 seans, 60 gün geçerli)",
-  "booking.trial_policy": "İlk deneme seansı ücretsizdir; randevu ile yapılmaktadır."
-}
-```
+### 2.2 Enter the verified business facts
 
-### 2.2 Configure Safety & Autonomy Defaults
-In strict adherence to **OQ-08** and **OQ-13**:
-- **Default Autonomy:** Set to **Human Review Required** (`autonomy: "human_review"`, `auto_send_enabled: false`). All AI replies remain in draft status awaiting human owner approval.
-- **Automated Suffix:** Enabled by default (`— Otomatik yanıt`) for any future autonomous messages.
-- **Publishing Limit:** Hard cap of 50 operations per 24 hours.
+Open **Daha fazla -> İşletme bilgileri** (Business knowledge). Two ways to fill it, and a normal session uses both:
+
+- **Paste to extract.** Tap **Metinden öneri al**, paste the owner's Instagram bio, price list or website text and tap **Önerileri bul**. The assistant proposes facts (worker required); they appear under **Öneriler** (Suggestions) and **nothing is used until a person accepts each one**. Check every value against what the owner says before accepting.
+- **Add by hand.** Under **İlginizi bekleyenler** each missing topic has an **Ekle** (Add) button. Use it for anything the extraction missed.
+
+What must exist before the assistant can draft ("Taslaklar için") and before automation can be switched on ("Otomasyon için"), as shown by the setup card on the same page:
+
+| Topic (Turkish label) | Fact key | Value format | Needed for |
+|---|---|---|---|
+| İşletme adı | `identity.business_name` | text | drafts |
+| İletişim yolu | `contact.phone` (or `contact.whatsapp`, `contact.email`) | phone in E.164 (`+905550000000`) or email; one is enough | drafts |
+| Adres | `location.address` (or `location.online_only` = yes) | address lines, district, city | drafts |
+| Çalışma saatleri | `hours.weekly` | opening ranges per weekday, closed days empty | drafts |
+| Rezervasyon talimatı | `booking.instructions` | text, Turkish and English | automation |
+| Fiyat politikası | `policy.price_disclosure` | `share` (quote prices) or `do_not_share` | automation |
+| Hizmetler | `service.<name>` (at least one) | short description, with a label | automation |
+
+Prices are separate facts per product, for example `pricing.reformer_pack_10` = `4.800 ₺`, unit *package*, label `Reformer 10 seanslık paket`. The assistant may quote a price **only** through such a fact; it never guesses one. Add the prices the owner expects customers to ask about, because the live test in section 5 depends on them.
+
+Optional but useful: `promotion.*` (with an end date), `policy.cancellation`, `brand.voice_guidelines`, `escalation.keywords`.
+
+### 2.3 Safety and autonomy defaults (already in place, verify, do not change on day one)
+
+Checked on a fresh workspace:
+
+- **Every reply waits for the owner.** Each topic starts on **Önce bana sor** (ask me first); no topic sends on its own. Auto-send is blocked until the facts above exist, an Instagram account is connected, and the owner has pressed **Bu ayarları inceledim** (I have reviewed these settings) on **Daha fazla -> Otomasyon ve Instagram**. Leave all topics on *Önce bana sor* for the first days (OQ-08).
+- **Automation disclosure (OQ-13).** The disclosure is on by default and is appended **only to replies the assistant sends on its own**: `Bu yanıt otomatik olarak hazırlanmıştır.` (English: `This reply was prepared automatically.`). A reply the owner approves or writes is sent without it. The text can be changed under workspace settings. There is no `— Otomatik yanıt` suffix.
+- **Publishing limit.** At most 50 posts per 24 hours per account (`PUBLISH_DAILY_LIMIT`, Meta's own ceiling).
+- **Cost guard.** At most 500 model calls per workspace per day (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`).
+- **Monthly AI reply allowance.** Every workspace starts on the `growth` plan, status `trial` (2,500 AI reply drafts per month, 10% grace, warnings at 80% and 100% to the owner and managers, then AI drafting pauses while messages still arrive). The operator changes it: `python -m app.cli plan-usage --workspace <slug>` shows the numbers, `plan-set --workspace <slug> --plan starter|growth|pro [--quota N | --clear-override] [--status trial|active|past_due|cancelled]` changes the plan, `plan-reset` starts a fresh period now, `plan-extend --days N` moves the period end. The owner sees it in Settings (Plan and AI replies) and on Today from 80%.
 
 ---
 
 ## 3. Owner Phone Verification & Account Setup (Bilingual Walkthrough)
 
-The operator generates a single-use invite link and delivers it directly to the owner's mobile device via SMS or WhatsApp.
+The operator creates a single-use invite and delivers it to the owner's phone via SMS or WhatsApp.
+
+**Operator:** `Daha fazla -> Üyeler -> Üye davet et`, choose the role **owner** (Sahip) for the business owner, tap **Davet oluştur**, and send the **Davet bağlantısı** (invite link) or show its QR code. The link has the form `https://<app-host>/invite/<token>`, is valid for 7 days, works once, and is shown only at creation (create a new one if it is lost). The operator stays an owner of the workspace; tell the owner, who can remove or change roles under **Üyeler**. The last owner cannot be removed.
 
 ### 🇹🇷 Adım Adım İşletme Sahibi Kurulumu (Türkçe)
 
 1. **Davet Bağlantısını Açma:**
-   - Telefonunuza SMS veya WhatsApp ile iletilen tek kullanımlık kurulum bağlantısına dokunun:
-     `https://agentnest.io/invites/accept?token=...`
-2. **Hesap Oluşturma & Güvenli Şifre Belirleme:**
-   - Adınızı, soyadınızı ve en az 10 karakterden oluşan güçlü bir şifre girin.
-   - *Hesabımı Oluştur* butonuna dokunun.
+   - Telefonunuza SMS veya WhatsApp ile iletilen tek kullanımlık bağlantıya dokunun:
+     `https://<uygulama-adresi>/invite/<kod>`
+2. **Hesap Oluşturma:**
+   - **Adınız**, **E-posta** ve en az 10 karakterden oluşan bir **Parola** girin.
+   - **Hesap oluştur ve katıl** butonuna dokunun. (Zaten hesabınız varsa *Giriş yap* deyin; sonra davete geri dönersiniz.)
 3. **Giriş Doğrulaması:**
-   - Sistem sizi otomatik olarak güvenli mobil panele yönlendirecektir.
-   - Ekranın sağ üst köşesinde işletme adınızın (*Gölkent Pilates & Wellness*) yazdığını doğrulayın.
+   - Sistem sizi otomatik olarak çalışma alanına yönlendirir.
+   - Üst çubukta işletme adınızın (*Gölkent Pilates & Wellness*) yazdığını ve ana ekranda *Merhaba, <adınız>* selamını gördüğünüzü doğrulayın.
 
 ---
 
 ### 🇬🇧 Step-by-Step Owner Setup (English)
 
 1. **Open Invitation Link:**
-   - Tap the single-use onboarding invite link sent to your mobile phone via SMS or WhatsApp:
-     `https://agentnest.io/invites/accept?token=...`
-2. **Create Account & Secure Password:**
-   - Enter your full name and a secure password (at least 10 characters).
-   - Tap *Create My Account*.
+   - Tap the single-use link sent to your phone via SMS or WhatsApp:
+     `https://<app-host>/invite/<token>`
+2. **Create Account:**
+   - Enter your **name**, **email** and a **password** of at least 10 characters.
+   - Tap **Create account and join**. (If you already have an account, tap *Sign in*; you return to the invite afterwards.)
 3. **Login Verification:**
-   - You will be automatically redirected to the secure mobile dashboard.
-   - Verify that your business name (*Gölkent Pilates & Wellness*) appears in the header.
+   - You are redirected into the workspace automatically.
+   - Verify that your business name (*Gölkent Pilates & Wellness*) appears in the header and the home screen greets you by name.
 
 ---
 
 ## 4. Meta Instagram OAuth Authorization Walkthrough
 
-Now connect the business Instagram account to AgentNest.
+Now connect the business Instagram account to AgentNest. The owner signs in with their **Instagram** credentials; no Facebook account or Page is involved.
 
 ### 🇹🇷 Instagram Bağlantısı ve İzin İncelemesi (Türkçe)
 
-1. **Entegrasyonlar Menüsüne Gitme:**
-   - Panelde sol/alt menüden **Ayarlar (Settings) -> Entegrasyonlar (Integrations)** bölümüne dokunun.
+1. **Bağlantılar Ekranına Gitme:**
+   - **Daha fazla -> Instagram bağlantısı** (ya da **Ayarlar -> Bağlantılar**) bölümüne dokunun.
 2. **Instagram ile Bağlan Butonu:**
-   - **Instagram Hesabını Bağla (Connect Instagram)** butonuna dokunun. Resmi Facebook / Meta giriş ekranı açılacaktır.
+   - **Instagram ile bağlan** butonuna dokunun. Resmi Instagram giriş ve izin ekranı açılacaktır. (Buton yalnızca sunucuda gerçek Meta sağlayıcısı açıksa görünür; yerel denemelerde **Demo hesabı bağla (simülasyon)** görünür.)
 3. **İzinleri Onaylama:**
-   - Meta ekranında şu izinler listelenecektir:
-     - *Instagram temel profil bilgilerini görüntüleme* (`instagram_basic`)
-     - *Instagram mesajlarını yönetme ve yanıtlama* (`instagram_manage_messages`)
-     - *Yorumları görüntüleme ve yanıtlama* (`instagram_manage_comments`)
-     - *Facebook Sayfası etkileşimlerini yönetme* (`pages_manage_metadata`, `pages_read_engagement`)
-   - İlgili Facebook Sayfanızı ve Instagram İşletme hesabınızı seçerek **İzin Ver (Allow)** butonuna dokunun.
+   - Ekranda AgentNest'in şu erişimleri istediği listelenir (Instagram kendi cümlelerini kullanır; teknik adları parantezde):
+     - Profil bilgilerinizi görme (`instagram_business_basic`)
+     - Mesajlarınızı yönetme ve yanıtlama (`instagram_business_manage_messages`)
+     - Gönderi ve hikâye paylaşma (`instagram_business_content_publish`)
+     - Hesap istatistiklerini görme (`instagram_business_manage_insights`)
+   - Yorumlara erişim **istenmez** (henüz eklenmedi, bkz. aşağıdaki not). **İzin Ver (Allow)** butonuna dokunun.
 4. **Bağlantı Başarısını Doğrulama:**
-   - Ekran AgentNest paneline geri dönecektir.
-   - Durum rozeti **Bağlandı (Connected)** ve Instagram kullanıcı adınız (örneğin `@golkentpilates`) yeşil ikonla görüntülenecektir.
+   - Ekran AgentNest'e geri döner; durum **bağlı** ve Instagram kullanıcı adınız görünür.
+   - **Yapabildikleri** satırında *Mesajlaşma* ve *Gönderi yayınlama* yazar. Yorumlar bu listede **yoktur**; bu beklenen durumdur.
+
+> **Not (yorumlar):** Instagram yorumlarını okumak ve yanıtlamak için `instagram_business_manage_comments` izni gerekir; uygulama bunu henüz istemez ve Meta App Review paketinde de eklenmesi gerekir. Bu nedenle gerçek hesaplarda **Gelen kutusu -> Yorumlar** sekmesi *Henüz yok* etiketi taşır ve "Yorumlar henüz kullanılamıyor" der. Pilot sahibine yorum yanıtı vaat etmeyin.
 
 ---
 
 ### 🇬🇧 Instagram Connection & Permission Review (English)
 
-1. **Navigate to Integrations:**
-   - In the sidebar or mobile menu, navigate to **Settings -> Integrations**.
-2. **Connect Instagram Button:**
-   - Tap **Connect Instagram Account**. The official Meta authorization screen will appear.
-3. **Review & Approve Permissions:**
-   - The permissions dialog will display:
-     - *View basic Instagram profile information* (`instagram_basic`)
-     - *Manage and reply to Instagram direct messages* (`instagram_manage_messages`)
-     - *View and moderate post comments* (`instagram_manage_comments`)
-     - *Manage Page webhook delivery* (`pages_manage_metadata`, `pages_read_engagement`)
-   - Select your Facebook Page and Instagram Business Account, then tap **Allow**.
-4. **Confirm Connection Status:**
-   - You are redirected back to AgentNest.
-   - Confirm that the status badge reads **Connected** with your handle (e.g. `@golkentpilates`).
+1. **Navigate to the connection screen:**
+   - **More -> Instagram connection** (or **Settings -> Connections**).
+2. **Connect button:**
+   - Tap **Connect with Instagram**. The official Instagram sign-in and permission screen opens. (The button appears only when the real Meta provider is enabled on the server; local trials show **Connect demo account (simulation)**.)
+3. **Review & approve permissions:**
+   - The screen lists the access AgentNest asks for (Instagram words it its own way; technical names in brackets):
+     - View your profile information (`instagram_business_basic`)
+     - Manage and reply to your messages (`instagram_business_manage_messages`)
+     - Publish posts and stories (`instagram_business_content_publish`)
+     - View account insights (`instagram_business_manage_insights`)
+   - Comment access is **not** requested yet (see the note below). Tap **Allow**.
+4. **Confirm connection status:**
+   - You are redirected back to AgentNest; the status reads **connected** with your handle.
+   - The **Capabilities** line lists *Messaging* and *Publishing*. Comments are **not** listed; that is expected.
+
+> **Note (comments):** reading and answering Instagram comments needs the `instagram_business_manage_comments` permission. The app does not request it yet, and it still has to be added to the code and to the Meta App Review package ([meta-app-review-package.md](meta-app-review-package.md)). Until then, on real accounts **Inbox -> Comments** carries a *Not yet* label and says comments are not available. Do not promise comment replies to a pilot owner.
 
 ---
 
 ## 5. Supervised Live Test & First Message Walkthrough
 
-To ensure total trust and verify fact-grounded accuracy, conduct a live test with the owner:
+To ensure total trust and verify fact-grounded accuracy, conduct a live test with the owner. Prepare it from the facts entered in section 2: ask a question that one of **your own verified facts answers** (the assistant hands everything else to a person, see step 2).
 
 | Step | Action | Turkish Walkthrough | English Walkthrough | Expected Outcome |
 |---|---|---|---|---|
-| **1. Send Inbound DM** | Owner or operator sends DM from a personal Instagram account | Kişisel Instagram hesabınızdan işletmenizin Instagram hesabına DM gönderin: *"Merhaba, reformer seans paket fiyatlarınızı öğrenebilir miyim?"* | Send a DM from a separate account to the business: *"Hello, what are your reformer package prices?"* | Message arrives instantly in AgentNest Unified Inbox via webhook. |
-| **2. Review AI Draft** | Inspect draft in AgentNest Inbox | AgentNest panelinde Mesaj Kutusu (Inbox) ekranını açın. Gelen mesajın altında *Hazırlanıyor…* rozeti belirecek ve birkaç saniye içinde taslak yanıt oluşturulacaktır. | Open AgentNest Unified Inbox. Under the incoming message, the AI drafts a factual response. | Draft displays: *"Merhaba! Reformer pilates 10 seanslık paketimiz 4.800 TL'dir (60 gün geçerlidir). — Otomatik yanıt"* |
-| **3. Grounding Verification** | Compare draft with facts | Taslaktaki fiyat ve bilginin yüklenen işletme bilgileriyle (4.800 TL) birebir örtüştüğünü doğrulayın. Asla uydurma veya halüsinasyon bilgi olmamalıdır. | Verify that the price matches the seeded business facts exactly (4,800 TL). No hallucinated or unverified facts. | Facts strictly validated. |
-| **4. Human Approval** | Owner approves draft | Yanıtı inceleyin, dilerseniz metni düzenleyin ve **Onayla ve Gönder (Approve & Send)** butonuna dokunun. | Review the text, optionally edit, and tap **Approve & Send**. | AgentNest dispatches message via Meta Graph API; status updates to *Sent*. |
-| **5. Delivery Confirmation** | Check sender phone | Kişisel Instagram DM kutunuzu kontrol edin. Yanıtın ulaştığını doğrulayın. | Check the test Instagram account's DM inbox to verify delivery. | Customer account receives the message with the disclosure suffix. |
+| **1. Send Inbound DM** | Owner or operator sends DM from a personal Instagram account | Kişisel Instagram hesabınızdan işletmenizin hesabına, girdiğiniz bir bilgiyle yanıtlanabilecek bir DM gönderin: *"Merhaba, reformer 10 seanslık paket fiyatınız nedir?"* | Send a DM from a separate account to the business that one of your facts answers: *"Hello, what is your 10-session reformer pack price?"* | The message appears in **Gelen kutusu -> Mesajlar** within seconds (webhook), marked *Size gerek var* until the draft is ready. |
+| **2. Review AI Draft** | Inspect draft in AgentNest Inbox | **Gelen kutusu**'nu açıp konuşmaya dokunun. Hazırlanırken *Hazırlanıyor…* görünür; sonra *Asistanın taslağı* ve *Onay bekliyor* çıkar. | Open the conversation in **Inbox**. *Preparing…* shows while the draft is made, then *Assistant's draft* with *Waiting for approval*. | Draft quotes the fact exactly, e.g. *"Merhaba! Reformer 10 seanslık paket ücretimiz 4.800 ₺."* The price is shown as a chip tied to its fact. If no fact covers the question, the assistant answers *Asistan emin olamadı* / *Size devredildi* (handed to you) instead of guessing: that is correct behaviour, not a fault. |
+| **3. Grounding Verification** | Compare draft with facts | Taslaktaki fiyat ve bilginin girdiğiniz bilgilerle birebir aynı olduğunu doğrulayın. Uydurma bilgi olmamalıdır. | Verify that the price matches the entered facts exactly. No invented or unverified facts. | Facts strictly validated. |
+| **4. Human Approval** | Owner approves draft | Yanıtı inceleyin, dilerseniz **Düzenle** ile değiştirin ve **Onayla ve gönder** butonuna dokunun. | Review the text, optionally **Edit**, and tap **Approve and send**. | AgentNest sends the message through the Instagram API; the draft shows *Gönderildi* (Sent) with *"<name> onayladı (date time)"*. |
+| **5. Delivery Confirmation** | Check sender phone | Kişisel Instagram DM kutunuzu kontrol edin; yanıtın ulaştığını doğrulayın. | Check the test Instagram account's DM inbox to verify delivery. | The customer account receives the message. The disclosure sentence is **not** added to an owner-approved reply (section 2.3). |
 
 ---
 
@@ -155,23 +171,23 @@ The business owner must know how to pause, override, or immediately disconnect A
 ### Contingency Runbook A: Immediate Emergency Disconnect (Tek Tıkla Bağlantı Kesme)
 - **When to use:** In case of any unexpected behavior, account security concern, or desire to immediately stop all AgentNest access.
 - **Action (In-App):**
-  1. Go to **Settings -> Integrations**.
-  2. Click **Instagram Bağlantısını Kes (Disconnect Instagram)**.
-  3. Confirm the modal. AgentNest immediately revokes tokens, pauses background workers, and deletes local cached session credentials.
-- **Action (From Instagram/Facebook App):**
-  1. Open Instagram -> Settings -> Security / Permissions -> Apps and Websites.
+  1. Go to **More -> Instagram connection** (**Daha fazla -> Instagram bağlantısı**).
+  2. Tap **Bağlantıyı kes** (Disconnect). A dialog asks to confirm and offers to delete the conversation and message history as well (**Konuşma ve mesaj geçmişini de sil**, off by default).
+  3. Tap **Evet, bağlantıyı kes**. Replies and posts can no longer be sent; AgentNest drops its stored token.
+- **Action (From Instagram):**
+  1. Open Instagram -> Settings -> Apps and websites.
   2. Select `AgentNest` and tap **Remove**.
-  3. Meta immediately triggers the deauthorization webhook; AgentNest fences all background operations within 2 seconds.
+  3. Meta calls the deauthorization webhook and AgentNest fences all background operations for that account.
 
-### Contingency Runbook B: Pause Autonomous Processing (Yapay Zekayı Duraklatma)
+### Contingency Runbook B: Pause Automatic Replies (Yapay Zekayı Duraklatma)
 - **When to use:** If the owner wants to handle DMs manually for a holiday or high-traffic event.
 - **Action:**
-  1. Navigate to **Agent & Autonomy Settings**.
-  2. Toggle **Yapay Zeka Asistanı (AI Assistant)** to `Paused / Kapalı`.
-  3. AgentNest ceases drafting and auto-actions; existing conversations can still be answered manually from the Inbox.
+  1. Go to **More -> Automation and Instagram** (**Daha fazla -> Otomasyon ve Instagram**).
+  2. Set every topic to **Her zaman bana bırak** (always leave it to me) and tap **Kaydet**. Nothing is sent without the owner; existing conversations can still be answered from the Inbox (**Kendi yanıtını yaz**).
+  3. If the account assistant was switched on (**Daha fazla -> Asistan**, *Hesap asistanını etkinleştir*), the same page offers **Asistanı duraklat** (Pause assistant), which stops new assistant work until resumed.
+- On the default setting (*Önce bana sor*) nothing is ever sent without the owner's tap, so pausing is only needed once the owner has turned on **Otomatik gönder** for a topic.
 
 ### Contingency Runbook C: Emergency Operator Escalation (Operatör Destek Hattı)
-- **Emergency Contact:** `ops@agentnest.io` / WhatsApp Destek Hattı: `+90 (5XX) XXX XX XX`
+- **Emergency Contact:** `ops@agentnest.io` / WhatsApp Destek Hattı: `+90 (5XX) XXX XX XX` (placeholders until the domain and numbers are decided, P-07).
 - **SLA:** 15-minute response time for active pilot businesses during pilot hours (08:00 - 22:00 TRT).
-- **Incident Playbook:** Operator can run `python -m app.cli post-restore-reconcile` or freeze workspace tenant jobs remotely.
-
+- **Incident Playbook:** Check **Daha fazla -> Sistem durumu** (connection, delivery and background jobs) first. On the server, `python -m app.cli check-config` and `migration-status` confirm configuration; `python -m app.cli post-restore-reconcile` is only for after a database restore (it re-applies erasure tombstones and fences stale operations), not for routine incidents.

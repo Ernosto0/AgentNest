@@ -107,6 +107,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register */
+        post: operations["register_api_v1_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend Verification */
+        post: operations["resend_verification_api_v1_auth_resend_verification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/sessions": {
         parameters: {
             query?: never;
@@ -153,6 +187,23 @@ export interface paths {
         post?: never;
         /** Revoke Session */
         delete: operations["revoke_session_api_v1_auth_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Email */
+        post: operations["verify_email_api_v1_auth_verify_email_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -395,6 +446,27 @@ export interface paths {
         get: operations["meta_api_v1_meta_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/waitlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join Waitlist
+         * @description Store a pilot request once per email and tell the operator. A repeated email answers the
+         *     same way and sends nothing, so the response never reveals whether an email was already known.
+         */
+        post: operations["join_waitlist_api_v1_waitlist_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2801,6 +2873,23 @@ export interface paths {
         };
         /** Get System Health */
         get: operations["get_system_health_api_v1_workspaces__workspace_id__system_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Usage */
+        get: operations["get_usage_api_v1_workspaces__workspace_id__usage_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5280,8 +5369,12 @@ export interface components {
             mock_requires_demo_workspace: boolean;
             /** Product Name */
             product_name: string;
+            /** Signup Enabled */
+            signup_enabled: boolean;
             /** Supported Locales */
             supported_locales: string[];
+            /** Terms Version */
+            terms_version: string;
         };
         /** MetricItemOut */
         MetricItemOut: {
@@ -5960,6 +6053,23 @@ export interface components {
             /** Schedule */
             schedule: components["schemas"]["LocalScheduleIn"] | "now";
         };
+        /** RegisterRequest */
+        RegisterRequest: {
+            /** Accepted Terms Version */
+            accepted_terms_version: string;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Password */
+            password: string;
+            /**
+             * Ui Locale
+             * @default tr
+             * @enum {string}
+             */
+            ui_locale: "tr" | "en";
+        };
         /** RenderedFactOut */
         RenderedFactOut: {
             /** Display */
@@ -6564,12 +6674,52 @@ export interface components {
             /** Default Slot Duration Minutes */
             default_slot_duration_minutes: number;
         };
+        /** UsageOut */
+        UsageOut: {
+            /** Grace Limit */
+            grace_limit: number;
+            /** Monthly Quota */
+            monthly_quota: number;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /**
+             * Plan
+             * @enum {string}
+             */
+            plan: "starter" | "growth" | "pro";
+            /** Quota */
+            quota: number;
+            /** Quota Override */
+            quota_override: number | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "normal" | "warning" | "grace" | "paused";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "trial" | "active" | "past_due" | "cancelled";
+            /** Used */
+            used: number;
+        };
         /** UserOut */
         UserOut: {
             /** Display Name */
             display_name: string;
             /** Email */
             email: string;
+            /** Email Verified */
+            email_verified: boolean;
             /**
              * Id
              * Format: uuid
@@ -6628,6 +6778,11 @@ export interface components {
             /** Passed */
             passed: boolean;
         };
+        /** VerificationRequest */
+        VerificationRequest: {
+            /** Token */
+            token: string;
+        };
         /** VersionOut */
         VersionOut: {
             /** Actor Name */
@@ -6664,6 +6819,37 @@ export interface components {
             };
             /** Version */
             version: number;
+        };
+        /**
+         * WaitlistRequest
+         * @description Email is required. The landing form also sends optional context for the operator.
+         */
+        WaitlistRequest: {
+            /** Business Name */
+            business_name?: string | null;
+            /** Category */
+            category?: string | null;
+            /** City */
+            city?: string | null;
+            /** Email */
+            email: string;
+            /** Instagram Handle */
+            instagram_handle?: string | null;
+            /**
+             * Locale
+             * @default tr
+             * @enum {string}
+             */
+            locale: "tr" | "en";
+        };
+        /** WaitlistResponse */
+        WaitlistResponse: {
+            /**
+             * Status
+             * @default received
+             * @constant
+             */
+            status: "received";
         };
         /** WebhooksHealth */
         WebhooksHealth: {
@@ -7091,6 +7277,72 @@ export interface operations {
             };
         };
     };
+    register_api_v1_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_verification_api_v1_auth_resend_verification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_sessions_api_v1_auth_sessions_get: {
         parameters: {
             query?: never;
@@ -7152,6 +7404,37 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_email_api_v1_auth_verify_email_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             204: {
@@ -7585,6 +7868,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetaResponse"];
+                };
+            };
+        };
+    };
+    join_waitlist_api_v1_waitlist_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaitlistRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -12626,6 +12942,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemHealthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_usage_api_v1_workspaces__workspace_id__usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageOut"];
                 };
             };
             /** @description Validation Error */

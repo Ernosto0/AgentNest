@@ -26,9 +26,13 @@ UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 CSRF_EXEMPT_PATHS = frozenset(
     {
         "/api/v1/auth/login",
+        "/api/v1/auth/register",
+        "/api/v1/auth/resend-verification",
+        "/api/v1/auth/verify-email",
         "/api/v1/auth/password-reset/request",
         "/api/v1/auth/password-reset/confirm",
         "/api/v1/invites/accept",
+        "/api/v1/waitlist",
         "/api/v1/webhooks/meta/deauthorize",
         "/api/v1/webhooks/meta/data-deletion",
         "/api/v1/webhooks/telegram",
@@ -89,6 +93,20 @@ def _authenticate(
     return result
 
 
+def current_auth_unverified_ok(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+    clock: Clock = Depends(get_clock),
+) -> AuthenticatedSession:
+    """Like ``current_auth`` but also accepts a session whose email is not verified yet.
+
+    Only for what the "verify your email" screen needs: ``/auth/me`` and ``/auth/logout``.
+    """
+    return _authenticate(request, response, db, settings, clock)
+
+
 def current_auth(
     request: Request,
     response: Response,
@@ -96,8 +114,16 @@ def current_auth(
     settings: Settings = Depends(get_app_settings),
     clock: Clock = Depends(get_clock),
 ) -> AuthenticatedSession:
-    """The authenticated user and session, or 401 ``AUTH_REQUIRED``."""
-    return _authenticate(request, response, db, settings, clock)
+    """The authenticated user and session, or 401 ``AUTH_REQUIRED``.
+
+    A session of a self-registered user whose email is not verified yet is refused with
+    403 ``EMAIL_NOT_VERIFIED``; ``require_membership`` builds on this, so every workspace
+    route is covered too.
+    """
+    auth = _authenticate(request, response, db, settings, clock)
+    if not auth.user.email_verified:
+        raise AppError("EMAIL_NOT_VERIFIED")
+    return auth
 
 
 def optional_auth(

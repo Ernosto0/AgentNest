@@ -96,8 +96,8 @@ def test_all_category_c_tables_have_forced_rls(session_factory: sessionmaker[Ses
         ).all()
         policies_by_table = {r[0]: r[1] for r in pol_rows}
 
-        assert len(CATEGORY_C_TABLES) == 60, (
-            f"Expected 60 Category C tables, got {len(CATEGORY_C_TABLES)}"
+        assert len(CATEGORY_C_TABLES) == 62, (
+            f"Expected 62 Category C tables, got {len(CATEGORY_C_TABLES)}"
         )
 
         missing_rls = []

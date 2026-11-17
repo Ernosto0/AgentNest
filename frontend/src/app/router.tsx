@@ -115,7 +115,16 @@ const DataDeletionInfoPage = lazyNamed(
   "DataDeletionInfoPage",
 );
 
+const SignupPage = lazyNamed(() => import("@/features/auth/SignupPages"), "SignupPage");
+const CheckEmailPage = lazyNamed(() => import("@/features/auth/SignupPages"), "CheckEmailPage");
+const VerifyEmailPage = lazyNamed(() => import("@/features/auth/SignupPages"), "VerifyEmailPage");
+const TermsPage = lazyNamed(() => import("@/features/legal/TermsPage"), "TermsPage");
+
 export const appRoutes: RouteObject[] = [
+  { path: "/signup", element: wrapLazy(<SignupPage />) },
+  { path: "/check-email", element: wrapLazy(<CheckEmailPage />) },
+  { path: "/verify-email/:token", element: wrapLazy(<VerifyEmailPage />) },
+  { path: "/terms", element: wrapLazy(<TermsPage />) },
   { path: "/login", element: wrapLazy(<LoginPage />) },
   { path: "/privacy", element: wrapLazy(<PrivacyPolicyPage />) },
   { path: "/data-deletion", element: wrapLazy(<DataDeletionInfoPage />) },

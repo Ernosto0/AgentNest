@@ -1,13 +1,16 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/Button";
 import { PlusIcon } from "@/components/icons";
 import type { ScheduledDay } from "./hooks";
 
 /**
  * Seven days from today on the workspace clock. Each day shows how many posts and stories are
- * scheduled; a day without a story offers to draft one (the sheet does not take a date).
+ * scheduled. A week with no story at all offers to draft one, once for the whole week: the
+ * sheet does not take a date, so a button per day would only repeat the same action.
  */
 export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onDraftStory: () => void }) {
   const { t, i18n } = useTranslation();
+  const weekHasStory = days.some((day) => day.stories.length > 0);
 
   return (
     <div className="flex flex-col gap-2">
@@ -24,12 +27,12 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
               key={day.dayStr}
               data-testid={`week-day-${day.dayStr}`}
               aria-current={day.isToday ? "date" : undefined}
-              className={`group/day relative flex min-w-0 flex-col items-center gap-0.5 rounded-xl border px-0.5 pt-1.5 pb-1 text-center transition-colors has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-offset-2 has-[button:focus-visible]:outline-focus ${
+              className={`flex min-w-0 flex-col items-center gap-0.5 rounded-xl border px-0.5 pt-1.5 pb-1.5 text-center ${
                 day.isToday
                   ? "border-action bg-action text-on-action"
                   : empty
-                    ? "border-dashed border-border bg-transparent hover:border-action/40 hover:bg-surface-subtle/60"
-                    : `border-transparent bg-surface-subtle ${day.hasStoryGap ? "hover:border-action/30" : ""}`
+                    ? "border-dashed border-border bg-transparent"
+                    : "border-transparent bg-surface-subtle"
               }`}
             >
               {/* The full date is announced below; these visible labels are for sighted readers. */}
@@ -66,23 +69,6 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
                 ) : null}
                 {day.stories.length > 0 ? <Count value={day.stories.length} className="bg-chart-2 text-primary" /> : null}
               </span>
-              {day.hasStoryGap ? (
-                <button
-                  type="button"
-                  onClick={onDraftStory}
-                  title={t("home.week.gapAction")}
-                  aria-label={`${fullDate}: ${t("home.week.gapAction")}`}
-                  className={`flex size-7 items-center justify-center rounded-full outline-none transition-colors after:absolute after:inset-0 after:rounded-xl after:content-[''] ${
-                    day.isToday
-                      ? "text-on-action/80 group-hover/day:bg-on-action/15 group-hover/day:text-on-action"
-                      : "text-secondary group-hover/day:bg-surface group-hover/day:text-action"
-                  }`}
-                >
-                  <PlusIcon className="text-base transition-transform group-hover/day:scale-110" />
-                </button>
-              ) : (
-                <span aria-hidden="true" className="size-7" />
-              )}
             </li>
           );
         })}
@@ -96,11 +82,16 @@ export function WeekCalendar({ days, onDraftStory }: { days: ScheduledDay[]; onD
           <span className="size-2 rounded-full bg-chart-2" />
           {t("home.upNext.stories")}
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <PlusIcon className="text-xs" />
-          {t("home.week.gapLegend")}
-        </span>
       </div>
+      {weekHasStory ? null : (
+        <div data-testid="week-story-prompt" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl bg-surface-subtle/60 py-1 pr-1 pl-3">
+          <p className="text-metadata text-secondary">{t("home.week.noStories")}</p>
+          <Button variant="secondary" onClick={onDraftStory} className="px-3">
+            <PlusIcon />
+            {t("home.upNext.draftStory")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

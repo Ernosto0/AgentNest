@@ -202,7 +202,7 @@ Index: `(workspace_id, status)`, `(workspace_id, fact_key) where status = 'pendi
 |---|---|---|
 | id, workspace_id | uuid | |
 | title | text not null | |
-| intent | text not null | from the intent list ([agent-runtime.md §4](agent-runtime.md)); the `CHECK` also allows `story_mention` (F-04, migration `0052`: the one thank-you for a story mention) |
+| intent | text not null | from the intent list ([agent-runtime.md §4](agent-runtime.md)); the `CHECK` also allows `story_mention` (F-04, migration `0054`: the one thank-you for a story mention) |
 | example_questions | jsonb not null | list of strings (empty only for `story_mention`) |
 | answer_template | text not null | may contain `{{fact:key}}` placeholders |
 | language | text not null | |
@@ -384,7 +384,7 @@ Index: `(conversation_id, provider_timestamp)`.
 
 Constraint: `unique (conversation_id) where status in ('pending_approval','needs_human','queued','sending','outcome_unknown')` (at most one open draft per conversation).
 
-**`message_transcripts`** (Feature Phase 2, F-03 Session 01; migration `0049`; tenant, RLS enabled and forced)
+**`message_transcripts`** (Feature Phase 2, F-03 Session 01; migration `0052`; tenant, RLS enabled and forced)
 The automatic transcript of one voice-note message. Separate from `messages` so that the customer's typed text and a machine transcript of their speech can never be confused, and so that a failure has somewhere to be recorded. One row per message (the first `audio` attachment), created `pending` in the transaction that stores the message and finished by the `transcribe_voice_note` job. The audio itself is never stored.
 | Column | Type | Notes |
 |---|---|---|
@@ -400,10 +400,13 @@ The automatic transcript of one voice-note message. Separate from `messages` so 
 | audio_bytes | int null | size of the downloaded clip |
 | is_simulated | boolean | copied from the message (INV-09) |
 | completed_at, erased_at | timestamptz null | |
+| created_at, updated_at | timestamptz | |
 
 `created_at` of a transcript row is set from the injected `Clock` when it is requested (the draft job measures how long it has waited from it). Session 02 reads the table in `inbox/context.py` (drafting, workspace-scoped) and `inbox/views.py` (inbox and approval API) and `policy/transcripts.py` (account agent guard); no new column or migration. `reply_drafts.validation.transcript_message_ids` (JSON list of message ids, written by code) records which voice notes a reply was drafted from.
 
-**`message_image_descriptions`** (Feature Phase 2, F-03 Session 03; migration `0050`; tenant, RLS enabled and forced)
+Indexes: `status`; `(workspace_id, created_at)` (the per-workspace daily quota counts rows with a `provider` in the last 24 h).
+
+**`message_image_descriptions`** (Feature Phase 2, F-03 Session 03; migration `0053`; tenant, RLS enabled and forced)
 The automatic description of one photo or screenshot a customer sent, for the owner only. Separate from `messages` for the same reasons as `message_transcripts`. One row per image attachment (the first `IMAGE_DESCRIPTION_MAX_PER_MESSAGE`, default 3, of a message), created `pending` in the transaction that stores the message and finished by the `describe_message_image` job. The image itself is never stored. **Nothing reads this table when drafting a reply**: it is shown in the inbox and exported, nothing else.
 | Column | Type | Notes |
 |---|---|---|
@@ -423,10 +426,7 @@ The automatic description of one photo or screenshot a customer sent, for the ow
 | completed_at, erased_at | timestamptz null | |
 | created_at, updated_at | timestamptz | `created_at` from the injected `Clock` |
 
-Migration `0050` also lets `agent_runs.task` hold `describe_image`.
-| created_at, updated_at | timestamptz | |
-
-Indexes: `status`; `(workspace_id, created_at)` (the per-workspace daily quota counts rows with a `provider` in the last 24 h). Nothing reads this table in the drafting path yet (Session 02 does).
+Migration `0053` also lets `agent_runs.task` hold `describe_image`.
 
 **`assistant_test_turns`** (Feature Phase 1, migration `0046`)
 The owner's test-chat sandbox ([api-design.md §2.6a](api-design.md)). One row per test customer message and the draft it got. Deliberately **not** `conversations`/`messages`/`reply_drafts`: those hang off a `social_accounts` row, and a test chat must work before an account is connected and must never be linked to a real one. Nothing reads this table except the test chat itself.
@@ -528,13 +528,19 @@ The facts a text states are recorded in `fact_references` (`referrer_type = 'con
 
 **`notification_deliveries`** (Phase 9; tenant): `id`, `workspace_id`, `notification_id`, `recipient_user_id`, `channel` (`web`, `telegram`, `web_push`; `web_push` since migration `0048`), `channel_link_id` (Telegram only), `status` (`pending`, `delivered`, `failed`, `skipped_quiet_hours`), `attempt_count`, `last_error` (a fixed reason code for `web_push`, never a URL or key), `sent_at`. This is the delivery ledger: one row per recipient per channel, written in the transaction that creates the notification, with the status the quiet-hours policy chose.
 
+
+**`workspace_plans`** (P-11; migration `0051`; tenant, RLS enabled and forced): one row per workspace, created on first use (existing workspaces were backfilled by the migration). `workspace_id` (PK, FK workspaces, cascade), `plan` (`starter`, `growth`, `pro`; the quotas 500, 2,500 and 7,500 live in one place, `app/plans/tiers.py`), `monthly_quota` (the plan's quota when it was set), `quota_override` (operator's per-workspace quota, null when unused), `status` (`trial`, `active`, `past_due`, `cancelled`; stored and shown, no behaviour attached yet), `period_start`, `period_end`, `anchor_day` (the day of month periods roll on; month-end days clamp), `period_id` (changes every period; keys the warning notifications), `used` (AI reply drafts counted in this period), `warned_80`, `warned_100`, `warned_paused` (each warning is sent once per period; reset with the period). Default for a new workspace: `growth`, `trial`, period starting at creation. Checks: positive quotas, `used >= 0`, `period_end > period_start`.
+
+**`reply_usage`** (P-11; migration `0051`; tenant, RLS enabled and forced): the allowance ledger, one row per counted draft, so a retried job or replayed action is never charged twice. `id`, `workspace_id`, `draft_key` (`legacy:{job id}:{message id}`, `dm:{thread}:{cursor}`, `public:…`, `private:…`), `period_id`, `state` (`reserved`, `consumed`, `released`), `expires_at` (a reservation lapses after five minutes). `unique (workspace_id, draft_key)`.
+
+**What counts and when (P-11).** One unit per customer reply draft the AI produced with reply text, counted when the draft is stored: a direct-message `reply_drafts` row (also one policy withheld, or a final text with its problems marked), a proposed public comment reply, a proposed private reply. Approved, edited, auto-sent, discarded or expired afterwards makes no difference. Not counted: the validator's second model call for the same draft, a run that ends without text (the model cannot answer, language not supported, model error), a draft thrown away because a newer customer message arrived while the model ran, manual replies, owner commands, content drafts, the test chat. Every path locks the `workspace_plans` row, so concurrent workers cannot both pass the limit or double-count; the legacy `draft_reply` job reserves a slot before its model call and consumes it in the transaction that stores the draft. Periods roll forward lazily, by calendar month from `anchor_day`, on the next read or write after `period_end`. States by `used`: `normal`, `warning` from 80% of the quota, `grace` from 100%, `paused` from 110% (the quota plus 10%, rounded up). At `paused`: no model call is made; the legacy job stores a `needs_human` draft with reason `REPLY_QUOTA_PAUSED` (and the usual `conversation.needs_human` notification), the account agent's goal ends `failed` with outcome `REPLY_QUOTA_PAUSED` before its first model call and the owner gets the same notification; inbound messages are stored and announced as always. `paused` is computed from `used`, so a plan change, a larger override, `plan-reset` or the next period resumes drafting by itself; the owner can ask for a draft on a paused conversation with "suggest reply" once it has. `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` is a separate safety net and unchanged. Operator commands: `python -m app.cli plan-usage|plan-set|plan-reset|plan-extend --workspace <slug>` (see [pilot-onboarding-checklist.md](../operations/pilot-onboarding-checklist.md)).
 **`push_preferences`** (Feature Phase 1, F-01 part 2; migration `0048`; tenant, RLS enabled and forced): a user's Web Push opt-in per category. `id`, `workspace_id`, `user_id` (FK users, cascade), `category` (`approvals`, `questions`, `failures`; the mapping from notification types is `notifications/catalog.py` `PUSH_TYPES`), `enabled`, `created_at`, `updated_at`. `unique (workspace_id, user_id, category)`. No row means off: push is opt-in, and a user changes only their own rows.
 
-**`fact_save_tokens`** (Feature Phase 2, D-05; migration `0055`; tenant, RLS enabled and forced): the single-use Telegram button "save this answer as a verified fact". `id`, `workspace_id`, `token_hash` (SHA-256 of a 22-character random token; the raw token exists only as the button's `callback_data`, `fsv:<token>`), `candidate_id` (composite FK to `fact_candidates (workspace_id, id)`, cascade), `user_id` (FK users, cascade: the owner or manager the button was sent to), `expires_at` (48 hours after it was created), `used_at` (set by the first tap, valid or not), `created_at`. Unique `token_hash`. The SECURITY DEFINER function `resolve_fact_save_token_by_hash(text)` returns `(id, workspace_id)` for the callback, which does not know the workspace yet; the row is then read under that tenant. The token carries no answer text.
+**`fact_save_tokens`** (Feature Phase 2, D-05; migration `0056`; tenant, RLS enabled and forced): the single-use Telegram button "save this answer as a verified fact". `id`, `workspace_id`, `token_hash` (SHA-256 of a 22-character random token; the raw token exists only as the button's `callback_data`, `fsv:<token>`), `candidate_id` (composite FK to `fact_candidates (workspace_id, id)`, cascade), `user_id` (FK users, cascade: the owner or manager the button was sent to), `expires_at` (48 hours after it was created), `used_at` (set by the first tap, valid or not), `created_at`. Unique `token_hash`. The SECURITY DEFINER function `resolve_fact_save_token_by_hash(text)` returns `(id, workspace_id)` for the callback, which does not know the workspace yet; the row is then read under that tenant. The token carries no answer text.
 
 **`push_subscriptions`** (Feature Phase 1, F-01; migration `0047`; tenant, RLS enabled and forced): one browser or phone a user can be notified on. `id`, `workspace_id`, `user_id` (FK users, cascade), `endpoint` (the push service URL as the browser sent it, https only; never returned by the API), `endpoint_hash` (sha256 hex), `p256dh_ciphertext` and `auth_ciphertext` (the message-encryption keys, AES-256-GCM with the token key ring, AAD `push:<part>:<workspace_id>:<id>`, so a copied blob does not open; plaintext only inside the sender), `key_id` (ring key that wrote both), `device_label` (a short label such as "Chrome on Android"; the raw user agent is not stored), `last_success_at` (set by the Web Push channel when a push service accepts a message), `revoked_at`, `created_at`, `updated_at`. `unique (workspace_id, user_id, endpoint_hash)` (one row per device per user per workspace; a re-subscribe refreshes the keys and revives a revoked row). A user keeps at most 10 active rows per workspace (the oldest is revoked). The same endpoint subscribed by another user of the same workspace revokes the previous user's row, so a shared phone never pushes to whoever signed in last. Rows are kept after unsubscribe (`revoked_at`); keys are not covered by the token key rotation job, so retired `TOKEN_ENCRYPTION_KEYS` entries must stay until devices re-subscribe.
 
-**`delegation_suggestions`** (Feature Phase 2, D-02; migration `0053`; tenant, RLS enabled and forced): the weekly "send this topic automatically?" proposal. `id`, `workspace_id`, `social_account_id` (composite FK `(workspace_id, social_account_id)` to `social_accounts`, cascade), `week` (date: Monday of the workspace-local week), `intent` (`hours` | `location_contact` | `services`), `action_class` (the automation class that intent maps to), `counts` (jsonb `{unchanged, edited, rejected, failed}` over the window: counts only, no customer text), `status` (`pending` | `accepted` | `dismissed` | `expired`), `created_at`, `expires_at` (7 days), `cooldown_until` (set on dismissal and on acceptance: that `action_class` is not suggested again until then), `decided_at`, `decided_by_user_id` (FK users, set null), `preview_hash` and `previewed_by` (the owner's preview of the exact `DelegationChange`; apply refuses without a matching one). `unique (workspace_id, week)` is the one-suggestion-per-week guarantee. Rows are written only by `agent/suggestions.py`; accepting one writes the `automation_policies` row in the same transaction as the delegation apply.
+**`delegation_suggestions`** (Feature Phase 2, D-02; migration `0055`; tenant, RLS enabled and forced): the weekly "send this topic automatically?" proposal. `id`, `workspace_id`, `social_account_id` (composite FK `(workspace_id, social_account_id)` to `social_accounts`, cascade), `week` (date: Monday of the workspace-local week), `intent` (`hours` | `location_contact` | `services`), `action_class` (the automation class that intent maps to), `counts` (jsonb `{unchanged, edited, rejected, failed}` over the window: counts only, no customer text), `status` (`pending` | `accepted` | `dismissed` | `expired`), `created_at`, `expires_at` (7 days), `cooldown_until` (set on dismissal and on acceptance: that `action_class` is not suggested again until then), `decided_at`, `decided_by_user_id` (FK users, set null), `preview_hash` and `previewed_by` (the owner's preview of the exact `DelegationChange`; apply refuses without a matching one). `unique (workspace_id, week)` is the one-suggestion-per-week guarantee. Rows are written only by `agent/suggestions.py`; accepting one writes the `automation_policies` row in the same transaction as the delegation apply.
 
 **`channel_links`** (Phase 9, user-level, not tenant): `id`, `user_id`, `channel`, `external_user_id`, `external_chat_id`, `default_workspace_id`, `status` (`active`, `revoked`), `linked_at`, `revoked_at`. `unique (channel, external_user_id) where status='active'`.
 
@@ -587,6 +593,7 @@ Downgrade to `0018` refuses any agent thread, event, delegation, session, step, 
 | Inbound event payloads | Webhooks | Status only (the retention job nulls `payload`) | Payload nulled after 30 days; rows deleted after 90 (implemented, Phase 6) |
 | Agent run input snapshots | AI runner | No | Nulled after 30 days (implemented, Phase 6; a `queued` or `running` run keeps it) |
 | Audit logs | All services | Never | 2 years in the policy; **no purge in Phase 6** (needs an ADR with the Phase 8 DB privileges) |
+| Pilot waitlist (`waitlist_entries`, migration `0049`; global, no workspace) | Public landing form (`POST /api/v1/waitlist`) | Insert only; a repeated email is ignored | Deleted 365 days after the request (`RETENTION_WAITLIST_DAYS`), or on request (`waitlist-delete`) |
 | Notifications | Services | `read_at` only | Deleted 90 days after they were read; an unread one is never deleted (implemented, Phase 6) |
 | Jobs | Queue | Status | Succeeded/cancelled deleted after 7 days; dead after 90 (implemented, Phase 6) |
 | Report generations / contributing evidence | Reporting | Immutable after creation; regeneration inserts a new generation | Lifetime of workspace; no copied source text or payloads |
@@ -740,7 +747,7 @@ source/media-version and exact request-hash evidence; no new table or migration 
 
 ### Feature Phase 2 Session 08 migration
 
-Revision `0056`, parent `0055`, extends `approvals.action` CHECK with
+Revision `0057`, parent `0056`, extends `approvals.action` CHECK with
 `command.reschedule_content` and `command.pause_agent`. No table/column/RLS change. Timers use
 existing jobs and account config_version/controller_epoch. Downgrade restores the prior CHECK
 and intentionally refuses if new-action approval rows exist, preserving audit/approval history.

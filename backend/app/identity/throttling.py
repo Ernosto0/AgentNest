@@ -6,7 +6,7 @@ import math
 from datetime import timedelta
 
 from fastapi import Request
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 
 from app.audit import service as audit
@@ -20,6 +20,10 @@ LOCKOUT_SCHEDULE_SECONDS = (60, 300, 900, 3600)  # 5th attempt: 60s, 6th: 300s, 
 FAILURES_BEFORE_LOCKOUT = 5
 RESET_REQUESTS_BEFORE_LOCKOUT = 5
 RESET_LOCKOUT_SECONDS = 900
+WAITLIST_REQUESTS_BEFORE_LOCKOUT = 5  # per IP or per email, within the 15-minute window
+WAITLIST_LOCKOUT_SECONDS = 900
+SIGNUP_REQUESTS_BEFORE_LOCKOUT = 5  # register / resend, per IP or per email, per 15 minutes
+SIGNUP_LOCKOUT_SECONDS = 900
 
 
 def hash_identifier(value: str) -> str:
@@ -205,9 +209,90 @@ def enforce_password_reset_throttle(
     ip_address: str,
 ) -> None:
     """Rate-limit password reset requests per IP and per normalized email (Serious 12)."""
+    _enforce_request_throttle(
+        session,
+        clock,
+        prefix="pw_reset",
+        limit=RESET_REQUESTS_BEFORE_LOCKOUT,
+        lockout_seconds=RESET_LOCKOUT_SECONDS,
+        audit_action="auth.password_reset_throttled",
+        email=email,
+        ip_address=ip_address,
+    )
+
+
+def enforce_waitlist_throttle(
+    session: Session,
+    clock: Clock,
+    *,
+    email: str,
+    ip_address: str,
+) -> None:
+    """Rate-limit public waitlist submissions per IP and per normalized email.
+
+    Reuses the login-throttle table with a ``waitlist:`` namespace, so no new storage is needed.
+    Both the hashed IP and the hashed email are stored, never the raw values.
+    """
+    _enforce_request_throttle(
+        session,
+        clock,
+        prefix="waitlist",
+        limit=WAITLIST_REQUESTS_BEFORE_LOCKOUT,
+        lockout_seconds=WAITLIST_LOCKOUT_SECONDS,
+        audit_action=None,
+        email=email,
+        ip_address=ip_address,
+    )
+
+
+def enforce_signup_throttle(
+    session: Session,
+    clock: Clock,
+    *,
+    purpose: str,
+    email: str,
+    ip_address: str,
+) -> None:
+    """Rate-limit ``register`` and ``resend_verification`` per IP and per email.
+
+    Each purpose has its own counters, so a burst of resends does not lock out registration.
+    The counters are committed here (before the work), so a request that later fails still
+    counts. Advisory locks serialize concurrent requests for the same IP or email, including
+    the very first one, whose counter row does not exist yet to lock.
+    """
+    if purpose not in {"register", "resend_verification"}:
+        raise ValueError(f"unknown signup throttle purpose: {purpose}")
+    for value in (ip_address, email):
+        key = int(hash_identifier(f"{purpose}:{value}")[:15], 16)
+        session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": key})
+    _enforce_request_throttle(
+        session,
+        clock,
+        prefix=purpose,
+        limit=SIGNUP_REQUESTS_BEFORE_LOCKOUT,
+        lockout_seconds=SIGNUP_LOCKOUT_SECONDS,
+        audit_action=f"auth.{purpose}_throttled",
+        email=email,
+        ip_address=ip_address,
+    )
+    session.commit()
+
+
+def _enforce_request_throttle(
+    session: Session,
+    clock: Clock,
+    *,
+    prefix: str,
+    limit: int,
+    lockout_seconds: int,
+    audit_action: str | None,
+    email: str,
+    ip_address: str,
+) -> None:
+    """Count every request per namespaced IP and email; lock both after ``limit`` in a window."""
     now = clock.now()
-    email_h = hash_identifier(f"pw_reset:{email}")
-    ip_h = hash_identifier(f"pw_reset:{ip_address}")
+    email_h = hash_identifier(f"{prefix}:{email}")
+    ip_h = hash_identifier(f"{prefix}:{ip_address}")
 
     existing = list(
         session.scalars(
@@ -227,20 +312,21 @@ def enforce_password_reset_throttle(
     if locked:
         max_locked = max(t.locked_until for t in locked if t.locked_until is not None)
         retry_after = max(1, math.ceil((max_locked - now).total_seconds()))
-        audit.record(
-            session,
-            None,
-            "auth.password_reset_throttled",
-            "user",
-            None,
-            {
-                "retry_after": retry_after,
-                "email_sha256": email_h,
-                "ip_sha256": ip_h,
-                "locked_targets": [t.identifier_type for t in locked],
-            },
-            clock=clock,
-        )
+        if audit_action is not None:
+            audit.record(
+                session,
+                None,
+                audit_action,
+                "user",
+                None,
+                {
+                    "retry_after": retry_after,
+                    "email_sha256": email_h,
+                    "ip_sha256": ip_h,
+                    "locked_targets": [t.identifier_type for t in locked],
+                },
+                clock=clock,
+            )
         session.commit()
         raise AppError(
             "RATE_LIMITED",
@@ -278,6 +364,6 @@ def enforce_password_reset_throttle(
             else:
                 row.failed_attempts += 1
                 row.last_failed_at = now
-                if row.failed_attempts >= RESET_REQUESTS_BEFORE_LOCKOUT:
-                    row.locked_until = now + timedelta(seconds=RESET_LOCKOUT_SECONDS)
+                if row.failed_attempts >= limit:
+                    row.locked_until = now + timedelta(seconds=lockout_seconds)
     session.flush()

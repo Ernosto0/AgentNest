@@ -83,6 +83,8 @@ The checklist also requires a linked Facebook Page with admin rights. That is a 
 
 **Suggested fix.** Either add the two CLI commands or rewrite section 2 around what exists (`create-user`, then the in-app workspace wizard and paste-to-extract). Correct the invite URL and the permission list. Then do one dry run of the whole checklist on a fresh workspace.
 
+**Status (2026-11-16, PR #5):** done. Section 2 is rewritten around what exists (`create-user`, the in-app workspace wizard, paste-to-extract and manual facts, with the real fact keys and value formats); no CLI commands were added because the dry run needed none. The invite URL is `/invite/:token`, the permission list is the four `instagram_business_*` scopes, and the Facebook Page requirement is removed: Meta's documentation says Instagram API with Instagram Login "does not require a Facebook Page to be linked to the Instagram professional account". The dry run (fresh DB, mock provider, fake LLM) also corrected the owner sign-up fields (one name field, 10-character minimum), the menu paths and button labels, the draft and approval wording, the disclosure behaviour (default text `Bu yanıt otomatik olarak hazırlanmıştır.`, added only to auto-sent replies, not `— Otomatik yanıt`), the pause runbook, the "50 operations per 24 hours" claim (it is the publish limit) and the `post-restore-reconcile` description. Still to confirm on the first real pilot: the real Meta consent screen and tester-invite menu names.
+
 ### P-05. Comment features cannot work on a real account
 
 **Problem.** The agent has comment tools (`comment.reply`, `comment.hide`, `comment.private_reply` and others) and the UI has a comments queue, but the OAuth flow never asks for a comment permission. Even after the capability gates open, a real account would have no grant.
@@ -91,6 +93,8 @@ The checklist also requires a linked Facebook Page with admin rights. That is a 
 
 **Suggested fix.** This is expected while the capability is gated, but make the state explicit: hide or label the comments queue on real accounts until the scope is added and verified, and add the scope to the App Review package. See F-05 in the companion document.
 
+**Status (2026-11-16, PR #5):** done for the UI and docs; the scope itself is still missing by design. When no connected account has a `comment_*` capability set (the same capability flags the agent uses, no new flag), the inbox labels the Comments tab "Henüz yok" / "Not yet", hides its count and replaces the list with "Yorumlar henüz kullanılamıyor". Mock accounts keep the list. [meta-app-review-package.md](../operations/meta-app-review-package.md) now says that `instagram_business_manage_comments` must be added to `SCOPES` and requested in App Review, and that the package's permission names are the Facebook Login ones and need reconciling before submission. Left: add the scope and close R75-01 to R75-06.
+
 ### P-06. Landing waitlist form may send nothing
 
 **Problem.** The landing form posts to `VITE_WAITLIST_ENDPOINT`, a build-time variable. If it is not set, the form goes into "preview" mode and tells the visitor nothing was sent. The backend has no waitlist endpoint, so an external collector is required.
@@ -98,6 +102,8 @@ The checklist also requires a linked Facebook Page with admin rights. That is a 
 **Evidence.** [waitlist.ts](../../landing/src/waitlist.ts), [landing/README.md](../../landing/README.md). Whether the variable is set on Railway could not be seen from the repository.
 
 **Suggested fix.** Submit the live form once and confirm the entry arrives. If no collector exists yet, point the variable at a form service or add a small `POST /waitlist` endpoint that emails `OPERATOR_ALERT_EMAIL`. Set `VITE_WAITLIST_WHATSAPP` as a fallback.
+
+**Status (2026-11-16, PR #5):** done in code; needs one live check after deploy. `POST /api/v1/waitlist` stores one row per email (migration `0049`, up and down tested), is rate-limited through the existing throttle table, answers new and repeated emails alike, and emails `OPERATOR_ALERT_EMAIL` after the commit (best effort). The email is never logged in plain text; rows are deleted after `RETENTION_WAITLIST_DAYS` (365) or by `waitlist-delete --email`; `waitlist-list` prints them. CORS for the landing origin is limited to this route and set by `LANDING_ORIGINS` (`.env.example`, environment-variables.md). The landing form now asks for an email, sends the new body and is documented in landing/README.md. Left on Railway: set `VITE_WAITLIST_ENDPOINT` (build-time) and `LANDING_CONNECT_SRC` on the landing service, `LANDING_ORIGINS`, `OPERATOR_ALERT_EMAIL`, `SMTP_URL` and `MAIL_FROM` on the API, then submit the live form once.
 
 ### P-07. Production runs on a `railway.app` subdomain
 
@@ -131,11 +137,15 @@ These do not stop assisted pilots, where the founder sets up each business in pe
 
 **Suggested fix.** Add email signup with verification, then route the new user into the existing workspace wizard. Protect it with the existing login throttling. Not needed for the first 10 to 15 pilots.
 
+**Status (2026-11-17, PR #6):** done, behind the `SIGNUP_ENABLED` flag (default off). `POST /auth/register`, `/auth/resend-verification` and `/auth/verify-email` with signed, 24 h, single-use links; generic 202 answers (an existing address gets a "you already have an account" email); register and resend are throttled per email and per IP; the accepted terms version and time are stored on the user (`backend/app/identity/legal.py`, `TERMS_VERSION`). Unverified sessions get 403 `EMAIL_NOT_VERIFIED` everywhere except `/auth/me`, `/auth/logout`, `/meta` and verification. Migration 0050 marks all existing users verified; invite acceptance by a new user marks the email verified. Frontend: signup, check-your-email, verification and terms pages, then the workspace wizard; Playwright journey `signup.spec.ts`. **Left:** (1) legal review of the terms page text, which is a short placeholder, and of the privacy page, then bump `TERMS_VERSION`; (2) production needs `SMTP_URL` and `MAIL_FROM` before the flag goes on; (3) unverified accounts are never purged, and an unverified account blocks the same address from being used in an invite (add a cleanup job or let an invite replace an unverified account if this shows up); (4) no CAPTCHA, only the throttle.
+
 ### P-11. No billing, plans or owner-visible usage limits
 
 **Problem.** No plan or subscription model exists in the code. The only limit is the global `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`, and the owner sees it only as a line in System Health after it is exhausted. The pricing document promises monthly reply quotas with warnings at 80% and 100%.
 
 **Suggested fix.** For pilots, keep manual invoicing as planned. Before selling tiers, add a per-workspace plan record, a monthly reply counter, and the two warning notifications. Payment integration (iyzico or PayTR) can follow.
+
+**Status (2026-11-17, PR #7):** partial: everything except taking payment is done. Each workspace has a plan (`starter` 500, `growth` 2,500, `pro` 7,500 AI replies per month; default `growth`, status `trial`, period from creation; per-workspace quota override), a concurrency-safe monthly counter (row lock plus an idempotent ledger, migration `0051`), warnings at 80% and 100% (once per period, owners and managers, every channel, tr/en), a 10% grace and then a pause: no model call, inbound DMs still stored and announced, a needs-human draft with reason `REPLY_QUOTA_PAUSED`, drafting resumes by itself on a plan change or the next period. Owners and managers see a usage meter in Settings and a notice on Today from 80%. Operator CLI: `plan-usage`, `plan-set`, `plan-reset`, `plan-extend`. The counting rule is in `app/plans/service.py` and [data-model.md](../architecture/data-model.md). **Still open:** payment (iyzico or PayTR), a self-service upgrade, the 100-reply trial cap and every other per-plan limit (seats, posts, retention); the plan `status` is stored but changes nothing. Pricing doc updated.
 
 ### P-12. No frontend error tracking and no product analytics
 
@@ -155,7 +165,7 @@ Findings P-13 to P-16 are from the 2026-11-09 screenshots; verify before acting.
 
 **Suggested fix.** On phones, keep "waiting for you", the command box and today's three numbers at the top. Collapse the rest behind section headers or move it to the pages that already own it (Content, Reports).
 
-**Status (2026-11-17).** Partly done. The command box is now first on Today at phone width (Feature Phase 2 Session 08: account banners, then the assistant panel with the command box on top; desktop layout unchanged). Collapsing or moving the other sections is still open. Not checked on a real phone.
+**Status (2026-11-16, PR #3):** done. Redesign commits had already cut the phone page to about 2,900 px with the order waiting items, numbers, assistant box. PR #3 folds upcoming content and Instagram performance behind their headings on phones (about 2,100 px; the Content and Reports links stay visible). Desktop is unchanged. Feature Phase 2 Session 08 found P-13 still open in its own baseline and moved the command box first; on merging with PR #3 that change was dropped in favour of the PR #3 order.
 
 ### P-14. Seven-day content grid repeats "no story" seven times
 
@@ -163,11 +173,15 @@ Findings P-13 to P-16 are from the 2026-11-09 screenshots; verify before acting.
 
 **Suggested fix.** Show the prompt once for the whole week. Revisit after story template cards exist (F-07).
 
+**Status (2026-11-16, PR #3):** done. The per-day "No story" text was already reduced to a "+" icon and the duplicate card was gone when a plan existed. PR #3 removes the per-day buttons and the second draft button in the empty card; a week with no story shows one prompt. Revisit after F-07.
+
 ### P-15. Instagram performance chart looks flat
 
 **Problem.** Reach and views share one vertical axis, so both lines look almost horizontal even when the cards above report +15% and +22%.
 
 **Suggested fix.** Scale the axis to the data range instead of starting at zero, or draw each metric as its own small sparkline inside its card.
+
+**Status (2026-11-16, PR #3):** done. Reach and views are two stacked lines, each on its own fitted axis with both ends labelled, so a non-zero baseline is stated. Chosen over per-KPI sparklines because it keeps the shared hover crosshair and the screen-reader table.
 
 ### P-16. Header search label is cut off on desktop
 
@@ -175,11 +189,15 @@ Findings P-13 to P-16 are from the 2026-11-09 screenshots; verify before acting.
 
 **Suggested fix.** Give the trigger a minimum width or drop the label and keep the icon plus shortcut.
 
+**Status (2026-11-16, PR #3):** done. The label was not truncated: "Git…" is the whole Turkish label. It is now "Sayfaya git…" / "Go to page…" with a 240 px minimum width from 1200 px; below that it is icon only.
+
 ### P-17. `index.html` has no favicon, description or share tags
 
 **Problem.** [frontend/index.html](../../frontend/index.html) contains only a title, a viewport tag and a fixed white `theme-color`. There is no favicon link, no meta description, no Open Graph tags and no web app manifest. The white theme colour is wrong in dark mode.
 
 **Suggested fix.** Add the icon set, description and share tags. Add the manifest as part of F-01.
+
+**Status (2026-11-16, PR #5):** done except the manifest (F-01) and a share image. `frontend/index.html` and `landing/index.html` now have `favicon.ico`, `favicon.svg`, an Apple touch icon, a description, Open Graph and Twitter tags and two media-specific `theme-color` tags. The icons are derived from the existing brand mark `landing/public/favicon.svg`. The app has no dark theme, so both app tags use the app canvas colour; the landing tags follow the visitor's chosen theme. No `og:image` or `og:url`: there is no share image and the production domain is undecided (P-07).
 
 ### P-18. Two lazy-loaded routes are not actually split
 
@@ -194,6 +212,8 @@ Findings P-13 to P-16 are from the 2026-11-09 screenshots; verify before acting.
 **Problem.** [pricing-and-unit-economics.md](../product/pricing-and-unit-economics.md) lists these as tier features: WhatsApp owner channel, up to three Instagram accounts, data export, Russian and German replies, comment automation on real accounts, and quota warnings. None exists in a usable form today.
 
 **Suggested fix.** Mark each row "planned" or remove it until it ships. Sell only what a pilot owner can use on day one.
+
+**Status (2026-11-16, PR #5):** done. Every tier row that is not built is marked **Planned**, and section 8 records what the code shows for each: WhatsApp has only an unused formatter, one active Instagram account per workspace is enforced by a unique index, data export exists only per conversation and per customer, replies are `tr` and `en` only, comments work on the mock provider only, and there is no monthly quota, usage warning, plan or billing field. A banner at the top says per-plan limits are not enforced.
 
 ---
 

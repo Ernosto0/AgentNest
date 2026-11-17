@@ -10,6 +10,7 @@ export const ME: Me = {
     email: "owner@demo.local",
     display_name: "Demo Sahip",
     ui_locale: "tr",
+    email_verified: true,
   },
   csrf_token: "csrf-token-for-tests",
   memberships: [

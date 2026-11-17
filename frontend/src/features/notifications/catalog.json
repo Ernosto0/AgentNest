@@ -1,6 +1,18 @@
 {
   "types": [
     {
+      "type": "quota.warning",
+      "severity": "attention"
+    },
+    {
+      "type": "quota.grace",
+      "severity": "attention"
+    },
+    {
+      "type": "quota.paused",
+      "severity": "attention"
+    },
+    {
       "type": "owner_question.requested",
       "severity": "attention"
     },

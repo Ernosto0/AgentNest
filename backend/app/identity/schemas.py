@@ -69,6 +69,27 @@ class LoginRequest(StrictModel):
     password: str = Field(min_length=1, max_length=1000)
 
 
+class RegisterRequest(StrictModel):
+    email: Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True,
+            to_lower=True,
+            min_length=3,
+            max_length=320,
+            pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+        ),
+    ]
+    password: str = Field(min_length=10, max_length=1000)
+    name: Name
+    accepted_terms_version: str = Field(min_length=1, max_length=100)
+    ui_locale: Locale = "tr"
+
+
+class VerificationRequest(StrictModel):
+    token: str = Field(min_length=1, max_length=512)
+
+
 class SessionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -91,6 +112,7 @@ class PasswordChangeRequest(StrictModel):
 
 
 class UserOut(BaseModel):
+    email_verified: bool
     id: uuid.UUID
     email: str
     display_name: str

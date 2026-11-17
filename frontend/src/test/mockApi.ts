@@ -45,6 +45,23 @@ const BACKGROUND: [RegExp, () => Response][] = [
     /^GET \/api\/v1\/workspaces\/[^/]+\/push-subscriptions\/config$/,
     () => json({ enabled: false, public_key: null }),
   ],
+  // Plans: a workspace well inside its allowance, so the meter and the Today notice stay quiet.
+  [
+    /^GET \/api\/v1\/workspaces\/[^/]+\/usage$/,
+    () =>
+      json({
+        plan: "growth",
+        status: "trial",
+        monthly_quota: 2500,
+        quota_override: null,
+        quota: 2500,
+        used: 12,
+        grace_limit: 2750,
+        period_start: "2026-10-01T00:00:00Z",
+        period_end: "2026-11-01T00:00:00Z",
+        state: "normal",
+      }),
+  ],
   [/^GET \/api\/v1\/workspaces\/[^/]+\/home\/attention$/, () => json({ drafts: 0, unanswered_comments: 0 })],
   // Approval-ladder suggestions (D-02): none unless a test supplies one.
   [/^GET \/api\/v1\/workspaces\/[^/]+\/delegation-suggestions$/, () => json({ items: [] })],

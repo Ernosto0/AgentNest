@@ -23,6 +23,7 @@ from app.identity.service import workspace_context
 from app.integrations.channels.base import ChannelRecipient, DeliveryResult, OwnerChannel
 from app.integrations.channels.telegram.client import TelegramClient
 from app.notifications.models import Notification, NotificationDelivery
+from app.notifications.quota_text import TEXT as QUOTA_TEXT
 
 SEVERITY_ICONS: dict[str, str] = {
     "critical": "🚨",
@@ -523,7 +524,12 @@ class TelegramChannel(OwnerChannel):
                 error_message="Recipient missing Telegram chat ID",
             )
 
-        text = _format_notification_text(notification)
+        if notification.type in QUOTA_TEXT:
+            locale = "tr" if (recipient.ui_locale or "tr").lower().startswith("tr") else "en"
+            title, body = QUOTA_TEXT[notification.type][locale]
+            text = f"<b>{title}</b>\n\n{body}"
+        else:
+            text = _format_notification_text(notification)
 
         try:
             res = self.client.send_message(

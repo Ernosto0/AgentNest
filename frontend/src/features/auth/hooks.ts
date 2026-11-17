@@ -53,7 +53,7 @@ export function useLogout() {
       // Push hygiene first, while the session still works: this phone must not keep buzzing
       // for someone who has signed out (best effort; it never blocks signing out).
       const me = queryClient.getQueryData<Me | null>(meKey);
-      if (me) await forgetThisDevice(me.user.id, me.memberships.map((m) => m.workspace_id));
+      if (me?.user.email_verified) await forgetThisDevice(me.user.id, me.memberships.map((m) => m.workspace_id));
       await unwrap<void>(api.POST("/api/v1/auth/logout"));
     },
     onSettled: () => {

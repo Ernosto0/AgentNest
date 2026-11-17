@@ -6,8 +6,8 @@
 - ``resolve_fact_save_token_by_hash``: SECURITY DEFINER lookup used by the Telegram callback, which
   does not know the workspace yet (same pattern as ``resolve_action_token_by_hash``).
 
-Revision ID: 0055
-Revises: 0053
+Revision ID: 0056
+Revises: 0055
 Create Date: 2026-11-16 12:00:00.000000
 """
 
@@ -16,8 +16,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0055"
-down_revision: str | None = "0053"
+revision: str = "0056"
+down_revision: str | None = "0055"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

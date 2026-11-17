@@ -24,6 +24,7 @@ from typing import Any
 
 from app.notifications.catalog import PUSH_TYPES
 from app.notifications.models import Notification
+from app.notifications.quota_text import TEXT as QUOTA_TEXT
 
 MAX_PAYLOAD_BYTES = 1024  # far under the ~4 KB a push service accepts
 
@@ -54,6 +55,7 @@ _TEXT: dict[str, dict[str, tuple[str, str]]] = {
         "tr": ("Instagram bağlantısı yenilenmeli", "Hesabı yeniden bağlamak için uygulamayı açın."),
     },
 }
+_TEXT.update(QUOTA_TEXT)
 _SIMULATION_PREFIX = {"en": "[Simulation] ", "tr": "[Simülasyon] "}
 
 
@@ -88,6 +90,8 @@ def deep_link(notification: Notification) -> str:
     base = f"/w/{notification.workspace_id}"
     params = notification.params if isinstance(notification.params, dict) else {}
     kind = notification.type
+    if kind.startswith("quota."):
+        return f"{base}/more/settings#usage"
     if kind.startswith("owner_question."):
         question = _uuid(params.get("question_id")) or _uuid(notification.subject_id)
         account = _uuid(params.get("account_id"))

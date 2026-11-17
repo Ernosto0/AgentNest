@@ -145,7 +145,10 @@ describe("web manifest and page", () => {
     expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
     expect(html).toContain('rel="apple-touch-icon"');
     expect(html).toContain('name="description"');
-    expect(html).toContain(`name="theme-color" content="${manifest.theme_color}"`);
+    // One tag per colour scheme (media-specific); the app is light-only, so both match the manifest.
+    const themeColors = [...html.matchAll(/<meta name="theme-color" media="\(prefers-color-scheme: (light|dark)\)" content="([^"]+)"/g)];
+    expect(themeColors.map((m) => m[1])).toEqual(["light", "dark"]);
+    for (const m of themeColors) expect(m[2]).toBe(manifest.theme_color);
   });
 });
 
