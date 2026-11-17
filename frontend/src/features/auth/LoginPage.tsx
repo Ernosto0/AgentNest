@@ -6,7 +6,7 @@ import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { Notice, Skeleton } from "@/components/Feedback";
 import { TextField } from "@/components/TextField";
-import { useLogin, useMe } from "./hooks";
+import { useLogin, useMe, useMeta } from "./hooks";
 import { returnDestination, type LoginLocationState } from "./returnTo";
 
 export function LoginPage() {
@@ -14,6 +14,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const me = useMe();
+  const meta = useMeta();
   const login = useLogin();
   const emailInput = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
@@ -21,7 +22,7 @@ export function LoginPage() {
   const [invalidEmail, setInvalidEmail] = useState(false);
   const from = (location.state as LoginLocationState | null)?.from;
   const destination = returnDestination(from);
-  if (me.data) return <Navigate to={destination} replace />;
+  if (me.data) return <Navigate to={me.data.user.email_verified ? destination : "/check-email"} replace />;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,6 +51,7 @@ export function LoginPage() {
         {login.isError ? <ErrorMessage error={login.error} /> : null}
         <Button type="submit" block pending={login.isPending} disabled={!email || !password} disabledReason={!email || !password ? t("entry.credentialsRequired") : undefined}>{login.isPending ? t("auth.submitting") : t("auth.submit")}</Button>
       </form>
+      {meta.data?.signup_enabled ? <Link to="/signup" className="inline-flex min-h-11 items-center justify-center text-action hover:underline">{t("signup.title")}</Link> : null}
       <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-secondary">
         <Link to="/privacy" className="inline-flex min-h-11 items-center rounded-control hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
           {t("legal.privacyTitle")}

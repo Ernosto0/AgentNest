@@ -6324,15 +6324,25 @@
             "title": "Product Name",
             "type": "string"
           },
+          "signup_enabled": {
+            "title": "Signup Enabled",
+            "type": "boolean"
+          },
           "supported_locales": {
             "items": {
               "type": "string"
             },
             "title": "Supported Locales",
             "type": "array"
+          },
+          "terms_version": {
+            "title": "Terms Version",
+            "type": "string"
           }
         },
         "required": [
+          "signup_enabled",
+          "terms_version",
           "product_name",
           "demo_tools_enabled",
           "llm_mode",
@@ -8190,6 +8200,53 @@
         "title": "ReapproveIn",
         "type": "object"
       },
+      "RegisterRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted_terms_version": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Accepted Terms Version",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string"
+          },
+          "ui_locale": {
+            "default": "tr",
+            "enum": [
+              "tr",
+              "en"
+            ],
+            "title": "Ui Locale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "name",
+          "accepted_terms_version"
+        ],
+        "title": "RegisterRequest",
+        "type": "object"
+      },
       "RenderedFactOut": {
         "properties": {
           "display": {
@@ -9652,6 +9709,10 @@
             "title": "Email",
             "type": "string"
           },
+          "email_verified": {
+            "title": "Email Verified",
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -9667,6 +9728,7 @@
           }
         },
         "required": [
+          "email_verified",
           "id",
           "email",
           "display_name",
@@ -9799,6 +9861,22 @@
           "issues"
         ],
         "title": "ValidationOut",
+        "type": "object"
+      },
+      "VerificationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "VerificationRequest",
         "type": "object"
       },
       "VersionOut": {
@@ -10767,6 +10845,84 @@
         ]
       }
     },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "operationId": "resend_verification_api_v1_auth_resend_verification_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resend Verification",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/sessions": {
       "get": {
         "operationId": "list_sessions_api_v1_auth_sessions_get",
@@ -10859,6 +11015,40 @@
           }
         },
         "summary": "Revoke Session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "operationId": "verify_email_api_v1_auth_verify_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Email",
         "tags": [
           "auth"
         ]

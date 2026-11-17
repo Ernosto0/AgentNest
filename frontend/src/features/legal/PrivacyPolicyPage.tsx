@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { useMeta } from "@/features/auth/hooks";
 import { PublicShell } from "@/app/layout/PublicShell";
 
 export function PrivacyPolicyPage() {
   const { t } = useTranslation();
+  const meta = useMeta();
 
   return (
     <PublicShell
@@ -15,6 +17,7 @@ export function PrivacyPolicyPage() {
     >
       <div className="flex flex-col gap-6 rounded-panel border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <section className="flex flex-col gap-2">
+          <p className="text-sm text-secondary">{t("signup.version", { version: meta.data?.terms_version ?? "" })}</p>
           <p className="text-sm leading-relaxed text-secondary">{t("legal.privacySummary")}</p>
         </section>
 
