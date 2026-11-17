@@ -62,6 +62,8 @@ def test_meta_exposes_only_public_configuration(client: TestClient) -> None:
     body = response.json()
     assert set(body) == {
         "product_name",
+        "signup_enabled",
+        "terms_version",
         "demo_tools_enabled",
         "llm_mode",
         "supported_locales",

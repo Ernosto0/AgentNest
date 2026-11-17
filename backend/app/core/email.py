@@ -6,13 +6,16 @@ credential-free operation, reproducible tests, and safe verification.
 """
 
 import contextlib
+import json
 import smtplib
 import urllib.parse
+import uuid
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 from threading import Lock
 from typing import Any
 
@@ -75,6 +78,14 @@ def send_email(
     email_outbox.record(captured)
 
     smtp_raw = settings.smtp_url.get_secret_value().strip()
+    if not smtp_raw and settings.app_env in {"development", "test"} and settings.email_outbox_dir:
+        # Optional disk mirror of the local transport, for cross-process E2E inspection.
+        directory = Path(settings.email_outbox_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+        target = directory / f"{uuid.uuid4()}.json"
+        pending = target.with_suffix(".tmp")
+        pending.write_text(json.dumps(asdict(captured), default=str), encoding="utf-8")
+        pending.replace(target)
     if not smtp_raw:
         _log.info("email_captured_locally", to=to_email, subject=subject)
         return
@@ -433,3 +444,68 @@ def send_operator_alert_email(
         )
 
     send_email(settings, to_email, subject, text_body, html_body)
+
+
+def send_signup_email(
+    settings: Settings, to_email: str, url: str, ui_locale: str, already_exists: bool
+) -> None:
+    """Verification link for a new account, or the "you already have an account" notice.
+
+    Runs after the request committed. Transport errors are logged without the recipient, the
+    token or the SMTP error, so a failure cannot reveal whether the account existed.
+    """
+    product = settings.product_name
+    en = ui_locale == "en"
+    if already_exists:
+        subject = (
+            f"[{product}] You already have an account"
+            if en
+            else f"[{product}] Zaten bir hesabınız var"
+        )
+        lines = (
+            (
+                "Someone tried to create an account with this email address, but you already "
+                "have one.",
+                "Sign in, or reset your password if you have forgotten it:",
+                "If this was not you, you can ignore this email.",
+            )
+            if en
+            else (
+                "Bu e-posta adresiyle bir hesap oluşturulmak istendi, ancak zaten bir "
+                "hesabınız var.",
+                "Giriş yapın veya şifrenizi unuttuysanız sıfırlayın:",
+                "Bunu siz yapmadıysanız bu e-postayı yok sayabilirsiniz.",
+            )
+        )
+    else:
+        subject = f"[{product}] Verify your email" if en else f"[{product}] E-postanızı doğrulayın"
+        lines = (
+            (
+                f"Welcome to {product}. Confirm your email address using the link below.",
+                "Verify your email:",
+                "This single-use link expires in 24 hours. If you did not create this account, "
+                "you can ignore this email.",
+            )
+            if en
+            else (
+                f"{product} hesabınıza hoş geldiniz. E-posta adresinizi aşağıdaki bağlantıyla "
+                "doğrulayın.",
+                "E-postanızı doğrulayın:",
+                "Bu tek kullanımlık bağlantı 24 saat geçerlidir. Bu hesabı siz "
+                "oluşturmadıysanız bu e-postayı yok sayabilirsiniz.",
+            )
+        )
+    intro, action, footer = lines
+    text_body = f"{intro}\n\n{action}\n{url}\n\n{footer}\n"
+    html_body = (
+        "<div style='font-family: sans-serif; line-height: 1.5; color: #111;'>"
+        f"<p>{intro}</p>"
+        f"<p><a href='{url}' style='display: inline-block; padding: 10px 20px; "
+        f"background-color: #2563eb; color: #fff; text-decoration: none; "
+        f"border-radius: 6px;'>{action.rstrip(':')}</a></p>"
+        f"<p style='color: #888; font-size: 12px;'>{footer}</p></div>"
+    )
+    try:
+        send_email(settings, to_email, subject, text_body, html_body)
+    except Exception:
+        _log.error("signup_email_delivery_failed")

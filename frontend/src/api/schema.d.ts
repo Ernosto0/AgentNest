@@ -107,6 +107,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register */
+        post: operations["register_api_v1_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend Verification */
+        post: operations["resend_verification_api_v1_auth_resend_verification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/sessions": {
         parameters: {
             query?: never;
@@ -153,6 +187,23 @@ export interface paths {
         post?: never;
         /** Revoke Session */
         delete: operations["revoke_session_api_v1_auth_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Email */
+        post: operations["verify_email_api_v1_auth_verify_email_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5102,8 +5153,12 @@ export interface components {
             mock_requires_demo_workspace: boolean;
             /** Product Name */
             product_name: string;
+            /** Signup Enabled */
+            signup_enabled: boolean;
             /** Supported Locales */
             supported_locales: string[];
+            /** Terms Version */
+            terms_version: string;
         };
         /** MetricItemOut */
         MetricItemOut: {
@@ -5732,6 +5787,23 @@ export interface components {
             /** Schedule */
             schedule: components["schemas"]["LocalScheduleIn"] | "now";
         };
+        /** RegisterRequest */
+        RegisterRequest: {
+            /** Accepted Terms Version */
+            accepted_terms_version: string;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Password */
+            password: string;
+            /**
+             * Ui Locale
+             * @default tr
+             * @enum {string}
+             */
+            ui_locale: "tr" | "en";
+        };
         /** RenderedFactOut */
         RenderedFactOut: {
             /** Display */
@@ -6286,6 +6358,8 @@ export interface components {
             display_name: string;
             /** Email */
             email: string;
+            /** Email Verified */
+            email_verified: boolean;
             /**
              * Id
              * Format: uuid
@@ -6343,6 +6417,11 @@ export interface components {
             issues: components["schemas"]["ValidationIssueOut"][];
             /** Passed */
             passed: boolean;
+        };
+        /** VerificationRequest */
+        VerificationRequest: {
+            /** Token */
+            token: string;
         };
         /** VersionOut */
         VersionOut: {
@@ -6824,6 +6903,72 @@ export interface operations {
             };
         };
     };
+    register_api_v1_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_verification_api_v1_auth_resend_verification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_sessions_api_v1_auth_sessions_get: {
         parameters: {
             query?: never;
@@ -6885,6 +7030,37 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_email_api_v1_auth_verify_email_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             204: {

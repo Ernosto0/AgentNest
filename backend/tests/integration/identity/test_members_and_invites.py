@@ -141,6 +141,8 @@ def test_accept_as_a_new_user_signs_them_in(
     assert me.json()["user"]["email"] == "new@example.test"  # normalised
     assert me.json()["user"]["display_name"] == "Yeni Üye"
     assert me.json()["memberships"][0]["role"] == "manager"
+    # Following the emailed invite link proves control of the address.
+    assert me.json()["user"]["email_verified"] is True
 
     row = db_session.scalars(select(Invite).where(Invite.id == uuid.UUID(invite["id"]))).one()
     assert row.accepted_at is not None and row.accepted_by_user_id is not None

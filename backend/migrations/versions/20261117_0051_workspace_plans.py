@@ -1,14 +1,14 @@
 """Workspace plans and idempotent reply allowance ledger.
 
-Revision ID: 0050
-Revises: 0049
+Revision ID: 0051
+Revises: 0050
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0050"
-down_revision = "0049"
+revision = "0051"
+down_revision = "0050"
 branch_labels = None
 depends_on = None
 

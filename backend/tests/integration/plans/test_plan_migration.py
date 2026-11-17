@@ -9,7 +9,7 @@ from sqlalchemy import Engine, create_engine, text
 from app.core.db import BACKEND_DIR
 
 
-def test_migration_0050_backfills_existing_workspaces_and_reverses_cleanly(engine: Engine) -> None:
+def test_migration_0051_backfills_existing_workspaces_and_reverses_cleanly(engine: Engine) -> None:
     schema = "plans_mig_" + uuid.uuid4().hex
     with engine.begin() as connection:
         connection.execute(text(f'CREATE SCHEMA "{schema}"'))
@@ -22,7 +22,7 @@ def test_migration_0050_backfills_existing_workspaces_and_reverses_cleanly(engin
     )
     workspace_id = uuid.uuid4()
     try:
-        command.upgrade(config, "0049")
+        command.upgrade(config, "0050")
         with isolated.begin() as connection:
             assert connection.scalar(text("SELECT to_regclass('workspace_plans')")) is None
             connection.execute(
@@ -33,7 +33,7 @@ def test_migration_0050_backfills_existing_workspaces_and_reverses_cleanly(engin
                 ),
                 {"id": workspace_id},
             )
-        command.upgrade(config, "0050")
+        command.upgrade(config, "0051")
         with isolated.connect() as connection:
             row = connection.execute(
                 text(
@@ -46,11 +46,11 @@ def test_migration_0050_backfills_existing_workspaces_and_reverses_cleanly(engin
             ).one()
             assert tuple(row) == ("growth", 2500, None, "trial", 0, True, True, False, False, False)
             assert connection.scalar(text("SELECT to_regclass('reply_usage')")) is not None
-        command.downgrade(config, "0049")
+        command.downgrade(config, "0050")
         with isolated.connect() as connection:
             assert connection.scalar(text("SELECT to_regclass('workspace_plans')")) is None
             assert connection.scalar(text("SELECT to_regclass('reply_usage')")) is None
-        command.upgrade(config, "0050")  # and back up again
+        command.upgrade(config, "0051")  # and back up again
         with isolated.connect() as connection:
             assert connection.scalar(text("SELECT count(*) FROM workspace_plans")) == 1
     finally:

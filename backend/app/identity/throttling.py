@@ -6,7 +6,7 @@ import math
 from datetime import timedelta
 
 from fastapi import Request
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 
 from app.audit import service as audit
@@ -22,6 +22,8 @@ RESET_REQUESTS_BEFORE_LOCKOUT = 5
 RESET_LOCKOUT_SECONDS = 900
 WAITLIST_REQUESTS_BEFORE_LOCKOUT = 5  # per IP or per email, within the 15-minute window
 WAITLIST_LOCKOUT_SECONDS = 900
+SIGNUP_REQUESTS_BEFORE_LOCKOUT = 5  # register / resend, per IP or per email, per 15 minutes
+SIGNUP_LOCKOUT_SECONDS = 900
 
 
 def hash_identifier(value: str) -> str:
@@ -241,6 +243,39 @@ def enforce_waitlist_throttle(
         email=email,
         ip_address=ip_address,
     )
+
+
+def enforce_signup_throttle(
+    session: Session,
+    clock: Clock,
+    *,
+    purpose: str,
+    email: str,
+    ip_address: str,
+) -> None:
+    """Rate-limit ``register`` and ``resend_verification`` per IP and per email.
+
+    Each purpose has its own counters, so a burst of resends does not lock out registration.
+    The counters are committed here (before the work), so a request that later fails still
+    counts. Advisory locks serialize concurrent requests for the same IP or email, including
+    the very first one, whose counter row does not exist yet to lock.
+    """
+    if purpose not in {"register", "resend_verification"}:
+        raise ValueError(f"unknown signup throttle purpose: {purpose}")
+    for value in (ip_address, email):
+        key = int(hash_identifier(f"{purpose}:{value}")[:15], 16)
+        session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": key})
+    _enforce_request_throttle(
+        session,
+        clock,
+        prefix=purpose,
+        limit=SIGNUP_REQUESTS_BEFORE_LOCKOUT,
+        lockout_seconds=SIGNUP_LOCKOUT_SECONDS,
+        audit_action=f"auth.{purpose}_throttled",
+        email=email,
+        ip_address=ip_address,
+    )
+    session.commit()
 
 
 def _enforce_request_throttle(
