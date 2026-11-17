@@ -9,6 +9,7 @@ import ipaddress
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import urlparse
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -82,6 +83,9 @@ class Settings(BaseSettings):
     test_database_url: str = DEFAULT_TEST_DATABASE_URL
     secret_key: SecretStr = SecretStr(EXAMPLE_SECRET_KEY)
     frontend_origin: str = "http://localhost:5173"
+    # Origins of the public landing page, comma-separated. Only POST /api/v1/waitlist answers
+    # their cross-origin requests (no cookies); empty disables it. Example: https://landing.example
+    landing_origins: str = ""
     app_base_url: str = "http://localhost:8000"
     product_name: str = "AgentNest"
     cookie_secure: bool = False
@@ -172,6 +176,7 @@ class Settings(BaseSettings):
     retention_jobs_dead_days: int = Field(default=90, ge=1)
     retention_media_orphan_days: int = Field(default=7, ge=1)
     retention_published_media_days: int = Field(default=90, ge=1)
+    retention_waitlist_days: int = Field(default=365, ge=1)
 
     # --- Production hardening, proxy boundary, backups, email & monitoring (Phase 8, ADR-025) ---
     trusted_proxy_cidrs: str = "127.0.0.1/32,::1/128"
@@ -270,6 +275,16 @@ class Settings(BaseSettings):
                 ipaddress.ip_network(cidr, strict=False)
             except ValueError:
                 problems.append(f"TRUSTED_PROXY_CIDRS contains an invalid IP or CIDR: {cidr!r}.")
+        for origin in self.landing_origin_list:
+            parsed = urlparse(origin)
+            if (
+                parsed.scheme not in ("http", "https")
+                or not parsed.netloc
+                or parsed.path not in ("", "/")
+            ):
+                problems.append(
+                    f"LANDING_ORIGINS must list origins like https://example.com, got {origin!r}."
+                )
         if self.smtp_url.get_secret_value().strip() and not self.mail_from.strip():
             problems.append("MAIL_FROM must be set when SMTP_URL is configured.")
         if self.migration_database_url.strip():
@@ -393,6 +408,13 @@ class Settings(BaseSettings):
         if mig_url.username and app_url.username:
             return mig_url.username != app_url.username
         return raw_mig != self.database_url.strip()
+
+    @property
+    def landing_origin_list(self) -> tuple[str, ...]:
+        """``LANDING_ORIGINS`` as normalized origins (no trailing slash)."""
+        return tuple(
+            entry.strip().rstrip("/") for entry in self.landing_origins.split(",") if entry.strip()
+        )
 
     @property
     def trusted_proxy_networks(

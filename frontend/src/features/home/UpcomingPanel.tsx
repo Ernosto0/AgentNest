@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import type { ContentItem } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { AlertIcon, CalendarIcon, ImageIcon, PlusIcon, SparkIcon } from "@/components/icons";
+import { AlertIcon, CalendarIcon, ImageIcon, SparkIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import type { NewContentMode } from "@/features/content/GenerateSheet";
 import { useMediaPreview } from "@/features/content/hooks";
 import { shiftDay, todayIn } from "@/features/reports/dates";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { FOCUS, Panel, PanelHeading, PanelLink, SkeletonRows } from "./DashboardPanel";
+import { useFoldOnPhone } from "./useFoldOnPhone";
 import { SCHEDULED_WEEK_LIMIT, useScheduledWeek } from "./hooks";
 import { WeekCalendar } from "./WeekCalendar";
 
@@ -31,6 +32,8 @@ export function UpcomingPanel({ onCreate, className = "" }: { onCreate: CreateCo
   const capped = week.items.length >= SCHEDULED_WEEK_LIMIT;
   const next = week.items.slice(0, NEXT_SHOWN);
   const draftStory = () => onCreate("blank", "story_image");
+  // On phones the week folds away behind its heading; "All content" stays one tap away.
+  const fold = useFoldOnPhone();
 
   return (
     <Panel aria-labelledby="home-upcoming-title" data-testid="home-upcoming" className={`gap-4 ${className}`}>
@@ -38,6 +41,7 @@ export function UpcomingPanel({ onCreate, className = "" }: { onCreate: CreateCo
         id="home-upcoming-title"
         icon={<CalendarIcon />}
         title={t("home.upNext.title")}
+        toggle={fold.foldable ? { open: fold.open, onToggle: fold.toggle, contentId: "home-upcoming-body" } : undefined}
         meta={
           week.isSuccess ? (
             <span data-testid="week-summary">
@@ -52,57 +56,55 @@ export function UpcomingPanel({ onCreate, className = "" }: { onCreate: CreateCo
       />
 
       {week.error ? <ErrorMessage error={week.error} /> : null}
-      {week.isPending ? <SkeletonRows label={t("common.loading")} rows={2} /> : null}
+      {fold.folded ? null : (
+        <div id="home-upcoming-body" className="flex min-w-0 flex-col gap-4">
+          {week.isPending ? <SkeletonRows label={t("common.loading")} rows={2} /> : null}
 
-      {week.isSuccess ? (
-        <>
-          <WeekCalendar days={week.days} onDraftStory={draftStory} />
+          {week.isSuccess ? (
+            <>
+              <WeekCalendar days={week.days} onDraftStory={draftStory} />
 
-          {next.length === 0 ? (
-            <div
-              data-testid="upcoming-empty"
-              className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl bg-surface-subtle/60 px-4 py-3"
-            >
-              <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-lg text-action">
-                <ImageIcon />
-              </span>
-              <div className="min-w-0 flex-1 basis-52">
-                <p className="text-body font-semibold text-primary">{t("home.upNext.empty")}</p>
-                <p className="text-xs text-secondary">{t("home.upcoming.emptyHint")}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={() => onCreate("ai")} className="px-3.5">
-                  <SparkIcon />
-                  {t("home.quick.generate")}
-                </Button>
-                <Button variant="secondary" onClick={draftStory} className="px-3.5">
-                  <PlusIcon />
-                  {t("home.upNext.draftStory")}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-secondary">{t("home.upNext.next")}</h3>
-                  <p className="text-xs text-secondary">{t("core.previewOnly")}</p>
+              {next.length === 0 ? (
+                <div
+                  data-testid="upcoming-empty"
+                  className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl bg-surface-subtle/60 px-4 py-3"
+                >
+                  <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-lg text-action">
+                    <ImageIcon />
+                  </span>
+                  <div className="min-w-0 flex-1 basis-52">
+                    <p className="text-body font-semibold text-primary">{t("home.upNext.empty")}</p>
+                    <p className="text-xs text-secondary">{t("home.upcoming.emptyHint")}</p>
+                  </div>
+                  <Button onClick={() => onCreate("ai")} className="px-3.5">
+                    <SparkIcon />
+                    {t("home.quick.generate")}
+                  </Button>
                 </div>
-                <PanelLink to={`/w/${workspace.id}/content?tab=scheduled`}>{t("home.upcoming.all")}</PanelLink>
-              </div>
-              {/* Phones scroll sideways with snap; wider screens show the preview in one row. */}
-              <ul
-                data-testid="upcoming-list"
-                className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pt-0.5 pb-2 md:grid md:max-w-3xl md:grid-cols-4 md:overflow-visible md:pb-0"
-              >
-                {next.map((item) => (
-                  <UpcomingCard key={item.id} item={item} />
-                ))}
-              </ul>
-            </div>
-          )}
-        </>
-      ) : null}
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-secondary">{t("home.upNext.next")}</h3>
+                      <p className="text-xs text-secondary">{t("core.previewOnly")}</p>
+                    </div>
+                    <PanelLink to={`/w/${workspace.id}/content?tab=scheduled`}>{t("home.upcoming.all")}</PanelLink>
+                  </div>
+                  {/* Phones scroll sideways with snap; wider screens show the preview in one row. */}
+                  <ul
+                    data-testid="upcoming-list"
+                    className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pt-0.5 pb-2 md:grid md:max-w-3xl md:grid-cols-4 md:overflow-visible md:pb-0"
+                  >
+                    {next.map((item) => (
+                      <UpcomingCard key={item.id} item={item} />
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
     </Panel>
   );
 }

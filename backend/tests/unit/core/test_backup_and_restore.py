@@ -336,9 +336,14 @@ def test_backup_audit_log_recording(db_session: Session) -> None:
             .order_by(AuditLog.occurred_at, AuditLog.created_at)
         )
     )
-    assert [r.action for r in rows] == ["system.backup_succeeded", "system.backup_failed"]
-    assert rows[0].metadata_["backup_id"] == "agentnest-20261030T020000Z"
-    assert rows[1].metadata_["error"] == "disk full"
+    # Both rows share the frozen clock and one transaction, so their order is a tie: look them up
+    # by action instead of by position.
+    by_action = {r.action: r for r in rows}
+    assert len(rows) == 2 and set(by_action) == {"system.backup_succeeded", "system.backup_failed"}
+    assert by_action["system.backup_succeeded"].metadata_["backup_id"] == (
+        "agentnest-20261030T020000Z"
+    )
+    assert by_action["system.backup_failed"].metadata_["error"] == "disk full"
 
 
 def test_post_restore_reconcile_fences_workers_operations_and_reapplies_tombstones(

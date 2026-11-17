@@ -285,7 +285,7 @@ uv run pytest -q
 
 ## 13. Landing page (outside the phase roadmap)
 
-`landing/` is the pilot-waitlist page: a separate static React + Vite + Tailwind site that shares no code with `frontend/` and needs no backend. It describes the finished product, so its copy must be checked against what is actually built before it is published.
+`landing/` is the pilot-waitlist page: a separate static React + Vite + Tailwind site that shares no code with `frontend/`. The waitlist form posts to the backend's `POST /api/v1/waitlist` when `VITE_WAITLIST_ENDPOINT` is set (the backend must list the landing origin in `LANDING_ORIGINS`); the rest of the page needs no backend. It describes the finished product, so its copy must be checked against what is actually built before it is published.
 
 ```bash
 cd landing
@@ -294,4 +294,4 @@ npm run dev          # http://localhost:5174
 npm run build        # static files in landing/dist/
 ```
 
-Without `VITE_WAITLIST_ENDPOINT` the form runs in preview mode (see [environment-variables.md](environment-variables.md)). Details: [landing/README.md](../../landing/README.md).
+Without `VITE_WAITLIST_ENDPOINT` (locally `http://localhost:8000/api/v1/waitlist`) the form runs in preview mode (see [environment-variables.md](environment-variables.md)). Details: [landing/README.md](../../landing/README.md).

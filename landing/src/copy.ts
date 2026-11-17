@@ -200,6 +200,7 @@ export type Copy = {
     submit: string
     sending: string
     required: string
+    invalidEmail: string
     consentRequired: string
     sent: string
     preview: string
@@ -644,7 +645,7 @@ export const copy: Record<Lang, Copy> = {
       business: 'İşletme adı',
       instagram: 'Instagram hesabı',
       instagramHint: '@kullaniciadi',
-      contact: 'Telefon veya e-posta',
+      contact: 'E-posta',
       contactHint: 'Size buradan ulaşacağız',
       city: 'Şehir',
       consent:
@@ -652,6 +653,7 @@ export const copy: Record<Lang, Copy> = {
       submit: 'Başvuruyu gönder',
       sending: 'Gönderiliyor…',
       required: 'Bu alan gerekli.',
+      invalidEmail: 'Geçerli bir e-posta adresi girin.',
       consentRequired: 'Devam etmek için onay kutusunu işaretleyin.',
       sent: 'Teşekkürler, başvurunuz alındı. 24 saat içinde size ulaşacağız.',
       preview: 'Önizleme: bu form henüz bir yere bağlı değil. Bilgileriniz gönderilmedi.',
@@ -1090,7 +1092,7 @@ export const copy: Record<Lang, Copy> = {
       business: 'Business name',
       instagram: 'Instagram account',
       instagramHint: '@username',
-      contact: 'Phone or email',
+      contact: 'Email',
       contactHint: 'This is how we will reach you',
       city: 'City',
       consent:
@@ -1098,6 +1100,7 @@ export const copy: Record<Lang, Copy> = {
       submit: 'Send application',
       sending: 'Sending…',
       required: 'This field is required.',
+      invalidEmail: 'Enter a valid email address.',
       consentRequired: 'Tick the consent box to continue.',
       sent: 'Thank you, we received your application. We will be in touch within 24 hours.',
       preview: 'Preview: this form is not connected yet. Nothing was sent.',

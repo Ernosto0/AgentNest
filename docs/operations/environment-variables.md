@@ -14,6 +14,7 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `TEST_DATABASE_URL` | `…/agentnest_test` | — | Used by pytest |
 | `SECRET_KEY` 🔒 | dev placeholder (refused in prod) | required, ≥ 32 bytes random | Signing (OAuth state HMAC, misc) |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | site origin | CORS (dev only) and redirects |
+| `LANDING_ORIGINS` | empty (none) | the landing page's origin, e.g. `https://landing.example` | Comma-separated origins (`scheme://host[:port]`, no path; anything else fails startup). Only `POST /api/v1/waitlist` answers their cross-origin requests (no cookies, `POST` only); every other route stays same-origin. Needed because the landing page is a separate site. `.env.example` sets `http://localhost:5174` for local development |
 | `APP_BASE_URL` | `http://localhost:8000` | `https://<domain>` | Absolute URLs (OAuth redirect, invites) |
 | `COOKIE_SECURE` | `false` | `true` (enforced) | Session cookie Secure flag |
 | `SESSION_TTL_HOURS` | `336` | `336` | Sliding session lifetime (14 days) |
@@ -96,6 +97,7 @@ Global values, in whole days (at least 1); per-workspace values are deferred. Th
 | `RETENTION_MESSAGE_TEXT_DAYS` | `365` | `messages.text` (age = `provider_timestamp`) and `reply_drafts.text/template/suggestion_text` (age = `created_at`) are nulled; the rows and their metadata stay |
 | `RETENTION_CUSTOMER_MEMORY_DAYS` | `365` | Customer memory expiry sweep; invalidates source-derived history/summaries/cached proposals and fences old writes while preserving content-free tombstones |
 | `RETENTION_NOTIFICATIONS_READ_DAYS` | `90` | a notification is deleted this long after it was read; an unread one is never deleted |
+| `RETENTION_WAITLIST_DAYS` | `365` | pilot waitlist rows (`waitlist_entries`, personal data) are deleted this long after the request was made |
 | `RETENTION_JOBS_SUCCEEDED_DAYS` | `7` | `succeeded` and `cancelled` jobs are deleted (age = `finished_at`) |
 | `RETENTION_JOBS_DEAD_DAYS` | `90` | `dead` jobs are deleted |
 | `RETENTION_MEDIA_ORPHAN_DAYS` | `7` | a media asset that no content item references is deleted after this age |
@@ -167,8 +169,8 @@ Manual Phase 7 probes read process environment variables directly, not applicati
 
 | Variable | dev | prod | Description |
 |---|---|---|---|
-| `VITE_WAITLIST_ENDPOINT` | empty (preview mode) | required to collect signups | URL that accepts a JSON `POST` of `{ business, category, instagram, contact, city, lang }`. When empty, the form says nothing was sent. The destination is not chosen yet. |
+| `VITE_WAITLIST_ENDPOINT` | empty (preview mode) | required to collect signups | Full URL of the API's `POST /api/v1/waitlist` (e.g. `https://<api-host>/api/v1/waitlist`). The form sends JSON `{ email, business_name, category, instagram_handle, city, locale }`. When empty, the form says nothing was sent. The API service must list the landing origin in `LANDING_ORIGINS`, and `OPERATOR_ALERT_EMAIL` plus `SMTP_URL`/`MAIL_FROM` decide who is emailed about each new entry. |
 | `VITE_WAITLIST_WHATSAPP` | empty (link hidden) | optional | The founders' contact number (digits) or a full `https://` link for the form's "message us on WhatsApp" fallback. A contact path only, not a product channel. |
-| `LANDING_CONNECT_SRC` | empty (same origin only) | when `VITE_WAITLIST_ENDPOINT` is on another origin | Runtime variable of the landing container (`landing/Caddyfile`): extra origin allowed in the page's CSP `connect-src`, e.g. `https://forms.example.com`. |
+| `LANDING_CONNECT_SRC` | empty (same origin only) | when `VITE_WAITLIST_ENDPOINT` is on another origin | Runtime variable of the landing container (`landing/Caddyfile`): extra origin allowed in the page's CSP `connect-src`, e.g. the API origin `https://api.example.com`. |
 
 **Phase 7 provider/storage checks (all environments):** enabling `meta` requires the Meta app ID/secret, an explicitly configured webhook verification token, OAuth redirect URI, a valid encryption key ring and S3. A supplied key ring is validated even when Meta is disabled. Selecting S3 requires bucket, region and explicit access/secret keys; endpoint is optional for AWS. `MEDIA_PUBLIC_BASE_URL` is reserved until secured public local-media serving exists and does not allow Meta with local storage. Mock/local defaults still require no external credentials. S3 presigned GET TTLs are restricted to 1 through 604800 seconds. Live verification and both phase gates remain pending.

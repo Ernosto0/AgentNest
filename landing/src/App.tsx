@@ -71,7 +71,10 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0d1410' : '#f7f8f3')
+    // index.html has one tag per OS scheme; the visitor's own choice wins, so every tag follows it.
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((tag) => tag.setAttribute('content', theme === 'dark' ? '#0d1410' : '#f7f8f3'))
     try {
       localStorage.setItem(THEME_KEY, theme)
     } catch {

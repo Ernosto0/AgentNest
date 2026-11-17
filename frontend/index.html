@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#f7f8f3" />
+    <!-- The app has a light theme only (canvas #f7f8f3), so both values match it. When a dark theme
+         ships, set the dark one to its canvas colour. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f8f3" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#f7f8f3" />
     <title>AgentNest</title>
     <meta
       name="description"
@@ -17,6 +20,15 @@
       content="Küçük işletmeler için Instagram asistanı. Kontrol her zaman sizde kalır."
     />
     <meta property="og:locale" content="tr_TR" />
+    <meta property="og:locale:alternate" content="en_GB" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="AgentNest" />
+    <meta
+      name="twitter:description"
+      content="Küçük işletmeler için Instagram asistanı. Kontrol her zaman sizde kalır."
+    />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
