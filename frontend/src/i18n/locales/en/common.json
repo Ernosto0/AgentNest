@@ -652,6 +652,14 @@
     "OWNER_QUESTION_CLOSED": {
       "what": "This information request is closed.",
       "next": "Open the latest request."
+    },
+    "EMAIL_NOT_VERIFIED": {
+      "what": "Your email is not verified.",
+      "next": "Verify your email before continuing."
+    },
+    "EMAIL_VERIFICATION_TOKEN_INVALID": {
+      "what": "This verification link is invalid or expired.",
+      "next": "Request a new verification email."
     }
   },
   "connections": {
@@ -941,5 +949,28 @@
     "typeLabel": "Format",
     "allAccounts": "All accounts",
     "completedRequirements": "Completed requirements ({{count}})"
+  },
+  "signup": {
+    "title": "Create an account",
+    "subtitle": "Set up your business account. Verify your email before creating a workspace.",
+    "name": "Your name",
+    "passwordHint": "Use at least 10 characters and avoid common passwords.",
+    "accept": "I accept the Terms of Use and Privacy Policy.",
+    "terms": "Terms of Use",
+    "checkTitle": "Check your email",
+    "checkBody": "If this address can receive signup mail, we have sent instructions. Check your spam folder too. Already registered? Sign in or reset your password.",
+    "resend": "Resend verification email",
+    "resent": "If eligible, a new link has been sent. Only the newest link works.",
+    "closed": "New signup and verification resends are currently disabled. Previously issued links still work.",
+    "refresh": "I have verified my email",
+    "logout": "Sign out",
+    "verifyTitle": "Verify your email",
+    "verifyBody": "Confirm the email address for the account you created.",
+    "verify": "Verify email",
+    "verified": "Your email is verified.",
+    "continue": "Sign in and create your workspace",
+    "version": "Document version: {{version}}",
+    "termsBody": "AgentNest helps you manage your business account and proposed customer communications. You must be authorized to connect and manage the accounts you use. Keep your login details secure.",
+    "termsResponsibility": "You are responsible for the business information you provide and actions you authorize. Use the service lawfully and respect your customers’ privacy. See the Privacy Policy for how data is handled."
   }
 }

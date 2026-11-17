@@ -21,5 +21,6 @@ export function RequireAuth() {
     );
   }
   if (me.data === null) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (me.data && !me.data.user.email_verified) return <Navigate to="/check-email" replace />;
   return <Outlet />;
 }

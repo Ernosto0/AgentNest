@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
+import { EMAIL_OUTBOX_DIR } from "./outbox";
 
 const CI = Boolean(process.env.CI);
 const backendDir = fileURLToPath(new URL("../../backend", import.meta.url));
@@ -48,6 +49,9 @@ export default defineConfig({
     {
       command: `uv run uvicorn app.main:create_app --factory --port ${API_PORT}`,
       cwd: backendDir,
+      // Signup is on here (it is off by default, pilots are invite-only) and the emails are
+      // mirrored to a folder so the signup journey can read its verification link.
+      env: { SIGNUP_ENABLED: "true", EMAIL_OUTBOX_DIR },
       url: `http://localhost:${API_PORT}/readyz`,
       reuseExistingServer: !CI,
       timeout: 60_000,

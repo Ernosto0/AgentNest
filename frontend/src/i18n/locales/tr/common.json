@@ -652,6 +652,14 @@
     "OWNER_QUESTION_CLOSED": {
       "what": "Bu bilgi talebi kapal?.",
       "next": "En g?ncel talebi a??n."
+    },
+    "EMAIL_NOT_VERIFIED": {
+      "what": "E-postanız doğrulanmadı.",
+      "next": "Devam etmeden önce e-postanızı doğrulayın."
+    },
+    "EMAIL_VERIFICATION_TOKEN_INVALID": {
+      "what": "Doğrulama bağlantısı geçersiz veya süresi dolmuş.",
+      "next": "Yeni bir doğrulama e-postası isteyin."
     }
   },
   "connections": {
@@ -941,5 +949,28 @@
     "typeLabel": "Biçim",
     "allAccounts": "Tüm hesaplar",
     "completedRequirements": "Tamamlanan gereksinimler ({{count}})"
+  },
+  "signup": {
+    "title": "Hesap oluştur",
+    "subtitle": "İşletme hesabınızı açın. Çalışma alanı oluşturmadan önce e-postanızı doğrulayın.",
+    "name": "Adınız",
+    "passwordHint": "En az 10 karakter kullanın ve yaygın şifrelerden kaçının.",
+    "accept": "Kullanım Koşullarını ve Gizlilik Politikasını kabul ediyorum.",
+    "terms": "Kullanım Koşulları",
+    "checkTitle": "E-postanızı kontrol edin",
+    "checkBody": "Bu adres kayıt e-postası alabiliyorsa yönergeleri gönderdik. Spam klasörünü de kontrol edin. Zaten hesabınız varsa giriş yapın veya şifrenizi sıfırlayın.",
+    "resend": "Doğrulama e-postasını yeniden gönder",
+    "resent": "Uygunsa yeni bağlantı gönderildi. Yalnızca en son bağlantı geçerlidir.",
+    "closed": "Yeni kayıtlar ve doğrulama e-postalarının yeniden gönderimi şu anda kapalı. Önceden gönderilen bağlantılar geçerlidir.",
+    "refresh": "E-postamı doğruladım",
+    "logout": "Çıkış yap",
+    "verifyTitle": "E-postanızı doğrulayın",
+    "verifyBody": "Oluşturduğunuz hesabın e-posta adresini doğrulayın.",
+    "verify": "E-postayı doğrula",
+    "verified": "E-postanız doğrulandı.",
+    "continue": "Giriş yap ve çalışma alanını oluştur",
+    "version": "Belge sürümü: {{version}}",
+    "termsBody": "AgentNest, işletme hesabınızı ve önerilen müşteri iletişimlerini yönetmenize yardımcı olur. Kullandığınız hesapları bağlamaya ve yönetmeye yetkili olmalısınız. Giriş bilgilerinizi güvenli tutun.",
+    "termsResponsibility": "Sağladığınız işletme bilgilerinden ve yetkilendirdiğiniz işlemlerden siz sorumlusunuz. Hizmeti hukuka uygun kullanın ve müşterilerinizin gizliliğine saygı gösterin. Verilerin işlenmesi hakkında Gizlilik Politikasını inceleyin."
   }
 }

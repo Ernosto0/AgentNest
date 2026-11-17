@@ -278,6 +278,7 @@ def test_me_returns_user_csrf_token_and_memberships(
         "email": user.email,
         "display_name": "Ayşe",
         "ui_locale": "tr",
+        "email_verified": True,
     }
     assert len(body["csrf_token"]) >= 32
     assert body["memberships"] == [

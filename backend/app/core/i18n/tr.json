@@ -344,6 +344,11 @@
   "errors.RATE_LIMITED.next": "Yeniden denemeden önce kilitleme süresinin bitmesini bekleyin.",
   "activity.auth.login_throttled": "Giriş denemeleri sınırlandırıldı",
   "activity.auth.password_reset_throttled": "Şifre sıfırlama talepleri sınırlandırıldı",
+  "activity.auth.registered": "Hesap oluşturuldu",
+  "activity.auth.register_throttled": "Kayıt istekleri sınırlandırıldı",
+  "activity.auth.email_verified": "E-posta doğrulandı",
+  "activity.auth.verification_requested": "Doğrulama e-postası istendi",
+  "activity.auth.resend_verification_throttled": "Doğrulama e-postası istekleri sınırlandırıldı",
   "activity.auth.password_change_failed": "Şifre değiştirme başarısız",
   "activity.auth.password_changed": "Şifre değiştirildi",
   "activity.auth.session_revoked": "Oturum kapatıldı",
@@ -469,5 +474,9 @@
   "activity.state.degraded": "Kararsız",
   "activity.state.needs_reauth": "Yenilenmeli",
   "activity.state.disconnected": "Bağlantı kesildi",
-  "activity.state.approved": "Onaylandı"
+  "activity.state.approved": "Onaylandı",
+  "errors.EMAIL_NOT_VERIFIED.what": "E-postanız doğrulanmadı.",
+  "errors.EMAIL_NOT_VERIFIED.next": "Devam etmeden önce e-postanızı doğrulayın.",
+  "errors.EMAIL_VERIFICATION_TOKEN_INVALID.what": "Doğrulama bağlantısı geçersiz veya süresi dolmuş.",
+  "errors.EMAIL_VERIFICATION_TOKEN_INVALID.next": "Yeni bir doğrulama e-postası isteyin."
 }
