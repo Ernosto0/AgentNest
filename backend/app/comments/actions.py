@@ -16,6 +16,7 @@ from app.comments.models import PublicComment, PublicCommentAction, PublicMedia
 from app.core.canonical import payload_hash
 from app.core.clock import Clock
 from app.jobs.queue import enqueue
+from app.plans import service as usage
 
 
 class PublicReplyArgs(BaseModel):
@@ -163,6 +164,10 @@ def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> d
         if not validated.valid:
             return {"valid": False, "errors": list(validated.errors)}
         proposal = request.reply.model_dump(mode="json")
+    if validated is not None and not usage.consume(
+        db, clock, thread.workspace_id, f"public:{thread.id}:{thread.event_cursor}"
+    ):
+        return {"status": "quota_paused", "reason": usage.PAUSED_REASON}
     body = {
         "comment_id": str(comment.id),
         "comment_version": comment.version,

@@ -21,6 +21,7 @@ from app.inbox.payloads import SendReplyPayload
 from app.jobs.queue import enqueue
 from app.knowledge import impact
 from app.operations.models import Operation
+from app.plans import service as usage
 
 
 def action_result(db: Session, action: AgentAction) -> dict[str, Any]:
@@ -163,6 +164,9 @@ def send(
                 raise ToolInputError("owner source missing")
             notify(db, clock, context.workspace, owner_source[0], "owner_question.window_closed")
             return {"valid": True, "retained": True, "status": "waiting_customer"}
+    if not usage.consume(db, clock, thread.workspace_id, f"dm:{thread.id}:{thread.event_cursor}"):
+        usage.notify_paused_conversation(db, clock, thread.workspace_id, conversation.id)
+        return {"status": "quota_paused", "reason": usage.PAUSED_REASON}
     draft = ReplyDraft(
         id=uuid.uuid4(),
         workspace_id=thread.workspace_id,

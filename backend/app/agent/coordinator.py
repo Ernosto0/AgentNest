@@ -30,6 +30,7 @@ from app.core.context import ActorRef, WorkspaceContext
 from app.core.errors import RetryableError
 from app.identity.models import Workspace
 from app.integrations.llm.steps import LLMStepRequest, LLMStepResult, LLMToolObservation
+from app.plans import service as usage
 
 LEASE = timedelta(seconds=90)
 TOKEN_RESERVATION = 40000  # includes bounded context and one repair
@@ -162,6 +163,16 @@ def claim(deps: RunnerDeps, workspace_id: uuid.UUID, thread_id: uuid.UUID) -> Cl
             db.add(goal)
             db.flush()
             thread.current_goal_key = goal.goal_key
+        if thread.surface in {"dm", "comment"} and usage.is_paused(db, deps.clock, workspace_id):
+            # The monthly reply allowance is used up (plans): no model call, no draft. The
+            # customer's message is already in the inbox; the people who answer are told.
+            if thread.dm_conversation_id:
+                usage.notify_paused_conversation(
+                    db, deps.clock, workspace_id, thread.dm_conversation_id
+                )
+            set_state(db, deps, goal, thread, "failed", reason=usage.PAUSED_REASON)
+            db.commit()
+            return None
         sync_usage(db, goal)
         latest = db.scalar(
             select(AgentStep)
