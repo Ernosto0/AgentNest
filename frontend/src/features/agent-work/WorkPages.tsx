@@ -15,6 +15,7 @@ import { AccountSelect, FOCUS, ListTime, PANE, PaneEmpty, PaneNote } from "@/fea
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { actionLabelKey, type Schema } from "@/features/agent/hooks";
 import { newRequestId } from "@/features/commands/hooks";
+import { SaveAsFactOffer } from "./SaveAsFactOffer";
 import {
   useAnswerQuestion,
   useAnswerTask,
@@ -244,11 +245,15 @@ function QuestionDetail({ account }: { account: string }) {
   const answers = useQuestionAnswers(workspace.id, account, questionId, answerCursor);
   const answer = useAnswerQuestion(workspace.id, account, questionId);
   const [body, setBody] = useState("");
-  const [reuse, setReuse] = useState(false);
   useDirtyForm(body.trim().length > 0);
   const [request, setRequest] = useState(newRequestId);
   const [sent, setSent] = useState(false);
   const canAnswer = role !== "staff";
+  // The owner's own answer that proposed a fact (D-05); the offer shows right after sending and
+  // again when the question is opened later (for example from a push notification).
+  const offered = canAnswer
+    ? answers.data?.items.find((a) => a.kind === "answer" && a.candidate_id)
+    : undefined;
   if (question.isPending) {
     return (
       <p role="status" className="text-sm text-secondary">
@@ -300,8 +305,7 @@ function QuestionDetail({ account }: { account: string }) {
                 expected_version: q.version,
                 client_request_id: request,
                 kind: canAnswer ? "answer" : "proposal",
-                reusable_knowledge:
-                  reuse && canAnswer ? { key: `custom.owner_answer_${questionId.replaceAll("-", "")}`, text: body } : null,
+                reusable_knowledge: null,
               },
               {
                 onSuccess: () => {
@@ -318,7 +322,7 @@ function QuestionDetail({ account }: { account: string }) {
             <textarea
               className={INPUT}
               rows={4}
-              maxLength={reuse ? 500 : 700}
+              maxLength={700}
               required
               value={body}
               onChange={(e) => {
@@ -327,19 +331,6 @@ function QuestionDetail({ account }: { account: string }) {
               }}
             />
           </label>
-          {canAnswer && q.visibility === "customer_reply" ? (
-            <div className="flex flex-col gap-3 rounded-control border border-border bg-surface-subtle p-3.5">
-              <label className="flex items-center gap-2 text-sm font-medium text-primary cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded-control border-border text-action focus-visible:outline-2 focus-visible:outline-focus"
-                  checked={reuse}
-                  onChange={(e) => setReuse(e.target.checked)}
-                />
-                <span>{t("agentWork.reuse")}</span>
-              </label>
-            </div>
-          ) : null}
           <div>
             <Button disabled={answer.isPending || !body.trim()} type="submit">
               {canAnswer ? t("agentWork.sendAnswer") : t("agentWork.sendProposal")}
@@ -353,6 +344,7 @@ function QuestionDetail({ account }: { account: string }) {
           {t("agentWork.answerRecorded")}
         </p>
       ) : null}
+      {offered ? <SaveAsFactOffer workspaceId={workspace.id} answer={offered} /> : null}
       {answer.error ? <ErrorMessage error={answer.error} /> : null}
 
       <Card className="flex flex-col gap-3">

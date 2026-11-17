@@ -9,8 +9,10 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Text,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -118,3 +120,34 @@ class OwnerAnswer(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     candidate_id: Mapped[uuid.UUID | None] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class FactSaveToken(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """Single-use Telegram button token: "save this owner answer as a verified fact" (D-05).
+
+    Only the SHA-256 of the token is stored. It is bound to one fact candidate and one user,
+    expires, and is consumed at most once. It never carries the answer text.
+    """
+
+    __tablename__ = "fact_save_tokens"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "candidate_id"],
+            ["fact_candidates.workspace_id", "fact_candidates.id"],
+            ondelete="CASCADE",
+        ),
+        Index("ix_fact_save_tokens_candidate", "workspace_id", "candidate_id"),
+        Index("ix_fact_save_tokens_expires_at", "expires_at"),
+        Index("ix_fact_save_tokens_token_hash", "token_hash", unique=True),
+    )
+    token_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    candidate_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

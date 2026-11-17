@@ -48,6 +48,16 @@ export function DailyReport() {
         ) : undefined}
       />
 
+      {canGenerate ? (
+        <Link
+          to={`/w/${workspace.id}/more/reports/missed-customers`}
+          className="inline-flex min-h-11 w-fit items-center text-sm font-semibold text-action underline underline-offset-2 hover:text-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          data-testid="missed-report-link"
+        >
+          {t("reports.missed.openWeekly")}
+        </Link>
+      ) : null}
+
       {/* Date Stepper */}
       <div
         className="flex items-center justify-between gap-3 border-b border-border pb-3"

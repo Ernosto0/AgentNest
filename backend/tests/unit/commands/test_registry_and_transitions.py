@@ -9,7 +9,7 @@ from app.core.errors import AppError
 from app.identity.permissions import PERMISSION_MATRIX
 
 FORBIDDEN_WORDS = ("approve", "reject", "publish", "send", "connect", "disconnect")
-# ``content.cancel_scheduled`` only *cancels* what is scheduled; nothing may schedule or submit.
+# Existing content may be moved after confirmation; new drafts cannot be scheduled by text.
 FORBIDDEN_CONTENT_VERBS = ("content.schedule", "content.submit", "content.reapprove")
 
 
@@ -24,6 +24,8 @@ def test_no_command_type_can_approve_publish_or_send() -> None:
         "knowledge.update_fact",
         "knowledge.update_brand_voice",
         "content.cancel_scheduled",
+        "content.reschedule",
+        "agent.pause_until",
     }
 
 

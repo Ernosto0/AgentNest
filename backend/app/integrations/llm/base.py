@@ -15,11 +15,23 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
+class LLMImage:
+    """One image sent to a vision task (F-03 image description). Held in memory for the call
+    only; ``media_type`` is already checked (``image/jpeg``, ``image/png`` or ``image/webp``).
+    Text inside the picture is untrusted data (INV-03), like any customer content."""
+
+    media_type: str
+    data: bytes
+
+
+@dataclass(frozen=True)
 class LLMMessage:
-    """One conversation turn. Untrusted data is wrapped and labelled by the prompt builder."""
+    """One conversation turn. Untrusted data is wrapped and labelled by the prompt builder.
+    ``images`` is used only by vision tasks (a ``user`` turn); empty for every other task."""
 
     role: Literal["user", "assistant"]
     content: str
+    images: tuple[LLMImage, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -120,7 +120,7 @@ export function AssistantPanel({
         )}
       </div>
 
-      <CommandBar />
+      <div className="-order-1 lg:order-none" data-testid="home-command-first"><CommandBar /></div>
 
       <AgentActivity />
     </Panel>

@@ -18,11 +18,14 @@ from app.ai.schemas import (
     MAX_CONTENT_REF_TEXT_CHARS,
     MAX_NOTES_CHARS,
     MAX_OBJECTIVE_CHARS,
+    AgentPauseUntil,
     Clarify,
+    CommandTime,
     ContentCancelScheduled,
     ContentCreateDraft,
     ContentKind,
     ContentRef,
+    ContentReschedule,
     FactCatalogEntry,
     InterpretCommandInput,
     InterpretCommandOutput,
@@ -117,6 +120,7 @@ def snapshot(task_input: InterpretCommandInput) -> dict[str, Any]:
 
 INTERPRET_COMMAND: TaskDefinition[InterpretCommandInput, InterpretCommandOutput] = TaskDefinition(
     name=TASK,
+    prompt_version="v2",
     output_schema=InterpretCommandOutput,
     max_output_tokens=800,
     timeout_s=30,
@@ -456,6 +460,39 @@ def _interpret_content(
     return None
 
 
+def _interpret_management(
+    task_input: InterpretCommandInput, folded: str
+) -> InterpretCommandOutput | None:
+    # Never turn a compound request to send/publish/approve into a management action.
+    if any(pattern.search(folded) for _, pattern in _UNSUPPORTED):
+        return None
+    pause = bool(re.search(r"\b(?:pause|duraklat)\w*", folded))
+    move = bool(re.search(r"\b(?:move|reschedule|tasi|ertele|al)\w*", folded)) and bool(
+        _CONTENT_NOUN.search(folded)
+    )
+    if not pause and not move:
+        return None
+    clock = re.search(r"\b([01]?\d|2[0-3]):([0-5]\d)\b", folded)
+    morning = bool(re.search(r"\b(?:morning|sabah)\w*", folded))
+    day = _mentioned_date(folded, _today(task_input))
+    iso = re.search(r"\b\d{4}-\d{2}-\d{2}\b", folded)
+    wall = f"{int(clock[1]):02}:{clock[2]}" if clock else "morning" if morning else ""
+    if not wall or (pause and day is None and iso is None):
+        return _unsupported("other")
+    time = CommandTime(
+        local_date=iso[0] if iso else day.isoformat() if day else None, local_time=wall
+    )
+    if pause:
+        return InterpretCommandOutput(
+            interpretation=AgentPauseUntil(type="agent.pause_until", time=time)
+        )
+    return InterpretCommandOutput(
+        interpretation=ContentReschedule(
+            type="content.reschedule", content_ref=_content_ref(task_input, folded), time=time
+        )
+    )
+
+
 @fake_implementation(TASK)
 def fake_interpret_command(
     task_input: InterpretCommandInput, schema: Any = None
@@ -468,6 +505,9 @@ def fake_interpret_command(
         return InterpretCommandOutput(
             interpretation=QueryPendingApprovals(type="query.pending_approvals")
         )
+    management = _interpret_management(task_input, folded)
+    if management is not None:
+        return management
     content = _interpret_content(task_input, folded)
     if content is not None:  # before the publish words: "yayını iptal et" is a cancel
         return content

@@ -21,6 +21,7 @@ from app.inbox.payloads import SendReplyPayload
 from app.jobs.queue import enqueue
 from app.knowledge import impact
 from app.operations.models import Operation
+from app.policy.transcripts import recent_transcript_present
 
 
 def action_result(db: Session, action: AgentAction) -> dict[str, Any]:
@@ -224,7 +225,10 @@ def send(
         visibility_allowed=True,
         claims_valid=True,
         quota_available=True,
-        require_human=require_human,
+        # A reply in a conversation with a transcribed voice note always needs a person (F-03),
+        # whatever the delegation says: code reads the stored transcript rows, not the model.
+        require_human=require_human
+        or recent_transcript_present(db, thread.workspace_id, conversation.id),
     )
     if decision.kind not in {"automatic", "ask"}:
         action.status, draft.status = "cancelled", "cancelled"

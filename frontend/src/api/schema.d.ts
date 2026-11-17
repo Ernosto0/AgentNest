@@ -1972,6 +1972,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/delegation-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Suggestions
+         * @description Open suggestions, each with the exact change to preview and apply.
+         */
+        get: operations["list_suggestions_api_v1_workspaces__workspace_id__delegation_suggestions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/delegation-suggestions/{suggestion_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss Suggestion */
+        post: operations["dismiss_suggestion_api_v1_workspaces__workspace_id__delegation_suggestions__suggestion_id__dismiss_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/delete-request": {
         parameters: {
             query?: never;
@@ -2267,6 +2304,23 @@ export interface paths {
         };
         /** Get Extraction */
         get: operations["get_extraction_api_v1_workspaces__workspace_id__knowledge_extractions__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/learning/month": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Monthly Learning */
+        get: operations["monthly_learning_api_v1_workspaces__workspace_id__learning_month_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2605,6 +2659,46 @@ export interface paths {
          * @description The records behind one number; their count is the number (AC-E3).
          */
         get: operations["get_metric_items_api_v1_workspaces__workspace_id__reports_daily__local_date__metrics__key__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/reports/missed-customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Missed Customer Report
+         * @description The week of ``week_start`` (default: this week so far), computed from the records.
+         */
+        get: operations["get_missed_customer_report_api_v1_workspaces__workspace_id__reports_missed_customers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/reports/missed-customers/{week_start}/metrics/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Missed Customer Items
+         * @description The records behind one number of the week; their count is the number.
+         */
+        get: operations["get_missed_customer_items_api_v1_workspaces__workspace_id__reports_missed_customers__week_start__metrics__key__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3114,8 +3208,12 @@ export interface components {
             author_role: string;
             /** Body */
             body: string | null;
+            /** Candidate Editor Type */
+            candidate_editor_type?: string | null;
             /** Candidate Id */
             candidate_id: string | null;
+            /** Candidate Status */
+            candidate_status?: ("pending" | "accepted" | "rejected" | "superseded") | null;
             /**
              * Expires At
              * Format: date-time
@@ -3171,7 +3269,7 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel" | "calendar.book" | "calendar.reschedule" | "calendar.cancel";
+            action: "command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "command.reschedule_content" | "command.pause_agent" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel" | "calendar.book" | "calendar.reschedule" | "calendar.cancel";
             /** Can Decide */
             can_decide: boolean;
             /** Cancel Reason */
@@ -3537,6 +3635,18 @@ export interface components {
             /** Expected Version */
             expected_version: number;
         };
+        /**
+         * CandidateAccept
+         * @description Explicit typed normalization of an owner answer before accepting it.
+         */
+        CandidateAccept: {
+            /** Value */
+            value: {
+                [key: string]: unknown;
+            };
+            /** Value Type */
+            value_type: string;
+        };
         /** CandidateOut */
         CandidateOut: {
             /**
@@ -3546,6 +3656,8 @@ export interface components {
             created_at: string;
             /** Current Display */
             current_display: string | null;
+            /** Editor Type */
+            editor_type?: string | null;
             /** Fact Id */
             fact_id: string | null;
             /** Fact Key */
@@ -4240,6 +4352,8 @@ export interface components {
             /** Expected Delegation Version */
             expected_delegation_version?: number | null;
             policy: components["schemas"]["DelegationPolicy"];
+            /** Suggestion Id */
+            suggestion_id?: string | null;
         };
         /** DelegationOut */
         DelegationOut: {
@@ -4265,6 +4379,8 @@ export interface components {
         };
         /** DelegationPreview */
         DelegationPreview: {
+            /** Automation Class */
+            automation_class?: string | null;
             /** Changed Actions */
             changed_actions: string[];
             /** Next Version */
@@ -4302,6 +4418,44 @@ export interface components {
             expected_version: number;
             /** Text */
             text: string;
+        };
+        /**
+         * DraftTranscriptOut
+         * @description A voice-note transcript a reply was drafted from, so the approval view can show it.
+         */
+        DraftTranscriptOut: {
+            /** Language */
+            language: string | null;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Text */
+            text: string | null;
+        };
+        /**
+         * EstimateOut
+         * @description The lira estimate and all of its inputs. ``amount`` is null unless ``status`` is ``ok``:
+         *     ``hours_missing`` and ``no_verified_price`` mean counts only.
+         */
+        EstimateOut: {
+            /** Amount */
+            amount: string | null;
+            /** Conversion Rate */
+            conversion_rate: string;
+            /** Currency */
+            currency: string;
+            /** Median Price */
+            median_price: string | null;
+            /** Price Count */
+            price_count: number;
+            /** Price Inputs */
+            price_inputs: components["schemas"]["PriceInputOut"][];
+            /** Price Questions */
+            price_questions: number | null;
+            /** Status */
+            status: string;
         };
         /** ExactActionPreview */
         ExactActionPreview: {
@@ -4605,6 +4759,32 @@ export interface components {
             /** Unanswered Comments */
             unanswered_comments: number;
         };
+        /**
+         * ImageDescriptionOut
+         * @description The automatic description of one photo or screenshot a customer sent (F-03). Always shown
+         *     as what it is: a machine's reading of a picture, for the owner. It is never a fact and never
+         *     used to answer the customer. The picture is not kept, so there is nothing to show: the owner
+         *     opens the picture in Instagram.
+         */
+        ImageDescriptionOut: {
+            /** Attachment Index */
+            attachment_index: number;
+            /** Description */
+            description: string | null;
+            /** Injection Suspected */
+            injection_suspected: boolean;
+            /** Looks Like */
+            looks_like: ("product" | "price_screenshot" | "location" | "other") | null;
+            /** Reason Code */
+            reason_code: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "succeeded" | "failed";
+            /** Visible Text */
+            visible_text: string | null;
+        };
         /** InsightsContentItemOut */
         InsightsContentItemOut: {
             /** Content Item Id */
@@ -4799,6 +4979,38 @@ export interface components {
             en?: string | null;
             /** Tr */
             tr?: string | null;
+        };
+        /** LearnedFact */
+        LearnedFact: {
+            /** Category */
+            category: string;
+            /**
+             * Fact Id
+             * Format: uuid
+             */
+            fact_id: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: {
+                [key: string]: string;
+            };
+            /**
+             * Learned At
+             * Format: date-time
+             */
+            learned_at: string;
+            /** Value Type */
+            value_type: string;
+        };
+        /** LearnedMonth */
+        LearnedMonth: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["LearnedFact"][];
+            /** Month */
+            month: string;
         };
         /**
          * LocalScheduleIn
@@ -5032,6 +5244,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Image Descriptions */
+            image_descriptions?: components["schemas"]["ImageDescriptionOut"][];
             /** Is Simulated */
             is_simulated: boolean;
             /**
@@ -5044,8 +5258,10 @@ export interface components {
              * @enum {string}
              */
             sender_kind: "customer" | "business_app" | "business_native";
+            story?: components["schemas"]["StoryOut"] | null;
             /** Text */
             text: string | null;
+            transcript?: components["schemas"]["TranscriptOut"] | null;
         };
         /** MetaResponse */
         MetaResponse: {
@@ -5115,6 +5331,45 @@ export interface components {
             section: string;
             /** Value */
             value: number | null;
+        };
+        /** MissedCustomerReportOut */
+        MissedCustomerReportOut: {
+            estimate: components["schemas"]["EstimateOut"];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Has Simulated Data */
+            has_simulated_data: boolean;
+            /** Hours Available */
+            hours_available: boolean;
+            /** Is Partial */
+            is_partial: boolean;
+            /** Metrics */
+            metrics: components["schemas"]["WeeklyMetricOut"][];
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Week End
+             * Format: date
+             */
+            week_end: string;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
         };
         /** MockAccountCreate */
         MockAccountCreate: {
@@ -5509,12 +5764,23 @@ export interface components {
              * Action Class
              * @enum {string}
              */
-            action_class: "reply.hours" | "reply.location_contact" | "reply.pricing" | "reply.services" | "reply.booking" | "reply.promotions" | "reply.general_faq" | "content.publish";
+            action_class: "reply.hours" | "reply.location_contact" | "reply.pricing" | "reply.services" | "reply.booking" | "reply.promotions" | "reply.general_faq" | "reply.story_mention" | "content.publish";
             /**
              * Mode
              * @enum {string}
              */
             mode: "auto" | "approval" | "off";
+        };
+        /** PriceInputOut */
+        PriceInputOut: {
+            /** Amount */
+            amount: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Unit */
+            unit: string | null;
         };
         /** PublishedMediaOut */
         PublishedMediaOut: {
@@ -5763,6 +6029,8 @@ export interface components {
             suggestion_text: string | null;
             /** Text */
             text: string | null;
+            /** Transcripts */
+            transcripts?: components["schemas"]["DraftTranscriptOut"][];
             validation: components["schemas"]["ValidationOut"];
             /** Version */
             version: number;
@@ -5984,6 +6252,31 @@ export interface components {
             state: string;
         };
         /**
+         * StoryOut
+         * @description The story a message refers to (F-04). ``known`` is true only for a story AgentNest
+         *     published, where the stored content is shown; a reply to any other story, and every mention,
+         *     carries just the kind (the provider's story link is short-lived and is never shown).
+         */
+        StoryOut: {
+            /** Expired */
+            expired: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "reply" | "mention";
+            /** Known */
+            known: boolean;
+            /** Lines */
+            lines: string[];
+            /** Media Asset Id */
+            media_asset_id: string | null;
+            /** Media Deleted */
+            media_deleted: boolean;
+            /** Title */
+            title: string | null;
+        };
+        /**
          * SubjectLinkOut
          * @description Structured so the API stays free of frontend routes.
          */
@@ -6022,6 +6315,52 @@ export interface components {
              * @default false
              */
             self_approve: boolean;
+        };
+        /** SuggestionDismissed */
+        SuggestionDismissed: {
+            /** Cooldown Until */
+            cooldown_until: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+        };
+        /** SuggestionList */
+        SuggestionList: {
+            /** Items */
+            items: components["schemas"]["SuggestionOut"][];
+        };
+        /** SuggestionOut */
+        SuggestionOut: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Action Class */
+            action_class: string;
+            change: components["schemas"]["DelegationChange"];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Intent */
+            intent: string;
+            /** Window Days */
+            window_days: number;
         };
         /** SummaryOut */
         SummaryOut: {
@@ -6199,6 +6538,27 @@ export interface components {
             /** Next Cursor */
             next_cursor: string | null;
         };
+        /**
+         * TranscriptOut
+         * @description The automatic transcript of a voice note (F-03). Always shown as what it is: a machine's
+         *     reading of what the customer said, never the customer's own typed words. The audio is not
+         *     kept, so there is nothing to play: the owner listens to the voice note in Instagram.
+         */
+        TranscriptOut: {
+            /** Duration Seconds */
+            duration_seconds: number | null;
+            /** Language */
+            language: string | null;
+            /** Reason Code */
+            reason_code: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "succeeded" | "failed";
+            /** Text */
+            text: string | null;
+        };
         /** UpdateCalendarSettingsIn */
         UpdateCalendarSettingsIn: {
             /** Default Slot Duration Minutes */
@@ -6315,6 +6675,20 @@ export interface components {
             received_24h: number;
             /** Signature Failures 24H System Wide */
             signature_failures_24h_system_wide: number;
+        };
+        /**
+         * WeeklyMetricOut
+         * @description One number of the missed-customer report. ``value`` is null when it cannot be known
+         *     (after-hours numbers without a verified opening-hours fact), never a made-up zero.
+         */
+        WeeklyMetricOut: {
+            /** Key */
+            key: string;
+            link: components["schemas"]["ReportLinkOut"] | null;
+            /** Previous Value */
+            previous_value: number | null;
+            /** Value */
+            value: number | null;
         };
         /** WorkActionOut */
         WorkActionOut: {
@@ -8936,7 +9310,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: ("pending" | "approved" | "rejected" | "expired" | "cancelled") | null;
-                action?: ("command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel" | "calendar.book" | "calendar.reschedule" | "calendar.cancel") | null;
+                action?: ("command.update_fact" | "command.update_brand_voice" | "command.cancel_content" | "command.reschedule_content" | "command.pause_agent" | "reply.send" | "content.publish" | "comments.approve" | "content.prepare" | "content.schedule" | "content.cancel" | "calendar.book" | "calendar.reschedule" | "calendar.cancel") | null;
                 limit?: number;
             };
             header?: never;
@@ -10544,6 +10918,69 @@ export interface operations {
             };
         };
     };
+    list_suggestions_api_v1_workspaces__workspace_id__delegation_suggestions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_suggestion_api_v1_workspaces__workspace_id__delegation_suggestions__suggestion_id__dismiss_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                suggestion_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionDismissed"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     request_workspace_deletion_endpoint_api_v1_workspaces__workspace_id__delete_request_post: {
         parameters: {
             query?: never;
@@ -10653,7 +11090,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CandidateAccept"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -11164,6 +11605,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtractionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    monthly_learning_api_v1_workspaces__workspace_id__learning_month_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearnedMonth"];
                 };
             };
             /** @description Validation Error */
@@ -11871,6 +12343,75 @@ export interface operations {
             header?: never;
             path: {
                 local_date: string;
+                key: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricItemsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_missed_customer_report_api_v1_workspaces__workspace_id__reports_missed_customers_get: {
+        parameters: {
+            query?: {
+                week_start?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissedCustomerReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_missed_customer_items_api_v1_workspaces__workspace_id__reports_missed_customers__week_start__metrics__key__get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                week_start: string;
                 key: string;
                 workspace_id: string;
             };

@@ -11,6 +11,7 @@ REPLY_ACTION_CLASSES = (
     "reply.booking",
     "reply.promotions",
     "reply.general_faq",
+    "reply.story_mention",
 )
 ACTION_CLASSES = (*REPLY_ACTION_CLASSES, "content.publish")
 MODES = ("auto", "approval", "off")
@@ -25,6 +26,7 @@ _INTENT_CLASS = {
     "promotions": "reply.promotions",
     "faq": "reply.general_faq",
     "greeting": "reply.general_faq",
+    "story_mention": "reply.story_mention",  # code sets it; the model cannot propose it
 }
 # Intents that always go to a person: there is no automation level for them.
 ALWAYS_HUMAN_INTENTS = frozenset({"complaint", "refund_request", "discount_request", "sensitive"})

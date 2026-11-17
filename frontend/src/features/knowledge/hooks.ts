@@ -103,6 +103,7 @@ function useRefreshKnowledge(workspaceId: string) {
       queryClient.invalidateQueries({ queryKey: ["fact-candidates", workspaceId] }),
       queryClient.invalidateQueries({ queryKey: readinessKey(workspaceId) }),
       queryClient.invalidateQueries({ queryKey: ["fact-versions", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["learning-month", workspaceId] }),
     ]);
   };
 }
@@ -171,15 +172,23 @@ export function useFactTransition(workspaceId: string) {
   });
 }
 
+/** The typed value an owner entered for a free-text answer that carries a price, hours or a contact. */
+export type NormalizedValue = { value_type: string; value: Record<string, unknown> };
+
 export function useResolveCandidate(workspaceId: string) {
   const refresh = useRefreshKnowledge(workspaceId);
-  return useMutation<unknown, AppError, { candidateId: string; action: "accept" | "reject" }>({
-    mutationFn: ({ candidateId, action }) => {
+  return useMutation<
+    unknown,
+    AppError,
+    { candidateId: string; action: "accept" | "reject"; normalized?: NormalizedValue }
+  >({
+    mutationFn: ({ candidateId, action, normalized }) => {
       const path = { workspace_id: workspaceId, candidate_id: candidateId };
       return action === "accept"
         ? unwrap(
             api.POST("/api/v1/workspaces/{workspace_id}/fact-candidates/{candidate_id}/accept", {
               params: { path },
+              ...(normalized ? { body: normalized } : {}),
             }),
           )
         : unwrap(

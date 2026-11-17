@@ -690,6 +690,30 @@ def erase_account(db: Session, clock: Clock, workspace: uuid.UUID, account: uuid
         .where(Message.workspace_id == workspace, Message.social_account_id == account)
         .values(text=None, attachments=[])
     )
+    from app.inbox.image_erasure import erase_image_descriptions
+    from app.inbox.models import MessageImageDescription, MessageTranscript
+    from app.inbox.transcripts import erase_transcripts
+
+    erase_transcripts(
+        db,
+        clock.now(),
+        MessageTranscript.workspace_id == workspace,
+        MessageTranscript.message_id.in_(
+            select(Message.id).where(
+                Message.workspace_id == workspace, Message.social_account_id == account
+            )
+        ),
+    )
+    erase_image_descriptions(
+        db,
+        clock.now(),
+        MessageImageDescription.workspace_id == workspace,
+        MessageImageDescription.message_id.in_(
+            select(Message.id).where(
+                Message.workspace_id == workspace, Message.social_account_id == account
+            )
+        ),
+    )
 
 
 def erase_source(db: Session, clock: Clock, message: Message) -> None:

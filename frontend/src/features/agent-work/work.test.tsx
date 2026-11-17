@@ -115,16 +115,6 @@ describe("assistant work", () => {
     );
     expect(requests.some((r) => r.path.includes("/decision"))).toBe(false);
   });
-  it("generates a stable valid knowledge key without asking the owner for one", async () => {
-    const requests = setup("owner", { [`POST ${AP}/owner-questions/${Q}/answer`]: () => json({ id: "answer", question_id: Q, version: 4, kind: "answer", body: "Yes", author_role: "owner", candidate_id: "candidate", expires_at: "2027-01-01T00:00:00Z" }) });
-    await open(`questions/${Q}`);
-    await userEvent.type(await screen.findByLabelText("Business answer"), "Yes");
-    await userEvent.click(screen.getByLabelText("Save for future answers"));
-    expect(screen.queryByLabelText(/Knowledge key/)).toBeNull();
-    await userEvent.click(screen.getByRole("button", { name: "Save information answer" }));
-    await screen.findByText(/Information recorded/);
-    expect(requests.find(r => r.method === "POST")?.body).toMatchObject({ reusable_knowledge: { key: "custom.owner_answer_a2000000000040008000000000000001", text: "Yes" } });
-  });
   it("staff propose information and never see authoritative answer or reusable controls", async () => {
     setup("staff");
     await open(`questions/${Q}`);

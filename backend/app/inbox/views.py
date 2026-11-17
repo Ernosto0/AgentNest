@@ -10,16 +10,27 @@ from sqlalchemy.orm import Session
 from app.approvals import repository as approvals_repo
 from app.core.context import WorkspaceContext
 from app.identity.models import User
+from app.inbox import stories
 from app.inbox.attention import customer_number
 from app.inbox.context import MESSAGING_WINDOW
-from app.inbox.models import Conversation, Message, ReplyDraft
+from app.inbox.models import (
+    Conversation,
+    Message,
+    MessageImageDescription,
+    MessageTranscript,
+    ReplyDraft,
+)
 from app.inbox.schemas import (
     ApprovalStateOut,
     ConversationOut,
+    DraftTranscriptOut,
     FactSourceOut,
+    ImageDescriptionOut,
     MessageOut,
     RenderedFactOut,
     ReplyDraftOut,
+    StoryOut,
+    TranscriptOut,
     ValidationIssueOut,
     ValidationOut,
 )
@@ -76,7 +87,72 @@ def conversation_out(conversation: Conversation, last: Message | None) -> Conver
     )
 
 
-def message_out(message: Message) -> MessageOut:
+def transcripts_by_message(
+    session: Session, ctx: WorkspaceContext, message_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, MessageTranscript]:
+    """The transcripts of these messages, in one query (workspace-scoped)."""
+    if not message_ids:
+        return {}
+    rows = session.scalars(
+        select(MessageTranscript).where(
+            MessageTranscript.workspace_id == ctx.workspace_id,
+            MessageTranscript.message_id.in_(message_ids),
+        )
+    )
+    return {row.message_id: row for row in rows}
+
+
+def transcript_out(row: MessageTranscript | None) -> TranscriptOut | None:
+    if row is None:
+        return None
+    return TranscriptOut(
+        status=row.status,
+        text=row.text if row.status == "succeeded" else None,
+        language=row.language,
+        reason_code=row.reason_code,
+        duration_seconds=row.duration_seconds,
+    )
+
+
+def image_descriptions_by_message(
+    session: Session, ctx: WorkspaceContext, message_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, list[MessageImageDescription]]:
+    """The image descriptions of these messages, in one query (workspace-scoped)."""
+    if not message_ids:
+        return {}
+    rows = session.scalars(
+        select(MessageImageDescription)
+        .where(
+            MessageImageDescription.workspace_id == ctx.workspace_id,
+            MessageImageDescription.message_id.in_(message_ids),
+        )
+        .order_by(MessageImageDescription.attachment_index)
+    )
+    found: dict[uuid.UUID, list[MessageImageDescription]] = {}
+    for row in rows:
+        found.setdefault(row.message_id, []).append(row)
+    return found
+
+
+def image_description_out(row: MessageImageDescription) -> ImageDescriptionOut:
+    done = row.status == "succeeded"
+    return ImageDescriptionOut(
+        attachment_index=row.attachment_index,
+        status=row.status,
+        looks_like=row.looks_like if done else None,
+        description=row.description if done else None,
+        visible_text=row.visible_text if done else None,
+        injection_suspected=row.injection_suspected and done,
+        reason_code=row.reason_code,
+    )
+
+
+def message_out(
+    message: Message,
+    transcript: MessageTranscript | None = None,
+    image_descriptions: list[MessageImageDescription] | None = None,
+    story: StoryOut | None = None,
+) -> MessageOut:
     return MessageOut(
         id=message.id,
         direction=message.direction,
@@ -85,7 +161,96 @@ def message_out(message: Message) -> MessageOut:
         attachments=[] if message.is_deleted else list(message.attachments or []),
         provider_timestamp=message.provider_timestamp,
         is_simulated=message.is_simulated,
+        transcript=None if message.is_deleted else transcript_out(transcript),
+        image_descriptions=[]
+        if message.is_deleted
+        else [image_description_out(row) for row in image_descriptions or []],
+        story=story,
     )
+
+
+def _story_out(
+    session: Session, ctx: WorkspaceContext, conversation: Conversation, message: Message
+) -> StoryOut | None:
+    if message.is_deleted or message.direction != "inbound":
+        return None
+    ref = stories.story_ref(message.attachments)
+    if ref is None:
+        return None
+    content = (
+        stories.own_story(
+            session,
+            ctx.workspace_id,
+            conversation.social_account_id,
+            ref.story_id,
+            message_time=message.provider_timestamp,
+        )
+        if ref.kind == "reply" and ref.story_id
+        else None
+    )
+    if content is None:
+        return StoryOut(
+            kind=ref.kind,
+            known=False,
+            title=None,
+            lines=[],
+            media_asset_id=None,
+            media_deleted=False,
+            expired=False,
+        )
+    return StoryOut(
+        kind=ref.kind,
+        known=True,
+        title=content.title or None,
+        lines=list(content.overlay_lines),
+        media_asset_id=content.media_asset_id,
+        media_deleted=content.media_deleted,
+        expired=content.expired,
+    )
+
+
+def messages_out(
+    session: Session, ctx: WorkspaceContext, conversation: Conversation, messages: list[Message]
+) -> list[MessageOut]:
+    """The messages as the API shows them: each with its voice-note transcript, its image
+    descriptions, and, for a story reply or mention, its story."""
+    ids = [m.id for m in messages]
+    transcripts = transcripts_by_message(session, ctx, ids)
+    descriptions = image_descriptions_by_message(session, ctx, ids)
+    return [
+        message_out(
+            m,
+            transcripts.get(m.id),
+            descriptions.get(m.id),
+            _story_out(session, ctx, conversation, m),
+        )
+        for m in messages
+    ]
+
+
+def draft_transcripts_out(
+    session: Session, ctx: WorkspaceContext, draft: ReplyDraft
+) -> list[DraftTranscriptOut]:
+    """The voice notes a reply was drafted from (recorded on the draft by code)."""
+    raw = draft.validation.get("transcript_message_ids")
+    if not isinstance(raw, list) or not raw:
+        return []
+    ids = []
+    for item in raw:
+        try:
+            ids.append(uuid.UUID(str(item)))
+        except ValueError:
+            continue
+    found = transcripts_by_message(session, ctx, ids)
+    return [
+        DraftTranscriptOut(
+            message_id=i,
+            text=found[i].text if found[i].status == "succeeded" else None,
+            language=found[i].language,
+        )
+        for i in ids
+        if i in found
+    ]
 
 
 def issue_out(issue: dict[str, object], *, matches_verified: bool = False) -> ValidationIssueOut:
@@ -190,4 +355,5 @@ def draft_out(
         window_ends_at=window_end(conversation),
         created_at=draft.created_at,
         is_simulated=draft.is_simulated,
+        transcripts=draft_transcripts_out(session, ctx, draft),
     )

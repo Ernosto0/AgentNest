@@ -2,7 +2,7 @@
 
 import uuid
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class _Payload(BaseModel):
@@ -47,3 +47,24 @@ class AssistantTestDraftPayload(_Payload):
     """The owner's test chat: draft the answer to one test message (an id, never its text)."""
 
     turn_id: uuid.UUID
+
+
+def transcribe_voice_note_key(message_id: uuid.UUID) -> str:
+    return f"transcribe_voice_note:{message_id}"
+
+
+class TranscribeVoiceNotePayload(_Payload):
+    """Transcribe the voice note of one customer message (an id, never audio or a URL)."""
+
+    message_id: uuid.UUID
+
+
+def describe_message_image_key(message_id: uuid.UUID, attachment_index: int) -> str:
+    return f"describe_message_image:{message_id}:{attachment_index}"
+
+
+class DescribeMessageImagePayload(_Payload):
+    """Describe one image of a customer message (ids and a position, never the image or a URL)."""
+
+    message_id: uuid.UUID
+    attachment_index: int = Field(ge=0)

@@ -43,8 +43,38 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `WEB_PUSH_VAPID_PUBLIC_KEY` | empty | set with the other two | Web Push (F-01). The public VAPID key (unpadded base64url, 65-byte P-256 point), served to the app by `GET /…/push-subscriptions/config`. All three `WEB_PUSH_*` values empty = push off (the config endpoint answers `enabled: false`, subscribing is 409). Set only some = the app refuses to start. Replacing the pair invalidates every stored subscription (browsers must re-subscribe) |
 | `WEB_PUSH_VAPID_PRIVATE_KEY` 🔒 | empty | set with the other two | The matching private key (unpadded base64url, 32 bytes). Never returned, logged or put in a job. Startup checks that it matches the public key. Generate the pair once with `uv run python -m app.cli generate-vapid-keys`, which prints both as `.env` lines on stdout |
 | `WEB_PUSH_SUBJECT` | empty | set with the other two | VAPID contact (RFC 8292): `mailto:ops@example.com` or an `https://` URL. Push services use it to reach the operator. Web Push also needs `TOKEN_ENCRYPTION_KEYS` (subscription keys are stored encrypted) |
+| `DELEGATION_SUGGESTION_WINDOW_DAYS` | `28` | `28` | Approval-ladder suggestions (D-02): the look-back window (7-90 days) for counting approved, edited, rejected and failed replies per topic |
+| `DELEGATION_SUGGESTION_MIN_UNCHANGED` | `20` | `20` | Unchanged owner approvals a topic needs in the window (with no edit, rejection or failure) before the weekly job suggests sending it automatically (minimum 5) |
+| `DELEGATION_SUGGESTION_COOLDOWN_DAYS` | `30` | `30` | How long a dismissed suggestion silences that topic (minimum 7 days) |
 | `LLM_REASONING_EFFORT` | `low` | `low` | `` (off) \| `minimal` \| `low` \| `medium` \| `high`. Reasoning tokens count against each task's `max_output_tokens` |
 | `LLM_PRICE_TABLE` | empty | optional JSON | `{"<model>": {"input_per_mtok": 0.0, "output_per_mtok": 0.0}}` (USD). Cost estimates in evals and system health; unpriced models have no estimate |
+
+## Voice notes (Feature Phase 2, F-03)
+
+A customer's voice note is downloaded and sent to the transcription provider (the audio leaves the platform: see [sub-processor-register.md](../legal/sub-processor-register.md)). Nothing is sent when `TRANSCRIPTION_PROVIDER=off`; the voice note then stays a person-handled attachment.
+
+| Variable | dev | prod | Description |
+|---|---|---|---|
+| `TRANSCRIPTION_PROVIDER` | `auto` | `auto` (= `openai` when `LLM_PROVIDER=openai`) \| `openai` \| `off` (`fake` refused) | `auto` \| `off` \| `fake` \| `openai`. `auto` follows `LLM_PROVIDER` (`fake` offline, `openai` live). `off` disables downloading and transcribing. `openai` needs `OPENAI_API_KEY` |
+| `TRANSCRIPTION_MODEL` | `gpt-4o-mini-transcribe` | same | OpenAI speech-to-text model ID, read only when the provider is `openai`. The ID is listed in the installed OpenAI SDK's documentation; it was **not confirmed on OpenAI's own model page and has never been run against the real API**. `whisper-1` is also supported (it additionally reports duration and language). Check before the first live run |
+| `TRANSCRIPTION_MAX_AUDIO_BYTES` | `10485760` | same | 10 MiB. A longer `Content-Length`, or a body that grows past it, is refused (`VOICE_TOO_LARGE`). At most 26 214 400 (the provider's own 25 MB limit) |
+| `TRANSCRIPTION_MAX_AUDIO_SECONDS` | `120` | same | Longer clips are refused before the provider call when the container (MP4/M4A, WAV) states its duration, otherwise after it (`VOICE_TOO_LONG`). At most 1 800 |
+| `TRANSCRIPTION_TIMEOUT_SECONDS` | `60` | same | One provider call |
+| `TRANSCRIPTION_DOWNLOAD_TIMEOUT_SECONDS` | `20` | same | One download; the whole download is cut off at twice this |
+| `TRANSCRIPTION_MAX_PER_WORKSPACE_PER_DAY` | `200` | per plan | Cost guard: provider calls per workspace in a rolling 24 h; over it a voice note fails with `VOICE_QUOTA_EXCEEDED` |
+
+## Photos and screenshots (Feature Phase 2, F-03 Session 03)
+
+A customer's photo or screenshot is downloaded and sent to the LLM provider's vision model (`LLM_PROVIDER`) to be described for the owner (the image leaves the platform: see [sub-processor-register.md](../legal/sub-processor-register.md)). Nothing is downloaded or sent when `IMAGE_DESCRIPTION_ENABLED=false`; the image then stays a plain attachment. The model call counts against `LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY` as well.
+
+| Variable | dev | prod | Description |
+|---|---|---|---|
+| `IMAGE_DESCRIPTION_ENABLED` | `true` | `true` after the sub-processor notice | `false` disables downloading and describing images |
+| `LLM_MODEL_DESCRIBE_IMAGE` | empty (= `LLM_MODEL_DEFAULT`) | a model that **accepts images** | Per-task model override. Image support of the default `gpt-6-luna` is **unverified**, and the adapter has never been run against the real API with an image. Check before the first live run |
+| `IMAGE_DESCRIPTION_MAX_BYTES` | `5242880` | same | 5 MiB. A longer `Content-Length`, or a body that grows past it, is refused (`IMAGE_TOO_LARGE`). At most 20 971 520 |
+| `IMAGE_DESCRIPTION_DOWNLOAD_TIMEOUT_SECONDS` | `20` | same | One download; the whole download is cut off at twice this |
+| `IMAGE_DESCRIPTION_MAX_PER_MESSAGE` | `3` | same | Images described per message (the first ones; 1 to 10) |
+| `IMAGE_DESCRIPTION_MAX_PER_WORKSPACE_PER_DAY` | `100` | per plan | Cost guard: model calls for images per workspace in a rolling 24 h; over it an image fails with `IMAGE_QUOTA_EXCEEDED` |
 
 ## Instagram and inbox (Phase 4; Meta in Phase 7)
 

@@ -364,12 +364,15 @@ def finish_interpretation(
         session.commit()
         return None
     interpretation = output.interpretation
+    from app.commands.manage import agent_snapshot
+
     outcome = resolver.resolve(
         interpretation,
         _snapshots(session, ctx, workspace),
         user_locale=identity_service_locale(user),
         workspace_locale=workspace.default_locale,
         currency=workspace.currency,
+        agent=agent_snapshot(session, ctx),
         content=content_refs.load(
             session, clock, ctx, workspace.timezone, aliases=content_aliases or {}
         ).context,
@@ -732,6 +735,7 @@ def _request_confirmation(
         subject_version=SUBJECT_VERSION,
         payload=outcome.payload,
         summary=summary,
+        is_simulated=bool(summary.get("is_simulated", False)),
         # Whoever holds this may decide it; the requester may too (ADR-014). Execution then
         # follows the *decider's* role: owners and managers write, staff only propose.
         required_permission=spec.approval_permission,

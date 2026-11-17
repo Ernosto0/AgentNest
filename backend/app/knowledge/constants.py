@@ -38,6 +38,7 @@ KEY_PATTERN = r"^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$"
 KEY_RE = re.compile(KEY_PATTERN)
 
 APPROVED_ANSWER_STATUSES = ("active", "needs_review", "archived")
+STORY_MENTION_INTENT = "story_mention"
 APPROVED_ANSWER_INTENTS = (
     "greeting",
     "pricing",
@@ -47,4 +48,5 @@ APPROVED_ANSWER_INTENTS = (
     "booking",
     "promotions",
     "faq",
+    STORY_MENTION_INTENT,  # the one thank-you for a story mention: not offered to the model
 )

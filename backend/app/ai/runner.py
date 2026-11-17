@@ -56,6 +56,10 @@ class TaskDefinition[InputT, OutputT: BaseModel]:
     post_validate: Callable[[InputT, OutputT], list[str]] = field(default=lambda _i, _o: [])
     # The (to be redacted) input kept in ``agent_runs.input_snapshot``.
     snapshot: Callable[[InputT], dict[str, Any]] = field(default=lambda _i: {})
+    # ``False`` keeps the validated output out of ``agent_runs.output`` (the run still records
+    # status, usage and the prompt version). For a task whose output is customer-derived text that
+    # is stored, and retention-erased, elsewhere (F-03 image description): no second copy.
+    store_output: bool = True
 
 
 @dataclass(frozen=True)
@@ -217,7 +221,7 @@ def run_task[InputT, OutputT: BaseModel](
         run_id,
         execution.totals,
         status="succeeded",
-        output=execution.output.model_dump(mode="json"),
+        output=execution.output.model_dump(mode="json") if task.store_output else None,
     )
     return TaskOutcome("succeeded", run_id, output=execution.output)
 

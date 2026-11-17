@@ -1,7 +1,7 @@
 """LLM adapters and vendor-neutral contracts (ADR-009, ADR-024)."""
 
 from app.core.config import Settings
-from app.integrations.llm.base import LLMMessage, LLMProvider, LLMResult, LLMUsage
+from app.integrations.llm.base import LLMImage, LLMMessage, LLMProvider, LLMResult, LLMUsage
 from app.integrations.llm.fake import FakeLLMProvider
 
 
@@ -20,6 +20,7 @@ def build_provider(settings: Settings) -> LLMProvider:
 
 __all__ = [
     "FakeLLMProvider",
+    "LLMImage",
     "LLMMessage",
     "LLMProvider",
     "LLMResult",

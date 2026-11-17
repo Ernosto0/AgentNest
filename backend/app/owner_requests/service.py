@@ -6,7 +6,7 @@ from datetime import timedelta
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import String, cast, func, or_, select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.orm import Session
 
 from app.agent.models import ACTIVE_RUN_STATES, AgentEvent, AgentSession, AgentThread
@@ -19,28 +19,11 @@ from app.core.errors import AppError
 from app.identity import repository as members
 from app.identity.permissions import has_permission
 from app.inbox.models import Message
+from app.knowledge.learning import knowledge_fence
 from app.owner_requests.models import OwnerAnswer, OwnerQuestion
 
 RequiredInfo = Literal["availability", "exception", "service_detail", "business_policy", "other"]
 Visibility = Literal["customer_reply", "private_business"]
-
-
-def knowledge_fence(db: Session, workspace: uuid.UUID) -> str:
-    """Content-free aggregate invalidation, without loading business bodies."""
-    from app.knowledge.models import BusinessFact, FactCandidate
-
-    parts = []
-    for model in (BusinessFact, FactCandidate):
-        row = db.execute(
-            select(
-                func.count(model.id),
-                func.sum(
-                    func.hashtextextended(func.concat(model.id, model.status, model.updated_at), 0)
-                ),
-            ).where(model.workspace_id == workspace)
-        ).one()
-        parts.append([row[0], str(row[1]) if row[1] is not None else None])
-    return payload_hash(parts)
 
 
 class AskOwner(BaseModel):
@@ -341,23 +324,31 @@ def decide(
         q.answer_id = answer.id if not cancel else None
         q.knowledge_fence = knowledge_fence(db, q.workspace_id)
         event_and_wake(db, clock, q, "owner_question_cancelled" if cancel else "owner_answer")
-    if isinstance(request, AnswerRequest) and request.reusable_knowledge:
+    if (
+        isinstance(request, AnswerRequest)
+        and kind == "answer"
+        and q.visibility == "customer_reply"
+        and (request.reusable_knowledge or request.body.strip())
+    ):
+        # Every owner answer to a customer-facing question becomes an unverified text candidate
+        # (D-05). It is only an offer: nothing is verified until the owner taps "save as fact".
         from app.knowledge.candidates import propose_candidate
         from app.knowledge.models import BusinessFact
         from app.knowledge.values import validate_value
 
         reusable = request.reusable_knowledge
-        value = validate_value("text", {"text": reusable.text})
+        key = reusable.key if reusable else f"custom.owner_answer_{q.id.hex}"
+        value = validate_value("text", {"text": reusable.text if reusable else request.body})
         fact = db.scalar(
             select(BusinessFact).where(
-                BusinessFact.workspace_id == ctx.workspace_id, BusinessFact.key == reusable.key
+                BusinessFact.workspace_id == ctx.workspace_id, BusinessFact.key == key
             )
         )
         candidate = propose_candidate(
             db,
             clock,
             ctx,
-            key=reusable.key,
+            key=key,
             value_type="text",
             value=value,
             source_type="owner_answer",

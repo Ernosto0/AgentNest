@@ -23,6 +23,16 @@ export function notificationTarget(workspaceId: string, notification: AppNotific
     return typeof id === "string" ? `${base}/inbox/${id}` : `${base}/inbox`;
   }
   if (notification.type.startsWith("account.")) return `${base}/more/settings/connections`;
+  if (notification.type === "delegation_suggestion") {
+    const account = params.account_id;
+    return typeof account === "string" ? `${base}/more/agent?account=${encodeURIComponent(account)}` : `${base}/more/agent`;
+  }
+  if (notification.type === "report.missed_customers_ready") {
+    const week = params.week_start;
+    return typeof week === "string"
+      ? `${base}/more/reports/missed-customers?week=${week}`
+      : `${base}/more/reports/missed-customers`;
+  }
   if (notification.type === "member.joined") return `${base}/more/settings/members`;
   if (notification.type === "report.daily_ready") {
     const day = params.local_date;

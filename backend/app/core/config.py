@@ -57,6 +57,7 @@ LLM_TASK_MODEL_FIELDS: dict[str, str] = {
     "draft_reply": "llm_model_draft_reply",
     "draft_content": "llm_model_draft_content",
     "extract_fact_candidates": "llm_model_extract_facts",
+    "describe_image": "llm_model_describe_image",
 }
 
 
@@ -102,17 +103,45 @@ class Settings(BaseSettings):
     llm_model_draft_reply: str = ""
     llm_model_draft_content: str = ""
     llm_model_extract_facts: str = ""
+    # Must be a model that accepts images (F-03 image description); unverified for the default.
+    llm_model_describe_image: str = ""
     llm_timeout_seconds: float = Field(default=30.0, gt=0)
     llm_max_calls_per_workspace_per_day: int = Field(default=500, ge=1)
     # The owner's "try your assistant" chat (F-02). Every message is an LLM call that counts
     # against the daily budget above, so it has its own, much tighter, per-workspace limits.
     test_chat_max_messages_per_hour: int = Field(default=20, ge=1)
     test_chat_max_messages_per_day: int = Field(default=60, ge=1)
+    # Approval-ladder suggestions (D-02): the weekly "send these automatically?" proposal. An
+    # intent qualifies after this many unchanged approvals in the window and no edit, rejection or
+    # failure; a dismissal silences that class for the cool-down.
+    delegation_suggestion_window_days: int = Field(default=28, ge=7, le=90)
+    delegation_suggestion_min_unchanged: int = Field(default=20, ge=5)
+    delegation_suggestion_cooldown_days: int = Field(default=30, ge=7)
     # Reasoning models spend output tokens on reasoning; keep it low for short structured tasks.
     llm_reasoning_effort: Literal["", "minimal", "low", "medium", "high"] = "low"
     # Optional JSON ``{"<model>": {"input_per_mtok": 0.0, "output_per_mtok": 0.0}}`` (USD) for
     # cost estimates in evals and system health. Unknown models have no estimate.
     llm_price_table: str = ""
+
+    # --- Voice notes (F-03, Feature Phase 2). Audio goes to the transcription provider. ---
+    # ``auto`` follows ``LLM_PROVIDER`` (fake offline, OpenAI otherwise); ``off`` stops voice
+    # notes from being downloaded or sent anywhere (they stay person-handled attachments).
+    transcription_provider: Literal["auto", "off", "fake", "openai"] = "auto"
+    transcription_model: str = "gpt-4o-mini-transcribe"
+    transcription_max_audio_bytes: int = Field(default=10_485_760, ge=1, le=26_214_400)
+    transcription_max_audio_seconds: int = Field(default=120, ge=1, le=1_800)
+    transcription_timeout_seconds: float = Field(default=60.0, gt=0)
+    transcription_download_timeout_seconds: float = Field(default=20.0, gt=0)
+    transcription_max_per_workspace_per_day: int = Field(default=200, ge=1)
+
+    # --- Photos and screenshots (F-03, Feature Phase 2, Session 03). The image goes to the LLM
+    # provider (``LLM_PROVIDER``) to be described for the owner; ``false`` stops that: images then
+    # stay plain attachments and nothing is downloaded or sent. ---
+    image_description_enabled: bool = True
+    image_description_max_bytes: int = Field(default=5_242_880, ge=1, le=20_971_520)
+    image_description_download_timeout_seconds: float = Field(default=20.0, gt=0)
+    image_description_max_per_message: int = Field(default=3, ge=1, le=10)
+    image_description_max_per_workspace_per_day: int = Field(default=100, ge=1)
 
     # --- Instagram (Phase 4, ADR-010). Mock only by default (INV-14). ---
     # Comma-separated provider kinds that may be connected and that receive webhooks.
@@ -290,6 +319,11 @@ class Settings(BaseSettings):
                     .replace("TOKEN_ENCRYPTION_KEYS", "BACKUP_ENCRYPTION_KEY")
                     .replace("TOKEN_ENCRYPTION_ACTIVE_KEY_ID", "BACKUP_ENCRYPTION_ACTIVE_KEY_ID")
                 )
+        if self.transcription_backend == "openai":
+            if not self.openai_api_key.get_secret_value():
+                problems.append("OPENAI_API_KEY must be set when transcription uses OpenAI.")
+            if not self.transcription_model.strip():
+                problems.append("TRANSCRIPTION_MODEL must be set when transcription uses OpenAI.")
         if self.app_env != "production":
             return problems
         secret = self.secret_key.get_secret_value()
@@ -311,6 +345,8 @@ class Settings(BaseSettings):
             problems.append("OPENAI_API_KEY must be set when LLM_PROVIDER=openai.")
         if self.llm_provider == "openai" and not self.llm_model_default.strip():
             problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
+        if self.transcription_provider == "fake":
+            problems.append("TRANSCRIPTION_PROVIDER must be 'openai' or 'off' in production.")
         # Telegram configuration checks in production (Phase 9, ADR-012)
         tg_token = (
             self.telegram_bot_token.get_secret_value().strip() if self.telegram_bot_token else ""
@@ -472,6 +508,13 @@ class Settings(BaseSettings):
             if not self.google_oauth_redirect_uri.strip():
                 problems.append("GOOGLE_OAUTH_REDIRECT_URI must be set when 'google' is enabled.")
         return problems
+
+    @property
+    def transcription_backend(self) -> Literal["off", "fake", "openai"]:
+        """The transcription provider in effect: ``auto`` follows ``LLM_PROVIDER``."""
+        if self.transcription_provider == "auto":
+            return self.llm_provider
+        return self.transcription_provider
 
     def llm_model_for(self, task: str) -> str:
         """The model for ``task``: its override if set, else the default."""

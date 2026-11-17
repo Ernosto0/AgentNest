@@ -568,6 +568,32 @@ def submit(
     self_approve: bool,
     expected_version: int,
 ) -> ContentItem:
+    item = apply_submit(
+        session,
+        clock,
+        settings,
+        ctx,
+        content_id,
+        schedule=schedule,
+        self_approve=self_approve,
+        expected_version=expected_version,
+    )
+    session.commit()
+    return item
+
+
+def apply_submit(
+    session: Session,
+    clock: Clock,
+    settings: Settings,
+    ctx: WorkspaceContext,
+    content_id: uuid.UUID,
+    *,
+    schedule: ScheduleRequest,
+    self_approve: bool,
+    expected_version: int,
+    account_id: uuid.UUID | None = None,
+) -> ContentItem:
     """Validate everything and submit a ``draft``. Commits (workflows.md section E step 4).
 
     - ``self_approve`` by someone who holds ``content.approve``: the approval is recorded as
@@ -586,7 +612,16 @@ def submit(
     if self_approve and not may_approve(ctx):
         raise AppError("FORBIDDEN", permission=APPROVAL_PERMISSION)
 
-    checked = _check(session, clock, settings, ctx, item, schedule, needs_approval=not self_approve)
+    checked = _check(
+        session,
+        clock,
+        settings,
+        ctx,
+        item,
+        schedule,
+        needs_approval=not self_approve,
+        account_id=account_id,
+    )
     ready = _require_valid(checked, ctx.locale)
 
     arguments = _approval_arguments(session, ctx, item, ready, item.version)
@@ -603,7 +638,6 @@ def submit(
     # The facts the text states *now*: a value typed before its fact was verified is grounded
     # only at this check, and a later change of that fact must reach the scheduled item.
     impact.replace_references(session, ctx, SUBJECT_TYPE, item.id, ready.claims.references)
-    session.commit()
     return item
 
 

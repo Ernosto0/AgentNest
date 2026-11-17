@@ -8,7 +8,7 @@ the tick must not enqueue it again every minute.
 """
 
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
@@ -22,9 +22,11 @@ from app.jobs.models import Job
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, job_handler
 from app.jobs.scheduler import register_periodic
-from app.reporting import service
+from app.reporting import missed_customers, service
 
 DEFAULT_REPORT_HOUR = 20
+# The weekly missed-customer report of the week that just ended is made on Monday from 09:00 local.
+MISSED_CUSTOMER_REPORT_HOUR = 9
 
 
 class GenerateDailyReportPayload(BaseModel):
@@ -86,6 +88,68 @@ def enqueue_daily_reports(session: Session, clock: Clock) -> int:
             session,
             "generate_daily_report",
             GenerateDailyReportPayload(workspace_id=workspace_id, local_date=local_date),
+            workspace_id=workspace_id,
+            correlation_id=None,
+            dedup_key=key,
+            clock=clock,
+        )
+        enqueued += 1
+    return enqueued
+
+
+class GenerateMissedCustomerReportPayload(BaseModel):
+    workspace_id: uuid.UUID
+    week_start: date  # the local Monday of the week to report
+
+
+def missed_customer_dedup_key(workspace_id: uuid.UUID, week_start: date) -> str:
+    return f"missed_customer_report:{workspace_id}:{week_start.isoformat()}"
+
+
+@job_handler("generate_missed_customer_report", GenerateMissedCustomerReportPayload, max_attempts=3)
+def generate_missed_customer_report(job: JobContext) -> None:
+    payload = job.payload
+    if not isinstance(payload, GenerateMissedCustomerReportPayload):
+        return
+    with job.session_factory() as session:
+        workspace = session.get(Workspace, payload.workspace_id)
+        if workspace is None or workspace.status != "active":
+            return  # gone or suspended meanwhile: nothing to report
+        ctx = WorkspaceContext(
+            workspace.id,
+            ActorRef.system("reporting.missed_customers"),
+            None,
+            workspace.timezone,
+            workspace.default_locale,
+            workspace.is_demo,
+        )
+        missed_customers.generate_weekly_report(session, job.clock, ctx, payload.week_start)
+        session.commit()
+
+
+@register_periodic
+def enqueue_missed_customer_reports(session: Session, clock: Clock) -> int:
+    """One job per workspace and finished local week, from Monday 09:00 local until the next
+    Monday. The dedup key also covers finished jobs (as the daily report does), so a week is
+    never made twice; a worker that was down on Monday still catches the week up."""
+    now = clock.now()
+    rows = session.execute(
+        select(Workspace.id, Workspace.timezone).where(Workspace.status == "active")
+    ).all()
+    enqueued = 0
+    for workspace_id, timezone in rows:
+        local_now = now.astimezone(ZoneInfo(timezone))
+        monday = missed_customers.week_start_of(local_now.date())
+        if local_now.date() == monday and local_now.hour < MISSED_CUSTOMER_REPORT_HOUR:
+            continue
+        week_start = monday - timedelta(days=7)
+        key = missed_customer_dedup_key(workspace_id, week_start)
+        if session.scalar(select(exists().where(Job.dedup_key == key))):
+            continue
+        enqueue(
+            session,
+            "generate_missed_customer_report",
+            GenerateMissedCustomerReportPayload(workspace_id=workspace_id, week_start=week_start),
             workspace_id=workspace_id,
             correlation_id=None,
             dedup_key=key,

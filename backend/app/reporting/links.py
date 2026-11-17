@@ -67,3 +67,12 @@ def knowledge_link(workspace_id: uuid.UUID) -> Link:
 
 def more_link(workspace_id: uuid.UUID) -> Link:
     return _link(None, f"/w/{workspace_id}/more")
+
+
+def missed_metric_link(workspace_id: uuid.UUID, week_start: date, key: str) -> Link:
+    ws = str(workspace_id)
+    week = week_start.isoformat()
+    return _link(
+        f"{API_ROOT}/{ws}/reports/missed-customers/{week}/metrics/{key}",
+        f"/w/{ws}/more/reports/missed-customers/{week}/{key}",
+    )

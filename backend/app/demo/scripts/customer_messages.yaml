@@ -66,5 +66,37 @@ scripts:
     customer_alias: Deniz
     text: null
     attachments:
-      - {type: image, url: "https://example.test/photo.jpg"}
-    expect: Handed to a person (nothing to read).
+      - {type: image, url: "mock-image://product_photo"}
+    expect: Handed to a person (nothing to read); the owner also sees an automatic description of the photo.
+
+  - id: price_screenshot
+    label: {tr: Fiyat ekran görüntüsü, en: Price screenshot}
+    customer_alias: Gizem
+    text: null
+    attachments:
+      - {type: image, url: "mock-image://price_screenshot_tr"}
+    expect: Handed to a person; the owner sees an automatic description and the text read from the screenshot (never used as a fact).
+
+  - id: voice_note
+    label: {tr: Sesli mesaj, en: Voice note}
+    customer_alias: Selin
+    text: null
+    attachments:
+      - {type: audio, url: "mock-audio://price_question_tr"}
+    expect: The voice note is transcribed in the background, then drafted from the transcript; the draft always needs approval (rule R18).
+
+  - id: story_reply
+    label: {tr: Hikâye yanıtı, en: Story reply}
+    customer_alias: Melis
+    text: "Bu ne kadar?"
+    attachments:
+      - {type: story_reply, url: "https://example.test/story.jpg", note: "sim-story-1"}
+    expect: Handed to a person. The story is not one AgentNest published, so nothing says what "this" is; for a story AgentNest published, the stored story is passed to the draft as context.
+
+  - id: story_mention
+    label: {tr: Hikâye etiketi, en: Story mention}
+    customer_alias: Orhan
+    text: null
+    attachments:
+      - {type: story_mention, url: "https://example.test/mention.jpg"}
+    expect: With a thank-you set up (Knowledge, Approved answers, "Story mention"), an approval-required thank-you draft; without one, handed to a person.

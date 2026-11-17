@@ -639,6 +639,17 @@
             ],
             "title": "Body"
           },
+          "candidate_editor_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Editor Type"
+          },
           "candidate_id": {
             "anyOf": [
               {
@@ -650,6 +661,23 @@
               }
             ],
             "title": "Candidate Id"
+          },
+          "candidate_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Status"
           },
           "expires_at": {
             "format": "date-time",
@@ -776,6 +804,8 @@
               "command.update_fact",
               "command.update_brand_voice",
               "command.cancel_content",
+              "command.reschedule_content",
+              "command.pause_agent",
               "reply.send",
               "content.publish",
               "comments.approve",
@@ -981,7 +1011,6 @@
               "type": "string"
             },
             "maxItems": 10,
-            "minItems": 1,
             "title": "Example Questions",
             "type": "array"
           },
@@ -1890,6 +1919,27 @@
         "title": "CancelRequest",
         "type": "object"
       },
+      "CandidateAccept": {
+        "additionalProperties": false,
+        "description": "Explicit typed normalization of an owner answer before accepting it.",
+        "properties": {
+          "value": {
+            "additionalProperties": true,
+            "title": "Value",
+            "type": "object"
+          },
+          "value_type": {
+            "title": "Value Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value_type",
+          "value"
+        ],
+        "title": "CandidateAccept",
+        "type": "object"
+      },
       "CandidateOut": {
         "properties": {
           "created_at": {
@@ -1907,6 +1957,17 @@
               }
             ],
             "title": "Current Display"
+          },
+          "editor_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editor Type"
           },
           "fact_id": {
             "anyOf": [
@@ -4025,6 +4086,18 @@
           },
           "policy": {
             "$ref": "#/components/schemas/DelegationPolicy"
+          },
+          "suggestion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion Id"
           }
         },
         "required": [
@@ -4104,6 +4177,17 @@
       },
       "DelegationPreview": {
         "properties": {
+          "automation_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Automation Class"
+          },
           "changed_actions": {
             "items": {
               "type": "string"
@@ -4179,6 +4263,118 @@
           "expected_version"
         ],
         "title": "DraftPatchIn",
+        "type": "object"
+      },
+      "DraftTranscriptOut": {
+        "description": "A voice-note transcript a reply was drafted from, so the approval view can show it.",
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "message_id",
+          "text",
+          "language"
+        ],
+        "title": "DraftTranscriptOut",
+        "type": "object"
+      },
+      "EstimateOut": {
+        "description": "The lira estimate and all of its inputs. ``amount`` is null unless ``status`` is ``ok``:\n``hours_missing`` and ``no_verified_price`` mean counts only.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "conversion_rate": {
+            "title": "Conversion Rate",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "median_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Price"
+          },
+          "price_count": {
+            "title": "Price Count",
+            "type": "integer"
+          },
+          "price_inputs": {
+            "items": {
+              "$ref": "#/components/schemas/PriceInputOut"
+            },
+            "title": "Price Inputs",
+            "type": "array"
+          },
+          "price_questions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Questions"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "currency",
+          "amount",
+          "price_questions",
+          "conversion_rate",
+          "median_price",
+          "price_inputs",
+          "price_count"
+        ],
+        "title": "EstimateOut",
         "type": "object"
       },
       "ExactActionPreview": {
@@ -5063,6 +5259,89 @@
         "title": "HomeAttentionOut",
         "type": "object"
       },
+      "ImageDescriptionOut": {
+        "description": "The automatic description of one photo or screenshot a customer sent (F-03). Always shown\nas what it is: a machine's reading of a picture, for the owner. It is never a fact and never\nused to answer the customer. The picture is not kept, so there is nothing to show: the owner\nopens the picture in Instagram.",
+        "properties": {
+          "attachment_index": {
+            "title": "Attachment Index",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "injection_suspected": {
+            "title": "Injection Suspected",
+            "type": "boolean"
+          },
+          "looks_like": {
+            "anyOf": [
+              {
+                "enum": [
+                  "product",
+                  "price_screenshot",
+                  "location",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Looks Like"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "visible_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visible Text"
+          }
+        },
+        "required": [
+          "attachment_index",
+          "status",
+          "looks_like",
+          "description",
+          "visible_text",
+          "injection_suspected",
+          "reason_code"
+        ],
+        "title": "ImageDescriptionOut",
+        "type": "object"
+      },
       "InsightsContentItemOut": {
         "properties": {
           "content_item_id": {
@@ -5648,6 +5927,75 @@
           }
         },
         "title": "LabelIn",
+        "type": "object"
+      },
+      "LearnedFact": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "fact_id": {
+            "format": "uuid",
+            "title": "Fact Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Label",
+            "type": "object"
+          },
+          "learned_at": {
+            "format": "date-time",
+            "title": "Learned At",
+            "type": "string"
+          },
+          "value_type": {
+            "title": "Value Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fact_id",
+          "key",
+          "category",
+          "label",
+          "value_type",
+          "learned_at"
+        ],
+        "title": "LearnedFact",
+        "type": "object"
+      },
+      "LearnedMonth": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LearnedFact"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "count",
+          "items"
+        ],
+        "title": "LearnedMonth",
         "type": "object"
       },
       "LocalScheduleIn": {
@@ -6241,6 +6589,13 @@
             "title": "Id",
             "type": "string"
           },
+          "image_descriptions": {
+            "items": {
+              "$ref": "#/components/schemas/ImageDescriptionOut"
+            },
+            "title": "Image Descriptions",
+            "type": "array"
+          },
           "is_simulated": {
             "title": "Is Simulated",
             "type": "boolean"
@@ -6259,6 +6614,16 @@
             "title": "Sender Kind",
             "type": "string"
           },
+          "story": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StoryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "text": {
             "anyOf": [
               {
@@ -6269,6 +6634,16 @@
               }
             ],
             "title": "Text"
+          },
+          "transcript": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TranscriptOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6535,6 +6910,76 @@
           "screen_link"
         ],
         "title": "MetricOut",
+        "type": "object"
+      },
+      "MissedCustomerReportOut": {
+        "properties": {
+          "estimate": {
+            "$ref": "#/components/schemas/EstimateOut"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "has_simulated_data": {
+            "title": "Has Simulated Data",
+            "type": "boolean"
+          },
+          "hours_available": {
+            "title": "Hours Available",
+            "type": "boolean"
+          },
+          "is_partial": {
+            "title": "Is Partial",
+            "type": "boolean"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/WeeklyMetricOut"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "week_end": {
+            "format": "date",
+            "title": "Week End",
+            "type": "string"
+          },
+          "week_start": {
+            "format": "date",
+            "title": "Week Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week_start",
+          "week_end",
+          "timezone",
+          "period_start",
+          "period_end",
+          "generated_at",
+          "is_partial",
+          "hours_available",
+          "has_simulated_data",
+          "metrics",
+          "estimate"
+        ],
+        "title": "MissedCustomerReportOut",
         "type": "object"
       },
       "MockAccountCreate": {
@@ -7683,6 +8128,7 @@
               "reply.booking",
               "reply.promotions",
               "reply.general_faq",
+              "reply.story_mention",
               "content.publish"
             ],
             "title": "Action Class",
@@ -7703,6 +8149,41 @@
           "mode"
         ],
         "title": "PolicyItem",
+        "type": "object"
+      },
+      "PriceInputOut": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "amount",
+          "unit"
+        ],
+        "title": "PriceInputOut",
         "type": "object"
       },
       "PublishedMediaOut": {
@@ -8388,6 +8869,13 @@
             ],
             "title": "Text"
           },
+          "transcripts": {
+            "items": {
+              "$ref": "#/components/schemas/DraftTranscriptOut"
+            },
+            "title": "Transcripts",
+            "type": "array"
+          },
           "validation": {
             "$ref": "#/components/schemas/ValidationOut"
           },
@@ -9001,6 +9489,72 @@
         "title": "StateOut",
         "type": "object"
       },
+      "StoryOut": {
+        "description": "The story a message refers to (F-04). ``known`` is true only for a story AgentNest\npublished, where the stored content is shown; a reply to any other story, and every mention,\ncarries just the kind (the provider's story link is short-lived and is never shown).",
+        "properties": {
+          "expired": {
+            "title": "Expired",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "reply",
+              "mention"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "known": {
+            "title": "Known",
+            "type": "boolean"
+          },
+          "lines": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Asset Id"
+          },
+          "media_deleted": {
+            "title": "Media Deleted",
+            "type": "boolean"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "kind",
+          "known",
+          "title",
+          "lines",
+          "media_asset_id",
+          "media_deleted",
+          "expired"
+        ],
+        "title": "StoryOut",
+        "type": "object"
+      },
       "SubjectLinkOut": {
         "description": "Structured so the API stays free of frontend routes.",
         "properties": {
@@ -9091,6 +9645,107 @@
           "expected_version"
         ],
         "title": "SubmitIn",
+        "type": "object"
+      },
+      "SuggestionDismissed": {
+        "properties": {
+          "cooldown_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooldown Until"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "cooldown_until"
+        ],
+        "title": "SuggestionDismissed",
+        "type": "object"
+      },
+      "SuggestionList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SuggestionList",
+        "type": "object"
+      },
+      "SuggestionOut": {
+        "properties": {
+          "account_id": {
+            "format": "uuid",
+            "title": "Account Id",
+            "type": "string"
+          },
+          "action_class": {
+            "title": "Action Class",
+            "type": "string"
+          },
+          "change": {
+            "$ref": "#/components/schemas/DelegationChange"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "intent": {
+            "title": "Intent",
+            "type": "string"
+          },
+          "window_days": {
+            "title": "Window Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "account_id",
+          "intent",
+          "action_class",
+          "counts",
+          "window_days",
+          "expires_at",
+          "change"
+        ],
+        "title": "SuggestionOut",
         "type": "object"
       },
       "SummaryOut": {
@@ -9626,6 +10281,73 @@
         "title": "ThreadPage",
         "type": "object"
       },
+      "TranscriptOut": {
+        "description": "The automatic transcript of a voice note (F-03). Always shown as what it is: a machine's\nreading of what the customer said, never the customer's own typed words. The audio is not\nkept, so there is nothing to play: the owner listens to the voice note in Instagram.",
+        "properties": {
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "status",
+          "text",
+          "language",
+          "reason_code",
+          "duration_seconds"
+        ],
+        "title": "TranscriptOut",
+        "type": "object"
+      },
       "UpdateCalendarSettingsIn": {
         "additionalProperties": false,
         "properties": {
@@ -9944,6 +10666,61 @@
           "signature_failures_24h_system_wide"
         ],
         "title": "WebhooksHealth",
+        "type": "object"
+      },
+      "WeeklyMetricOut": {
+        "description": "One number of the missed-customer report. ``value`` is null when it cannot be known\n(after-hours numbers without a verified opening-hours fact), never a made-up zero.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportLinkOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previous_value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Value"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "previous_value",
+          "link"
+        ],
+        "title": "WeeklyMetricOut",
         "type": "object"
       },
       "WorkActionOut": {
@@ -15019,6 +15796,8 @@
                     "command.update_fact",
                     "command.update_brand_voice",
                     "command.cancel_content",
+                    "command.reschedule_content",
+                    "command.pause_agent",
                     "reply.send",
                     "content.publish",
                     "comments.approve",
@@ -17694,6 +18473,103 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/delegation-suggestions": {
+      "get": {
+        "description": "Open suggestions, each with the exact change to preview and apply.",
+        "operationId": "list_suggestions_api_v1_workspaces__workspace_id__delegation_suggestions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Suggestions",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/delegation-suggestions/{suggestion_id}/dismiss": {
+      "post": {
+        "operationId": "dismiss_suggestion_api_v1_workspaces__workspace_id__delegation_suggestions__suggestion_id__dismiss_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "suggestion_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Suggestion Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionDismissed"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dismiss Suggestion",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/delete-request": {
       "post": {
         "description": "Initiate workspace deletion grace period, pause automation, and dispatch owner email.",
@@ -17877,6 +18753,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CandidateAccept"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -18759,6 +19652,49 @@
           }
         },
         "summary": "Get Extraction",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/learning/month": {
+      "get": {
+        "operationId": "monthly_learning_api_v1_workspaces__workspace_id__learning_month_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnedMonth"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Monthly Learning",
         "tags": [
           "knowledge"
         ]
@@ -19951,6 +20887,158 @@
           }
         },
         "summary": "Get Metric Items",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/reports/missed-customers": {
+      "get": {
+        "description": "The week of ``week_start`` (default: this week so far), computed from the records.",
+        "operationId": "get_missed_customer_report_api_v1_workspaces__workspace_id__reports_missed_customers_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Week Start"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissedCustomerReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Missed Customer Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/reports/missed-customers/{week_start}/metrics/{key}": {
+      "get": {
+        "description": "The records behind one number of the week; their count is the number.",
+        "operationId": "get_missed_customer_items_api_v1_workspaces__workspace_id__reports_missed_customers__week_start__metrics__key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricItemsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Missed Customer Items",
         "tags": [
           "reports"
         ]

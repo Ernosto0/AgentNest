@@ -410,6 +410,19 @@ describe("Home: agent status card", () => {
     );
   });
 
+  it("puts the command box first on a phone: banners, then the assistant panel with the box on top", async () => {
+    mockApi(routes({ ...reportWith([]), ...accounts(socialAccount({ status: "needs_reauth" })) }));
+    renderApp(`/w/${WS_GOLKENT}`);
+
+    const panel = await screen.findByTestId("agent-status-card");
+    const first = within(panel).getByTestId("home-command-first");
+    expect(within(first).getByTestId("assistant-module")).toBeInTheDocument();
+    // Phone order (CSS `order`): the notice, then this panel, then the rest; desktop is unchanged.
+    expect(first).toHaveClass("-order-1", "lg:order-none");
+    expect(panel).toHaveClass("-order-1", "lg:order-none");
+    expect((await screen.findByTestId("banner-needs-reauth")).parentElement).toHaveClass("-order-2");
+  });
+
   it("does not offer pause controls to staff", async () => {
     mockApi(
       routes(

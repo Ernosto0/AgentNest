@@ -102,7 +102,16 @@ _SPECS = (
         "account:{account_id}:permission_missing:{capability}",
     ),
     NotificationSpec("report.daily_ready", INFO, "reports.view", "report:{local_date}"),
+    NotificationSpec(
+        "report.missed_customers_ready", INFO, "reports.view", "missed-customers:{week_start}"
+    ),
     NotificationSpec("member.joined", INFO, "owners", "member.joined:{user_id}"),
+    NotificationSpec(
+        "delegation_suggestion",
+        INFO,
+        "owners (agent.delegation.manage)",
+        "delegation_suggestion:{workspace_id}:{week}",
+    ),
 )
 
 CATALOG: dict[str, NotificationSpec] = {spec.type: spec for spec in _SPECS}

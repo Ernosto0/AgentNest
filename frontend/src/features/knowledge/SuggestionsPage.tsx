@@ -13,6 +13,7 @@ import { useCandidates, useResolveCandidate } from "./hooks";
 import { CategoryGlyph } from "./CategoryGlyph";
 import { knowledgeBase } from "./useKnowledgeBase";
 import { isCategory, pickLabel } from "./labels";
+import { OwnerAnswerSave } from "./OwnerAnswerSave";
 import { PasteExtractSheet } from "./PasteExtractSheet";
 
 /**
@@ -128,11 +129,21 @@ export function SuggestionsPage() {
                     {candidate.source_excerpt}
                   </blockquote>
                 ) : null}
+                {canVerify && candidate.editor_type ? (
+                  <OwnerAnswerSave
+                    editor={candidate.editor_type}
+                    currency={workspace.currency}
+                    busy={busy(candidate.id)}
+                    onSave={(normalized) => resolve.mutate({ candidateId: candidate.id, action: "accept", normalized })}
+                  />
+                ) : null}
                 {canVerify ? (
                   <div className="flex flex-wrap gap-2 border-t border-border/70 pt-3">
-                    <Button disabled={busy(candidate.id)} onClick={() => resolve.mutate({ candidateId: candidate.id, action: "accept" })}>
-                      {t("knowledge.suggestions.accept", { value: candidate.proposed_display })}
-                    </Button>
+                    {candidate.editor_type ? null : (
+                      <Button disabled={busy(candidate.id)} onClick={() => resolve.mutate({ candidateId: candidate.id, action: "accept" })}>
+                        {t("knowledge.suggestions.accept", { value: candidate.proposed_display })}
+                      </Button>
+                    )}
                     <Button
                       variant="secondary"
                       disabled={busy(candidate.id)}

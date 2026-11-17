@@ -4,9 +4,12 @@
   output is constrained to the task schema. The runner still re-validates ``raw_text``.
 - ``store=False``: nothing is retained by OpenAI for later retrieval (agent-runtime.md §8).
 - Legacy tasks send no tools; account-agent steps use only registered strict functions.
+- A turn may carry images (``LLMMessage.images``, F-03): they are sent as ``input_image`` data
+  URLs, with the same no-tools, ``store=False`` call. Not yet run against the real API.
 - This is the only module that imports the ``openai`` SDK.
 """
 
+import base64
 import json
 import time
 from typing import Any, cast
@@ -63,7 +66,7 @@ class OpenAIProvider:
             response = self._client.responses.parse(
                 model=model,
                 instructions=system,
-                input=[{"role": m.role, "content": m.content} for m in messages],
+                input=cast(Any, [_input_item(m) for m in messages]),
                 text_format=output_schema,
                 max_output_tokens=max_output_tokens,
                 store=False,
@@ -284,6 +287,25 @@ class OpenAIProvider:
             explanation=explanation,
             **common,
         )
+
+
+def _input_item(message: LLMMessage) -> dict[str, Any]:
+    """A turn as a Responses API input item. A turn with images (F-03) becomes text plus
+    ``input_image`` parts carrying the bytes inline as a data URL: nothing is hosted, no URL is
+    given to the provider, and ``store=False`` applies to the call as to every other."""
+    if not message.images:
+        return {"role": message.role, "content": message.content}
+    parts: list[dict[str, Any]] = [{"type": "input_text", "text": message.content}]
+    for image in message.images:
+        encoded = base64.b64encode(image.data).decode("ascii")
+        parts.append(
+            {
+                "type": "input_image",
+                "image_url": f"data:{image.media_type};base64,{encoded}",
+                "detail": "auto",
+            }
+        )
+    return {"role": message.role, "content": parts}
 
 
 def _to_wire_tool_name(name: str) -> str:

@@ -46,6 +46,10 @@ const BACKGROUND: [RegExp, () => Response][] = [
     () => json({ enabled: false, public_key: null }),
   ],
   [/^GET \/api\/v1\/workspaces\/[^/]+\/home\/attention$/, () => json({ drafts: 0, unanswered_comments: 0 })],
+  // Approval-ladder suggestions (D-02): none unless a test supplies one.
+  [/^GET \/api\/v1\/workspaces\/[^/]+\/delegation-suggestions$/, () => json({ items: [] })],
+  // The Assistant page's "learned this month" card; a test overrides it to assert on it.
+  [/^GET \/api\/v1\/workspaces\/[^/]+\/learning\/month$/, () => json({ month: "2026-11", count: 0, items: [] })],
   // Home reads these background feeds; a test that cares about them overrides the route.
   [/^GET \/api\/v1\/workspaces\/[^/]+\/social-accounts$/, () => json({ items: [], next_cursor: null })],
   [/^GET \/api\/v1\/workspaces\/[^/]+\/content-items$/, () => json({ items: [], next_cursor: null })],

@@ -69,7 +69,15 @@
       "severity": "info"
     },
     {
+      "type": "report.missed_customers_ready",
+      "severity": "info"
+    },
+    {
       "type": "member.joined",
+      "severity": "info"
+    },
+    {
+      "type": "delegation_suggestion",
       "severity": "info"
     }
   ]

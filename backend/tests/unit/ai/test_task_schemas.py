@@ -89,6 +89,8 @@ def test_the_interpretation_is_a_union_of_closed_types() -> None:
         "query.explain_failure",
         "content.create_draft",
         "content.cancel_scheduled",
+        "content.reschedule",
+        "agent.pause_until",
         "clarify",
         "unsupported",
     }

@@ -31,7 +31,9 @@
         "consequence": "İptal ederseniz bu içerik yayınlanmaz ve bekleyen onayı ya da zamanlaması da iptal olur.",
         "approve": "Evet, iptal et",
         "open": "İçeriği aç"
-      }
+      },
+      "pauseUntil": "Asistan {{when}} tarihine kadar duraklatılacak.",
+      "timezone": "Saat dilimi: {{timezone}}"
     },
     "clarify": {
       "which_fact": "Hangi bilgiyi kastettiniz?",
@@ -73,7 +75,10 @@
       "failureRetryAt": "Tekrar denenecek: {{time}}.",
       "failureRetryable": "Otomatik olarak tekrar denenir.",
       "failureFinal": "Otomatik olarak tekrar denenmeyecek.",
-      "content_failure_title": "“{{title}}” neden yayınlanmadı?"
+      "content_failure_title": "“{{title}}” neden yayınlanmadı?",
+      "content_rescheduled": "{{title}} için yeni zaman: {{when}}.",
+      "agent_paused_until": "Asistan {{when}} tarihine kadar duraklatıldı.",
+      "management_refused": "Değişiklik uygulanamadı. Güncel durumu ve zamanı kontrol edip yeniden deneyin."
     },
     "period": {
       "today": "Bugün",
@@ -139,7 +144,9 @@
       "content_cancel": "İçeriği iptal etme",
       "calendar_book": "Randevu oluşturma",
       "calendar_reschedule": "Randevu saatini değiştirme",
-      "calendar_cancel": "Randevuyu iptal etme"
+      "calendar_cancel": "Randevuyu iptal etme",
+      "command_reschedule_content": "İçerik zamanını değiştir",
+      "command_pause_agent": "Asistanı duraklat"
     },
     "status": {
       "pending": "Bekliyor",
@@ -182,6 +189,7 @@
       "knowledge_fact_changed": "{{label}} değişti: {{old}} → {{new}}",
       "knowledge_fact_archived": "{{label}} arşivlendi",
       "knowledge_promotion_expired": "Kampanya sona erdi: {{label}}. Artık yanıtlarda ve paylaşımlarda kullanılmıyor.",
+      "delegation_suggestion": "Asistanınızın bir önerisi var: bazı yanıtları otomatik gönderin",
       "unknown": "Yeni bildirim",
       "conversation_needs_human": "Bir konuşma kendi yanıtınızı bekliyor",
       "reply_failed": "Bir yanıt gönderilemedi",
@@ -192,6 +200,7 @@
       "content_published": "“{{title}}” yayınlandı.",
       "content_failed": "“{{title}}” yayınlanamadı: {{what}}",
       "report_daily_ready": "{{date}} günlük raporu hazır",
+      "report_missed_customers_ready": "Haftalık kaçan müşteri raporu: {{count}} mesaj mesai dışında geldi, {{unanswered}} konuşma yanıtsız kaldı",
       "account_permission_missing": "Instagram izni eksik: {{what}}",
       "account_degraded": "Instagram bağlantısı kararsız. Gönderim ve paylaşım birkaç dakika duraklatıldı, otomatik devam edecek.",
       "account_recovered": "Instagram bağlantısı yeniden çalışıyor. Bekleyen yanıtlar gönderiliyor.",

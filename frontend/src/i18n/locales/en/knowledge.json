@@ -45,7 +45,8 @@
       "pasted_text": "Your pasted text",
       "staff_proposal": "A team member",
       "instagram_profile": "Your Instagram profile",
-      "website": "Your website"
+      "website": "Your website",
+      "owner_answer": "Your answer to the assistant"
     },
     "verifiedOn": "Verified {{date}}",
     "validity": "Valid {{from}} to {{until}}",
@@ -233,7 +234,16 @@
       },
       "current": "In use now",
       "proposed": "Suggested",
-      "nothingYet": "Nothing yet"
+      "nothingYet": "Nothing yet",
+      "needsEditor": "Your answer contains {{kind}}. Enter it below so it is verified in the right form.",
+      "saveTyped": "Save as verified fact",
+      "editorKind": {
+        "money": "a price",
+        "weekly_hours": "opening hours",
+        "phone": "a phone number",
+        "email": "an email address",
+        "url": "a web link"
+      }
     },
     "asideLabel": "Teaching and setup",
     "answersHint": "Reusable replies built on your verified facts",

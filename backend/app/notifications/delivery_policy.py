@@ -31,6 +31,7 @@ IMMEDIATE_TYPES: frozenset[str] = frozenset(
 QUIET_HOURS_TYPES: frozenset[str] = frozenset(
     {
         "report.daily_ready",
+        "report.missed_customers_ready",
         "content.scheduled",
         "content.on_hold",
         "content.failed",
@@ -39,6 +40,7 @@ QUIET_HOURS_TYPES: frozenset[str] = frozenset(
         "account.degraded",
         "account.permission_missing",
         "knowledge.promotion_expired",
+        "delegation_suggestion",
     }
 )
 

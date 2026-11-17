@@ -18,8 +18,10 @@ from app.identity.service import AuthenticatedSession
 from app.knowledge import extraction, service
 from app.knowledge import readiness as readiness_module
 from app.knowledge import repository as repo
+from app.knowledge.learning import LearnedMonth, editor_type, learned_month
 from app.knowledge.models import BusinessFact, FactCandidate
 from app.knowledge.schemas import (
+    CandidateAccept,
     CandidateOut,
     CandidateStatus,
     Category,
@@ -67,6 +69,7 @@ def _fact_out(view: service.FactView) -> FactOut:
 def _candidate_out(view: service.CandidateView) -> CandidateOut:
     candidate = view.candidate
     return CandidateOut(
+        editor_type=editor_type(candidate),
         id=candidate.id,
         fact_key=candidate.fact_key,
         fact_id=candidate.fact_id,
@@ -290,12 +293,13 @@ def list_candidates(
 @router.post("/fact-candidates/{candidate_id}/accept", response_model=FactOut)
 def accept_candidate(
     candidate_id: uuid.UUID,
+    body: CandidateAccept | None = None,
     ctx: WorkspaceContext = Depends(require_membership("knowledge.verify")),
     auth: AuthenticatedSession = Depends(current_auth),
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
 ) -> FactOut:
-    fact = service.accept_candidate(db, clock, ctx, candidate_id)
+    fact = service.accept_candidate(db, clock, ctx, candidate_id, normalized=body)
     return _fact_response(db, clock, ctx, auth, fact)
 
 
@@ -373,3 +377,12 @@ def get_extraction(
     db: Session = Depends(get_db),
 ) -> ExtractionOut:
     return _extraction_out(extraction.status_of(db, ctx, run_id))
+
+
+@router.get("/learning/month", response_model=LearnedMonth)
+def monthly_learning(
+    ctx: WorkspaceContext = Depends(require_membership()),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> LearnedMonth:
+    return learned_month(db, clock, ctx)

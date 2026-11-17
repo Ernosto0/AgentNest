@@ -27,6 +27,50 @@ class ConversationOut(BaseModel):
     is_simulated: bool
 
 
+class StoryOut(BaseModel):
+    """The story a message refers to (F-04). ``known`` is true only for a story AgentNest
+    published, where the stored content is shown; a reply to any other story, and every mention,
+    carries just the kind (the provider's story link is short-lived and is never shown)."""
+
+    kind: Literal["reply", "mention"]
+    known: bool
+    title: str | None
+    lines: list[str]
+    media_asset_id: uuid.UUID | None
+    media_deleted: bool
+    expired: bool
+
+
+class TranscriptOut(BaseModel):
+    """The automatic transcript of a voice note (F-03). Always shown as what it is: a machine's
+    reading of what the customer said, never the customer's own typed words. The audio is not
+    kept, so there is nothing to play: the owner listens to the voice note in Instagram."""
+
+    status: Literal["pending", "succeeded", "failed"]
+    # ``None`` unless the transcription succeeded (and the text was not erased by retention).
+    text: str | None
+    language: str | None  # tr | en | other | None
+    reason_code: str | None  # why a transcript is missing, when it failed
+    duration_seconds: float | None
+
+
+class ImageDescriptionOut(BaseModel):
+    """The automatic description of one photo or screenshot a customer sent (F-03). Always shown
+    as what it is: a machine's reading of a picture, for the owner. It is never a fact and never
+    used to answer the customer. The picture is not kept, so there is nothing to show: the owner
+    opens the picture in Instagram."""
+
+    attachment_index: int  # the position of the image in the message's attachments
+    status: Literal["pending", "succeeded", "failed"]
+    # Text only when the description succeeded (and was not erased by retention).
+    looks_like: Literal["product", "price_screenshot", "location", "other"] | None
+    description: str | None
+    visible_text: str | None  # the text read from the picture, untrusted customer content
+    # The injection heuristics matched the description or the visible text: shown with a warning.
+    injection_suspected: bool
+    reason_code: str | None  # why there is no description, when it failed
+
+
 class MessageOut(BaseModel):
     id: uuid.UUID
     direction: Literal["inbound", "outbound"]
@@ -35,6 +79,20 @@ class MessageOut(BaseModel):
     attachments: list[dict[str, Any]]
     provider_timestamp: datetime
     is_simulated: bool
+    # Set only on a customer message with a voice note.
+    transcript: TranscriptOut | None = None
+    # One per described image attachment of a customer message (empty for any other message).
+    image_descriptions: list[ImageDescriptionOut] = Field(default_factory=list)
+    # Set only on a story reply or mention (F-04).
+    story: StoryOut | None = None
+
+
+class DraftTranscriptOut(BaseModel):
+    """A voice-note transcript a reply was drafted from, so the approval view can show it."""
+
+    message_id: uuid.UUID
+    text: str | None
+    language: str | None
 
 
 class RenderedFactOut(BaseModel):
@@ -104,6 +162,8 @@ class ReplyDraftOut(BaseModel):
     window_ends_at: datetime | None
     created_at: datetime
     is_simulated: bool
+    # Non-empty when the reply was drafted from a voice-note transcript: a person must approve it.
+    transcripts: list[DraftTranscriptOut] = Field(default_factory=list)
 
 
 class ConversationDetailOut(BaseModel):
@@ -154,7 +214,8 @@ class ApprovedAnswerOut(BaseModel):
 class ApprovedAnswerIn(StrictModel):
     title: str = Field(min_length=1, max_length=120)
     intent: str
-    example_questions: list[str] = Field(min_length=1, max_length=10)
+    # At least one, except for the story-mention thank-you (checked by the service).
+    example_questions: list[str] = Field(max_length=10)
     answer_template: str = Field(min_length=1, max_length=2000)
     language: Literal["tr", "en"]
 

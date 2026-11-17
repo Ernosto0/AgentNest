@@ -19,11 +19,14 @@ INPUT_KEYS = (
     "languages",
     "automation",
     "attachments",
+    "transcript",  # draft_reply: the customer's words as the machine transcript of a voice note
+    "story_context",  # draft_reply: the story the customer replied to (F-04)
     "approved_answers",
     "handling_mode",
     "objective",  # draft_content
     "content_type",
     "notes",
+    "agent",  # interpret_command: explicit account snapshot fixture
     "content",  # interpret_command: the workspace's content, as rows of the catalog
 )
 TASKS = ("interpret_command", "extract_fact_candidates", "draft_reply", "draft_content")

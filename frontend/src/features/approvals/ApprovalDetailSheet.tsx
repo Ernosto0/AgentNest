@@ -1,3 +1,4 @@
+import { ManagementSummary } from "./ManagementSummary";
 import { useTranslation } from "react-i18next";
 import type { Approval } from "@/api/types";
 import { BottomSheet } from "@/components/BottomSheet";
@@ -81,6 +82,7 @@ export function ApprovalDetailSheet({
   const isAgent = approval.subject.type === "agent_action";
   const exact = useExactAction(workspace.id, approval.subject.id, isAgent);
   const isPublish = approval.action === "content.publish" && !isAgent;
+  const management = ["command.reschedule_content", "command.pause_agent"].includes(approval.action);
   const isCancel = approval.action === "command.cancel_content";
   // A publish approval is decided on what it covers, so the item is read first.
   const content = useContentItem(workspace.id, approval.subject.id, isPublish);
@@ -169,7 +171,8 @@ export function ApprovalDetailSheet({
           />
         ) : null}
         {isCancel ? <CancelContentSummary summary={approval.summary} /> : null}
-        {isPublish || isAgent ? null : (
+        {management ? <ManagementSummary action={approval.action} summary={approval.summary} /> : null}
+        {isPublish || isAgent || management ? null : (
           <>
             {isCancel ? null : (
               <ChangeSummary

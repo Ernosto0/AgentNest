@@ -75,6 +75,13 @@ export function describeNotification(
     }
     case "report.daily_ready":
       return t("notifications.type.report_daily_ready", { date: String(params.local_date ?? "") });
+    case "report.missed_customers_ready":
+      return t("notifications.type.report_missed_customers_ready", {
+        count: Number(params.after_hours_dms ?? 0),
+        unanswered: Number(params.unanswered_conversations ?? 0),
+      });
+    case "delegation_suggestion":
+      return t("notifications.type.delegation_suggestion");
     case "member.joined":
       return t("notifications.type.member_joined", { name: String(params.display_name ?? "") });
     default:

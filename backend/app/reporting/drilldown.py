@@ -89,7 +89,7 @@ def _encode(
     return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 
-def _decode(
+def decode_cursor(
     cursor: str,
     ctx: WorkspaceContext,
     local_date: date,
@@ -240,6 +240,55 @@ def _describe(session: Session, ctx: WorkspaceContext, rows: list[Any], locale: 
     return items
 
 
+def rows_page(
+    session: Session,
+    ctx: WorkspaceContext,
+    rows: Any,
+    *,
+    local_date: date,
+    key: str,
+    snapshot_id: uuid.UUID | None,
+    position: tuple[datetime, uuid.UUID, str, uuid.UUID | None] | None,
+    limit: int,
+    language: str,
+) -> tuple[list[Item], str | None]:
+    """One newest-first page of a seven-column row set, described, with the next cursor.
+
+    Shared by the daily and the weekly (missed-customer) drill-downs; ``local_date`` and ``key``
+    scope the cursor.
+    """
+    sort_at = func.coalesce(rows.c.occurred_at, _EPOCH).label("sort_at")
+    statement = select(rows, sort_at)
+    if position is not None:
+        at, row_id, kind, _ = position
+        statement = statement.where(
+            tuple_(sort_at, rows.c.subject_id, rows.c.subject_type) < tuple_(at, row_id, kind)
+        )
+    page_size = min(max(limit, 1), MAX_LIMIT)
+    fetched = list(
+        session.execute(
+            statement.order_by(
+                sort_at.desc(), rows.c.subject_id.desc(), rows.c.subject_type.desc()
+            ).limit(page_size + 1)
+        ).all()
+    )
+    page = fetched[:page_size]
+    next_cursor = (
+        _encode(
+            page[-1].sort_at,
+            page[-1].subject_id,
+            page[-1].subject_type,
+            ctx,
+            local_date,
+            key,
+            snapshot_id,
+        )
+        if len(fetched) > page_size
+        else None
+    )
+    return _describe(session, ctx, page, language), next_cursor
+
+
 def metric_items(
     session: Session,
     clock: Clock,
@@ -261,7 +310,7 @@ def metric_items(
         raise AppError("NOT_FOUND")
     now = clock.now()
     today = check_not_future(ctx, local_date, now)
-    position = _decode(cursor, ctx, local_date, key) if cursor is not None else None
+    position = decode_cursor(cursor, ctx, local_date, key) if cursor is not None else None
     if position is not None:
         cursor_snapshot = position[3]
         if snapshot_id is not None and snapshot_id != cursor_snapshot:
@@ -301,33 +350,15 @@ def metric_items(
         check_sources(session, ctx, start, end)
         value = compute_metric(session, ctx, definition, start, end, now).value
         rows = definition.rows(session, ctx, start, end, now).subquery("rows")
-    sort_at = func.coalesce(rows.c.occurred_at, _EPOCH).label("sort_at")
-    statement = select(rows, sort_at)
-    if position is not None:
-        at, row_id, kind, _ = position
-        statement = statement.where(
-            tuple_(sort_at, rows.c.subject_id, rows.c.subject_type) < tuple_(at, row_id, kind)
-        )
-    page_size = min(max(limit, 1), MAX_LIMIT)
-    fetched = list(
-        session.execute(
-            statement.order_by(
-                sort_at.desc(), rows.c.subject_id.desc(), rows.c.subject_type.desc()
-            ).limit(page_size + 1)
-        ).all()
+    items, next_cursor = rows_page(
+        session,
+        ctx,
+        rows,
+        local_date=local_date,
+        key=key,
+        snapshot_id=snapshot_id,
+        position=position,
+        limit=limit,
+        language=language,
     )
-    page = fetched[:page_size]
-    next_cursor = (
-        _encode(
-            page[-1].sort_at,
-            page[-1].subject_id,
-            page[-1].subject_type,
-            ctx,
-            local_date,
-            key,
-            snapshot_id,
-        )
-        if len(fetched) > page_size
-        else None
-    )
-    return Drilldown(key, value, _describe(session, ctx, page, language), next_cursor, snapshot_id)
+    return Drilldown(key, value, items, next_cursor, snapshot_id)

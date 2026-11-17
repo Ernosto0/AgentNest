@@ -51,6 +51,58 @@
       "agent_owner_questions_v1": "İşletmeye sorulan bilgi istekleri",
       "agent_unknown_now_v1": "Sonucu belirsiz asistan işlemleri"
     },
-    "evidenceUnavailable": "Bu eski raporun ayrıntı kayıtları saklanmamış. Kaynaklar hâlâ mevcutsa yeni bir rapor oluşturabilirsiniz."
+    "evidenceUnavailable": "Bu eski raporun ayrıntı kayıtları saklanmamış. Kaynaklar hâlâ mevcutsa yeni bir rapor oluşturabilirsiniz.",
+    "missed": {
+      "title": "Kaçan müşteri raporu",
+      "intro": "Mesai saatleri dışında yazan müşteriler için asistanınızın neler yaptığı. Arkasındaki konuşmaları görmek için bir sayıya dokunun.",
+      "openWeekly": "Haftalık kaçan müşteri raporu",
+      "weekLabel": "Rapor haftası",
+      "previousWeek": "Önceki hafta",
+      "nextWeek": "Sonraki hafta",
+      "thisWeek": "Bu hafta",
+      "backToThisWeek": "Bu haftaya dön",
+      "inProgress": "Hafta devam ediyor, {{time}} itibarıyla",
+      "backToReport": "Haftalık rapora dön",
+      "simulatedNote": "Demo ve simüle edilmiş mesajlar buraya hiçbir zaman dahil edilmez.",
+      "numbersTitle": "Haftanın sayıları",
+      "previous": "Önceki hafta: {{value}}",
+      "unknown": "Bilinmiyor",
+      "needsHours": "Bu sayıyı görmek için doğrulanmış çalışma saatlerinizi ekleyin.",
+      "noData": "Veri yok",
+      "empty": "Bu hafta raporlanacak müşteri mesajı yok",
+      "emptyHint": "Müşteriler yazdıkça bu sayfa kaç kişinin mesai dışında yazdığını ve asistanınızın neleri yanıtladığını gösterir.",
+      "metrics": {
+        "after_hours_dms": "Mesai saatleri dışında gelen mesaj",
+        "after_hours_price_answers": "Asistanın mesai dışında yanıtladığı fiyat sorusu",
+        "answered_questions": "Asistanın yanıtladığı fiyat ve randevu sorusu",
+        "unanswered_conversations": "Yanıtsız kalan konuşma",
+        "first_reply_median_minutes": "İlk yanıta kadar geçen ortanca süre"
+      },
+      "estimate": {
+        "title": "Bu yanıtların tahmini değeri",
+        "badge": "Tahmindir, ölçüm değildir",
+        "formulaTitle": "Nasıl hesaplandı",
+        "formula": "Mesai dışında yanıtlanan {{questions}} fiyat sorusu × {{rate}} dönüşüm × {{price}} doğrulanmış ortanca fiyat = {{amount}}",
+        "rateNote": "{{rate}} oranı bilerek düşük tutulmuş bir planlama oranıdır, ölçtüğümüz bir değer değildir. Gerçek sonuç daha düşük ya da yüksek olabilir.",
+        "inputsTitle": "Kullanılan doğrulanmış fiyatlar",
+        "medianOf": "Ortanca, doğrulanmış {{count}} fiyat üzerinden alındı.",
+        "showing": "{{count}} fiyattan {{shown}} tanesi gösteriliyor, en ucuzdan başlayarak.",
+        "checkPrices": "Fiyatlarınızı kontrol edin",
+        "hoursMissing": "Çalışma saatleriniz henüz doğrulanmadığı için hangi mesajların mesai dışında geldiğini bilemiyoruz. Yalnızca sayılar gösterilir, lira tutarı gösterilmez.",
+        "noPrice": "Henüz TL cinsinden doğrulanmış bir fiyat yok. Yalnızca sayılar gösterilir, lira tutarı gösterilmez.",
+        "addHours": "Çalışma saatlerinizi ekleyin",
+        "addPrices": "Fiyatlarınızı ekleyin"
+      },
+      "unit": {
+        "month": "ay",
+        "session": "seans",
+        "package": "paket",
+        "item": "adet",
+        "hour": "saat",
+        "person": "kişi",
+        "day": "gün",
+        "year": "yıl"
+      }
+    }
   }
 }

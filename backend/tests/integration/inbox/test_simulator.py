@@ -55,7 +55,7 @@ def test_the_scripts_cover_the_demo_cases() -> None:
     scripts = {s.id: s for s in simulator.load_scripts()}
     assert {
         "price", "hours", "location", "trial", "complaint", "refund", "discount", "injection",
-        "english_tourist", "russian", "photo_only",
+        "english_tourist", "russian", "photo_only", "story_reply", "story_mention",
     } <= set(scripts)  # fmt: skip
     assert scripts["photo_only"].text is None and scripts["photo_only"].attachments
     assert all(s.label.keys() >= {"tr", "en"} for s in scripts.values())
@@ -352,3 +352,42 @@ def test_the_cli_parser_knows_the_simulator_commands() -> None:
         ).text
         == "t"
     )
+
+
+def test_demo_a_reply_to_an_unknown_story_is_handled_as_before(inbox: InboxEnv, gym) -> None:
+    simulate(inbox, "story_reply")
+    draft = only_draft(inbox, "Melis")
+    assert draft is not None and draft.status == "needs_human" and draft.text is None
+    detail = inbox.env.call(
+        inbox.env.owner, "GET", f"/conversations/{inbox.conversation('sim-melis').id}"
+    ).json()
+    (message,) = detail["messages"]
+    assert message["story"]["kind"] == "reply" and message["story"]["known"] is False
+    assert message["attachments"][0]["note"] == "sim-story-1"
+
+
+def test_demo_a_story_mention_without_a_thank_you_goes_to_a_person(inbox: InboxEnv, gym) -> None:
+    simulate(inbox, "story_mention")
+    draft = only_draft(inbox, "Orhan")
+    assert draft is not None and draft.status == "needs_human"
+    assert draft.decision_reasons == ["ATTACHMENT_ONLY"]
+
+
+def test_demo_a_story_mention_with_a_thank_you_waits_for_approval(inbox: InboxEnv, gym) -> None:
+    created = inbox.env.call(
+        inbox.env.owner,
+        "POST",
+        "/approved-answers",
+        json={
+            "title": "Etiket",
+            "intent": "story_mention",
+            "example_questions": [],
+            "answer_template": "Bizi etiketlediğin için teşekkürler!",
+            "language": "tr",
+        },
+    )
+    assert created.status_code == 201, created.text
+    simulate(inbox, "story_mention")
+    draft = only_draft(inbox, "Orhan")
+    assert draft is not None and draft.status == "pending_approval"
+    assert draft.text == "Bizi etiketlediğin için teşekkürler!"

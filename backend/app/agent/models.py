@@ -1,12 +1,13 @@
 """Phase 7.5 durable agent state. Personal bodies remain in domain tables."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
@@ -418,3 +419,55 @@ class AgentAction(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
     execute_before: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     authorized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     outcome_code: Mapped[str | None] = mapped_column(Text)
+
+
+SUGGESTION_STATES = ("pending", "accepted", "dismissed", "expired")
+
+
+class DelegationSuggestion(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """One weekly "send this topic automatically?" proposal (D-02, approval ladder).
+
+    Built only from counts of the owner's own unchanged approvals. At most one per workspace and
+    local week (``uq_..._workspace_week``). It never grants anything: accepting goes through the
+    delegation preview and apply endpoints, and the owner's click is the only authority. A
+    dismissal sets ``cooldown_until`` and silences that action class until then.
+    """
+
+    __tablename__ = "delegation_suggestions"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint("workspace_id", "week"),
+        ForeignKeyConstraint(
+            ["workspace_id", "social_account_id"],
+            ["social_accounts.workspace_id", "social_accounts.id"],
+            name="fk_delegation_suggestions_account",
+            ondelete="CASCADE",
+        ),
+        CheckConstraint(_in("status", SUGGESTION_STATES), name="status"),
+        CheckConstraint(
+            "preview_hash IS NULL OR preview_hash ~ '^[0-9a-f]{64}$'", name="preview_hash"
+        ),
+        Index(
+            "ix_delegation_suggestions_class_cooldown",
+            "workspace_id",
+            "action_class",
+            "cooldown_until",
+        ),
+    )
+
+    social_account_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    week: Mapped[date] = mapped_column(Date, nullable=False)  # Monday of the workspace-local week
+    intent: Mapped[str] = mapped_column(Text, nullable=False)
+    action_class: Mapped[str] = mapped_column(Text, nullable=False)
+    counts: Mapped[dict[str, int]] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    cooldown_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    decided_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    # The owner's preview of the exact change, bound by hash; apply refuses without it.
+    preview_hash: Mapped[str | None] = mapped_column(Text)
+    previewed_by: Mapped[str | None] = mapped_column(Text)

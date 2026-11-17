@@ -297,7 +297,7 @@ All routes below use `/workspaces/{workspace_id}/accounts/{account_id}/owner-que
 |---|---|
 | `GET /`, `GET /{id}` | Member inspection; bounded UUID pagination (`limit=1..50`, `cursor`), optional customer filter; foreign persisted account/customer/question IDs return 404. |
 | `GET /{id}/answers` | Version/proposal history with the same pagination bounds; private bodies never enter public tools/context. |
-| `POST /{id}/answer` | `{expected_version,client_request_id,body,kind:"answer"|"proposal",reusable_knowledge:null}`. Owner/manager authoritatively answer; staff may propose while pending. A proposal after an authoritative answer rejects without changing its version. |
+| `POST /{id}/answer` | `{expected_version,client_request_id,body,kind:"answer"|"proposal",reusable_knowledge:null}`. Owner/manager authoritatively answer; staff may propose while pending. A proposal after an authoritative answer rejects without changing its version. The answer carries `candidate_id`, `candidate_status` (`pending`, `accepted`, `rejected`, `superseded`) and `candidate_editor_type` (D-05, below); `GET /{id}/answers` returns the same fields. |
 | `POST /{id}/cancel` | Owner/manager only; `{expected_version,client_request_id}`. Cancellation is versioned and idempotent. |
 
 Information decisions lock account -> thread -> question, never approval. Answer + event +
@@ -338,7 +338,9 @@ cleared when either customer memory generation or thread event cursor changes.
 Explicit reusable knowledge accepts only `{key:"custom.<slug>",text}` and creates an
 unverified typed text candidate with `source_type=owner_answer` and persisted
 `owner_answer_id`; normal knowledge verification remains mandatory. Private-business answers
-cannot create reusable candidates. Question/answer bodies and linked proposal caches redact
+cannot create reusable candidates.
+
+**Visible learning loop (D-05, Feature Phase 2).** Every authoritative answer to a `customer_reply` question now also creates the unverified text candidate (key `custom.owner_answer_<question id hex>`, or the key given in `reusable_knowledge`), so the owner can be offered "Save this as a verified fact?" right after answering. The candidate verifies nothing by itself and free text never accepts it: only an explicit tap does, through `POST /fact-candidates/{id}/accept` (web) or a single-use Telegram button (below), both as the signed-in or linked user with `knowledge.verify`. A candidate whose text carries a price, hours, a phone number, an e-mail or a URL is not one-tap: it needs the typed value (`candidate_editor_type`). The fact label is the start of the answer text (60 characters), nothing from the question or the customer. Staff proposals and `private_business` answers create no candidate. Question/answer bodies and linked proposal caches redact
 on linked source removal, disconnect erasure and expiry; memory-only correction/forget does
 not rewrite historical business messages. The broader conversation/data-subject erasure API
 remains the separate owner `data.delete`/Phase 8 workflow. Jobs, events, notifications, audit

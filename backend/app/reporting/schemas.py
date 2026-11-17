@@ -75,3 +75,49 @@ class MetricItemsOut(BaseModel):
     value: int | float | None
     items: list[MetricItemOut]
     next_cursor: str | None
+
+
+class WeeklyMetricOut(BaseModel):
+    """One number of the missed-customer report. ``value`` is null when it cannot be known
+    (after-hours numbers without a verified opening-hours fact), never a made-up zero."""
+
+    key: str
+    value: int | float | None
+    previous_value: int | float | None  # the same number over the previous full week
+    link: ReportLinkOut | None  # the records behind the number
+
+
+class PriceInputOut(BaseModel):
+    key: str
+    label: str
+    amount: str  # a decimal string in the estimate's currency
+    unit: str | None
+
+
+class EstimateOut(BaseModel):
+    """The lira estimate and all of its inputs. ``amount`` is null unless ``status`` is ``ok``:
+    ``hours_missing`` and ``no_verified_price`` mean counts only."""
+
+    status: str  # ok | hours_missing | no_verified_price
+    currency: str
+    amount: str | None
+    price_questions: int | None  # factor 1: after-hours price questions the assistant answered
+    conversion_rate: str  # factor 2: a conservative planning rate, e.g. "0.05"
+    median_price: str | None  # factor 3: the median of ``price_inputs``
+    price_inputs: list[PriceInputOut]  # at most 20, cheapest first
+    price_count: int  # how many verified prices the median is over; more than the inputs when cut
+
+
+class MissedCustomerReportOut(BaseModel):
+    week_start: date  # the local Monday
+    week_end: date  # the local Sunday
+    timezone: str
+    period_start: datetime
+    period_end: datetime
+    generated_at: datetime
+    is_partial: bool
+    hours_available: bool
+    # Simulated and mock-account records are never counted; the flag documents that.
+    has_simulated_data: bool
+    metrics: list[WeeklyMetricOut]
+    estimate: EstimateOut

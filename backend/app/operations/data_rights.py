@@ -27,7 +27,16 @@ from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity.models import Workspace
 from app.identity.permissions import has_permission
-from app.inbox.models import Conversation, InboundEvent, Message, ReplyDraft
+from app.inbox.image_erasure import erase_image_descriptions, export_image_descriptions
+from app.inbox.models import (
+    Conversation,
+    InboundEvent,
+    Message,
+    MessageImageDescription,
+    MessageTranscript,
+    ReplyDraft,
+)
+from app.inbox.transcripts import erase_transcripts, export_transcripts
 from app.integrations.instagram.models import SocialAccount
 from app.memory import service as memory_service
 from app.memory.models import CustomerIdentity
@@ -74,6 +83,11 @@ def export_conversation(
             )
             .order_by(Message.provider_timestamp.asc(), Message.created_at.asc())
         )
+    )
+
+    transcripts = export_transcripts(session, ctx.workspace_id, [m.id for m in messages])
+    image_descriptions = export_image_descriptions(
+        session, ctx.workspace_id, [m.id for m in messages]
     )
 
     # 2. Reply drafts
@@ -280,6 +294,8 @@ def export_conversation(
                 "external_message_id": m.external_message_id,
                 "text": m.text,
                 "attachments": m.attachments,
+                "transcript": transcripts.get(m.id),
+                "image_descriptions": image_descriptions.get(m.id, []),
                 "provider_timestamp": m.provider_timestamp.isoformat(),
                 "is_deleted": m.is_deleted,
                 "created_at": m.created_at.isoformat(),
@@ -381,6 +397,10 @@ def export_customer(
                 .order_by(Message.provider_timestamp.asc())
             )
         )
+        transcripts = export_transcripts(session, ctx.workspace_id, [m.id for m in msg_rows])
+        image_descriptions = export_image_descriptions(
+            session, ctx.workspace_id, [m.id for m in msg_rows]
+        )
         messages = [
             {
                 "id": str(m.id),
@@ -389,6 +409,8 @@ def export_customer(
                 "sender_kind": m.sender_kind,
                 "text": m.text,
                 "attachments": m.attachments,
+                "transcript": transcripts.get(m.id),
+                "image_descriptions": image_descriptions.get(m.id, []),
                 "provider_timestamp": m.provider_timestamp.isoformat(),
             }
             for m in msg_rows
@@ -604,6 +626,28 @@ def erase_conversation(
         )
         .values(text=None, attachments=[], is_deleted=True)
     )
+    erase_transcripts(
+        session,
+        clock.now(),
+        MessageTranscript.workspace_id == ctx.workspace_id,
+        MessageTranscript.message_id.in_(
+            select(Message.id).where(
+                Message.workspace_id == ctx.workspace_id,
+                Message.conversation_id == conversation.id,
+            )
+        ),
+    )
+    erase_image_descriptions(
+        session,
+        clock.now(),
+        MessageImageDescription.workspace_id == ctx.workspace_id,
+        MessageImageDescription.message_id.in_(
+            select(Message.id).where(
+                Message.workspace_id == ctx.workspace_id,
+                Message.conversation_id == conversation.id,
+            )
+        ),
+    )
     session.execute(
         update(ReplyDraft)
         .where(
@@ -734,13 +778,23 @@ def erase_conversation(
             deletion_generation=AgentThread.deletion_generation + 1,
         )
     )
+    # A draft and its message reference each other, and a draft references its approval: break
+    # those links (both nullable) so the approvals, drafts and messages below can be deleted.
+    session.execute(
+        update(Message)
+        .where(
+            Message.workspace_id == ctx.workspace_id,
+            Message.conversation_id == conversation.id,
+        )
+        .values(reply_draft_id=None)
+    )
     session.execute(
         update(ReplyDraft)
         .where(
             ReplyDraft.workspace_id == ctx.workspace_id,
             ReplyDraft.conversation_id == conversation.id,
         )
-        .values(covers_through_message_id=None)
+        .values(approval_id=None, superseded_by_id=None)
     )
     if draft_ids:
         session.execute(
@@ -891,6 +945,28 @@ def erase_customer(
             )
             .values(text=None, attachments=[], is_deleted=True)
         )
+        erase_transcripts(
+            session,
+            clock.now(),
+            MessageTranscript.workspace_id == ctx.workspace_id,
+            MessageTranscript.message_id.in_(
+                select(Message.id).where(
+                    Message.workspace_id == ctx.workspace_id,
+                    Message.conversation_id.in_(conv_ids),
+                )
+            ),
+        )
+        erase_image_descriptions(
+            session,
+            clock.now(),
+            MessageImageDescription.workspace_id == ctx.workspace_id,
+            MessageImageDescription.message_id.in_(
+                select(Message.id).where(
+                    Message.workspace_id == ctx.workspace_id,
+                    Message.conversation_id.in_(conv_ids),
+                )
+            ),
+        )
         session.execute(
             update(ReplyDraft)
             .where(
@@ -1001,13 +1077,22 @@ def erase_customer(
                 deletion_generation=AgentThread.deletion_generation + 1,
             )
         )
+        # Break the draft <-> message and draft -> approval links first (see erase_conversation).
+        session.execute(
+            update(Message)
+            .where(
+                Message.workspace_id == ctx.workspace_id,
+                Message.conversation_id.in_(conv_ids),
+            )
+            .values(reply_draft_id=None)
+        )
         session.execute(
             update(ReplyDraft)
             .where(
                 ReplyDraft.workspace_id == ctx.workspace_id,
                 ReplyDraft.conversation_id.in_(conv_ids),
             )
-            .values(covers_through_message_id=None)
+            .values(approval_id=None, superseded_by_id=None)
         )
         if draft_ids:
             session.execute(

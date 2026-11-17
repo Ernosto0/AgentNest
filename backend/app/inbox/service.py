@@ -360,6 +360,8 @@ def edit_draft(
         "passed": not warnings,
         "issues": [w.model_dump() for w in warnings],
         "rendered": [],
+        # The words of an edited reply still answer a voice note: keep the label.
+        **{k: v for k, v in draft.validation.items() if k == "transcript_message_ids"},
     }
     draft.decision_reasons = ["OWNER_EDIT"]
     drafts.transition(session, clock, ctx, draft, "edit")  # version + 1

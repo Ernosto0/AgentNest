@@ -11,6 +11,7 @@ import { useDecideApproval } from "@/features/commands/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { ApprovalStateNote, DraftText, ReasonChips } from "./DraftParts";
 import { useApproval, useCancelDraft, useEditDraft } from "./hooks";
+import { DraftTranscripts } from "./TranscriptBlock";
 
 type Status = ReplyDraft["status"];
 
@@ -97,6 +98,8 @@ export function DraftCard({
           {draft.is_simulated ? <SimulatedBadge compact /> : null}
         </div>
       </div>
+
+      <DraftTranscripts transcripts={draft.transcripts} />
 
       {draft.text !== null && !editing ? (
         <div className="rounded-xl border border-action/10 bg-surface px-4 py-3">

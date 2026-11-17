@@ -16,7 +16,6 @@
     "memory": "Müşteri hafızası",
     "answer": "İşletme yanıtı",
     "proposal": "Yanıt öneriniz",
-    "reuse": "Gelecek yanıtlar için kaydet",
     "knowledgeKey": "Bilgi anahtarı (küçük harf ve alt çizgi)",
     "sendAnswer": "Bilgi yanıtını kaydet",
     "sendProposal": "Öneriyi kaydet",
@@ -114,6 +113,18 @@
       "hide": "Yorumu gizle",
       "unhide": "Yorumu göster",
       "delete": "Yorumu sil"
+    },
+    "learning": {
+      "title": "Bu ay sizden öğrendikleri",
+      "count_one": "Bu ay sizden {{count}} şey öğrendi",
+      "count_other": "Bu ay sizden {{count}} şey öğrendi",
+      "empty": "Bu ay henüz yok. Bir soruyu yanıtladıktan sonra yanıtı tek dokunuşla doğrulanmış bilgi olarak kaydedebilirsiniz.",
+      "offerTitle": "Bunu doğrulanmış bilgi olarak kaydedelim mi?",
+      "offerHint": "Asistan sonraki yanıtlarda kullanır. Dokunmadan hiçbir şey doğrulanmaz.",
+      "save": "Doğrulanmış bilgi olarak kaydet",
+      "saved": "Doğrulanmış bilgi olarak kaydedildi. Asistan sonraki yanıtlarda kullanabilir.",
+      "needsEditor": "Bu yanıtta fiyat, saat veya iletişim bilgisi var. Doğru doğrulanması için önce uygun biçimde girin.",
+      "review": "Önerilerde incele"
     }
   }
 }

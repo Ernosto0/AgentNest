@@ -1,0 +1,24 @@
+{
+  "ladder": {
+    "title": "{{topic}} yanıtları otomatik gönderilsin mi?",
+    "body": "Son {{days}} günde {{topic}} hakkındaki {{count}} yanıtı asistanın yazdığı hâliyle onayladınız. Hiçbirini düzenlemediniz, reddetmediniz ve hiçbiri gönderilemeden kalmadı.",
+    "note": "Fiyat, randevu ve kampanya yanıtları önce size sormaya devam eder. Bunu istediğiniz zaman otomasyon ayarlarından kapatabilirsiniz.",
+    "review": "İncele",
+    "reviewing": "Kontrol ediliyor…",
+    "dismiss": "Şimdi değil",
+    "dismissing": "Kaydediliyor…",
+    "dismissHint": "\"Şimdi değil\" derseniz bunu bir süre tekrar önermeyiz.",
+    "confirmTitle": "{{topic}} yanıtlarını otomatik gönder",
+    "confirmBody": "Bundan sonra asistan, kullandığı bilgiler doğrulanmış olduğu ve başka bir şey kişi gerektirmediği sürece {{topic}} hakkındaki yanıtları kendisi gönderir. Diğer tüm konular önce size sormaya devam eder.",
+    "confirm": "Otomatik yanıtı aç",
+    "confirming": "Açılıyor…",
+    "back": "Geri",
+    "done": "{{topic}} yanıtları artık otomatik gönderiliyor.",
+    "settings": "Otomasyon ayarları",
+    "topic": {
+      "hours": "çalışma saatleri",
+      "location_contact": "adres ve iletişim",
+      "services": "hizmetler"
+    }
+  }
+}

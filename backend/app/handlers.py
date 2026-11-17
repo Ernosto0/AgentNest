@@ -7,7 +7,9 @@ both processes call ``load_handlers()`` at startup. Later phases add their modul
 
 def load_handlers() -> None:
     import app.agent.jobs  # noqa: F401
+    import app.agent.pause_jobs  # noqa: F401
     import app.agent.subject  # noqa: F401
+    import app.agent.suggestions  # noqa: F401
     import app.ai.jobs  # noqa: F401
     import app.approvals.jobs  # noqa: F401
     import app.commands.jobs  # noqa: F401
@@ -17,9 +19,11 @@ def load_handlers() -> None:
     import app.content.jobs  # noqa: F401
     import app.content.media_cleanup  # noqa: F401
     import app.content.subject  # noqa: F401
+    import app.inbox.image_description  # noqa: F401
     import app.inbox.impact  # noqa: F401
     import app.inbox.jobs  # noqa: F401
     import app.inbox.subject  # noqa: F401
+    import app.inbox.transcription  # noqa: F401
     import app.insights.jobs  # noqa: F401
     import app.knowledge.extraction  # noqa: F401
     import app.knowledge.impact_handlers  # noqa: F401

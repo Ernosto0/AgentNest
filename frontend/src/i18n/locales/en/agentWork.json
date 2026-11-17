@@ -16,7 +16,6 @@
     "memory": "Customer memory",
     "answer": "Business answer",
     "proposal": "Your proposed answer",
-    "reuse": "Save for future answers",
     "knowledgeKey": "Knowledge key (lowercase letters and underscores)",
     "sendAnswer": "Save information answer",
     "sendProposal": "Save proposal",
@@ -114,6 +113,18 @@
       "hide": "Hide comment",
       "unhide": "Unhide comment",
       "delete": "Delete comment"
+    },
+    "learning": {
+      "title": "Learned from you this month",
+      "count_one": "Learned {{count}} thing from you this month",
+      "count_other": "Learned {{count}} things from you this month",
+      "empty": "Nothing yet this month. After you answer a question, you can save the answer as a verified fact in one tap.",
+      "offerTitle": "Save this as a verified fact?",
+      "offerHint": "The assistant will use it in future replies. Nothing is verified until you tap.",
+      "save": "Save as verified fact",
+      "saved": "Saved as a verified fact. The assistant can use it in future replies.",
+      "needsEditor": "This answer has a price, hours or contact details. Enter it in the right form first so it is verified correctly.",
+      "review": "Review in Suggestions"
     }
   }
 }

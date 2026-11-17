@@ -1,6 +1,6 @@
 # Feature Phase 2: During Pilots
 
-**Status:** Planned. Nothing in this file is implemented yet.
+**Status:** Sessions 01–08 implemented and verified offline; stopped for review (2026-11-17). See the [Session 08 report](s08-report.md) and the [phase summary](../phase-summaries/features-phase-2-summary.md) for checks, known environment failures and the live items that are still pending. Nothing committed.
 **Source:** [pre-launch-feature-recommendations.md](../../review/pre-launch-feature-recommendations.md) §4, step 2, plus D-04 and D-05, which §4 left unplaced.
 **Features:** F-03 (voice and image understanding), F-04 (story replies and mentions), D-02 (approval ladder), D-03 (missed-customer report), D-05 (learning loop), D-04 (manage by chat).
 **Sessions:** 8. Sessions 01–03 are in order. Sessions 04–07 are independent and can run in any order once Feature Phase 1 is closed. Session 08 closes the phase.

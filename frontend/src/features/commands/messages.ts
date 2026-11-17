@@ -23,6 +23,9 @@ export const RESULT_MESSAGE_KEYS = [
   // Content commands (api-design §2.4, P5-03b).
   "draft_created",
   "content_cancelled",
+  "content_rescheduled",
+  "agent_paused_until",
+  "management_refused",
   "content_changed_meanwhile",
   "content_not_cancellable",
   "content_status",

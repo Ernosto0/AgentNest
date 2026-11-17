@@ -16,6 +16,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
@@ -194,6 +195,125 @@ class Message(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+TRANSCRIPT_STATUSES = ("pending", "succeeded", "failed")
+
+
+class MessageTranscript(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
+    """The automatic transcript of one voice note (F-03, Feature Phase 2).
+
+    One row per message (the first audio attachment), created ``pending`` in the transaction that
+    stores the message and finished by the ``transcribe_voice_note`` job. ``text`` is **customer
+    speech**, untrusted data (INV-03) that is labelled ``source = 'transcript'`` wherever it is
+    shown: it is never the customer's own typed text and never a fact. It is personal data: it is
+    nulled by the same retention and erasure paths as ``messages.text``, and ``erased_at`` records
+    that. A ``failed`` row carries a ``reason_code`` and the message stays a person-handled
+    attachment. The audio itself is never stored: it is held in memory during the job only.
+    """
+
+    __tablename__ = "message_transcripts"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint("workspace_id", "message_id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "message_id"],
+            ["messages.workspace_id", "messages.id"],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint(_in("status", TRANSCRIPT_STATUSES), name="status"),
+        CheckConstraint("source = 'transcript'", name="source"),
+        CheckConstraint("attachment_index >= 0", name="attachment_index"),
+        CheckConstraint("(status = 'failed') = (reason_code IS NOT NULL)", name="reason_code"),
+        CheckConstraint(
+            "status <> 'succeeded' OR (provider IS NOT NULL AND model IS NOT NULL)",
+            name="succeeded_has_provider",
+        ),
+        Index("ix_message_transcripts_status", "status"),
+        Index("ix_message_transcripts_workspace_created", "workspace_id", "created_at"),
+    )
+
+    message_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    attachment_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    reason_code: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(Text, nullable=False, server_default="transcript")
+    text: Mapped[str | None] = mapped_column(Text)
+    language: Mapped[str | None] = mapped_column(Text)  # tr | en | other | null (no evidence)
+    provider: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str | None] = mapped_column(Text)
+    duration_seconds: Mapped[float | None] = mapped_column(Float)
+    audio_bytes: Mapped[int | None] = mapped_column(Integer)
+    is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    erased_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+IMAGE_DESCRIPTION_STATUSES = ("pending", "succeeded", "failed")
+IMAGE_KINDS = ("product", "price_screenshot", "location", "other")
+
+
+class MessageImageDescription(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
+    """The automatic description of one photo or screenshot a customer sent (F-03, Session 03).
+
+    One row per image attachment (the first few of a message), created ``pending`` in the
+    transaction that stores the message and finished by the ``describe_message_image`` job.
+    ``description`` and ``visible_text`` are **a machine's reading of customer content**: untrusted
+    data (INV-03), labelled ``source = 'image_description'`` wherever shown, never a fact, never
+    read by a draft, never an instruction. ``injection_suspected`` records that the injection
+    heuristics matched them. They are personal data, nulled by the same retention and erasure
+    paths as ``messages.text`` (``erased_at`` records that). The image itself is never stored: it
+    is held in memory during the job only.
+    """
+
+    __tablename__ = "message_image_descriptions"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint(
+            "workspace_id",
+            "message_id",
+            "attachment_index",
+            name="uq_message_image_descriptions_message_attachment",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "message_id"],
+            ["messages.workspace_id", "messages.id"],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint(_in("status", IMAGE_DESCRIPTION_STATUSES), name="status"),
+        CheckConstraint("source = 'image_description'", name="source"),
+        CheckConstraint("attachment_index >= 0", name="attachment_index"),
+        CheckConstraint("(status = 'failed') = (reason_code IS NOT NULL)", name="reason_code"),
+        CheckConstraint(
+            "looks_like IS NULL OR " + _in("looks_like", IMAGE_KINDS), name="looks_like"
+        ),
+        CheckConstraint(
+            "status <> 'succeeded' OR (provider IS NOT NULL AND model IS NOT NULL)",
+            name="succeeded_has_provider",
+        ),
+        Index("ix_message_image_descriptions_status", "status"),
+        Index("ix_message_image_descriptions_workspace_created", "workspace_id", "created_at"),
+    )
+
+    message_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    attachment_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
+    reason_code: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(Text, nullable=False, server_default="image_description")
+    looks_like: Mapped[str | None] = mapped_column(Text)  # product | price_screenshot | ...
+    description: Mapped[str | None] = mapped_column(Text)
+    visible_text: Mapped[str | None] = mapped_column(Text)
+    injection_suspected: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    provider: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str | None] = mapped_column(Text)
+    media_type: Mapped[str | None] = mapped_column(Text)
+    image_bytes: Mapped[int | None] = mapped_column(Integer)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column()  # no FK: runs are purged on their own
+    is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    erased_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ReplyDraft(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):

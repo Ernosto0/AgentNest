@@ -202,8 +202,8 @@ Index: `(workspace_id, status)`, `(workspace_id, fact_key) where status = 'pendi
 |---|---|---|
 | id, workspace_id | uuid | |
 | title | text not null | |
-| intent | text not null | from the intent list ([agent-runtime.md §4](agent-runtime.md)) |
-| example_questions | jsonb not null | list of strings |
+| intent | text not null | from the intent list ([agent-runtime.md §4](agent-runtime.md)); the `CHECK` also allows `story_mention` (F-04, migration `0052`: the one thank-you for a story mention) |
+| example_questions | jsonb not null | list of strings (empty only for `story_mention`) |
 | answer_template | text not null | may contain `{{fact:key}}` placeholders |
 | language | text not null | |
 | status | text not null | `active`, `needs_review`, `archived` |
@@ -284,7 +284,7 @@ Index: `(workspace_id, fact_id)`; `unique (referrer_type, referrer_id, fact_id)`
 
 Constraint: `unique (workspace_id, subject_type, subject_id) where status = 'pending'`. Index: `(workspace_id, status, expires_at)`. There is no `payload` column: the payload lives with the subject (for a command, `owner_commands.resolution`), and execution recomputes its hash and compares it with `payload_hash`.
 
-**`automation_policies`**: PK `(workspace_id, action_class)`; `mode` `CHECK in ('auto','approval','off')`; `updated_by_user_id`; `updated_at`. Missing rows mean the default (`approval`).
+**`automation_policies`**: PK `(workspace_id, action_class)`; `mode` `CHECK in ('auto','approval','off')`; `updated_by_user_id`; `updated_at`. Missing rows mean the default (`approval`). The `action_class` `CHECK` includes `reply.story_mention` (F-04, migration `0052`).
 
 ### 3.5 Instagram, inbox (Phase 4)
 
@@ -383,6 +383,50 @@ Index: `(conversation_id, provider_timestamp)`.
 | is_simulated | boolean | |
 
 Constraint: `unique (conversation_id) where status in ('pending_approval','needs_human','queued','sending','outcome_unknown')` (at most one open draft per conversation).
+
+**`message_transcripts`** (Feature Phase 2, F-03 Session 01; migration `0049`; tenant, RLS enabled and forced)
+The automatic transcript of one voice-note message. Separate from `messages` so that the customer's typed text and a machine transcript of their speech can never be confused, and so that a failure has somewhere to be recorded. One row per message (the first `audio` attachment), created `pending` in the transaction that stores the message and finished by the `transcribe_voice_note` job. The audio itself is never stored.
+| Column | Type | Notes |
+|---|---|---|
+| id, workspace_id | uuid | composite FK `(workspace_id, message_id)` → `messages`, cascade; `unique (workspace_id, message_id)` |
+| attachment_index | int not null default 0 | index into `messages.attachments` (>= 0) |
+| status | text not null | `pending`, `succeeded`, `failed` |
+| reason_code | text null | required exactly when `status = failed`; `VOICE_*` codes in [background-jobs.md §6](background-jobs.md) |
+| source | text not null default `transcript` | check `= 'transcript'`: the label every reader must show ("Transcript (automatic)") |
+| text | text null | the transcript: customer speech, **untrusted data (INV-03)**, never a fact. Nulled by retention (365 days, with `messages.text`), provider deletion and every erasure path; `erased_at` records it |
+| language | text null | `tr`, `en`, `other` or null (no evidence); detected from the transcript text by `inbox/language.py`, the provider's guess is the fallback |
+| provider, model | text null | set when the provider was called (a success, or a failure after the call); a success requires both |
+| duration_seconds | double null | from the container (MP4/M4A, WAV) or the provider |
+| audio_bytes | int null | size of the downloaded clip |
+| is_simulated | boolean | copied from the message (INV-09) |
+| completed_at, erased_at | timestamptz null | |
+
+`created_at` of a transcript row is set from the injected `Clock` when it is requested (the draft job measures how long it has waited from it). Session 02 reads the table in `inbox/context.py` (drafting, workspace-scoped) and `inbox/views.py` (inbox and approval API) and `policy/transcripts.py` (account agent guard); no new column or migration. `reply_drafts.validation.transcript_message_ids` (JSON list of message ids, written by code) records which voice notes a reply was drafted from.
+
+**`message_image_descriptions`** (Feature Phase 2, F-03 Session 03; migration `0050`; tenant, RLS enabled and forced)
+The automatic description of one photo or screenshot a customer sent, for the owner only. Separate from `messages` for the same reasons as `message_transcripts`. One row per image attachment (the first `IMAGE_DESCRIPTION_MAX_PER_MESSAGE`, default 3, of a message), created `pending` in the transaction that stores the message and finished by the `describe_message_image` job. The image itself is never stored. **Nothing reads this table when drafting a reply**: it is shown in the inbox and exported, nothing else.
+| Column | Type | Notes |
+|---|---|---|
+| id, workspace_id | uuid | composite FK `(workspace_id, message_id)` → `messages`, cascade; `unique (workspace_id, message_id, attachment_index)` |
+| attachment_index | int not null default 0 | index into `messages.attachments` (>= 0) |
+| status | text not null | `pending`, `succeeded`, `failed` |
+| reason_code | text null | required exactly when `status = failed`; `IMAGE_*` codes in [background-jobs.md §6](background-jobs.md) |
+| source | text not null default `image_description` | check `= 'image_description'`: the label every reader must show ("What the customer sent (automatic)") |
+| looks_like | text null | `product`, `price_screenshot`, `location` or `other` (check); the model's rough reading, never acted on |
+| description | text null | a short description: a machine's reading of customer content, **untrusted (INV-03)**, never a fact. Nulled by retention (365 days, with `messages.text`), provider deletion and every erasure path; `erased_at` records it |
+| visible_text | text null | the text read from the picture, verbatim as far as the model could: customer content, **untrusted**, never a fact, never an instruction. Erased with `description` |
+| injection_suspected | boolean not null default false | the injection heuristics ([agent-runtime.md §7](agent-runtime.md)) matched `description` or `visible_text`; the inbox shows a warning. Nothing acts on the text either way |
+| provider, model | text null | set when the model was called (a success, or a failure after the call); a success requires both |
+| media_type, image_bytes | text / int null | of the downloaded file (`image/jpeg`, `image/png` or `image/webp`) |
+| agent_run_id | uuid null | the `agent_runs` row of the call (no FK: runs are purged on their own schedule); the run keeps no copy of the words (`store_output = false`) |
+| is_simulated | boolean | copied from the message (INV-09) |
+| completed_at, erased_at | timestamptz null | |
+| created_at, updated_at | timestamptz | `created_at` from the injected `Clock` |
+
+Migration `0050` also lets `agent_runs.task` hold `describe_image`.
+| created_at, updated_at | timestamptz | |
+
+Indexes: `status`; `(workspace_id, created_at)` (the per-workspace daily quota counts rows with a `provider` in the last 24 h). Nothing reads this table in the drafting path yet (Session 02 does).
 
 **`assistant_test_turns`** (Feature Phase 1, migration `0046`)
 The owner's test-chat sandbox ([api-design.md §2.6a](api-design.md)). One row per test customer message and the draft it got. Deliberately **not** `conversations`/`messages`/`reply_drafts`: those hang off a `social_accounts` row, and a test chat must work before an account is connected and must never be linked to a real one. Nothing reads this table except the test chat itself.
@@ -486,7 +530,11 @@ The facts a text states are recorded in `fact_references` (`referrer_type = 'con
 
 **`push_preferences`** (Feature Phase 1, F-01 part 2; migration `0048`; tenant, RLS enabled and forced): a user's Web Push opt-in per category. `id`, `workspace_id`, `user_id` (FK users, cascade), `category` (`approvals`, `questions`, `failures`; the mapping from notification types is `notifications/catalog.py` `PUSH_TYPES`), `enabled`, `created_at`, `updated_at`. `unique (workspace_id, user_id, category)`. No row means off: push is opt-in, and a user changes only their own rows.
 
+**`fact_save_tokens`** (Feature Phase 2, D-05; migration `0055`; tenant, RLS enabled and forced): the single-use Telegram button "save this answer as a verified fact". `id`, `workspace_id`, `token_hash` (SHA-256 of a 22-character random token; the raw token exists only as the button's `callback_data`, `fsv:<token>`), `candidate_id` (composite FK to `fact_candidates (workspace_id, id)`, cascade), `user_id` (FK users, cascade: the owner or manager the button was sent to), `expires_at` (48 hours after it was created), `used_at` (set by the first tap, valid or not), `created_at`. Unique `token_hash`. The SECURITY DEFINER function `resolve_fact_save_token_by_hash(text)` returns `(id, workspace_id)` for the callback, which does not know the workspace yet; the row is then read under that tenant. The token carries no answer text.
+
 **`push_subscriptions`** (Feature Phase 1, F-01; migration `0047`; tenant, RLS enabled and forced): one browser or phone a user can be notified on. `id`, `workspace_id`, `user_id` (FK users, cascade), `endpoint` (the push service URL as the browser sent it, https only; never returned by the API), `endpoint_hash` (sha256 hex), `p256dh_ciphertext` and `auth_ciphertext` (the message-encryption keys, AES-256-GCM with the token key ring, AAD `push:<part>:<workspace_id>:<id>`, so a copied blob does not open; plaintext only inside the sender), `key_id` (ring key that wrote both), `device_label` (a short label such as "Chrome on Android"; the raw user agent is not stored), `last_success_at` (set by the Web Push channel when a push service accepts a message), `revoked_at`, `created_at`, `updated_at`. `unique (workspace_id, user_id, endpoint_hash)` (one row per device per user per workspace; a re-subscribe refreshes the keys and revives a revoked row). A user keeps at most 10 active rows per workspace (the oldest is revoked). The same endpoint subscribed by another user of the same workspace revokes the previous user's row, so a shared phone never pushes to whoever signed in last. Rows are kept after unsubscribe (`revoked_at`); keys are not covered by the token key rotation job, so retired `TOKEN_ENCRYPTION_KEYS` entries must stay until devices re-subscribe.
+
+**`delegation_suggestions`** (Feature Phase 2, D-02; migration `0053`; tenant, RLS enabled and forced): the weekly "send this topic automatically?" proposal. `id`, `workspace_id`, `social_account_id` (composite FK `(workspace_id, social_account_id)` to `social_accounts`, cascade), `week` (date: Monday of the workspace-local week), `intent` (`hours` | `location_contact` | `services`), `action_class` (the automation class that intent maps to), `counts` (jsonb `{unchanged, edited, rejected, failed}` over the window: counts only, no customer text), `status` (`pending` | `accepted` | `dismissed` | `expired`), `created_at`, `expires_at` (7 days), `cooldown_until` (set on dismissal and on acceptance: that `action_class` is not suggested again until then), `decided_at`, `decided_by_user_id` (FK users, set null), `preview_hash` and `previewed_by` (the owner's preview of the exact `DelegationChange`; apply refuses without a matching one). `unique (workspace_id, week)` is the one-suggestion-per-week guarantee. Rows are written only by `agent/suggestions.py`; accepting one writes the `automation_policies` row in the same transaction as the delegation apply.
 
 **`channel_links`** (Phase 9, user-level, not tenant): `id`, `user_id`, `channel`, `external_user_id`, `external_chat_id`, `default_workspace_id`, `status` (`active`, `revoked`), `linked_at`, `revoked_at`. `unique (channel, external_user_id) where status='active'`.
 
@@ -601,7 +649,8 @@ optional reusable candidate. Request IDs are unique per question; answer version
 per question. Bodies redact while minimal ledger/version identifiers survive.
 
 `fact_candidates.owner_answer_id` and `source_type=owner_answer` preserve true provenance
-for explicitly requested reusable knowledge; these are unverified candidates, never an
+for owner answers (D-05: every authoritative answer to a customer-facing question proposes one, and the
+owner may name the key with reusable knowledge); these are unverified candidates, never an
 automatic change to business facts. Answer/candidate and question/answer cycles use named
 scoped constraints. Downgrade refuses when any owner-question evidence exists.
 
@@ -688,3 +737,11 @@ numbers contribute. Saved generations retain original metrics, version and repor
 membership; old snapshots do not acquire new zero-valued metrics. Explicit manual moderation
 uses existing `operations` rows (`subject_type=public_comment`) and content-free actor,
 source/media-version and exact request-hash evidence; no new table or migration is added.
+
+### Feature Phase 2 Session 08 migration
+
+Revision `0056`, parent `0055`, extends `approvals.action` CHECK with
+`command.reschedule_content` and `command.pause_agent`. No table/column/RLS change. Timers use
+existing jobs and account config_version/controller_epoch. Downgrade restores the prior CHECK
+and intentionally refuses if new-action approval rows exist, preserving audit/approval history.
+

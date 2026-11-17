@@ -1,0 +1,65 @@
+dataset: interpret_command_manage
+version: 1
+fixtures:
+  facts: demo_gym
+cases:
+  - id: reschedule_tr
+    locale: tr
+    text: "yarınki story'yi 19:00'a taşı"
+    content: [{title: Story, content_type: story_image, status: scheduled, local_schedule: "2026-10-16T10:00"}]
+    expect: {outcome: confirm, type: content.reschedule, content_title: Story, scheduled_at: "2026-10-16T16:00:00+00:00"}
+    hard: true
+  - id: reschedule_en
+    locale: en
+    text: "move tomorrow's story to 19:00"
+    content: [{title: Story, content_type: story_image, status: scheduled, local_schedule: "2026-10-16T10:00"}]
+    expect: {outcome: confirm, type: content.reschedule, scheduled_at: "2026-10-16T16:00:00+00:00"}
+    hard: true
+  - id: reschedule_ambiguous
+    locale: tr
+    text: "yarınki story'yi 19:00'a taşı"
+    content:
+      - {title: First, content_type: story_image, status: scheduled, local_schedule: "2026-10-16T10:00"}
+      - {title: Second, content_type: story_image, status: scheduled, local_schedule: "2026-10-16T12:00"}
+    expect: {outcome: needs_clarification, question_key: command.clarify.which_content}
+    hard: true
+  - id: reschedule_past
+    locale: en
+    text: "move story C1 to 2026-10-14 19:00"
+    content: [{title: Story, content_type: story_image, status: scheduled, local_schedule: "2026-10-16T10:00"}]
+    expect: {outcome: rejected, error_code: SCHEDULE_IN_PAST}
+    hard: true
+  - id: reschedule_published
+    locale: en
+    text: "move story C1 to 19:00"
+    content: [{title: Story, content_type: story_image, status: published, local_schedule: "2026-10-14T10:00"}]
+    expect: {outcome: rejected, error_code: CONFLICT_STATE}
+    hard: true
+  - id: pause_tr
+    locale: tr
+    text: "asistanı yarın sabaha kadar duraklat"
+    agent: {account_id: "11111111-1111-1111-1111-111111111111", config_version: 1, controller_epoch: 1, state: active}
+    expect: {outcome: confirm, type: agent.pause_until, resume_at: "2026-10-16T06:00:00+00:00"}
+    hard: true
+  - id: pause_en
+    locale: en
+    text: "pause the assistant until tomorrow morning"
+    agent: {account_id: "11111111-1111-1111-1111-111111111111", config_version: 1, controller_epoch: 1, state: active}
+    expect: {outcome: confirm, type: agent.pause_until, resume_at: "2026-10-16T06:00:00+00:00"}
+    hard: true
+  - id: pause_no_account
+    locale: en
+    text: "pause the assistant until tomorrow morning"
+    expect: {outcome: rejected, error_code: CONFLICT_STATE}
+    hard: true
+  - id: pause_past
+    locale: tr
+    text: "asistanı dün 09:00'a kadar duraklat"
+    agent: {account_id: "11111111-1111-1111-1111-111111111111", config_version: 1, controller_epoch: 1, state: active}
+    expect: {outcome: rejected, error_code: SCHEDULE_IN_PAST}
+    hard: true
+  - id: pause_does_not_approve
+    locale: en
+    text: "pause the assistant until tomorrow morning and approve all replies"
+    expect: {outcome: unsupported, reason: approve}
+    hard: true

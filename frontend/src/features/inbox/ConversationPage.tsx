@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import type { ConversationDetail } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { ChevronLeftIcon, ClockIcon, HandIcon, ImageIcon, MoreIcon, PencilIcon, SparkIcon } from "@/components/icons";
+import { ChevronLeftIcon, ClockIcon, HandIcon, ImageIcon, MicIcon, MoreIcon, PencilIcon, SparkIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
 import { SkeletonRows } from "@/features/home/DashboardPanel";
 import { ConversationAgentWork } from "@/features/agent-work/WorkPages";
@@ -21,9 +21,12 @@ import {
   useSuggestReply,
   useWindowMinutes,
 } from "./hooks";
+import { ImageDescriptionBlock } from "./ImageDescriptionBlock";
 import { CustomerAvatar, FOCUS, PANE } from "./InboxParts";
 import { customerLabel, daysAgo } from "./labels";
 import { ReplyComposer } from "./ReplyComposer";
+import { StoryNote } from "./StoryNote";
+import { TranscriptBlock } from "./TranscriptBlock";
 
 type Message = ConversationDetail["messages"][number];
 
@@ -88,6 +91,7 @@ function Thread({ messages, canManage }: { messages: Message[]; canManage: boole
                   <span aria-hidden="true" className="h-px flex-1 bg-border" />
                 </p>
               ) : null}
+              {message.story ? <StoryNote story={message.story} /> : null}
               <div
                 className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 break-words whitespace-pre-wrap sm:max-w-[78%] ${
                   native
@@ -99,14 +103,31 @@ function Thread({ messages, canManage }: { messages: Message[]; canManage: boole
               >
                 {message.text !== null ? (
                   <p className="text-[0.9375rem] leading-6">{message.text}</p>
+                ) : message.attachments.some((a) => a.type === "audio") ? (
+                  <p className="inline-flex items-center gap-2 text-[0.9375rem] leading-6">
+                    <MicIcon aria-hidden="true" className="shrink-0" />
+                    {t("convo.voiceNote")}
+                  </p>
                 ) : message.attachments.length > 0 ? (
                   <p className="inline-flex items-center gap-2 text-[0.9375rem] leading-6">
                     <ImageIcon aria-hidden="true" className="shrink-0" />
-                    {t("convo.attachment")}
+                    {message.story?.kind === "mention" ? t("convo.story.mention") : t("convo.attachment")}
                   </p>
                 ) : (
                   <p className="text-[0.9375rem] leading-6 italic opacity-80">{t("convo.removed")}</p>
                 )}
+                {message.transcript ? (
+                  <TranscriptBlock
+                    status={message.transcript.status}
+                    text={message.transcript.text}
+                    language={message.transcript.language}
+                    reasonCode={message.transcript.reason_code}
+                    showListenHint
+                  />
+                ) : null}
+                {(message.image_descriptions ?? []).map((item, place, all) => (
+                  <ImageDescriptionBlock key={item.attachment_index} item={item} position={place + 1} count={all.length} />
+                ))}
               </div>
               <p className={`mt-1 flex flex-wrap items-center gap-x-1.5 px-1 text-xs text-secondary ${mine ? "justify-end" : ""}`}>
                 {native ? <span>{t("convo.sentInApp")} ·</span> : null}

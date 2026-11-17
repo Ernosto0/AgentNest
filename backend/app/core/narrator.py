@@ -190,6 +190,27 @@ def narrate_fallback(
             )
         return f"I've prepared the draft '{title}' for you. You can review it under Content."
 
+    if key == "content_rescheduled":
+        title, when = params.get("title", ""), params.get("when", "")
+        return (
+            f"{title} için yeni zaman: {when}."
+            if locale == "tr"
+            else f"{title} is now scheduled for {when}."
+        )
+    if key == "agent_paused_until":
+        when = params.get("when", "")
+        return (
+            f"Asistan {when} tarihine kadar duraklatıldı."
+            if locale == "tr"
+            else f"Assistant paused until {when}."
+        )
+    if key == "management_refused":
+        return (
+            "Değişiklik uygulanamadı. Güncel durumu ve zamanı kontrol edip yeniden deneyin."
+            if locale == "tr"
+            else "The change could not be applied. Check the current state and time, then retry."
+        )
+
     # General fallback
     return ""
 

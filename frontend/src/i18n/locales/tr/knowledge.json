@@ -45,7 +45,8 @@
       "pasted_text": "Yapıştırdığınız metin",
       "staff_proposal": "Bir ekip üyesi",
       "instagram_profile": "Instagram profiliniz",
-      "website": "Web siteniz"
+      "website": "Web siteniz",
+      "owner_answer": "Asistana verdiğiniz yanıt"
     },
     "verifiedOn": "{{date}} tarihinde doğrulandı",
     "validity": "{{from}} – {{until}} arasında geçerli",
@@ -233,7 +234,16 @@
       },
       "current": "Şu an kullanılan",
       "proposed": "Önerilen",
-      "nothingYet": "Henüz yok"
+      "nothingYet": "Henüz yok",
+      "needsEditor": "Yanıtınızda {{kind}} var. Doğru biçimde doğrulanması için aşağıya girin.",
+      "saveTyped": "Doğrulanmış bilgi olarak kaydet",
+      "editorKind": {
+        "money": "bir fiyat",
+        "weekly_hours": "çalışma saatleri",
+        "phone": "bir telefon numarası",
+        "email": "bir e-posta adresi",
+        "url": "bir web bağlantısı"
+      }
     },
     "asideLabel": "Öğretme ve kurulum",
     "answersHint": "Doğrulanmış bilgilerinize dayanan hazır yanıtlar",

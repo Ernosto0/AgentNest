@@ -10,7 +10,7 @@ import { AlertIcon } from "@/components/icons";
 import { useAnswers, useArchiveAnswer, useCreateAnswer } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
-const INTENTS = ["faq", "greeting", "pricing", "hours", "location_contact", "services", "booking", "promotions"];
+const INTENTS = ["faq", "greeting", "pricing", "hours", "location_contact", "services", "booking", "promotions", "story_mention"];
 
 function renderTemplatePlaceholders(template: string) {
   const parts = template.split(/(\{\{[^}]+\}\})/g);
@@ -45,6 +45,8 @@ export function ApprovedAnswers() {
 
   const visible = (answers.data ?? []).filter((a) => a.status !== "archived");
   const literal = create.error?.fieldErrors.find((e) => e.code === "LITERAL_VALUE");
+  const mentionExists = create.error?.fieldErrors.find((e) => e.code === "already_exists");
+  const isMention = intent === "story_mention"; // a thank-you answers no question
 
   return (
     <div className="flex flex-col gap-6">
@@ -125,7 +127,7 @@ export function ApprovedAnswers() {
             onSubmit={(event) => {
               event.preventDefault();
               create.mutate(
-                { title, intent, question, template, language },
+                { title, intent, question: isMention ? "" : question, template, language },
                 {
                   onSuccess: () => {
                     setTitle("");
@@ -148,17 +150,23 @@ export function ApprovedAnswers() {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="answer-question" className="text-sm font-medium text-primary">
-                {t("answers.fieldQuestion")}
-              </label>
-              <input
-                id="answer-question"
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                className="min-h-11 rounded-control border border-border bg-surface px-3 text-base text-primary font-normal focus:border-control focus-visible:outline-2 focus-visible:outline-focus"
-              />
-            </div>
+            {isMention ? (
+              <p className="rounded-panel bg-surface-subtle p-3 text-sm text-secondary border border-border">
+                {t("answers.mentionHint")}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="answer-question" className="text-sm font-medium text-primary">
+                  {t("answers.fieldQuestion")}
+                </label>
+                <input
+                  id="answer-question"
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  className="min-h-11 rounded-control border border-border bg-surface px-3 text-base text-primary font-normal focus:border-control focus-visible:outline-2 focus-visible:outline-focus"
+                />
+              </div>
+            )}
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="answer-template" className="text-sm font-medium text-primary">
@@ -212,12 +220,16 @@ export function ApprovedAnswers() {
               <p role="alert" className="rounded-panel bg-danger-subtle p-4 text-sm text-danger border border-border">
                 {t("answers.literalValue")}
               </p>
+            ) : mentionExists ? (
+              <p role="alert" className="rounded-panel bg-danger-subtle p-4 text-sm text-danger border border-border">
+                {t("answers.mentionExists")}
+              </p>
             ) : create.error ? (
               <ErrorMessage error={create.error} />
             ) : null}
 
             <div className="pt-1">
-              <Button type="submit" disabled={create.isPending || !title.trim() || !question.trim() || !template.trim()}>
+              <Button type="submit" disabled={create.isPending || !title.trim() || (!isMention && !question.trim()) || !template.trim()}>
                 {t("answers.save")}
               </Button>
             </div>

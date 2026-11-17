@@ -60,6 +60,7 @@ def policy_input(
         escalation_keyword=plan.escalation_keyword,
         injection_suspected=plan.injection,
         attachment_only=plan.attachment_only,
+        transcript_based=plan.transcript_based,
         intent=plan.intent,
         model_flags=frozenset(plan.model_flags),
         model_responded=responded,
@@ -168,6 +169,8 @@ def persist_plan(
     sendable = decision.outcome in (APPROVAL, AUTO)
     validation = dict(plan.validation)
     validation["controller_cutover_generation"] = context.controller_cutover_generation
+    if context.transcript_message_ids:  # which voice notes the reply was drafted from
+        validation["transcript_message_ids"] = [str(i) for i in context.transcript_message_ids]
     text = (plan.text + suffix) if sendable and plan.text is not None else None
     if text is not None and suffix and plan.text is not None:
         validation["suffix_span"] = [len(plan.text), len(text)]
@@ -218,6 +221,7 @@ def persist_plan(
             "reasons": list(decision.reasons),
             "status": status,
             "intent": plan.intent,
+            "transcript_based": plan.transcript_based,
         },
         is_simulated=draft.is_simulated,
         correlation_id=correlation_id,

@@ -18,6 +18,14 @@ from app.integrations.instagram.base import NormalizedInboundEvent
 SIGNATURE_HEADER = "X-Hub-Signature-256"
 SIGNATURE_PREFIX = "sha256="
 
+# A voice note arrives as ``message.attachments[]`` with ``type: "audio"`` and a media URL in
+# ``payload.url`` (Meta webhook examples, read 2026-11-16; no real recorded payload yet). The docs
+# do not say how long the URL lives or which hosts serve it, so the job downloads it promptly,
+# allows only Instagram/Facebook CDN hosts and treats an expired link as a normal failure. A URL
+# longer than a CDN link is dropped.
+AUDIO_TYPE = "audio"
+MAX_AUDIO_URL_LENGTH = 2048
+
 
 # --- signing --------------------------------------------------------------------------------
 
@@ -84,10 +92,22 @@ def message_item(
     message: dict[str, Any] = {"mid": mid}
     if text is not None:
         message["text"] = text
-    if attachments:
+    plain: list[dict[str, Any]] = []
+    for attachment in attachments or []:
+        if attachment.get("type") == "story_reply":
+            # A story reply is not an attachment on the wire: it is ``reply_to.story`` (the story
+            # id in ``note``, its link in ``url``), the shape ``_attachments`` parses back.
+            story: dict[str, Any] = {}
+            if attachment.get("note"):
+                story["id"] = attachment["note"]
+            if attachment.get("url"):
+                story["url"] = attachment["url"]
+            message["reply_to"] = {"story": story}
+        else:
+            plain.append(attachment)
+    if plain:
         message["attachments"] = [
-            {"type": a.get("type", "file"), "payload": {"url": a.get("url", "")}}
-            for a in attachments
+            {"type": a.get("type", "file"), "payload": {"url": a.get("url", "")}} for a in plain
         ]
     return {
         "sender": {"id": customer_id},
@@ -95,6 +115,11 @@ def message_item(
         "timestamp": _ms(moment),
         "message": message,
     }
+
+
+def audio_attachment(url: str) -> dict[str, str]:
+    """A voice-note attachment for ``message_item`` (the mock uses ``mock-audio://<fixture>``)."""
+    return {"type": AUDIO_TYPE, "url": url}
 
 
 def echo_item(
@@ -222,13 +247,11 @@ def _attachments(message: dict[str, Any]) -> list[dict[str, Any]]:
         payload = entry.get("payload")
         url = payload.get("url") if isinstance(payload, dict) else None
         kind = entry.get("type")
-        result.append(
-            {
-                "type": kind if isinstance(kind, str) else "file",
-                "url": url if isinstance(url, str) else None,
-                "note": None,
-            }
-        )
+        kind = kind.strip().lower() if isinstance(kind, str) and kind.strip() else "file"
+        clean_url = url if isinstance(url, str) else None
+        if kind == AUDIO_TYPE and clean_url is not None and len(clean_url) > MAX_AUDIO_URL_LENGTH:
+            clean_url = None
+        result.append({"type": kind, "url": clean_url, "note": None})
     return result
 
 

@@ -1,4 +1,4 @@
-"""The reply policy engine (workflows.md §C.1, rules R1 to R17): table-driven, plus adversarial
+"""The reply policy engine (workflows.md §C.1, rules R1 to R18): table-driven, plus adversarial
 model output. AC-B4 (default), AC-B6 (complaints), AC-B7 (injection) and INV-04 (the model can
 only escalate)."""
 
@@ -220,6 +220,18 @@ CASES: list[tuple[str, dict[str, object], str, str]] = [
         "approval_required",
         "INJECTION_SUSPECTED",
     ),
+    (
+        "R18 transcript on an approval policy",
+        {"transcript_based": True},
+        "approval_required",
+        "TRANSCRIPT_REQUIRES_APPROVAL",
+    ),
+    (
+        "R18 transcript on an automatic policy",
+        {"transcript_based": True, "automation_mode": "auto"},
+        "approval_required",
+        "TRANSCRIPT_REQUIRES_APPROVAL",
+    ),
     ("R13 automation off", {"automation_mode": "off"}, "human_required", "AUTOMATION_OFF"),
     (
         "R14 policy approval",
@@ -261,9 +273,9 @@ def test_each_rule_fires_with_its_outcome_and_reason(
 
 
 def test_every_documented_rule_is_exercised_above() -> None:
-    assert len(RULES) == 17
+    assert len(RULES) == 18
     exercised = {name.split()[0] for name, *_ in CASES}
-    assert exercised == {f"R{n}" for n in range(1, 18)}
+    assert exercised == {f"R{n}" for n in range(1, 19)}
 
 
 def test_the_rate_guard_allows_two_automatic_replies_an_hour() -> None:
@@ -400,6 +412,7 @@ def test_without_a_model_proposal_there_is_no_intent_unsupported_noise() -> None
         ("promotions", "reply.promotions"),
         ("faq", "reply.general_faq"),
         ("greeting", "reply.general_faq"),
+        ("story_mention", "reply.story_mention"),
         ("complaint", None),
         ("refund_request", None),
         ("discount_request", None),
@@ -538,3 +551,92 @@ def test_contains_reason_names_the_class_without_its_prefix() -> None:
         intent="faq", automation_mode="approval", automation_mode_class="reply.location_contact"
     )
     assert "CONTAINS_LOCATION_CONTACT" in decision.reasons
+
+
+# --- R18: a transcript-based reply always needs a person (F-03) ---------------------------
+
+AUTOMATIC_INTENTS = [
+    "pricing",
+    "hours",
+    "location_contact",
+    "services",
+    "booking",
+    "faq",
+    "greeting",
+]
+
+
+@pytest.mark.parametrize("intent", AUTOMATIC_INTENTS)
+def test_a_transcript_based_reply_is_never_automatic_whatever_the_policy_says(
+    intent: str,
+) -> None:
+    """Delegation (an automatic mode on a ready workspace) cannot override R18, for every
+    intent that would otherwise be sent without asking."""
+    typed = decide(intent=intent, automation_mode="auto")
+    assert typed == Decision("auto", ("POLICY_AUTO",))  # control: the same reply, typed
+    spoken = decide(intent=intent, automation_mode="auto", transcript_based=True)
+    assert spoken.outcome == "approval_required"
+    assert spoken.reasons == ("TRANSCRIPT_REQUIRES_APPROVAL",)
+
+
+def test_r18_holds_when_every_other_rule_would_allow_automation() -> None:
+    spoken = base(automation_mode="auto", readiness_level="ready", auto_replies_last_hour=0)
+    assert evaluate_reply(replace(spoken, transcript_based=True)).outcome == "approval_required"
+    assert evaluate_reply(spoken).outcome == "auto"
+
+
+@pytest.mark.parametrize("mode", ["auto", "approval"])
+def test_r18_sits_alongside_the_other_approval_reasons(mode: str) -> None:
+    decision = decide(transcript_based=True, automation_mode=mode, injection_suspected=True)
+    assert decision.outcome == "approval_required"
+    assert {"TRANSCRIPT_REQUIRES_APPROVAL", "INJECTION_SUSPECTED"} <= set(decision.reasons)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "outcome", "reason"),
+    [
+        ({"automation_mode": "off"}, "human_required", "AUTOMATION_OFF"),
+        ({"intent": "complaint"}, "human_required", "INTENT_COMPLAINT"),
+        ({"keyword_flags": frozenset({"legal"})}, "human_required", "FLAG_LEGAL"),
+        ({"model_needs_human": True}, "human_required", "MODEL_REQUESTED_HUMAN"),
+        ({"grounding_failed": True}, "human_required", "GROUNDING_FAILED"),
+        ({"attachment_only": True}, "human_required", "ATTACHMENT_ONLY"),
+        ({"window_end": NOW - timedelta(minutes=1)}, "blocked", "MESSAGING_WINDOW_CLOSED"),
+        ({"account_status": "needs_reauth"}, "blocked", "ACCOUNT_NOT_CONNECTED"),
+    ],
+)
+def test_r18_is_a_floor_not_a_ceiling_a_stricter_rule_still_wins(
+    overrides: dict[str, object], outcome: str, reason: str
+) -> None:
+    decision = decide(transcript_based=True, **overrides)
+    assert decision.outcome == outcome and reason in decision.reasons
+    assert "TRANSCRIPT_REQUIRES_APPROVAL" not in decision.reasons
+
+
+MODEL_OUTPUTS = list(itertools.product(*MODEL_FIELDS.values()))
+
+
+@pytest.mark.parametrize("mode", ["auto", "approval"])
+def test_no_model_output_can_clear_the_transcript_rule(mode: str) -> None:
+    """The flag comes from code (stored rows); nothing the model returns removes it."""
+    for flags, needs_human, can_answer in MODEL_OUTPUTS:
+        decision = decide(
+            transcript_based=True,
+            automation_mode=mode,
+            model_flags=flags,
+            model_needs_human=needs_human,
+            model_can_answer=can_answer,
+        )
+        assert decision.outcome in ("approval_required", "human_required")
+        assert decision.outcome != "auto"
+
+
+def test_the_rule_does_not_read_any_model_field() -> None:
+    from app.policy.rules_reply import r18_transcript
+
+    assert r18_transcript(base(transcript_based=False, model_flags=frozenset({"x"}))) == []
+    (finding,) = r18_transcript(base(transcript_based=True, model_can_answer=True))
+    assert (finding.outcome, finding.reason) == (
+        "approval_required",
+        "TRANSCRIPT_REQUIRES_APPROVAL",
+    )

@@ -122,6 +122,8 @@ RULES: dict[str, Rule] = {
     "security.alert_delivery_failed": Rule("failure"),
     # The account agent's own bookkeeping: routine unless it records a problem.
     "agent.event_recorded": Rule(routine=True),
+    "agent.delegation_suggestion_previewed": Rule(routine=True),
+    "agent.delegation_suggestion_accepted": Rule("success"),
     "agent.session_transition": Rule(routine=True, fields=("to",), by_value=_AGENT_STATES),
     "agent.thread_transition": Rule(routine=True, fields=("to",), by_value=_AGENT_STATES),
     "agent.step_transition": Rule(routine=True, fields=("to",), by_value=_AGENT_STATES),

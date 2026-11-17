@@ -216,6 +216,12 @@ export const ListIcon = (p: IconProps) => (
     <path d="M9 6h11M9 12h11M9 18h11M4 6v.01M4 12v.01M4 18v.01" />
   </Svg>
 );
+export const MicIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="9" y="3" width="6" height="11" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+  </Svg>
+);
 export const NoteIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M6 3h9l4 4v14H6Z" />

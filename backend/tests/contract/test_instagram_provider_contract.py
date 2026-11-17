@@ -229,6 +229,54 @@ def test_attachments_are_normalised(h: Harness) -> None:
     assert event.attachments == [{"type": "image", "url": "https://x/y.jpg", "note": None}]
 
 
+def test_a_voice_note_is_an_audio_attachment_with_its_url(h: Harness) -> None:
+    payload = wf.build_message_payload(
+        "biz-1",
+        CUSTOMER,
+        "m3",
+        None,
+        NOW,
+        attachments=[wf.audio_attachment("mock-audio://price_question_tr")],
+    )
+    (event,) = h.provider.parse_webhook(payload)
+    assert event.text is None
+    assert event.attachments == [
+        {"type": "audio", "url": "mock-audio://price_question_tr", "note": None}
+    ]
+
+
+def test_audio_type_is_normalised_and_an_oversized_url_is_dropped(h: Harness) -> None:
+    def item(kind: object, url: object) -> dict:
+        return {
+            "object": "instagram",
+            "entry": [
+                {
+                    "id": "biz-1",
+                    "messaging": [
+                        {
+                            "sender": {"id": CUSTOMER},
+                            "recipient": {"id": "biz-1"},
+                            "timestamp": 1,
+                            "message": {
+                                "mid": "m",
+                                "attachments": [{"type": kind, "payload": {"url": url}}],
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+
+    (shouty,) = h.provider.parse_webhook(item(" Audio ", "https://x.test/a.mp4"))
+    assert shouty.attachments[0]["type"] == "audio"
+    (long_url,) = h.provider.parse_webhook(item("audio", "https://x.test/" + "a" * 3000))
+    assert long_url.attachments[0] == {"type": "audio", "url": None, "note": None}
+    (no_type,) = h.provider.parse_webhook(item(None, "https://x.test/a"))
+    assert no_type.attachments[0]["type"] == "file"
+    (no_payload,) = h.provider.parse_webhook(item("audio", None))
+    assert no_payload.attachments[0]["url"] is None
+
+
 def test_reaction_and_read_events_are_recognised(h: Harness) -> None:
     payload = wf.build_payload(
         "biz-1",
@@ -895,6 +943,7 @@ def test_shared_signature_validation(shared):
     [
         "text_message",
         "attachments",
+        "voice_note",
         "story_reply",
         "story_mention",
         "echo_app",
@@ -917,6 +966,9 @@ def test_shared_parse_all_synthetic_webhook_fixtures(shared, name):
         assert event.event_type == "message"
     if name in ("story_reply", "story_mention", "unsupported"):
         assert event.attachments[0]["type"] == name
+    if name == "voice_note":
+        assert event.attachments[0]["type"] == "audio"
+        assert event.attachments[0]["url"].startswith("https://scontent.cdninstagram.com/")
     if name == "story_reply":
         assert event.attachments[0]["note"] == "story-1"
     if name == "unsupported":

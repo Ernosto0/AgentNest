@@ -159,6 +159,31 @@ describe("ApprovedAnswers", () => {
     });
   });
 
+  it("creates the story-mention thank-you without an example question", async () => {
+    const user = userEvent.setup();
+    let createdBody: Record<string, unknown> | null = null;
+    mockApi(
+      routes({
+        [`POST ${BASE}/approved-answers`]: (req) => {
+          createdBody = req.body as Record<string, unknown>;
+          return json({ ...mockAnswer1, id: "ans-mention", intent: "story_mention", example_questions: [] });
+        },
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge/answers`);
+    expect(await screen.findByRole("heading", { name: "Yeni onaylı yanıt" })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Konu"), "story_mention");
+    expect(screen.queryByLabelText("Müşterilerin sorduğu bir soru")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Başlık"), "Etiket teşekkürü");
+    fireEvent.change(screen.getByLabelText("Yanıt"), { target: { value: "Bizi etiketlediğiniz için teşekkürler!" } });
+    await user.click(screen.getByRole("button", { name: "Yanıtı kaydet" }));
+
+    await waitFor(() => {
+      expect(createdBody).toMatchObject({ intent: "story_mention", example_questions: [] });
+    });
+  });
+
   it("allows owner to archive an approved answer", async () => {
     const user = userEvent.setup();
     let archivedId: string | null = null;

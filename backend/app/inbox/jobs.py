@@ -9,7 +9,7 @@ from app.core.clock import Clock
 from app.core.config import get_settings
 from app.core.errors import RetryableError
 from app.inbox import expiry, processing, reply_workflow, sandbox
-from app.inbox.context import DraftContext, DraftSkip, prepare
+from app.inbox.context import TRANSCRIPT_POLL_SECONDS, DraftContext, DraftSkip, prepare
 from app.inbox.drafting import failed_plan, make_plan
 from app.inbox.models import InboundEvent
 from app.inbox.payloads import (
@@ -110,6 +110,12 @@ def draft_reply(job: JobContext) -> None:
     if isinstance(prepared, DraftSkip):
         if prepared.retry:  # an earlier reply is still being sent
             raise RetryableError("REPLY_IN_FLIGHT", retry_after_seconds=IN_FLIGHT_RETRY_SECONDS)
+        if prepared.reason == "transcript_pending":
+            # A voice note is still being transcribed. The transcription job pulls this job
+            # forward when it finishes (or fails); until then look again, so a job that was
+            # lost cannot leave the conversation waiting (``prepare`` stops waiting after
+            # TRANSCRIPT_WAIT_LIMIT). The attempt is given back: this is not a failure.
+            raise RescheduleJob(job.clock.now() + timedelta(seconds=TRANSCRIPT_POLL_SECONDS))
         return
     plan = make_plan(  # no transaction is open here
         runner_deps(job.session_factory, job.clock), prepared, job.correlation_id, job.job_id

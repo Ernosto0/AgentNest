@@ -1,4 +1,4 @@
-"""The reply rules R1 to R17 (workflows.md §C.1), each a small pure function.
+"""The reply rules R1 to R18 (workflows.md §C.1), each a small pure function.
 
 A rule returns ``None`` (does not apply) or a :class:`Finding` (an outcome and its reason).
 The engine takes the most restrictive outcome. The model's output enters only through
@@ -78,6 +78,8 @@ class ReplyPolicyInput:
     automation_mode_class: str | None = None
     readiness_level: str = "not_ready"
     auto_replies_last_hour: int = 0
+    # Code found that the model was shown a voice-note transcript (F-03). Never set by the model.
+    transcript_based: bool = False
 
 
 Rule = Callable[[ReplyPolicyInput], list[Finding]]
@@ -209,6 +211,20 @@ def r17_unsupported_intent(i: ReplyPolicyInput) -> list[Finding]:
     return [Finding(HUMAN, "INTENT_UNSUPPORTED")]
 
 
+TRANSCRIPT_REASON = "TRANSCRIPT_REQUIRES_APPROVAL"
+
+
+def r18_transcript(i: ReplyPolicyInput) -> list[Finding]:
+    """A reply drafted from a machine transcript of a voice note always needs a person (F-03).
+
+    A transcript can mishear a word, a name or a number, and the customer cannot be asked what
+    was said before the reply is written. So whatever the automation mode, the intent, the
+    readiness or the account delegation says, the outcome is at least ``approval_required``
+    (a stricter rule still wins). Nothing the model returns reads or clears ``transcript_based``:
+    it is derived by code from the stored transcript rows."""
+    return _one(Finding(APPROVAL, TRANSCRIPT_REASON) if i.transcript_based else None)
+
+
 RULES: tuple[Rule, ...] = (
     r1_account,
     r2_window,
@@ -227,4 +243,5 @@ RULES: tuple[Rule, ...] = (
     r15_readiness,
     r16_rate_guard,
     r17_unsupported_intent,
+    r18_transcript,
 )

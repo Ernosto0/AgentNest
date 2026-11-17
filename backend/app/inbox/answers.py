@@ -19,7 +19,7 @@ from app.inbox import drafts
 from app.inbox.language import detect_language
 from app.inbox.models import Message
 from app.knowledge import approved_answers
-from app.knowledge.constants import APPROVED_ANSWER_INTENTS
+from app.knowledge.constants import APPROVED_ANSWER_INTENTS, STORY_MENTION_INTENT
 from app.knowledge.models import ApprovedAnswer
 
 TITLE_CHARS = 60
@@ -80,7 +80,11 @@ def save_from_message(
         )
     language = (draft.language if draft else None) or _language(sent_text)
     chosen_intent = intent or (
-        draft.intent if draft and draft.intent in APPROVED_ANSWER_INTENTS else "faq"
+        draft.intent
+        if draft
+        and draft.intent in APPROVED_ANSWER_INTENTS
+        and draft.intent != STORY_MENTION_INTENT
+        else "faq"
     )
     return approved_answers.create_answer(
         session,

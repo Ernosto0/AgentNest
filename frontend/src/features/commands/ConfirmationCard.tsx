@@ -3,6 +3,7 @@ import type { Command } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { AlertIcon, ClockIcon } from "@/components/icons";
+import { ManagementSummary } from "@/features/approvals/ManagementSummary";
 import { CancelContentSummary } from "@/features/approvals/CancelContentSummary";
 import { ChangeSummary, ImpactSummary } from "@/features/approvals/ChangeSummary";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -21,6 +22,7 @@ export function ConfirmationCard({ command }: { command: Command }) {
   const approval = command.approval;
   if (!approval) return null;
   // The card is generic over the action: a content cancel names an item, not a fact.
+  const management = ["command.reschedule_content", "command.pause_agent"].includes(approval.action);
   const cancelContent = approval.action === "command.cancel_content";
 
   const expires = new Date(approval.expires_at).toLocaleTimeString(i18n.language, {
@@ -51,7 +53,7 @@ export function ConfirmationCard({ command }: { command: Command }) {
         </div>
       </div>
 
-      {cancelContent ? (
+      {management ? <ManagementSummary action={approval.action} summary={approval.summary} /> : cancelContent ? (
         <CancelContentSummary summary={approval.summary} />
       ) : (
         <>

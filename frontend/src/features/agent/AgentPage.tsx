@@ -9,10 +9,12 @@ import { useSocialAccounts } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { FOCUS } from "./AgentParts";
 import { HistoryPanel } from "./HistoryPanel";
+import { LearnedThisMonth } from "./LearnedThisMonth";
 import { useAgentDelegation, useAgentOverview, useAgentPersonality, useAgentTasks } from "./hooks";
 import { OverviewPanel } from "./OverviewPanel";
 import { PersonalityForm } from "./PersonalityForm";
 import { DelegationForm } from "./DelegationForm";
+import { DelegationSuggestionCard } from "./DelegationSuggestionCard";
 import { TONE_DOT, TONE_PILL } from "./presentation";
 
 const PANELS = ["overview", "voice", "permissions", "history"] as const;
@@ -215,6 +217,9 @@ function AccountAgent({
       ) : (
         <AccountStrip account={account} state={state} simulated={data.is_simulated} picker={picker} />
       )}
+
+      {panel === "overview" ? <DelegationSuggestionCard accountId={accountId} /> : null}
+      {panel === "overview" ? <LearnedThisMonth /> : null}
 
       {panel === "voice" ? (
         <>

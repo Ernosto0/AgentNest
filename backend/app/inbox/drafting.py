@@ -27,10 +27,11 @@ from app.ai.schemas import (
     ReplyProposal,
 )
 from app.ai.tasks.draft_reply import DRAFT_REPLY
-from app.inbox.context import DraftContext, model_facts
+from app.inbox.context import TRANSCRIPT_ROLE, DraftContext, model_facts
 from app.inbox.escalation import keyword_flags, matches_escalation_keywords
 from app.knowledge.approved_answers import AnswerView
 from app.knowledge.claims import ClaimIssue, ClaimReport, length_issue, validate_claims
+from app.knowledge.constants import STORY_MENTION_INTENT
 from app.knowledge.render import RenderResult, render
 from app.knowledge.service import UsableFact
 from app.knowledge.sources import span_records
@@ -65,6 +66,9 @@ class DraftPlan:
     grounding_failed: bool  # the claim validator refused the text, twice
     agent_run_ids: tuple[uuid.UUID, ...] = field(default=())
     usable_keys: frozenset[str] = field(default_factory=frozenset)
+    # The model was shown a voice-note transcript. Set by code from the context; the policy rule
+    # R18 turns it into "a person approves", whatever the model or the delegation says.
+    transcript_based: bool = False
 
     @property
     def has_sendable_text(self) -> bool:
@@ -97,6 +101,13 @@ def _label(fact: UsableFact, language: str) -> str:
     return fact.label.get(language) or fact.label.get("tr") or fact.label.get("en") or fact.key
 
 
+def _message(role: str, text: str) -> DraftMessage:
+    """A voice-note transcript is a customer message labelled as a transcript (INV-03)."""
+    if role == TRANSCRIPT_ROLE:
+        return DraftMessage(role="customer", text=text, source="transcript")
+    return DraftMessage(role="customer" if role == "customer" else "business", text=text)
+
+
 def _task_input(
     context: DraftContext, facts: list[UsableFact], language: str, feedback: list[str]
 ) -> DraftReplyInput:
@@ -124,10 +135,8 @@ def _task_input(
             for a in context.approved_answers
         ],
         brand_voice=context.brand_voice,
-        conversation=[
-            DraftMessage(role="customer" if role == "customer" else "business", text=text)
-            for role, text in context.history
-        ],
+        conversation=[_message(role, text) for role, text in context.history],
+        story_context=context.story_context,
         validator_feedback=feedback,
     )
 
@@ -212,6 +221,7 @@ def plan_with(context: DraftContext, call: ModelCall) -> DraftPlan:
         "injection": bool(detect_injection(text)),
         "escalation_keyword": matches_escalation_keywords(text, context.escalation_keywords),
         "usable_keys": context.usable_keys,
+        "transcript_based": context.transcript_based,
     }
     empty: dict[str, Any] = {
         "intent": None,
@@ -231,9 +241,13 @@ def plan_with(context: DraftContext, call: ModelCall) -> DraftPlan:
         "render_failed": False,
         "grounding_failed": False,
     }
+    language = context.language.code
+    if context.story_mention and context.story_mention_template is not None:
+        if language is None:
+            return DraftPlan(**base, **{**empty, "language_unsupported": True})
+        return _mention_plan(context, base, empty, language, context.story_mention_template)
     if context.attachment_only:  # nothing to read: a person looks at the picture
         return DraftPlan(**base, **{**empty, "attachment_only": True})
-    language = context.language.code
     if language is None:
         return DraftPlan(**base, **{**empty, "language_unsupported": True})
 
@@ -299,6 +313,52 @@ def plan_with(context: DraftContext, call: ModelCall) -> DraftPlan:
     raise AssertionError("unreachable: the loop returns on its second pass")  # pragma: no cover
 
 
+def _mention_plan(
+    context: DraftContext,
+    base: dict[str, Any],
+    empty: dict[str, Any],
+    language: str,
+    answer: AnswerView,
+) -> DraftPlan:
+    """A plain story mention (F-04): no model call. The reply is the owner's single thank-you
+    template, rendered from verified facts and checked like any other reply; whether it is sent
+    is the policy's decision (class ``reply.story_mention``, approval by default)."""
+    checked = _check(
+        answer.answer_template, model_facts(context), language, disclosure_suffix(context)
+    )
+    common = {
+        "intent": STORY_MENTION_INTENT,
+        "can_answer": True,
+        "source": "approved_answer",
+        "approved_answer_id": answer.id,
+        "template": answer.answer_template,
+        "validation": _validation(checked, checked.passed),
+    }
+    if checked.passed:
+        return DraftPlan(
+            **base,
+            **{
+                **empty,
+                **common,
+                "text": checked.rendered.text,
+                "used_facts": checked.rendered.used,
+            },
+        )
+    render_failed = not checked.rendered.ok
+    return DraftPlan(
+        **base,
+        **{
+            **empty,
+            **common,
+            "suggestion_text": None
+            if render_failed
+            else mark_issues(checked.rendered.text, tuple(checked.issues)),
+            "render_failed": render_failed,
+            "grounding_failed": not render_failed,
+        },
+    )
+
+
 def _chosen_answer(context: DraftContext, proposal: ReplyProposal) -> AnswerView | None:
     if proposal.approved_answer_id is None:
         return None
@@ -335,4 +395,5 @@ def failed_plan(context: DraftContext, error_code: str) -> DraftPlan:
         render_failed=False,
         grounding_failed=False,
         usable_keys=context.usable_keys,
+        transcript_based=context.transcript_based,
     )

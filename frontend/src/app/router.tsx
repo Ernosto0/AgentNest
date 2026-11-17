@@ -87,6 +87,8 @@ const SuggestionsPage = lazyNamed(
 );
 const DailyReport = lazyNamed(() => import("@/features/reports/DailyReport"), "DailyReport");
 const MetricItems = lazyNamed(() => import("@/features/reports/MetricItems"), "MetricItems");
+const MissedCustomersReport = lazyNamed(() => import("@/features/reports/MissedCustomersReport"), "MissedCustomersReport");
+const MissedCustomerItems = lazyNamed(() => import("@/features/reports/MissedCustomerItems"), "MissedCustomerItems");
 const CreateWorkspaceWizard = lazyNamed(
   () => import("@/features/workspaces/CreateWorkspaceWizard"),
   "CreateWorkspaceWizard",
@@ -156,6 +158,8 @@ export const appRoutes: RouteObject[] = [
           { path: "more/automation", element: wrapLazy(<AutomationSettings />) },
           { path: "more/reports", element: wrapLazy(<DailyReport />) },
           { path: "more/reports/:date/:key", element: wrapLazy(<MetricItems />) },
+          { path: "more/reports/missed-customers", element: wrapLazy(<MissedCustomersReport />) },
+          { path: "more/reports/missed-customers/:week/:key", element: wrapLazy(<MissedCustomerItems />) },
           { path: "more/activity", element: wrapLazy(<ActivityFeed />) },
           { path: "more/notifications", element: wrapLazy(<NotificationCenter />) },
           { path: "more/dev", element: wrapLazy(<DevPanel />) },

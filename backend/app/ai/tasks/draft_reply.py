@@ -14,12 +14,13 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
-from app.ai.prompt import json_section, untrusted_section
+from app.ai.prompt import data_section, json_section, untrusted_section
 from app.ai.runner import TaskDefinition
 from app.ai.schemas import (
     MAX_TEMPLATE_BYTES,
     DraftApprovedAnswer,
     DraftFact,
+    DraftMessage,
     DraftReplyInput,
     ReplyProposal,
 )
@@ -31,6 +32,17 @@ from app.knowledge.render import placeholder_keys
 
 TASK = "draft_reply"
 LANGUAGES = ("tr", "en")
+
+
+TRANSCRIPT_LABEL = "customer (voice note, automatic transcript, may contain transcription errors)"
+
+
+def _line(message: DraftMessage) -> str:
+    """One line of the conversation. A transcript is labelled as what it is, in the line itself,
+    so no later text of the customer can make it look like a typed message."""
+    if message.source == "transcript":
+        return f"{TRANSCRIPT_LABEL}: {message.text}"
+    return f"{message.role}: {message.text}"
 
 
 def build_messages(task_input: DraftReplyInput) -> list[LLMMessage]:
@@ -46,7 +58,9 @@ def build_messages(task_input: DraftReplyInput) -> list[LLMMessage]:
     ]
     if task_input.validator_feedback:
         sections.append(json_section("validator_feedback", task_input.validator_feedback))
-    conversation = "\n".join(f"{m.role}: {m.text}" for m in task_input.conversation)
+    if task_input.story_context:
+        sections.append(data_section("story_context", task_input.story_context))
+    conversation = "\n".join(_line(m) for m in task_input.conversation)
     sections.append(untrusted_section("untrusted_customer_messages", conversation))
     return [LLMMessage("user", "\n\n".join(sections))]
 
@@ -77,13 +91,17 @@ def snapshot(task_input: DraftReplyInput) -> dict[str, Any]:
         "fact_keys": [f.key for f in task_input.facts],
         "approved_answer_ids": [a.id for a in task_input.approved_answers],
         "message_count": len(task_input.conversation),
+        "transcript_count": sum(1 for m in task_input.conversation if m.source == "transcript"),
         "regeneration": bool(task_input.validator_feedback),
+        "has_story_context": bool(task_input.story_context),
     }
 
 
 DRAFT_REPLY: TaskDefinition[DraftReplyInput, ReplyProposal] = TaskDefinition(
     name=TASK,
-    prompt_version="v2",  # v2: sector-neutral example key (ADR-023)
+    # v4: v3 (voice-note transcripts are labelled data, F-03) plus optional <story_context>;
+    # v2: sector-neutral example key (ADR-023)
+    prompt_version="v4",
     output_schema=ReplyProposal,
     max_output_tokens=800,
     timeout_s=30,
@@ -162,6 +180,13 @@ def _recent_customer_text(task_input: DraftReplyInput) -> str:
     return " ".join(reversed(trailing))
 
 
+def _story_title(task_input: DraftReplyInput) -> str:
+    for line in (task_input.story_context or "").splitlines():
+        if line.startswith("title: "):
+            return line.removeprefix("title: ")
+    return ""
+
+
 def _by_prefix(facts: Sequence[DraftFact], prefix: str) -> list[DraftFact]:
     return [f for f in facts if f.key.startswith(prefix)]
 
@@ -231,7 +256,11 @@ def _price_reply(
     # sector-specific key is ever assumed. Generic price words never select a product.
     is_specific, matched = match_price_facts(folded, prices)
     if is_specific and not matched:
-        return _cannot(task_input, "pricing")
+        # "how much is this?" under a story: the story's title says which product it means.
+        title = _story_title(task_input)
+        is_specific, matched = match_price_facts(title, prices) if title else (True, [])
+        if not matched:
+            return _cannot(task_input, "pricing")
     chosen = matched[:3] if is_specific else prices[:3]
     if len(chosen) == 1:
         only = chosen[0]

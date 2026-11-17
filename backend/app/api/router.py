@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from app.activity.router import router as activity_router
 from app.agent.owner_tasks_router import router as owner_tasks_router
 from app.agent.router import router as agent_router
+from app.agent.suggestions_router import router as suggestions_router
 from app.agent.work_views import router as agent_work_router
 from app.api.deps import enforce_csrf, get_app_settings
 from app.api.v1.channels_router import router as channels_router
@@ -36,6 +37,7 @@ from app.operations.system_health_router import router as system_health_router
 from app.owner_requests.router import router as owner_requests_router
 from app.policy.router import router as policy_router
 from app.reporting.home_router import router as home_router
+from app.reporting.missed_router import router as missed_reports_router
 from app.reporting.router import router as reports_router
 
 health_router = APIRouter(tags=["health"])
@@ -109,8 +111,10 @@ api_router.include_router(inbox_router)
 api_router.include_router(assistant_test_chat_router)
 api_router.include_router(content_router)
 api_router.include_router(reports_router)
+api_router.include_router(missed_reports_router)
 api_router.include_router(activity_router)
 api_router.include_router(agent_router)
+api_router.include_router(suggestions_router)
 api_router.include_router(owner_tasks_router)
 
 api_router.include_router(agent_work_router)

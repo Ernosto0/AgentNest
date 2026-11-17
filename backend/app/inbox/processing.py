@@ -17,11 +17,19 @@ from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.ids import new_id
-from app.inbox import attention, drafts
+from app.inbox import attention, drafts, image_description, transcription
 from app.inbox.echoes import Echo, claimed_by_a_send
-from app.inbox.models import Conversation, InboundEvent, Message
+from app.inbox.image_erasure import erase_image_descriptions
+from app.inbox.models import (
+    Conversation,
+    InboundEvent,
+    Message,
+    MessageImageDescription,
+    MessageTranscript,
+)
 from app.inbox.payloads import DraftReplyPayload, draft_reply_key
 from app.inbox.system import system_context
+from app.inbox.transcripts import erase_transcripts
 from app.integrations.instagram import queries
 from app.integrations.instagram.base import NormalizedInboundEvent
 from app.integrations.instagram.models import SocialAccount
@@ -84,6 +92,18 @@ def process_inbound_event(
         ).one_or_none()
         if message is not None:
             message.is_deleted = True
+            erase_transcripts(
+                session,
+                clock.now(),
+                MessageTranscript.workspace_id == workspace_id,
+                MessageTranscript.message_id == message.id,
+            )
+            erase_image_descriptions(
+                session,
+                clock.now(),
+                MessageImageDescription.workspace_id == workspace_id,
+                MessageImageDescription.message_id == message.id,
+            )
             from app.memory.service import erase_source
 
             erase_source(session, clock, message)
@@ -211,6 +231,22 @@ def _on_customer_message(
         is_simulated=account.is_simulated,
         correlation_id=event.correlation_id,
         clock=clock,
+    )
+    transcription.request_transcript(
+        session,
+        clock,
+        account,
+        message_id,
+        normalized.attachments,
+        correlation_id=event.correlation_id,
+    )
+    image_description.request_image_descriptions(
+        session,
+        clock,
+        account,
+        message_id,
+        normalized.attachments,
+        correlation_id=event.correlation_id,
     )
     from app.agent.repository import add_event_and_wake, scoped_account
 

@@ -21,6 +21,73 @@
     "eraseConfirm": "Are you sure you want to permanently erase all messages and customer memory for this conversation? This cannot be undone.",
     "messages": "Messages",
     "attachment": "Photo or file",
+    "story": {
+      "reply": "Replying to your story",
+      "mention": "Mentioned you in their story",
+      "unknown": "A story we have no details for",
+      "expired": "The story has expired",
+      "lines": "Text on the story"
+    },
+    "voiceNote": "Voice note",
+    "transcript": {
+      "title": "Transcript (automatic)",
+      "languages": {
+        "tr": "Turkish",
+        "en": "English",
+        "other": "Another language"
+      },
+      "mayHaveErrors": "Written by a machine, so it can contain mistakes.",
+      "listenInInstagram": "You can listen to the voice note in Instagram.",
+      "pending": "Transcribing the voice note…",
+      "failed": "The voice note could not be turned into text. Listen to it in Instagram to answer.",
+      "erased": "The transcript was deleted after the retention period.",
+      "basis": "Written from an automatic voice transcript. Check it before you approve.",
+      "reason": {
+        "VOICE_URL_MISSING": "Instagram did not give a link to the audio.",
+        "VOICE_URL_REFUSED": "The audio link was not accepted.",
+        "VOICE_EXPIRED": "The audio is no longer available.",
+        "VOICE_DOWNLOAD_FAILED": "The audio could not be downloaded.",
+        "VOICE_TOO_LARGE": "The voice note is too large.",
+        "VOICE_TOO_LONG": "The voice note is too long.",
+        "VOICE_UNSUPPORTED_TYPE": "The audio format is not supported.",
+        "VOICE_EMPTY_AUDIO": "The audio was empty.",
+        "VOICE_NO_SPEECH": "No speech was found in it.",
+        "VOICE_TRANSCRIPTION_REJECTED": "The transcription service refused it.",
+        "VOICE_TRANSCRIPTION_UNAVAILABLE": "The transcription service is not available.",
+        "VOICE_QUOTA_EXCEEDED": "The daily limit for voice notes was reached.",
+        "VOICE_SOURCE_GONE": "The message was deleted."
+      }
+    },
+    "imageDescription": {
+      "title": "What the customer sent (automatic)",
+      "photoNumber": "Photo {{n}}",
+      "kinds": {
+        "product": "Looks like a product",
+        "price_screenshot": "Looks like a price screenshot",
+        "location": "Looks like a location",
+        "other": "Something else"
+      },
+      "visibleText": "Text in the picture",
+      "injection": "The text in the picture looks like instructions for an assistant. It was ignored.",
+      "mayBeWrong": "Written by a machine, so it can be wrong. It is not a price or a fact about your business.",
+      "openInInstagram": "Open the picture in Instagram to be sure, and answer yourself.",
+      "pending": "Looking at the photo…",
+      "failed": "The photo could not be described. Open it in Instagram.",
+      "erased": "The description was deleted after the retention period.",
+      "reason": {
+        "IMAGE_URL_MISSING": "Instagram did not give a link to the picture.",
+        "IMAGE_URL_REFUSED": "The picture link was not accepted.",
+        "IMAGE_EXPIRED": "The picture is no longer available.",
+        "IMAGE_DOWNLOAD_FAILED": "The picture could not be downloaded.",
+        "IMAGE_TOO_LARGE": "The picture is too large.",
+        "IMAGE_UNSUPPORTED_TYPE": "This kind of file is not supported.",
+        "IMAGE_EMPTY": "The picture was empty.",
+        "IMAGE_DESCRIPTION_REJECTED": "The assistant could not describe it.",
+        "IMAGE_DESCRIPTION_UNAVAILABLE": "The description service is not available.",
+        "IMAGE_QUOTA_EXCEEDED": "The daily limit for photos was reached.",
+        "IMAGE_SOURCE_GONE": "The message was deleted."
+      }
+    },
     "sentInApp": "Sent in the Instagram app",
     "saveAsAnswer": "Save as approved answer",
     "savedAsAnswer": "Saved as approved answer",
@@ -143,6 +210,7 @@
       "LLM_OUTPUT_INVALID": "The assistant's answer was invalid",
       "LLM_REFUSED": "The assistant declined",
       "ATTACHMENT_ONLY": "Only a photo or file",
+      "TRANSCRIPT_REQUIRES_APPROVAL": "Written from a voice note, so you always approve it",
       "INJECTION_SUSPECTED": "Looks like an attempt to give the assistant instructions",
       "MESSAGING_WINDOW_CLOSED": "Reply window closed",
       "ACCOUNT_NOT_CONNECTED": "Instagram account not connected",
@@ -217,6 +285,7 @@
       "reply_booking": "Booking",
       "reply_promotions": "Offers",
       "reply_general_faq": "General questions",
+      "reply_story_mention": "Thank-you for a story mention",
       "content_publish": "Publishing posts"
     },
     "manageConnection": "Manage the connection"
@@ -237,6 +306,8 @@
     "fieldIntent": "Topic",
     "fieldLanguage": "Language",
     "save": "Save answer",
+    "mentionHint": "Sent when someone mentions you in their story. One per language. It never goes out without your approval unless you change that under automation. No example question needed.",
+    "mentionExists": "There is already a story-mention thank-you in this language. Archive it first.",
     "literalValue": "The answer contains a price, time, contact or link typed by hand. Replace it with a placeholder.",
     "intent": {
       "faq": "General question",
@@ -246,7 +317,8 @@
       "location_contact": "Address and contact",
       "services": "Services",
       "booking": "Booking",
-      "promotions": "Offers"
+      "promotions": "Offers",
+      "story_mention": "Story mention thank-you"
     },
     "lang": {
       "tr": "Turkish",

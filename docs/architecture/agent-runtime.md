@@ -88,7 +88,7 @@
 - `price_disclosure`: `share` | `do_not_share`. When `do_not_share`, price facts are **omitted** from `facts` and `policy.price_answer_text` is provided instead.
 - `approved_answers`: `[{id, intent, example_questions, answer_template}]` with status `active`/`needs_review`.
 - `brand_voice`: guidelines text.
-- `conversation`: last ≤ 10 messages `[{role: customer|business, text}]`, **inside an untrusted-data section**, with no usernames, IDs or timestamps beyond relative order.
+- `conversation`: last ≤ 10 messages `[{role: customer|business, text, source: message|transcript}]`, **inside an untrusted-data section**, with no usernames, IDs or timestamps beyond relative order. `source = transcript` (F-03, prompt v3) marks the machine transcript of a customer's voice note: it is rendered as `customer (voice note, automatic transcript, may contain transcription errors): …`, screened by the injection heuristics and keyword flags like typed text, and the system prompt says it may contain transcription errors. `agent_runs` snapshots keep only `transcript_count`.
 
 **Output** (`ReplyProposal`)
 ```text
@@ -114,8 +114,11 @@ language: str               # must equal reply_language
 | `booking` | `reply.booking` | `booking.instructions` |
 | `promotions` | `reply.promotions` | `promotion.*` (within validity) |
 | `faq`, `greeting` | `reply.general_faq` | an approved answer or `faq.*` (greeting: none) |
+| `story_mention` (set by code, never proposed by the model; F-04) | `reply.story_mention` | the owner's thank-you template (an approved answer with intent `story_mention`); any `{{fact:key}}` in it must be usable |
 | `complaint`, `refund_request`, `discount_request`, `sensitive` | — (always human) | — |
 | `other` | — (human) | — |
+
+**Input additions (F-04, prompt `v4`):** `DraftReplyInput.story_context` (optional text: the title, objective and overlay lines of one of the business's own stories the customer replied to) is sent as a `<story_context>` data section; nothing else changes. Prompt `draft_reply` `v4` is `v3` (the voice-note transcript wording, F-03) plus the `<story_context>` rule; `v2` and `v3` stay in the repo. The thank-you for a story mention does not call `draft_reply` at all.
 
 **Post-validator** (structure only): `language == reply_language`; if `approved_answer_id` is set it must be one of the provided answers and `reply_template` must then be empty; `reply_template` ≤ 900 bytes; `can_answer=false` ⇒ no template required. Which facts a template uses is **not** checked here but by the renderer: a placeholder naming a fact that was not provided fails with `FACT_NOT_USABLE`, gets the one regeneration with feedback, and then goes to a person. (Treating it as invalid output would give the generic repair and the reason `LLM_OUTPUT_INVALID` instead.)
 
@@ -151,6 +154,17 @@ Post-validation (structure; a failure is the one repair call): a feed post has a
 **Input** (`ExtractFactsInput`): pasted text (untrusted data section), template key catalog `[{key, label, value_type, description}]`, workspace locale and currency.
 **Output**: `items: [{fact_key, raw_value_text, normalized_value, source_excerpt}]`, at most 50.
 **Post-validation (deterministic):** `fact_key` in the catalog or matching the `custom.*` pattern; `source_excerpt` is a verbatim (whitespace-normalised) substring of the pasted text, otherwise the item is dropped; `raw_value_text` occurs inside `source_excerpt`; the value is re-parsed from `raw_value_text`. Results become `fact_candidates` only ([workflows.md §A](workflows.md)).
+
+## 6a. Task: `describe_image` (F-03, Feature Phase 2 Session 03)
+
+A **vision task with no tools**: it looks at one photo or screenshot a customer sent and returns a short description for the **owner**. It never answers the customer and its output is never an input of `draft_reply`.
+
+**Input** (`DescribeImageInput`): the image bytes (held in memory for the call, never stored; not in `repr`), `media_type` (`image/jpeg|png|webp`, checked), `locale` (the workspace's default locale: the language of the description). The picture goes to the provider inline (`LLMMessage.images`; OpenAI: an `input_image` data URL in the one user turn, `store=false`, no tools, no URL); **no handle, name, conversation or workspace identifier is sent**.
+**Output** (`ImageDescription`): `looks_like` (`product | price_screenshot | location | other`), `description` (at most 500 characters), `visible_text` (the text readable in the picture, verbatim, at most 1 500 characters, empty if none). Post-validation: a non-empty description within the limits, else one repair call.
+**Prompt:** `prompts/describe_image/v1.md`. Everything in the picture, including every word of text, is customer data that may contain instructions: never followed, never repeated as an instruction. No person is named or identified, no personal trait is guessed, and prices, hours, phone numbers and addresses seen in the picture are only copied as visible text.
+**What happens to the output** (`inbox/image_description.py`): it is cleaned (no control characters, bounded), screened with `ai/injection.py` (a match sets `injection_suspected`, shown to the owner as a warning), and stored in `message_image_descriptions` labelled `source = image_description`. It is **never a fact** (INV-02: no price or hour in a picture becomes a business value; no fact candidate is created), **never an instruction** (INV-03), and **not read by any draft** (`inbox/context.py` does not know the table). The conversation stays `human_required`; nothing is sent or suggested. **Decision (Session 03): no suggested reply is pre-filled from a description**, not even when it matches a verified fact: a customer's picture is too weak a basis for an answer, and the brief allowed leaving it out. A later session may reconsider it with measured accuracy.
+**Run record:** the `agent_runs` row (`task = describe_image`) keeps the status, usage, prompt version and a redacted snapshot of sizes only (`media_type`, `image_bytes`, `locale`); the validated output is **not** copied into `agent_runs.output` (`TaskDefinition.store_output = false`), so the one stored copy of the words is the one retention and erasure reach. Each call counts against the shared daily LLM budget (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`) and the image-specific `IMAGE_DESCRIPTION_MAX_PER_WORKSPACE_PER_DAY`.
+**Fake:** reads only fixture images (`mock-image://…`) and returns the fixture's description in the workspace locale; a real picture is refused (`LLMConfigError`): the offline model never invents what a photo shows. **Model:** `LLM_MODEL_DESCRIBE_IMAGE` (empty = `LLM_MODEL_DEFAULT`); the model **must accept images**, which is **unverified** for the default `gpt-6-luna` and for the structured-output adapter with images (never run against the real API).
 
 ## 7. Prompt construction and injection containment
 
@@ -200,7 +214,7 @@ Input snapshots stored in `agent_runs` follow the same rule and are deleted afte
 
 ## 10. Model and provider configuration
 
-- `LLM_PROVIDER` = `fake` | `openai`. `LLM_MODEL_DEFAULT` (default `gpt-6-luna`, the cheapest GPT-6 model; the ID was confirmed on OpenAI's model page on 2026-10-21), with per-task overrides `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS`.
+- `LLM_PROVIDER` = `fake` | `openai`. `LLM_MODEL_DEFAULT` (default `gpt-6-luna`, the cheapest GPT-6 model; the ID was confirmed on OpenAI's model page on 2026-10-21), with per-task overrides `LLM_MODEL_INTERPRET_COMMAND`, `LLM_MODEL_DRAFT_REPLY`, `LLM_MODEL_DRAFT_CONTENT`, `LLM_MODEL_EXTRACT_FACTS`, `LLM_MODEL_DESCRIBE_IMAGE` (must accept images).
 - The `openai` adapter uses the **Responses API** with structured outputs (`text_format` = the Pydantic model, sent as a strict JSON schema), `store=false` (nothing is retained by the provider), **no tools**, low reasoning effort (`LLM_REASONING_EFFORT`, default `low`, because reasoning tokens count against `max_output_tokens`), a stable system prompt ordering (OpenAI caches prefixes automatically), and records usage. Strict mode needs an object at the root and no `oneOf`, length or pattern keywords, so `interpret_command` returns `{interpretation: <union>}` (plain `anyOf`) and size limits are checked by the task's post-validator. A test builds the strict schema of every task output and fails on anything strict mode would reject.
 - Model changes for cost or quality (e.g., a larger model for `draft_reply`) are a founder decision based on eval results (OQ-09).
 - `LLM_PRICE_TABLE` (optional JSON, USD per million tokens per model) feeds cost estimates in evals and system health.
@@ -241,3 +255,38 @@ task runner retains its earlier budget implementation; Session 05 must unify ato
 quota and cumulative goal accounting across both paths. A model's `wait_for` is a proposal:
 Session 05 must validate it against an existing persisted question, approval, operation or
 scheduled wake condition before entering a waiting state.
+
+### Feature Phase 2 D-04: confirmed management commands
+
+`interpret_command` prompt v2 adds `content.reschedule` and `agent.pause_until` (executor files
+`content_reschedule.py` and `agent_pause_until.py`). Both are proposals requiring an explicit,
+single-use, expiring, hash-bound confirmation. Free text cannot decide them. TR/EN examples and
+ten hard eval cases live in `evals/interpret_command/manage.yaml`.
+
+Both use `CommandTime {local_date: string|null, local_time: string}`. Date accepts ISO, `today`,
+or `tomorrow`; a null date preserves an existing content item's date, and is invalid for pause.
+Time is HH:MM, or `morning` = 09:00 in the workspace timezone. Relative dates use injected Clock.
+Nonexistent DST times, past/equal instants and times beyond 60 days are refused; repeated DST
+times choose the earlier instant, as content scheduling already does. Confirmations show the
+local instant and timezone; execution uses the bound UTC instant and rejects a changed timezone.
+
+Rescheduling resolves catalog aliases/filters, asks which content when ambiguous (keeping the
+proposed time), and accepts only pending_approval, scheduled or on_hold with an existing time.
+Payload binds content ID/version, old/new instants and timezone. Confirmation rechecks version,
+old instant, state, future time, account, media, quota and grounding. It cancels pending old
+approval/queued publish work, follows edit -> draft -> schedule, creates a new version and a
+human self-approved publication grant and publish job, all in the command decision transaction.
+Old approved evidence remains historical and cannot authorize the new version. Validation
+failure rolls back all content changes. Drafts, retries in flight, publishing and terminal
+content are not rescheduled by this command. Permission is content.approve (owner/manager).
+
+Pause resolves exactly one active/paused agent-controlled account in the workspace (no model
+supplied account ID). Only the owner with agent.control can request/confirm it. Payload binds
+account ID, config version, controller epoch, UTC resume time and timezone. It reuses
+`agent.state.change_state`, the transaction-only service behind HTTP pause/resume. Only the
+command passes `repause=True`: re-pausing a paused account increments its version and epoch,
+overriding an earlier timer, while `POST /agent/pause` still refuses a second pause. The durable
+agent_resume_due job resumes only that exact paused version/epoch, and rechecks that the
+confirming owner remains active and an owner. Manual resume, another pause, controller or config
+change makes the old timer a no-op. No new grant or delegated authority is created.
+

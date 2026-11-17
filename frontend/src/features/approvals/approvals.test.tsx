@@ -68,6 +68,54 @@ describe("approvals screen", () => {
     expect(row).toHaveTextContent("kaynak: Aylık üyelik, doğrulama tarihi 3 Kas");
   });
 
+  it("shows the voice transcript a reply was written from, labelled as automatic (F-03)", async () => {
+    const DRAFT = "d1000000-0000-4000-8000-00000000000a";
+    const pending = approval({
+      id: "a0000000-0000-4000-8000-00000000000a",
+      action: "reply.send",
+      kind: "authorization",
+      summary: {},
+      subject: { type: "reply_draft", id: DRAFT, version: 1, status: "pending_approval", link: { target: "reply_draft", id: DRAFT } },
+    });
+    mockApi(
+      routes([pending], {
+        [`GET ${BASE}/reply-drafts/${DRAFT}`]: () =>
+          json({
+            id: DRAFT,
+            conversation_id: "c1000000-0000-4000-8000-000000000001",
+            status: "pending_approval",
+            source: "ai",
+            language: "tr",
+            intent: "pricing",
+            flags: [],
+            text: "Üyelik 6.000 ₺ / ay.",
+            suggestion_text: null,
+            rendered_facts: [],
+            facts_used: [],
+            validation: { passed: true, issues: [] },
+            decision: "approval_required",
+            decision_reasons: ["TRANSCRIPT_REQUIRES_APPROVAL"],
+            approval_id: pending.id,
+            approval_state: null,
+            version: 1,
+            failure_code: null,
+            window_ends_at: null,
+            created_at: "2026-11-03T10:00:00Z",
+            is_simulated: false,
+            transcripts: [{ message_id: "m1000000-0000-4000-8000-0000000000aa", text: "Aylık üyelik ücreti ne kadar?", language: "tr" }],
+          }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/approvals`);
+    await userEvent.setup().click(await screen.findByRole("button", { name: /Yanıt gönderme/ }));
+    const body = await screen.findByTestId("reply-approval-body");
+    const transcripts = await within(body).findByTestId("draft-transcripts");
+    expect(transcripts).toHaveTextContent("Yazıya çeviri (otomatik)");
+    expect(transcripts).toHaveTextContent("Türkçe");
+    expect(transcripts).toHaveTextContent("Aylık üyelik ücreti ne kadar?");
+    expect(within(body).getByText("Sesli mesajdan yazıldı, bu yüzden her zaman sizin onayınız gerekir")).toBeInTheDocument();
+  });
+
   it("lists what is pending and teaches when there is nothing", async () => {
     mockApi(routes([]));
     renderApp(`/w/${WS_GOLKENT}/approvals`);

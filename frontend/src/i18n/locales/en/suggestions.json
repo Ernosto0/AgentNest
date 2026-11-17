@@ -1,0 +1,24 @@
+{
+  "ladder": {
+    "title": "Send replies about {{topic}} automatically?",
+    "body": "In the last {{days}} days you approved {{count}} replies about {{topic}} exactly as the assistant wrote them. You edited none, rejected none, and none failed to send.",
+    "note": "Prices, bookings and promotions keep asking you first. You can switch this off again at any time in the automation settings.",
+    "review": "Review",
+    "reviewing": "Checking…",
+    "dismiss": "Not now",
+    "dismissing": "Saving…",
+    "dismissHint": "If you choose \"Not now\", we will not suggest this again for a while.",
+    "confirmTitle": "Turn on automatic replies about {{topic}}",
+    "confirmBody": "From now on the assistant sends replies about {{topic}} by itself, as long as the facts it uses are verified and nothing else needs a person. Every other topic keeps asking you first.",
+    "confirm": "Turn on automatic replies",
+    "confirming": "Turning on…",
+    "back": "Back",
+    "done": "Automatic replies about {{topic}} are on.",
+    "settings": "Automation settings",
+    "topic": {
+      "hours": "opening hours",
+      "location_contact": "address and contact",
+      "services": "services"
+    }
+  }
+}

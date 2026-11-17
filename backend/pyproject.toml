@@ -261,6 +261,8 @@ source_modules = [
     "app.reporting.drilldown",
     "app.reporting.schemas",
     "app.reporting.jobs",
+    "app.reporting.weekly_sources",
+    "app.reporting.missed_customers",
     "app.activity.groups",
     "app.activity.feed",
     "app.activity.labels",
@@ -309,7 +311,10 @@ name = "only the OpenAI adapter imports the openai SDK"
 type = "forbidden"
 source_modules = ["app"]
 forbidden_modules = ["openai"]
-ignore_imports = ["app.integrations.llm.openai_provider -> openai"]
+ignore_imports = [
+    "app.integrations.llm.openai_provider -> openai",
+    "app.integrations.transcription.openai_provider -> openai",
+]
 
 [[tool.importlinter.contracts]]
 name = "only the API, the loader and the worker reach the command system (INV-03)"
@@ -340,6 +345,10 @@ name = "approvals and notifications know no subject module"
 type = "forbidden"
 source_modules = ["app.approvals", "app.notifications"]
 forbidden_modules = ["app.knowledge", "app.commands", "app.ai"]
+# The Telegram approval message shows where each quoted value comes from (D-01). It reads that
+# through app.knowledge.sources, a read-only helper that imports only knowledge models; the chain
+# reaches notifications only through the channel registry.
+ignore_imports = ["app.integrations.channels.telegram.adapter -> app.knowledge.sources"]
 
 [[tool.importlinter.contracts]]
 name = "knowledge core does not depend on ai, approvals or commands"
@@ -485,6 +494,7 @@ forbidden_modules = [
 # The routers are the places that touch the API layer, through its shared dependencies.
 ignore_imports = [
     "app.reporting.router -> app.api.deps",
+    "app.reporting.missed_router -> app.api.deps",
     "app.reporting.home_router -> app.api.deps",
 ]
 
@@ -510,6 +520,7 @@ forbidden_modules = ["app.reporting"]
 allow_indirect_imports = true
 ignore_imports = [
     "app.reporting.router -> app.api.deps",
+    "app.reporting.missed_router -> app.api.deps",
     "app.integrations.channels.telegram.handlers -> app.reporting.service",
     "app.integrations.channels.telegram.handlers -> app.reporting.periods",
 ]

@@ -98,6 +98,16 @@ class PreparedWebhook:
     mid: str
 
 
+def voice_attachment(fixture: str) -> dict[str, str]:
+    """A simulated voice note: the mock transcriber knows these fixtures (``FIXTURES``)."""
+    return webhook_format.audio_attachment(f"mock-audio://{fixture}")
+
+
+def image_attachment(fixture: str) -> dict[str, str]:
+    """A simulated photo: the fake model knows these fixtures (``vision.fake.FIXTURES``)."""
+    return {"type": "image", "url": f"mock-image://{fixture}"}
+
+
 def customer_id_for(alias: str) -> str:
     """A stable provider-style id for a simulated customer, from the alias."""
     folded = unicodedata.normalize("NFKD", alias).encode("ascii", "ignore").decode().lower()

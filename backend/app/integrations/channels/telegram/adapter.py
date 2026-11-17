@@ -260,6 +260,25 @@ def _deliver_approval_notification(
             time_label = "Planlanan Zaman" if is_tr else "Scheduled Time"
             lines.append(f"• <b>{time_label}:</b> {sched_str}")
 
+    elif approval.action in ("command.reschedule_content", "command.pause_agent"):
+        pause = approval.action == "command.pause_agent"
+        heading = (
+            ("Asistanı duraklat" if is_tr else "Pause assistant")
+            if pause
+            else ("İçerik zamanını değiştir" if is_tr else "Reschedule content")
+        )
+        lines.append(f"{sim_badge}<b>{heading}</b>")
+        summary = approval.summary
+        if pause:
+            label = "Devam zamanı" if is_tr else "Resume at"
+            lines.append(f"{label}: {html.escape(str(summary.get('resume_at', '')))}")
+        else:
+            lines.append(html.escape(str(summary.get("label", ""))))
+            lines.append(
+                f"{html.escape(str(summary.get('old_formatted', '')))} → "
+                f"{html.escape(str(summary.get('new_formatted', '')))}"
+            )
+        lines.append(html.escape(str(summary.get("timezone", ""))))
     else:
         req_label = "Onay İsteği" if is_tr else "Approval Request"
         title = f"{sim_badge}⚡ <b>{req_label}: {html.escape(approval.action)}</b>"

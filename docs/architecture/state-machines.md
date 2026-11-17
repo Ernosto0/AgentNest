@@ -281,3 +281,13 @@ stateDiagram-v2
 Job states are **internal** (*no audit*). Users see domain states. Dead jobs appear in the dev jobs page and system health.
 
 Phase 7 Session 3 permits `disconnected -> connected` only through an explicitly reauthorized Meta connect (or refresh of authorization while already connected); ordinary state changes keep disconnected terminal. The account transition helper requires `reauthorized=True` for these OAuth-only paths and writes the normal connection/reconnection audit. Pending-approval reply cancellation on disconnect is a documented `cancel` event, not a direct status assignment.
+
+### D-04 rescheduling and bounded pause
+
+No new content or command state. Rescheduling only existing pending_approval/scheduled/on_hold
+content uses the existing edit (version +1, draft) then schedule (scheduled) transitions in one
+transaction after explicit command confirmation. Retry_scheduled/publishing are refused; old
+publish jobs are cancelled/fenced by version. A confirmed pause and a version-bound timer use
+the existing account active/paused states, advancing config_version/controller_epoch on each
+change. Re-pausing is a new state revision even though its state label stays paused.
+

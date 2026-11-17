@@ -13,6 +13,7 @@ ActionClass = Literal[
     "reply.booking",
     "reply.promotions",
     "reply.general_faq",
+    "reply.story_mention",
     "content.publish",
 ]
 

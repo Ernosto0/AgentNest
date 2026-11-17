@@ -21,7 +21,7 @@ from app.identity.permissions import has_permission
 from app.knowledge import impact
 from app.knowledge import repository as repo
 from app.knowledge.claims import validate_claims
-from app.knowledge.constants import APPROVED_ANSWER_INTENTS
+from app.knowledge.constants import APPROVED_ANSWER_INTENTS, STORY_MENTION_INTENT
 from app.knowledge.models import ApprovedAnswer
 from app.knowledge.render import PLACEHOLDER, RenderResult, placeholder_keys
 
@@ -64,10 +64,30 @@ def list_for_drafting(session: Session, ctx: WorkspaceContext, language: str) ->
             ApprovedAnswer.workspace_id == ctx.workspace_id,
             ApprovedAnswer.language == language,
             ApprovedAnswer.status.in_(DRAFTING_STATUSES),
+            # The thank-you for a story mention is chosen by code, never offered to the model.
+            ApprovedAnswer.intent != STORY_MENTION_INTENT,
         )
         .order_by(ApprovedAnswer.created_at, ApprovedAnswer.id)
     )
     return [_view(row) for row in rows]
+
+
+def story_mention_template(
+    session: Session, ctx: WorkspaceContext, language: str
+) -> AnswerView | None:
+    """The owner's single thank-you for a story mention in ``language``, if one is set up."""
+    row = session.scalars(
+        select(ApprovedAnswer)
+        .where(
+            ApprovedAnswer.workspace_id == ctx.workspace_id,
+            ApprovedAnswer.language == language,
+            ApprovedAnswer.intent == STORY_MENTION_INTENT,
+            ApprovedAnswer.status.in_(DRAFTING_STATUSES),
+        )
+        .order_by(ApprovedAnswer.created_at, ApprovedAnswer.id)
+        .limit(1)
+    ).first()
+    return _view(row) if row is not None else None
 
 
 def get_answer(
@@ -102,9 +122,9 @@ def _error(field: str, code: str, **params: object) -> AppError:
     )
 
 
-def _clean_examples(examples: list[str]) -> list[str]:
+def _clean_examples(examples: list[str], *, required: bool = True) -> list[str]:
     cleaned = list(dict.fromkeys(e.strip() for e in examples if e.strip()))
-    if not cleaned:
+    if not cleaned and required:
         raise _error("example_questions", "required")
     if len(cleaned) > MAX_EXAMPLES or any(len(e) > MAX_EXAMPLE_CHARS for e in cleaned):
         raise _error("example_questions", "too_long", max_items=MAX_EXAMPLES)
@@ -125,6 +145,26 @@ def check_template(template: str, language: str) -> None:
         raise _error(
             "answer_template", "LITERAL_VALUE", issues=[i.to_dict() for i in report.issues]
         )
+
+
+def _ensure_single_mention_template(
+    session: Session,
+    ctx: WorkspaceContext,
+    language: str,
+    *,
+    except_id: uuid.UUID | None = None,
+) -> None:
+    """One thank-you per language: a second live one is refused (archive the first)."""
+    existing = session.scalars(
+        select(ApprovedAnswer.id).where(
+            ApprovedAnswer.workspace_id == ctx.workspace_id,
+            ApprovedAnswer.language == language,
+            ApprovedAnswer.intent == STORY_MENTION_INTENT,
+            ApprovedAnswer.status.in_(DRAFTING_STATUSES),
+        )
+    ).all()
+    if any(found != except_id for found in existing):
+        raise _error("intent", "already_exists")
 
 
 def _references(
@@ -162,9 +202,13 @@ def create_answer(
     title = title.strip()
     if not title or len(title) > 120:
         raise _error("title", "invalid")
-    examples = _clean_examples(example_questions)
+    is_mention = intent == STORY_MENTION_INTENT
+    # A thank-you for a mention answers no question, so it needs no example question.
+    examples = _clean_examples(example_questions, required=not is_mention)
     check_template(answer_template, language)
     references = _references(session, ctx, answer_template)
+    if is_mention:
+        _ensure_single_mention_template(session, ctx, language)
     answer = ApprovedAnswer(
         workspace_id=ctx.workspace_id,
         title=title,
@@ -216,8 +260,14 @@ def update_answer(
         raise AppError("VERSION_CONFLICT", expected=expected_version, current=answer.version)
     if intent is not None and intent not in APPROVED_ANSWER_INTENTS:
         raise _error("intent", "invalid")
+    if intent is not None and (intent == STORY_MENTION_INTENT) != (
+        answer.intent == STORY_MENTION_INTENT
+    ):
+        raise _error("intent", "invalid")  # a mention thank-you never becomes a Q&A, or back
     if status is not None and status not in ("active", "archived"):
         raise _error("status", "invalid")
+    if status == "active" and answer.status == "archived" and answer.intent == STORY_MENTION_INTENT:
+        _ensure_single_mention_template(session, ctx, answer.language, except_id=answer.id)
     if title is not None:
         if not title.strip() or len(title.strip()) > 120:
             raise _error("title", "invalid")
@@ -225,7 +275,9 @@ def update_answer(
     if intent is not None:
         answer.intent = intent
     if example_questions is not None:
-        answer.example_questions = _clean_examples(example_questions)
+        answer.example_questions = _clean_examples(
+            example_questions, required=answer.intent != STORY_MENTION_INTENT
+        )
     if answer_template is not None and answer_template != answer.answer_template:
         check_template(answer_template, answer.language)
         impact.replace_references(

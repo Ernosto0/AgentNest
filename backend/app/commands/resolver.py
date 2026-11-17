@@ -18,11 +18,13 @@ from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
 from app.ai.schemas import (
+    AgentPauseUntil,
     Clarify,
     CommandInterpretation,
     ContentCancelScheduled,
     ContentCreateDraft,
     ContentRef,
+    ContentReschedule,
     NormalizedBoolean,
     NormalizedMoney,
     NormalizedValue,
@@ -480,6 +482,7 @@ class ContentContext:
     timezone: str
     reply_failures: Sequence[ReplyFailureSnapshot] = ()
     failure_cutoff: datetime | None = None
+    now: datetime | None = None
 
 
 def _sort_key(item: ContentSnapshot) -> tuple[bool, datetime, str]:
@@ -684,10 +687,17 @@ def resolve(
     workspace_locale: str,
     currency: str,
     content: ContentContext | None = None,
+    agent: dict[str, Any] | None = None,
 ) -> Outcome:
     """Turn the model's proposal into an outcome. Anything not in the registry is
     ``unsupported``; there is no branch here that can approve, publish or send."""
+    from app.commands.manage import resolve_pause, resolve_reschedule
+
     match interpretation:
+        case ContentReschedule():
+            return resolve_reschedule(interpretation, content, user_locale)
+        case AgentPauseUntil():
+            return resolve_pause(interpretation, content, agent, user_locale)
         case Unsupported():
             return UnsupportedOutcome(interpretation.reason)
         case QueryContentStatus():
@@ -841,6 +851,13 @@ def resolve_choice(
         item = next((i for i in context.items if str(i.id) == wanted), None)
         if item is None:  # gone since the question was asked
             return _not_found(None)
+        if pending.get("intent") == "content.reschedule":
+            from app.ai.schemas import CommandTime
+            from app.commands.manage import reschedule_item
+
+            return reschedule_item(
+                item, CommandTime.model_validate(pending["time"]), context, user_locale
+            )
         return _content_outcome(str(pending.get("intent", "")), item, context, user_locale)
     if clarification.get("kind") == "fact":
         return _continue_with_fact(

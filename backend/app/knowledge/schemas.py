@@ -59,6 +59,13 @@ class FactPatch(StrictModel):
     reason: Reason | None = None
 
 
+class CandidateAccept(StrictModel):
+    """Explicit typed normalization of an owner answer before accepting it."""
+
+    value_type: str
+    value: dict[str, Any]
+
+
 class FactTransition(StrictModel):
     """Body of verify / archive / restore."""
 
@@ -92,6 +99,7 @@ class FactOut(BaseModel):
 
 
 class CandidateOut(BaseModel):
+    editor_type: str | None = None
     kind: Literal["candidate"] = "candidate"
     id: uuid.UUID
     fact_key: str

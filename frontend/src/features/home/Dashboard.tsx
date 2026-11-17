@@ -4,6 +4,7 @@ import type { ReportMetric, SocialAccount } from "@/api/types";
 import { AlertIcon, CriticalIcon } from "@/components/icons";
 import { useSocialAccounts } from "@/features/inbox/hooks";
 import { useDailyReport } from "@/features/reports/hooks";
+import { DelegationSuggestionCard } from "@/features/agent/DelegationSuggestionCard";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { AppointmentsCard } from "./AppointmentsCard";
 import { AssistantPanel } from "./AssistantPanel";
@@ -24,8 +25,9 @@ import { UpcomingPanel, type CreateContent } from "./UpcomingPanel";
  * readiness and, while readiness is complete, Instagram performance. Open readiness requirements
  * are tall, so performance then moves to a full-width band below to keep the columns balanced.
  *
- * Phones: one column ordered by urgency. The column wrappers use `display: contents` below `lg`,
- * so the flex `order` utilities can interleave their children.
+ * Phones: one column ordered by urgency: blocking notices, then the assistant panel with its
+ * command box on top (P-13), then what waits for the owner and the numbers. The column wrappers
+ * use `display: contents` below `lg`, so the flex `order` utilities can interleave their children.
  */
 export function Dashboard({ onCreate }: { onCreate: CreateContent }) {
   const { workspace, role } = useCurrentWorkspace();
@@ -43,7 +45,9 @@ export function Dashboard({ onCreate }: { onCreate: CreateContent }) {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-5">
-      <Banners accounts={activeAccounts} canReconnect={isOwner} />
+      <div className="-order-2 flex flex-col gap-4 empty:hidden lg:order-none lg:gap-5">
+        <Banners accounts={activeAccounts} canReconnect={isOwner} />
+      </div>
 
       <div className="order-2 lg:order-none">
         <TodayPulse report={report.data} yesterday={yesterday.data} pending={report.isPending} failed={report.isError} />
@@ -51,8 +55,11 @@ export function Dashboard({ onCreate }: { onCreate: CreateContent }) {
 
       <div className="contents lg:grid lg:grid-cols-12 lg:items-start lg:gap-5">
         <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-5">
+          <div className="order-3 empty:hidden lg:order-none">
+            <DelegationSuggestionCard />
+          </div>
           <AssistantPanel
-            className="order-3 lg:order-none"
+            className="-order-1 lg:order-none"
             accounts={activeAccounts}
             overviews={overviews}
             canControl={isOwner}

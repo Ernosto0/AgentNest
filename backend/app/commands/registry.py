@@ -14,8 +14,10 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.ai.schemas import (
+    AgentPauseUntil,
     ContentCancelScheduled,
     ContentCreateDraft,
+    ContentReschedule,
     QueryActivitySummary,
     QueryContentStatus,
     QueryExplainFailure,
@@ -28,8 +30,10 @@ from app.ai.schemas import (
     UpdateFact,
 )
 from app.commands.executors import (
+    agent_pause_until,
     content_cancel,
     content_create_draft,
+    content_reschedule,
     query_activity_summary,
     query_content_status,
     query_explain_failure,
@@ -200,6 +204,35 @@ REGISTRY: dict[str, CommandSpec] = {
             parameters={"content_ref": "the post: an alias from content_catalog, or its filters"},
             approval_action="command.cancel_content",
             approval_permission="content.approve",
+        ),
+        CommandSpec(
+            type="content.reschedule",
+            mutating=True,
+            required_permission="content.approve",
+            params_model=ContentReschedule,
+            executor=content_reschedule.execute,
+            confirmation_summary_builder=plain_summary,
+            description="Move an existing content item to a new time; confirm first.",
+            parameters={
+                "content_ref": "catalog alias or filters",
+                "time": "local_date (ISO/today/tomorrow/null keeps date), local_time (HH:MM)",
+            },
+            approval_action="command.reschedule_content",
+            approval_permission="content.approve",
+        ),
+        CommandSpec(
+            type="agent.pause_until",
+            mutating=True,
+            required_permission="agent.control",
+            params_model=AgentPauseUntil,
+            executor=agent_pause_until.execute,
+            confirmation_summary_builder=plain_summary,
+            description="Pause the account assistant until a local time; confirm first.",
+            parameters={
+                "time": "local_date (ISO/today/tomorrow), local_time (HH:MM or morning=09:00)"
+            },
+            approval_action="command.pause_agent",
+            approval_permission="agent.control",
         ),
         CommandSpec(
             type="unsupported",

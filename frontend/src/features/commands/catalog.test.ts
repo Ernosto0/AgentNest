@@ -21,6 +21,8 @@ const ACTIONS = [
   "command_update_fact",
   "command_update_brand_voice",
   "command_cancel_content",
+  "command_reschedule_content",
+  "command_pause_agent",
   "reply_send",
   "content_publish",
 ];

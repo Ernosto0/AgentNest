@@ -15,6 +15,8 @@ from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.db import get_db
 from app.core.errors import AppError
+from app.knowledge.learning import editor_type
+from app.knowledge.models import FactCandidate
 from app.owner_requests import service
 from app.owner_requests.models import OwnerAnswer, OwnerQuestion
 
@@ -51,6 +53,10 @@ class AnswerOut(BaseModel):
     body: str | None
     author_role: str
     candidate_id: uuid.UUID | None
+    # The unverified fact this answer proposed (D-05): pending means "offer one-tap save".
+    candidate_status: Literal["pending", "accepted", "rejected", "superseded"] | None = None
+    # Set when the answer carries a price, hours or a contact: it needs a typed editor, no one tap.
+    candidate_editor_type: str | None = None
     expires_at: datetime
 
 
@@ -77,7 +83,7 @@ def question_out(q: OwnerQuestion, clock: Clock) -> QuestionOut:
     )
 
 
-def answer_out(a: OwnerAnswer, clock: Clock) -> AnswerOut:
+def answer_out(a: OwnerAnswer, clock: Clock, candidate: FactCandidate | None = None) -> AnswerOut:
     return AnswerOut(
         id=a.id,
         question_id=a.question_id,
@@ -86,8 +92,28 @@ def answer_out(a: OwnerAnswer, clock: Clock) -> AnswerOut:
         body=a.body if a.expires_at > clock.now() else None,
         author_role=a.author_role,
         candidate_id=a.candidate_id,
+        candidate_status=candidate.status if candidate else None,
+        candidate_editor_type=editor_type(candidate) if candidate else None,
         expires_at=a.expires_at,
     )
+
+
+def candidate_of(db: Session, ctx: WorkspaceContext, a: OwnerAnswer) -> FactCandidate | None:
+    return candidates_of(db, ctx, [a]).get(a.candidate_id) if a.candidate_id else None
+
+
+def candidates_of(
+    db: Session, ctx: WorkspaceContext, answers: list[OwnerAnswer]
+) -> dict[uuid.UUID, FactCandidate]:
+    ids = [a.candidate_id for a in answers if a.candidate_id]
+    if not ids:
+        return {}
+    rows = db.scalars(
+        select(FactCandidate).where(
+            FactCandidate.workspace_id == ctx.workspace_id, FactCandidate.id.in_(ids)
+        )
+    )
+    return {c.id: c for c in rows}
 
 
 @router.get("", response_model=QuestionPage)
@@ -158,8 +184,12 @@ def list_answers(
     if cursor:
         query = query.where(OwnerAnswer.id > cursor)
     rows = list(db.scalars(query.order_by(OwnerAnswer.id).limit(limit + 1)))
+    found = candidates_of(db, ctx, rows[:limit])
     return AnswerPage(
-        items=[answer_out(a, clock) for a in rows[:limit]],
+        items=[
+            answer_out(a, clock, found.get(a.candidate_id) if a.candidate_id else None)
+            for a in rows[:limit]
+        ],
         next_cursor=rows[limit - 1].id if len(rows) > limit else None,
     )
 
@@ -175,7 +205,7 @@ def answer(
 ) -> AnswerOut:
     a = service.decide(db, clock, ctx, account_id, question_id, body)
     db.commit()
-    return answer_out(a, clock)
+    return answer_out(a, clock, candidate_of(db, ctx, a))
 
 
 @router.post("/{question_id}/cancel", response_model=AnswerOut)

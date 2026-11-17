@@ -129,6 +129,7 @@ def load(
         timezone=timezone,
         reply_failures=_reply_failures(session, ctx, cutoff),
         failure_cutoff=cutoff,
+        now=now,
     )
     return ContentView(context, catalog)
 

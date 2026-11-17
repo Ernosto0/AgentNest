@@ -301,7 +301,7 @@ export function useCreateAnswer(ws: string) {
           body: {
             title,
             intent,
-            example_questions: [question],
+            example_questions: question.trim() ? [question] : [],
             answer_template: template,
             language,
           },

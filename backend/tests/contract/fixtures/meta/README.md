@@ -24,3 +24,5 @@ These remain provisional R75-01..06 questions. Only `SyntheticMetaCommentProvide
 which requires an exact `httpx.MockTransport`, exercises this scaffold. The real
 registry, default adapter and OAuth capability map cannot enable it. An operation
 key has no assumed remote idempotency or readback meaning; lookups return no evidence.
+
+`webhook_voice_note.json` was hand-authored on 2026-11-16 for Feature Phase 2 Session 01 from the documented attachment shape (`type: "audio"`, `payload.url`; Meta webhook examples page). The URL host and lifetime are invented and not evidence of what Instagram serves; it is not a recording.

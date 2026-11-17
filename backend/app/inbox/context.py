@@ -8,6 +8,7 @@ are ever collected (INV-02).
 """
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
@@ -18,14 +19,15 @@ from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.identity.models import Workspace
 from app.identity.schemas import WorkspaceSettings
-from app.inbox import drafts
+from app.inbox import drafts, stories
 from app.inbox.language import ReplyLanguage, choose_reply_language
-from app.inbox.models import Conversation, Message, ReplyDraft
+from app.inbox.models import Conversation, Message, MessageTranscript, ReplyDraft
 from app.inbox.system import system_context
 from app.integrations.instagram import queries
 from app.knowledge import approved_answers
 from app.knowledge import readiness as readiness_module
 from app.knowledge import service as knowledge_service
+from app.knowledge.approved_answers import AnswerView
 from app.knowledge.service import UsableFact
 
 MESSAGING_WINDOW = timedelta(hours=24)
@@ -36,6 +38,17 @@ HISTORY_CHARS = 1000
 INTERNAL_CATEGORIES = frozenset({"escalation", "brand", "schedule"})
 INTERNAL_KEYS = frozenset({"policy.price_disclosure"})
 AUTO_STATUSES = ("queued", "sending", "outcome_unknown", "sent")
+# A voice note's transcript is shown to the model under this role (it is the customer's speech,
+# transcribed by a machine); see ``DraftMessage.source`` and the draft_reply prompt.
+TRANSCRIPT_ROLE = "customer_transcript"
+# How long drafting waits for a ``pending`` transcript before it gives up and treats the voice
+# note as it always was (an attachment a person handles). The transcription job's own retries
+# end well before this (3 attempts, 180 s timeout, 10 s / 60 s backoff), so this only matters if
+# a job is lost; it keeps a stuck row from leaving a conversation unhandled for ever.
+TRANSCRIPT_WAIT_LIMIT = timedelta(minutes=20)
+# While waiting, the draft job looks again after this long (the transcription job also pulls the
+# draft job forward the moment it finishes, so this is only the safety net).
+TRANSCRIPT_POLL_SECONDS = 30
 
 DEFAULT_DISCLOSURE = {
     "tr": "Bu yanıt otomatik olarak hazırlanmıştır.",
@@ -51,12 +64,44 @@ class DraftSkip:
     retry: bool = False
 
 
+def _clean_transcript(text: str | None) -> str:
+    """One line of plain words: a transcript cannot start a new "business:" line of its own."""
+    return " ".join((text or "").split())
+
+
+@dataclass(frozen=True)
+class TranscriptView:
+    """The transcript of a voice note as drafting needs it (status, words, language)."""
+
+    status: str  # pending | succeeded | failed
+    text: str | None = None
+    language: str | None = None
+    reason_code: str | None = None
+    created_at: datetime | None = None
+
+    @property
+    def words(self) -> str:
+        """The transcript text, usable only when the transcription succeeded."""
+        return _clean_transcript(self.text) if self.status == "succeeded" else ""
+
+
 @dataclass(frozen=True)
 class InboundText:
     message_id: uuid.UUID
     text: str | None
     attachments: int
     provider_timestamp: datetime
+    transcript: TranscriptView | None = None
+
+    @property
+    def transcript_words(self) -> str:
+        return self.transcript.words if self.transcript is not None else ""
+
+    @property
+    def reading(self) -> str:
+        """Everything the customer said in this message: typed text and transcript."""
+        parts = [(self.text or "").strip(), self.transcript_words]
+        return "\n".join(p for p in parts if p)
 
 
 @dataclass(frozen=True)
@@ -92,14 +137,28 @@ class DraftContext:
     usable_keys: frozenset[str] = field(default_factory=frozenset)
     unusable_keys: frozenset[str] = field(default_factory=frozenset)  # exist, but not usable
     controller_cutover_generation: int = 0
+    # Messages whose transcript text the model is shown (the unanswered ones and those in the
+    # history). Set by code from stored rows, never by the model: it is what forces approval.
+    transcript_message_ids: tuple[uuid.UUID, ...] = ()
+    # F-04: what we know about the story a customer replied to (prompt text), and, for a plain
+    # story mention, the owner's thank-you template in the reply language (None: not set up).
+    story_context: str | None = None
+    story_mention: bool = False
+    story_mention_template: AnswerView | None = None
 
     @property
     def customer_text(self) -> str:
-        return "\n".join(m.text for m in self.unanswered if m.text)
+        """What the customer said, typed or spoken: the text every pre-check scans (injection,
+        escalation words, flags), so a transcript is screened like any other message."""
+        return "\n".join(m.reading for m in self.unanswered if m.reading)
 
     @property
     def attachment_only(self) -> bool:
-        return not any((m.text or "").strip() for m in self.unanswered)
+        return not any(m.reading for m in self.unanswered)
+
+    @property
+    def transcript_based(self) -> bool:
+        return bool(self.transcript_message_ids)
 
 
 def _fact(facts: list[UsableFact], key: str) -> UsableFact | None:
@@ -137,7 +196,7 @@ def _unanswered(session: Session, conversation: Conversation) -> list[Message]:
     return list(session.scalars(stmt.order_by(Message.provider_timestamp, Message.created_at)))
 
 
-def _history(session: Session, conversation: Conversation) -> list[tuple[str, str]]:
+def _history_rows(session: Session, conversation: Conversation) -> list[Message]:
     rows = session.scalars(
         select(Message)
         .where(
@@ -148,12 +207,45 @@ def _history(session: Session, conversation: Conversation) -> list[tuple[str, st
         .order_by(Message.provider_timestamp.desc(), Message.created_at.desc())
         .limit(HISTORY_MESSAGES)
     ).all()
+    return list(reversed(rows))
+
+
+def transcripts_for(
+    session: Session, workspace_id: uuid.UUID, message_ids: Sequence[uuid.UUID]
+) -> dict[uuid.UUID, TranscriptView]:
+    """The transcripts of these messages, by message id (workspace-scoped)."""
+    if not message_ids:
+        return {}
+    rows = session.scalars(
+        select(MessageTranscript).where(
+            MessageTranscript.workspace_id == workspace_id,
+            MessageTranscript.message_id.in_(list(message_ids)),
+        )
+    )
+    return {
+        row.message_id: TranscriptView(
+            row.status, row.text, row.language, row.reason_code, row.created_at
+        )
+        for row in rows
+    }
+
+
+def _history(
+    rows: Sequence[Message], transcripts: dict[uuid.UUID, TranscriptView]
+) -> list[tuple[str, str]]:
+    """(role, text) of the recent messages, oldest first. A voice note whose transcript
+    succeeded is shown as its transcript, under its own role, never as typed text."""
     history: list[tuple[str, str]] = []
-    for message in reversed(rows):
-        text = (message.text or "").strip() or ("[attachment]" if message.attachments else "")
-        if text:
-            role = "customer" if message.direction == "inbound" else "business"
-            history.append((role, text[:HISTORY_CHARS]))
+    for message in rows:
+        typed = (message.text or "").strip()
+        spoken = transcripts[message.id].words if message.id in transcripts else ""
+        role = "customer" if message.direction == "inbound" else "business"
+        if typed:
+            history.append((role, typed[:HISTORY_CHARS]))
+        if spoken and message.direction == "inbound":
+            history.append((TRANSCRIPT_ROLE, spoken[:HISTORY_CHARS]))
+        elif not typed and message.attachments:
+            history.append((role, "[attachment]"))
     return history
 
 
@@ -237,14 +329,45 @@ def prepare(
     workspace = session.get(Workspace, workspace_id)
     if account is None or workspace is None:
         return DraftSkip("conversation_missing")
+    history_rows = _history_rows(session, conversation)
+    transcripts = transcripts_for(
+        session,
+        workspace_id,
+        [m.id for m in unanswered] + [m.id for m in history_rows],
+    )
+    if _waiting_for_transcript(clock, unanswered, transcripts):
+        return DraftSkip("transcript_pending")  # the transcription job wakes this job
+    inbound = [
+        InboundText(
+            m.id,
+            m.text,
+            len(m.attachments or []),
+            m.provider_timestamp,
+            transcripts.get(m.id),
+        )
+        for m in unanswered
+    ]
     gathered = gather_workspace_inputs(
         session,
         clock,
         ctx,
         workspace,
-        [m.text for m in reversed(unanswered) if m.text],
+        [m.reading for m in reversed(inbound) if m.reading],
     )
     last_inbound = conversation.last_inbound_at
+    spoken = {m.id for m in unanswered} | {m.id for m in history_rows}
+    # A plain story mention has no words and no audio, so it never waits for a transcript above.
+    mention = stories.is_mention_only([(m.text, m.attachments) for m in unanswered])
+    story_content = (
+        None
+        if mention
+        else stories.reply_context(
+            session,
+            workspace_id,
+            conversation.social_account_id,
+            [(m.attachments, m.provider_timestamp) for m in unanswered],
+        )
+    )
 
     return DraftContext(
         ctx=ctx,
@@ -256,12 +379,9 @@ def prepare(
         handling_mode=conversation.handling_mode,
         is_simulated=conversation.is_simulated,
         requested=requested,
-        unanswered=[
-            InboundText(m.id, m.text, len(m.attachments or []), m.provider_timestamp)
-            for m in unanswered
-        ],
+        unanswered=inbound,
         covers_through_message_id=newest.id,
-        history=_history(session, conversation),
+        history=_history(history_rows, transcripts),
         language=gathered.language,
         facts=gathered.facts,
         price_disclosure=gathered.price_disclosure,
@@ -277,7 +397,37 @@ def prepare(
         auto_replies_last_hour=_auto_replies_last_hour(session, clock, conversation),
         usable_keys=frozenset(f.key for f in gathered.facts),
         unusable_keys=frozenset(gathered.unusable_keys),
+        transcript_message_ids=tuple(
+            sorted(
+                (mid for mid in spoken if mid in transcripts and transcripts[mid].words),
+                key=str,
+            )
+        ),
+        story_context=stories.prompt_text(story_content),
+        story_mention=mention,
+        story_mention_template=(
+            approved_answers.story_mention_template(session, ctx, gathered.language.code)
+            if mention and gathered.language.code is not None
+            else None
+        ),
     )
+
+
+def _waiting_for_transcript(
+    clock: Clock, unanswered: Sequence[Message], transcripts: dict[uuid.UUID, TranscriptView]
+) -> bool:
+    """True while a voice note among the unanswered messages has a transcript on its way.
+
+    A ``pending`` row older than ``TRANSCRIPT_WAIT_LIMIT`` no longer counts: drafting proceeds
+    without it (the voice note stays a person-handled attachment). ``failed`` never waits."""
+    now = clock.now()
+    for message in unanswered:
+        view = transcripts.get(message.id)
+        if view is None or view.status != "pending":
+            continue
+        if view.created_at is None or now - view.created_at < TRANSCRIPT_WAIT_LIMIT:
+            return True
+    return False
 
 
 @dataclass(frozen=True)

@@ -14,7 +14,7 @@ Autonomy must be configurable per action type, defaulting to supervised. The LLM
 - **Inputs are facts computed by code**: action type, intent and flags from the validated LLM output, claim-validator result, fact usability, automation policy settings, conversation mode, messaging window, account capability and health, rate guards, injection heuristics.
 - **The LLM's output can only make a decision stricter.** A model flag such as `needs_human=true` or low self-reported confidence can escalate. Nothing the model outputs can relax a rule.
 - Rule order and the full rule table are in [workflows.md §C](../workflows.md) (replies) and §E (content).
-- **Automation policies** (`automation_policies` table): per workspace and **action class** (`reply.hours`, `reply.location_contact`, `reply.pricing`, `reply.services`, `reply.booking`, `reply.promotions`, `reply.general_faq`, `content.publish`; the mapping from intents is in [agent-runtime.md §4](../agent-runtime.md)), mode ∈ `auto` | `approval` | `off`. Defaults: all `approval`. `content.publish` is fixed to `approval` in MVP. `auto` can only be enabled when workspace readiness is `ready`.
+- **Automation policies** (`automation_policies` table): per workspace and **action class** (`reply.hours`, `reply.location_contact`, `reply.pricing`, `reply.services`, `reply.booking`, `reply.promotions`, `reply.general_faq`, `reply.story_mention` (F-04), `content.publish`; the mapping from intents is in [agent-runtime.md §4](../agent-runtime.md)), mode ∈ `auto` | `approval` | `off`. Defaults: all `approval`. `content.publish` is fixed to `approval` in MVP. `auto` can only be enabled when workspace readiness is `ready`.
 
 ### 2. Approvals (one mechanism, two kinds)
 Table `approvals`, with `kind` ∈:

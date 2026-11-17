@@ -87,7 +87,9 @@ def get_conversation(
     ]
     return ConversationDetailOut(
         conversation=_conversation_out(db, ctx, conversation),
-        messages=[views.message_out(m) for m in service.recent_messages(db, ctx, conversation)],
+        messages=views.messages_out(
+            db, ctx, conversation, service.recent_messages(db, ctx, conversation)
+        ),
         open_draft=views.draft_out(db, ctx, open_draft, conversation) if open_draft else None,
         recent_drafts=[views.draft_out(db, ctx, d, conversation) for d in recent],
     )

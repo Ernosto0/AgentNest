@@ -21,6 +21,73 @@
     "eraseConfirm": "Bu konuşmaya ait tüm mesajları ve müşteri hafızasını kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
     "messages": "Mesajlar",
     "attachment": "Fotoğraf veya dosya",
+    "story": {
+      "reply": "Hikâyenize yanıt veriyor",
+      "mention": "Hikâyesinde sizi etiketledi",
+      "unknown": "Ayrıntısını bilmediğimiz bir hikâye",
+      "expired": "Hikâyenin süresi doldu",
+      "lines": "Hikâyedeki yazı"
+    },
+    "voiceNote": "Sesli mesaj",
+    "transcript": {
+      "title": "Yazıya çeviri (otomatik)",
+      "languages": {
+        "tr": "Türkçe",
+        "en": "İngilizce",
+        "other": "Başka bir dil"
+      },
+      "mayHaveErrors": "Bir makine yazdı, bu yüzden hata içerebilir.",
+      "listenInInstagram": "Sesli mesajı Instagram’da dinleyebilirsiniz.",
+      "pending": "Sesli mesaj yazıya çevriliyor…",
+      "failed": "Sesli mesaj yazıya çevrilemedi. Yanıtlamak için Instagram’da dinleyin.",
+      "erased": "Yazıya çeviri saklama süresi dolduğu için silindi.",
+      "basis": "Otomatik bir ses çevirisinden yazıldı. Onaylamadan önce kontrol edin.",
+      "reason": {
+        "VOICE_URL_MISSING": "Instagram ses için bir bağlantı vermedi.",
+        "VOICE_URL_REFUSED": "Ses bağlantısı kabul edilmedi.",
+        "VOICE_EXPIRED": "Ses artık erişilebilir değil.",
+        "VOICE_DOWNLOAD_FAILED": "Ses indirilemedi.",
+        "VOICE_TOO_LARGE": "Sesli mesaj çok büyük.",
+        "VOICE_TOO_LONG": "Sesli mesaj çok uzun.",
+        "VOICE_UNSUPPORTED_TYPE": "Ses biçimi desteklenmiyor.",
+        "VOICE_EMPTY_AUDIO": "Ses boştu.",
+        "VOICE_NO_SPEECH": "İçinde konuşma bulunamadı.",
+        "VOICE_TRANSCRIPTION_REJECTED": "Yazıya çeviri hizmeti reddetti.",
+        "VOICE_TRANSCRIPTION_UNAVAILABLE": "Yazıya çeviri hizmeti şu anda kullanılamıyor.",
+        "VOICE_QUOTA_EXCEEDED": "Sesli mesajlar için günlük sınıra ulaşıldı.",
+        "VOICE_SOURCE_GONE": "Mesaj silindi."
+      }
+    },
+    "imageDescription": {
+      "title": "Müşterinin gönderdiği (otomatik)",
+      "photoNumber": "Fotoğraf {{n}}",
+      "kinds": {
+        "product": "Ürün gibi görünüyor",
+        "price_screenshot": "Fiyat ekran görüntüsü gibi görünüyor",
+        "location": "Konum gibi görünüyor",
+        "other": "Başka bir şey"
+      },
+      "visibleText": "Görseldeki yazı",
+      "injection": "Görseldeki yazı bir asistana verilmiş talimata benziyor. Yok sayıldı.",
+      "mayBeWrong": "Bir makine yazdı, bu yüzden yanlış olabilir. Bir fiyat ya da işletmenizle ilgili bir bilgi değildir.",
+      "openInInstagram": "Emin olmak için fotoğrafı Instagram’da açın ve yanıtı kendiniz verin.",
+      "pending": "Fotoğrafa bakılıyor…",
+      "failed": "Fotoğraf tarif edilemedi. Instagram’da açın.",
+      "erased": "Tarif saklama süresi dolduğu için silindi.",
+      "reason": {
+        "IMAGE_URL_MISSING": "Instagram fotoğraf için bir bağlantı vermedi.",
+        "IMAGE_URL_REFUSED": "Fotoğraf bağlantısı kabul edilmedi.",
+        "IMAGE_EXPIRED": "Fotoğraf artık erişilebilir değil.",
+        "IMAGE_DOWNLOAD_FAILED": "Fotoğraf indirilemedi.",
+        "IMAGE_TOO_LARGE": "Fotoğraf çok büyük.",
+        "IMAGE_UNSUPPORTED_TYPE": "Bu dosya türü desteklenmiyor.",
+        "IMAGE_EMPTY": "Fotoğraf boştu.",
+        "IMAGE_DESCRIPTION_REJECTED": "Asistan fotoğrafı tarif edemedi.",
+        "IMAGE_DESCRIPTION_UNAVAILABLE": "Tarif hizmeti şu anda kullanılamıyor.",
+        "IMAGE_QUOTA_EXCEEDED": "Fotoğraflar için günlük sınıra ulaşıldı.",
+        "IMAGE_SOURCE_GONE": "Mesaj silindi."
+      }
+    },
     "sentInApp": "Instagram uygulamasından gönderildi",
     "saveAsAnswer": "Onaylı yanıt olarak kaydet",
     "savedAsAnswer": "Onaylı yanıt olarak kaydedildi",
@@ -143,6 +210,7 @@
       "LLM_OUTPUT_INVALID": "Asistanın yanıtı geçersizdi",
       "LLM_REFUSED": "Asistan yanıtlamayı reddetti",
       "ATTACHMENT_ONLY": "Yalnızca fotoğraf veya dosya",
+      "TRANSCRIPT_REQUIRES_APPROVAL": "Sesli mesajdan yazıldı, bu yüzden her zaman sizin onayınız gerekir",
       "INJECTION_SUSPECTED": "Asistana talimat vermeye çalışıyor gibi görünüyor",
       "MESSAGING_WINDOW_CLOSED": "Yanıt süresi doldu",
       "ACCOUNT_NOT_CONNECTED": "Instagram hesabı bağlı değil",
@@ -217,6 +285,7 @@
       "reply_booking": "Rezervasyon",
       "reply_promotions": "Kampanyalar",
       "reply_general_faq": "Genel sorular",
+      "reply_story_mention": "Hikâye etiketi teşekkürü",
       "content_publish": "Gönderi yayınlama"
     },
     "manageConnection": "Bağlantıyı yönet"
@@ -237,6 +306,8 @@
     "fieldIntent": "Konu",
     "fieldLanguage": "Dil",
     "save": "Yanıtı kaydet",
+    "mentionHint": "Biri hikâyesinde sizi etiketlediğinde gönderilir. Her dilde bir tane olabilir. Otomasyon ayarlarından değiştirmediğiniz sürece onayınız olmadan gitmez. Örnek soru gerekmez.",
+    "mentionExists": "Bu dilde zaten bir hikâye etiketi teşekkürü var. Önce onu arşivleyin.",
     "literalValue": "Yanıtta elle yazılmış bir fiyat, saat, iletişim bilgisi veya bağlantı var. Bunu bir yer tutucuyla değiştirin.",
     "intent": {
       "faq": "Genel soru",
@@ -246,7 +317,8 @@
       "location_contact": "Adres ve iletişim",
       "services": "Hizmetler",
       "booking": "Rezervasyon",
-      "promotions": "Kampanyalar"
+      "promotions": "Kampanyalar",
+      "story_mention": "Hikâye etiketi teşekkürü"
     },
     "lang": {
       "tr": "Türkçe",

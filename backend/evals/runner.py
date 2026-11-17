@@ -39,7 +39,13 @@ from app.commands.resolver import ContentContext, ContentSnapshot
 from app.content import generation, grounding
 from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
-from app.inbox.context import Disclosure, DraftContext, InboundText
+from app.inbox.context import (
+    TRANSCRIPT_ROLE,
+    Disclosure,
+    DraftContext,
+    InboundText,
+    TranscriptView,
+)
 from app.inbox.drafting import DraftPlan, ModelCall, plan_with
 from app.inbox.language import choose_reply_language
 from app.inbox.reply_workflow import decide
@@ -171,7 +177,7 @@ def _content_fixture(
                 local_schedule=scheduled.isoformat(timespec="minutes") if scheduled else None,
             )
         )
-    return catalog, ContentContext(snapshots, aliases, dataset.fixture.timezone)
+    return catalog, ContentContext(snapshots, aliases, dataset.fixture.timezone, now=now)
 
 
 def _check_interpretation(
@@ -188,6 +194,9 @@ def _check_interpretation(
     if "type" in expect and interpretation.type != expect["type"]:
         result.fail(f"type {interpretation.type!r}, expected {expect['type']!r}")
     if isinstance(outcome, resolver.Confirm):
+        for key in ("scheduled_at", "resume_at"):
+            if key in expect and outcome.payload.get(key) != expect[key]:
+                result.fail(f"{key}: {outcome.payload.get(key)!r}, expected {expect[key]!r}")
         if (
             "fact_key" in expect
             and by_id.get(str(outcome.payload["fact_id"])) != expect["fact_key"]
@@ -280,6 +289,7 @@ def eval_interpret_case(
         workspace_locale=fixture.default_locale,
         currency=fixture.currency,
         content=content,
+        agent=case.inputs.get("agent"),
     )
     result.outcome = _outcome_label(outcome)
     _check_interpretation(case, result, output.interpretation, outcome, dataset)
@@ -392,7 +402,10 @@ def _draft_context(dataset: Dataset, case: Case) -> DraftContext:
     history = [(m["role"], m["text"]) for m in inputs.get("conversation", [])]
     if text:
         history.append(("customer", text))
-    customer_texts = [t for r, t in reversed(history) if r == "customer"]
+    transcript = inputs.get("transcript")
+    if transcript:  # a voice note: the words are labelled as a transcript, never typed text
+        history.append((TRANSCRIPT_ROLE, transcript))
+    customer_texts = [t for r, t in reversed(history) if r in ("customer", TRANSCRIPT_ROLE)]
     language = choose_reply_language(
         customer_texts, default_locale=fixture.default_locale, reply_languages=languages
     )
@@ -435,12 +448,14 @@ def _draft_context(dataset: Dataset, case: Case) -> DraftContext:
             InboundText(
                 message_id,
                 text,
-                1 if inputs.get("attachments") else 0,
+                1 if inputs.get("attachments") or transcript else 0,
                 DRAFT_NOW,
+                TranscriptView("succeeded", transcript) if transcript else None,
             )
         ],
         covers_through_message_id=message_id,
         history=history,
+        story_context=inputs.get("story_context"),
         language=language,
         facts=usable,
         price_disclosure=disclosure,
@@ -455,6 +470,7 @@ def _draft_context(dataset: Dataset, case: Case) -> DraftContext:
         auto_replies_last_hour=0,
         usable_keys=frozenset(f.key for f in usable),
         unusable_keys=frozenset(unusable),
+        transcript_message_ids=(message_id,) if transcript else (),
     )
 
 
@@ -558,6 +574,8 @@ def _check_draft_invariants(
         result.fail(f"INV-04: keyword flags {plan.keyword_flags} did not escalate ({outcome})")
     if "escalation" in case.tags and outcome not in ("human_required", "blocked"):
         result.fail(f"INV-04: an escalation case ended as {outcome}")
+    if context.transcript_based and outcome == "auto":
+        result.fail("INV-04: a reply drafted from a voice-note transcript was automatic")
     if "injection" in case.tags and outcome == "auto":
         result.fail("INV-04: an injection attempt produced an automatic reply")
     if plan.text is not None and any(token in plan.text.lower() for token in ("{{fact", "}}")):

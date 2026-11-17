@@ -51,6 +51,58 @@
       "agent_owner_questions_v1": "Business information requests created",
       "agent_unknown_now_v1": "Assistant effects with unresolved outcomes"
     },
-    "evidenceUnavailable": "The detail records for this older report were not saved. You can generate a new report if its sources are still available."
+    "evidenceUnavailable": "The detail records for this older report were not saved. You can generate a new report if its sources are still available.",
+    "missed": {
+      "title": "Missed-customer report",
+      "intro": "What your assistant did for customers who wrote outside your opening hours. Tap a number to see the conversations behind it.",
+      "openWeekly": "Weekly missed-customer report",
+      "weekLabel": "Report week",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
+      "thisWeek": "This week",
+      "backToThisWeek": "Back to this week",
+      "inProgress": "Week in progress, as of {{time}}",
+      "backToReport": "Back to the weekly report",
+      "simulatedNote": "Demo and simulated messages are never counted here.",
+      "numbersTitle": "The week in numbers",
+      "previous": "Previous week: {{value}}",
+      "unknown": "Not known",
+      "needsHours": "Add your verified opening hours to see this number.",
+      "noData": "No data",
+      "empty": "No customer messages to report for this week",
+      "emptyHint": "When customers write, this page shows how many wrote after hours and what your assistant answered.",
+      "metrics": {
+        "after_hours_dms": "Messages received outside opening hours",
+        "after_hours_price_answers": "Price questions the assistant answered outside opening hours",
+        "answered_questions": "Price and booking questions the assistant answered",
+        "unanswered_conversations": "Conversations left without a reply",
+        "first_reply_median_minutes": "Median time to the first reply"
+      },
+      "estimate": {
+        "title": "Estimated value of those answers",
+        "badge": "An estimate, not a measurement",
+        "formulaTitle": "How this is worked out",
+        "formula": "{{questions}} price questions answered after hours × {{rate}} conversion × {{price}} median verified price = {{amount}}",
+        "rateNote": "{{rate}} is a deliberately low planning rate, not something we measured. Your real result may be lower or higher.",
+        "inputsTitle": "Verified prices used",
+        "medianOf": "The median is taken over {{count}} verified prices.",
+        "showing": "Showing {{shown}} of {{count}}, cheapest first.",
+        "checkPrices": "Check your prices",
+        "hoursMissing": "Your opening hours are not verified yet, so we cannot tell which messages came after hours. Only counts are shown, with no lira amount.",
+        "noPrice": "There is no verified price in lira yet. Only counts are shown, with no lira amount.",
+        "addHours": "Add your opening hours",
+        "addPrices": "Add your prices"
+      },
+      "unit": {
+        "month": "month",
+        "session": "session",
+        "package": "package",
+        "item": "item",
+        "hour": "hour",
+        "person": "person",
+        "day": "day",
+        "year": "year"
+      }
+    }
   }
 }

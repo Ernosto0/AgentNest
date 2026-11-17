@@ -25,7 +25,9 @@ from app.identity.permissions import has_permission
 from app.knowledge import candidates, impact, usability
 from app.knowledge import repository as repo
 from app.knowledge.formatting import format_value
+from app.knowledge.learning import answer_fence, editor_type, rebase_answer_fence
 from app.knowledge.models import BusinessFact, FactCandidate, FactVersion
+from app.knowledge.schemas import CandidateAccept
 from app.knowledge.templates import Template, TemplateItem, load_template
 from app.knowledge.transitions import apply_fact_event
 from app.knowledge.values import clean_text, validate_value, values_equal
@@ -736,17 +738,48 @@ def restore_fact(
     return fact
 
 
+def _owner_answer_label(candidate: FactCandidate) -> dict[str, str] | None:
+    """A readable name for the fact an owner answer becomes: the start of the answer itself."""
+    if candidate.source_type != "owner_answer" or candidate.value_type != "text":
+        return None
+    text = " ".join(str(candidate.proposed_value.get("text", "")).split())
+    if not text:
+        return None
+    short = text if len(text) <= 60 else text[:59].rstrip() + "…"
+    return {"tr": short, "en": short}
+
+
 # --- candidates -----------------------------------------------------------------------------
 
 
 def accept_candidate(
-    session: Session, clock: Clock, ctx: WorkspaceContext, candidate_id: uuid.UUID
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    candidate_id: uuid.UUID,
+    *,
+    normalized: CandidateAccept | None = None,
 ) -> BusinessFact:
-    """Apply a pending candidate as a verified fact value (``knowledge.verify``)."""
+    """Apply a pending candidate as a verified fact value (``knowledge.verify``).
+
+    An owner answer is free text. If it carries a price, hours or a contact it cannot be accepted
+    as text: the caller sends ``normalized``, the typed value the owner entered in the editor.
+    """
     _require(ctx, "knowledge.verify")
     candidate = repo.get_candidate(session, ctx, candidate_id, lock=True)  # candidate first
     if candidate is None:
         raise AppError("NOT_FOUND")
+    if candidate.status != "pending":
+        raise AppError("CONFLICT_STATE")
+    fence = answer_fence(session, candidate)
+    label = _owner_answer_label(candidate)
+    if normalized is not None:
+        if candidate.source_type != "owner_answer":
+            raise AppError("VALIDATION_FAILED")
+        value = validate_value(normalized.value_type, normalized.value)
+        candidate.value_type, candidate.proposed_value = normalized.value_type, value
+    if editor_type(candidate) is not None:
+        raise AppError("VALIDATION_FAILED", reason="owner_answer_requires_editor")
     # Resolve first: applying the value would otherwise supersede this very candidate (it then
     # equals the fact). Raises CONFLICT_STATE unless it is still pending. All in one transaction.
     candidates.resolve(candidate, "accept", _user_id(ctx), clock.now())
@@ -758,7 +791,7 @@ def accept_candidate(
             load_template(workspace.business_category),
             candidate.fact_key,
             value_type=candidate.value_type,
-            label=None,
+            label=label,
             criticality=None,
             allow_missing_label=True,
         )
@@ -792,6 +825,7 @@ def accept_candidate(
             source_ref=ref,
             reason=None,
         )
+    rebase_answer_fence(session, candidate, fence)
     audit.record(
         session,
         ctx,
@@ -818,7 +852,9 @@ def reject_candidate(
     candidate = repo.get_candidate(session, ctx, candidate_id, lock=True)
     if candidate is None:
         raise AppError("NOT_FOUND")
+    fence = answer_fence(session, candidate)
     candidates.resolve(candidate, "reject", _user_id(ctx), clock.now())
+    rebase_answer_fence(session, candidate, fence)
     audit.record(
         session,
         ctx,

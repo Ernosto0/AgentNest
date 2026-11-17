@@ -19,7 +19,6 @@ from app.agent.personality import (
 )
 from app.agent.repository import AgentScopeError, scoped_account
 from app.api.deps import get_clock, require_membership
-from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.db import get_db
@@ -87,6 +86,8 @@ def patch_personality(
 class DelegationPreview(BaseModel):
     next_version: int
     changed_actions: list[str]
+    # Set for an approval-ladder suggestion (D-02): the reply topic that would turn automatic.
+    automation_class: str | None = None
 
 
 class ContentPreview(BaseModel):
@@ -208,8 +209,12 @@ def preview_delegation(
     body: delegation.DelegationChange,
     ctx: WorkspaceContext = Depends(require_membership("agent.delegation.manage")),
     db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
 ) -> DelegationPreview:
-    return DelegationPreview.model_validate(delegation.preview(db, ctx, account_id, body))
+    result = DelegationPreview.model_validate(delegation.preview(db, clock, ctx, account_id, body))
+    if body.suggestion_id is not None:
+        db.commit()  # the preview of a suggestion is recorded (hash-bound) and audited
+    return result
 
 
 @router.post("/delegation/apply", response_model=DelegationOut)
@@ -280,37 +285,9 @@ def _state_change(
     body: StateChange,
     target: str,
 ) -> StateOut:
-    if ctx.actor.type != "user" or ctx.role != "owner":
-        raise AppError("FORBIDDEN", permission="agent.control")
-    try:
-        account = scoped_account(db, ctx.workspace_id, account_id, lock=True)
-    except AgentScopeError as exc:
-        raise AppError("NOT_FOUND") from exc
-    if account.config_version != body.expected_config_version:
-        raise AppError("VERSION_CONFLICT")
-    if account.controller_mode != "agent" or account.state not in (
-        "active" if target == "paused" else "paused",
-    ):
-        raise AppError("CONFLICT_STATE", entity="account_agent", status=account.state)
-    account.state = target
-    account.controller_epoch += 1
-    from app.agent.control import adopt_threads
+    from app.agent.state import change_state
 
-    adopt_threads(db, clock, account)
-    from app.agent.jobs import enqueue_cleanup
-
-    enqueue_cleanup(db, clock, ctx.workspace_id, account_id, account.controller_epoch)
-    account.config_version += 1
-    account.updated_at = clock.now()
-    audit.record(
-        db,
-        ctx,
-        "agent.state_changed",
-        "account_agent",
-        account.id,
-        {"state": target, "controller_epoch": account.controller_epoch},
-        clock=clock,
-    )
+    account = change_state(db, clock, ctx, account_id, body.expected_config_version, target)
     db.commit()
     return StateOut(
         state=account.state,

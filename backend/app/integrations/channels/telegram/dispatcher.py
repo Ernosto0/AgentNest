@@ -154,12 +154,20 @@ def process_update(
     # 3. Handle Callback Query
     if update.callback_query:
         cb_data = (update.callback_query.data or "").strip()
-        if cb_data.startswith("act:"):
+        if cb_data.startswith(("act:", "fsv:")):
             token_str = cb_data[4:]
-            from app.integrations.channels.telegram.handlers import handle_approval_callback
+            from app.integrations.channels.telegram.handlers import (
+                handle_approval_callback,
+                handle_fact_save_callback,
+            )
 
+            callback = (
+                handle_fact_save_callback
+                if cb_data.startswith("fsv:")
+                else handle_approval_callback
+            )
             try:
-                action_name = handle_approval_callback(
+                action_name = callback(
                     session=session,
                     clock=clock,
                     callback_query=update.callback_query,

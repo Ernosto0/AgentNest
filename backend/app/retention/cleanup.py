@@ -36,7 +36,13 @@ from app.core.clock import FrozenClock
 from app.core.config import Settings
 from app.core.db import set_tenant_context
 from app.identity.models import Workspace
-from app.inbox.models import InboundEvent, Message, ReplyDraft
+from app.inbox.models import (
+    InboundEvent,
+    Message,
+    MessageImageDescription,
+    MessageTranscript,
+    ReplyDraft,
+)
 from app.jobs.models import Job
 from app.notifications.models import Notification
 from app.owner_requests.models import OwnerAnswer, OwnerQuestion
@@ -64,6 +70,10 @@ class RetentionCounts:
     owner_tasks_redacted: int = 0
     agent_steps_scrubbed: int = 0
     agent_actions_scrubbed: int = 0
+    # Feature Phase 2 (F-03): voice-note transcripts follow the message text
+    transcripts_nulled: int = 0
+    # Feature Phase 2 (F-03): what a model wrote about a customer's picture, likewise
+    image_descriptions_nulled: int = 0
 
     def as_dict(self) -> dict[str, int]:
         return asdict(self)
@@ -290,6 +300,53 @@ def run_retention(
             and_(Message.provider_timestamp < text_cutoff, Message.text.is_not(None)),
         )
     )
+    # A voice-note transcript is the customer's speech as text: it goes with the message text.
+    transcripts = run_tenant(
+        lambda batch: (
+            update(MessageTranscript)
+            .where(
+                MessageTranscript.id.in_(
+                    _ids_of(
+                        MessageTranscript,
+                        and_(
+                            MessageTranscript.text.is_not(None),
+                            MessageTranscript.message_id.in_(
+                                select(Message.id).where(Message.provider_timestamp < text_cutoff)
+                            ),
+                        ),
+                        batch,
+                    )
+                )
+            )
+            .values(text=null(), erased_at=now)
+            .execution_options(synchronize_session=False)
+        )
+    )
+    # The description of a customer's picture and the text read from it, likewise.
+    image_descriptions = run_tenant(
+        lambda batch: (
+            update(MessageImageDescription)
+            .where(
+                MessageImageDescription.id.in_(
+                    _ids_of(
+                        MessageImageDescription,
+                        and_(
+                            or_(
+                                MessageImageDescription.description.is_not(None),
+                                MessageImageDescription.visible_text.is_not(None),
+                            ),
+                            MessageImageDescription.message_id.in_(
+                                select(Message.id).where(Message.provider_timestamp < text_cutoff)
+                            ),
+                        ),
+                        batch,
+                    )
+                )
+            )
+            .values(description=null(), visible_text=null(), erased_at=now)
+            .execution_options(synchronize_session=False)
+        )
+    )
     drafts = run_tenant(
         _null_columns(
             ReplyDraft,
@@ -450,4 +507,6 @@ def run_retention(
         owner_tasks_redacted=owner_tasks_redacted,
         agent_steps_scrubbed=agent_steps_scrubbed,
         agent_actions_scrubbed=agent_actions_scrubbed,
+        transcripts_nulled=transcripts,
+        image_descriptions_nulled=image_descriptions,
     )

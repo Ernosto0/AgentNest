@@ -154,6 +154,22 @@ class ContentCancelScheduled(BaseModel):
     content_ref: ContentRef
 
 
+class CommandTime(BaseModel):
+    local_date: str | None  # ISO date, today, tomorrow; null keeps the content's date
+    local_time: str  # HH:MM or morning (09:00 workspace time)
+
+
+class ContentReschedule(BaseModel):
+    type: Literal["content.reschedule"]
+    content_ref: ContentRef
+    time: CommandTime
+
+
+class AgentPauseUntil(BaseModel):
+    type: Literal["agent.pause_until"]
+    time: CommandTime
+
+
 class Clarify(BaseModel):
     """The command is ambiguous. The question shown to the owner is built by code from the
     candidates; the model's wording is never displayed."""
@@ -189,6 +205,8 @@ CommandInterpretation = (
     | QueryExplainFailure
     | ContentCreateDraft
     | ContentCancelScheduled
+    | ContentReschedule
+    | AgentPauseUntil
     | Clarify
     | Unsupported
 )
@@ -205,6 +223,8 @@ INTERPRETATION_TYPES = frozenset(
         "query.explain_failure",
         "content.create_draft",
         "content.cancel_scheduled",
+        "content.reschedule",
+        "agent.pause_until",
         "clarify",
         "unsupported",
     }
@@ -314,6 +334,9 @@ class DraftApprovedAnswer(BaseModel):
 class DraftMessage(BaseModel):
     role: Literal["customer", "business"]
     text: str  # untrusted: the customer's own words
+    # "transcript": the customer's voice note, written down by a machine (it may contain
+    # transcription errors). Always a customer message, always untrusted (INV-03).
+    source: Literal["message", "transcript"] = "message"
 
 
 class DraftReplyInput(BaseModel):
@@ -323,6 +346,8 @@ class DraftReplyInput(BaseModel):
     approved_answers: list[DraftApprovedAnswer]
     brand_voice: str | None
     conversation: list[DraftMessage]  # the last messages, oldest first
+    # One of the business's own stories the customer is replying to (stored content, as data).
+    story_context: str | None = None
     # Set on the one regeneration: what was wrong with the previous proposal.
     validator_feedback: list[str]
 
@@ -377,3 +402,28 @@ class ContentProposal(BaseModel):
     hashtags: list[str]  # at most 10; code appends them to the caption
     used_fact_keys: list[str]
     commercial_claims: list[CommercialClaim]
+
+
+# --- describe_image (F-03, Feature Phase 2, Session 03) ---------------------------------------
+
+ImageKind = Literal["product", "price_screenshot", "location", "other"]
+MAX_IMAGE_DESCRIPTION_CHARS = 500
+MAX_IMAGE_VISIBLE_TEXT_CHARS = 1500
+
+
+class DescribeImageInput(BaseModel):
+    """One image a customer sent, in memory only. The picture and every word in it are untrusted
+    customer content (INV-03)."""
+
+    image: bytes = Field(repr=False)
+    media_type: str  # image/jpeg | image/png | image/webp, already checked
+    locale: str  # tr | en: the language of the description (the workspace's default locale)
+
+
+class ImageDescription(BaseModel):
+    """What the model saw. A proposal for the owner to read: never a fact, never an instruction,
+    never an input of a draft."""
+
+    looks_like: ImageKind
+    description: str
+    visible_text: str

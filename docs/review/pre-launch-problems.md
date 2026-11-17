@@ -155,6 +155,8 @@ Findings P-13 to P-16 are from the 2026-11-09 screenshots; verify before acting.
 
 **Suggested fix.** On phones, keep "waiting for you", the command box and today's three numbers at the top. Collapse the rest behind section headers or move it to the pages that already own it (Content, Reports).
 
+**Status (2026-11-17).** Partly done. The command box is now first on Today at phone width (Feature Phase 2 Session 08: account banners, then the assistant panel with the command box on top; desktop layout unchanged). Collapsing or moving the other sections is still open. Not checked on a real phone.
+
 ### P-14. Seven-day content grid repeats "no story" seven times
 
 **Problem.** Every day cell shows the same "+ no story" prompt, followed by a separate "no story planned" card that says the same thing again. The owner still has to design the story image, so the prompt asks for work the product cannot help with yet.

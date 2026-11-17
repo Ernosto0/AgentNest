@@ -153,6 +153,9 @@ class DelegationChange(BaseModel):
     expected_delegation_version: int | None = Field(default=None, ge=1)
     client_request_id: uuid.UUID
     policy: DelegationPolicy
+    # Set only by an approval-ladder suggestion (D-02). The change is then bound to that
+    # suggestion: preview and apply check it (agent/suggestions.py) and apply accepts it.
+    suggestion_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -213,7 +216,11 @@ def _read_versions(
 
 
 def preview(
-    session: Session, ctx: WorkspaceContext, account_id: uuid.UUID, change: DelegationChange
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    account_id: uuid.UUID,
+    change: DelegationChange,
 ) -> dict[str, object]:
     if not has_permission(ctx.role, "agent.delegation.manage"):
         raise AppError("FORBIDDEN", permission="agent.delegation.manage")
@@ -223,6 +230,15 @@ def preview(
         raise AppError("NOT_FOUND") from exc
     current = current_delegation(session, ctx.workspace_id, account_id)
     _read_versions(account, current, change)
+    if change.suggestion_id is not None:
+        from app.agent import suggestions
+
+        automation_class = suggestions.preview_suggestion(session, clock, ctx, account_id, change)
+        return {
+            "next_version": (current.version + 1) if current else 1,
+            "changed_actions": [],
+            "automation_class": automation_class,
+        }
     previous = DelegationPolicy.model_validate(current.policy) if current else None
     changed = [
         action
@@ -265,6 +281,11 @@ def apply(
     member = session.get(WorkspaceMember, (ctx.workspace_id, user_id)) if user_id else None
     if member is None or member.role != "owner":
         raise AppError("FORBIDDEN", permission="agent.delegation.manage")
+    suggestion = None
+    if change.suggestion_id is not None:
+        from app.agent import suggestions
+
+        suggestion = suggestions.validate(session, clock, ctx, account_id, change, applying=True)
     now = clock.now()
     if current is not None:
         current.revoked_at = now
@@ -296,9 +317,17 @@ def apply(
         "agent.delegation_applied",
         "account_agent",
         account.id,
-        {"version": delegation.version, "changed_actions": preview_actions(current, canonical)},
+        {
+            "version": delegation.version,
+            # A suggestion leaves the agent grant as it was; it only turns one reply topic on.
+            "changed_actions": [] if suggestion else preview_actions(current, canonical),
+        },
         clock=clock,
     )
+    if suggestion is not None:
+        from app.agent import suggestions
+
+        suggestions.accept(session, clock, ctx, suggestion)
     return delegation
 
 

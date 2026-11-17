@@ -4,6 +4,7 @@ import type { Approval } from "@/api/types";
 import { FactsUsed } from "@/components/FactsUsed";
 import { DraftText, ReasonChips } from "@/features/inbox/DraftParts";
 import { useReplyDraft } from "@/features/inbox/hooks";
+import { DraftTranscripts } from "@/features/inbox/TranscriptBlock";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 /** The reply an authorization covers, shown with its sources (the approval carries only ids). */
@@ -19,6 +20,7 @@ export function ReplyApprovalBody({ approval }: { approval: Approval }) {
       className="flex flex-col gap-3.5 rounded-panel border border-border bg-surface p-4 shadow-xs"
       data-testid="reply-approval-body"
     >
+      <DraftTranscripts transcripts={draft.data.transcripts} />
       <div className="rounded-control border border-border bg-surface-subtle p-3.5 shadow-2xs">
         <DraftText draft={draft.data} />
         <FactsUsed facts={draft.data.facts_used} timeZone={workspace.timezone} className="mt-3 border-t border-border/60 pt-3" />

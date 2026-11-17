@@ -1018,7 +1018,7 @@ def _handle_owner_question_answer(
     )
 
     try:
-        owner_requests_service.decide(
+        answer = owner_requests_service.decide(
             db=session,
             clock=clock,
             ctx=ctx,
@@ -1026,6 +1026,7 @@ def _handle_owner_question_answer(
             question=question.id,
             request=request,
         )
+        offer = _fact_save_offer(session, clock, ctx, answer, is_tr)
         session.commit()
         msg = (
             "✅ <b>Bilgi kaydedildi ve asistana iletildi.</b>\n\n"
@@ -1036,7 +1037,17 @@ def _handle_owner_question_answer(
                 "This information will be used to generate a response for the customer."
             )
         )
-        tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+        if offer is None:
+            tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+        elif offer[1] is None:
+            tg_client.send_message(chat_id=chat_id, text=f"{msg}\n\n{offer[0]}", parse_mode="HTML")
+        else:
+            tg_client.send_message(
+                chat_id=chat_id,
+                text=f"{msg}\n\n{offer[0]}",
+                parse_mode="HTML",
+                reply_markup=offer[1],
+            )
         return "owner_question_answered"
     except AppError as exc:
         if exc.code in ("OWNER_QUESTION_CLOSED", "VERSION_CONFLICT"):
@@ -1054,6 +1065,146 @@ def _handle_owner_question_answer(
             tg_client.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
             return "owner_question_stale"
         raise
+
+
+def _fact_save_offer(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    answer: Any,
+    is_tr: bool,
+) -> tuple[str, dict[str, Any] | None] | None:
+    """The "save as verified fact" offer shown under the confirmation (D-05).
+
+    A one-tap button (single-use token) when the answer is plain text. An answer that carries a
+    price, hours or a contact gets a note instead: those go through the typed editor in the app.
+    """
+    from app.identity.permissions import has_permission
+    from app.knowledge.learning import editor_type
+    from app.knowledge.models import FactCandidate
+    from app.owner_requests import save_tokens
+
+    if answer.candidate_id is None or ctx.actor.id is None:
+        return None
+    candidate = session.get(FactCandidate, answer.candidate_id)
+    if (
+        candidate is None
+        or candidate.status != "pending"
+        or not has_permission(ctx.role, "knowledge.verify")
+    ):
+        return None
+    if editor_type(candidate) is not None:
+        note = (
+            "ℹ️ Bu yanıt fiyat, saat veya iletişim bilgisi içeriyor. Doğrulanmış bilgi "
+            "olarak kaydetmek için uygulamada İşletme bilgisi bölümünden onaylayın."
+            if is_tr
+            else (
+                "ℹ️ This answer contains a price, hours or contact details. To save it "
+                "as a verified fact, confirm it in Business knowledge in the app."
+            )
+        )
+        return note, None
+    token = save_tokens.create(session, clock, ctx, candidate.id, uuid.UUID(ctx.actor.id))
+    label = "💾 Doğrulanmış bilgi olarak kaydet" if is_tr else "💾 Save as verified fact"
+    prompt = (
+        "Bu yanıtı doğrulanmış bilgi olarak kaydedelim mi? Asistan sonraki yanıtlarda kullanır."
+        if is_tr
+        else "Save this as a verified fact? The assistant will use it in future replies."
+    )
+    keyboard = {
+        "inline_keyboard": [[{"text": label, "callback_data": save_tokens.CALLBACK_PREFIX + token}]]
+    }
+    return prompt, keyboard
+
+
+def handle_fact_save_callback(
+    session: Session,
+    clock: Clock,
+    callback_query: Any,
+    token_str: str,
+    tg_client: TelegramClient,
+) -> str:
+    """Consume a single-use "save as verified fact" token and accept its candidate (D-05).
+
+    The accept is the ordinary ``knowledge.accept_candidate`` as the linked user: the token only
+    proves which candidate and which person the button was meant for.
+    """
+    from app.knowledge import service as knowledge_service
+    from app.owner_requests import save_tokens
+
+    channel_user_id = str(callback_query.from_.id) if callback_query.from_ else ""
+    chat_id = str(callback_query.message.chat.id) if callback_query.message else None
+    message_id = callback_query.message.message_id if callback_query.message else None
+
+    def finish(text: str, action: str) -> str:
+        tg_client.answer_callback_query(callback_query.id, text=text, show_alert=True)
+        if chat_id and message_id:
+            with contextlib.suppress(Exception):
+                tg_client.edit_message_reply_markup(
+                    chat_id=chat_id, message_id=message_id, reply_markup={"inline_keyboard": []}
+                )
+        return action
+
+    try:
+        token = save_tokens.consume(session, clock, token_str, channel_user_id)
+    except AppError as exc:
+        if exc.code == "APPROVAL_ALREADY_DECIDED":
+            return finish("Bu bilgi zaten kaydedildi / Already saved", "fact_save_already_used")
+        if exc.code == "APPROVAL_EXPIRED":
+            return finish("Düğmenin süresi doldu / Button expired", "fact_save_expired")
+        if exc.code == "FORBIDDEN":
+            return finish("Bu işlem için yetkiniz yok / Unauthorized", "fact_save_unauthorized")
+        return finish("Bu düğme geçerli değil / Invalid button", "fact_save_failed")
+
+    user = session.get(User, token.user_id)
+    workspace = session.get(Workspace, token.workspace_id)
+    member = (
+        session.scalar(
+            select(WorkspaceMember).where(
+                WorkspaceMember.workspace_id == token.workspace_id,
+                WorkspaceMember.user_id == token.user_id,
+            )
+        )
+        if user is not None and workspace is not None
+        else None
+    )
+    if user is None or workspace is None or member is None:
+        return finish("Çalışma alanı erişimi yok / Workspace access revoked", "fact_save_failed")
+    ctx = workspace_context(workspace, ActorRef.user(user.id), member.role)
+    try:
+        knowledge_service.accept_candidate(session, clock, ctx, token.candidate_id)
+    except AppError as exc:
+        # The token stays spent: a failed accept changed nothing else.
+        session.commit()
+        if exc.code == "CONFLICT_STATE":
+            return finish("Bu öneri zaten karara bağlandı / Already handled", "fact_save_conflict")
+        if exc.code == "FORBIDDEN":
+            return finish("Bu işlem için yetkiniz yok / Unauthorized", "fact_save_unauthorized")
+        if exc.code == "VALIDATION_FAILED":
+            return finish(
+                "Bu yanıt uygulamada onaylanmalı / Confirm it in the app", "fact_save_needs_editor"
+            )
+        return finish("Kaydedilemedi / Could not save", "fact_save_failed")
+
+    tg_client.answer_callback_query(
+        callback_query.id, text="✅ Kaydedildi / Saved", show_alert=False
+    )
+    if chat_id and message_id and callback_query.message:
+        orig = callback_query.message.text or ""
+        name = user.display_name or user.email or "Owner"
+        try:
+            tg_client.edit_message_text(
+                chat_id=chat_id,
+                message_id=message_id,
+                text=f"{orig}\n\n✅ Doğrulanmış bilgi olarak kaydedildi / Saved as a fact — {name}",
+                reply_markup={"inline_keyboard": []},
+            )
+        except Exception:
+            with contextlib.suppress(Exception):
+                tg_client.edit_message_reply_markup(
+                    chat_id=chat_id, message_id=message_id, reply_markup={"inline_keyboard": []}
+                )
+    return "fact_saved"
 
 
 def handle_approval_callback(
