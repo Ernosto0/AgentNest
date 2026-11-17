@@ -942,5 +942,38 @@
     "typeLabel": "Biçim",
     "allAccounts": "Tüm hesaplar",
     "completedRequirements": "Tamamlanan gereksinimler ({{count}})"
+  },
+  "usage": {
+    "title": "Plan ve yapay zeka yanıtları",
+    "description": "Asistanın bu ay kaç müşteri yanıtı hazırladığı ve planınızın yanıt hakkı.",
+    "plan": "Plan",
+    "customQuota": "Çalışma alanınız için özel yanıt hakkı tanımlı",
+    "plans": {
+      "starter": "Başlangıç",
+      "growth": "İşletme",
+      "pro": "Stüdyo & Şube"
+    },
+    "status": {
+      "trial": "Deneme",
+      "active": "Aktif",
+      "past_due": "Ödemesi gecikmiş",
+      "cancelled": "İptal edilmiş"
+    },
+    "repliesThisPeriod": "Bu dönemki yapay zeka yanıtları",
+    "used": "{{used}} / {{quota}} yanıt",
+    "periodEnds": "Dönem sonu",
+    "state": {
+      "normal": "Yapay zeka taslakları kullanılabilir.",
+      "warning": "Bu ayki yapay zeka yanıt hakkınızın %80'i kullanıldı.",
+      "grace": "Aylık yanıt hakkı doldu. Taslaklar %10 ek hakla devam eder, ardından duraklar.",
+      "paused": "Yapay zeka yanıtları duraklatıldı: yanıt hakkı ve %10 ek hak doldu. Yeni mesajlar gelen kutunuza düşmeye devam eder, kendiniz yanıtlayabilirsiniz. Taslaklar yeni dönemde veya plan değişince devam eder."
+    },
+    "details": "Plan ve kullanımı gör",
+    "rule": "Asistanın hazırladığı her müşteri yanıtı taslağı, siz düzenleseniz veya silseniz bile bir kez sayılır. Kendi yazdığınız yanıtlar, komutlar ve içerik taslakları sayılmaz.",
+    "notifications": {
+      "warning": "Bu ayki yapay zeka yanıt hakkınızın %80'i kullanıldı.",
+      "grace": "Yapay zeka yanıt hakkınız doldu. Taslaklar %10 ek hakla devam ediyor.",
+      "paused": "Yapay zeka yanıtları duraklatıldı: yanıt hakkı ve %10 ek hak doldu. Yeni dönem veya plan değişikliğine kadar yeni mesajları kendiniz yanıtlayın."
+    }
   }
 }

@@ -9642,6 +9642,90 @@
         "title": "UpdateCalendarSettingsIn",
         "type": "object"
       },
+      "UsageOut": {
+        "properties": {
+          "grace_limit": {
+            "title": "Grace Limit",
+            "type": "integer"
+          },
+          "monthly_quota": {
+            "title": "Monthly Quota",
+            "type": "integer"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "plan": {
+            "enum": [
+              "starter",
+              "growth",
+              "pro"
+            ],
+            "title": "Plan",
+            "type": "string"
+          },
+          "quota": {
+            "title": "Quota",
+            "type": "integer"
+          },
+          "quota_override": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quota Override"
+          },
+          "state": {
+            "enum": [
+              "normal",
+              "warning",
+              "grace",
+              "paused"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "trial",
+              "active",
+              "past_due",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "plan",
+          "status",
+          "monthly_quota",
+          "quota_override",
+          "quota",
+          "used",
+          "grace_limit",
+          "period_start",
+          "period_end",
+          "state"
+        ],
+        "title": "UsageOut",
+        "type": "object"
+      },
       "UserOut": {
         "properties": {
           "display_name": {
@@ -20282,6 +20366,49 @@
         "summary": "Get System Health",
         "tags": [
           "operations"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/usage": {
+      "get": {
+        "operationId": "get_usage_api_v1_workspaces__workspace_id__usage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Usage",
+        "tags": [
+          "plans"
         ]
       }
     },

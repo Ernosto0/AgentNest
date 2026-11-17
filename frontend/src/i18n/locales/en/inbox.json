@@ -140,6 +140,7 @@
       "GROUNDING_FAILED": "The draft contained unverified values",
       "LLM_UNAVAILABLE": "The assistant is unavailable",
       "LLM_BUDGET_EXCEEDED": "Daily assistant limit reached",
+      "REPLY_QUOTA_PAUSED": "Monthly AI reply allowance used up (drafting is paused)",
       "LLM_OUTPUT_INVALID": "The assistant's answer was invalid",
       "LLM_REFUSED": "The assistant declined",
       "ATTACHMENT_ONLY": "Only a photo or file",

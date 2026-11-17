@@ -5,6 +5,7 @@ import { AlertIcon, CriticalIcon } from "@/components/icons";
 import { useSocialAccounts } from "@/features/inbox/hooks";
 import { useDailyReport } from "@/features/reports/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import { UsageNotice } from "@/features/settings/UsageNotice";
 import { AppointmentsCard } from "./AppointmentsCard";
 import { AssistantPanel } from "./AssistantPanel";
 import { AttentionPanel } from "./AttentionPanel";
@@ -44,6 +45,7 @@ export function Dashboard({ onCreate }: { onCreate: CreateContent }) {
   return (
     <div className="flex flex-col gap-4 lg:gap-5">
       <Banners accounts={activeAccounts} canReconnect={isOwner} />
+      <UsageNotice />
 
       <div className="order-2 lg:order-none">
         <TodayPulse report={report.data} yesterday={yesterday.data} pending={report.isPending} failed={report.isError} />

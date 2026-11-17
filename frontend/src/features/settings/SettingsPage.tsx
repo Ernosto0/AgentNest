@@ -9,6 +9,7 @@ import { SecuritySection } from "./AccountSecurity";
 import { ConnectionsSection } from "./ConnectionsSection";
 import { PrivacySection } from "./PrivacySection";
 import { SectionNav } from "./SettingsParts";
+import { Usage } from "./Usage";
 import { WorkspaceSection } from "./WorkspaceSection";
 
 /**
@@ -24,11 +25,12 @@ export function SettingsPage() {
     () => [
       { id: "account", label: t("settings.nav.account") },
       { id: "workspace", label: t("settings.nav.workspace") },
+      ...(role === "owner" || role === "manager" ? [{ id: "usage", label: t("usage.title") }] : []),
       { id: "security", label: t("settings.nav.security") },
       { id: "connections", label: t("settings.nav.connections") },
       { id: "privacy", label: t("settings.nav.privacy") },
     ],
-    [t],
+    [t, role],
   );
 
   // Deep links (e.g. the deletion email's "#danger-zone") land on their section once rendered.
@@ -61,6 +63,7 @@ export function SettingsPage() {
         <div className="flex min-w-0 max-w-[52rem] flex-col gap-10 pb-6">
           <AccountSection />
           <WorkspaceSection />
+          <Usage />
           <SecuritySection />
           <ConnectionsSection />
           <PrivacySection />
