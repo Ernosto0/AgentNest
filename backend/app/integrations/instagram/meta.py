@@ -13,7 +13,7 @@ from typing import Any, Literal, TypeVar, cast
 from urllib.parse import urlsplit
 
 import httpx
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationError
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from app.core.clock import Clock
 from app.core.logging import get_logger
@@ -30,9 +30,11 @@ from app.integrations.instagram.base import (
     NormalizedInboundEvent,
     OutboundMessageInfo,
     PrivateReplyResult,
+    ProfileDetails,
     ProviderKind,
     PublicEffectResult,
     PublishingQuota,
+    RecentCaption,
     SendResult,
     TokenInfo,
 )
@@ -61,6 +63,29 @@ class ID(Shape):
 class Profile(Shape):
     user_id: str = Field(min_length=1)
     username: str | None = None
+
+
+class ProfileDetailShape(Shape):
+    username: str | None = None
+    name: str | None = None
+    biography: str | None = None
+    website: str | None = None
+
+
+class CaptionShape(ID):
+    caption: str | None = None
+    timestamp: str | None = None
+    permalink: str | None = None
+    media_type: str | None = None
+
+    @field_validator("timestamp", mode="before")
+    @classmethod
+    def tolerate_timestamp(cls, value: Any) -> str | None:
+        return value if isinstance(value, str) else None
+
+
+class CaptionsShape(Shape):
+    data: list[CaptionShape]
 
 
 class Sent(Shape):
@@ -345,6 +370,60 @@ class MetaInstagramProvider:
             ),
         )
         return AccountProfile(value.user_id, value.username)
+
+    @_logged("get_profile_details")
+    def get_profile_details(self, account: AccountRef) -> ProfileDetails:
+        value = self._shape(
+            ProfileDetailShape,
+            self._request(
+                account,
+                _identifier(account.external_account_id),
+                params={"fields": "username,name,biography,website"},
+            ),
+        )
+        return ProfileDetails(
+            account.external_account_id,
+            value.username or None,
+            value.name or None,
+            value.biography or None,
+            value.website or None,
+        )
+
+    @_logged("list_recent_captions")
+    def list_recent_captions(self, account: AccountRef, limit: int) -> list[RecentCaption]:
+        limit = min(max(limit, 1), 50)
+        value = self._shape(
+            CaptionsShape,
+            self._request(
+                account,
+                f"{_identifier(account.external_account_id)}/media",
+                params={"fields": "id,caption,timestamp,permalink,media_type", "limit": str(limit)},
+            ),
+        )
+        result = []
+        for item in value.data:
+            posted_at = None
+            if item.timestamp:
+                try:
+                    parsed = datetime.fromisoformat(item.timestamp)
+                    if parsed.utcoffset() is not None:
+                        posted_at = parsed
+                except ValueError:
+                    pass
+            result.append(
+                RecentCaption(
+                    item.id,
+                    item.caption or None,
+                    posted_at,
+                    item.permalink or None,
+                    item.media_type or None,
+                )
+            )
+        result.sort(
+            key=lambda item: item.posted_at.timestamp() if item.posted_at else float("-inf"),
+            reverse=True,
+        )
+        return result[:limit]
 
     @_logged("send_text_message")
     def send_text_message(self, account: AccountRef, recipient_id: str, text: str) -> SendResult:

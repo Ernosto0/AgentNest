@@ -26,6 +26,7 @@ from app.integrations.instagram.base import AccountRef
 from app.integrations.instagram.errors import ProviderAuthError, ProviderError
 from app.integrations.instagram.models import OAuthState, SocialAccount
 from app.jobs.queue import enqueue
+from app.knowledge.profile_import import first_connection_import
 from app.operations import conversation_deletion
 from app.operations.accounts import lock_workspace, transition_account
 from app.operations.payloads import ResumeAccountPayload
@@ -277,6 +278,8 @@ def complete_callback(
                     dedup_key=f"resume_account:{account.id}",
                     clock=clock,
                 )
+            if purpose != "reconnect":
+                first_connection_import(session, clock, ctx, account)
             session.commit()
         return CallbackOutcome(workspace_id)
     except IntegrityError:

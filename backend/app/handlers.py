@@ -28,7 +28,9 @@ def load_handlers() -> None:
     import app.insights.jobs  # noqa: F401
     import app.knowledge.extraction  # noqa: F401
     import app.knowledge.impact_handlers  # noqa: F401
+    import app.knowledge.profile_import  # noqa: F401
     import app.knowledge.promotion_notices  # noqa: F401
+    import app.knowledge.website_import  # noqa: F401
     import app.memory.models  # noqa: F401
     import app.notifications.jobs  # noqa: F401
     import app.operations.calendar  # noqa: F401

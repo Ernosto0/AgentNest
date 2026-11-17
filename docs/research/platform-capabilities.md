@@ -152,6 +152,17 @@ Sources (all read 2026-11-17):
 
 **History.** The first register was opened on 2026-10-26 (Phase 7.5 Session 01) with HEAD-only reachability checks; Session 16 (2026-10-29) could not read the pages ([dated evidence](meta-comments-session16.md)). Both left all six items open. Separately, Phase 7.5 Session 04 must fixture-test the installed OpenAI SDK's step/tool transport against [the function-calling guide](https://platform.openai.com/docs/guides/function-calling); that is model-adapter research, not R75 platform acceptance. Session 18 requires the full application workflow on an authorized account, not only a direct adapter probe.
 
+### 1.9 Profile and recent media reads (F-09)
+
+Checked 2026-11-17 against Meta's [IG User reference](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user) (also the accessible [versioned reference](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/v21.0/)), [IG Media reference](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-media) ([current reference](https://developers.facebook.com/documentation/instagram-platform/reference/instagram-media)), and [media edge](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media). Documentation evidence is separate from live acceptance.
+
+- **Confirmed (docs):** IG User `biography`, `website`, `name`, `username` with Instagram Login, `graph.instagram.com`, Instagram User token, `instagram_business_basic`.
+- **Unverified:** the Instagram Login permission for `GET /{ig-user-id}/media` (assumed `instagram_business_basic`, as for IG Media). The edge's permission table lists Facebook Login permissions (`instagram_basic`, etc.). It supports `since`/`until` time pagination and up to 10K recent media, but documents neither per-page size nor sort order. `limit` behaviour and sort order remain unverified; the adapter requests a limit, reads one page and sorts it newest-first itself.
+- **Confirmed (docs):** IG Media `timestamp` (ISO 8601 UTC), `permalink`, and `media_type` (`CAROUSEL_ALBUM`, `IMAGE`, `VIDEO`).
+- **Unverified / contradictory:** `caption` is marked Facebook Login only in the IG Media field table, excludes album children, and excludes `@` unless the app user has admin-equivalent tasks on the connected Page. Other Meta pages and integrations suggest Instagram Login use; V-12 must establish actual behaviour. The adapter requests captions; rejection or missing permission degrades to profile-only import with `captions_unavailable`.
+- **Unavailable via documented API:** contact-button email, phone and address fields are absent from the IG User reference. Phone/email extraction uses bio/caption text only.
+
+
 ## 2. WhatsApp Business Platform (Cloud API)
 
 | Capability | Status | Detail | Source |
@@ -235,6 +246,7 @@ Official Meta [business-login](https://developers.facebook.com/docs/instagram-pl
 | V-09 | Media fetch behaviour with signed URLs (expiry tolerance, redirects, content-type requirements). | Publish with S3 presigned URL. | Media storage |
 | V-10 | WhatsApp terms primary text regarding AI functionality; business verification requirements in Türkiye. | Read terms; consult Meta partner if needed. | OQ-01 decision |
 | V-11 | LLM provider data retention, sub-processor terms, regional processing options. | Provider terms. | KVKK assessment |
+| V-12 | Instagram Login `GET /{id}/media?fields=caption,...`: caption returned? sort order, `limit`, `@` handling; biography and website on a real professional account. | Connect the founder's test account, call both reads, record fixtures. | F-09 live claim |
 
 ### Feature Phase 3 Session 02 implementation boundary (2026-11-17)
 

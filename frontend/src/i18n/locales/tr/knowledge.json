@@ -1,5 +1,16 @@
 {
   "knowledge": {
+    "importInstagram": {
+      "button": "Instagram'dan yeniden içe aktar",
+      "connectFirst": "Önce Instagram'ı bağlayın",
+      "working": "Instagram profiliniz ve son gönderileriniz inceleniyor…",
+      "done_one": "{{count}} öneri bulundu. Sizi bekliyor.",
+      "done_other": "{{count}} öneri bulundu. Sizi bekliyor.",
+      "none": "Profilinizde ve son gönderilerinizde önerilecek yeni bir bilgi bulunamadı.",
+      "injection": "Profilinizde talimat gibi görünen bazı bölümler vardı; bunlar yok sayıldı.",
+      "failed": "Instagram'dan bilgiler alınamadı. Yeniden deneyebilirsiniz.",
+      "intro": "Siz kabul edene kadar hiçbir şey değişmez."
+    },
     "title": "İşletme bilgileri",
     "intro": "Yanıtlarınızın ve paylaşımlarınızın dayandığı doğrulanmış bilgiler. Doğrulanmamış hiçbir bilgi kullanılmaz.",
     "categories": "Kategoriler",
@@ -214,6 +225,16 @@
       }
     },
     "suggestions": {
+      "source": {
+        "bio": "Instagram biyografinizden",
+        "captionDate": "{{date}} tarihli bir gönderiden",
+        "caption": "Bir gönderiden",
+        "viewPost": "Gönderiyi gör",
+        "stale": "Bu gönderi {{days}} gün önce paylaşılmış. Fiyatlar değişmiş olabilir; kabul etmeden önce kontrol edin.",
+        "simulated": "Simülasyon",
+        "website": "Web sitenizden",
+        "viewPage": "Sayfayı gör"
+      },
       "title": "Öneriler",
       "link": "Öneriler",
       "intro": "Ekibinizin önerdiği veya yapıştırılan metinde bulunan değerler. Siz karar verene kadar hiçbir şey değişmez.",
@@ -356,6 +377,25 @@
       "emptyHint": "Müşterilerin sorduğu ve başka bir kategoriye uymayan her şeyi ekleyin.",
       "notAdded": "Henüz eklenmedi",
       "notAddedHint": "İşletme türünüz için önerilenler. Size uyanları ekleyin."
+    },
+    "importWebsite": {
+      "label": "Web sitesi adresi",
+      "button": "Web sitenizden içe aktarın",
+      "required": "Devam etmek için web sitesi adresinizi girin.",
+      "invalidUrl": "Adresi kontrol edin: http:// veya https:// ile başlayan, herkese açık bir web sitesi olmalıdır.",
+      "working": "Web siteniz okunuyor…",
+      "done_one": "{{count}} öneri bulundu. İncelemenizi bekliyor.",
+      "done_other": "{{count}} öneri bulundu. İncelemenizi bekliyor.",
+      "none": "Web sitenizde önerilecek yeni bir bilgi bulunamadı.",
+      "failed": "Web siteniz okunamadı.",
+      "injection": "Web sitenizde talimat gibi görünen bazı bölümler vardı; bunlar yok sayıldı.",
+      "privacy": "Yalnızca ana sayfanızı ve aynı sitedeki en fazla üç sayfayı daha (fiyatlar, iletişim, hakkımızda) okuyoruz. Bir öneriyi kabul edene kadar hiçbir şey değişmez.",
+      "placeholder": "www.example.com"
+    },
+    "importProfile": {
+      "title": "Instagram’dan veya web sitenizden içe aktarın",
+      "intro": "İşletmenize ait bilgileri bulun ve kaydetmeden önce inceleyin.",
+      "review": "Önerileri incele"
     }
   },
   "readiness": {
@@ -412,6 +452,12 @@
     "previous": "Geri",
     "next": "Devam",
     "create": "Çalışma alanı oluştur",
-    "creating": "Oluşturuluyor…"
+    "creating": "Oluşturuluyor…",
+    "import": {
+      "title": "İçe aktar",
+      "instagramLater": "Instagram: Daha sonra Ayarlar’dan bağlayın. İlk bağlantıdan sonra profilinizi otomatik olarak okuyacağız.",
+      "review": "Önerileri incele",
+      "skip": "Şimdilik geç"
+    }
   }
 }

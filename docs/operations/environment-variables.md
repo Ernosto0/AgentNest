@@ -58,6 +58,8 @@ A customer's voice note is downloaded and sent to the transcription provider (th
 
 | Variable | dev | prod | Description |
 |---|---|---|---|
+| `WEBSITE_IMPORT_FETCHER` | `auto` | `auto` \| `live` (`fake` refused) | `auto` (= `fake` when `LLM_PROVIDER=fake`, else `live`) \| `live` \| `fake`. The website import (F-09) fetches an owner-typed URL with the SSRF-safe fetcher; `fake` makes no network call and returns a demo site |
+| `WEBSITE_IMPORT_MAX_PER_WORKSPACE_PER_DAY` | `10` | same | Website imports a workspace may start per 24 hours (`429 RATE_LIMITED` beyond that); at least 1 |
 | `TRANSCRIPTION_PROVIDER` | `auto` | `auto` (= `openai` when `LLM_PROVIDER=openai`) \| `openai` \| `off` (`fake` refused) | `auto` \| `off` \| `fake` \| `openai`. `auto` follows `LLM_PROVIDER` (`fake` offline, `openai` live). `off` disables downloading and transcribing. `openai` needs `OPENAI_API_KEY` |
 | `TRANSCRIPTION_MODEL` | `gpt-4o-mini-transcribe` | same | OpenAI speech-to-text model ID, read only when the provider is `openai`. The ID is listed in the installed OpenAI SDK's documentation; it was **not confirmed on OpenAI's own model page and has never been run against the real API**. `whisper-1` is also supported (it additionally reports duration and language). Check before the first live run |
 | `TRANSCRIPTION_MAX_AUDIO_BYTES` | `10485760` | same | 10 MiB. A longer `Content-Length`, or a body that grows past it, is refused (`VOICE_TOO_LARGE`). At most 26 214 400 (the provider's own 25 MB limit) |

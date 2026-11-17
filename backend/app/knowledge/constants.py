@@ -50,3 +50,5 @@ APPROVED_ANSWER_INTENTS = (
     "faq",
     STORY_MENTION_INTENT,  # the one thank-you for a story mention: not offered to the model
 )
+
+STALE_CAPTION_DAYS = 90

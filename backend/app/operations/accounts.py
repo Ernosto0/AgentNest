@@ -31,6 +31,7 @@ from app.integrations.instagram.mock import MockInstagramProvider
 from app.integrations.instagram.models import OAuthState, SocialAccount
 from app.integrations.instagram.transitions import apply_account_transition
 from app.jobs.queue import cancel_queued, enqueue
+from app.knowledge.profile_import import first_connection_import
 from app.operations import conversation_deletion
 from app.operations.models import Operation
 from app.operations.payloads import ResumeAccountPayload
@@ -158,6 +159,7 @@ def connect_mock(
         is_simulated=True,
         clock=clock,
     )
+    first_connection_import(session, clock, ctx, account)
     session.commit()
     return account
 

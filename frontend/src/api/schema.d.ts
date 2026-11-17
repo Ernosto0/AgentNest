@@ -2487,6 +2487,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/knowledge/imports/instagram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Instagram Import
+         * @description Import profile suggestions without verifying facts.
+         */
+        post: operations["start_instagram_import_api_v1_workspaces__workspace_id__knowledge_imports_instagram_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/knowledge/imports/website": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Website Import */
+        post: operations["start_website_import_api_v1_workspaces__workspace_id__knowledge_imports_website_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/knowledge/imports/website/prefill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Website Prefill */
+        get: operations["get_website_prefill_api_v1_workspaces__workspace_id__knowledge_imports_website_prefill_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/learning/month": {
         parameters: {
             query?: never;
@@ -3940,6 +3994,7 @@ export interface components {
             relation: "new" | "same" | "discrepancy" | "contest";
             /** Resolved At */
             resolved_at: string | null;
+            source?: components["schemas"]["CandidateSourceOut"] | null;
             /** Source Excerpt */
             source_excerpt: string | null;
             /** Source Type */
@@ -3951,6 +4006,21 @@ export interface components {
             status: "pending" | "accepted" | "rejected" | "superseded";
             /** Value Type */
             value_type: string;
+        };
+        /** CandidateSourceOut */
+        CandidateSourceOut: {
+            /** Age Days */
+            age_days: number | null;
+            /** Origin */
+            origin: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Simulated */
+            simulated: boolean;
+            /** Stale */
+            stale: boolean;
+            /** Url */
+            url: string | null;
         };
         /** ChangedOut */
         ChangedOut: {
@@ -5069,6 +5139,11 @@ export interface components {
             status: "pending" | "succeeded" | "failed";
             /** Visible Text */
             visible_text: string | null;
+        };
+        /** ImportRequest */
+        ImportRequest: {
+            /** Client Request Id */
+            client_request_id: string;
         };
         /** InsightsContentItemOut */
         InsightsContentItemOut: {
@@ -7205,6 +7280,18 @@ export interface components {
             received_24h: number;
             /** Signature Failures 24H System Wide */
             signature_failures_24h_system_wide: number;
+        };
+        /** WebsiteImportRequest */
+        WebsiteImportRequest: {
+            /** Client Request Id */
+            client_request_id: string;
+            /** Url */
+            url: string;
+        };
+        /** WebsitePrefillOut */
+        WebsitePrefillOut: {
+            /** Url */
+            url: string | null;
         };
         /**
          * WeeklyMetricOut
@@ -12506,6 +12593,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtractionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_instagram_import_api_v1_workspaces__workspace_id__knowledge_imports_instagram_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_website_import_api_v1_workspaces__workspace_id__knowledge_imports_website_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebsiteImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_website_prefill_api_v1_workspaces__workspace_id__knowledge_imports_website_prefill_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebsitePrefillOut"];
                 };
             };
             /** @description Validation Error */

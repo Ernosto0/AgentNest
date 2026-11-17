@@ -232,6 +232,8 @@
   "activity.fact_candidate.accepted": "Bilgi önerisi kabul edildi",
   "activity.fact_candidate.rejected": "Bilgi önerisi reddedildi",
   "activity.knowledge.extraction_requested": "Metinden bilgi çıkarma istendi",
+  "activity.knowledge.import_requested": "Bilgi aktarımı istendi",
+  "activity.knowledge.import_completed": "Bilgi aktarımı tamamlandı",
   "activity.approved_answer.created": "Onaylı yanıt eklendi",
   "activity.approved_answer.updated": "Onaylı yanıt güncellendi",
   "activity.approved_answer.archived": "Onaylı yanıt arşivlendi",
@@ -502,5 +504,14 @@
   "command.price_card_not_a_price": "{label} bir fiyat değil. Doğrulanmış bir fiyat seçin.",
   "command.price_card_fact_unusable": "{label} şu anda kullanılamıyor. Fiyat kartı oluşturmadan önce doğrulayın.",
   "activity.content.template_image_rerendered": "Şablon görseli yeniden oluşturuldu",
-  "activity.content.template_image_failed": "Şablon görseli eklenemedi"
+  "activity.content.template_image_failed": "Şablon görseli eklenemedi",
+  "errors.WEBSITE_UNREACHABLE.what": "Web sitesine ulaşılamadı.",
+  "errors.WEBSITE_UNREACHABLE.next": "Web sitesi adresini kontrol edip tekrar deneyin.",
+  "errors.WEBSITE_BLOCKED.what": "Bu web sitesi adresi engellendi.",
+  "errors.WEBSITE_BLOCKED.next": "Standart HTTP veya HTTPS bağlantı noktası kullanan herkese açık bir işletme sitesi girin.",
+  "errors.WEBSITE_NOT_HTML.what": "Web sitesi bir HTML sayfası döndürmedi.",
+  "errors.WEBSITE_NOT_HTML.next": "Normal bir web sayfasının adresini girin.",
+  "errors.WEBSITE_TOO_LARGE.what": "Web sayfası çok büyük.",
+  "errors.WEBSITE_TOO_LARGE.next": "İşletme bilgilerini içeren daha küçük bir sayfa deneyin.",
+  "activity.knowledge.website_fetched": "Web sayfası alındı"
 }

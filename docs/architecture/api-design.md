@@ -352,3 +352,13 @@ Result keys: `command.price_card_started {title,label}`, `command.price_card_no_
 `command.price_card_not_a_price {label}`, `command.price_card_fact_unusable {label}`.
 Refusal codes: `NOT_FOUND`, `TEMPLATE_FACT_TYPE_MISMATCH`, `TEMPLATE_FACT_NOT_USABLE`,
 `FACT_CHANGED_MEANWHILE` (fact changed after the card).
+
+### Instagram knowledge import (F-09 Session 01)
+
+`POST /workspaces/{workspace_id}/knowledge/imports/instagram`, `knowledge.edit`, strict `{client_request_id: string}` (trimmed, 1–100 chars), returns 202 with the unchanged `ExtractionOut`. Poll `GET /knowledge/extractions/{run_id}`; foreign runs return 404. Same request IDs are idempotent; a queued/running import less than ten minutes old is reused. Requires a connected/degraded active account. 
+
+`POST /workspaces/{workspace_id}/knowledge/imports/website`, `knowledge.edit`, strict `{client_request_id: string, url: string}` (the id trimmed, 1–100 chars; the URL may omit the scheme, which defaults to `https://`), returns 202 with the unchanged `ExtractionOut`; poll the same `GET /knowledge/extractions/{run_id}`. The URL is validated without DNS at request time (scheme http/https, default ports only, no credentials, no IP literal, public-looking host): a refusal is `422 VALIDATION_FAILED` with `errors[0] = {field: "url", code: "invalid_url"}`. Same request IDs are idempotent; a queued/running website import less than ten minutes old is reused; more than `WEBSITE_IMPORT_MAX_PER_WORKSPACE_PER_DAY` (default 10) imports in 24 hours is `429 RATE_LIMITED` with `Retry-After`. Run failures are catalog codes in `error_code`: `WEBSITE_UNREACHABLE` (retryable once), `WEBSITE_BLOCKED`, `WEBSITE_NOT_HTML`, `WEBSITE_TOO_LARGE`.
+
+`GET /workspaces/{workspace_id}/knowledge/imports/website/prefill` (any member) returns `{url: string | null}`: the address of the workspace's latest website import, else the website found on the Instagram profile by the last profile import. Candidates from this source have `source.origin = "website_page"` and `source.url` set to the page (http or https).
+
+`CandidateOut.source` is nullable; imported candidates return `{origin, posted_at, url, age_days, stale, simulated}`. Only HTTPS evidence URLs are returned. Age is non-negative whole days computed at read time from the injected Clock; only caption age greater than 90 days sets `stale`. Legacy candidates return `source: null`.

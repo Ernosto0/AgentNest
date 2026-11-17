@@ -1068,3 +1068,39 @@ def test_shared_unknown_publish_reconciles_without_second_publish(shared):
         shared.provider.publish_container(shared.account, cid)
     assert shared.provider.get_container_status(shared.account, cid).status_code == "PUBLISHED"
     assert shared.provider.get_publishing_quota(shared.account).used == 1
+
+
+def test_profile_fixture_defaults_overrides_and_clear(h: Harness) -> None:
+    from app.integrations.instagram.mock import ProfileFixture
+
+    try:
+        profile = h.provider.get_profile_details(h.account)
+        assert profile.username == "biz.demo" and profile.name == "Gölkent Fitness"
+        assert profile.biography and "Aylık üyelik 6.000 TL" in profile.biography
+        captions = h.provider.list_recent_captions(h.account, 12)
+        assert [(h.clock.now() - c.posted_at).days for c in captions if c.posted_at] == [5, 40, 200]
+        assert all(
+            c.permalink and c.permalink.startswith("https://instagram.example/sim/")
+            for c in captions
+        )
+        h.clock.advance(days=1)
+        assert h.provider.list_recent_captions(h.account, 1)[
+            0
+        ].posted_at == h.clock.now() - timedelta(days=5)
+        MockInstagramProvider.set_profile_fixture(
+            h.account.social_account_id, ProfileFixture("custom", None, None, [])
+        )
+        assert h.provider.get_profile_details(h.account).biography == "custom"
+        assert h.provider.list_recent_captions(h.account, 12) == []
+        MockInstagramProvider.set_profile_fixture(h.account.social_account_id, None)
+        assert h.provider.get_profile_details(h.account).name == "Gölkent Fitness"
+    finally:
+        MockInstagramProvider.clear_profile_fixtures()
+    assert len(h.provider.list_recent_captions(h.account, 12)) == 3
+
+
+@pytest.mark.parametrize("method", ["get_profile_details", "list_recent_captions"])
+def test_profile_reads_consume_scripted_auth_failure(h: Harness, method: str) -> None:
+    h.fail("profile", "auth_revoked")
+    with pytest.raises(ProviderAuthError):
+        getattr(h.provider, method)(h.account, *([12] if method == "list_recent_captions" else []))

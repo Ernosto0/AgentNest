@@ -5,7 +5,7 @@ import type { FactCandidate } from "@/api/types";
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { ChevronLeftIcon, SparkIcon, UsersIcon } from "@/components/icons";
+import { AlertIcon, ChevronLeftIcon, SparkIcon, UsersIcon } from "@/components/icons";
 import { PageHeader } from "@/components/Layout";
 import { FOCUS, SkeletonRows } from "@/features/home/DashboardPanel";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
@@ -15,6 +15,47 @@ import { knowledgeBase } from "./useKnowledgeBase";
 import { isCategory, pickLabel } from "./labels";
 import { OwnerAnswerSave } from "./OwnerAnswerSave";
 import { PasteExtractSheet } from "./PasteExtractSheet";
+import { InstagramImportButton } from "./InstagramImportButton";
+
+function CandidateSource({ candidate }: { candidate: FactCandidate }) {
+  const { t, i18n } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
+  const source = candidate.source;
+  if (!source) return null;
+  const knownOrigin = source.origin === "bio" || source.origin === "caption";
+  const website = source.origin === "website_page";
+  let page: URL | null = null;
+  try {
+    const parsed = new URL(source.url ?? "");
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") page = parsed;
+  } catch { /* Invalid source addresses have no host or link. */ }
+  const posted = source.posted_at ? new Date(source.posted_at) : null;
+  const date = posted && !Number.isNaN(posted.getTime())
+    ? new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeZone: workspace.timezone }).format(posted)
+    : null;
+  return <div className="flex min-w-0 flex-col gap-2 text-metadata text-secondary">
+    {website ? <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 [overflow-wrap:anywhere]">
+      <span>{t("knowledge.suggestions.source.website")}</span>
+      {page ? <><span>{page.host}</span><a href={source.url ?? undefined} target="_blank" rel="noopener noreferrer"
+        className={`inline-flex min-h-11 items-center rounded-control px-2 text-action underline ${FOCUS}`}>{t("knowledge.suggestions.source.viewPage")}</a></> : null}
+    </div> : null}
+    {knownOrigin ? <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span>{source.origin === "bio" ? t("knowledge.suggestions.source.bio") : date
+        ? t("knowledge.suggestions.source.captionDate", { date }) : t("knowledge.suggestions.source.caption")}</span>
+      {source.url?.startsWith("https://") ? <a href={source.url} target="_blank" rel="noopener noreferrer"
+        className={`inline-flex min-h-11 items-center rounded-control px-2 text-action underline ${FOCUS}`}>
+        {t("knowledge.suggestions.source.viewPost")}
+      </a> : null}
+    </div> : null}
+    {source.origin === "caption" && source.stale ? <p className="flex items-start gap-2 rounded-control bg-surface-subtle p-3 text-attention">
+      <AlertIcon className="mt-0.5 shrink-0" />
+      <span>{t("knowledge.suggestions.source.stale", { days: source.age_days })}</span>
+    </p> : null}
+    {source.simulated ? <span className="self-start rounded-full bg-surface-subtle px-2 py-1 text-xs text-secondary">
+      {t("knowledge.suggestions.source.simulated")}
+    </span> : null}
+  </div>;
+}
 
 /**
  * Pending suggestions: staff proposals (contest) and values found elsewhere (discrepancy, new).
@@ -62,10 +103,14 @@ export function SuggestionsPage() {
           title={t("knowledge.suggestions.title")}
           description={t("knowledge.suggestions.intro")}
           action={
+            <div className="flex min-w-0 max-w-full flex-wrap items-start gap-2">
             <Button variant="secondary" onClick={() => setPasting(true)}>
               <SparkIcon className="text-base text-action" />
               {t("extract.open")}
             </Button>
+            <InstagramImportButton variant="secondary" />
+            <p className="w-full text-metadata text-secondary">{t("knowledge.importInstagram.intro")}</p>
+            </div>
           }
         />
       </div>
@@ -124,6 +169,7 @@ export function SuggestionsPage() {
                 </dl>
 
                 <p className="text-metadata [overflow-wrap:anywhere] text-secondary">{explain(candidate)}</p>
+                <CandidateSource candidate={candidate} />
                 {candidate.source_excerpt ? (
                   <blockquote className="rounded-r-lg border-l-2 border-action/40 bg-surface-subtle/60 px-3 py-2 text-metadata [overflow-wrap:anywhere] text-secondary italic">
                     {candidate.source_excerpt}

@@ -156,6 +156,9 @@ class FactCandidate(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, B
         CheckConstraint(
             "source_excerpt IS NULL OR char_length(source_excerpt) <= 500", name="source_excerpt"
         ),
+        CheckConstraint(
+            "source_detail IS NULL OR jsonb_typeof(source_detail) = 'object'", name="source_detail"
+        ),
         Index("ix_fact_candidates_workspace_status", "workspace_id", "status"),
         Index(
             "ix_fact_candidates_pending_key",
@@ -171,6 +174,7 @@ class FactCandidate(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, B
     value_type: Mapped[str] = mapped_column(Text, nullable=False)
     source_type: Mapped[str] = mapped_column(Text, nullable=False)
     source_excerpt: Mapped[str | None] = mapped_column(Text)
+    source_detail: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
     relation: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="pending")
     proposed_by_actor_type: Mapped[str] = mapped_column(Text, nullable=False)

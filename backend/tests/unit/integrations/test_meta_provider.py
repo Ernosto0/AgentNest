@@ -453,3 +453,73 @@ def test_unexpected_error_does_not_log_success(
     with capture_logs() as logs, pytest.raises(RuntimeError):
         api.provider.get_account_profile(api.account)
     assert logs[0]["outcome"] == "PROVIDER_ERROR"
+
+
+def test_profile_details_read(clock: FrozenClock) -> None:
+    api = API(clock, {"username": "gym", "name": "Gym", "biography": "private bio", "website": ""})
+    with capture_logs() as logs:
+        value = api.provider.get_profile_details(api.account)
+    assert value.external_account_id == "biz-1" and value.website is None
+    assert value.biography == "private bio"
+    request = api.requests[0]
+    assert request.method == "GET" and request.url.path == "/v25.0/biz-1"
+    assert dict(request.url.params) == {"fields": "username,name,biography,website"}
+    assert "private bio" not in str(logs) and TOKEN not in str(logs)
+
+
+def test_recent_captions_dates_sort_limit_and_safe_logs(clock: FrozenClock) -> None:
+    api = API(
+        clock,
+        {
+            "data": [
+                {"id": "bad", "timestamp": "bad"},
+                {
+                    "id": "old",
+                    "timestamp": "2026-03-01T10:00:00+0000",
+                    "caption": "private caption",
+                },
+                {"id": "new", "timestamp": "2026-03-02T10:00:00+00:00"},
+                {"id": "z", "timestamp": "2026-03-03T10:00:00Z"},
+            ]
+        },
+    )
+    with capture_logs() as logs:
+        values = api.provider.list_recent_captions(api.account, 50)
+    assert [v.media_id for v in values] == ["z", "new", "old", "bad"]
+    assert all(v.posted_at and v.posted_at.utcoffset() is not None for v in values[:3])
+    assert values[-1].posted_at is None
+    assert [v.media_id for v in api.provider.list_recent_captions(api.account, 2)] == ["z", "new"]
+    assert api.requests[-1].url.path == "/v25.0/biz-1/media"
+    assert dict(api.requests[-1].url.params) == {
+        "fields": "id,caption,timestamp,permalink,media_type",
+        "limit": "2",
+    }
+    assert "private caption" not in str(logs) and TOKEN not in str(logs)
+    api.provider.list_recent_captions(api.account, 100)
+    assert api.requests[-1].url.params["limit"] == "50"
+    api.provider.list_recent_captions(api.account, 0)
+    assert api.requests[-1].url.params["limit"] == "1"
+
+
+@pytest.mark.parametrize(
+    "data", [{}, {"data": None}, {"data": [{"id": 1}]}, {"data": [{"caption": "secret"}]}]
+)
+def test_recent_caption_malformed_is_typed(clock: FrozenClock, data: Any) -> None:
+    api = API(clock, data)
+    with pytest.raises(ProviderTransientError):
+        api.provider.list_recent_captions(api.account, 12)
+
+
+@pytest.mark.parametrize("method", ["get_profile_details", "list_recent_captions"])
+def test_profile_reads_auth_error(clock: FrozenClock, method: str) -> None:
+    api = API(clock, {"error": {"code": 190}}, 401)
+    with pytest.raises(ProviderAuthError):
+        getattr(api.provider, method)(
+            api.account, *([12] if method == "list_recent_captions" else [])
+        )
+
+
+@pytest.mark.parametrize("timestamp", [None, "not-a-date", "2026-03-01", 123, {}])
+def test_bad_caption_timestamp_is_absent(clock: FrozenClock, timestamp: Any) -> None:
+    api = API(clock, {"data": [{"id": "one", "timestamp": timestamp}]})
+    assert api.provider.list_recent_captions(api.account, 12)[0].posted_at is None

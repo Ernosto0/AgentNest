@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/Button";
 import { SparkIcon } from "@/components/icons";
 import { Panel, PanelHeading } from "@/features/home/DashboardPanel";
+import { ProfileImport } from "./ProfileImport";
+import { useCurrentWorkspace } from "@/features/workspaces/context";
 
 const STEPS = ["paste", "suggest", "review"] as const;
 
@@ -11,6 +13,7 @@ const STEPS = ["paste", "suggest", "review"] as const;
  */
 export function TeachPanel({ onPaste }: { onPaste: () => void }) {
   const { t } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
   return (
     <Panel tone="assistant" aria-labelledby="knowledge-teach-title" data-testid="knowledge-teach" className="gap-3">
       <PanelHeading id="knowledge-teach-title" icon={<SparkIcon />} iconTone="assistant" title={t("knowledge.teach.title")} />
@@ -29,6 +32,7 @@ export function TeachPanel({ onPaste }: { onPaste: () => void }) {
         <SparkIcon className="text-base" />
         {t("extract.open")}
       </Button>
+      <ProfileImport key={workspace.id} workspaceId={workspace.id} />
     </Panel>
   );
 }

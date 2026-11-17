@@ -1,6 +1,6 @@
 # Feature Phase 4: Before Self-Service Launch
 
-**Status:** Planned. Nothing in this file is implemented yet.
+**Status:** Sessions 01 to 03 implemented and verified offline (2026-11-17); stopped for review; nothing is committed. Live Instagram behaviour is pending V-12, the website fetcher has only been exercised offline plus one manual public-site fetch, and the landing price is hidden until a price is settled. Close-out: [phase summary](../phase-summaries/features-phase-4-summary.md) and [s03-report.md](s03-report.md).
 **Source:** [pre-launch-feature-recommendations.md](../../review/pre-launch-feature-recommendations.md) §4, step 4, plus D-06, which §4 left unplaced.
 **Features:** F-09 (import facts from the Instagram profile and a website), D-06 (local package on the landing page).
 **Sessions:** 3, in order.
@@ -12,7 +12,7 @@
 
 | Session | Feature | Scope | Main deliverables |
 |:---:|---|---|---|
-| 01 | F-09 | Import from the Instagram profile | Bio, contact buttons and recent captions turned into unverified candidates |
+| 01 | F-09 | Import from the Instagram profile | Bio and recent captions turned into unverified candidates (contact buttons unavailable via documented API) |
 | 02 | F-09 | Import from a website | SSRF-safe fetcher, HTML-to-text, candidates, onboarding UI for both imports |
 | 03 | D-06 | Local package on the landing page, and phase close-out | Package section (Turkish, KVKK, TRY invoice, in-person setup), price display, phase summary |
 

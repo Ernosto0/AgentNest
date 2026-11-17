@@ -232,6 +232,8 @@
   "activity.fact_candidate.accepted": "Information suggestion accepted",
   "activity.fact_candidate.rejected": "Information suggestion rejected",
   "activity.knowledge.extraction_requested": "Information extraction from text requested",
+  "activity.knowledge.import_requested": "Information import requested",
+  "activity.knowledge.import_completed": "Information import completed",
   "activity.approved_answer.created": "Approved answer added",
   "activity.approved_answer.updated": "Approved answer updated",
   "activity.approved_answer.archived": "Approved answer archived",
@@ -502,5 +504,14 @@
   "command.price_card_not_a_price": "{label} is not a price. Choose a verified price.",
   "command.price_card_fact_unusable": "{label} is not currently usable. Verify it before making a price card.",
   "activity.content.template_image_rerendered": "Template image re-rendered",
-  "activity.content.template_image_failed": "Template image could not be attached"
+  "activity.content.template_image_failed": "Template image could not be attached",
+  "errors.WEBSITE_UNREACHABLE.what": "The website could not be reached.",
+  "errors.WEBSITE_UNREACHABLE.next": "Check the website address and try again.",
+  "errors.WEBSITE_BLOCKED.what": "This website address is blocked.",
+  "errors.WEBSITE_BLOCKED.next": "Use a public business website with a standard HTTP or HTTPS port.",
+  "errors.WEBSITE_NOT_HTML.what": "The website did not return an HTML page.",
+  "errors.WEBSITE_NOT_HTML.next": "Enter the address of a regular website page.",
+  "errors.WEBSITE_TOO_LARGE.what": "The website page is too large.",
+  "errors.WEBSITE_TOO_LARGE.next": "Try a smaller page containing business information.",
+  "activity.knowledge.website_fetched": "Website page fetched"
 }

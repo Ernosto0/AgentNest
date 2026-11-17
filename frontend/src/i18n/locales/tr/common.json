@@ -676,6 +676,22 @@
     "TEMPLATE_IMAGE_STALE": {
       "what": "Görsel eski bir değeri gösteriyor.",
       "next": "Görseli güncel değerle yeniden oluşturun."
+    },
+    "WEBSITE_UNREACHABLE": {
+      "what": "Web sitesine ulaşılamadı.",
+      "next": "Web sitesi adresini kontrol edip tekrar deneyin."
+    },
+    "WEBSITE_BLOCKED": {
+      "what": "Bu web sitesi adresi engellendi.",
+      "next": "Standart HTTP veya HTTPS bağlantı noktası kullanan herkese açık bir işletme sitesi girin."
+    },
+    "WEBSITE_NOT_HTML": {
+      "what": "Web sitesi bir HTML sayfası döndürmedi.",
+      "next": "Normal bir web sayfasının adresini girin."
+    },
+    "WEBSITE_TOO_LARGE": {
+      "what": "Web sayfası çok büyük.",
+      "next": "İşletme bilgilerini içeren daha küçük bir sayfa deneyin."
     }
   },
   "connections": {
@@ -881,13 +897,14 @@
     "inviteFieldsRequired": "Adınızı, e-posta adresinizi ve parolanızı girin.",
     "existingAccount": "Zaten hesabınız var mı?",
     "noMembershipHint": "Bir çalışma alanı oluşturun veya mevcut bir alana katılmak için sahibinden davet bağlantısı isteyin.",
-    "wizardIntro": "İşletmenizin temel bilgilerini üç adımda hazırlayın, ardından asistanınızı deneyin.",
+    "wizardIntro": "İşletmenizin temel bilgilerini ayarlayın, asistanınızı deneyin ve web sitenizden bilgi aktarın.",
     "setupProgress": "Kurulum adımları",
     "steps": {
       "name": "İşletmeniz",
       "category": "İşletme türü",
       "locale": "Bölge ve dil",
-      "try": "Deneme"
+      "try": "Deneme",
+      "import": "İçe aktar"
     },
     "nameHint": "En fazla 100 karakter. Bu ad çalışma alanında görünür.",
     "nameRequired": "Devam etmek için işletmenizin adını girin.",

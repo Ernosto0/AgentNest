@@ -19,7 +19,7 @@ The test for inclusion: **is it needed to demonstrate the core value loop credib
 | Capability | Included scope | Explicitly excluded in S1 |
 |---|---|---|
 | Accounts & workspaces | Email/password login, workspaces, roles owner/manager/staff, workspace switcher, invite by link, tr/en UI | Email delivery, password reset UI (CLI only), SSO |
-| Business knowledge | Typed facts from business templates (with category presets, ADR-023), verification, version history, candidates with discrepancy/contest rules, readiness, paste-text extraction, approved answers, brand voice | Website URL fetch, Instagram profile import, structured class timetables, multiple branches |
+| Business knowledge | Typed facts from business templates (with category presets, ADR-023), verification, version history, candidates with discrepancy/contest rules, readiness, paste-text extraction, approved answers, brand voice | structured class timetables, multiple branches |
 | Commands | Web command bar. Closed registry: activity questions, pending approvals, content status, failure explanation, fact query, fact update, brand voice update, content draft request, cancel scheduled content. Clarification and confirmation. | Approve/publish/send by command (never), rescheduling by command, multi-step plans |
 | Inbox | Mock account, simulated webhooks through the real ingestion path, conversations, debounce, grounded drafts, policy decisions, approvals, manual replies, takeover, messaging window, echo-based supersede (simulated), approved answers | Attachments analysis (images in DMs are shown as "attachment received" → human), story replies to stories we did not publish, story mentions without an owner-set thank-you (both stay with a person), comments, Human Agent tag |
 | Content | Image upload with validation, `feed_image` and `story_image`, AI content drafts with overlay text suggestions, claim validation, approve & schedule, mock publish worker with container semantics, retries with deadline, cancel, on-hold on fact change | Video, Reels, carousels, image generation, hashtags research, best-time suggestions |
@@ -85,6 +85,14 @@ Planned in [features-phase-3-after-app-review/sessions.md](../implementation/fea
 |---|---|---|
 | **F-07 Template images** | Deterministic price, hours, services and announcement cards; story/feed sizes; workspace colours/logo; verified fact keys resolved at render time with immutable version evidence; a template picker with live preview in content creation and the Today story prompt; rendered items carry the fact versions used, so a price change holds them; re-render creates a new draft version that needs fresh approval; a confirmed `content.make_price_card` command (TR/EN) | AI image generation; free text with prices, times, phones or URLs on a card; automatic approval or publishing of a rendered image |
 
+### Feature Phase 4: before self-service launch (F-09)
+
+Session 01 (backend and the "Re-import from Instagram" button) and Session 02 (website import and the onboarding step) are implemented offline; live Instagram behaviour is pending V-12, and the website fetcher has been exercised against real sites only by hand.
+
+| Capability | Included scope | Explicitly excluded |
+|---|---|---|
+| **F-09 Import facts from the Instagram profile and a website** | Session 01: bio and recent captions with dates, warning above 90 days, candidates only, deduplicated, first connection and re-import API. Session 02: SSRF-safe website fetcher (home page plus up to 3 same-site price/contact/about pages, HTML only, 2 MB, host-only audit, 10 imports per workspace per day), candidates with the page address, a website field prefilled from the Instagram profile, and an "Import from Instagram or website" step in workspace creation and on the Knowledge page | Auto-verifying; contact-button fields (no Graph API field); stories, DMs, comments; scraping Instagram web pages; crawling beyond 4 pages; running JavaScript (script-rendered sites yield little text); PDFs and images on a site; gzip-only sites |
+
 ## 4. Deferred (with reason and trigger)
 
 | Feature | Reason for deferral | Revisit trigger |
@@ -92,7 +100,6 @@ Planned in [features-phase-3-after-app-review/sessions.md](../implementation/fea
 | WhatsApp owner channel | Cost, verification, policy uncertainty | OQ-01 |
 | Story/post **AI image generation** | Not core to the trust loop; model and design effort | OQ-15 after pilots |
 | Video/Reels/carousels | Transcoding and validation complexity | Pilot demand |
-| Website and profile import | SSRF-safe fetching, scraping quality | Self-service onboarding stage |
 | Human Agent tag (7-day replies) | Requires separate permission; human-only | Pilot demand for late replies |
 | Billing, plans, usage limits | No paying users yet | Paid commitments (OQ-06) |
 | Advanced analytics and Instagram insights | Not the core problem | Pilot demand |

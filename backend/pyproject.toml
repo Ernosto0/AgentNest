@@ -137,6 +137,9 @@ source_modules = [
     "app.identity.schemas",
     "app.identity.permissions",
     "app.identity.invites",
+    "app.knowledge.imports",
+    "app.knowledge.profile_import",
+    "app.knowledge.website_import",
     "app.knowledge.service",
     "app.knowledge.repository",
     "app.knowledge.models",
@@ -607,3 +610,14 @@ forbidden_modules = [
     "app.api",
 ]
 allow_indirect_imports = true
+
+
+[[tool.importlinter.contracts]]
+name = "website fetcher depends only on core"
+type = "forbidden"
+source_modules = ["app.integrations.web"]
+forbidden_modules = [
+    "app.identity", "app.knowledge", "app.audit", "app.jobs", "app.ai", "app.approvals",
+    "app.notifications", "app.commands", "app.inbox", "app.policy", "app.operations",
+    "app.content", "app.integrations.instagram", "app.integrations.llm", "app.demo", "app.api",
+]

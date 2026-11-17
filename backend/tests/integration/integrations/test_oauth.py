@@ -10,6 +10,7 @@ from pydantic import SecretStr
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from app.ai.models import AgentRun
 from app.audit.models import AuditLog
 from app.core.security import TokenKeyRing, account_token_aad, hash_token
 from app.identity.models import AuthSession, WorkspaceMember
@@ -120,6 +121,12 @@ def test_connect_consumes_before_exchange_encrypts_and_whitelists_response(env, 
     env.session.expire_all()
     account = env.session.scalar(select(SocialAccount))
     assert account.status == "connected" and not account.is_simulated
+
+    imported = env.session.scalar(
+        select(AgentRun).where(AgentRun.input_snapshot["source"].astext == "instagram_profile")
+    )
+    assert imported is not None and imported.input_snapshot["social_account_id"] == str(account.id)
+    assert env.session.scalar(select(Job.id).where(Job.job_type == "import_instagram_profile"))
     assert account.external_account_id == "123"
     assert account.capabilities == {
         "messaging": True,
@@ -277,6 +284,9 @@ def test_reconnect_records_actual_comment_consent(
     assert callback(env, raw).headers["location"].endswith("oauth=connected")
     env.session.refresh(account)
     assert account.granted_scopes == sorted(granted_scopes)
+    assert (
+        env.session.scalar(select(Job.id).where(Job.job_type == "import_instagram_profile")) is None
+    )
     assert account.capabilities["comments_permission"] is comments_granted
     assert account.comment_automation_enabled is flag
     assert account.capabilities["comment_read"] is (flag and comments_granted)

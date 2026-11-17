@@ -16,6 +16,7 @@ export type ChatMessage = {
 export type PostStatus = 'published' | 'scheduled' | 'held' | 'pending'
 
 type Titled = { title: string; body: string }
+type Packaged = Titled & { badge?: string }
 
 export type Copy = {
   meta: { title: string; description: string }
@@ -174,6 +175,18 @@ export type Copy = {
     securityTitle: string
     security: Titled[]
   }
+  // The local package (D-06). Five items, in this order: language, KVKK documents, invoice,
+  // setup, verified-price guarantee. The price is not copy: it comes from config.ts.
+  localPackage: {
+    eyebrow: string
+    title: string
+    body: string
+    items: [Packaged, Packaged, Packaged, Packaged, Packaged]
+    legalLabel: string
+    legal: { label: string; path: string }[]
+    priceLabel: string
+    cta: string
+  }
   faq: { eyebrow: string; title: string; body: string; items: { q: string; a: string }[] }
   pilot: {
     eyebrow: string
@@ -222,6 +235,7 @@ export const copy: Record<Lang, Copy> = {
         { id: 'nasil', label: 'Nasıl çalışır' },
         { id: 'demo', label: 'Örnekler' },
         { id: 'guven', label: 'Güvenlik' },
+        { id: 'paket', label: 'Paket' },
         { id: 'sss', label: 'Sorular' },
       ],
       cta: 'Pilota başvurun',
@@ -554,6 +568,43 @@ export const copy: Record<Lang, Copy> = {
         },
       ],
     },
+    localPackage: {
+      eyebrow: 'Yerel paket',
+      title: 'Yazılımın yanında, işletmenizin ihtiyaç duyduğu her şey.',
+      body: 'Türkçe çalışır, kurulumu birlikte yaparız, hukuki belgeleri hazırlarız. Aşağıdakilerin hepsi bugün için geçerlidir; henüz hazır olmayanı yanında açıkça belirttik.',
+      items: [
+        {
+          title: 'Türkçe arayüz, Türkçe yanıtlar',
+          body: 'Uygulama Türkçe açılır (İngilizce de seçebilirsiniz). Müşterinin mesajının dilini algılar, Türkçe ya da İngilizce yanıt hazırlar. Başka dildeki mesajı yanıtlamaya çalışmaz, size bırakır.',
+        },
+        {
+          title: 'KVKK belgeleri hazırlandı',
+          badge: 'Taslak · hukuki inceleme bekliyor',
+          body: 'Gizlilik politikası, kullanım koşulları ve veri silme sayfası uygulamada yer alır. Müşterilerinize göstereceğiniz KVKK aydınlatma metni şablonunu ve veri işleme sözleşmesi taslağını kurulumda size veririz. Belgeler henüz avukat incelemesinden geçmedi; kendi unvanınızla yayınlamadan önce kendi avukatınıza da onaylatmanızı öneririz.',
+        },
+        {
+          title: 'Türk lirasıyla fatura',
+          badge: 'Planlanan',
+          body: 'Pilot ücretsizdir ve kendiliğinden ücretlendirme yoktur. Ücretli döneme geçerseniz faturalandırma Türk lirası (₺) ile yapılacak; ödeme ve fatura düzeni (e-arşiv fatura, havale/EFT ya da ödeme bağlantısı) başlamadan önce sizinle netleştirilir.',
+        },
+        {
+          title: 'Yerinde ya da görüntülü kurulum',
+          body: 'İlk kurulumu birlikte yaparız: yerinde (şimdilik Burdur ve Antalya çevresinde) ya da görüntülü görüşmeyle, yaklaşık 30 dakikada. Fiyat ve saatlerinizi birlikte girer, gerçek müşteri sorularıyla deneriz.',
+        },
+        {
+          title: 'Fiyatı uydurmaz',
+          body: 'Yanıttaki fiyat, saat, tarih ve telefon gibi değerler yalnızca sizin doğruladığınız bilgi kartlarından gelir. Kartlarda olmayan bir değer içeren taslak müşteriye gönderilmez, konuşma size kalır. Uygulamada her değerin hangi karttan ve hangi tarihte doğrulandığı görünür; günlük özet “gönderilen doğrulanmamış değer” sayısını da gösterir. Bilgi kartlarının doğru ve güncel olması sizin sorumluluğunuzdadır.',
+        },
+      ],
+      legalLabel: 'Uygulamadaki belgeler',
+      legal: [
+        { label: 'Gizlilik politikası', path: '/privacy' },
+        { label: 'Kullanım koşulları', path: '/terms' },
+        { label: 'Veri silme', path: '/data-deletion' },
+      ],
+      priceLabel: 'Paket fiyatı',
+      cta: 'Pilota başvurun',
+    },
     faq: {
       eyebrow: 'Sorular',
       title: 'Sık sorulanlar',
@@ -678,6 +729,7 @@ export const copy: Record<Lang, Copy> = {
         { id: 'nasil', label: 'How it works' },
         { id: 'demo', label: 'Examples' },
         { id: 'guven', label: 'Security' },
+        { id: 'paket', label: 'Package' },
         { id: 'sss', label: 'Questions' },
       ],
       cta: 'Apply for the pilot',
@@ -1008,6 +1060,43 @@ export const copy: Record<Lang, Copy> = {
           body: 'When you disconnect, the related data is deleted. You can ask for deletion at any time.',
         },
       ],
+    },
+    localPackage: {
+      eyebrow: 'Local package',
+      title: 'Beyond the software, what a local business needs.',
+      body: 'It works in Turkish, we set it up with you, and the legal documents are prepared. Everything below is true today; what is not ready yet is marked next to it.',
+      items: [
+        {
+          title: 'Turkish interface, Turkish replies',
+          body: 'The app opens in Turkish (English is available too). It detects the language of the customer’s message and drafts a reply in Turkish or English. It does not try to answer a message in another language; it leaves it to you.',
+        },
+        {
+          title: 'KVKK documents prepared',
+          badge: 'Draft · awaiting legal review',
+          body: 'The privacy policy, the terms and a data-deletion page are in the app. We hand you the KVKK information-notice template for your customers and a draft data processing agreement during setup. They have not been through a lawyer’s review yet; before you publish them under your company name, we recommend your own lawyer approves them.',
+        },
+        {
+          title: 'Invoiced in Turkish lira',
+          badge: 'Planned',
+          body: 'The pilot is free and nothing is charged automatically. If you move to a paid plan, billing will be in Turkish lira (₺); the payment and invoice arrangement (e-archive invoice, bank transfer or a payment link) is agreed with you before it starts.',
+        },
+        {
+          title: 'Set up in person or by video',
+          body: 'We do the first setup together: in person (for now around Burdur and Antalya) or on a video call, in about 30 minutes. We enter your prices and hours together and try it with real customer questions.',
+        },
+        {
+          title: 'No made-up prices',
+          body: 'Prices, hours, dates and phone numbers in a reply come only from the business facts you have verified. A draft that contains a value that is not in your facts is not sent; the conversation is left to you. The app shows which fact each value came from and when it was verified, and the daily summary shows how many unverified values were sent. Keeping your facts correct and up to date is your responsibility.',
+        },
+      ],
+      legalLabel: 'Documents in the app',
+      legal: [
+        { label: 'Privacy policy', path: '/privacy' },
+        { label: 'Terms of use', path: '/terms' },
+        { label: 'Data deletion', path: '/data-deletion' },
+      ],
+      priceLabel: 'Package price',
+      cta: 'Apply for the pilot',
     },
     faq: {
       eyebrow: 'Questions',

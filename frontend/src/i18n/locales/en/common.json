@@ -676,6 +676,22 @@
     "TEMPLATE_IMAGE_STALE": {
       "what": "The image shows an old value.",
       "next": "Re-render the image with the current value."
+    },
+    "WEBSITE_UNREACHABLE": {
+      "what": "The website could not be reached.",
+      "next": "Check the website address and try again."
+    },
+    "WEBSITE_BLOCKED": {
+      "what": "This website address is blocked.",
+      "next": "Use a public business website with a standard HTTP or HTTPS port."
+    },
+    "WEBSITE_NOT_HTML": {
+      "what": "The website did not return an HTML page.",
+      "next": "Enter the address of a regular website page."
+    },
+    "WEBSITE_TOO_LARGE": {
+      "what": "The website page is too large.",
+      "next": "Try a smaller page containing business information."
     }
   },
   "connections": {
@@ -881,13 +897,14 @@
     "inviteFieldsRequired": "Enter your name, email and password.",
     "existingAccount": "Already have an account?",
     "noMembershipHint": "Create a workspace or ask its owner for an invite link to join an existing one.",
-    "wizardIntro": "Set up the basics for your business in three steps, then try your assistant.",
+    "wizardIntro": "Set up the basics for your business, try your assistant, then import information from your website.",
     "setupProgress": "Setup steps",
     "steps": {
       "name": "Your business",
       "category": "Business type",
       "locale": "Region and language",
-      "try": "Try it"
+      "try": "Try it",
+      "import": "Import"
     },
     "nameHint": "Up to 100 characters. This name appears in your workspace.",
     "nameRequired": "Enter your business name to continue.",

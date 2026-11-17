@@ -2250,6 +2250,16 @@
             ],
             "title": "Resolved At"
           },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CandidateSourceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "source_excerpt": {
             "anyOf": [
               {
@@ -2298,6 +2308,66 @@
           "resolved_at"
         ],
         "title": "CandidateOut",
+        "type": "object"
+      },
+      "CandidateSourceOut": {
+        "properties": {
+          "age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Days"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          },
+          "simulated": {
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "origin",
+          "posted_at",
+          "url",
+          "age_days",
+          "stale",
+          "simulated"
+        ],
+        "title": "CandidateSourceOut",
         "type": "object"
       },
       "ChangedOut": {
@@ -5631,6 +5701,20 @@
           "reason_code"
         ],
         "title": "ImageDescriptionOut",
+        "type": "object"
+      },
+      "ImportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "title": "Client Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_request_id"
+        ],
+        "title": "ImportRequest",
         "type": "object"
       },
       "InsightsContentItemOut": {
@@ -11557,6 +11641,45 @@
           "signature_failures_24h_system_wide"
         ],
         "title": "WebhooksHealth",
+        "type": "object"
+      },
+      "WebsiteImportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_request_id",
+          "url"
+        ],
+        "title": "WebsiteImportRequest",
+        "type": "object"
+      },
+      "WebsitePrefillOut": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "WebsitePrefillOut",
         "type": "object"
       },
       "WeeklyMetricOut": {
@@ -21114,6 +21237,156 @@
           }
         },
         "summary": "Get Extraction",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/knowledge/imports/instagram": {
+      "post": {
+        "description": "Import profile suggestions without verifying facts.",
+        "operationId": "start_instagram_import_api_v1_workspaces__workspace_id__knowledge_imports_instagram_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Instagram Import",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/knowledge/imports/website": {
+      "post": {
+        "operationId": "start_website_import_api_v1_workspaces__workspace_id__knowledge_imports_website_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Website Import",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/knowledge/imports/website/prefill": {
+      "get": {
+        "operationId": "get_website_prefill_api_v1_workspaces__workspace_id__knowledge_imports_website_prefill_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsitePrefillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Website Prefill",
         "tags": [
           "knowledge"
         ]

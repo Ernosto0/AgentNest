@@ -1,5 +1,16 @@
 {
   "knowledge": {
+    "importInstagram": {
+      "button": "Re-import from Instagram",
+      "connectFirst": "Connect Instagram first",
+      "working": "Reading your Instagram profile and recent posts…",
+      "done_one": "{{count}} suggestion found. It is waiting for you.",
+      "done_other": "{{count}} suggestions found. They are waiting for you.",
+      "none": "No new information to suggest was found in your profile or recent posts.",
+      "injection": "Some text on your profile looked like instructions and was ignored.",
+      "failed": "Could not import from Instagram. You can try again.",
+      "intro": "Nothing changes until you accept it."
+    },
     "title": "Business knowledge",
     "intro": "The verified facts your replies and posts are based on. Nothing unverified is ever used.",
     "categories": "Categories",
@@ -214,6 +225,16 @@
       }
     },
     "suggestions": {
+      "source": {
+        "bio": "From your Instagram bio",
+        "captionDate": "From a post on {{date}}",
+        "caption": "From a post",
+        "viewPost": "View post",
+        "stale": "This post is {{days}} days old. Prices may have changed: check before you accept.",
+        "simulated": "Simulated",
+        "website": "From your website",
+        "viewPage": "View page"
+      },
       "title": "Suggestions",
       "link": "Suggestions",
       "intro": "Values proposed by your team or found in pasted text. Nothing changes until you decide.",
@@ -356,6 +377,25 @@
       "emptyHint": "Add anything customers ask about that does not fit another category.",
       "notAdded": "Not added yet",
       "notAddedHint": "Suggested for your type of business. Add the ones that apply to you."
+    },
+    "importWebsite": {
+      "label": "Website address",
+      "button": "Import from website",
+      "required": "Enter your website address to continue.",
+      "invalidUrl": "Check the address: it must be a public website starting with http:// or https://",
+      "working": "Reading your website…",
+      "done_one": "{{count}} suggestion found. Ready for your review.",
+      "done_other": "{{count}} suggestions found. Ready for your review.",
+      "none": "No new information to suggest was found on your website.",
+      "failed": "We could not read your website.",
+      "injection": "Some parts of your website looked like instructions; these were ignored.",
+      "privacy": "We read only your home page and up to three more pages on the same site (prices, contact, about). Nothing changes until you accept a suggestion.",
+      "placeholder": "www.example.com"
+    },
+    "importProfile": {
+      "title": "Import from Instagram or your website",
+      "intro": "Find business information and review it before adding it to your knowledge.",
+      "review": "Review suggestions"
     }
   },
   "readiness": {
@@ -412,6 +452,12 @@
     "previous": "Back",
     "next": "Continue",
     "create": "Create workspace",
-    "creating": "Creating…"
+    "creating": "Creating…",
+    "import": {
+      "title": "Import",
+      "instagramLater": "Instagram: connect it later in Settings and we will read your profile automatically after the first connection.",
+      "review": "Review suggestions",
+      "skip": "Skip for now"
+    }
   }
 }

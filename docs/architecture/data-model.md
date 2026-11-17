@@ -179,6 +179,8 @@ Indexes: `ix_jobs_due (run_at, priority) where status = 'queued'`; `ix_jobs_leas
 | reason | text null | user-supplied or system reason |
 | change_kind | text not null | `created`, `value_changed`, `verified`, `archived`, `restored` |
 
+Migration `0061` adds nullable `fact_candidates.source_detail JSONB`, constrained to an object (`ck_fact_candidates_source_detail`). It holds import `origin`, nullable ISO `posted_at`, HTTPS-only `url`, and `simulated`; existing candidates have null. Existing forced RLS is unchanged.
+
 **`fact_candidates`**
 | Column | Type | Notes |
 |---|---|---|
@@ -187,7 +189,7 @@ Indexes: `ix_jobs_due (run_at, priority) where status = 'queued'`; `ix_jobs_leas
 | fact_key | text not null | proposed key (existing or new) |
 | fact_id | uuid null | composite FK when the key exists |
 | proposed_value / value_type | jsonb / text | |
-| source_type | text not null | `staff_proposal`, `pasted_text`, `instagram_profile` (P7+), `website` (later) |
+| source_type | text not null | `staff_proposal`, `pasted_text`, `instagram_profile` (P7+), `website` (F-09; `source_detail.origin = "website_page"`, `source_detail.url` the page) |
 | source_excerpt | text null | ≤ 500 chars, the text the value came from |
 | relation | text not null | `new`, `same`, `discrepancy`, `contest` (computed at creation and recomputed when the fact changes) |
 | status | text not null | `pending`, `accepted`, `rejected`, `superseded` |

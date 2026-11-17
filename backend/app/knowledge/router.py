@@ -5,24 +5,28 @@ from another workspace is simply not found (404).
 """
 
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
-from app.api.deps import current_auth, get_clock, require_membership
+from app.api.deps import current_auth, get_app_settings, get_clock, require_membership
 from app.core.clock import Clock
+from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.db import get_db
 from app.core.pagination import Page
 from app.identity.service import AuthenticatedSession
-from app.knowledge import extraction, service
+from app.knowledge import extraction, profile_import, service, website_import
 from app.knowledge import readiness as readiness_module
 from app.knowledge import repository as repo
+from app.knowledge.constants import STALE_CAPTION_DAYS
 from app.knowledge.learning import LearnedMonth, editor_type, learned_month
 from app.knowledge.models import BusinessFact, FactCandidate
 from app.knowledge.schemas import (
     CandidateAccept,
     CandidateOut,
+    CandidateSourceOut,
     CandidateStatus,
     Category,
     ExtractionCreate,
@@ -32,11 +36,14 @@ from app.knowledge.schemas import (
     FactPatch,
     FactStatus,
     FactTransition,
+    ImportRequest,
     ReadinessLinkOut,
     ReadinessOut,
     RequirementOut,
     TemplateItemOut,
     VersionOut,
+    WebsiteImportRequest,
+    WebsitePrefillOut,
 )
 
 router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["knowledge"])
@@ -66,9 +73,31 @@ def _fact_out(view: service.FactView) -> FactOut:
     )
 
 
-def _candidate_out(view: service.CandidateView) -> CandidateOut:
+def _candidate_out(view: service.CandidateView, clock: Clock) -> CandidateOut:
     candidate = view.candidate
+    source = None
+    detail = candidate.source_detail
+    if detail:
+        posted_at = None
+        try:
+            parsed = datetime.fromisoformat(detail.get("posted_at") or "")
+            if parsed.utcoffset() is not None:
+                posted_at = parsed
+        except (TypeError, ValueError):
+            pass
+        age = max(0, (clock.now() - posted_at).days) if posted_at else None
+        url = detail.get("url")
+        origin = str(detail.get("origin", ""))
+        source = CandidateSourceOut(
+            origin=origin,
+            posted_at=posted_at,
+            url=url if isinstance(url, str) and url.startswith(("https://", "http://")) else None,
+            age_days=age,
+            stale=origin == "caption" and age is not None and age > STALE_CAPTION_DAYS,
+            simulated=bool(detail.get("simulated")),
+        )
     return CandidateOut(
+        source=source,
         editor_type=editor_type(candidate),
         id=candidate.id,
         fact_key=candidate.fact_key,
@@ -169,7 +198,7 @@ def create_fact(
     if isinstance(result, FactCandidate):
         response.status_code = 202
         return _candidate_out(
-            service.candidate_view(db, ctx, result, ui_locale=auth.user.ui_locale)
+            service.candidate_view(db, ctx, result, ui_locale=auth.user.ui_locale), clock
         )
     return _fact_response(db, clock, ctx, auth, result)
 
@@ -199,7 +228,7 @@ def patch_fact(
     if isinstance(result, FactCandidate):
         response.status_code = 202
         return _candidate_out(
-            service.candidate_view(db, ctx, result, ui_locale=auth.user.ui_locale)
+            service.candidate_view(db, ctx, result, ui_locale=auth.user.ui_locale), clock
         )
     return _fact_response(db, clock, ctx, auth, result)
 
@@ -284,10 +313,11 @@ def list_candidates(
     ctx: WorkspaceContext = Depends(require_membership()),
     auth: AuthenticatedSession = Depends(current_auth),
     db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
 ) -> Page[CandidateOut]:
     items = repo.list_candidates(db, ctx, status=status)
     views = service.candidate_views(db, ctx, list(items), ui_locale=auth.user.ui_locale)
-    return Page(items=[_candidate_out(v) for v in views])
+    return Page(items=[_candidate_out(v, clock) for v in views])
 
 
 @router.post("/fact-candidates/{candidate_id}/accept", response_model=FactOut)
@@ -312,7 +342,9 @@ def reject_candidate(
     clock: Clock = Depends(get_clock),
 ) -> CandidateOut:
     candidate = service.reject_candidate(db, clock, ctx, candidate_id)
-    return _candidate_out(service.candidate_view(db, ctx, candidate, ui_locale=auth.user.ui_locale))
+    return _candidate_out(
+        service.candidate_view(db, ctx, candidate, ui_locale=auth.user.ui_locale), clock
+    )
 
 
 # --- readiness ------------------------------------------------------------------------------
@@ -368,6 +400,42 @@ def start_extraction(
     """Suggestions from pasted text: candidates only, never facts (INV-02)."""
     run = extraction.start(db, clock, ctx, text=body.text, client_request_id=body.client_request_id)
     return _extraction_out(extraction.status_of(db, ctx, run.id))
+
+
+@router.post("/knowledge/imports/instagram", response_model=ExtractionOut, status_code=202)
+def start_instagram_import(
+    body: ImportRequest,
+    ctx: WorkspaceContext = Depends(require_membership("knowledge.edit")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> ExtractionOut:
+    """Import profile suggestions without verifying facts."""
+    run = profile_import.start_manual_instagram_import(
+        db, clock, ctx, client_request_id=body.client_request_id
+    )
+    return _extraction_out(extraction.status_of(db, ctx, run.id))
+
+
+@router.post("/knowledge/imports/website", response_model=ExtractionOut, status_code=202)
+def start_website_import(
+    body: WebsiteImportRequest,
+    settings: Settings = Depends(get_app_settings),
+    ctx: WorkspaceContext = Depends(require_membership("knowledge.edit")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> ExtractionOut:
+    run = website_import.start_manual_website_import(
+        db, clock, ctx, settings, url=body.url, client_request_id=body.client_request_id
+    )
+    return _extraction_out(extraction.status_of(db, ctx, run.id))
+
+
+@router.get("/knowledge/imports/website/prefill", response_model=WebsitePrefillOut)
+def get_website_prefill(
+    ctx: WorkspaceContext = Depends(require_membership()),
+    db: Session = Depends(get_db),
+) -> WebsitePrefillOut:
+    return WebsitePrefillOut(url=website_import.website_prefill(db, ctx))
 
 
 @router.get("/knowledge/extractions/{run_id}", response_model=ExtractionOut)

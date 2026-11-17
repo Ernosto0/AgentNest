@@ -70,6 +70,10 @@ ERROR_CATALOG: dict[str, ErrorSpec] = {
     "OUTCOME_UNCONFIRMED": ErrorSpec(None, retryable=False),
     "REFERENCE_NOT_FOUND": ErrorSpec(None),
     # Not API errors: reasons recorded on commands, agent runs and render results.
+    "WEBSITE_UNREACHABLE": ErrorSpec(None, retryable=True),
+    "WEBSITE_BLOCKED": ErrorSpec(None, retryable=False),
+    "WEBSITE_NOT_HTML": ErrorSpec(None, retryable=False),
+    "WEBSITE_TOO_LARGE": ErrorSpec(None, retryable=False),
     "FACT_NOT_USABLE": ErrorSpec(None, retryable=False),
     "FACT_CHANGED_MEANWHILE": ErrorSpec(None, retryable=False),
     "LLM_UNAVAILABLE": ErrorSpec(None, retryable=True),

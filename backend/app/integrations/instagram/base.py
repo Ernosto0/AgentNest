@@ -74,6 +74,24 @@ class AccountProfile:
 
 
 @dataclass(frozen=True)
+class ProfileDetails:
+    external_account_id: str
+    username: str | None
+    name: str | None
+    biography: str | None
+    website: str | None
+
+
+@dataclass(frozen=True)
+class RecentCaption:
+    media_id: str
+    caption: str | None
+    posted_at: datetime | None
+    permalink: str | None
+    media_type: str | None
+
+
+@dataclass(frozen=True)
 class OutboundMessageInfo:
     message_id: str
     recipient_id: str
@@ -147,6 +165,10 @@ class InstagramProvider(Protocol):
     def parse_webhook(self, payload: dict[str, Any]) -> list[NormalizedInboundEvent]: ...
 
     def get_account_profile(self, account: AccountRef) -> AccountProfile: ...
+
+    def get_profile_details(self, account: AccountRef) -> ProfileDetails: ...
+
+    def list_recent_captions(self, account: AccountRef, limit: int) -> list[RecentCaption]: ...
 
     def get_container_status(self, account: AccountRef, container_id: str) -> ContainerStatus: ...
 

@@ -70,6 +70,7 @@ def propose_candidate(
     value: dict[str, Any],
     source_type: str,
     source_excerpt: str | None = None,
+    source_detail: dict[str, Any] | None = None,
     fact: BusinessFact | None = None,
     agent_run_id: uuid.UUID | None = None,
 ) -> FactCandidate:
@@ -98,6 +99,7 @@ def propose_candidate(
             value_type=value_type,
             source_type=source_type,
             source_excerpt=source_excerpt[:500] if source_excerpt else None,
+            source_detail=source_detail,
             relation=relation,
             status=status,
             proposed_by_actor_type=ctx.actor.type,

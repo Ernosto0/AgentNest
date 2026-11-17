@@ -98,7 +98,21 @@ class FactOut(BaseModel):
     open_candidates_count: int
 
 
+class CandidateSourceOut(BaseModel):
+    origin: str
+    posted_at: datetime | None
+    url: str | None
+    age_days: int | None
+    stale: bool
+    simulated: bool
+
+
+class ImportRequest(StrictModel):
+    client_request_id: str
+
+
 class CandidateOut(BaseModel):
+    source: CandidateSourceOut | None = None
     editor_type: str | None = None
     kind: Literal["candidate"] = "candidate"
     id: uuid.UUID
@@ -183,3 +197,12 @@ class ExtractionOut(BaseModel):
     candidates_created: int
     error_code: str | None = None
     injection_suspected: bool = False
+
+
+class WebsiteImportRequest(StrictModel):
+    client_request_id: str
+    url: str
+
+
+class WebsitePrefillOut(BaseModel):
+    url: str | None

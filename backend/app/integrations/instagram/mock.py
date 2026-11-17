@@ -12,8 +12,9 @@ Publishing (Phase 5): ``create_media_container`` reads the JPEG back through the
 
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -34,9 +35,11 @@ from app.integrations.instagram.base import (
     NormalizedInboundEvent,
     OutboundMessageInfo,
     PrivateReplyResult,
+    ProfileDetails,
     ProviderKind,
     PublicEffectResult,
     PublishingQuota,
+    RecentCaption,
     SendResult,
     TokenInfo,
 )
@@ -73,8 +76,80 @@ PERMALINK_BASE = "https://instagram.example/sim"
 SessionFactory = Callable[[], Session]
 
 
+@dataclass(frozen=True)
+class ProfileFixture:
+    biography: str | None
+    website: str | None
+    name: str | None
+    captions: list[tuple[timedelta, str]]
+
+
+DEFAULT_PROFILE = ProfileFixture(
+    "Gölkent Fitness 💪\nAylık üyelik 6.000 TL\nTel: 0555 123 45 67\nBucak / Burdur",
+    "https://golkent-fitness.example",
+    "Gölkent Fitness",
+    [
+        (timedelta(days=5), "Yeni sezon başladı! 3 aylık üyelik 16.500 TL"),
+        (timedelta(days=40), "Hafta sonu grup dersleri herkese açık."),
+        (timedelta(days=200), "Yaz kampanyası: aylık üyelik 4.500 TL"),
+    ],
+)
+
+
 class MockInstagramProvider:
     kind: ProviderKind = "mock"
+    _profile_fixtures: ClassVar[dict[uuid.UUID, ProfileFixture]] = {}
+
+    @classmethod
+    def set_profile_fixture(
+        cls, social_account_id: uuid.UUID, fixture: ProfileFixture | None
+    ) -> None:
+        """Process-local, test-only overrides; the dev stack uses DEFAULT_PROFILE."""
+        if fixture is None:
+            cls._profile_fixtures.pop(social_account_id, None)
+        else:
+            cls._profile_fixtures[social_account_id] = fixture
+
+    @classmethod
+    def clear_profile_fixtures(cls) -> None:
+        cls._profile_fixtures.clear()
+
+    def get_profile_details(self, account: AccountRef) -> ProfileDetails:
+        rule = self._consume_failure(account, "profile")
+        if rule is not None:
+            self._raise_for(rule)
+        with self._session_factory() as session:
+            row = session.get(SocialAccount, account.social_account_id)
+            username = (
+                row.username
+                if row is not None and row.workspace_id == account.workspace_id
+                else None
+            )
+        fixture = self._profile_fixtures.get(account.social_account_id, DEFAULT_PROFILE)
+        return ProfileDetails(
+            account.external_account_id, username, fixture.name, fixture.biography, fixture.website
+        )
+
+    def list_recent_captions(self, account: AccountRef, limit: int) -> list[RecentCaption]:
+        rule = self._consume_failure(account, "profile")
+        if rule is not None:
+            self._raise_for(rule)
+        fixture = self._profile_fixtures.get(account.social_account_id, DEFAULT_PROFILE)
+        captions = [
+            RecentCaption(
+                f"profile-{account.social_account_id}-{i}",
+                text,
+                self._clock.now() - ago,
+                f"{PERMALINK_BASE}/profile-{account.social_account_id}-{i}",
+                "IMAGE",
+            )
+            for i, (ago, text) in enumerate(fixture.captions)
+        ]
+        captions.sort(
+            key=lambda item: item.posted_at.timestamp() if item.posted_at else float("-inf"),
+            reverse=True,
+        )
+        return captions[: min(max(limit, 1), 50)]
 
     def __init__(
         self,

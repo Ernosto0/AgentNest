@@ -129,6 +129,10 @@ class Settings(BaseSettings):
     # cost estimates in evals and system health. Unknown models have no estimate.
     llm_price_table: str = ""
 
+    # Website imports (F-09). Auto uses fake with LLM_PROVIDER=fake; live otherwise.
+    website_import_fetcher: Literal["auto", "live", "fake"] = "auto"
+    website_import_max_per_workspace_per_day: int = Field(default=10, ge=1)
+
     # --- Voice notes (F-03, Feature Phase 2). Audio goes to the transcription provider. ---
     # ``auto`` follows ``LLM_PROVIDER`` (fake offline, OpenAI otherwise); ``off`` stops voice
     # notes from being downloaded or sent anywhere (they stay person-handled attachments).
@@ -364,6 +368,8 @@ class Settings(BaseSettings):
             problems.append("OPENAI_API_KEY must be set when LLM_PROVIDER=openai.")
         if self.llm_provider == "openai" and not self.llm_model_default.strip():
             problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
+        if self.website_import_fetcher == "fake":
+            problems.append("WEBSITE_IMPORT_FETCHER must not be fake in production.")
         if self.transcription_provider == "fake":
             problems.append("TRANSCRIPTION_PROVIDER must be 'openai' or 'off' in production.")
         # Telegram configuration checks in production (Phase 9, ADR-012)

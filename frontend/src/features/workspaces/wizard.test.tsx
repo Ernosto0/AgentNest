@@ -41,6 +41,7 @@ describe("workspace wizard", () => {
     const requests = mockApi({
       ...base,
       "POST /api/v1/workspaces": () => json(created, 201),
+      [`GET /api/v1/workspaces/${created.id}/knowledge/imports/website/prefill`]: () => json({ url: null }),
       [`GET /api/v1/workspaces/${created.id}`]: () => json(created),
       [`GET /api/v1/workspaces/${created.id}/facts`]: () => json({ items: [], next_cursor: null }),
       [`GET /api/v1/workspaces/${created.id}/facts/template`]: () => json([]),
@@ -77,6 +78,9 @@ describe("workspace wizard", () => {
     expect(await screen.findByTestId("suggestions")).toBeVisible();
     expect(router.state.location.pathname).toBe("/workspaces/new");
     await user.click(screen.getByRole("button", { name: "Şimdilik geç" }));
+    expect(await screen.findByRole("heading", { name: "İçe aktar" })).toBeVisible();
+    expect(screen.getByTestId("website-import-url")).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: "Şimdilik geç" }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/w/${created.id}/more/knowledge`));
     const post = requests.find((r) => r.method === "POST");
     expect(post?.body).toEqual({
@@ -98,6 +102,7 @@ describe("workspace wizard", () => {
     const requests = mockApi({
       ...base,
       "POST /api/v1/workspaces": () => json(created, 201),
+      [`GET /api/v1/workspaces/${created.id}/knowledge/imports/website/prefill`]: () => json({ url: null }),
       [`GET /api/v1/workspaces/${created.id}`]: () => json(created),
       [`GET /api/v1/workspaces/${created.id}/facts`]: () => json({ items: [], next_cursor: null }),
       [`GET /api/v1/workspaces/${created.id}/facts/template`]: () => json([]),
@@ -120,6 +125,9 @@ describe("workspace wizard", () => {
     expect(requests.find((r) => r.path === `${chatPath}/messages`)?.body).toEqual({ text: "Saat kaçta açıksınız?" });
     expect(router.state.location.pathname).toBe("/workspaces/new");
     await user.click(screen.getByRole("button", { name: "İşletme bilgilerine devam et" }));
+    expect(await screen.findByRole("heading", { name: "İçe aktar" })).toBeVisible();
+    expect(screen.getByTestId("website-import-url")).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: "Şimdilik geç" }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/w/${created.id}/more/knowledge`));
   });
 

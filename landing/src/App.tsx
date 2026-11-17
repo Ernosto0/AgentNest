@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { PRODUCT_NAME } from './brand'
 import { copy, type Copy, type Lang, type PostStatus } from './copy'
+import { PACKAGE_PRICE, appLink } from './config'
 import { DraftDemo } from './DraftDemo'
 import { HeroPreview } from './HeroPreview'
 import { KnowledgePreview } from './KnowledgePreview'
@@ -149,6 +150,7 @@ export function App() {
         <ContentAndReport t={t} />
         <Limits t={t.limits} />
         <Trust t={t.trust} />
+        <LocalPackage t={t.localPackage} />
         <Faq t={t.faq} />
         <Pilot t={t} lang={lang} pilotRef={pilotRef} />
       </main>
@@ -684,6 +686,70 @@ function Trust({ t }: { t: Copy['trust'] }) {
         </div>
       </div>
     </section>
+  )
+}
+
+function LocalPackage({ t }: { t: Copy['localPackage'] }) {
+  const icons = [<ChatIcon key="l" />, <ShieldCheckIcon key="k" />, <ListIcon key="i" />, <UsersIcon key="s" />, <TagIcon key="p" />]
+  return (
+    <Section id="paket" tone="surface">
+      <SectionHeader eyebrow={t.eyebrow} title={t.title} body={t.body} />
+      <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {t.items.map((item, i) => (
+          <li
+            key={item.title}
+            className="reveal flex min-w-0 flex-col rounded-frame border border-border bg-canvas p-5"
+            style={{ transitionDelay: `${i * 60}ms` }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span aria-hidden className="grid size-10 place-items-center rounded-panel bg-assistant text-lg text-action">
+                {icons[i]}
+              </span>
+              {item.badge && (
+                <Badge tone="attention" size="sm" icon={<ClockIcon />}>
+                  {item.badge}
+                </Badge>
+              )}
+            </div>
+            <h3 className="mt-4 font-heading text-lg leading-snug font-bold tracking-tight">{item.title}</h3>
+            <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-secondary">{item.body}</p>
+            {i === 1 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-secondary">{t.legalLabel}</p>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {t.legal.map((doc) => {
+                    const href = appLink(doc.path)
+                    const chip = 'inline-flex min-h-9 items-center rounded-full border border-border bg-surface px-3 text-sm font-medium'
+                    return (
+                      <li key={doc.path}>
+                        {href ? (
+                          <a href={href} className={`${chip} text-action hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>
+                            {doc.label}
+                          </a>
+                        ) : (
+                          <span className={`${chip} text-secondary`}>{doc.label}</span>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+          </li>
+        ))}
+        <li className="reveal flex min-w-0 flex-col justify-center gap-5 rounded-frame border border-border bg-assistant p-5 sm:col-span-2 lg:col-span-1">
+          {PACKAGE_PRICE && (
+            <div>
+              <p className="type-eyebrow text-secondary">{t.priceLabel}</p>
+              <p className="mt-1 font-heading text-3xl font-extrabold tracking-tight">{PACKAGE_PRICE}</p>
+            </div>
+          )}
+          <a href="#pilot" className={`${buttonPrimary} ${buttonLarge}`}>
+            {t.cta} <ArrowRightIcon aria-hidden />
+          </a>
+        </li>
+      </ul>
+    </Section>
   )
 }
 

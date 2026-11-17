@@ -7,8 +7,8 @@ import { TestChat } from "@/features/test-chat/TestChat";
 import { useTestChat } from "@/features/test-chat/hooks";
 
 /**
- * The last, skippable wizard step: the workspace now exists, so the owner can try the assistant
- * before adding business details. Skipping or continuing both go on to the knowledge checklist.
+ * A skippable wizard step: the workspace now exists, so the owner can try the assistant
+ * before adding business details. Skipping or continuing both go on to website import.
  */
 export function WizardTryStep({ workspace, onDone }: { workspace: Workspace; onDone: () => void }) {
   const { t } = useTranslation();
