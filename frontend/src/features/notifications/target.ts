@@ -5,6 +5,7 @@ export function notificationTarget(workspaceId: string, notification: AppNotific
   if (!workspaceId || !notification) return null;
   const base = `/w/${encodeURIComponent(workspaceId)}`;
   const params = (notification.params && typeof notification.params === "object" ? notification.params : {}) as Record<string, unknown>;
+  if (notification.type.startsWith("quota.")) return `${base}/more/settings#usage`;
   if (notification.type.startsWith("owner_question.")) {
     const account = params.account_id;
     const question = params.question_id;

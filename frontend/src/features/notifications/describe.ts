@@ -19,6 +19,10 @@ export function describeNotification(
   const type = notification.type.replace(/\./g, "_");
   const label = pick((params.label as Labelled) ?? (summary.label as Labelled), language);
   switch (notification.type) {
+    case "quota.warning":
+    case "quota.grace":
+    case "quota.paused":
+      return t(`usage.notifications.${notification.type.split(".")[1]}`);
     case "owner_question.requested":
       return t("notifications.type.owner_question_requested");
     case "owner_question.expired":
