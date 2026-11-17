@@ -1,0 +1,9 @@
+[
+  {
+    "id": "GHSA-fc5q-39xc-vjpf",
+    "package": "picomatch",
+    "reason": "ReDoS in extglob patterns; no patched release exists. Reached only through dev tooling (vite, vitest, typescript-eslint) on repo-controlled glob patterns; `npm audit --omit=dev` is clean. Remove this entry when picomatch ships a fix.",
+    "added": "2026-11-18",
+    "reviewBy": "2026-12-18"
+  }
+]

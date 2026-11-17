@@ -92,7 +92,8 @@ jobs:
       - run: npm ci
         working-directory: frontend
       - name: Dependency audit (npm audit)
-        run: npm audit --audit-level=moderate
+        # Fails on moderate or higher, except advisories in scripts/audit-allowlist.json.
+        run: node scripts/audit-check.mjs
         working-directory: frontend
       - run: npm run lint
         working-directory: frontend
