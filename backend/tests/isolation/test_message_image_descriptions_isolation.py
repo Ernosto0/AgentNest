@@ -23,12 +23,14 @@ from app.identity.models import User, Workspace
 from app.inbox.models import Message, MessageImageDescription
 from tests.factories import add_member, create_user, create_workspace
 from tests.helpers.reporting import Builder
+from tests.helpers.roles import ensure_runtime_roles
 
 WHEN = datetime(2026, 11, 16, 10, 0, tzinfo=UTC)
 
 
 @contextlib.contextmanager
 def as_role(session: Session, role: str) -> Iterator[None]:
+    ensure_runtime_roles(session)
     session.execute(text(f"SET LOCAL ROLE {role}"))
     session.execute(text("SET LOCAL search_path = public, pg_temp"))
     try:
