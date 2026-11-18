@@ -76,6 +76,7 @@ function ConversationRow({ conversation, selected, to }: { conversation: Convers
             <ListTime value={conversation.last_message_at} timeZone={workspace.timezone} />
           </span>
           <span
+            dir="auto"
             className={`truncate text-body leading-5 ${
               conversation.last_message_preview ? "text-secondary" : "text-secondary italic"
             }`}
@@ -91,7 +92,12 @@ function ConversationRow({ conversation, selected, to }: { conversation: Convers
                   {t("convo.handledByYou")}
                 </QuietPill>
               ) : null}
-              <WindowTimer endsAt={conversation.window_ends_at} compact />
+              <WindowTimer
+                endsAt={conversation.window_ends_at}
+                compact
+                state={conversation.window_state}
+                humanAgentUntil={conversation.human_agent_until}
+              />
             </span>
           ) : null}
         </span>

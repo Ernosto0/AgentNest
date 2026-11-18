@@ -99,7 +99,7 @@ def assemble(db: Session, clock: Clock, context: BrokerContext) -> ModelContext:
     language = choose_reply_language(
         [row.text or "" for row in turns if row.direction == "inbound"] + public_texts,
         default_locale=workspace.default_locale,
-        reply_languages=workspace.reply_languages,
+        reply_languages=[code for code in workspace.reply_languages if code in ("tr", "en")],
     ).code
     selected = language or ctx.locale
     recent_customer = " ".join(row.text or "" for row in turns[:3] if row.direction == "inbound")

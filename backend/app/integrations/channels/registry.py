@@ -64,6 +64,13 @@ def get_channel(name: str) -> OwnerChannel:
         _REGISTRY["web_push"] = wp
         return wp
 
+    if name == "whatsapp":
+        from app.integrations.channels.whatsapp.adapter import WhatsAppChannel
+
+        wa: OwnerChannel = WhatsAppChannel()
+        _REGISTRY["whatsapp"] = wa
+        return wa
+
     raise KeyError(f"Unknown owner channel: '{name}'. Available: {list_registered_channels()}")
 
 

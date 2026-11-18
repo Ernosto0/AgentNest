@@ -22,7 +22,9 @@
     },
     "type": {
       "feed_image": "Gönderi",
-      "story_image": "Story"
+      "story_image": "Story",
+      "feed_carousel": "Kaydırmalı",
+      "reel": "Reels"
     },
     "status": {
       "soon": "kısa süre sonra",
@@ -38,7 +40,9 @@
       "aiDraftHint": "Asistan hazırladı",
       "noText": "Henüz metin yok",
       "noImage": "Henüz görsel yok",
+      "noVideo": "Henüz video yok",
       "imageDeleted": "Görsel silindi",
+      "videoDeleted": "Video silindi",
       "imageFailed": "Görsel gösterilemedi",
       "rejectedNote": "Not: {{note}}"
     },
@@ -99,10 +103,119 @@
         "SCHEDULE_TIME_NONEXISTENT": "{{timezoneLabel}} için {{local_date}} günü saat {{local_time}} diye bir saat yok (saatler o saati atlıyor). Başka bir saat seçin.",
         "SCHEDULE_TOO_SOON_FOR_APPROVAL": "Yayından önce birinin onaylaması gerekir. Şu andan en az {{minutes}} dakika sonrasını seçin.",
         "PUBLISH_QUOTA_FORECAST_EXCEEDED": "Bu saatin çevresinde zaten çok fazla gönderi zamanlanmış. Başka bir saat seçin.",
-        "TEMPLATE_IMAGE_STALE": "Görsel eski bir değeri gösteriyor ({{keys}}). Güncel değerle yeniden oluşturun."
+        "TEMPLATE_IMAGE_STALE": "Görsel eski bir değeri gösteriyor ({{keys}}). Güncel değerle yeniden oluşturun.",
+        "CAROUSEL_TOO_FEW_ITEMS": "En az 2 görsel ekleyin.",
+        "CAROUSEL_TOO_MANY_ITEMS": "En fazla {{max}} görsel kullanın (şu an {{count}}).",
+        "CAROUSEL_DUPLICATE_MEDIA": "Aynı görsel birden fazla eklenemez.",
+        "CAROUSEL_MIXED_ASPECT_RATIO": "{{positions}}. sıradaki görsellerin en boy oranı görsel 1’den farklı.",
+        "REEL_DURATION_OUT_OF_RANGE": "Reels videosu 3 saniye ile 15 dakika arasında olmalıdır.",
+        "REEL_COVER_OFFSET_INVALID": "Seçilen kapak karesi konumu video süresinin dışında.",
+        "REEL_COVER_TOO_LARGE": "Kapak görseli en fazla 8 MB olmalıdır.",
+        "REEL_ASPECT_NOT_9_16": "Video 9:16 oranında değil; Instagram kırpabilir veya boşluk ekleyebilir.",
+        "REEL_RESOLUTION_BELOW_RECOMMENDED": "Video genişliği önerilen 540 pikselin altında.",
+        "REEL_EDIT_LIST_PRESENT": "Bu videoda bir düzenleme listesi var; Instagram uyumluluğu canlı olarak henüz doğrulanmadı."
       }
     },
     "media": {
+      "videoReason": {
+        "EMPTY_FILE": {
+          "what": "Video dosyası boş.",
+          "next": "Bir video seçip yeniden yükleyin."
+        },
+        "NOT_A_VIDEO": {
+          "what": "Bu dosya bir video değil.",
+          "next": "MP4 veya MOV biçiminde bir video seçin."
+        },
+        "UNSUPPORTED_CONTAINER": {
+          "what": "Bu video kapsayıcısı desteklenmiyor.",
+          "next": "MP4 veya MOV olarak dışa aktarın."
+        },
+        "CORRUPT_VIDEO": {
+          "what": "Video okunamadı.",
+          "next": "Orijinal videoyu yeniden dışa aktarıp yükleyin."
+        },
+        "NO_VIDEO_STREAM": {
+          "what": "Bu dosyada video izi yok.",
+          "next": "Tek video izi içeren bir dosya seçin."
+        },
+        "MULTIPLE_VIDEO_STREAMS": {
+          "what": "Bu dosyada birden fazla video izi var.",
+          "next": "Tek video iziyle dışa aktarın."
+        },
+        "UNSUPPORTED_VIDEO_CODEC": {
+          "what": "Video kodeği desteklenmiyor.",
+          "next": "MP4 veya MOV içinde H.264 ya da HEVC video olarak dışa aktarın."
+        },
+        "UNSUPPORTED_AUDIO_CODEC": {
+          "what": "Ses kodeği desteklenmiyor.",
+          "next": "AAC sesle veya sessiz olarak dışa aktarın."
+        },
+        "UNSUPPORTED_AUDIO_SAMPLE_RATE": {
+          "what": "Ses örnekleme hızı 48 kHz üzerinde veya bilinmiyor.",
+          "next": "AAC sesi en fazla 48 kHz ile dışa aktarın."
+        },
+        "UNSUPPORTED_AUDIO_CHANNELS": {
+          "what": "Ses mono veya stereo olmalı.",
+          "next": "AAC sesi bir veya iki kanalla dışa aktarın."
+        },
+        "UNSUPPORTED_PIXEL_FORMAT": {
+          "what": "Video 4:2:0 renk örneklemesi kullanmalı.",
+          "next": "H.264 veya HEVC videoyu 4:2:0 renk örneklemesiyle dışa aktarın."
+        },
+        "INTERLACED": {
+          "what": "Geçmeli taramalı video desteklenmiyor.",
+          "next": "Aşamalı tarama (progressive) ile dışa aktarın."
+        },
+        "DURATION_UNKNOWN": {
+          "what": "Video süresi belirlenemedi.",
+          "next": "Videoyu yeniden dışa aktarıp yükleyin."
+        },
+        "DURATION_TOO_SHORT": {
+          "what": "Video 3 saniyeden kısa.",
+          "next": "En az 3 saniyelik bir video seçin."
+        },
+        "DURATION_TOO_LONG": {
+          "what": "Video 15 dakikadan uzun.",
+          "next": "Videoyu kısaltıp yeniden yükleyin."
+        },
+        "FRAME_RATE_OUT_OF_RANGE": {
+          "what": "Kare hızı 23 ile 60 FPS arasında olmalı.",
+          "next": "23–60 FPS ile dışa aktarın."
+        },
+        "WIDTH_TOO_LARGE": {
+          "what": "Videonun görüntülenen genişliği 1920 pikseli aşıyor.",
+          "next": "Görüntülenen genişlik en fazla 1920 piksel olacak şekilde dışa aktarın."
+        },
+        "RESOLUTION_TOO_LOW": {
+          "what": "Video boyutları çok küçük.",
+          "next": "Genişliği ve yüksekliği en az 64 piksel olan bir video kullanın."
+        },
+        "ASPECT_RATIO_OUT_OF_RANGE": {
+          "what": "Videonun en boy oranı desteklenmiyor.",
+          "next": "Genişlik/yükseklik oranı 0,1 ile 10 arasında olmalı; 9:16 önerilir."
+        },
+        "BITRATE_TOO_HIGH": {
+          "what": "Video bit hızı 25 Mbps üzerinde.",
+          "next": "En fazla 25 Mbps ile dışa aktarın."
+        },
+        "MOOV_NOT_AT_FRONT": {
+          "what": "Video akış için optimize edilmemiş.",
+          "next": "“Hızlı başlatma” veya “web için optimize et” seçeneğiyle dışa aktarın."
+        },
+        "EDIT_LIST_PRESENT": {
+          "what": "Videoda bir düzenleme listesi var.",
+          "next": "Instagram uyumluluğu canlı olarak henüz doğrulanmadı."
+        },
+        "ASPECT_NOT_9_16": {
+          "what": "Video önerilen 9:16 biçiminde değil.",
+          "next": "Instagram videoyu kırpabilir veya boşluk ekleyebilir."
+        },
+        "RESOLUTION_BELOW_RECOMMENDED": {
+          "what": "Video önerilen 540 piksel genişliğin altında.",
+          "next": "Daha yüksek çözünürlüklü bir orijinal daha iyi görünebilir."
+        }
+      },
+      "videoPlaceholder": "Video",
       "label": "Görsel",
       "feedHint": "Gönderi için dikey ya da kare bir görsel ekleyin (4:5 ile 1,91:1 arası).",
       "storyHint": "Story için 9:16 bir görsel ekleyin. Instagram'da story metni görselin üzerinde olmalıdır.",
@@ -230,6 +343,8 @@
       "rejected": "Bu içerik reddedildi.",
       "rejectedBy": "{{name}} reddetti.",
       "rejectedNote": "Not: {{note}}",
+      "processing": "Instagram bu reels videosunu işliyor. Hazır olduğunda otomatik olarak yayınlanacak.",
+      "processingNext": "Sonraki durum kontrolü: {{when}} ({{zone}})",
       "rejectedNext": "Düzenleyip yeniden gönderebilirsiniz.",
       "expiredNote": "Onay süresi doldu.",
       "draftHold": {
@@ -274,7 +389,9 @@
       "title": "İzinler",
       "messaging": "Mesajlaşma",
       "publish_feed_image": "Gönderi yayınlama",
-      "publish_story_image": "Story yayınlama"
+      "publish_story_image": "Story yayınlama",
+      "publish_feed_carousel": "Kaydırmalı gönderi yayınlama",
+      "publish_reel": "Reels yayınlama"
     },
     "when": {
       "today": "Bugün",
@@ -316,6 +433,7 @@
       "all": "Tümü",
       "posts": "Gönderiler",
       "stories": "Story'ler",
+      "reels": "Reels'ler",
       "clear": "Filtreleri temizle",
       "noMatch": "Bu filtrelere uyan içerik yok",
       "noMatchHint": "Başka bir kelime deneyin ya da tüm biçimleri gösterin.",
@@ -416,6 +534,57 @@
         "holdHint": "Önce görseli yeniden oluşturun; ardından içerik yeniden onay ister.",
         "done": "Yeni görsel yapıldı. İçerik yeniden taslak oldu; zamanlanmadan önce yeniden onay gerekir."
       }
+    },
+    "carousel": {
+      "captionHint": "Tüm kaydırmalı gönderi için tek açıklama (en fazla 2.200 karakter). Instagram’da görsel başına açıklama yoktur.",
+      "manualHint": "Boş bir kaydırmalı gönderi açıp görsellerinizi yükleyin. Yapay zekâ ve şablonlar bu türde kullanılamaz.",
+      "up": "Görsel {{n}} yukarı taşı",
+      "down": "Görsel {{n}} aşağı taşı",
+      "remove": "Görsel {{n}} kaldır",
+      "removeShort": "Kaldır",
+      "upload": "Görsel ekle",
+      "moved": "Görsel {{from}}, {{to}}. sıraya taşındı.",
+      "cap": "En fazla 10 görsel. Fazla dosyalar yüklenmedi.",
+      "waiting": "Bekliyor",
+      "uploading": "Yükleniyor...",
+      "done": "Kaydedildi",
+      "error": "Başarısız",
+      "saving": "Sıra kaydediliyor...",
+      "previous": "Önceki görsel",
+      "next": "Sonraki görsel",
+      "count_one": "{{count}} görsel",
+      "count_other": "{{count}} görsel",
+      "itemIssue": "Görsel {{n}}: {{message}}"
+    },
+    "reel": {
+      "manualHint": "Videonuzu yüklemek ve kapağını seçmek için boş bir reels açın. Yapay zekâ ve şablonlar bu türde kullanılamaz.",
+      "uploadVideo": "Video yükle (MP4 veya MOV)",
+      "replaceVideo": "Videoyu değiştir",
+      "hint": "En fazla 300 MB, 3 saniye ile 15 dakika arası MP4 veya MOV.",
+      "uploading": "Video yükleniyor… %{{percent}}",
+      "probing": "Dosya işleniyor…",
+      "cancelUpload": "İptal",
+      "wrongFileType": "MP4 veya MOV biçiminde bir video dosyası seçin.",
+      "fileTooLarge": "Video en fazla 300 MB olabilir.",
+      "coverSection": "Reels kapağı",
+      "coverHint": "Videodan bir kare seçin ya da en fazla 8 MB bir JPEG kapak görseli yükleyin.",
+      "framePosition": "Kapak karesi konumu: {{time}}",
+      "useThisFrame": "Bu kareyi kullan",
+      "uploadCover": "Görsel yükle",
+      "useFirstFrame": "İlk kareyi kullan",
+      "coverWrongType": "JPEG kapak görseli seçin (.jpg veya .jpeg).",
+      "coverTooLarge": "Kapak görseli en fazla 8 MB olabilir.",
+      "coverUsingCustom": "Yüklenen kapak görseli kullanılıyor",
+      "coverUsingOffset": "{{time}} konumundaki kare kullanılıyor",
+      "coverUsingDefault": "İlk video karesi kullanılıyor",
+      "shareToFeed": "Profil ızgarasında da (Akış) paylaş",
+      "shareToFeedHint": "Bu reels'i Reels sekmesinin yanı sıra ana profil ızgarasında da gösterir.",
+      "notFactChecked": "Video ve ses otomatik olarak bilgi kontrolünden geçmez. Videodaki fiyat, saat ve bilgilerin güncel işletme bilgilerinizle eşleştiğinden emin olun.",
+      "warningsLabel": "Video uyarıları",
+      "deleted": "Bu video yayınlandıktan sonra silindi ve artık saklanmıyor.",
+      "coverDeleted": "Özel kapak görseli yayınlandıktan sonra silindi.",
+      "saving": "Kaydediliyor…",
+      "previewLabel": "Reels önizlemesi"
     }
   }
 }

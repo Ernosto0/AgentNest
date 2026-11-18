@@ -23,10 +23,10 @@ from datetime import datetime, timedelta
 
 from pydantic import BaseModel
 from sqlalchemy import ColumnElement, and_, exists, or_, select, update
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, aliased, sessionmaker
 
 from app.audit import service as audit
-from app.content.models import ContentItem, MediaAsset, WorkspaceBrandSettings
+from app.content.models import ContentItem, ContentItemMedia, MediaAsset, WorkspaceBrandSettings
 from app.core.clock import Clock, FrozenClock
 from app.core.config import Settings, get_settings
 from app.core.context import ActorRef
@@ -54,7 +54,17 @@ def eligible(settings: Settings, now: datetime) -> ColumnElement[bool]:
         select(ContentItem.id)
         .where(
             ContentItem.workspace_id == MediaAsset.workspace_id,
-            ContentItem.media_asset_id == MediaAsset.id,
+            or_(
+                ContentItem.media_asset_id == MediaAsset.id,
+                ContentItem.cover_media_asset_id == MediaAsset.id,
+                exists(
+                    select(ContentItemMedia.id).where(
+                        ContentItemMedia.workspace_id == MediaAsset.workspace_id,
+                        ContentItemMedia.content_item_id == ContentItem.id,
+                        ContentItemMedia.media_asset_id == MediaAsset.id,
+                    )
+                ).correlate(ContentItem, MediaAsset),
+            ),
         )
         .exists()
     )
@@ -62,7 +72,17 @@ def eligible(settings: Settings, now: datetime) -> ColumnElement[bool]:
         select(ContentItem.id)
         .where(
             ContentItem.workspace_id == MediaAsset.workspace_id,
-            ContentItem.media_asset_id == MediaAsset.id,
+            or_(
+                ContentItem.media_asset_id == MediaAsset.id,
+                ContentItem.cover_media_asset_id == MediaAsset.id,
+                exists(
+                    select(ContentItemMedia.id).where(
+                        ContentItemMedia.workspace_id == MediaAsset.workspace_id,
+                        ContentItemMedia.content_item_id == ContentItem.id,
+                        ContentItemMedia.media_asset_id == MediaAsset.id,
+                    )
+                ).correlate(ContentItem, MediaAsset),
+            ),
             or_(
                 ContentItem.status != "published",
                 ContentItem.published_at.is_(None),
@@ -85,19 +105,47 @@ def eligible(settings: Settings, now: datetime) -> ColumnElement[bool]:
         )
         .exists()
     )
+    parent = aliased(MediaAsset)
+    live_parent = (
+        select(parent.id)
+        .where(
+            parent.workspace_id == MediaAsset.workspace_id,
+            parent.thumbnail_media_asset_id == MediaAsset.id,
+            parent.kind == "video",
+            parent.status != "deleted",
+        )
+        .exists()
+    )
+    thumbnail_due = and_(
+        MediaAsset.kind == "video_thumbnail",
+        ~live_parent,
+        MediaAsset.created_at < now - timedelta(days=settings.retention_media_orphan_days),
+    )
     return and_(
-        ~logo, MediaAsset.status.in_(("uploaded", "ready")), or_(orphan, only_old_published)
+        ~logo,
+        MediaAsset.status.in_(("uploaded", "ready")),
+        or_(
+            and_(MediaAsset.kind != "video_thumbnail", or_(orphan, only_old_published)),
+            thumbnail_due,
+        ),
     )
 
 
-def run_media_cleanup(
+def _cleanup_pass(
     session_factory: sessionmaker[Session],
     storage: MediaStorage,
     settings: Settings,
     now: datetime,
+    *,
+    thumbnails: bool,
 ) -> int:
     """Delete every eligible asset's file and mark its row; returns how many rows were marked."""
-    condition = eligible(settings, now)
+    condition = and_(
+        eligible(settings, now),
+        MediaAsset.kind == "video_thumbnail"
+        if thumbnails
+        else MediaAsset.kind != "video_thumbnail",
+    )
     deleted = 0
     last_id: uuid.UUID | None = None
     while True:
@@ -148,6 +196,18 @@ def run_media_cleanup(
                 deleted += 1
             else:
                 _log.warning("media_cleanup_raced", asset_id=str(asset_id))
+
+
+def run_media_cleanup(
+    session_factory: sessionmaker[Session],
+    storage: MediaStorage,
+    settings: Settings,
+    now: datetime,
+) -> int:
+    # Parents first, then thumbnails irrespective of UUID order. A crash is completed next run.
+    return _cleanup_pass(session_factory, storage, settings, now, thumbnails=False) + _cleanup_pass(
+        session_factory, storage, settings, now, thumbnails=True
+    )
 
 
 @job_handler("media_cleanup", MediaCleanupPayload, max_attempts=1)

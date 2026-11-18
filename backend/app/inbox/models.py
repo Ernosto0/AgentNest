@@ -70,6 +70,61 @@ def _in(column: str, values: tuple[str, ...]) -> str:
     return f"{column} IN ({', '.join(repr(v) for v in values)})"
 
 
+class ConversationFollowUp(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
+    __tablename__ = "conversation_follow_ups"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        UniqueConstraint("workspace_id", "conversation_id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "conversation_id"],
+            ["conversations.workspace_id", "conversations.id"],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "answer_draft_id"],
+            ["reply_drafts.workspace_id", "reply_drafts.id"],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "covers_through_message_id"],
+            ["messages.workspace_id", "messages.id"],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "reply_draft_id"],
+            ["reply_drafts.workspace_id", "reply_drafts.id"],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint(
+            "status IN ('scheduled', 'cancelled', 'skipped', 'drafted')", name="status"
+        ),
+        CheckConstraint(
+            "(status = 'drafted') = (reply_draft_id IS NOT NULL)", name="drafted_reply"
+        ),
+        CheckConstraint(
+            "status NOT IN ('cancelled', 'skipped') OR reason_code IS NOT NULL", name="reason"
+        ),
+        CheckConstraint("due_at >= answered_at", name="due_at"),
+        Index(
+            "uq_conversation_follow_ups_reply_draft_id",
+            "reply_draft_id",
+            unique=True,
+            postgresql_where=sql_text("reply_draft_id IS NOT NULL"),
+        ),
+    )
+
+    conversation_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    answer_draft_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    covers_through_message_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False)
+    reason_code: Mapped[str | None] = mapped_column(Text)
+    reply_draft_id: Mapped[uuid.UUID | None] = mapped_column()
+    is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    drafted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class InboundEvent(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "inbound_events"
     __table_args__ = (
@@ -356,6 +411,13 @@ class ReplyDraft(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
         CheckConstraint(_in("decision", DRAFT_DECISIONS), name="decision"),
         CheckConstraint(_in("status", DRAFT_STATUSES), name="status"),
         CheckConstraint("version >= 1", name="version"),
+        # The Human Agent tag only ever belongs to a person's own typed reply (no AI or approved
+        # answer, no agent draft, no system actor): the database refuses anything else.
+        CheckConstraint(
+            "message_tag IS NULL OR (message_tag = 'HUMAN_AGENT' AND source = 'owner' "
+            "AND origin = 'legacy' AND created_by_actor_type = 'user')",
+            name="message_tag_human_only",
+        ),
         # One open draft per conversation (workflows.md §C).
         Index(
             "uq_reply_drafts_open_conversation",
@@ -410,6 +472,8 @@ class ReplyDraft(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
     failure_code: Mapped[str | None] = mapped_column(Text)
     created_by_actor_type: Mapped[str] = mapped_column(Text, nullable=False)
     created_by_actor_id: Mapped[str | None] = mapped_column(Text)
+    # ``HUMAN_AGENT`` when the person's reply is sent after the 24-hour window (up to 7 days).
+    message_tag: Mapped[str | None] = mapped_column(Text)
     client_request_id: Mapped[str | None] = mapped_column(Text)
     is_simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
 

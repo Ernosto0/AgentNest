@@ -25,6 +25,7 @@ function conversation(overrides: Partial<Conversation> = {}): Conversation {
     attention: "needs_approval",
     handling_mode: "automatic",
     window_ends_at: new Date(Date.now() + 20 * 3_600_000).toISOString(),
+    window_state: "open",
     is_simulated: true,
     ...overrides,
   };
@@ -608,6 +609,44 @@ describe("inbox", () => {
     expect(screen.queryByTestId("window-timer")).not.toBeInTheDocument();
   });
 
+  it("shows the Human Agent window when only your own typed reply can still go out", async () => {
+    const later = detail(null);
+    later.conversation = conversation({
+      window_ends_at: new Date(Date.now() - 3_600_000).toISOString(),
+      window_state: "human_agent_only",
+      human_agent_until: new Date(Date.now() + 5 * 86_400_000).toISOString(),
+    });
+    mockApi(routes({ [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(later) }));
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const hint = await screen.findByTestId("human-agent-hint");
+    expect(hint).toHaveTextContent("24 saatlik yanıt süresi doldu.");
+    expect(hint).toHaveTextContent("kendi yazdığınız bir yanıtı");
+    expect(screen.getByTestId("window-human-agent")).toHaveTextContent("İnsan Temsilcisi süresi");
+    expect(screen.queryByText(/24 saat içinde yanıt verilmesine izin verir/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the closed explanation when the server says the window is closed", async () => {
+    const closed = detail(null);
+    closed.conversation = conversation({
+      window_ends_at: new Date(Date.now() - 3_600_000).toISOString(),
+      window_state: "closed",
+      human_agent_until: null,
+    });
+    mockApi(routes({ [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(closed) }));
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    expect(await screen.findByText(/24 saat içinde yanıt verilmesine izin verir/)).toBeInTheDocument();
+    expect(screen.queryByTestId("human-agent-hint")).not.toBeInTheDocument();
+  });
+
+  it("shows the normal timer while the 24-hour window is open", async () => {
+    const open = detail(null);
+    open.conversation = conversation({ window_state: "open", human_agent_until: null });
+    mockApi(routes({ [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(open) }));
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    expect(await screen.findByTestId("window-timer")).toBeInTheDocument();
+    expect(screen.queryByTestId("human-agent-hint")).not.toBeInTheDocument();
+  });
+
   it("counts unanswered comments on the Comments tab without renaming it", async () => {
     mockApi(
       routes({
@@ -905,5 +944,95 @@ describe("inbox", () => {
       expect(screen.queryByTestId("image-description-pending")).not.toBeInTheDocument();
     });
   });
+  });
+});
+
+describe("right-to-left text (Arabic customers, Feature Phase 5)", () => {
+  const ARABIC_QUESTION = "مرحبا، كم سعر الاشتراك الشهري؟";
+  const ARABIC_DRAFT = "مرحبًا! سعر الاشتراك الشهري: 6.000 ₺.";
+
+  function arabicDetail(open: ReplyDraft | null): ConversationDetail {
+    const base = detail(open);
+    return {
+      ...base,
+      conversation: { ...base.conversation, last_message_preview: ARABIC_QUESTION },
+      messages: [
+        { ...base.messages[0]!, text: ARABIC_QUESTION },
+        {
+          id: "m1000000-0000-4000-8000-0000000000bb",
+          direction: "inbound",
+          sender_kind: "customer",
+          text: null,
+          attachments: [{ type: "audio" }],
+          provider_timestamp: "2026-10-15T12:01:00Z",
+          is_simulated: true,
+          transcript: { status: "succeeded", text: "أريد حجز موعد", language: "ar", reason_code: null, duration_seconds: 4 },
+        },
+      ],
+    };
+  }
+
+  it("lets the browser pick the direction of an Arabic customer message and of the voice transcript", async () => {
+    mockApi(routes({ [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(arabicDetail(null)) }));
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const message = await screen.findByText(ARABIC_QUESTION);
+    expect(message).toHaveAttribute("dir", "auto");
+    expect(message.closest("[dir='rtl'], [dir='ltr']")).toBeNull(); // the bubble layout stays as it is
+    const transcript = await screen.findByTestId("transcript");
+    expect(within(transcript).getByText("أريد حجز موعد")).toHaveAttribute("dir", "auto");
+    expect(within(transcript).getByText("أريد حجز موعد")).toHaveAttribute("lang", "ar");
+    expect(within(transcript).getByTestId("transcript-language")).toHaveTextContent("Arapça");
+  });
+
+  it("shows the draft text, the edit field and the manual reply field with dir=auto", async () => {
+    const arabic = draft({ language: "ar", text: ARABIC_DRAFT, rendered_facts: [], facts_used: [] });
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(arabicDetail(arabic)),
+        [`GET ${BASE}/approvals/${APPROVAL_ID}`]: () => json(approval({ id: APPROVAL_ID, action: "reply.send", kind: "authorization" })),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const user = userEvent.setup();
+    const card = await screen.findByTestId("draft-card");
+    expect(within(card).getByTestId("draft-text")).toHaveAttribute("dir", "auto");
+    expect(within(card).getByTestId("draft-text")).toHaveTextContent(ARABIC_DRAFT);
+
+    await user.click(await within(card).findByRole("button", { name: /Düzenle/ }));
+    const editor = await within(card).findByLabelText("Yanıt metni");
+    expect(editor.tagName).toBe("TEXTAREA");
+    expect(editor).toHaveAttribute("dir", "auto");
+    expect(editor).toHaveValue(ARABIC_DRAFT);
+  });
+
+  it("gives the suggestion text and the composer dir=auto too", async () => {
+    const suggestion = draft({ status: "needs_human", language: "ar", text: null, suggestion_text: "نعتذر عن ذلك، سنتصل بك.", rendered_facts: [], facts_used: [], approval_id: null });
+    mockApi(routes({ [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(arabicDetail(suggestion)) }));
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const user = userEvent.setup();
+    expect(await screen.findByTestId("draft-suggestion-text")).toHaveAttribute("dir", "auto");
+    await user.click(screen.getByRole("button", { name: "Yanıtım olarak kullan" }));
+    const composer = screen.getByLabelText("Yanıtınız");
+    expect(composer).toHaveAttribute("dir", "auto");
+    expect(composer).toHaveValue("نعتذر عن ذلك، سنتصل بك.");
+  });
+
+  it("gives the conversation list preview dir=auto", async () => {
+    mockApi(
+      routes({
+        [`GET ${BASE}/conversations`]: () => json({ items: [conversation({ last_message_preview: ARABIC_QUESTION })], next_cursor: null }),
+      }),
+    );
+    renderApp(`/w/${WS_GOLKENT}/inbox`);
+    expect(await screen.findByText(ARABIC_QUESTION)).toHaveAttribute("dir", "auto");
+  });
+
+  it("keeps Turkish and English text untouched: dir=auto resolves them to left-to-right", async () => {
+    mockApi(routes({ [`GET ${BASE}/conversations/${CONVERSATION_ID}`]: () => json(detail(draft())) }));
+    renderApp(`/w/${WS_GOLKENT}/inbox/${CONVERSATION_ID}`);
+    const card = await screen.findByTestId("draft-card");
+    expect(within(card).getByTestId("draft-text")).toHaveAttribute("dir", "auto");
+    expect(within(card).getByTestId("draft-text")).toHaveTextContent("Merhaba! Aylık üyelik ücretimiz 6.000 ₺ / ay.");
+    expect(document.documentElement).not.toHaveAttribute("dir", "rtl"); // the interface itself is not mirrored
   });
 });

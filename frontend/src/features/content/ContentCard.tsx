@@ -29,12 +29,15 @@ function whenLine(item: ContentItem, t: TFunction, language: string, timezone: s
 /** Post or Story, on the image. Colours follow the Today calendar (posts green, stories amber). */
 export function TypePill({ type, className = "" }: { type: ContentItem["content_type"]; className?: string }) {
   const { t } = useTranslation();
-  const story = type === "story_image";
+  const tone =
+    type === "story_image"
+      ? "bg-chart-2 text-primary"
+      : type === "reel"
+        ? "bg-info-subtle text-info ring-1 ring-inset ring-info/30"
+        : "bg-action text-on-action";
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.6875rem] leading-4 font-semibold ${
-        story ? "bg-chart-2 text-primary" : "bg-action text-on-action"
-      } ${className}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.6875rem] leading-4 font-semibold ${tone} ${className}`}
     >
       {t(`content.type.${type}`)}
     </span>

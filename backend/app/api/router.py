@@ -41,6 +41,7 @@ from app.owner_requests.router import router as owner_requests_router
 from app.plans.router import router as plans_router
 from app.policy.router import router as policy_router
 from app.reporting.home_router import router as home_router
+from app.reporting.leads_router import router as leads_router
 from app.reporting.missed_router import router as missed_reports_router
 from app.reporting.router import router as reports_router
 from app.waitlist.router import router as waitlist_router
@@ -123,6 +124,7 @@ api_router.include_router(content_router)
 api_router.include_router(template_images_router)
 api_router.include_router(reports_router)
 api_router.include_router(missed_reports_router)
+api_router.include_router(leads_router)
 api_router.include_router(activity_router)
 api_router.include_router(agent_router)
 api_router.include_router(suggestions_router)

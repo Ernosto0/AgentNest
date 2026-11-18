@@ -88,6 +88,9 @@ class FailureRuleIn(BaseModel):
     mode: Literal[*FAILURE_MODES]  # type: ignore[valid-type]
     remaining: int | None = Field(default=1, ge=1, le=100)  # null: every matching call
     retry_after_s: int | None = Field(default=None, ge=1, le=3600)
+    skip_first: int = Field(default=0, ge=0)
+    delay_s: int | None = Field(default=None, ge=0, le=3600)
+    error_subcode: int | None = Field(default=None, ge=1)
 
 
 class FailureRuleOut(BaseModel):
@@ -96,6 +99,9 @@ class FailureRuleOut(BaseModel):
     mode: str
     remaining: int | None
     retry_after_s: int | None
+    skip_first: int
+    delay_s: int | None = None
+    error_subcode: int | None = None
 
 
 class PublishedMediaOut(BaseModel):
@@ -211,6 +217,9 @@ def list_failure_rules(
                 mode=r.mode,
                 remaining=r.remaining,
                 retry_after_s=r.retry_after_s,
+                skip_first=r.skip_first,
+                delay_s=r.delay_s,
+                error_subcode=r.error_subcode,
             )
             for r in simulator.list_failure_rules(db, ctx.workspace_id)
         ]
@@ -232,6 +241,9 @@ def add_failure_rule(
         mode=body.mode,
         remaining=body.remaining,
         retry_after_s=body.retry_after_s,
+        skip_first=body.skip_first,
+        delay_s=body.delay_s,
+        error_subcode=body.error_subcode,
     )
     return FailureRuleOut(
         id=rule.id,
@@ -239,6 +251,9 @@ def add_failure_rule(
         mode=rule.mode,
         remaining=rule.remaining,
         retry_after_s=rule.retry_after_s,
+        skip_first=rule.skip_first,
+        delay_s=rule.delay_s,
+        error_subcode=rule.error_subcode,
     )
 
 

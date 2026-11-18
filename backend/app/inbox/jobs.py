@@ -17,12 +17,30 @@ from app.inbox.payloads import (
     AssistantTestDraftPayload,
     DraftReplyPayload,
     ExpireReplyDraftsPayload,
+    FollowUpCheckPayload,
     ProcessInboundEventPayload,
 )
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, RescheduleJob, job_handler
 from app.jobs.scheduler import register_periodic
 from app.plans import service as usage
+
+
+@job_handler("follow_up_check", FollowUpCheckPayload, max_attempts=3)
+def follow_up_check(job: JobContext) -> None:
+    from app.core.db import set_tenant_context
+    from app.inbox import follow_up
+    from app.inbox.system import system_context
+
+    if not isinstance(job.payload, FollowUpCheckPayload) or job.workspace_id is None:
+        return
+    with job.session_factory() as session:
+        set_tenant_context(session, job.workspace_id)
+        ctx = system_context(session, job.workspace_id, "follow_up_check")
+        if ctx is not None:
+            follow_up.check(session, job.clock, ctx, job.payload)
+        session.commit()
+
 
 # Two model calls (the call and one regeneration), each with its own repair call, at 30 s.
 DRAFT_TIMEOUT_SECONDS = 150

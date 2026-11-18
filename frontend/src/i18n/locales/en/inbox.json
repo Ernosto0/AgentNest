@@ -34,6 +34,9 @@
       "languages": {
         "tr": "Turkish",
         "en": "English",
+        "ru": "Russian",
+        "de": "German",
+        "ar": "Arabic",
         "other": "Another language"
       },
       "mayHaveErrors": "Written by a machine, so it can contain mistakes.",
@@ -115,7 +118,11 @@
       "hoursShort_other": "{{count}}h left",
       "minutesShort_one": "{{count}}m left",
       "minutesShort_other": "{{count}}m left",
-      "closedHint": "Instagram allows replies only within 24 hours of the customer’s last message. You can reply again once they write."
+      "closedHint": "Instagram allows replies only within 24 hours of the customer’s last message. You can reply again once they write.",
+      "humanAgentOnly": "Human Agent window: only your own typed reply, until {{until}}",
+      "humanAgentShort": "Human Agent window",
+      "humanAgentTitle": "The 24-hour reply window is over.",
+      "humanAgentHint": "You can still send a reply you type yourself until {{until}}, with Instagram's Human Agent tag. Assistant drafts and automatic follow-ups cannot be sent now."
     },
     "status": {
       "pending_approval": "Waiting for approval",
@@ -212,12 +219,14 @@
       "LLM_REFUSED": "The assistant declined",
       "ATTACHMENT_ONLY": "Only a photo or file",
       "TRANSCRIPT_REQUIRES_APPROVAL": "Written from a voice note, so you always approve it",
+      "FOLLOW_UP_REQUIRES_APPROVAL": "This follow-up always needs your approval",
       "INJECTION_SUSPECTED": "Looks like an attempt to give the assistant instructions",
       "MESSAGING_WINDOW_CLOSED": "Reply window closed",
       "ACCOUNT_NOT_CONNECTED": "Instagram account not connected",
       "CAPABILITY_MISSING": "Messaging permission missing",
       "OWNER_REPLY": "Written by you",
-      "OWNER_EDIT": "Edited by you"
+      "OWNER_EDIT": "Edited by you",
+      "HUMAN_AGENT_TAG": "Sent as your own reply with the Human Agent tag"
     },
     "removed": "This message was removed.",
     "assistantHandles": "Assistant is handling",
@@ -324,6 +333,7 @@
       "services": "Services",
       "booking": "Booking",
       "promotions": "Offers",
+      "follow_up": "Follow-up",
       "story_mention": "Story mention thank-you"
     },
     "lang": {
@@ -371,6 +381,12 @@
       "denied": "Notifications are blocked for this site in the browser settings.",
       "subscribed": "Subscribed: {{label}}",
       "removed": "This device was removed."
-    }
+    },
+    "skipFirst": "Matching calls to skip",
+    "createCarouselItem": "Create carousel image",
+    "createCarouselContainer": "Create carousel container",
+    "createReelContainer": "Create reel container",
+    "delayS": "Delay (s)",
+    "errorSubcode": "Error subcode"
   }
 }

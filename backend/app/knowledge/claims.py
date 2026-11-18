@@ -7,13 +7,14 @@ the code-appended disclosure suffix are excluded; any match outside them is an i
 
 Values the model *copies* from placeholders cannot be wrong (code inserts them); values it
 *invents* match a pattern class and fail here. Matching runs on a length-preserving,
-diacritic-insensitive Turkish fold, so every issue span indexes the original text.
+multilingual fold and an index map for ignored marks, so issue spans index original text.
 """
 
 import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.core.reply_languages import REPLY_LANGUAGES
 from app.knowledge.render import RenderResult
 
 # --- result types ---------------------------------------------------------------------------
@@ -67,15 +68,31 @@ class AllowList:
     phrases: tuple[str, ...] = ()
 
 
-ALLOW_LISTS: dict[str, AllowList] = {"tr": AllowList(), "en": AllowList()}
+ALLOW_LISTS: dict[str, AllowList] = {code: AllowList() for code in REPLY_LANGUAGES}
 
 # --- folding --------------------------------------------------------------------------------
 
-_FOLD = str.maketrans("çğıöşüâîû", "cgiosuaiu")
+_FOLD = str.maketrans(
+    "çğıöşüâîûёäßأإآٱى٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹٫٬٪",
+    "cgiosuaiuеasااااي01234567890123456789.,%",
+)
+_IGNORABLE = re.compile(
+    "[\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\u061c\ufeff\u00ad\u064b-\u065f\u0670\u0640]"
+)
+
+
+def strip_directional_marks(text: str) -> str:
+    """Remove ignorable formatting/vocalisation for comparisons, not indexed spans."""
+    return _IGNORABLE.sub("", text)
+
+
+def _canonical(text: str) -> tuple[str, list[int]]:
+    kept = [(char, index) for index, char in enumerate(text) if not _IGNORABLE.fullmatch(char)]
+    return "".join(char for char, _ in kept), [index for _, index in kept]
 
 
 def fold(text: str) -> str:
-    """Lower case without Turkish diacritics, **same length as ``text``**.
+    """Fold reply-language letters, digits and separators, **same length as ``text``**.
 
     (``İ`` is mapped first: its plain ``lower()`` expands to two code points.)
     """
@@ -85,18 +102,29 @@ def fold(text: str) -> str:
 
 # --- patterns (applied to folded text) ------------------------------------------------------
 
+_LETTER_LEFT = r"(?<![^\W\d_])"
+_LETTER_RIGHT = r"(?![^\W\d_])"
 _CUR_WORD = (
-    r"(?<![a-z])(?:tl|try|lira|liras|eur|euro|euros|usd|dolar|dollars?|gbp|pounds?|sterlin)"
-    r"(?![a-z])"
+    _LETTER_LEFT + r"(?:tl|try|lira|liras|eur|euros?|usd|dolar|dollars?|gbp|pounds?|sterlin"
+    r"|franken|chf|pfund|рубл\w*|руб\.?|р\.|rub|лир\w*|евро|доллар\w*|долл\.?|фунт\w*|тенге"
+    r"|(?:بال|لل|ال|و|ب|ل)?(?:ليره|ليرة|ليرات|ريال|درهم|دينار|دولار|يورو|جنيهات|جنيه|ر\.س|د\.ا))"
+    + _LETTER_RIGHT
 )
-_CUR = rf"(?:₺|€|\$|£|{_CUR_WORD})"
+_CUR = rf"(?:₺|€|\$|£|₽|{_CUR_WORD})"
 _NUM = r"\d+(?:[.,\s]\d+)*"
-_MULT = r"(?:bin|k|milyon|thousand|million)"
-
+_MULT = (
+    r"(?:bin|k|milyon|thousand|million|tausend|mio\.?|million(?:en)?"
+    r"|тыс\.?|тысяч\w*|млн|миллион\w*|الف|الاف|مليون)"
+)
 _MONTHS = (
     r"(?:ocak|subat|mart|nisan|mayis|haziran|temmuz|agustos|eylul|ekim|kasim|aralik"
     r"|january|february|march|april|may|june|july|august|september|october|november|december"
-    r"|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)"
+    r"|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec"
+    r"|januar|februar|marz|maerz|mai|juni|juli|oktober|dezember|mrz|okt|dez"
+    r"|январ\w|феврал\w|март\w?|апрел\w|ма[йя]|июн\w|июл\w|август\w?|сентябр\w|октябр\w"
+    r"|ноябр\w|декабр\w|янв|фев|мар|апр|июн|июл|авг|сен|окт|ноя|дек|нояб\.?"
+    r"|يناير|كانون الثاني|فبراير|شباط|مارس|اذار|ابريل|نيسان|مايو|ايار|يونيو|حزيران|يوليو|تموز"
+    r"|اغسطس|سبتمبر|ايلول|اكتوبر|تشرين الاول|نوفمبر|تشرين الثاني|ديسمبر|كانون الاول)"
 )
 _DAY = r"(?:0?[1-9]|[12]\d|3[01])"
 
@@ -134,9 +162,9 @@ _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
         ),
         (
             DATE,
-            rf"(?<!\d){_DAY}(?:st|nd|rd|th)?\.?\s*{_MONTHS}(?![a-z])"
-            rf"|(?<![a-z]){_MONTHS}\s+{_DAY}(?!\d)"
-            rf"|(?<!\d){_DAY}[./](?:0?[1-9]|1[0-2])(?:[./](?:\d{{4}}|\d{{2}}))?(?![\d])"
+            rf"(?<!\d){_DAY}(?:st|nd|rd|th)?\.?\s*{_MONTHS}{_LETTER_RIGHT}"
+            rf"|{_LETTER_LEFT}{_MONTHS}\s+{_DAY}(?!\d)"
+            rf"|(?<!\d){_DAY}[./](?:0?[1-9]|1[0-2])(?:[./](?:\d{{4}}|\d{{2}}))?\.?(?![\d])"
             r"|(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)",
         ),
         (
@@ -145,8 +173,43 @@ _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
         ),
     )
 )
+_PATTERNS += tuple(
+    (code, re.compile(pattern))
+    for code, pattern in (
+        (
+            PERCENT,
+            rf"\d+(?:[.,]\d+)?\s*(?:prozent|процент\w*|بالمئة|بالمائة|في المئة){_LETTER_RIGHT}",
+        ),
+        (
+            DISCOUNT_WORD,
+            _LETTER_LEFT + r"(?:rabatt\w*|ermasigung\w*|ermassigung\w*|kostenlos\w*"
+            r"|gratis|umsonst|geschenkt|aktion\w*"
+            r"|скидк\w*|бесплатн\w*|акци[яи]\w*|в подарок"
+            r"|خصومات|خصم|تخفيض\w*|مجاني\w*|مجانا|عرض خاص|هدية)" + _LETTER_RIGHT,
+        ),
+        (
+            TIME,
+            _LETTER_LEFT + r"(?:(?:um|ab)\s+)?\d{1,2}(?:[.:]\d{2})?\s*uhr\b"
+            r"|(?<![\d-])(?:von\s+)?\d{1,2}\s*(?:bis|[-–—])\s*\d{1,2}(?:\s*uhr\b)?(?![\d-])"
+            r"|zwischen\s+\d{1,2}\s+und\s+\d{1,2}(?!\d)"
+            r"|(?:в\s+)?\d{1,2}\s*(?:часов|часа|час|ч)"
+            + _LETTER_RIGHT
+            + r"|с\s+\d{1,2}(?::\d{2})?\s+до\s+\d{1,2}(?::\d{2})?(?!\d)"
+            r"|\d{1,2}\s*[-–—]\s*\d{1,2}\s*часов"
+            r"|\d{1,2}\s*(?:утра|вечера)" + _LETTER_RIGHT + r"|(?:الساعة|الساعه)\s*\d{1,2}(?!\d)"
+            r"|من\s+\d{1,2}\s+(?:الي|حتي)\s+\d{1,2}(?!\d)"
+            r"|بين\s+\d{1,2}\s+و\s*\d{1,2}(?!\d)"
+            r"|\d{1,2}\s*(?:صباحا|مساء|م|ص)" + _LETTER_RIGHT,
+        ),
+        (
+            DATE,
+            rf"(?<!\d){_DAY}\.?\s*(?:{_MONTHS}|اب){_LETTER_RIGHT}"
+            rf"|{_LETTER_LEFT}{_MONTHS}\s+{_DAY}(?!\d)",
+        ),
+    )
+)
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
-_PRIORITY = (EMAIL, URL, PHONE, MONEY, PERCENT, TIME, DATE, DISCOUNT_WORD)
+_PRIORITY = (EMAIL, URL, PHONE, MONEY, PERCENT, DATE, TIME, DISCOUNT_WORD)
 
 
 def byte_length(text: str) -> int:
@@ -185,7 +248,7 @@ def validate_claims(
     trusted: list[tuple[int, int]] = [(s.start, s.end) for s in render_result.spans]
     if allow_suffix_span is not None:
         trusted.append(allow_suffix_span)
-    rendered_values = {fold(s.display) for s in render_result.spans}
+    rendered_values = {strip_directional_marks(fold(s.display)) for s in render_result.spans}
     promotion_used = any(s.key.startswith("promotion.") for s in render_result.spans)
 
     # Mask trusted spans with spaces so neighbouring text cannot merge into a match.
@@ -197,6 +260,8 @@ def validate_claims(
     for phrase in rules.phrases:
         masked = masked.replace(fold(phrase), " " * len(phrase))
 
+    masked, index_map = _canonical(masked)
+
     found: list[ClaimIssue] = []
     taken: list[tuple[int, int]] = []
     for code in _PRIORITY:
@@ -204,11 +269,18 @@ def validate_claims(
             if pattern_code != code:
                 continue
             for match in pattern.finditer(masked):
-                start, end = match.span()
+                # Preserve the legacy HH.MM interpretation when a numeric date is ambiguous.
+                # ISO dates, dates with years and German trailing-dot dates take priority.
+                if code == DATE and re.fullmatch(r"(?:[01]?\d|2[0-4])\.[0-5]\d", match.group()):
+                    continue
+                start, end = index_map[match.start()], index_map[match.end() - 1] + 1
                 matched = text[start:end].strip()
                 if end == start or not matched or _overlaps(taken, start, end):
                     continue
-                if code in (URL, EMAIL) and fold(matched) in rendered_values:
+                if (
+                    code in (URL, EMAIL)
+                    and strip_directional_marks(fold(matched)) in rendered_values
+                ):
                     continue  # the exact value of a rendered fact, typed out
                 if code == DISCOUNT_WORD and promotion_used:
                     continue  # backed by a usable promotion fact used in the same text
@@ -216,7 +288,7 @@ def validate_claims(
                 found.append(ClaimIssue(code, start, end, text[start:end]))
 
     for match in _NUMBER.finditer(masked):  # remaining numbers: small cardinals are fine
-        start, end = match.span()
+        start, end = index_map[match.start()], index_map[match.end() - 1] + 1
         if _overlaps(taken, start, end):
             continue
         literal = match.group()
@@ -235,6 +307,7 @@ __all__: list[str] = [
     "ClaimReport",
     "byte_length",
     "fold",
+    "strip_directional_marks",
     "length_issue",
     "validate_claims",
 ]

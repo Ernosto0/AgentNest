@@ -175,6 +175,7 @@ _BY_GROUP: dict[str, tuple[str, ...]] = {
         "operation.reconciled",
         "webhook.signature_invalid",
         "report.generated",
+        "leads.exported",
         "retention.cleanup_ran",
         "security.token_key_rotated",
         "security.token_key_rotation_failed",

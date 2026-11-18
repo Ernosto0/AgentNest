@@ -6,7 +6,7 @@ still needs an approval bound to its exact text: someone who may approve records
 """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -15,17 +15,18 @@ from app.approvals import service as approvals
 from app.approvals.grants import record_policy_grant
 from app.audit import service as audit
 from app.core.clock import Clock
+from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
 from app.identity.models import Workspace
 from app.identity.permissions import has_permission
-from app.inbox import attention, drafts
+from app.inbox import attention, drafts, human_agent
 from app.inbox.approval_payload import approval_payload, approval_summary
 from app.inbox.context import MESSAGING_WINDOW
 from app.inbox.language import choose_reply_language
 from app.inbox.models import Conversation, Message, ReplyDraft
 from app.inbox.payloads import DraftReplyPayload, SendReplyPayload, draft_reply_key
-from app.inbox.reply_workflow import SEND_MARGIN, deadlines
+from app.inbox.reply_workflow import deadlines
 from app.inbox.schemas import ValidationIssueOut
 from app.inbox.views import issue_out
 from app.integrations.instagram import queries
@@ -34,6 +35,7 @@ from app.knowledge import impact
 from app.knowledge import service as knowledge_service
 from app.knowledge.claims import validate_claims
 from app.knowledge.render import RenderResult
+from app.policy.message_tag import AUTOMATED_SOURCE, HUMAN_AGENT_TAG, HUMAN_AGENT_WINDOW
 
 MAX_REPLY_BYTES = 1000
 
@@ -128,9 +130,21 @@ def _window_end(conversation: Conversation) -> datetime:
 
 
 def _check_sendable(
-    session: Session, clock: Clock, ctx: WorkspaceContext, conversation: Conversation
-) -> datetime:
-    """The account must be usable and the window open; returns the window end."""
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    conversation: Conversation,
+    *,
+    settings: Settings | None = None,
+    typed_by_person: bool = False,
+) -> tuple[datetime, str | None]:
+    """The account must be usable and the window open; returns ``(window end, message tag)``.
+
+    After the 24-hour window the only way through is the Human Agent tag, and only for a reply a
+    person typed (``typed_by_person``, set by the two callers that take a person's own words),
+    with the capability on, up to 7 days after the customer's last message. The end returned is
+    then the end of the 7-day window.
+    """
     account = queries.get_account_in_workspace(
         session, ctx.workspace_id, conversation.social_account_id
     )
@@ -141,9 +155,42 @@ def _check_sendable(
     ):
         raise AppError("ACCOUNT_NOT_CONNECTED")
     end = _window_end(conversation)
-    if clock.now() >= end - SEND_MARGIN - timedelta(minutes=1):
+    margin = human_agent.NEW_REPLY_MARGIN
+    if clock.now() < end - margin:
+        return end, None
+    if not typed_by_person:
         raise AppError("MESSAGING_WINDOW_CLOSED")
-    return end
+    decision = human_agent.decide_new_reply(
+        now=clock.now(),
+        last_inbound_at=conversation.last_inbound_at,
+        human_agent_available=human_agent.available(settings, account),
+        actor_type=ctx.actor.type,
+        margin=margin,
+    )
+    if not decision.allowed:
+        if AUTOMATED_SOURCE in decision.reasons:
+            raise AppError("HUMAN_AGENT_NOT_ALLOWED", reason="automated_source")
+        raise AppError("MESSAGING_WINDOW_CLOSED")
+    return end - MESSAGING_WINDOW + HUMAN_AGENT_WINDOW, HUMAN_AGENT_TAG
+
+
+def _ai_derived(
+    session: Session,
+    ctx: WorkspaceContext,
+    conversation: Conversation,
+    text: str,
+    source_draft: ReplyDraft | None,
+) -> bool:
+    """True if ``text`` is a draft the assistant wrote (chosen as the starting point, or sent
+    unchanged): the Human Agent tag is only for what a person typed."""
+    if source_draft is not None and source_draft.source != "owner":
+        return True
+    for draft in drafts.recent_drafts(session, ctx.workspace_id, conversation.id, limit=20):
+        if draft.source == "owner":
+            continue
+        if text in ((draft.text or "").strip(), (draft.suggestion_text or "").strip()):
+            return True
+    return False
 
 
 def _newest_message_id(session: Session, conversation: Conversation) -> uuid.UUID:
@@ -177,7 +224,11 @@ def _newest_inbound_id(session: Session, conversation: Conversation) -> uuid.UUI
 def _reply_language(session: Session, ctx: WorkspaceContext, text: str) -> str:
     workspace = session.get(Workspace, ctx.workspace_id)
     default = workspace.default_locale if workspace else "tr"
-    chosen = choose_reply_language([text], default_locale=default, reply_languages=["tr", "en"])
+    chosen = choose_reply_language(
+        [text],
+        default_locale=default,
+        reply_languages=workspace.reply_languages if workspace else [default],
+    )
     return chosen.code or default
 
 
@@ -205,7 +256,10 @@ def _authorise(
         "subject_version": draft.version,
         "payload": approval_payload(draft, conversation),
         "summary": approval_summary(
-            draft.id, conversation.id, ["OWNER_REPLY"], window_end.isoformat()
+            draft.id,
+            conversation.id,
+            ["OWNER_REPLY", *([human_agent.REASON] if draft.message_tag else [])],
+            window_end.isoformat(),
         ),
         "required_permission": "reply.approve",
         "expires_at": expires_at,
@@ -241,8 +295,12 @@ def submit_manual_reply(
     text: str,
     client_request_id: str,
     from_draft_id: uuid.UUID | None,
+    settings: Settings | None = None,
 ) -> tuple[ReplyDraft, list[ValidationIssueOut]]:
-    """A reply written by a person. Idempotent per author and ``client_request_id``. Commits."""
+    """A reply written by a person. Idempotent per author and ``client_request_id``. Commits.
+
+    After the 24-hour window the reply is accepted only with the Human Agent tag (7 days), when
+    the capability is on and ``settings`` is given; nothing else in the service passes it."""
     conversation = get_conversation(session, ctx, conversation_id, lock=True)
     existing = session.scalars(
         select(ReplyDraft).where(
@@ -255,11 +313,16 @@ def submit_manual_reply(
         return existing, [issue_out(i) for i in existing.validation.get("issues", [])]
 
     text = _check_text(text)
-    window_end = _check_sendable(session, clock, ctx, conversation)
+    window_end, message_tag = _check_sendable(
+        session, clock, ctx, conversation, settings=settings, typed_by_person=True
+    )
+    source_draft: ReplyDraft | None = None
     if from_draft_id is not None:
-        source = get_draft(session, ctx, from_draft_id)
-        if source.conversation_id != conversation.id:
+        source_draft = get_draft(session, ctx, from_draft_id)
+        if source_draft.conversation_id != conversation.id:
             raise AppError("NOT_FOUND")
+    if message_tag is not None and _ai_derived(session, ctx, conversation, text, source_draft):
+        raise AppError("HUMAN_AGENT_NOT_ALLOWED", reason="ai_text")
     open_draft = drafts.get_open_draft(session, ctx.workspace_id, conversation.id)
     if open_draft is not None and open_draft.status in ("sending", "outcome_unknown"):
         raise AppError("CONFLICT_STATE", entity="reply_draft", reason="reply_in_flight")
@@ -288,10 +351,11 @@ def submit_manual_reply(
             "rendered": [],
         },
         decision="approval_required",
-        decision_reasons=["OWNER_REPLY"],
+        decision_reasons=["OWNER_REPLY", *([human_agent.REASON] if message_tag else [])],
         status="queued" if can_approve else "pending_approval",
         created_by_actor_type=ctx.actor.type,
         created_by_actor_id=ctx.actor.id,
+        message_tag=message_tag,
         client_request_id=client_request_id,
         is_simulated=conversation.is_simulated,
         created_at=clock.now(),
@@ -313,6 +377,7 @@ def submit_manual_reply(
             "reasons": ["OWNER_REPLY"],
             "status": draft.status,
             "source": "owner",
+            "message_tag": message_tag,
             "warnings": [w.code for w in warnings],
         },
         is_simulated=draft.is_simulated,
@@ -332,6 +397,7 @@ def edit_draft(
     text: str,
     expected_version: int,
     approve: bool,
+    settings: Settings | None = None,
 ) -> tuple[ReplyDraft, list[ValidationIssueOut]]:
     """Change the text of a draft that still waits for approval. The old approval is withdrawn
     and a new one is bound to the new text (INV-16). Commits."""
@@ -344,7 +410,16 @@ def edit_draft(
         raise AppError("CONFLICT_STATE", entity="reply_draft", status=draft.status)
     conversation = get_conversation(session, ctx, draft.conversation_id, lock=True)
     text = _check_text(text)
-    window_end = _check_sendable(session, clock, ctx, conversation)
+    # Only a reply that already carries the tag (a person's own, created as such) may keep
+    # using the extended window; an assistant draft never gets it by being edited.
+    window_end, message_tag = _check_sendable(
+        session,
+        clock,
+        ctx,
+        conversation,
+        settings=settings,
+        typed_by_person=draft.message_tag is not None,
+    )
 
     approvals.cancel_for_subject(
         session, clock, ctx, drafts.SUBJECT_TYPE, draft.id, "SUBJECT_EDITED"
@@ -356,6 +431,7 @@ def edit_draft(
     draft.template = None
     draft.suggestion_text = None
     draft.language = language
+    draft.message_tag = message_tag
     draft.validation = {
         "passed": not warnings,
         "issues": [w.model_dump() for w in warnings],

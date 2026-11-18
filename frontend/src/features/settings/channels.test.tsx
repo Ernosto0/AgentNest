@@ -49,6 +49,78 @@ function routes(
 
 const PAGE = (ws: string) => `/w/${ws}/more/settings/connections`;
 
+describe("WhatsApp linking", () => {
+  const availability = (whatsapp: boolean) => ({
+    [`GET /api/v1/workspaces/${WS_GOLKENT}/channels/availability`]: () => json({ whatsapp }),
+  });
+
+  it("hides WhatsApp when the server has no credentials for it", async () => {
+    const requests = mockApi(routes(WS_GOLKENT, () => [], availability(false)));
+    renderApp(PAGE(WS_GOLKENT));
+    await screen.findByTestId("channel-status-badge");
+    await waitFor(() =>
+      expect(requests.some((r) => r.path.endsWith("/channels/availability"))).toBe(true),
+    );
+    expect(screen.queryByTestId("whatsapp-status-badge")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "WhatsApp'ı bağla" })).not.toBeInTheDocument();
+  });
+
+  it("creates a WhatsApp code and shows its business-number deep link", async () => {
+    const user = userEvent.setup();
+    const requests = mockApi(
+      routes(WS_GOLKENT, () => [], {
+        ...availability(true),
+        [`POST /api/v1/workspaces/${WS_GOLKENT}/channels/link-code`]: () =>
+          json({
+            channel: "whatsapp",
+            code: "WAPP1234",
+            expires_at: new Date(Date.now() + 900000).toISOString(),
+            bot_username: null,
+            whatsapp_number: "905551112233",
+            deep_link_url: "https://wa.me/905551112233?text=WAPP1234",
+          }),
+      }),
+    );
+    renderApp(PAGE(WS_GOLKENT));
+    await user.click(await screen.findByRole("button", { name: "WhatsApp'ı bağla" }));
+    expect(await screen.findByTestId("channel-link-code-display")).toHaveTextContent("WAPP1234");
+    expect(screen.getByRole("link", { name: "WhatsApp'ta aç" })).toHaveAttribute(
+      "href",
+      "https://wa.me/905551112233?text=WAPP1234",
+    );
+    expect(
+      requests.find((r) => r.method === "POST" && r.path.endsWith("/channels/link-code"))?.body,
+    ).toEqual({ channel: "whatsapp" });
+    expect(screen.queryByRole("link", { name: "Telegram'da aç" })).not.toBeInTheDocument();
+  });
+
+  it("unlinks WhatsApp while preserving Telegram", async () => {
+    const user = userEvent.setup();
+    const waId = "c1000000-0000-4000-8000-000000000002";
+    let links = [activeLink(), activeLink({ id: waId, channel: "whatsapp", channel_username: null })];
+    mockApi(
+      routes(WS_GOLKENT, () => links, {
+        ...availability(true),
+        [`DELETE /api/v1/workspaces/${WS_GOLKENT}/channels/links/${waId}`]: () => {
+          links = links.filter((link) => link.id !== waId);
+          return new Response(null, { status: 204 });
+        },
+      }),
+    );
+    renderApp(PAGE(WS_GOLKENT));
+    await waitFor(() =>
+      expect(screen.getByTestId("whatsapp-status-badge")).toHaveAttribute("data-status", "connected"),
+    );
+    await user.click(screen.getByRole("button", { name: "WhatsApp bağlantısını kes" }));
+    expect(await screen.findByText("WhatsApp bağlantısını kaldır")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Evet, bağlantıyı kaldır" }));
+    await waitFor(() =>
+      expect(screen.getByTestId("whatsapp-status-badge")).toHaveAttribute("data-status", "unlinked"),
+    );
+    expect(screen.getByTestId("channel-status-badge")).toHaveAttribute("data-status", "connected");
+  });
+});
+
 describe("Owner Messaging Channel Settings (Telegram)", () => {
   it("renders unlinked state with Connect button when no channel is linked", async () => {
     mockApi(routes(WS_GOLKENT, () => []));

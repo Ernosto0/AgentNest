@@ -6,9 +6,11 @@ Every tenant child references its parent through a composite foreign key
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -16,6 +18,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    Numeric,
     Text,
     UniqueConstraint,
 )
@@ -25,8 +28,15 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
 
+MEDIA_KINDS = ("image", "video", "video_thumbnail")
+VIDEO_FIELDS_CHECK = """(kind = 'video' AND duration_ms IS NOT NULL AND duration_ms > 0
+AND video_codec IS NOT NULL AND container IS NOT NULL AND container IN ('mp4','mov')
+AND frame_rate IS NOT NULL AND frame_rate > 0) OR
+(kind != 'video' AND duration_ms IS NULL AND video_codec IS NULL AND audio_codec IS NULL
+AND frame_rate IS NULL AND bitrate_bps IS NULL AND container IS NULL
+AND video_warnings IS NULL AND thumbnail_media_asset_id IS NULL)"""
 MEDIA_STATUSES = ("uploaded", "ready", "rejected", "deleted")
-CONTENT_TYPES = ("feed_image", "story_image")
+CONTENT_TYPES = ("feed_image", "story_image", "feed_carousel", "reel")
 # state-machines.md section 5.
 CONTENT_STATUSES = (
     "draft",
@@ -47,7 +57,7 @@ def _in(column: str, values: tuple[str, ...]) -> str:
 
 
 class MediaAsset(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
-    """An uploaded image, already validated and re-encoded as a baseline sRGB JPEG."""
+    """A validated image/JPEG thumbnail or an unchanged private MP4/MOV original."""
 
     __tablename__ = "media_assets"
     __table_args__ = (
@@ -55,8 +65,24 @@ class MediaAsset(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base
         UniqueConstraint("storage_backend", "storage_key"),
         CheckConstraint(_in("status", MEDIA_STATUSES), name="status"),
         CheckConstraint("byte_size >= 0 AND width > 0 AND height > 0", name="dimensions"),
+        CheckConstraint(_in("kind", MEDIA_KINDS), name="kind"),
+        CheckConstraint(VIDEO_FIELDS_CHECK, name="video_fields"),
+        ForeignKeyConstraint(
+            ["workspace_id", "thumbnail_media_asset_id"],
+            ["media_assets.workspace_id", "media_assets.id"],
+        ),
+        Index("ix_media_assets_workspace_kind", "workspace_id", "kind"),
     )
 
+    kind: Mapped[str] = mapped_column(Text, nullable=False, server_default="image")
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    video_codec: Mapped[str | None] = mapped_column(Text)
+    audio_codec: Mapped[str | None] = mapped_column(Text)
+    frame_rate: Mapped[Decimal | None] = mapped_column(Numeric(7, 3))
+    bitrate_bps: Mapped[int | None] = mapped_column(BigInteger)
+    container: Mapped[str | None] = mapped_column(Text)
+    video_warnings: Mapped[list[str] | None] = mapped_column(JSONB)
+    thumbnail_media_asset_id: Mapped[uuid.UUID | None] = mapped_column()
     storage_backend: Mapped[str] = mapped_column(Text, nullable=False)
     storage_key: Mapped[str] = mapped_column(Text, nullable=False)
     original_filename: Mapped[str | None] = mapped_column(Text)  # sanitised; display only
@@ -89,6 +115,10 @@ class ContentItem(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
             ["media_assets.workspace_id", "media_assets.id"],
         ),
         ForeignKeyConstraint(
+            ["workspace_id", "cover_media_asset_id"],
+            ["media_assets.workspace_id", "media_assets.id"],
+        ),
+        ForeignKeyConstraint(
             ["workspace_id", "approval_id"], ["approvals.workspace_id", "approvals.id"]
         ),
         ForeignKeyConstraint(
@@ -114,6 +144,18 @@ class ContentItem(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
             name="agent_origin",
         ),
         CheckConstraint("version >= 1", name="version"),
+        CheckConstraint("thumb_offset_ms IS NULL OR thumb_offset_ms >= 0", name="thumb_offset_ms"),
+        CheckConstraint(
+            "content_type = 'reel' OR "
+            "(cover_media_asset_id IS NULL AND thumb_offset_ms IS NULL AND share_to_feed IS NULL)",
+            name="reel_fields_only",
+        ),
+        CheckConstraint(
+            "cover_media_asset_id IS NULL OR thumb_offset_ms IS NULL", name="reel_cover_exclusive"
+        ),
+        CheckConstraint(
+            "content_type != 'reel' OR share_to_feed IS NOT NULL", name="reel_share_to_feed"
+        ),
         Index(
             "ix_content_items_workspace_status_scheduled", "workspace_id", "status", "scheduled_at"
         ),
@@ -134,6 +176,9 @@ class ContentItem(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Bas
     )
     visual_notes: Mapped[str | None] = mapped_column(Text)
     media_asset_id: Mapped[uuid.UUID | None] = mapped_column()
+    cover_media_asset_id: Mapped[uuid.UUID | None] = mapped_column()
+    thumb_offset_ms: Mapped[int | None] = mapped_column(Integer)
+    share_to_feed: Mapped[bool | None] = mapped_column(Boolean)
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     schedule_input: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     approval_id: Mapped[uuid.UUID | None] = mapped_column()  # the current (or latest) approval
@@ -172,3 +217,35 @@ class WorkspaceBrandSettings(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScope
     primary_color: Mapped[str] = mapped_column(Text, nullable=False)
     accent_color: Mapped[str] = mapped_column(Text, nullable=False)
     logo_media_asset_id: Mapped[uuid.UUID | None] = mapped_column()
+
+
+class ContentItemMedia(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
+    """Ordered carousel images; tenant FKs prevent cross-workspace links."""
+
+    __tablename__ = "content_item_media"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "content_item_id"],
+            ["content_items.workspace_id", "content_items.id"],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "media_asset_id"],
+            ["media_assets.workspace_id", "media_assets.id"],
+        ),
+        UniqueConstraint("content_item_id", "position", deferrable=True, initially="DEFERRED"),
+        UniqueConstraint("content_item_id", "media_asset_id"),
+        CheckConstraint("position >= 0 AND position < 20", name="position"),
+        Index(
+            "ix_content_item_media_workspace_content_position",
+            "workspace_id",
+            "content_item_id",
+            "position",
+        ),
+    )
+
+    content_item_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    media_asset_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

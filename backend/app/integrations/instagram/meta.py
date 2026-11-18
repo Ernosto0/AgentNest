@@ -19,6 +19,7 @@ from app.core.clock import Clock
 from app.core.logging import get_logger
 from app.integrations.instagram.base import (
     META_PRIVATE_REPLY_WINDOW,
+    SUPPORTED_MESSAGE_TAGS,
     AccountInsightsMetric,
     AccountProfile,
     AccountRef,
@@ -92,8 +93,27 @@ class Sent(Shape):
     message_id: str = Field(min_length=1)
 
 
+_META_SUBCODE_RE = re.compile(r"\b2207\d{3}\b")
+
+
+def _validate_https_url(raw: str) -> str:
+    try:
+        url = urlsplit(raw)
+    except ValueError:
+        raise ProviderInvalidRequest("MEDIA_URL_NOT_PUBLIC") from None
+    if url.scheme != "https" or not url.hostname or url.username or url.password:
+        raise ProviderInvalidRequest("MEDIA_URL_NOT_PUBLIC")
+    return raw
+
+
 class Status(Shape):
     status_code: Literal["IN_PROGRESS", "FINISHED", "ERROR", "EXPIRED", "PUBLISHED"]
+    status: str | None = None
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def tolerate_status_text(cls, value: Any) -> str | None:
+        return value if isinstance(value, str) else None
 
 
 class Media(ID):
@@ -426,18 +446,30 @@ class MetaInstagramProvider:
         return result[:limit]
 
     @_logged("send_text_message")
-    def send_text_message(self, account: AccountRef, recipient_id: str, text: str) -> SendResult:
+    def send_text_message(
+        self,
+        account: AccountRef,
+        recipient_id: str,
+        text: str,
+        message_tag: str | None = None,
+    ) -> SendResult:
         if not text.strip():
             raise ProviderInvalidRequest("EMPTY_TEXT")
         if len(text.encode("utf-8")) > 1000:
             raise ProviderInvalidRequest("MESSAGE_TOO_LONG")
+        if message_tag is not None and message_tag not in SUPPORTED_MESSAGE_TAGS:
+            raise ProviderInvalidRequest("UNSUPPORTED_MESSAGE_TAG")
+        body: dict[str, Any] = {"recipient": {"id": recipient_id}, "message": {"text": text}}
+        if message_tag is not None:  # documented fields of a tagged message (Send API reference)
+            body["messaging_type"] = "MESSAGE_TAG"
+            body["tag"] = message_tag
         value = self._shape(
             Sent,
             self._request(
                 account,
                 f"{_identifier(account.external_account_id)}/messages",
                 method="POST",
-                body={"recipient": {"id": recipient_id}, "message": {"text": text}},
+                body=body,
                 ambiguous=True,
             ),
             ambiguous=True,
@@ -516,19 +548,46 @@ class MetaInstagramProvider:
 
     @_logged("create_media_container")
     def create_media_container(self, account: AccountRef, spec: ContainerSpec) -> str:
+        """Meta shapes verified 2026-11-18.
+
+        https://developers.facebook.com/docs/instagram-platform/content-publishing
+        """
         if spec.media_type == "STORIES" and spec.caption is not None:
             raise ProviderInvalidRequest("CAPTION_NOT_ALLOWED")
-        try:
-            url = urlsplit(spec.image_url)
-        except ValueError:
-            raise ProviderInvalidRequest("MEDIA_URL_NOT_PUBLIC") from None
-        if url.scheme != "https" or not url.hostname or url.username or url.password:
-            raise ProviderInvalidRequest("MEDIA_URL_NOT_PUBLIC")
-        body = {"image_url": spec.image_url}
-        if spec.media_type == "STORIES":
-            body["media_type"] = "STORIES"
-        elif spec.caption is not None:
-            body["caption"] = spec.caption
+        # Verified 2026-11-18: https://developers.facebook.com/docs/instagram-platform/content-publishing
+        body: dict[str, str] = {}
+        if spec.media_type == "CAROUSEL":
+            body = {"media_type": "CAROUSEL", "children": ",".join(spec.children)}
+            if spec.caption is not None:
+                body["caption"] = spec.caption
+        elif spec.media_type == "REELS":
+            if (
+                spec.video_url is None
+                or spec.share_to_feed is None
+                or (spec.cover_url is not None and spec.thumb_offset_ms is not None)
+            ):
+                raise ProviderInvalidRequest("MEDIA_REJECTED")
+            body = {
+                "media_type": "REELS",
+                "video_url": _validate_https_url(spec.video_url),
+                "share_to_feed": "true" if spec.share_to_feed else "false",
+            }
+            if spec.caption is not None:
+                body["caption"] = spec.caption
+            if spec.cover_url is not None:
+                body["cover_url"] = _validate_https_url(spec.cover_url)
+            elif spec.thumb_offset_ms is not None:
+                body["thumb_offset"] = str(spec.thumb_offset_ms)
+        else:
+            if spec.image_url is None:
+                raise ProviderInvalidRequest("MEDIA_REJECTED")
+            body["image_url"] = _validate_https_url(spec.image_url)
+            if spec.is_carousel_item:
+                body["is_carousel_item"] = "true"
+            elif spec.media_type == "STORIES":
+                body["media_type"] = "STORIES"
+            elif spec.caption is not None:
+                body["caption"] = spec.caption
         return self._shape(
             ID,
             self._request(
@@ -548,9 +607,13 @@ class MetaInstagramProvider:
             ),
         )
         # Graph does not document the published media ID on this read; never invent one.
-        return ContainerStatus(
-            value.status_code, "MEDIA_PROCESSING_ERROR" if value.status_code == "ERROR" else None
-        )
+        error_detail: str | None = None
+        if value.status_code == "ERROR":
+            match = _META_SUBCODE_RE.search(value.status or "")
+            error_detail = (
+                f"SUBCODE_{match.group(0)}" if match is not None else "MEDIA_PROCESSING_ERROR"
+            )
+        return ContainerStatus(value.status_code, error_detail)
 
     @_logged("publish_container")
     def publish_container(self, account: AccountRef, container_id: str) -> str:
@@ -647,6 +710,8 @@ class MetaInstagramProvider:
     def get_media_insights(
         self, account: AccountRef, media_id: str, media_type: str
     ) -> MediaInsightsData:
+        if media_type in ("feed_carousel", "CAROUSEL", "carousel", "reel", "REELS"):
+            raise ProviderInvalidRequest("MEDIA_INSIGHTS_NOT_SUPPORTED")
         is_story = media_type in ("story_image", "story")
         metrics = (
             ["reach", "views", "replies", "shares", "navigation", "total_interactions"]

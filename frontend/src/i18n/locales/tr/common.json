@@ -78,6 +78,7 @@
     "on_hold": "Beklemede",
     "sending": "Gönderiliyor",
     "publishing": "Yayınlanıyor",
+    "processing": "İşleniyor",
     "checking": "Kontrol ediliyor",
     "sent": "Gönderildi",
     "published": "Yayınlandı",
@@ -263,11 +264,32 @@
     "systemHealth": "Sistem durumu"
   },
   "settings": {
+    "followUp": {
+      "ownerOnly": "Takip mesajı ayarlarını yalnızca sahip değiştirebilir.",
+      "title": "Müşteri takip mesajı",
+      "description": "Fiyat veya randevu yanıtından sonra, konuşma başına en fazla bir takip mesajı hazırlanır. Yalnızca 24 saatlik süre içinde ve sizin onayınızdan sonra gönderilir. Önceki konu asistanını kullanan hesaplarda çalışır.",
+      "enabled": "Müşteri sessiz kaldığında takip mesajı hazırla",
+      "hours": "Bekleme süresi (saat)",
+      "text": {
+        "tr": "Özel metin (Türkçe)",
+        "en": "Özel metin (İngilizce)"
+      },
+      "templateHint": "İsteğe bağlı. Bilgileri {{fact:key}} yer tutucularıyla ekleyin; fiyat, saat, telefon veya bağlantıyı doğrudan yazmayın.",
+      "saved": "Takip mesajı ayarları kaydedildi",
+      "errors": {
+        "LITERAL_VALUE": "Fiyat, saat, iletişim ve bağlantılar için bilgi yer tutucuları kullanın.",
+        "UNKNOWN_FACT": "Bu bilgi yok. Kayıtlı bir bilgi anahtarı seçin.",
+        "invalid": "Bu şablonu ve uzunluğunu kontrol edin."
+      }
+    },
     "title": "Ayarlar",
     "description": "Hesabınız, bu çalışma alanı, güvenlik ve bağlı hizmetler.",
     "languages": {
       "tr": "Türkçe",
-      "en": "English"
+      "en": "English",
+      "ru": "Русский",
+      "de": "Deutsch",
+      "ar": "العربية"
     },
     "openSystemHealth": "Sistem durumunu gör",
     "edit": "Düzenle",
@@ -324,6 +346,13 @@
       "timezoneChangeBody": "Kaydettikten sonra bu çalışma alanındaki tarih ve saatler, günlük raporun gelme saati dahil, {{zone}} dilimini kullanır.",
       "replyLanguages": "Müşteri yanıt dilleri",
       "replyLanguagesHint": "Diğer dillerdeki mesajlar ekibinize aktarılır.",
+      "replyLanguagesChoose": "AgentNest’in müşteri yanıtı taslağı hazırlayabileceği dilleri seçin. Çalışma alanının ana dili her zaman açıktır.",
+      "replyLanguagesMain": "Çalışma alanının ana dili",
+      "replyLanguagesCoverage": "Taslak kalitesi yalnızca burada listelenen diller için test edilmiştir. Başka bir dildeki mesaj her zaman ekibinize aktarılır.",
+      "replyLanguagesNewTitle": "Rusça, Almanca ve Arapça yenidir",
+      "replyLanguagesNewBody": "Bu dillerdeki taslaklar sabit bir örnek konuşma kümesiyle test edilmiştir; kendi müşterilerinizle henüz denenmemiştir. Her taslağı onaylamadan önce okuyun. Hesap temsilcisi yalnızca Türkçe ve İngilizce yanıt verir: kullanıyorsanız Rusça, Almanca veya Arapça bir konuşma ekibinize aktarılır.",
+      "replyLanguagesAgentNote": "Hesap temsilcisi yalnızca Türkçe ve İngilizce yanıt verir; bu yüzden Rusça, Almanca ve Arapça konuşmalar ekibinize aktarılır.",
+      "replyLanguagesInvalid": "Listeden en az bir dil seçin.",
       "created": "Oluşturulma",
       "adminTitle": "Ekip ve yönetim",
       "team": "Ekip üyeleri",
@@ -460,6 +489,26 @@
     "back": "Çalışma alanlarıma dön"
   },
   "errors": {
+    "VIDEO_INVALID": {
+      "what": "Video kabul edilemiyor.",
+      "next": "Ret nedenlerini kontrol edip yeniden dışa aktarın."
+    },
+    "VIDEO_TOO_LARGE": {
+      "what": "Video yükleme boyutu sınırını aşıyor.",
+      "next": "En fazla 300 MB boyutunda bir video seçin."
+    },
+    "VIDEO_STORAGE_QUOTA_EXCEEDED": {
+      "what": "Bu çalışma alanının video depolama sınırına ulaşıldı.",
+      "next": "Saklama süresi temizliğini bekleyin veya çalışma alanı sahibiyle iletişime geçin."
+    },
+    "VIDEO_PROBE_UNAVAILABLE": {
+      "what": "Video incelemesi şu anda kullanılamıyor.",
+      "next": "Biraz sonra yeniden deneyin veya yöneticiden ffmpeg kurulumunu kontrol etmesini isteyin."
+    },
+    "MEDIA_KIND_INVALID": {
+      "what": "Bu alan bir görsel gerektiriyor.",
+      "next": "Video veya video küçük resmi yerine bir görsel seçin."
+    },
     "AUTH_REQUIRED": {
       "what": "Oturum açmadınız.",
       "next": "Lütfen giriş yapın."
@@ -613,6 +662,10 @@
       "what": "Yayınlanıp yayınlanmadığını doğrulayamadık.",
       "next": "Yeniden paylaşmadan önce Instagram'ı kontrol edin."
     },
+    "REEL_PROCESSING_TIMEOUT": {
+      "what": "Instagram reels videosunu işlerken zaman aşımına uğradı.",
+      "next": "Video biçimini kontrol edin veya yeniden yükleyip tekrar yayınlamayı deneyin."
+    },
     "REFERENCE_NOT_FOUND": {
       "what": "Söylediğiniz gönderiyi bulamadım.",
       "next": "Tarihi veya başlığıyla söyleyin, ya da İçerik bölümünden seçin."
@@ -692,6 +745,10 @@
     "WEBSITE_TOO_LARGE": {
       "what": "Web sayfası çok büyük.",
       "next": "İşletme bilgilerini içeren daha küçük bir sayfa deneyin."
+    },
+    "HUMAN_AGENT_NOT_ALLOWED": {
+      "what": "24 saatten sonraki yanıt yalnızca sizin kendi yazdığınız bir mesaj olabilir; asistanın taslağı olamaz.",
+      "next": "Yanıtı kendi cümlelerinizle yazın ve yeniden gönderin."
     }
   },
   "connections": {
@@ -730,6 +787,17 @@
     "deleteConversationDataHint": "Silme işlemi, devam eden bir gönderimin sonucu doğrulanana kadar bekleyebilir. Bağlantınız hemen kaldırılır."
   },
   "channels": {
+    "whatsappDisconnectTitle": "WhatsApp bağlantısını kaldır",
+    "whatsappDisconnectBody": "WhatsApp hesabınızın bu çalışma alanıyla bağlantısı kaldırılacak. Devam edilsin mi?",
+    "whatsappTitle": "WhatsApp bağlantısı",
+    "whatsappIntro": "WhatsApp bildirimleri ve onay düğmeleri için hesabınızı işletme numarasına bağlayın.",
+    "whatsappConnect": "WhatsApp'ı bağla",
+    "whatsappDisconnect": "WhatsApp bağlantısını kes",
+    "whatsappModalTitle": "WhatsApp hesabınızı bağlayın",
+    "whatsappModalDesc": "Bağlantı kodunu işletme WhatsApp numarasına gönderin.",
+    "openInWhatsApp": "WhatsApp'ta aç",
+    "whatsappStep1": "1. WhatsApp uygulamasında {{number}} numarasını açın.",
+    "whatsappStep2": "2. {{code}} kodunu gönderin.",
     "telegramLabel": "Telegram",
     "title": "Telegram bağlantısı",
     "intro": "Bildirimleri almak, onayları yanıtlamak ve komut göndermek için kişisel Telegram hesabınızı bağlayın.",

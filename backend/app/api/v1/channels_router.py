@@ -1,6 +1,9 @@
 """Owner messaging channel routes (ADR-012, Phase 9 Session 02 / P9-01)."""
 
+from __future__ import annotations
+
 import uuid
+from urllib.parse import quote
 
 from fastapi import APIRouter, Body, Depends, Response
 from sqlalchemy.orm import Session
@@ -10,8 +13,10 @@ from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.db import get_db
+from app.core.errors import AppError
 from app.identity.channels import ChannelLinkService
 from app.identity.schemas import (
+    ChannelAvailabilityOut,
     ChannelLinkCodeOut,
     ChannelLinkCodeRequest,
     ChannelLinkOut,
@@ -29,7 +34,18 @@ def generate_channel_link_code(
     settings: Settings = Depends(get_app_settings),
 ) -> ChannelLinkCodeOut:
     """Generate a one-time link code for owner channel linking."""
+    if body.channel == "whatsapp" and not settings.whatsapp_configured:
+        raise AppError("CONFLICT_STATE", reason="whatsapp_not_configured")
     code, expires_at = ChannelLinkService.generate_link_code(db, clock, ctx, channel=body.channel)
+    if body.channel == "whatsapp":
+        number = settings.whatsapp_display_phone_number
+        return ChannelLinkCodeOut(
+            channel="whatsapp",
+            code=code,
+            expires_at=expires_at,
+            whatsapp_number=number,
+            deep_link_url=f"https://wa.me/{number}?text={quote(code, safe='')}" if number else None,
+        )
     bot_username = settings.telegram_bot_username
     deep_link_url = None
     if bot_username:
@@ -42,6 +58,15 @@ def generate_channel_link_code(
         bot_username=bot_username,
         deep_link_url=deep_link_url,
     )
+
+
+@router.get("/availability", response_model=ChannelAvailabilityOut)
+def get_channel_availability(
+    ctx: WorkspaceContext = Depends(require_membership("settings.view")),
+    settings: Settings = Depends(get_app_settings),
+) -> ChannelAvailabilityOut:
+    """Which optional owner channels this server has credentials for (no secrets, no numbers)."""
+    return ChannelAvailabilityOut(whatsapp=settings.whatsapp_configured)
 
 
 @router.get("/links", response_model=list[ChannelLinkOut])

@@ -216,7 +216,11 @@ class ChannelLinkService:
                         metadata={
                             "channel": channel,
                             "user_id": str(existing_identity_link.user_id),
-                            "channel_user_id": channel_user_id,
+                            **(
+                                {"channel_user_id": channel_user_id}
+                                if channel != "whatsapp"
+                                else {}
+                            ),
                             "initiated_by": "bot",
                         },
                         clock=clock,
@@ -243,7 +247,7 @@ class ChannelLinkService:
                     metadata={
                         "channel": channel,
                         "user_id": str(ex.user_id),
-                        "channel_user_id": channel_user_id,
+                        **({"channel_user_id": channel_user_id} if channel != "whatsapp" else {}),
                         "initiated_by": "bot",
                     },
                     clock=clock,
@@ -273,7 +277,7 @@ class ChannelLinkService:
                 metadata={
                     "channel": channel,
                     "user_id": str(target_user_id),
-                    "channel_user_id": ex.channel_user_id,
+                    **({"channel_user_id": ex.channel_user_id} if channel != "whatsapp" else {}),
                     "initiated_by": "bot",
                 },
                 clock=clock,
@@ -306,7 +310,7 @@ class ChannelLinkService:
             metadata={
                 "channel": channel,
                 "user_id": str(target_user_id),
-                "channel_user_id": channel_user_id,
+                **({"channel_user_id": channel_user_id} if channel != "whatsapp" else {}),
                 "channel_username": channel_username,
             },
             clock=clock,
@@ -351,7 +355,7 @@ class ChannelLinkService:
             metadata={
                 "channel": link.channel,
                 "user_id": str(link.user_id),
-                "channel_user_id": link.channel_user_id,
+                **({"channel_user_id": link.channel_user_id} if link.channel != "whatsapp" else {}),
                 "initiated_by": "web",
             },
             clock=clock,
@@ -411,7 +415,7 @@ class ChannelLinkService:
             metadata={
                 "channel": channel,
                 "user_id": str(link.user_id),
-                "channel_user_id": channel_user_id,
+                **({"channel_user_id": channel_user_id} if channel != "whatsapp" else {}),
                 "initiated_by": "bot",
             },
             clock=clock,

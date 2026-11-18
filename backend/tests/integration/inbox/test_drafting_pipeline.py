@@ -251,10 +251,17 @@ def test_an_unsupported_language_goes_to_a_person_without_a_model_call(
     gym,
     provider: FakeLLMProvider,  # type: ignore[no-untyped-def]
 ) -> None:
+    inbox.env.workspace.reply_languages = ["tr", "en"]
+    inbox.session.commit()
     plan = inbox.drafted("Привет, сколько стоит абонемент?")
     assert plan.language_unsupported and plan.language is None
-    assert plan.detected_language == "other"
+    assert plan.detected_language == "ru"
     assert plan.text is None
+    assert provider.calls == []
+
+    inbox.draft_now()
+    draft = inbox.draft()
+    assert draft is not None and draft.decision_reasons == ["LANGUAGE_UNSUPPORTED"]
     assert provider.calls == []
 
 
@@ -567,3 +574,74 @@ def test_snapshots_never_keep_the_customers_words(
     assert run.input_snapshot is not None
     assert "0555" not in str(run.input_snapshot)
     assert run.input_snapshot["message_count"] >= 1
+
+
+@pytest.mark.parametrize(
+    ("language", "text"),
+    [
+        ("ru", "Привет, сколько стоит абонемент?"),
+        ("de", "Wie viel kostet?"),
+        ("ar", "مرحبا كم سعر الاشتراك الشهري؟"),
+    ],
+)
+def test_new_reply_language_fake_pipeline_and_disclosure(
+    inbox: InboxEnv, gym, language, text
+) -> None:
+    from app.inbox.context import DEFAULT_DISCLOSURE
+    from app.inbox.drafting import disclosure_suffix
+
+    workspace = inbox.env.workspace
+    workspace.reply_languages = ["tr", "en", language]
+    workspace.settings = {**workspace.settings, "disclosure_enabled": True}
+    inbox.session.commit()
+    inbox.deliver_and_process(text)
+    context = inbox.context()
+    assert isinstance(context, DraftContext)
+    assert context.language.code == language
+    assert disclosure_suffix(context) == "\n\n" + DEFAULT_DISCLOSURE[language]
+    plan = inbox.plan(context)
+    assert plan.language == language and plan.has_sendable_text
+    assert not plan.language_unsupported and plan.validation["passed"]
+    # Disclosure is appended only for automatic replies; retain that existing policy.
+    from tests.integration.inbox.test_reply_workflow import automate
+
+    automate(inbox, "reply.pricing")
+    inbox.draft_now()
+    draft = inbox.draft()
+    assert draft is not None and draft.language == language
+    assert draft.text.endswith(DEFAULT_DISCLOSURE[language])
+
+
+def test_german_unknown_price_product_is_not_guessed(inbox: InboxEnv, gym) -> None:
+    inbox.env.workspace.reply_languages = ["tr", "en", "de"]
+    inbox.session.commit()
+    plan = inbox.drafted("Wie viel kostet ein Zimmer?")
+    assert plan.language == "de" and not plan.has_sendable_text
+    assert not plan.can_answer
+
+
+@pytest.mark.parametrize(
+    ("language", "text", "custom"),
+    [
+        ("ru", "Привет, сколько стоит абонемент?", "Ответ подготовлен ассистентом."),
+        ("de", "Wie viel kostet?", "Dieser Text stammt vom Assistenten."),
+        ("ar", "مرحبا كم سعر الاشتراك الشهري؟", "أعد هذا الرد المساعد الآلي."),
+    ],
+)
+def test_the_workspace_can_set_its_own_disclosure_text_per_new_language(
+    inbox: InboxEnv, gym, language, text, custom
+) -> None:
+    from app.inbox.drafting import disclosure_suffix
+
+    workspace = inbox.env.workspace
+    workspace.reply_languages = ["tr", "en", language]
+    workspace.settings = {
+        **workspace.settings,
+        "disclosure_enabled": True,
+        "disclosure_text": {language: custom},
+    }
+    inbox.session.commit()
+    inbox.deliver_and_process(text)
+    context = inbox.context()
+    assert isinstance(context, DraftContext)
+    assert disclosure_suffix(context) == "\n\n" + custom

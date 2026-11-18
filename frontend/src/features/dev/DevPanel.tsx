@@ -26,6 +26,9 @@ const OPERATIONS = [
   "echo",
   "profile",
   "create_container",
+  "create_carousel_item",
+  "create_carousel_container",
+  "create_reel_container",
   "container_status",
   "publish",
   "any",
@@ -38,6 +41,8 @@ const MODES = [
   "window_closed",
   "invalid_media",
   "timeout_after_success",
+  "slow_processing",
+  "processing_error",
 ] as const;
 
 function useDev(ws: string) {
@@ -126,12 +131,16 @@ function useDev(ws: string) {
       void navigate(`/w/${result.workspace_id}`);
     },
   });
-  const addRule = useMutation<unknown, AppError, { operation: string; mode: string; remaining: number | null }>({
-    mutationFn: ({ operation, mode, remaining }) =>
+  const addRule = useMutation<
+    unknown,
+    AppError,
+    { operation: string; mode: string; remaining: number | null; skip_first?: number; delay_s?: number | null; error_subcode?: number | null }
+  >({
+    mutationFn: ({ operation, mode, remaining, skip_first, delay_s, error_subcode }) =>
       unwrap(
         api.POST("/api/v1/dev/workspaces/{workspace_id}/failure-rules", {
           params: { path: { workspace_id: ws } },
-          body: { operation, mode, remaining } as never,
+          body: { operation, mode, remaining, skip_first, delay_s, error_subcode } as never,
         }),
       ),
     onSettled: refresh,
@@ -155,6 +164,9 @@ export function DevPanel() {
   const dev = useDev(workspace.id);
   const [operation, setOperation] = useState<(typeof OPERATIONS)[number]>("send");
   const [mode, setMode] = useState<(typeof MODES)[number]>("transient");
+  const [skipFirst, setSkipFirst] = useState(0);
+  const [delayS, setDelayS] = useState("");
+  const [errorSubcode, setErrorSubcode] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
 
   return (
@@ -198,7 +210,15 @@ export function DevPanel() {
             className="min-h-11 rounded-control border border-border bg-surface px-3 py-1.5 text-sm text-primary focus-visible:outline-2 focus-visible:outline-focus"
           >
             {OPERATIONS.map((name) => (
-              <option key={name}>{name}</option>
+              <option key={name} value={name}>
+                {name === "create_carousel_item"
+                  ? t("devPanel.createCarouselItem")
+                  : name === "create_carousel_container"
+                    ? t("devPanel.createCarouselContainer")
+                    : name === "create_reel_container"
+                      ? t("devPanel.createReelContainer")
+                      : name}
+              </option>
             ))}
           </select>
           <select
@@ -211,10 +231,28 @@ export function DevPanel() {
               <option key={name}>{name}</option>
             ))}
           </select>
+          <label className="flex flex-col text-sm">{t("devPanel.skipFirst")}
+            <input type="number" min={0} value={skipFirst} onChange={(event) => setSkipFirst(Math.max(0, Number(event.target.value) || 0))} className="min-h-11 w-24 rounded-control border border-border px-2" />
+          </label>
+          <label className="flex flex-col text-sm">{t("devPanel.delayS")}
+            <input type="number" min={0} max={3600} value={delayS} onChange={(event) => setDelayS(event.target.value)} className="min-h-11 w-24 rounded-control border border-border px-2" />
+          </label>
+          <label className="flex flex-col text-sm">{t("devPanel.errorSubcode")}
+            <input type="number" min={1} value={errorSubcode} onChange={(event) => setErrorSubcode(event.target.value)} className="min-h-11 w-28 rounded-control border border-border px-2" />
+          </label>
           <Button
             variant="secondary"
             disabled={dev.addRule.isPending}
-            onClick={() => dev.addRule.mutate({ operation, mode, remaining: 1 })}
+            onClick={() =>
+              dev.addRule.mutate({
+                operation,
+                mode,
+                remaining: 1,
+                skip_first: skipFirst,
+                delay_s: delayS.trim() === "" ? null : Math.max(0, Number(delayS) || 0),
+                error_subcode: errorSubcode.trim() === "" ? null : Math.max(1, Number(errorSubcode) || 1),
+              })
+            }
           >
             {t("devPanel.addRule")}
           </Button>
@@ -224,6 +262,8 @@ export function DevPanel() {
             <li key={rule.id} className="flex items-center justify-between gap-2 py-2">
               <span className="text-primary">
                 {rule.operation} → {rule.mode} ({rule.remaining ?? "∞"})
+                {rule.delay_s !== null && rule.delay_s !== undefined ? ` · ${rule.delay_s}s` : ""}
+                {rule.error_subcode !== null && rule.error_subcode !== undefined ? ` · #${rule.error_subcode}` : ""}
               </span>
               <Button variant="ghost" onClick={() => dev.removeRule.mutate(rule.id)}>
                 {t("devPanel.removeRule")}

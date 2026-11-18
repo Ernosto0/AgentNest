@@ -37,7 +37,10 @@ export function workspace(id: string, overrides: Partial<Workspace> = {}): Works
     settings: {
       automation_reviewed_at: null,
       disclosure_enabled: true,
-      disclosure_text: { tr: "", en: "" },
+      follow_up_enabled: false,
+      follow_up_hours: 6,
+      follow_up_text: { tr: "", en: "" },
+      disclosure_text: { tr: "", en: "", ru: "", de: "", ar: "" },
       daily_report_hour: 20,
       publish_max_delay_minutes: 1440,
     },

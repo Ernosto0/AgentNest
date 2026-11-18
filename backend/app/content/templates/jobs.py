@@ -64,6 +64,7 @@ def render_template_image(job: JobContext) -> None:
                 or item is None
                 or item.status != "draft"
                 or item.version != payload.version
+                or item.content_type in ("feed_carousel", "reel")
                 or item.media_asset_id is not None
             ):
                 return
@@ -77,6 +78,7 @@ def render_template_image(job: JobContext) -> None:
             if (
                 item.status != "draft"
                 or item.version != payload.version
+                or item.content_type in ("feed_carousel", "reel")
                 or item.media_asset_id is not None
             ):
                 raise AppError("VERSION_CONFLICT")

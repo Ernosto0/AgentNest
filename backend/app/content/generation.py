@@ -40,9 +40,10 @@ from app.content import grounding, service, transitions
 from app.content.models import ContentItem
 from app.content.payload import GenerateContentPayload, generate_job_key
 from app.content.schemas import empty_validation
-from app.content.templates.link import merge_references, render_references
+from app.content.templates.link import item_render_references, merge_references
 from app.core.clock import Clock
 from app.core.context import ActorRef, WorkspaceContext
+from app.core.errors import AppError
 from app.identity import service as identity_service
 from app.identity.models import Workspace
 from app.inbox.context import INTERNAL_CATEGORIES, INTERNAL_KEYS
@@ -90,6 +91,8 @@ def stage_request(
     the same ``client_request_id`` by the same author returns the first draft and ``False``
     (G7)."""
     user_id = service.author_id(ctx)
+    if content_type not in ("feed_image", "story_image"):
+        raise AppError("CONTENT_MEDIA_SHAPE_INVALID", reason="generation_unsupported_type")
     existing = service.existing_for_request(session, ctx, user_id, client_request_id)
     if existing is not None:
         return existing, False
@@ -504,7 +507,7 @@ def store(session: Session, clock: Clock, prepared: Prepared, proposal: ContentP
         ctx,
         SUBJECT_TYPE,
         item.id,
-        merge_references(checked.references, render_references(session, ctx, item.media_asset_id)),
+        merge_references(checked.references, item_render_references(session, ctx, item)),
     )
     _mark_stored(run, clock)
     _audit(

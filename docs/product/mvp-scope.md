@@ -22,7 +22,7 @@ The test for inclusion: **is it needed to demonstrate the core value loop credib
 | Business knowledge | Typed facts from business templates (with category presets, ADR-023), verification, version history, candidates with discrepancy/contest rules, readiness, paste-text extraction, approved answers, brand voice | structured class timetables, multiple branches |
 | Commands | Web command bar. Closed registry: activity questions, pending approvals, content status, failure explanation, fact query, fact update, brand voice update, content draft request, cancel scheduled content. Clarification and confirmation. | Approve/publish/send by command (never), rescheduling by command, multi-step plans |
 | Inbox | Mock account, simulated webhooks through the real ingestion path, conversations, debounce, grounded drafts, policy decisions, approvals, manual replies, takeover, messaging window, echo-based supersede (simulated), approved answers | Attachments analysis (images in DMs are shown as "attachment received" → human), story replies to stories we did not publish, story mentions without an owner-set thank-you (both stay with a person), comments, Human Agent tag |
-| Content | Image upload with validation, `feed_image` and `story_image`, AI content drafts with overlay text suggestions, claim validation, approve & schedule, mock publish worker with container semantics, retries with deadline, cancel, on-hold on fact change | Video, Reels, carousels, image generation, hashtags research, best-time suggestions |
+| Content | Image upload with validation, `feed_image` and `story_image`, AI content drafts with overlay text suggestions, claim validation, approve & schedule, mock publish worker with container semantics, retries with deadline, cancel, on-hold on fact change | Video, Reels, image generation, hashtags research, best-time suggestions |
 | Approvals | Confirmation and authorisation kinds, binding, expiry, sweep, approvals screen | Multi-level approval chains |
 | Reporting | Daily report (computed, templated), activity feed, notification centre, Home dashboard, integration health | Charts, exports, insights from Instagram |
 | Simulation | Seed data, dev panel and CLI, failure injection, run-due-jobs, reset, simulation labelling | — |
@@ -93,20 +93,61 @@ Session 01 (backend and the "Re-import from Instagram" button) and Session 02 (w
 |---|---|---|
 | **F-09 Import facts from the Instagram profile and a website** | Session 01: bio and recent captions with dates, warning above 90 days, candidates only, deduplicated, first connection and re-import API. Session 02: SSRF-safe website fetcher (home page plus up to 3 same-site price/contact/about pages, HTML only, 2 MB, host-only audit, 10 imports per workspace per day), candidates with the page address, a website field prefilled from the Instagram profile, and an "Import from Instagram or website" step in workspace creation and on the Knowledge page | Auto-verifying; contact-button fields (no Graph API field); stories, DMs, comments; scraping Instagram web pages; crawling beyond 4 pages; running JavaScript (script-rendered sites yield little text); PDFs and images on a site; gzip-only sites |
 
+### Feature Phase 5, Track A: WhatsApp owner channel (F-06; in scope since 2026-11-18)
+
+Planned in [features-phase-5-on-demand/sessions.md](../implementation/features-phase-5-on-demand/sessions.md). Moved out of §4 Deferred on 2026-11-18 at the owner's request to implement all Feature Phase 5 sessions; **trigger evidence (OQ-01: pilot owners will not use Telegram or push) is not yet recorded**, so the channel stays optional, off by default and never a dependency of the core. Policy reading and decision: [platform-capabilities.md §2.1](../research/platform-capabilities.md) and [ADR-027](../architecture/decisions/ADR-027-whatsapp-owner-channel-scope.md). Every live result is **pending**.
+
+| Capability | Included scope | Explicitly excluded |
+|---|---|---|
+| **F-06 WhatsApp owner channel** | Session 01: WhatsApp Cloud API client with a mock transport (template, interactive reply buttons, webhook verification), credentials in settings (off without them), a signed webhook, and account linking by the existing one-time code sent to the business number. Session 02: WhatsApp notifications and the daily summary (the Web Push types plus `report.daily_ready`) through the delivery ledger and quiet hours, a session message inside the 24-hour window and an approved template (TR and EN, utility) outside it, per-message cost metadata (category only; no Türkiye price is verified). Session 03: approve and reject reply buttons on approval requests (session messages inside the 24-hour window only; the plain template with no buttons outside it), carrying the Phase 9 single-use hashed expiring action tokens and deciding through the same approval service, with replay, expiry, stale, forwarded, unlinked and revoked-member handling | Free-text commands, any owner text sent to an LLM or the command system, customer message text in a WhatsApp message, free-text approval, a general-purpose assistant on WhatsApp, WhatsApp as a customer channel, live sending before a verified number and approved templates exist |
+
+### Feature Phase 5, Track B: carousels and Reels (F-08, in scope since 2026-11-18)
+
+Moved out of Deferred on 2026-11-18 at the owner's request to implement all Feature Phase 5 sessions; trigger evidence (pilot demand for carousels and Reels) is not yet recorded. Sessions 04–07 (carousel data model, carousel publishing/UI, video upload/validation/storage/thumbnails, and Reels publishing/UI) are implemented and verified offline; live Meta carousel and Reel acceptance remains pending.
+
+| Feature | In scope | Follow-up |
+|---|---|---|
+| **F-08 Carousels** | Session 04: a `feed_carousel` content type with an ordered list of 2-10 JPEG images (the existing image rules plus one shared aspect ratio), the media order bound into the approval hash, and any item that quotes a fact joining the price-change hold. Session 05 implemented: publishing through the operations ledger (mock and documented Meta flow), multi-upload, ordering and preview UI; live publishing acceptance pending | Mixed images and videos in one carousel, Reels as carousel items, per-item captions (Instagram has none), tagging and location |
+| **F-08 Reels** | Sessions 06 & 07 implemented offline: private MP4/MOV ingest + ffprobe/ffmpeg validation + Range streaming + `reel` type (custom JPEG cover or `thumb_offset_ms`, `share_to_feed`, hash-bound approvals) + async `poll_reel_container` ledger publishing and React upload/scrubber/preview UI; live Meta Reel acceptance pending | AI video generation, server-side transcoding, template overlays on video, video/audio auto-fact-checking, Reel insights |
+
+### Feature Phase 5, Track C: follow-up and late replies (F-10, Sessions 08 and 09)
+
+Moved out of Deferred on 2026-11-18 at the owner's request (all Feature Phase 5 sessions were requested); trigger evidence (pilot owners asking for late replies) is not yet recorded. Session 09 (Human Agent tag, 7-day manual replies) moved out of Deferred on the same date and the same basis; the pilot evidence is likewise not yet recorded.
+
+| Capability | Included scope | Explicitly excluded |
+|---|---|---|
+| **F-10 One follow-up message inside the 24-hour window** | Off by default (workspace setting, owner only). When a customer asked about a price or booking, the assistant's answer (a legacy-controlled, assistant-written reply with intent `pricing` or `booking`) was sent, and the customer then stayed quiet for X hours (setting, 1 to 20, default 6), one follow-up draft is created. The wording is a built-in neutral Turkish/English text or an owner-written text per language; facts only through `{{fact:key}}` placeholders, rendered from usable facts and checked by the claim validator like any reply. The draft always needs the owner's approval (no automatic sending in this session). At most one follow-up per conversation, enforced by a unique row; a new customer message cancels a pending one. The 24-hour window is checked when the draft is made and again at send time (an expired window rejects the send). A weekly report shows follow-ups sent and how many customers wrote back | Automatic (no-approval) follow-ups, more than one per conversation, follow-ups after the window closed (a follow-up never uses the Human Agent tag), follow-ups for threads handled by the Phase 7.5 account agent, follow-ups after a person's own typed reply or a native app reply, a model-written follow-up, marketing broadcasts |
+| **F-10b Human Agent tag: a person's reply up to 7 days after the customer's last message** | Behind the capability `human_agent` (a Meta account needs `META_HUMAN_AGENT_ENABLED=true`, set only after Meta grants the Human Agent feature, plus the messaging permission; the simulator supports the tag). A reply a person types in the inbox 24 hours to 7 days after the customer's last message is sent with `messaging_type=MESSAGE_TAG` and `tag=HUMAN_AGENT`, through the same approval and operations ledger as any reply (the tag is part of the approved payload). One deterministic rule decides at creation and again at send time; the draft stores the tag and the database allows it only for a person's own reply. The conversation view shows the window state (open, Human Agent only until a time, closed) in Turkish and English | Any use of the tag by an assistant draft, an approved answer, a follow-up, an agent draft, a job or a system actor (rejected by code, policy and a database constraint); an assistant draft or an edited assistant draft sent as a tagged reply; text started from or equal to an assistant draft; replies after 7 days; other message tags; a UI toggle (the flag is operator-set); proving the feature is granted per account (Meta documents no way, V-HA) |
+
+### Feature Phase 5, Track D: more reply languages
+
+| Capability | Included scope | Explicitly excluded |
+|---|---|---|
+| **F-11 More reply languages (Feature Phase 5, Track D)** | Script and word-list detection of `ru`, `de`, `ar`; workspace `reply_languages` accepts them; per-language fact formatting, claim-validator formats (Arabic/Persian digits and invisible marks included), escalation keywords and owner-approved answers. Implemented offline in Sessions 10 and 11: 20 eval cases per language (fake provider), owner setting with coverage warning, RTL display (`dir="auto"`) in the inbox and approvals, per-language disclosure text. Live LLM quality in ru/de/ar is **pending** | UI languages, content/post languages, account-agent calendar replies (tr/en only), translation of owner facts, spelled-out numbers |
+
+Moved out of Deferred on 2026-11-18 at the owner's request (the owner asked to implement all Feature Phase 5 sessions); trigger evidence (the tourism segment starting, OQ-11) not yet recorded.
+
+### Feature Phase 5, Track E: light lead list (F-12)
+
+Moved out of "later" on 2026-11-18 at the owner's request (the product owner asked for every Feature Phase 5 session to be implemented); the trigger "owners ask for a call-back list" is treated as confirmed by that request, and trigger evidence from pilot owners is not yet recorded. This is **a filtered view and an export of existing conversations, not a CRM**.
+
+| Capability | Included scope | Explicitly excluded |
+|---|---|---|
+| **F-12 Light lead list with CSV export** | A list, for a chosen period (workspace-local dates), of real conversations in which the customer asked about a price or a booking and no appointment exists afterwards; the same list as a CSV with four columns only (customer handle, last question, date, conversation link). Owner and manager only (`reports.view`); the export is audited with counts and the period, never customer data; formula injection is escaped; simulated data is never listed | Pipelines, stages, statuses, tags, notes, assignees, custom fields, a "done" marker, scores, reminders and automated follow-up; phone numbers, e-mail addresses or any other customer data in the export; scheduled or e-mailed exports; a link to external CRMs |
+
 ## 4. Deferred (with reason and trigger)
 
 | Feature | Reason for deferral | Revisit trigger |
 |---|---|---|
-| WhatsApp owner channel | Cost, verification, policy uncertainty | OQ-01 |
+| WhatsApp owner channel | Cost, verification, policy uncertainty. **Moved out of Deferred on 2026-11-18** (see Feature Phase 5, Track A above (§3)) | OQ-01 (answered by the owner's request, above (§3)) |
 | Story/post **AI image generation** | Not core to the trust loop; model and design effort | OQ-15 after pilots |
-| Video/Reels/carousels | Transcoding and validation complexity | Pilot demand |
-| Human Agent tag (7-day replies) | Requires separate permission; human-only | Pilot demand for late replies |
+| ~~Video/Reels/carousels~~ | Implemented offline in Feature Phase 5 Sessions 04–07 (Track B, F-08); live Meta acceptance pending | Pilot demand |
+| ~~Human Agent tag (7-day replies)~~ | Implemented offline in Feature Phase 5 Session 09 (F-10b), off until Meta grants the feature; live check V-HA pending | Meta approval, then pilot demand |
 | Billing, plans, usage limits | No paying users yet | Paid commitments (OQ-06) |
 | Advanced analytics and Instagram insights | Not the core problem | Pilot demand |
 | Multiple Instagram accounts per workspace, agencies | Complexity; not the target segment | Market evidence |
 | CRM, lead pipeline, booking integrations | Scope explosion | Strong pilot demand |
 | Multi-agent / autonomous campaigns | Contradicts the trust model at this stage | Proven trust + concrete use case |
-| Additional reply languages (ru, de) | Tourism segment later | OQ-11 |
 
 ## 5. Scope guardrails for implementers
 

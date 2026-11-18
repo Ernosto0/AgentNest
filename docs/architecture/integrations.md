@@ -38,7 +38,9 @@ class InstagramProvider(Protocol):
                              since: datetime) -> list[OutboundMessageInfo]: ...   # reconciliation
 
     # --- side effects (operations module only) ---
-    def send_text_message(self, account: AccountRef, recipient_id: str, text: str) -> SendResult: ...
+    def send_text_message(
+        self, account: AccountRef, recipient_id: str, text: str, message_tag: str | None = None
+    ) -> SendResult: ...  # message_tag: HUMAN_AGENT only, for a person's reply after 24 h (Meta: messaging_type=MESSAGE_TAG, tag=HUMAN_AGENT)
     def create_media_container(self, account: AccountRef, spec: ContainerSpec) -> str: ...  # container_id
     def publish_container(self, account: AccountRef, container_id: str) -> str: ...          # media_id
     def refresh_token(self, account: AccountRef) -> TokenInfo: ...
@@ -54,7 +56,9 @@ Types (Pydantic or dataclasses in `integrations/instagram/base.py`):
 - **Transcription provider** (`app/integrations/transcription/`, F-03): its own small interface next to the LLM provider, not part of it. `TranscriptionProvider.transcribe_audio(clip, model, timeout) -> TranscriptionResult{text, language?, duration_seconds?, provider, model, is_fake, latency_ms}`; `AudioFetcher.fetch(url, max_bytes, timeout) -> FetchedAudio`. Implementations: `FakeTranscriptionProvider` (deterministic text from a fixture; real audio is refused, it never invents a transcript) with `FixtureAudioFetcher` (mock accounts, no network), and `OpenAITranscriptionProvider` (`audio.transcriptions`, only the audio is sent: no prompt, no handle, no workspace; `max_retries=0`) with `HttpsAudioFetcher` (real accounts). Selection: `TRANSCRIPTION_PROVIDER` (`auto` follows `LLM_PROVIDER`; `off` disables). Typed errors map to the `VOICE_*` reason codes ([background-jobs.md §6](background-jobs.md)). It has no tools and its text is untrusted data. The `openai` SDK is imported only by the two OpenAI adapters (import-linter).
 - **Image download** (`app/integrations/vision/`, F-03 Session 03): there is no vision provider interface, because describing an image is an LLM task (`describe_image`, [agent-runtime.md §6a](agent-runtime.md)); this package only gets the bytes. `ImageFetcher.fetch(url, max_bytes, timeout) -> FetchedImage{data, content_type}`. `FixtureImageFetcher` (mock accounts: only `mock-image://<fixture>` URLs, no network; fixtures `price_screenshot_tr`, `product_photo`, `location_pin`, `blurry`, `injection_text`, failure fixtures `expired`, `unreachable`, `oversize`, `notimage`) and `HttpsImageFetcher` (real accounts: the rules of the voice-note fetcher, whose host list and address check it reuses: https only, no credentials or non-443 port, Instagram/Facebook CDN host suffix allowlist, every resolved address globally routable, no redirects, no cookies or proxy, **no Authorization header**, size cap by `Content-Length` and while streaming, content-type and file-signature check, total deadline; the signed URL is never logged or put in an error). Accepted files: JPEG, PNG, WebP (a declared type that disagrees with the file signature is refused; an animated GIF is not accepted). An image attachment is `type: "image"` with the URL in `payload.url` (Meta webhook examples; **the CDN hosts and the URL lifetime for images are unverified**, as for audio). Typed errors map to the `IMAGE_*` reason codes ([background-jobs.md §6](background-jobs.md)). The image is held in memory during the job and never stored.
 - `AccountProfile{external_account_id, username?}`, `OutboundMessageInfo{message_id, recipient_id, text?, sent_at}`.
-- `ContainerSpec{media_type: IMAGE|STORIES, image_url, caption?}` (MVP. `REELS`, `VIDEO` and `CAROUSEL` come later.)
+- `ContainerSpec{media_type: IMAGE|STORIES|CAROUSEL|REELS, image_url: str|null, video_url: str|null, cover_url: str|null, thumb_offset_ms: int|null, share_to_feed: bool|null, caption?, is_carousel_item=false, children: tuple=()}`. Children require IMAGE, a URL and no caption; CAROUSEL requires 2..20 child ids and no URL; REELS requires `video_url` and mutually exclusive `cover_url` / `thumb_offset_ms`.
+- Carousel flow verified against Meta documentation on 2026-11-18: POST media with image_url and `is_carousel_item="true"` for each child, POST media with `media_type=CAROUSEL`, comma-joined `children` and one caption, then media_publish with the parent creation_id. Source: https://developers.facebook.com/docs/instagram-platform/content-publishing . Product cap remains 2..10; no per-image alt text or captions. The simulator preserves child order and rejects bare-child publishes and reused published-album children. Album media insights return typed `MEDIA_INSIGHTS_NOT_SUPPORTED`; snapshot ingestion skips albums.
+- Failure injection also supports `create_carousel_item`, `create_carousel_container`, `create_reel_container` (with `slow_processing`, `processing_error`, optional `delay_s` and `error_subcode`) and `skip_first >= 0` (default 0). `create_container` continues to mean single-image/story creation; `any` matches all steps. Only the parent publish consumes one quota slot.
 - `ContainerStatus{status_code: IN_PROGRESS|FINISHED|ERROR|EXPIRED|PUBLISHED, error_detail?, media_id?}`. `media_id` is set only with `PUBLISHED` (P5-06): after a lost `publish_container` answer, reconciliation reads the container and needs the media it became to fetch the permalink (`get_media` is keyed by media id). An adapter that cannot tell returns `None`; the executor then records the publication without a permalink. The change is additive; the Meta adapter fills it in Phase 7 if the Graph API allows, otherwise it stays `None` (open question for Phase 7).
 - `SendResult{message_id}`, `MediaInfo{media_id, permalink?, timestamp?}`, `PublishingQuota{used, limit, window_hours}`.
 - `TokenInfo{expires_at, access_token?}` carries the returned refresh token to the operations refresh consumer. `access_token` defaults to `None` for compatibility and is excluded from `repr`; the shape is internal and must never be serialized in API responses, ledger results, jobs or logs. The consumer encrypts it immediately. Meta computes expiry from the injected `Clock` plus validated `expires_in` seconds.
@@ -69,7 +73,7 @@ For Meta sends and publishes, malformed successful responses (invalid JSON, miss
 `social_accounts.capabilities` is computed at connect and refresh:
 - `messaging`: scope `instagram_business_manage_messages` granted.
 - Meta `comments_permission`: true only when returned `granted_scopes` includes `instagram_business_manage_comments`, now requested as the fifth OAuth scope. This records consent; the separately stored owner opt-in is also required for comment read/private reply. Existing stored JSON is not migrated: a missing key means permission not granted. Active real accounts without it show an owner reconnect action in Connections (non-owners see the owner-only notice); mock accounts are unchanged.
-- `publish_feed_image`, `publish_story_image`: scope `instagram_business_content_publish` granted (story: pending V-03; mock: true). These are the only publishing capability names: an earlier build used `content_publish` for mock accounts, and migration `0011` rewrote those rows to the two documented names (keeping their value). `MOCK_CAPABILITIES = {messaging, publish_feed_image, publish_story_image}` (plan G4).
+- `publish_feed_image`, `publish_story_image`, `publish_feed_carousel`, `publish_reel`: scope `instagram_business_content_publish` granted (story: pending V-03; reels live pending; mock: true). Carousel (migration `0080`) and Reel (migration `0083`) copy the same publishing scope as feed images. `MOCK_CAPABILITIES = {messaging, publish_feed_image, publish_story_image, publish_feed_carousel, publish_reel}` (plan G4).
 - Meta `comment_read` and `comment_private_reply` require actual comment scope plus the
   persisted owner opt-in. Public `comment_reply` and `comment_moderate` remain false.
   Live rollout still requires the R75 evidence below; subscriptions remain manual.
@@ -84,9 +88,9 @@ The policy engine (R1) and the content submit validation check capabilities. Mis
 | Signature | HMAC-SHA256 with `MOCK_INSTAGRAM_APP_SECRET`, same header format as Meta, delivered to `POST /webhooks/instagram/mock` (mounted only when `mock` is enabled) |
 | Inbound messages | `demo.simulate_customer_message(workspace, customer_alias, text)` builds a Meta-format payload (`object: "instagram"`, `entry[].messaging[]` with `sender.id`, `recipient.id`, `timestamp`, `message.mid`, `message.text`), signs it, and submits the signed raw bytes to the **same ingestion function** that serves `POST /webhooks/instagram` (with provider kind `mock`). The CLI posts over HTTP to the running API. The dev panel endpoint and tests call `inbox.ingest_webhook(session, clock, settings, "mock", raw_body, headers)` in-process, which avoids the API calling itself. |
 | Echo of native owner reply | `demo.simulate_owner_native_reply(...)` emits an echo event with an unknown `mid` |
-| `send_text_message` | Enforces window (based on the last simulated inbound for that recipient, read from `sim_inbound_messages`), ≤ 1000 bytes; writes `sim_sent_messages`; returns `message_id`; can emit an echo event: the `demo_emit_echo` job (in `operations`, mock accounts only) enqueues a signed echo webhook through the real ingestion path, 1 s after a successful send and 5 s after an unknown outcome |
-| `create_media_container` | Requires a JPEG at the URL (plan G3): the URL is the `localmedia:{key}?exp=…` reference of the local `MediaStorage` ([ADR-015](decisions/ADR-015-media-storage.md)). The registry passes the storage to the mock, which resolves the reference through it; an expired reference, a missing object or a non-JPEG (magic bytes `FF D8 FF`) is `ProviderInvalidRequest(MEDIA_REJECTED)`. A story with a caption is `ProviderInvalidRequest(CAPTION_NOT_ALLOWED)` (G5: stories use `ContainerSpec(STORIES, caption=None)`). Writes `sim_containers(status=IN_PROGRESS, ready_at=now+SIM_CONTAINER_DELAY_SECONDS (default 2 s), expires_at=now+24h)` and returns `mock-container-{uuid}` |
-| `get_container_status` | `IN_PROGRESS` until `ready_at`, then `FINISHED`; `PUBLISHED` once published (and it stays so; the status then carries the post's `media_id`); `EXPIRED` for an unpublished container at `expires_at`; `ERROR` once the provider failed it (stored, sticky). Only `IN_PROGRESS`, `ERROR` and `PUBLISHED` are stored; the rest is derived from `ready_at`/`expires_at` and the injected `Clock`. An unknown container, or one of another account, is `ProviderInvalidRequest(CONTAINER_NOT_FOUND)` |
+| `send_text_message` | Enforces window (based on the last simulated inbound for that recipient, read from `sim_inbound_messages`; 24 h, or 7 days when `message_tag="HUMAN_AGENT"`; any other tag is `ProviderInvalidRequest`), ≤ 1000 bytes; writes `sim_sent_messages`; returns `message_id`; can emit an echo event: the `demo_emit_echo` job (in `operations`, mock accounts only) enqueues a signed echo webhook through the real ingestion path, 1 s after a successful send and 5 s after an unknown outcome |
+| `create_media_container` | For images (`IMAGE`/`STORIES`/`CAROUSEL`), requires a JPEG at the URL (plan G3; stories use `ContainerSpec(STORIES, caption=None)`, a story with caption is `ProviderInvalidRequest(CAPTION_NOT_ALLOWED)`); the URL is the `localmedia:{key}?exp=…` reference of the local `MediaStorage` ([ADR-015](decisions/ADR-015-media-storage.md)). The registry passes the storage to the mock, which resolves the reference through it; an expired reference, a missing object or a non-JPEG (magic bytes `FF D8 FF`) is `ProviderInvalidRequest(MEDIA_REJECTED)`. For `REELS`, requires a video (`MP4`/`MOV` box check + non-empty) at `video_url` and optional JPEG at `cover_url`. Writes `sim_containers(status=IN_PROGRESS, ready_at=now+SIM_CONTAINER_DELAY_SECONDS (default 2 s; `SIM_REEL_PROCESSING_SECONDS` default 20 s for REELS), expires_at=now+24h)` and returns `mock-container-{uuid}` |
+| `get_container_status` | `IN_PROGRESS` until `ready_at`, then `FINISHED` (or `ERROR` + `error_subcode` when `processing_error` rule delayed to `ready_at`); `PUBLISHED` once published (and it stays so; the status then carries the post's `media_id`); `EXPIRED` for an unpublished container at `expires_at`; `ERROR` once the provider failed it (stored, sticky). Only `IN_PROGRESS`, `ERROR` and `PUBLISHED` are stored; the rest is derived from `ready_at`/`expires_at` and the injected `Clock`. An unknown container, or one of another account, is `ProviderInvalidRequest(CONTAINER_NOT_FOUND)` |
 | `publish_container` | Locks the container row and requires `FINISHED`, otherwise `ProviderInvalidRequest` with `CONTAINER_NOT_READY` (`IN_PROGRESS`), `CONTAINER_EXPIRED`, `CONTAINER_ERROR` or `CONTAINER_PUBLISHED`. Inserts `sim_published_media` (`unique(container_id)`, so publishing twice is a DB error mapped to `ProviderInvalidRequest(CONTAINER_PUBLISHED)`) and marks the container `PUBLISHED`; returns `mock-media-{uuid}`; permalink `https://instagram.example/sim/{media_id}` (clearly fake domain). With `PUBLISH_DAILY_LIMIT` posts already in the last 24 h it raises `ProviderRateLimited(retry_after_s = oldest post + 24 h - now)` instead of publishing (INV-11) |
 | `get_media` | Returns `MediaInfo(media_id, permalink, timestamp=published_at)` from `sim_published_media`; an unknown id (or another account's) is `ProviderInvalidRequest(MEDIA_NOT_FOUND)`. Not injectable |
 | `get_publishing_quota` | Counts the account's `sim_published_media` in the last 24 h (a post leaves the window exactly 24 h after it was published); `limit = PUBLISH_DAILY_LIMIT` (default 50), `window_hours = 24`. Not injectable |
@@ -140,9 +144,10 @@ Adapter-neutral cases run against both `mock` and `meta` with deterministic `htt
 ### 3.6 Content-type constraints (from verified docs)
 | Type | MVP | Constraints enforced |
 |---|---|---|
+| `feed_carousel` | Mock implemented; live pending | 2–10 images (product rule; Meta says up to 20), each obeying feed image rules and within 2% of the first aspect ratio; shared caption |
 | `feed_image` | yes | JPEG, ≤ 8 MB, aspect 4:5–1.91:1, width 320–1440 (scaled), caption ≤ 2200 chars (to verify) |
 | `story_image` | yes (story publishing behaviour pending V-03) | JPEG, ≤ 8 MB, 9:16 recommended, **no caption**: text must be in the image |
-| Reels / video / carousel | no | — |
+| `reel` | Mock implemented; live pending | Ready MP4/MOV video (`video`), duration 3 s–15 min, optional JPEG custom cover (≤ 8 MB) or `thumb_offset_ms` within video duration, `share_to_feed` boolean, caption ≤ 2200 chars |
 
 ## 4. LLM provider
 Contract and behaviour: [ADR-009](decisions/ADR-009-llm-provider-abstraction.md), [agent-runtime.md](agent-runtime.md). Adapters: `fake` (default), `openai`. Only `app/ai` imports `integrations.llm`.
@@ -258,3 +263,69 @@ Real `read_comment` and `send_private_reply` use the existing operations executo
 The pure real-account rules enforce a 7-day minus 10-minute window, no parent, known author and strict one-per-commenter admission. They reuse verified-placeholder drafts, delegation and approval (Ask by default), and revalidate before dispatch. Count semantics and reply eligibility are ASSUMED-strict pending live evidence. The [rollout rule table](../operations/account-agent-rollout.md#real-account-comment-to-dm-rollout-feature-phase-3) defines reason codes and rollback.
 
 Subscriptions remain manual: POST `https://graph.instagram.com/<version>/<ig-user-id>/subscribed_apps?subscribed_fields=comments`, then GET the same subscribed_apps endpoint with the account token. App Live/Advanced Access prerequisites and whether `comments` is accepted for this app remain a live gate. No application subscription effect was added.
+
+## WhatsApp owner channel (Feature Phase 5, Session 01)
+
+[ADR-027](decisions/ADR-027-whatsapp-owner-channel-scope.md) limits WhatsApp to
+notifications, fixed replies and future button actions; free text never enters commands or AI.
+Settings generates an eight-character, hashed, expiring one-time code for `whatsapp`.
+The owner sends it to the business number, optionally through `https://wa.me/<digits>?text=<code>`.
+`GET /workspaces/{id}/channels/availability` returns `{"whatsapp": true|false}` (no numbers,
+no secrets) so Settings shows the WhatsApp row only when the server has credentials;
+unconfigured link-code requests fail with `409 CONFLICT_STATE` and
+`params.reason=whatsapp_not_configured`. No code is issued when disabled.
+GET `/api/v1/webhooks/whatsapp` performs the constant-time verify-token handshake.
+POST verifies `X-Hub-Signature-256` over raw bytes before JSON parsing or dispatch.
+The unprefixed `/webhooks/whatsapp` alias is also registered, as for Telegram.
+Only the configured receiving number is accepted. Global message-ID dedup stores sender hashes.
+Fixed TR/EN replies are queued, committed with link changes, then sent outside the transaction.
+Unknown free text gets no reply; linked owners receive a fixed instruction to open the app.
+Offline tests use mock HTTP; live acceptance is pending.
+
+### Notifications and the daily summary (Session 02)
+
+`notify` hands every notification of a supported type (`catalog.WHATSAPP_TYPES`: the Web Push types
+plus `report.daily_ready`) to `notifications/whatsapp_dispatch.py`, which writes a
+`notification_deliveries` row (`channel=whatsapp`, status from the quiet-hours policy, so a held
+message is `skipped_quiet_hours` and a critical one bypasses it) and enqueues
+`deliver_channel_notification`, only for a member with an **active WhatsApp link**. Simulated
+notifications are never sent. The job calls `WhatsAppChannel.deliver_notification`, which chooses at
+send time between a **session message** (the owner wrote within 24 hours minus a 5-minute margin;
+`channel_links.last_inbound_at`, maintained by the webhook) and an **approved template** (registry
+in `integrations/channels/whatsapp/templates.py`, TR and EN, category utility; submission steps in
+[platform-capabilities.md §2.2](../research/platform-capabilities.md)). Text is fixed per type;
+variables are the report date and three counts only. A template is never sent while
+`WHATSAPP_TEMPLATES_APPROVED=false`.
+
+Failure handling reuses the ledger: 429 and 5xx are `retryable` (job backoff 5/30/120 s, three
+attempts, then a dead job and a failed delivery); any other rejection is terminal; a transport
+error or a 2xx without a message id is **ambiguous** and is failed, never re-sent. The adapter
+commits a `send_state="sending"` marker before the HTTP call (no transaction is open during it); a
+later attempt that finds the marker still set fails as `whatsapp_send_state_unknown` instead of
+sending. `delivery_metadata` keeps `send_state`, `wamid`, `cost` (send mode, category, template
+name, pricing note, `price_verified: false`; no amount) and, from Meta's status webhooks,
+`provider_status` and `billing` flags. A `failed` status marks the delivery failed.
+
+### Approval buttons (Session 03)
+
+For `approval.requested`, `WhatsAppChannel` sends an **interactive reply-button message** only inside the
+24-hour window: two buttons (`Onayla`/`Reddet`, `Approve`/`Reject`) whose ids are `act:<token>`, where the
+token is a Phase 9 action token (hashed, single-use, bound to the member, expiring with the approval;
+`approvals/action_tokens.py`). The body says what is being approved: the proposed outgoing reply or caption (clipped to
+1,000 characters with an ellipsis and "full text in the app"; the approval still binds to the full payload
+hash), title, schedule, price or time change, a fixed kind label and the expiry. The customer's inbound
+message and handle never appear. Outside the window the message is the plain approval template with no buttons and no token
+(`delivery_metadata.approval_buttons = "not_sent_outside_window"`; `"sent"` inside). An approval that is
+no longer pending when the job runs is not announced (`approval_not_pending`, terminal).
+
+A button reply from the webhook (`interactive.button_reply`) goes to
+`integrations/channels/whatsapp/approval_buttons.py`: the sender must be linked to an active member (else
+no reply), the token is consumed with `channel="whatsapp"`, and the decision goes through
+`approvals.service.decide(channel="whatsapp")`. The fixed TR/EN answer is sent after the commit and shows
+the current state for a replay (`already approved/rejected`), expiry, a stale or withdrawn approval or a
+lost permission; a forwarded button tapped by a different linked member gets only "not valid". Free text
+never reaches this path. The WhatsApp webhook dedup (message id) makes a repeated delivery a no-op.
+
+### Video prober (ADR-028)
+
+`app.integrations.video` imports only core within the app: frozen VideoFacts, VideoProber protocol, typed VideoProbeFailed (rejection) and VideoProbeUnavailable (retryable 503), ffmpeg adapter, bounded ISO box scanner, fake and registry. Default ffmpeg/ffprobe paths resolve at call time; fake requires FAKEVIDEO1 JSON test fixtures and is refused in production. No runtime network calls. Restricted subprocess flags, limits and pin rationale are in ADR-028.

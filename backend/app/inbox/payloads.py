@@ -39,6 +39,11 @@ class SendReplyPayload(_Payload):
     reply_draft_id: uuid.UUID
 
 
+class FollowUpCheckPayload(_Payload):
+    follow_up_id: uuid.UUID
+    answer_draft_id: uuid.UUID
+
+
 class ExpireReplyDraftsPayload(_Payload):
     pass
 

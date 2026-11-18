@@ -62,3 +62,11 @@ flowchart LR
 ## 5. Revisit when
 - More than ~50 active workspaces, or any SLA commitment → managed Postgres, 2+ app instances behind a load balancer, OpenTelemetry, alerting.
 - Media volume grows (video) → a separate transcoding worker.
+
+### Video binary and upload envelope (Session 06 / ADR-028)
+
+Backend runtime installs Debian ffmpeg/ffprobe as root before USER, pinned by FFMPEG_DEBIAN_VERSION=7:5.1.9-0+deb12u1, checks dpkg-query version, uses --no-install-recommends and cleans apt lists. Package sources accessed 2026-11-18: https://packages.debian.org/bookworm/ffmpeg and https://security-tracker.debian.org/tracker/source-package/ffmpeg. Debian CVE maintenance was chosen over an unpatched static/wheel supply chain; parser restrictions remain necessary.
+
+When the pin disappears from the mirror, inspect `apt-cache policy ffmpeg` in a `python:3.12-slim-bookworm` container, update the ARG, rebuild, and run `uv run pytest tests/unit/core/test_production_packaging.py tests/integration/content/test_video_real_ffprobe.py`. Extra image size: **to be measured on the first build**. Real Docker build and Caddyfile validated with `caddy validate`: **pending** locally.
+
+Provision writable MEDIA_SCRATCH_DIR (empty uses OS temp) with about 2x maximum upload size per concurrent upload: Starlette spools multipart and ingest copies it once, plus thumbnail and capped probe output. MEDIA_SCRATCH_DIR controls our copy and binary scratch; Starlette still spools in the OS temporary directory. Budget both filesystems, or align TMPDIR with MEDIA_SCRATCH_DIR in the container. Default binary concurrency 2 is per API process, not a global upload limit. Do not size disk solely from the binary semaphore; simultaneous upload requests can exceed it. Caddy allows 310MB only on `/api/v1/workspaces/[^/]+/media/video`, 10MB elsewhere; keep it in sync with MEDIA_MAX_VIDEO_BYTES and the 64 KiB app envelope. Caddy/uvicorn need no extra timeout setting; a slow 300 MB upload can take minutes. Probe and thumbnail timeouts default to 30s each. No real-binary local results are claimed.

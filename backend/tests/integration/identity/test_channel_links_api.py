@@ -198,3 +198,38 @@ def test_non_member_cannot_access_channel_routes(
         headers=outsider_headers,
     )
     assert res3.status_code == 404
+
+
+def test_whatsapp_link_code_api_configured_and_off(client: TestClient, db_session: Session) -> None:
+    ws, users = workspace_with_members(db_session)
+    headers = login(client, users["owner"])
+    url = f"/api/v1/workspaces/{ws.id}/channels/link-code"
+    cfg = Settings(_env_file=None)
+    client.app.dependency_overrides[get_app_settings] = lambda: cfg
+    try:
+        off = client.get(f"/api/v1/workspaces/{ws.id}/channels/availability", headers=headers)
+        assert off.status_code == 200 and off.json() == {"whatsapp": False}
+        response = client.post(url, json={"channel": "whatsapp"}, headers=headers)
+        assert response.status_code == 409
+        assert response.json()["code"] == "CONFLICT_STATE"
+        assert response.json()["params"]["reason"] == "whatsapp_not_configured"
+        cfg = Settings(
+            _env_file=None,
+            whatsapp_access_token="synthetic-token",
+            whatsapp_app_secret="synthetic-secret",
+            whatsapp_webhook_verify_token="synthetic-verify",
+            whatsapp_phone_number_id="123",
+            whatsapp_display_phone_number="905551112233",
+        )
+        response = client.get(f"/api/v1/workspaces/{ws.id}/channels/availability", headers=headers)
+        assert response.status_code == 200 and response.json() == {"whatsapp": True}
+        response = client.post(url, json={"channel": "whatsapp"}, headers=headers)
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["channel"] == "whatsapp" and data["bot_username"] is None
+        assert data["whatsapp_number"] == "905551112233"
+        assert data["deep_link_url"] == f"https://wa.me/905551112233?text={data['code']}"
+        response = client.post(url, json={"channel": "telegram"}, headers=headers)
+        assert response.status_code == 200 and response.json()["whatsapp_number"] is None
+    finally:
+        client.app.dependency_overrides.pop(get_app_settings, None)

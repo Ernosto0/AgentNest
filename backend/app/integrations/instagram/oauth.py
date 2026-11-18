@@ -69,12 +69,20 @@ def build_authorize_url(settings: Settings, state: str) -> str:
 
 
 def compute_capabilities(
-    granted_scopes: list[str], stories_enabled: bool, comment_automation_enabled: bool = False
+    granted_scopes: list[str],
+    stories_enabled: bool,
+    comment_automation_enabled: bool = False,
+    human_agent_enabled: bool = False,
 ) -> dict[str, bool]:
     return {
         "messaging": SCOPES[1] in granted_scopes,
+        # The Human Agent feature is granted to the app, not requested as an OAuth scope: it is
+        # on only when the operator confirms the approval and the account can message at all.
+        "human_agent": SCOPES[1] in granted_scopes and human_agent_enabled,
         "publish_feed_image": SCOPES[2] in granted_scopes,
+        "publish_feed_carousel": SCOPES[2] in granted_scopes,
         "publish_story_image": SCOPES[2] in granted_scopes and stories_enabled,
+        "publish_reel": SCOPES[2] in granted_scopes,
         "comments_permission": COMMENTS_SCOPE in granted_scopes,
         **dict.fromkeys(COMMENT_CAPABILITIES, False),
         "comment_read": COMMENTS_SCOPE in granted_scopes and comment_automation_enabled,

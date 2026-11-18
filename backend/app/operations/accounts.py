@@ -39,11 +39,14 @@ from app.operations.resolution import set_operation
 
 MOCK_CAPABILITIES = {
     "messaging": True,
+    "human_agent": True,  # the simulator supports the HUMAN_AGENT tag
     "comment_reply": True,
     "comment_moderate": True,
     "comment_private_reply": True,
     "publish_feed_image": True,
+    "publish_feed_carousel": True,
     "publish_story_image": True,
+    "publish_reel": True,
 }
 
 

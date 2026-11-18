@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from app.approvals import callbacks
 from app.approvals.models import Approval
 from app.content import service, transitions
-from app.content.models import ContentItem, MediaAsset
+from app.content.models import ContentItem, ContentItemMedia, MediaAsset
 from app.content.payload import approval_payload, approval_payload_hash
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
@@ -36,14 +36,46 @@ APPROVAL_EXPIRED = "APPROVAL_EXPIRED"
 def bound_payload_hash(session: Session, item: ContentItem) -> str | None:
     """The hash of the payload the item would be submitted with right now, for the account and
     instant it was submitted with; ``None`` if the media or the schedule is gone."""
-    if item.media_asset_id is None or item.scheduled_at is None or item.social_account_id is None:
+    if item.scheduled_at is None or item.social_account_id is None:
         return None
+    expected_kind = "video" if item.content_type == "reel" else "image"
     sha256 = session.scalar(
         select(MediaAsset.sha256).where(
-            MediaAsset.workspace_id == item.workspace_id, MediaAsset.id == item.media_asset_id
+            MediaAsset.workspace_id == item.workspace_id,
+            MediaAsset.id == item.media_asset_id,
+            MediaAsset.kind == expected_kind,
         )
     )
-    if sha256 is None:
+    cover_sha256: str | None = None
+    if item.content_type == "reel" and item.cover_media_asset_id is not None:
+        cover_sha256 = session.scalar(
+            select(MediaAsset.sha256).where(
+                MediaAsset.workspace_id == item.workspace_id,
+                MediaAsset.id == item.cover_media_asset_id,
+                MediaAsset.kind == "image",
+            )
+        )
+        if cover_sha256 is None:
+            return None
+    carousel_media = None
+    if item.content_type == "feed_carousel":
+        rows = session.execute(
+            select(ContentItemMedia.media_asset_id, MediaAsset.sha256)
+            .outerjoin(
+                MediaAsset,
+                (MediaAsset.workspace_id == ContentItemMedia.workspace_id)
+                & (MediaAsset.id == ContentItemMedia.media_asset_id),
+            )
+            .where(
+                ContentItemMedia.workspace_id == item.workspace_id,
+                ContentItemMedia.content_item_id == item.id,
+            )
+            .order_by(ContentItemMedia.position)
+        ).all()
+        if not rows or any(sha is None for _, sha in rows):
+            return None
+        carousel_media = [(id, sha) for id, sha in rows]
+    elif sha256 is None:
         return None
     fact_versions = None
     if item.origin == "agent":
@@ -61,6 +93,8 @@ def bound_payload_hash(session: Session, item: ContentItem) -> str | None:
             media_sha256=sha256,
             scheduled_at=item.scheduled_at,
             fact_versions=fact_versions,
+            carousel_media=carousel_media,
+            cover_sha256=cover_sha256,
         )
     )
 

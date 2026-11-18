@@ -98,7 +98,10 @@ def disclosure_suffix(context: DraftContext) -> str:
 
 
 def _label(fact: UsableFact, language: str) -> str:
-    return fact.label.get(language) or fact.label.get("tr") or fact.label.get("en") or fact.key
+    # Owner labels exist in Turkish and English. Ru, de and ar replies prefer English, as the
+    # formatted values do (knowledge.formatting), then Turkish.
+    order = (language, "tr", "en") if language == "tr" else (language, "en", "tr")
+    return next((fact.label[c] for c in order if fact.label.get(c)), fact.key)
 
 
 def _message(role: str, text: str) -> DraftMessage:

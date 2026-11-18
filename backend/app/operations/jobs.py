@@ -43,6 +43,7 @@ from app.operations.payloads import (
     DeleteAccountConversationsPayload,
     EmitEchoPayload,
     EvaluateOperatorAlertsPayload,
+    PollReelContainerPayload,
     ReconcilePublishPayload,
     ReconcileSendPayload,
     ReconcileStuckPayload,
@@ -211,6 +212,43 @@ def publish_content(job: JobContext) -> None:
         )
     if outcome.kind == "rescheduled" and outcome.run_at is not None:
         raise RescheduleJob(outcome.run_at)
+
+
+def _poll_reel_dead(job: JobContext, code: str) -> None:
+    payload = job.payload
+    if not isinstance(payload, PollReelContainerPayload) or job.workspace_id is None:
+        return
+    with job.session_factory() as session:
+        publish.abandon_poll(session, job.clock, job.workspace_id, payload.operation_id)
+        session.commit()
+
+
+@job_handler(
+    "poll_reel_container",
+    PollReelContainerPayload,
+    max_attempts=8,
+    on_dead=_poll_reel_dead,
+)
+def poll_reel_container(job: JobContext) -> None:
+    """Poll a processing Reel container using the deterministic backoff schedule."""
+    payload = job.payload
+    if not isinstance(payload, PollReelContainerPayload) or job.workspace_id is None:
+        return
+    outcome = publish.poll_reel(
+        job.session_factory,
+        job.clock,
+        get_settings(),
+        job.workspace_id,
+        payload.operation_id,
+        heartbeat=job.heartbeat,
+    )
+    if outcome.kind in ("rescheduled", "processing") and outcome.run_at is not None:
+        raise RescheduleJob(outcome.run_at)
+    if outcome.kind == "retry" and outcome.detail != "handed_over":
+        raise RetryableError(
+            outcome.error_code or "PROVIDER_UNAVAILABLE",
+            retry_after_seconds=outcome.retry_after_seconds,
+        )
 
 
 def _reconcile_publish_dead(job: JobContext, code: str) -> None:

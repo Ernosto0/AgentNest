@@ -27,6 +27,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
+from app.core.reply_languages import REPLY_LANGUAGES
 from app.knowledge.constants import (
     APPROVED_ANSWER_INTENTS,
     APPROVED_ANSWER_STATUSES,
@@ -238,7 +239,7 @@ class ApprovedAnswer(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, 
             ["workspace_id", "created_from_message_id"],
             ["messages.workspace_id", "messages.id"],
         ),
-        CheckConstraint("language IN ('tr', 'en')", name="language"),
+        CheckConstraint(_in("language", REPLY_LANGUAGES), name="language"),
         CheckConstraint("version >= 1", name="version"),
         Index("ix_approved_answers_workspace_status", "workspace_id", "status"),
     )

@@ -24,7 +24,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Literal
+from typing import Any, Literal, cast
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -36,6 +36,7 @@ from app.approvals import service as approvals
 from app.audit import service as audit
 from app.content import notifications as content_notifications
 from app.content import transitions
+from app.content.carousel import ordered_asset_ids, ordered_assets
 from app.content.models import ContentItem, MediaAsset
 from app.content.payload import PublishContentPayload, publish_job_key
 from app.content.subject import bound_payload_hash
@@ -51,6 +52,7 @@ from app.integrations.instagram import queries
 from app.integrations.instagram.base import (
     AccountRef,
     ContainerSpec,
+    ContainerStatus,
     InstagramProvider,
     MediaInfo,
     PublishingQuota,
@@ -68,10 +70,10 @@ from app.integrations.instagram.models import SocialAccount
 from app.integrations.instagram.registry import account_ref, get_provider
 from app.integrations.storage.base import MediaStorageUnavailable
 from app.integrations.storage.registry import get_media_storage
-from app.jobs.queue import enqueue
+from app.jobs.queue import cancel_queued, enqueue
 from app.operations import health
 from app.operations.models import Operation
-from app.operations.payloads import ReconcilePublishPayload
+from app.operations.payloads import PollReelContainerPayload, ReconcilePublishPayload
 from app.operations.resolution import set_operation
 
 log = get_logger(__name__)
@@ -81,12 +83,17 @@ PUBLISH_MAX_ATTEMPTS = 5
 PUBLISH_BACKOFF = (60, 300, 900, 1800, 1800)
 POLL_INTERVAL_SECONDS = 10
 POLL_TIMEOUT = timedelta(minutes=5)
+# Seconds between reel container polls; the last value repeats until REEL_PROCESSING_TIMEOUT.
+REEL_POLL_SCHEDULE = (15, 30, 60, 60, 120, 120, 180, 180, 300)
+REEL_PROCESSING_TIMEOUT = timedelta(minutes=30)
+REEL_MAX_READ_FAILURES = 5
+RETRYABLE_REEL_ERROR_SUBCODES = frozenset({"SUBCODE_2207003", "SUBCODE_2207032", "SUBCODE_2207053"})
 RECONCILE_DELAY = timedelta(minutes=1)  # first check, and between later ones
 QUOTA_WINDOW = timedelta(hours=24)
 QUOTA_FALLBACK_DELAY = timedelta(hours=1)  # when the oldest post is not known
 MAX_CONTAINER_RECREATIONS = 2  # an expired container is replaced at most this often per run
-# The lease a publishing job asks for: the polling budget plus the calls around it.
-PUBLISH_LEASE_SECONDS = int(POLL_TIMEOUT.total_seconds()) + 120
+# The lease covers both carousel polling budgets plus the calls around them.
+PUBLISH_LEASE_SECONDS = 2 * int(POLL_TIMEOUT.total_seconds()) + 120
 
 ACTIONABLE = ("scheduled", "retry_scheduled")
 # ``publish_container`` answers that mean "somebody may already have published this container":
@@ -96,7 +103,9 @@ AMBIGUOUS_PUBLISH_CODES = frozenset(
 )
 ACCOUNT_UNAVAILABLE = transitions.PUBLISHING_HOLD_REASON
 
-Kind = Literal["published", "skipped", "held", "failed", "retry", "rescheduled", "unknown"]
+Kind = Literal[
+    "published", "skipped", "held", "failed", "retry", "rescheduled", "unknown", "processing"
+]
 
 
 @dataclass(frozen=True)
@@ -105,7 +114,7 @@ class PublishOutcome:
     detail: str | None = None
     error_code: str | None = None
     retry_after_seconds: float | None = None  # ``retry``: the delay before the next attempt
-    run_at: datetime | None = None  # ``rescheduled`` / ``unknown``: when to look again
+    run_at: datetime | None = None  # ``rescheduled`` / ``unknown`` / ``processing``
 
 
 @dataclass(frozen=True)
@@ -121,6 +130,14 @@ class _Prepared:
     caption: str | None
     storage_key: str
     container_id: str | None
+    assets: tuple[tuple[uuid.UUID, str], ...] = ()
+    children: tuple[tuple[str, str], ...] = ()
+    recreations: int = 0
+    cover_storage_key: str | None = None
+    thumb_offset_ms: int | None = None
+    share_to_feed: bool | None = None
+    polls: int = 0
+    reconciled_status: ContainerStatus | None = None
 
 
 @dataclass(frozen=True)
@@ -158,8 +175,14 @@ def _skip(detail: str) -> PublishOutcome:
 
 
 def capability_for(content_type: str) -> str:
-    """``feed_image`` needs ``publish_feed_image``; ``story_image``, ``publish_story_image``."""
+    """``feed_image`` needs ``publish_feed_image``; ``reel`` needs ``publish_reel``."""
     return f"publish_{content_type}"
+
+
+def reel_poll_delay_seconds(polls: int) -> int:
+    """Deterministic seconds before the next reel status poll; final interval repeats."""
+    index = min(max(polls, 0), len(REEL_POLL_SCHEDULE) - 1)
+    return REEL_POLL_SCHEDULE[index]
 
 
 # --- entry points ---------------------------------------------------------------------------------
@@ -227,13 +250,18 @@ def reconcile_publish(
         container_id = op.provider_ref.get("container_id")
 
     status_code: str | None = None
+    error_detail: str | None = None
     media_id: str | None = None
     media: MediaInfo | None = None
     if container_id:
         reader = env.provider_for(kind)
         try:  # no transaction is open here
             status = reader.get_container_status(ref, str(container_id))
-            status_code, media_id = status.status_code, status.media_id
+            status_code, error_detail, media_id = (
+                status.status_code,
+                status.error_detail,
+                status.media_id,
+            )
         except ProviderError:
             pass  # a failed read and an unreadable container are treated alike: ask again later
         if status_code == "PUBLISHED":
@@ -249,11 +277,82 @@ def reconcile_publish(
             status_code,
             media_id,
             media,
+            error_detail=error_detail,
         )
         session.commit()
     if isinstance(concluded, PublishOutcome):
         return concluded
     return _drive(env, concluded)
+
+
+def poll_reel(
+    session_factory: sessionmaker[Session],
+    clock: Clock,
+    settings: Settings,
+    workspace_id: uuid.UUID,
+    operation_id: uuid.UUID,
+    *,
+    provider: InstagramProvider | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+    heartbeat: Callable[[], None] | None = None,
+) -> PublishOutcome:
+    """One scheduled backoff poll of an ``in_progress`` Reel container."""
+    env = _Env(
+        session_factory,
+        clock,
+        settings,
+        provider,
+        sleep,
+        heartbeat or (lambda: None),
+        requeue_on_retry=True,
+    )
+    with session_factory() as session:
+        op = _operation_by_id(session, workspace_id, operation_id)
+        if (
+            op is None
+            or op.operation_type != "publish_content"
+            or op.status != "in_progress"
+            or op.provider_ref.get("phase") != "processing"
+        ):
+            return _skip("resolved")
+        container_id = op.provider_ref.get("container_id")
+        if not isinstance(container_id, str) or not container_id:
+            return _skip("container_missing")
+        item = _item(session, workspace_id, op.subject_id)
+        if (
+            item is None
+            or item.content_type != "reel"
+            or item.status != "publishing"
+            or op.idempotency_key != publish_job_key(item.id, item.version)
+        ):
+            return _skip("not_publishing")
+        account = queries.get_account_in_workspace(session, workspace_id, op.social_account_id)
+        if account is None:
+            return _skip("account_missing")
+        resolved = _resolve_publish_assets(session, item)
+        if resolved is None:
+            ctx = system_context(session, workspace_id, "operations.publish")
+            if ctx is None:
+                return _skip("ctx_missing")
+            return _fail(session, clock, ctx, item, op, "MEDIA_REJECTED")
+        assets, cover_key = resolved
+        prepared = _prepared(item, op, account, assets, env.settings, cover_storage_key=cover_key)
+    return _reel_step(env, prepared, from_poll=True)
+
+
+def abandon_poll(
+    session: Session, clock: Clock, workspace_id: uuid.UUID, operation_id: uuid.UUID
+) -> None:
+    """``poll_reel_container`` exhausted retries: move to ``outcome_unknown`` and reconcile."""
+    ctx = system_context(session, workspace_id, "operations.poll_reel")
+    op_row = _operation_by_id(session, workspace_id, operation_id)
+    if ctx is None or op_row is None:
+        return
+    item = _item(session, workspace_id, op_row.subject_id, lock=True)
+    op = _operation_by_id(session, workspace_id, operation_id, lock=True)
+    if op is None or item is None or op.status != "in_progress":
+        return
+    mark_unknown(session, clock, ctx, item, op)
 
 
 def abandon_publish(
@@ -345,6 +444,48 @@ def _operation_by_id(
     return session.scalars(statement.with_for_update() if lock else statement).one_or_none()
 
 
+def _resolve_publish_assets(
+    session: Session, item: ContentItem
+) -> tuple[tuple[MediaAsset, ...], str | None] | None:
+    """Load the ready media assets required to publish ``item`` (plus reel cover key, if any)."""
+    if item.content_type == "reel":
+        if item.media_asset_id is None:
+            return None
+        video = session.scalar(
+            select(MediaAsset).where(
+                MediaAsset.workspace_id == item.workspace_id,
+                MediaAsset.id == item.media_asset_id,
+                MediaAsset.kind == "video",
+            )
+        )
+        if video is None or video.status != "ready":
+            return None
+        cover_key: str | None = None
+        if item.cover_media_asset_id is not None:
+            cover = session.scalar(
+                select(MediaAsset).where(
+                    MediaAsset.workspace_id == item.workspace_id,
+                    MediaAsset.id == item.cover_media_asset_id,
+                    MediaAsset.kind == "image",
+                )
+            )
+            if cover is None or cover.status != "ready":
+                return None
+            cover_key = cover.storage_key
+        return ((video,), cover_key)
+    ctx = system_context(session, item.workspace_id, "operations.publish")
+    if ctx is None:
+        return None
+    assets = ordered_assets(session, ctx, item)
+    if (
+        not assets
+        or len(assets) != len(ordered_asset_ids(session, ctx, item))
+        or any(a.status != "ready" for a in assets)
+    ):
+        return None
+    return (assets, None)
+
+
 def _read_quota(
     env: _Env, workspace_id: uuid.UUID, content_id: uuid.UUID, version: int
 ) -> _Quota | None:
@@ -360,6 +501,21 @@ def _read_quota(
             or item.social_account_id is None
         ):
             return None
+        if item.content_type in ("feed_carousel", "reel"):
+            ctx = system_context(session, workspace_id, "operations.publish")
+            approval = (
+                approvals_repo.get_approval(session, ctx, item.approval_id)
+                if ctx is not None and item.approval_id
+                else None
+            )
+            if (
+                ctx is None
+                or approval is None
+                or bound_payload_hash(session, item) != approval.payload_hash
+            ):
+                return None
+            if _resolve_publish_assets(session, item) is None:
+                return None
         account = queries.get_account_in_workspace(session, workspace_id, item.social_account_id)
         if account is None or account.status != "connected":
             return None  # T1 holds the item
@@ -493,13 +649,10 @@ def _begin(
             session, clock, ctx, item, op, account, deadline, retry_at, "ACCOUNT_DEGRADED"
         )
     # else half-open (or connected): the publish itself is the probe
-    asset = session.scalars(
-        select(MediaAsset).where(
-            MediaAsset.workspace_id == workspace_id, MediaAsset.id == item.media_asset_id
-        )
-    ).one_or_none()
-    if asset is None or asset.status != "ready":
+    resolved_assets = _resolve_publish_assets(session, item)
+    if resolved_assets is None:
         return _refuse(session, clock, ctx, item, op, "MEDIA_REJECTED")
+    assets, cover_storage_key = resolved_assets
 
     if quota is not None and quota.exhausted:
         retry_at = _quota_retry_at(session, item, account, quota, now)
@@ -518,7 +671,7 @@ def _begin(
     op.started_at = now  # each attempt: the "stuck" sweep measures from the latest start
     op.next_attempt_at = None
     transitions.apply(session, clock, ctx, item, "start")
-    return _prepared(item, op, account, asset, env.settings)
+    return _prepared(item, op, account, assets, env.settings, cover_storage_key=cover_storage_key)
 
 
 def _reschedule(
@@ -548,9 +701,18 @@ def _text(value: object) -> str | None:
 
 
 def _prepared(
-    item: ContentItem, op: Operation, account: SocialAccount, asset: MediaAsset, settings: Settings
+    item: ContentItem,
+    op: Operation,
+    account: SocialAccount,
+    assets: tuple[MediaAsset, ...],
+    settings: Settings,
+    *,
+    recreations: int = 0,
+    cover_storage_key: str | None = None,
+    reconciled_status: ContainerStatus | None = None,
 ) -> _Prepared:
     container_id = op.provider_ref.get("container_id")
+    stored_recreations = op.provider_ref.get("recreations", 0)
     return _Prepared(
         workspace_id=item.workspace_id,
         content_id=item.id,
@@ -559,8 +721,20 @@ def _prepared(
         provider_kind=account.provider_kind,
         content_type=item.content_type,
         caption=item.caption,
-        storage_key=asset.storage_key,
+        storage_key=assets[0].storage_key,
         container_id=str(container_id) if container_id else None,
+        assets=tuple((a.id, a.storage_key) for a in assets),
+        children=tuple(
+            (str(c["media_asset_id"]), str(c["container_id"]))
+            for c in op.provider_ref.get("children", [])
+            if isinstance(c, dict) and c.get("media_asset_id") and c.get("container_id")
+        ),
+        recreations=max(recreations, int(stored_recreations) if stored_recreations else 0),
+        cover_storage_key=cover_storage_key,
+        thumb_offset_ms=item.thumb_offset_ms,
+        share_to_feed=item.share_to_feed,
+        polls=int(op.provider_ref.get("polls", 0) or 0),
+        reconciled_status=reconciled_status,
     )
 
 
@@ -681,6 +855,10 @@ def _hold(
 def _drive(env: _Env, prepared: _Prepared) -> PublishOutcome:
     """Everything after T1: container, polling, publish, outcome. No transaction is open
     during any provider call or sleep."""
+    if prepared.content_type == "feed_carousel":
+        return _drive_carousel(env, prepared)
+    if prepared.content_type == "reel":
+        return _drive_reel(env, prepared)
     provider = env.provider_for(prepared.provider_kind)
     container_id = prepared.container_id
     recreated = 0
@@ -714,6 +892,101 @@ def _drive(env: _Env, prepared: _Prepared) -> PublishOutcome:
         return _finish(env, provider, prepared, media_id)
 
 
+def _store_children(env: _Env, prepared: _Prepared, children: dict[str, str]) -> None:
+    """Commit every accepted child before the next provider call; URLs never enter the ledger."""
+    with env.session_factory() as session:
+        op = _operation_by_id(session, prepared.workspace_id, prepared.operation_id, lock=True)
+        if op is None:
+            raise RuntimeError("the operation of a publish vanished")
+        op.provider_ref = {
+            **op.provider_ref,
+            "children": [
+                {"media_asset_id": str(asset_id), "container_id": children[str(asset_id)]}
+                for asset_id, _ in prepared.assets
+                if str(asset_id) in children
+            ],
+        }
+        session.commit()
+
+
+def _drive_carousel(env: _Env, prepared: _Prepared) -> PublishOutcome:
+    """Meta flow verified 2026-11-18: https://developers.facebook.com/docs/instagram-platform/content-publishing.
+
+    Reconcile the parent first; children share one polling budget. Only a FINISHED parent
+    observed in this run can reach media_publish. Every returned id gets its own commit.
+    """
+    provider = env.provider_for(prepared.provider_kind)
+    container_id = prepared.container_id
+    children = {a: c for a, c in prepared.children if a in {str(i) for i, _ in prepared.assets}}
+    started: datetime | None = None
+    recreated = prepared.recreations
+    while True:
+        if container_id is not None:
+            polled = _poll(env, provider, prepared, container_id)
+            if isinstance(polled, PublishOutcome):
+                return polled
+            if polled.state == "published":
+                return _finish(env, provider, prepared, polled.media_id)
+            if polled.state == "finished":
+                try:
+                    media_id = provider.publish_container(prepared.account, container_id)
+                except Exception as exc:
+                    return _record_error(env, prepared, exc, "publish")
+                return _finish(env, provider, prepared, media_id)
+            recreated += 1
+            _store_container(env, prepared, None)
+            container_id = None
+            if recreated > MAX_CONTAINER_RECREATIONS:
+                return _record_error(
+                    env, prepared, ProviderTransientError("containers keep expiring"), "status"
+                )
+        started = started or env.clock.now()
+        for asset_id, key in prepared.assets:
+            asset_key = str(asset_id)
+            while True:
+                child_id = children.get(asset_key)
+                if child_id is None:
+                    try:
+                        storage = get_media_storage(env.settings, env.clock)
+                        url = storage.public_fetch_url(
+                            key, env.settings.media_public_url_ttl_seconds
+                        )
+                        child_id = provider.create_media_container(
+                            prepared.account, ContainerSpec("IMAGE", url, is_carousel_item=True)
+                        )
+                    except MediaStorageUnavailable:
+                        return _fail_now(env, prepared, "MEDIA_REJECTED", None)
+                    except Exception as exc:
+                        return _record_error(env, prepared, exc, "create")
+                    children[asset_key] = child_id
+                    _store_children(env, prepared, children)
+                polled = _poll(env, provider, prepared, child_id, started=started, child=True)
+                if isinstance(polled, PublishOutcome):
+                    return polled
+                if polled.state == "finished":
+                    break
+                recreated += 1
+                del children[asset_key]
+                _store_children(env, prepared, children)
+                if recreated > MAX_CONTAINER_RECREATIONS:
+                    return _record_error(
+                        env, prepared, ProviderTransientError("containers keep expiring"), "status"
+                    )
+        try:
+            container_id = provider.create_media_container(
+                prepared.account,
+                ContainerSpec(
+                    "CAROUSEL",
+                    None,
+                    prepared.caption,
+                    children=tuple(children[str(a)] for a, _ in prepared.assets),
+                ),
+            )
+        except Exception as exc:
+            return _record_error(env, prepared, exc, "create")
+        _store_container(env, prepared, container_id)
+
+
 def _create_container(env: _Env, provider: InstagramProvider, prepared: _Prepared) -> str:
     try:
         storage = get_media_storage(env.settings, env.clock)
@@ -725,6 +998,290 @@ def _create_container(env: _Env, provider: InstagramProvider, prepared: _Prepare
     return provider.create_media_container(prepared.account, spec)
 
 
+def _create_reel_container(env: _Env, provider: InstagramProvider, prepared: _Prepared) -> str:
+    try:
+        storage = get_media_storage(env.settings, env.clock)
+    except MediaStorageUnavailable as exc:
+        raise ProviderInvalidRequest("MEDIA_REJECTED", "media storage unavailable") from exc
+    ttl = env.settings.media_public_url_ttl_seconds
+    video_url = storage.public_fetch_url(prepared.storage_key, ttl)
+    cover_url = (
+        storage.public_fetch_url(prepared.cover_storage_key, ttl)
+        if prepared.cover_storage_key is not None
+        else None
+    )
+    spec = ContainerSpec(
+        "REELS",
+        caption=prepared.caption,
+        video_url=video_url,
+        cover_url=cover_url,
+        thumb_offset_ms=prepared.thumb_offset_ms,
+        share_to_feed=prepared.share_to_feed,
+    )
+    return provider.create_media_container(prepared.account, spec)
+
+
+def _processing_started(op: Operation, fallback: datetime) -> datetime:
+    raw = op.provider_ref.get("processing_started_at")
+    if isinstance(raw, str) and raw:
+        try:
+            return datetime.fromisoformat(raw)
+        except ValueError:
+            pass
+    return fallback
+
+
+def _store_reel_processing(
+    env: _Env,
+    prepared: _Prepared,
+    container_id: str,
+    *,
+    recreations: int,
+    enqueue_poll: bool,
+    from_poll: bool,
+) -> PublishOutcome:
+    """[T2] Atomically store the reel container id, processing phase, and enqueue the first poll."""
+    now = env.clock.now()
+    run_at = now + timedelta(seconds=reel_poll_delay_seconds(0))
+    with env.session_factory() as session:
+        op = _operation_by_id(session, prepared.workspace_id, prepared.operation_id, lock=True)
+        if op is None:
+            raise RuntimeError("the operation of a publish vanished")
+        if op.status != "in_progress":
+            return _skip(f"operation_{op.status}")
+        op.provider_ref = {
+            **{k: v for k, v in op.provider_ref.items() if k not in ("read_failures",)},
+            "container_id": container_id,
+            "phase": "processing",
+            "processing_started_at": now.isoformat(),
+            "polls": 0,
+            "recreations": recreations,
+        }
+        op.started_at = now
+        op.next_attempt_at = run_at
+        if enqueue_poll:
+            cancel_queued(session, f"poll_reel:{op.id}", env.clock)
+            enqueue(
+                session,
+                "poll_reel_container",
+                PollReelContainerPayload(operation_id=op.id),
+                workspace_id=op.workspace_id,
+                correlation_id=op.correlation_id,
+                run_at=run_at,
+                dedup_key=f"poll_reel:{op.id}",
+                clock=env.clock,
+            )
+        session.commit()
+    return PublishOutcome("rescheduled" if from_poll else "processing", run_at=run_at)
+
+
+def _forget_reel_container(env: _Env, prepared: _Prepared, *, recreations: int) -> None:
+    with env.session_factory() as session:
+        op = _operation_by_id(session, prepared.workspace_id, prepared.operation_id, lock=True)
+        if op is None:
+            raise RuntimeError("the operation of a publish vanished")
+        op.provider_ref = {
+            **{
+                k: v
+                for k, v in op.provider_ref.items()
+                if k
+                not in (
+                    "container_id",
+                    "phase",
+                    "processing_started_at",
+                    "polls",
+                    "read_failures",
+                )
+            },
+            "recreations": recreations,
+        }
+        op.next_attempt_at = None
+        session.commit()
+
+
+def _before_reel_publish(env: _Env, prepared: _Prepared) -> PublishOutcome | None:
+    """Re-verify state and deadline right before ``publish_container``; returns outcome if done."""
+    with env.session_factory() as session:
+        ctx, item, op, _ = _locked(session, prepared)
+        if op.status != "in_progress" or item.status != "publishing":
+            return _skip(f"operation_{op.status}")
+        if op.deadline_at is not None and env.clock.now() >= op.deadline_at:
+            outcome = _fail(session, env.clock, ctx, item, op, "PUBLISH_DEADLINE_PASSED")
+            session.commit()
+            return outcome
+    return None
+
+
+def _record_reel_read_error(
+    env: _Env, prepared: _Prepared, error: Exception, *, from_poll: bool
+) -> PublishOutcome:
+    if isinstance(error, (ProviderInvalidRequest, ProviderPermissionError, ProviderAuthError)):
+        return _record_error(env, prepared, error, "status")
+    now = env.clock.now()
+    with env.session_factory() as session:
+        ctx, item, op, account = _locked(session, prepared)
+        if op.status != "in_progress" or item.status != "publishing":
+            return _skip(f"operation_{op.status}")
+        failures = int(op.provider_ref.get("read_failures", 0) or 0) + 1
+        if failures >= REEL_MAX_READ_FAILURES:
+            op.provider_ref = {
+                k: v for k, v in op.provider_ref.items() if k not in ("phase", "read_failures")
+            }
+            outcome = _map_error(session, env, ctx, item, op, account, error, "status")
+            session.commit()
+            if outcome.kind == "retry" and env.requeue_on_retry:
+                return PublishOutcome(
+                    "retry",
+                    detail="handed_over",
+                    error_code=outcome.error_code,
+                    retry_after_seconds=outcome.retry_after_seconds,
+                )
+            return outcome
+        polls = int(op.provider_ref.get("polls", 0) or 0)
+        base_delay = reel_poll_delay_seconds(polls)
+        retry_after = (
+            float(error.retry_after_s or 0) if isinstance(error, ProviderRateLimited) else 0.0
+        )
+        delay = max(float(base_delay), retry_after)
+        next_at = now + timedelta(seconds=delay)
+        op.provider_ref = {
+            **op.provider_ref,
+            "phase": "processing",
+            "read_failures": failures,
+            "polls": polls + 1,
+        }
+        op.started_at = now
+        op.next_attempt_at = next_at
+        if not from_poll:
+            enqueue(
+                session,
+                "poll_reel_container",
+                PollReelContainerPayload(operation_id=op.id),
+                workspace_id=op.workspace_id,
+                correlation_id=op.correlation_id,
+                run_at=next_at,
+                dedup_key=f"poll_reel:{op.id}",
+                clock=env.clock,
+            )
+        session.commit()
+    return PublishOutcome("rescheduled" if from_poll else "processing", run_at=next_at)
+
+
+def _drive_reel(env: _Env, prepared: _Prepared) -> PublishOutcome:
+    """Create the REELS container if missing and hand status polling to ``poll_reel_container``."""
+    provider = env.provider_for(prepared.provider_kind)
+    if prepared.container_id is not None:
+        return _reel_step(env, prepared, from_poll=False, pre_status=prepared.reconciled_status)
+    try:
+        container_id = _create_reel_container(env, provider, prepared)
+    except Exception as exc:
+        return _record_error(env, prepared, exc, "create")
+    return _store_reel_processing(
+        env,
+        prepared,
+        container_id,
+        recreations=prepared.recreations,
+        enqueue_poll=True,
+        from_poll=False,
+    )
+
+
+def _reel_step(
+    env: _Env,
+    prepared: _Prepared,
+    *,
+    from_poll: bool,
+    pre_status: ContainerStatus | None = None,
+) -> PublishOutcome:
+    """Run one non-blocking status read and transition for a Reel container."""
+    provider = env.provider_for(prepared.provider_kind)
+    container_id = prepared.container_id
+    if container_id is None:
+        return _skip("container_missing")
+
+    if pre_status is not None:
+        status = pre_status
+    else:
+        try:
+            status = provider.get_container_status(prepared.account, container_id)
+        except Exception as exc:
+            return _record_reel_read_error(env, prepared, exc, from_poll=from_poll)
+
+    code = status.status_code
+    if code == "PUBLISHED":
+        return _finish(env, provider, prepared, status.media_id)
+
+    if code == "FINISHED":
+        blocked = _before_reel_publish(env, prepared)
+        if blocked is not None:
+            return blocked
+        try:
+            media_id = provider.publish_container(prepared.account, container_id)
+        except Exception as exc:
+            return _record_error(env, prepared, exc, "publish")
+        return _finish(env, provider, prepared, media_id)
+
+    if code == "IN_PROGRESS":
+        now = env.clock.now()
+        with env.session_factory() as session:
+            ctx, item, op, _ = _locked(session, prepared)
+            if op.status != "in_progress" or item.status != "publishing":
+                return _skip(f"operation_{op.status}")
+            proc_started = _processing_started(op, now)
+            if now - proc_started >= REEL_PROCESSING_TIMEOUT:
+                outcome = _fail(session, env.clock, ctx, item, op, "REEL_PROCESSING_TIMEOUT")
+                session.commit()
+                return outcome
+            polls = int(op.provider_ref.get("polls", 0) or 0) + 1
+            next_at = now + timedelta(seconds=reel_poll_delay_seconds(polls))
+            op.provider_ref = {
+                **{k: v for k, v in op.provider_ref.items() if k != "read_failures"},
+                "phase": "processing",
+                "processing_started_at": proc_started.isoformat(),
+                "polls": polls,
+            }
+            op.started_at = now
+            op.next_attempt_at = next_at
+            if not from_poll:
+                enqueue(
+                    session,
+                    "poll_reel_container",
+                    PollReelContainerPayload(operation_id=op.id),
+                    workspace_id=op.workspace_id,
+                    correlation_id=op.correlation_id,
+                    run_at=next_at,
+                    dedup_key=f"poll_reel:{op.id}",
+                    clock=env.clock,
+                )
+            session.commit()
+        return PublishOutcome("rescheduled" if from_poll else "processing", run_at=next_at)
+
+    recreate = code == "EXPIRED" or (
+        code == "ERROR" and status.error_detail in RETRYABLE_REEL_ERROR_SUBCODES
+    )
+    if recreate:
+        recreated = prepared.recreations + 1
+        if recreated > MAX_CONTAINER_RECREATIONS:
+            return _fail_now(env, prepared, "PROVIDER_UNAVAILABLE", status.error_detail)
+        _forget_reel_container(env, prepared, recreations=recreated)
+        try:
+            new_container_id = _create_reel_container(env, provider, prepared)
+        except Exception as exc:
+            return _record_error(env, prepared, exc, "create")
+        return _store_reel_processing(
+            env,
+            prepared,
+            new_container_id,
+            recreations=recreated,
+            enqueue_poll=not from_poll,
+            from_poll=from_poll,
+        )
+
+    if code == "ERROR":
+        return _fail_now(env, prepared, "MEDIA_REJECTED", status.error_detail)
+    return _fail_now(env, prepared, "PROVIDER_REJECTED", None)
+
+
 @dataclass(frozen=True)
 class _Polled:
     state: Literal["finished", "published", "expired"]
@@ -732,26 +1289,42 @@ class _Polled:
 
 
 def _poll(
-    env: _Env, provider: InstagramProvider, prepared: _Prepared, container_id: str
+    env: _Env,
+    provider: InstagramProvider,
+    prepared: _Prepared,
+    container_id: str,
+    *,
+    started: datetime | None = None,
+    child: bool = False,
 ) -> _Polled | PublishOutcome:
     """Wait for the container (plan.md G9): every 10 s for up to 5 minutes, the elapsed time
     taken from the ``Clock``, the sleeper injected, a heartbeat after each wait. Returns what
     the container became, or the outcome of an error or of the timeout."""
-    started = env.clock.now()
+    started = started or env.clock.now()
     while True:
         try:
             status = provider.get_container_status(prepared.account, container_id)
         except Exception as exc:
+            if (
+                child
+                and isinstance(exc, ProviderInvalidRequest)
+                and exc.request_code == "CONTAINER_NOT_FOUND"
+            ):
+                return _Polled("expired")
             return _record_error(env, prepared, exc, "status")
         code = status.status_code
         if code == "FINISHED":
             return _Polled("finished")
         if code == "PUBLISHED":
+            if child:
+                return _fail_now(env, prepared, "PROVIDER_REJECTED", None)
             return _Polled("published", status.media_id)
         if code == "EXPIRED":
             return _Polled("expired")
         if code == "ERROR":
             return _fail_now(env, prepared, "MEDIA_REJECTED", status.error_detail)
+        if code != "IN_PROGRESS":
+            return _fail_now(env, prepared, "PROVIDER_REJECTED", None)
         if env.clock.now() - started >= POLL_TIMEOUT:  # still IN_PROGRESS
             return _poll_timeout(env, prepared)
         env.sleep(POLL_INTERVAL_SECONDS)
@@ -827,6 +1400,9 @@ def _record_published(
     on, INV-17), the approvers are told, the account's failure counter is reset."""
     if op.status != "succeeded":  # a repair finds it done already
         set_operation(clock, op, "succeed")
+        op.next_attempt_at = None
+        if "phase" in op.provider_ref:
+            op.provider_ref = {k: v for k, v in op.provider_ref.items() if k != "phase"}
         op.result = {"media_id": media_id, "permalink": permalink, "resolved_by": via}
     transitions.apply(
         session, clock, ctx, item, "succeed",
@@ -858,6 +1434,9 @@ def mark_unknown(
     (the UI shows "checking" from the operation) and ``reconcile_publish`` reads the container."""
     now = clock.now()
     set_operation(clock, op, "unknown", code="OUTCOME_UNKNOWN")
+    op.next_attempt_at = None
+    if "phase" in op.provider_ref:
+        op.provider_ref = {k: v for k, v in op.provider_ref.items() if k != "phase"}
     run_at = now + RECONCILE_DELAY
     enqueue(
         session,
@@ -915,6 +1494,9 @@ def _fail(
     if op.status != "in_progress" and op.status != "outcome_unknown":
         return _skip(f"operation_{op.status}")
     set_operation(clock, op, "fail", code=code)
+    op.next_attempt_at = None
+    if "phase" in op.provider_ref:
+        op.provider_ref = {k: v for k, v in op.provider_ref.items() if k != "phase"}
     op.last_error_detail = detail
     transitions.apply(session, clock, ctx, item, "fail", reason=code)
     content_notifications.notify(
@@ -933,6 +1515,13 @@ def _record_error(
             return _skip(f"operation_{op.status}")
         outcome = _map_error(session, env, ctx, item, op, account, error, phase)
         session.commit()
+    if outcome.kind == "retry" and env.requeue_on_retry:
+        return PublishOutcome(
+            "retry",
+            detail="handed_over",
+            error_code=outcome.error_code,
+            retry_after_seconds=outcome.retry_after_seconds,
+        )
     return outcome
 
 
@@ -978,6 +1567,9 @@ def _map_error(
         # Not published, and not a content problem: the item waits for the owner (G1).
         health.handle_auth_error(session, clock, ctx, account)
         set_operation(clock, op, "fail", code="ACCOUNT_NEEDS_REAUTH")
+        op.next_attempt_at = None
+        if "phase" in op.provider_ref:
+            op.provider_ref = {k: v for k, v in op.provider_ref.items() if k != "phase"}
         transitions.apply(session, clock, ctx, item, "hold", reason=ACCOUNT_UNAVAILABLE)
         content_notifications.notify(
             session, clock, ctx, item, content_notifications.ON_HOLD, reason=ACCOUNT_UNAVAILABLE
@@ -1004,6 +1596,8 @@ def _map_error(
     if op.attempts >= op.max_attempts or out_of_time:
         return _fail(session, clock, ctx, item, op, code)
     set_operation(clock, op, "retry", code=code)
+    if "phase" in op.provider_ref:
+        op.provider_ref = {k: v for k, v in op.provider_ref.items() if k != "phase"}
     op.next_attempt_at = now + timedelta(seconds=delay)
     transitions.apply(session, clock, ctx, item, "retry", reason=code)
     if env.requeue_on_retry:
@@ -1032,6 +1626,8 @@ def _conclude(
     status_code: str | None,
     media_id: str | None,
     media: MediaInfo | None,
+    *,
+    error_detail: str | None = None,
 ) -> _Prepared | PublishOutcome:
     clock = env.clock
     now = clock.now()
@@ -1062,8 +1658,13 @@ def _conclude(
     deadline = op.deadline_at
     past_deadline = deadline is not None and now >= deadline
 
-    def finish(code: str) -> PublishOutcome:
+    def finish(code: str, detail: str | None = None) -> PublishOutcome:
         set_operation(clock, op, "fail", code=code)
+        op.next_attempt_at = None
+        if "phase" in op.provider_ref:
+            op.provider_ref = {k: v for k, v in op.provider_ref.items() if k != "phase"}
+        if detail is not None:
+            op.last_error_detail = detail
         if item.status == "publishing":
             transitions.apply(session, clock, ctx, item, "fail", reason=code)
             content_notifications.notify(
@@ -1086,28 +1687,38 @@ def _conclude(
 
     if had_container and status_code is None:  # unreadable: the post may exist
         return finish("OUTCOME_UNCONFIRMED") if past_deadline else later()
-    if status_code == "ERROR":
-        return finish("MEDIA_REJECTED")
+    is_reel = item.content_type == "reel"
+    retryable_reel_error = (
+        is_reel and status_code == "ERROR" and error_detail in RETRYABLE_REEL_ERROR_SUBCODES
+    )
+    if status_code == "ERROR" and not retryable_reel_error:
+        return finish("MEDIA_REJECTED", detail=error_detail)
     if past_deadline:  # proven not published, and too late to do it now
         return finish("PUBLISH_DEADLINE_PASSED")
-    if status_code == "IN_PROGRESS":
+    if status_code == "IN_PROGRESS" and not is_reel:
         return later()
 
-    # FINISHED (proven unpublished), EXPIRED (never published, needs a new container) or no
-    # container at all (nothing was ever created): publishing again is safe.
-    if op.attempts >= op.max_attempts:
+    # FINISHED (proven unpublished), EXPIRED / retryable reel ERROR (needs a new container),
+    # IN_PROGRESS reel returning to processing, or no container at all: safe to resume.
+    reel_recreate = is_reel and (status_code == "EXPIRED" or retryable_reel_error)
+    if (
+        reel_recreate
+        and int(op.provider_ref.get("recreations", 0) or 0) >= MAX_CONTAINER_RECREATIONS
+    ):
+        return finish("PROVIDER_UNAVAILABLE", detail=error_detail)
+    if op.attempts >= op.max_attempts and not (
+        is_reel and (status_code in ("IN_PROGRESS", "FINISHED") or reel_recreate)
+    ):
         return finish("PROVIDER_UNAVAILABLE")
-    if status_code != "FINISHED":
+    if not is_reel and status_code not in ("FINISHED", "IN_PROGRESS"):
         op.provider_ref = {k: v for k, v in op.provider_ref.items() if k != "container_id"}
-    asset = session.scalars(
-        select(MediaAsset).where(
-            MediaAsset.workspace_id == workspace_id, MediaAsset.id == item.media_asset_id
-        )
-    ).one_or_none()
-    if asset is None or asset.status != "ready":
+    resolved_assets = _resolve_publish_assets(session, item)
+    if resolved_assets is None:
         return finish("MEDIA_REJECTED")
+    assets, cover_storage_key = resolved_assets
     set_operation(clock, op, "start")  # outcome_unknown -> in_progress: publishing only
-    op.attempts += 1
+    if not (is_reel and status_code in ("IN_PROGRESS", "FINISHED")):
+        op.attempts += 1
     op.started_at = now
     op.next_attempt_at = None
     audit.record(
@@ -1120,4 +1731,18 @@ def _conclude(
         is_simulated=op.is_simulated,
         clock=clock,
     )
-    return _prepared(item, op, account, asset, env.settings)
+    reconciled_status = (
+        ContainerStatus(cast(Any, status_code), error_detail=error_detail, media_id=media_id)
+        if is_reel and status_code is not None and op.provider_ref.get("container_id")
+        else None
+    )
+    return _prepared(
+        item,
+        op,
+        account,
+        assets,
+        env.settings,
+        recreations=int(item.content_type == "feed_carousel" and status_code == "EXPIRED"),
+        cover_storage_key=cover_storage_key,
+        reconciled_status=reconciled_status,
+    )

@@ -17,6 +17,7 @@ from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
+from app.core.reply_languages import REPLY_LANGUAGES
 from app.identity.permissions import has_permission
 from app.knowledge import impact
 from app.knowledge import repository as repo
@@ -131,14 +132,14 @@ def _clean_examples(examples: list[str], *, required: bool = True) -> list[str]:
     return cleaned
 
 
-def check_template(template: str, language: str) -> None:
+def check_template(template: str, language: str, *, max_bytes: int = MAX_TEMPLATE_BYTES) -> None:
     """No literal critical value may live in an approved answer (INV-02): prices, hours,
     contacts and links appear only as placeholders. Raises ``VALIDATION_FAILED`` listing the
     offending spans so that the owner can replace them."""
     if not template.strip():
         raise _error("answer_template", "required")
-    if len(template.encode("utf-8")) > MAX_TEMPLATE_BYTES:
-        raise _error("answer_template", "too_long", max_bytes=MAX_TEMPLATE_BYTES)
+    if len(template.encode("utf-8")) > max_bytes:
+        raise _error("answer_template", "too_long", max_bytes=max_bytes)
     scanned = PLACEHOLDER.sub(NEUTRAL, template)
     report = validate_claims(scanned, RenderResult(text=scanned), language)
     if not report.passed:
@@ -197,7 +198,7 @@ def create_answer(
     require(ctx, "knowledge.verify")
     if intent not in APPROVED_ANSWER_INTENTS:
         raise _error("intent", "invalid")
-    if language not in ("tr", "en"):
+    if language not in REPLY_LANGUAGES:
         raise _error("language", "invalid")
     title = title.strip()
     if not title or len(title) > 120:

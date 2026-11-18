@@ -27,7 +27,8 @@ def rerender(
     item = content.get_item(db, ctx, content_id)
     if item.version != expected_version:
         raise AppError("VERSION_CONFLICT", expected=expected_version, current=item.version)
-    old_id = item.media_asset_id
+    old_id = item.cover_media_asset_id if item.content_type == "reel" else item.media_asset_id
+    target_field = "cover_media_asset_id" if item.content_type == "reel" else "media_asset_id"
     record = link.records(db, ctx, [old_id]).get(old_id) if old_id else None
     if item.status not in transitions.EDITABLE_STATUSES or record is None:
         raise AppError("CONFLICT_STATE", entity="content_item", status=item.status)
@@ -44,7 +45,7 @@ def rerender(
         ctx,
         content_id,
         expected_version=expected_version,
-        fields={"media_asset_id": new_id},
+        fields={target_field: new_id},
         rerender_details={
             "old_asset_id": old_id,
             "new_asset_id": new_id,

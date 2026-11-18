@@ -68,11 +68,26 @@ export function ContentStatusPanel({ item }: { item: ContentItem }) {
       }
       break;
     case "publishing":
-      lines.push(
-        <p key="publishing" className="font-medium text-info">
-          {t("content.detail.publishing")}
-        </p>,
-      );
+      if (item.operation?.processing) {
+        lines.push(
+          <p key="processing" className="font-medium text-info">
+            {t("content.detail.processing")}
+          </p>,
+        );
+        if (item.operation.next_attempt_at) {
+          lines.push(
+            <p key="processing-next" className="text-secondary">
+              {t("content.detail.processingNext", { when: local(item.operation.next_attempt_at), zone })}
+            </p>,
+          );
+        }
+      } else {
+        lines.push(
+          <p key="publishing" className="font-medium text-info">
+            {t("content.detail.publishing")}
+          </p>,
+        );
+      }
       break;
     case "published": {
       const permalink = safeUrl(item.external_permalink);

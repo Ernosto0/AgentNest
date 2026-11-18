@@ -27,3 +27,8 @@ export function daysAgo(value: string, timeZone: string, now = new Date()): numb
   const today = Date.parse(dayKey(now, timeZone));
   return Math.round((today - then) / 86_400_000);
 }
+
+/** A moment in the workspace's time zone, for the end of a reply window. */
+export function formatWindowTime(iso: string, language: string, timezone: string): string {
+  return new Date(iso).toLocaleString(language, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
+}

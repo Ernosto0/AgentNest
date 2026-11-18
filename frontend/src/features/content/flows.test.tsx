@@ -353,6 +353,9 @@ describe("schedule sheet: every submit item code reaches the screen (G17)", () =
     PUBLISH_QUOTA_FORECAST_EXCEEDED: "Bu saatin çevresinde zaten çok fazla gönderi zamanlanmış.",
     STORY_ASPECT_NOT_9_16: "Görsel 9:16 değil (1000×1000).",
     OVERLAY_TOO_LONG: "Bu öneri uzun",
+    REEL_DURATION_OUT_OF_RANGE: "Reels videosu 3 saniye ile 15 dakika arasında olmalıdır.",
+    REEL_COVER_OFFSET_INVALID: "Seçilen kapak karesi konumu video süresinin dışında.",
+    REEL_COVER_TOO_LARGE: "Kapak görseli en fazla 8 MB olmalıdır.",
   };
   const WARNINGS = ["STORY_ASPECT_NOT_9_16", "OVERLAY_TOO_LONG"];
   const ERRORS = SUBMIT_ITEM_CODES.filter((code) => !WARNINGS.includes(code));
@@ -364,8 +367,8 @@ describe("schedule sheet: every submit item code reaches the screen (G17)", () =
     "PUBLISH_QUOTA_FORECAST_EXCEEDED",
   ]);
 
-  it("covers all fourteen error codes and both warnings", () => {
-    expect(ERRORS).toHaveLength(14);
+  it("covers all seventeen error codes and both warnings", () => {
+    expect(ERRORS).toHaveLength(17);
     expect(WARNINGS).toHaveLength(2);
   });
 
@@ -667,6 +670,7 @@ describe("failure detail", () => {
                 attempts: 2,
                 next_attempt_at: "2026-10-20T16:05:00Z",
                 last_error_code: "PROVIDER_UNAVAILABLE",
+                processing: false,
               },
             }),
           ),
@@ -688,7 +692,7 @@ describe("failure detail", () => {
           json(
             draftWithMedia({
               status: "publishing",
-              operation: { status: "outcome_unknown", attempts: 1, next_attempt_at: null, last_error_code: null },
+              operation: { status: "outcome_unknown", attempts: 1, next_attempt_at: null, last_error_code: null, processing: false },
             }),
           ),
         [`GET ${BASE}/media/${MEDIA_ID}/content`]: image,
@@ -974,7 +978,7 @@ describe("INV-18: every status on the detail page reads as the server state", ()
               external_permalink: status === "published" ? "https://instagram.example/sim/1" : null,
               operation:
                 status === "retry_scheduled"
-                  ? { status: "retry_wait", attempts: 1, next_attempt_at: "2026-10-21T16:05:00Z", last_error_code: "PROVIDER_UNAVAILABLE" }
+                  ? { status: "retry_wait", attempts: 1, next_attempt_at: "2026-10-21T16:05:00Z", last_error_code: "PROVIDER_UNAVAILABLE", processing: false }
                   : null,
             }),
           ),

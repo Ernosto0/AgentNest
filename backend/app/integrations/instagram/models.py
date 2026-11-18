@@ -37,6 +37,9 @@ FAILURE_OPERATIONS = (
     "lookup",
     "echo",
     "create_container",
+    "create_carousel_item",
+    "create_carousel_container",
+    "create_reel_container",
     "container_status",
     "publish",
     "refresh",
@@ -50,7 +53,7 @@ FAILURE_OPERATIONS = (
     "private_reply_lookup",
     "any",
 )
-CONTAINER_MEDIA_TYPES = ("IMAGE", "STORIES")
+CONTAINER_MEDIA_TYPES = ("IMAGE", "STORIES", "CAROUSEL", "REELS")
 CONTAINER_STATUSES = ("IN_PROGRESS", "FINISHED", "ERROR", "EXPIRED", "PUBLISHED")
 FAILURE_MODES = (
     "transient",
@@ -60,6 +63,8 @@ FAILURE_MODES = (
     "invalid_media",
     "timeout_after_success",
     "window_closed",
+    "slow_processing",
+    "processing_error",
 )
 
 
@@ -197,6 +202,8 @@ class SimSentMessage(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     message_id: Mapped[str] = mapped_column(Text, nullable=False)
     recipient_id: Mapped[str] = mapped_column(Text, nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    # The message tag the simulator received (evidence for the Human Agent path); usually None.
+    message_tag: Mapped[str | None] = mapped_column(Text)
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -214,6 +221,8 @@ class SimFailureRule(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, 
         CheckConstraint(_in("operation", FAILURE_OPERATIONS), name="operation"),
         CheckConstraint(_in("mode", FAILURE_MODES), name="mode"),
         CheckConstraint("remaining IS NULL OR remaining >= 0", name="remaining"),
+        CheckConstraint("skip_first >= 0", name="skip_first"),
+        CheckConstraint("delay_s IS NULL OR delay_s >= 0", name="delay_s"),
         Index("ix_sim_failure_rules_account", "social_account_id"),
     )
 
@@ -222,6 +231,9 @@ class SimFailureRule(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, 
     mode: Mapped[str] = mapped_column(Text, nullable=False)
     remaining: Mapped[int | None] = mapped_column(Integer)  # NULL = every matching call
     retry_after_s: Mapped[int | None] = mapped_column(Integer)
+    skip_first: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    delay_s: Mapped[int | None] = mapped_column(Integer)
+    error_subcode: Mapped[int | None] = mapped_column(Integer)
 
 
 class SimContainer(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):
@@ -246,9 +258,17 @@ class SimContainer(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Ba
     social_account_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     container_id: Mapped[str] = mapped_column(Text, nullable=False)
     media_type: Mapped[str] = mapped_column(Text, nullable=False)
-    media_url: Mapped[str] = mapped_column(Text, nullable=False)
+    media_url: Mapped[str | None] = mapped_column(Text)
+    is_carousel_item: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
+    children: Mapped[list[str] | None] = mapped_column(JSONB)
+    cover_url: Mapped[str | None] = mapped_column(Text)
+    thumb_offset_ms: Mapped[int | None] = mapped_column(Integer)
+    share_to_feed: Mapped[bool | None] = mapped_column(Boolean)
     caption: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="IN_PROGRESS")
+    error_subcode: Mapped[int | None] = mapped_column(Integer)
     ready_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     published_media_id: Mapped[str | None] = mapped_column(Text)

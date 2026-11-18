@@ -7,7 +7,7 @@ suffixes are covered ("iade", "iadesi", "iade etmek") without matching inside ot
 
 import re
 
-from app.knowledge.claims import fold
+from app.knowledge.claims import fold, strip_directional_marks
 from app.knowledge.parsing import tr_casefold
 
 # flag -> regex over folded text
@@ -27,7 +27,10 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
         r"|legal action|\bsue\b|\bcourt\b"
     ),
     "health_safety": re.compile(
-        r"sakatlan|yaralan|\bkaza\b|ambulans|hastane|\binjur|\baccident|\bhospital|emergency|\bacil\b"
+        (
+            r"sakatlan|yaralan|\bkaza\b|ambulans|hastane|\binjur|\baccident|\bhospital"
+            r"|emergency|\bacil\b"
+        ),
     ),
     "abusive": re.compile(
         r"\baptal|\bsalak|\bgerizekali|\bkufur|\bidiot|\bstupid|shut up|\bfuck|\bbitch"
@@ -39,9 +42,39 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
 }
 
 
+# Unicode word starts after the shared length-preserving fold.
+_REPLY_PATTERNS = {
+    "complaint": (
+        r"beschwerde|beschweren|schlechter service|жалоб|плохой сервис"
+        r"|недоволен|شكوي|شكوى|خدمة سيئة|غير راض"
+    ),
+    "refund": (
+        r"erstattung|ruckerstattung|geld zuruck|возврат|верните деньги"
+        r"|вернуть деньги|استرداد|اريد اموالي|اعادة المال"
+    ),
+    "discount": r"rabatt|ermasigung|скидк|дешевле|خصم|تخفيض",
+    "legal": r"anwalt|klage|verklag|юрист|адвокат|суд|محامي|دعوي|دعوى|مقاضاة",
+    "health_safety": (
+        r"unfall|krankenhaus|notfall|травм|больниц|скорая|حادث|مستشفي|(?:بال|ال)?طوارئ"
+    ),
+    "abusive": r"arschloch|scheis|dummkopf|идиот|дурак|заткнись|احمق|غبي|اخرس",
+    "personal_data": (
+        r"kreditkarte|reisepass|kartennummer|кредитн|паспорт"
+        r"|номер карты|بطاقة ائتمان|جواز سفر|رقم البطاقة"
+    ),
+}
+# Arabic attaches particles to the next word ("بمحامي" = with a lawyer, "للاسترداد" = for a
+# refund): one conjunction/preposition letter and the article may precede a keyword.
+_AR_PROCLITICS = r"(?:[وفبلك]?(?:ال)?|لل)"
+for _flag, _pattern in _REPLY_PATTERNS.items():
+    _PATTERNS[_flag] = re.compile(
+        _PATTERNS[_flag].pattern + r"|(?<![^\W\d_])" + _AR_PROCLITICS + "(?:" + _pattern + ")"
+    )
+
+
 def keyword_flags(text: str) -> set[str]:
     """The flags the customer's words raise on their own."""
-    folded = fold(text)
+    folded = fold(strip_directional_marks(text))
     return {flag for flag, pattern in _PATTERNS.items() if pattern.search(folded)}
 
 

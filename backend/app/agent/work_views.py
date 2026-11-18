@@ -360,7 +360,9 @@ def task_selections(
         raise AppError("NOT_FOUND") from exc
     if kind == "media":
         media_query = select(MediaAsset).where(
-            MediaAsset.workspace_id == ctx.workspace_id, MediaAsset.status == "ready"
+            MediaAsset.workspace_id == ctx.workspace_id,
+            MediaAsset.status == "ready",
+            MediaAsset.kind == "image",
         )
         if cursor:
             if db.scalar(media_query.where(MediaAsset.id == cursor)) is None:

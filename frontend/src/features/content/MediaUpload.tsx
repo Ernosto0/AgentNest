@@ -8,9 +8,30 @@ import { useMediaPreview, useUploadMedia } from "./hooks";
 import { checkMessage } from "./messages";
 
 const MB = 1024 * 1024;
+const VIDEO_REASONS = new Set([
+  "NOT_A_VIDEO",
+  "UNSUPPORTED_CONTAINER",
+  "CORRUPT_VIDEO",
+  "NO_VIDEO_STREAM",
+  "MULTIPLE_VIDEO_STREAMS",
+  "UNSUPPORTED_VIDEO_CODEC",
+  "UNSUPPORTED_AUDIO_CODEC",
+  "UNSUPPORTED_AUDIO_SAMPLE_RATE",
+  "UNSUPPORTED_AUDIO_CHANNELS",
+  "UNSUPPORTED_PIXEL_FORMAT",
+  "INTERLACED",
+  "DURATION_UNKNOWN",
+  "DURATION_TOO_SHORT",
+  "DURATION_TOO_LONG",
+  "FRAME_RATE_OUT_OF_RANGE",
+  "WIDTH_TOO_LARGE",
+  "RESOLUTION_TOO_LOW",
+  "ASPECT_RATIO_OUT_OF_RANGE",
+  "BITRATE_TOO_HIGH",
+]);
 
 /** Upload failures with a precise cause get their own sentence; anything else the shared catalog. */
-function UploadError({ error }: { error: unknown }) {
+export function UploadError({ error }: { error: unknown }) {
   const { t } = useTranslation();
   if (error instanceof AppError) {
     if (error.code === "MEDIA_TOO_LARGE" && typeof error.params.limit_bytes === "number") {
@@ -27,6 +48,14 @@ function UploadError({ error }: { error: unknown }) {
         <p role="alert" className="rounded-control border border-danger bg-danger-subtle p-3 text-sm text-danger shadow-xs">
           {t(`content.media.reason.${reason}`)}
         </p>
+      );
+    }
+    if (error.code === "MEDIA_INVALID" && reason && VIDEO_REASONS.has(reason)) {
+      return (
+        <div role="alert" className="rounded-control border border-danger bg-danger-subtle p-3 text-sm text-danger shadow-xs">
+          <p className="font-medium">{t(`content.media.videoReason.${reason}.what`)}</p>
+          <p className="mt-0.5 text-xs">{t(`content.media.videoReason.${reason}.next`)}</p>
+        </div>
       );
     }
   }

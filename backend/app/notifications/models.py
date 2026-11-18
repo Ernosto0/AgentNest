@@ -59,7 +59,7 @@ class Notification(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Ba
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
-DELIVERY_CHANNELS = ("web", "telegram", "web_push")
+DELIVERY_CHANNELS = ("web", "telegram", "web_push", "whatsapp")
 DELIVERY_STATUSES = ("pending", "delivered", "failed", "skipped_quiet_hours")
 
 
@@ -79,6 +79,11 @@ class NotificationDelivery(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedM
         Index("ix_notification_deliveries_recipient", "workspace_id", "recipient_user_id"),
         Index("ix_notification_deliveries_status", "status"),
         Index("ix_notification_deliveries_pending", "status", "created_at"),
+        Index(
+            "ix_notification_deliveries_wamid",
+            "workspace_id",
+            text("(delivery_metadata->>'wamid')"),
+        ),
     )
 
     notification_id: Mapped[uuid.UUID] = mapped_column(
@@ -95,6 +100,11 @@ class NotificationDelivery(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedM
     attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     last_error: Mapped[str | None] = mapped_column(Text)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Channel facts about the attempt (WhatsApp: template or session, category, cost notes, the
+    # provider message id and the provider's later status and pricing). Never message text.
+    delivery_metadata: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, server_default="{}"
+    )
 
 
 class PushSubscription(UUIDPrimaryKeyMixin, TimestampMixin, WorkspaceScopedMixin, Base):

@@ -66,7 +66,18 @@ _ONE_DAY = timedelta(days=1)
 # A download (twice its timeout at most) and one provider call, with room to spare.
 TRANSCRIBE_TIMEOUT_SECONDS = 180
 
-_PROVIDER_LANGUAGES = {"tr": "tr", "turkish": "tr", "en": "en", "english": "en"}
+_PROVIDER_LANGUAGES = {
+    "tr": "tr",
+    "turkish": "tr",
+    "en": "en",
+    "english": "en",
+    "ru": "ru",
+    "russian": "ru",
+    "de": "de",
+    "german": "de",
+    "ar": "ar",
+    "arabic": "ar",
+}
 
 
 def first_audio_attachment(
@@ -80,7 +91,7 @@ def first_audio_attachment(
 
 
 def _language(text: str, provider_language: str | None) -> str | None:
-    """``tr`` | ``en`` | ``other`` | ``None``. The text wins; the provider's guess is the
+    """A reply language, ``other`` or ``None``. The text wins; the provider's guess is the
     fallback when the text gives no evidence."""
     detected = detect_language(text)
     if detected is not None:

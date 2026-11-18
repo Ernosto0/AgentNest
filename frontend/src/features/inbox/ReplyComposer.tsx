@@ -66,6 +66,7 @@ export function ReplyComposer({
       <div className="flex flex-col rounded-xl border border-control/50 bg-surface transition-colors focus-within:border-action focus-within:ring-2 focus-within:ring-action/15 has-[textarea:disabled]:opacity-60">
         <textarea
           id="reply-text"
+          dir="auto"
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={handleKeyDown}

@@ -20,7 +20,13 @@ http://127.0.0.1:8080 {
 {$APP_DOMAIN::80} {
 	{$CADDY_TLS_CONFIG:}
 
-	request_body {
+	# Keep this envelope in sync with MEDIA_MAX_VIDEO_BYTES (300 MB plus multipart overhead).
+	@video_upload path_regexp ^/api/v1/workspaces/[^/]+/media/video$
+	request_body @video_upload {
+		max_size 310MB
+	}
+	@other_uploads not path_regexp ^/api/v1/workspaces/[^/]+/media/video$
+	request_body @other_uploads {
 		max_size 10MB
 	}
 

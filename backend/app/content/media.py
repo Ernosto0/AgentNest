@@ -22,7 +22,7 @@ import re
 import uuid
 import warnings
 from dataclasses import dataclass
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Literal
 
 from PIL import Image, ImageCms, ImageOps, UnidentifiedImageError
 from sqlalchemy import select
@@ -288,7 +288,9 @@ def validate_bytes(
     return processed
 
 
-def get_asset(db: Session, ctx: WorkspaceContext, media_id: uuid.UUID) -> MediaAsset:
+def get_asset(
+    db: Session, ctx: WorkspaceContext, media_id: uuid.UUID, *, kind: str | None = "image"
+) -> MediaAsset:
     """A ready asset of this workspace; anything else (foreign, deleted) is a 404 (INV-01)."""
     asset = db.scalar(
         select(MediaAsset).where(
@@ -299,4 +301,46 @@ def get_asset(db: Session, ctx: WorkspaceContext, media_id: uuid.UUID) -> MediaA
     )
     if asset is None:
         raise AppError("NOT_FOUND")
+    if kind is not None and asset.kind != kind:
+        raise AppError("MEDIA_KIND_INVALID", expected=kind, actual=asset.kind)
     return asset
+
+
+_RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$", re.IGNORECASE)
+
+
+def parse_byte_range(
+    header: str | None, total: int
+) -> tuple[int, int] | Literal["full", "unsatisfiable"]:
+    """Parse a single HTTP ``Range`` header for a representation of ``total`` bytes.
+
+    Multi-range or syntactically invalid headers fall back to ``"full"`` (RFC 9110 §14.2);
+    syntactically valid ranges that do not overlap ``0..total-1`` return ``"unsatisfiable"``.
+    """
+    if header is None:
+        return "full"
+    cleaned = header.strip()
+    if not cleaned or "," in cleaned:
+        return "full"
+    match = _RANGE_RE.fullmatch(cleaned)
+    if match is None:
+        return "full"
+    start_s, end_s = match.groups()
+    if not start_s and not end_s:
+        return "full"
+    if not start_s:
+        suffix = int(end_s)
+        if suffix <= 0 or total <= 0:
+            return "unsatisfiable"
+        return (max(0, total - suffix), total - 1)
+    start = int(start_s)
+    if not end_s:
+        if start >= total:
+            return "unsatisfiable"
+        return (start, total - 1)
+    end = int(end_s)
+    if start > end:
+        return "full"
+    if start >= total:
+        return "unsatisfiable"
+    return (start, min(end, total - 1))

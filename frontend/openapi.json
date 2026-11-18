@@ -1087,7 +1087,10 @@
           "language": {
             "enum": [
               "tr",
-              "en"
+              "en",
+              "ru",
+              "de",
+              "ar"
             ],
             "title": "Language",
             "type": "string"
@@ -2381,6 +2384,19 @@
         "title": "ChangedOut",
         "type": "object"
       },
+      "ChannelAvailabilityOut": {
+        "properties": {
+          "whatsapp": {
+            "title": "Whatsapp",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "whatsapp"
+        ],
+        "title": "ChannelAvailabilityOut",
+        "type": "object"
+      },
       "ChannelLinkCodeOut": {
         "properties": {
           "bot_username": {
@@ -2393,6 +2409,15 @@
               }
             ],
             "title": "Bot Username"
+          },
+          "channel": {
+            "default": "telegram",
+            "enum": [
+              "telegram",
+              "whatsapp"
+            ],
+            "title": "Channel",
+            "type": "string"
           },
           "code": {
             "title": "Code",
@@ -2413,6 +2438,17 @@
             "format": "date-time",
             "title": "Expires At",
             "type": "string"
+          },
+          "whatsapp_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp Number"
           }
         },
         "required": [
@@ -2426,8 +2462,11 @@
         "additionalProperties": false,
         "properties": {
           "channel": {
-            "const": "telegram",
             "default": "telegram",
+            "enum": [
+              "telegram",
+              "whatsapp"
+            ],
             "title": "Channel",
             "type": "string"
           }
@@ -3109,7 +3148,7 @@
         "type": "object"
       },
       "ContentCheckItemOut": {
-        "description": "One submit rule that was broken (``errors``) or only worth a look (``warnings``)\n(plan.md G17). ``field`` names what it is about (``caption``, ``media_asset_id``,\n``schedule``, ``scheduled_at``, ``social_account_id``, ``overlay_text_suggestions.{i}``);\n``null`` for the claim check, whose ``params.issues`` lists the claim issues.",
+        "description": "One submit rule that was broken (``errors``) or only worth a look (``warnings``)\n(plan.md G17). ``field`` names what it is about (``caption``, ``media_asset_id``,\n``media_asset_ids``, ``media_asset_ids.{index}``, ``schedule``, ``scheduled_at``,\n``social_account_id``, ``overlay_text_suggestions.{i}``);\n``null`` for the claim check, whose ``params.issues`` lists the claim issues.",
         "properties": {
           "code": {
             "title": "Code",
@@ -3179,10 +3218,24 @@
           "content_type": {
             "enum": [
               "feed_image",
-              "story_image"
+              "story_image",
+              "feed_carousel",
+              "reel"
             ],
             "title": "Content Type",
             "type": "string"
+          },
+          "cover_media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Media Asset Id"
           },
           "media_asset_id": {
             "anyOf": [
@@ -3196,6 +3249,22 @@
             ],
             "title": "Media Asset Id"
           },
+          "media_asset_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Asset Ids"
+          },
           "overlay_text_suggestions": {
             "items": {
               "maxLength": 500,
@@ -3204,6 +3273,29 @@
             "maxItems": 10,
             "title": "Overlay Text Suggestions",
             "type": "array"
+          },
+          "share_to_feed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share To Feed"
+          },
+          "thumb_offset_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumb Offset Ms"
           },
           "title": {
             "maxLength": 200,
@@ -3359,10 +3451,29 @@
           "content_type": {
             "enum": [
               "feed_image",
-              "story_image"
+              "story_image",
+              "feed_carousel",
+              "reel"
             ],
             "title": "Content Type",
             "type": "string"
+          },
+          "cover_media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Media Asset Id"
+          },
+          "cover_media_deleted": {
+            "default": false,
+            "title": "Cover Media Deleted",
+            "type": "boolean"
           },
           "created_at": {
             "format": "date-time",
@@ -3453,6 +3564,13 @@
             "title": "Media Deleted",
             "type": "boolean"
           },
+          "media_items": {
+            "items": {
+              "$ref": "#/components/schemas/ContentMediaItemOut"
+            },
+            "title": "Media Items",
+            "type": "array"
+          },
           "objective": {
             "anyOf": [
               {
@@ -3526,6 +3644,17 @@
             ],
             "title": "Scheduled At"
           },
+          "share_to_feed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share To Feed"
+          },
           "social_account_id": {
             "anyOf": [
               {
@@ -3564,6 +3693,17 @@
               }
             ]
           },
+          "thumb_offset_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumb Offset Ms"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -3579,6 +3719,17 @@
           "version": {
             "title": "Version",
             "type": "integer"
+          },
+          "video_duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Duration Ms"
           },
           "visual_notes": {
             "anyOf": [
@@ -3627,6 +3778,40 @@
         "title": "ContentItemOut",
         "type": "object"
       },
+      "ContentMediaItemOut": {
+        "properties": {
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "media_asset_id": {
+            "format": "uuid",
+            "title": "Media Asset Id",
+            "type": "string"
+          },
+          "media_deleted": {
+            "title": "Media Deleted",
+            "type": "boolean"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "media_asset_id",
+          "position",
+          "width",
+          "height",
+          "media_deleted"
+        ],
+        "title": "ContentMediaItemOut",
+        "type": "object"
+      },
       "ContentOperationOut": {
         "properties": {
           "attempts": {
@@ -3655,6 +3840,11 @@
               }
             ],
             "title": "Next Attempt At"
+          },
+          "processing": {
+            "default": false,
+            "title": "Processing",
+            "type": "boolean"
           },
           "status": {
             "title": "Status",
@@ -3685,6 +3875,18 @@
             ],
             "title": "Caption"
           },
+          "cover_media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Media Asset Id"
+          },
           "expected_version": {
             "minimum": 1.0,
             "title": "Expected Version",
@@ -3702,6 +3904,22 @@
             ],
             "title": "Media Asset Id"
           },
+          "media_asset_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Asset Ids"
+          },
           "overlay_text_suggestions": {
             "anyOf": [
               {
@@ -3717,6 +3935,29 @@
               }
             ],
             "title": "Overlay Text Suggestions"
+          },
+          "share_to_feed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share To Feed"
+          },
+          "thumb_offset_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumb Offset Ms"
           },
           "title": {
             "anyOf": [
@@ -4117,6 +4358,18 @@
             "title": "Handling Mode",
             "type": "string"
           },
+          "human_agent_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Agent Until"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -4172,6 +4425,16 @@
               }
             ],
             "title": "Window Ends At"
+          },
+          "window_state": {
+            "default": "closed",
+            "enum": [
+              "open",
+              "human_agent_only",
+              "closed"
+            ],
+            "title": "Window State",
+            "type": "string"
           }
         },
         "required": [
@@ -4500,11 +4763,30 @@
       },
       "DisclosureText": {
         "additionalProperties": false,
+        "description": "The notice appended to automatic replies, per reply language. Empty: the built-in text.",
         "properties": {
+          "ar": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Ar",
+            "type": "string"
+          },
+          "de": {
+            "default": "",
+            "maxLength": 500,
+            "title": "De",
+            "type": "string"
+          },
           "en": {
             "default": "",
             "maxLength": 500,
             "title": "En",
+            "type": "string"
+          },
+          "ru": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Ru",
             "type": "string"
           },
           "tr": {
@@ -5355,6 +5637,31 @@
       "FailureRuleIn": {
         "additionalProperties": false,
         "properties": {
+          "delay_s": {
+            "anyOf": [
+              {
+                "maximum": 3600.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay S"
+          },
+          "error_subcode": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Subcode"
+          },
           "mode": {
             "enum": [
               "transient",
@@ -5363,7 +5670,9 @@
               "permission_missing",
               "invalid_media",
               "timeout_after_success",
-              "window_closed"
+              "window_closed",
+              "slow_processing",
+              "processing_error"
             ],
             "title": "Mode",
             "type": "string"
@@ -5374,6 +5683,9 @@
               "lookup",
               "echo",
               "create_container",
+              "create_carousel_item",
+              "create_carousel_container",
+              "create_reel_container",
               "container_status",
               "publish",
               "refresh",
@@ -5416,6 +5728,12 @@
               }
             ],
             "title": "Retry After S"
+          },
+          "skip_first": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Skip First",
+            "type": "integer"
           }
         },
         "required": [
@@ -5427,6 +5745,28 @@
       },
       "FailureRuleOut": {
         "properties": {
+          "delay_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay S"
+          },
+          "error_subcode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Subcode"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -5461,6 +5801,10 @@
               }
             ],
             "title": "Retry After S"
+          },
+          "skip_first": {
+            "title": "Skip First",
+            "type": "integer"
           }
         },
         "required": [
@@ -5468,9 +5812,93 @@
           "operation",
           "mode",
           "remaining",
-          "retry_after_s"
+          "retry_after_s",
+          "skip_first"
         ],
         "title": "FailureRuleOut",
+        "type": "object"
+      },
+      "FollowUpSettingsIn": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "hours": {
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Hours",
+            "type": "integer"
+          },
+          "text": {
+            "$ref": "#/components/schemas/FollowUpText"
+          }
+        },
+        "required": [
+          "enabled",
+          "hours",
+          "text"
+        ],
+        "title": "FollowUpSettingsIn",
+        "type": "object"
+      },
+      "FollowUpSettingsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "default_text": {
+            "$ref": "#/components/schemas/FollowUpText"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "hours": {
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Hours",
+            "type": "integer"
+          },
+          "max_hours": {
+            "default": 20,
+            "title": "Max Hours",
+            "type": "integer"
+          },
+          "min_hours": {
+            "default": 1,
+            "title": "Min Hours",
+            "type": "integer"
+          },
+          "text": {
+            "$ref": "#/components/schemas/FollowUpText"
+          }
+        },
+        "required": [
+          "enabled",
+          "hours",
+          "text",
+          "default_text"
+        ],
+        "title": "FollowUpSettingsOut",
+        "type": "object"
+      },
+      "FollowUpText": {
+        "additionalProperties": false,
+        "properties": {
+          "en": {
+            "default": "",
+            "maxLength": 400,
+            "title": "En",
+            "type": "string"
+          },
+          "tr": {
+            "default": "",
+            "maxLength": 400,
+            "title": "Tr",
+            "type": "string"
+          }
+        },
+        "title": "FollowUpText",
         "type": "object"
       },
       "GenerateReportRequest": {
@@ -6304,6 +6732,147 @@
         "title": "LabelIn",
         "type": "object"
       },
+      "LeadExportRequest": {
+        "properties": {
+          "from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From"
+          },
+          "to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To"
+          }
+        },
+        "title": "LeadExportRequest",
+        "type": "object"
+      },
+      "LeadListOut": {
+        "properties": {
+          "has_simulated_data": {
+            "const": false,
+            "default": false,
+            "title": "Has Simulated Data",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LeadOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "period_from": {
+            "format": "date",
+            "title": "Period From",
+            "type": "string"
+          },
+          "period_to": {
+            "format": "date",
+            "title": "Period To",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "period_from",
+          "period_to",
+          "timezone",
+          "total",
+          "limit",
+          "offset",
+          "items"
+        ],
+        "title": "LeadListOut",
+        "type": "object"
+      },
+      "LeadOut": {
+        "properties": {
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "customer_handle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Handle"
+          },
+          "intent": {
+            "enum": [
+              "pricing",
+              "booking"
+            ],
+            "title": "Intent",
+            "type": "string"
+          },
+          "last_question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Question"
+          },
+          "last_question_at": {
+            "format": "date-time",
+            "title": "Last Question At",
+            "type": "string"
+          },
+          "link": {
+            "$ref": "#/components/schemas/ReportLinkOut"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "customer_handle",
+          "last_question",
+          "last_question_at",
+          "intent",
+          "link"
+        ],
+        "title": "LeadOut",
+        "type": "object"
+      },
       "LearnedFact": {
         "properties": {
           "category": {
@@ -6603,14 +7172,73 @@
       },
       "MediaAssetOut": {
         "properties": {
+          "audio_codec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Codec"
+          },
+          "bitrate_bps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bitrate Bps"
+          },
           "byte_size": {
             "title": "Byte Size",
             "type": "integer"
+          },
+          "container": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mp4",
+                  "mov"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Container"
           },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "frame_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Rate"
           },
           "height": {
             "title": "Height",
@@ -6619,6 +7247,16 @@
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "default": "image",
+            "enum": [
+              "image",
+              "video",
+              "video_thumbnail"
+            ],
+            "title": "Kind",
             "type": "string"
           },
           "mime_type": {
@@ -6650,6 +7288,43 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "thumbnail_media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Media Asset Id"
+          },
+          "video_codec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Codec"
+          },
+          "video_warnings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Warnings"
           },
           "width": {
             "title": "Width",
@@ -9365,6 +10040,18 @@
             ],
             "title": "Language"
           },
+          "message_tag": {
+            "anyOf": [
+              {
+                "const": "HUMAN_AGENT",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Tag"
+          },
           "rendered_facts": {
             "items": {
               "$ref": "#/components/schemas/RenderedFactOut"
@@ -10712,14 +11399,73 @@
       },
       "TemplateImageOut": {
         "properties": {
+          "audio_codec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Codec"
+          },
+          "bitrate_bps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bitrate Bps"
+          },
           "byte_size": {
             "title": "Byte Size",
             "type": "integer"
+          },
+          "container": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mp4",
+                  "mov"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Container"
           },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "frame_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Rate"
           },
           "height": {
             "title": "Height",
@@ -10728,6 +11474,16 @@
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "default": "image",
+            "enum": [
+              "image",
+              "video",
+              "video_thumbnail"
+            ],
+            "title": "Kind",
             "type": "string"
           },
           "mime_type": {
@@ -10762,6 +11518,43 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "thumbnail_media_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Media Asset Id"
+          },
+          "video_codec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Codec"
+          },
+          "video_warnings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Warnings"
           },
           "width": {
             "title": "Width",
@@ -12066,7 +12859,10 @@
             "items": {
               "enum": [
                 "tr",
-                "en"
+                "en",
+                "ru",
+                "de",
+                "ar"
               ],
               "type": "string"
             },
@@ -12198,7 +12994,10 @@
                 "items": {
                   "enum": [
                     "tr",
-                    "en"
+                    "en",
+                    "ru",
+                    "de",
+                    "ar"
                   ],
                   "type": "string"
                 },
@@ -12268,6 +13067,21 @@
           },
           "disclosure_text": {
             "$ref": "#/components/schemas/DisclosureText"
+          },
+          "follow_up_enabled": {
+            "default": false,
+            "title": "Follow Up Enabled",
+            "type": "boolean"
+          },
+          "follow_up_hours": {
+            "default": 6,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Follow Up Hours",
+            "type": "integer"
+          },
+          "follow_up_text": {
+            "$ref": "#/components/schemas/FollowUpText"
           },
           "publish_max_delay_minutes": {
             "default": 1440,
@@ -13562,6 +14376,42 @@
           }
         },
         "summary": "Telegram Webhook",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/whatsapp": {
+      "get": {
+        "operationId": "whatsapp_handshake_api_v1_webhooks_whatsapp_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Whatsapp Handshake",
+        "tags": [
+          "webhooks"
+        ]
+      },
+      "post": {
+        "operationId": "whatsapp_webhook_api_v1_webhooks_whatsapp_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Whatsapp Webhook",
         "tags": [
           "webhooks"
         ]
@@ -18256,6 +19106,50 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/channels/availability": {
+      "get": {
+        "description": "Which optional owner channels this server has credentials for (no secrets, no numbers).",
+        "operationId": "get_channel_availability_api_v1_workspaces__workspace_id__channels_availability_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelAvailabilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Channel Availability",
+        "tags": [
+          "channels"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/channels/link-code": {
       "post": {
         "description": "Generate a one-time link code for owner channel linking.",
@@ -20952,6 +21846,100 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/follow-up-settings": {
+      "get": {
+        "operationId": "get_follow_up_settings_api_v1_workspaces__workspace_id__follow_up_settings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Follow Up Settings",
+        "tags": [
+          "inbox"
+        ]
+      },
+      "put": {
+        "operationId": "put_follow_up_settings_api_v1_workspaces__workspace_id__follow_up_settings_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpSettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowUpSettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Follow Up Settings",
+        "tags": [
+          "inbox"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/home/attention": {
       "get": {
         "operationId": "get_home_attention_api_v1_workspaces__workspace_id__home_attention_get",
@@ -21392,6 +22380,155 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/leads": {
+      "get": {
+        "operationId": "get_leads_api_v1_workspaces__workspace_id__leads_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Leads",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/leads/export": {
+      "post": {
+        "operationId": "export_leads_api_v1_workspaces__workspace_id__leads_export_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Leads",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/learning/month": {
       "get": {
         "operationId": "monthly_learning_api_v1_workspaces__workspace_id__learning_month_get",
@@ -21488,9 +22625,124 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/media/video": {
+      "post": {
+        "operationId": "upload_video_api_v1_workspaces__workspace_id__media_video_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAssetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Video",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/media/{media_id}": {
+      "get": {
+        "operationId": "media_metadata_api_v1_workspaces__workspace_id__media__media_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "media_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Media Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAssetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Media Metadata",
+        "tags": [
+          "content"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/media/{media_id}/content": {
       "get": {
-        "description": "The stored JPEG, for authenticated members only. Never a bucket URL (ADR-015).",
+        "description": "Stored media for authenticated members only. Never a bucket URL (ADR-015).",
         "operationId": "media_content_api_v1_workspaces__workspace_id__media__media_id__content_get",
         "parameters": [
           {
@@ -23526,6 +24778,42 @@
           }
         },
         "summary": "Telegram Webhook",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/webhooks/whatsapp": {
+      "get": {
+        "operationId": "whatsapp_handshake_webhooks_whatsapp_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Whatsapp Handshake",
+        "tags": [
+          "webhooks"
+        ]
+      },
+      "post": {
+        "operationId": "whatsapp_webhook_webhooks_whatsapp_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Whatsapp Webhook",
         "tags": [
           "webhooks"
         ]

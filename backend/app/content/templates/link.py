@@ -7,7 +7,8 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.content.models import MediaAsset
+from app.content.carousel import ordered_asset_ids
+from app.content.models import ContentItem, MediaAsset
 from app.content.templates.spec import RenderRecord
 from app.core.context import WorkspaceContext
 from app.knowledge.models import BusinessFact
@@ -23,6 +24,7 @@ def records(
         select(MediaAsset.id, MediaAsset.render_record).where(
             MediaAsset.workspace_id == ctx.workspace_id,
             MediaAsset.id.in_(ids),
+            MediaAsset.kind == "image",
             MediaAsset.render_record.is_not(None),
         )
     )
@@ -81,3 +83,24 @@ def states(
             ),
         }
     return result
+
+
+def item_media_asset_ids(
+    session: Session, ctx: WorkspaceContext, item: ContentItem
+) -> list[uuid.UUID]:
+    """Image assets associated with ``item`` that may hold template render evidence."""
+    if item.content_type == "reel":
+        return [item.cover_media_asset_id] if item.cover_media_asset_id else []
+    return ordered_asset_ids(session, ctx, item)
+
+
+def item_render_references(
+    session: Session, ctx: WorkspaceContext, item: ContentItem
+) -> tuple[tuple[uuid.UUID, int], ...]:
+    return tuple(
+        dict.fromkeys(
+            ref
+            for record in records(session, ctx, item_media_asset_ids(session, ctx, item)).values()
+            for ref in record.fact_references()
+        )
+    )

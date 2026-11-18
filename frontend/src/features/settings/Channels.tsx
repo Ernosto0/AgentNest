@@ -7,6 +7,7 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { CheckIcon } from "@/components/icons";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import {
+  useChannelAvailability,
   useChannelLinks,
   useGenerateChannelLinkCode,
   useLocalTime,
@@ -41,9 +42,10 @@ function LinkCodeModal({
   const seconds = secondsLeft % 60;
   const timeFormatted = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
+  const isWhatsApp = codeData.channel === "whatsapp";
   const botName = codeData.bot_username?.replace(/^@/, "") || "AgentNestBot";
   const deepLink =
-    codeData.deep_link_url || `https://t.me/${botName}?start=${codeData.code}`;
+    codeData.deep_link_url || (isWhatsApp ? undefined : `https://t.me/${botName}?start=${codeData.code}`);
 
   const handleCopy = async () => {
     try {
@@ -57,22 +59,22 @@ function LinkCodeModal({
 
   return (
     <BottomSheet
-      title={t("channels.modalTitle")}
-      description={t("channels.modalDesc")}
+      title={t(isWhatsApp ? "channels.whatsappModalTitle" : "channels.modalTitle")}
+      description={t(isWhatsApp ? "channels.whatsappModalDesc" : "channels.modalDesc")}
       onClose={onClose}
       footer={
         <div className="flex w-full flex-wrap justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>
             {t("channels.close")}
           </Button>
-          {!isExpired ? (
+          {!isExpired && deepLink ? (
             <a
               href={deepLink}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center justify-center rounded-control bg-action px-4 py-2 text-sm font-medium text-on-action transition-colors hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-focus"
             >
-              {t("channels.openInTelegram")}
+              {t(isWhatsApp ? "channels.openInWhatsApp" : "channels.openInTelegram")}
             </a>
           ) : null}
         </div>
@@ -127,10 +129,10 @@ function LinkCodeModal({
         {/* Step-by-step instructions */}
         <div className="flex flex-col gap-2 rounded-panel border border-border bg-surface p-4 text-sm text-secondary">
           <p className="font-medium text-primary">
-            {t("channels.step1", { bot: botName })}
+            {t(isWhatsApp ? "channels.whatsappStep1" : "channels.step1", { bot: botName, number: codeData.whatsapp_number })}
           </p>
           <p className="font-medium text-primary">
-            {t("channels.step2", { code: codeData.code })}
+            {t(isWhatsApp ? "channels.whatsappStep2" : "channels.step2", { code: codeData.code })}
           </p>
         </div>
       </div>
@@ -142,25 +144,30 @@ export function Channels() {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const links = useChannelLinks(workspace.id);
+  const availability = useChannelAvailability(workspace.id);
   const generateCode = useGenerateChannelLinkCode(workspace.id);
   const unlink = useUnlinkChannel(workspace.id);
 
+  const [selectedChannel, setSelectedChannel] = useState<"telegram" | "whatsapp">("telegram");
   const [codeData, setCodeData] = useState<ChannelLinkCode | null>(null);
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
 
   const activeLink =
-    links.data?.find((l) => l.channel === "telegram" && l.status === "active") ??
+    links.data?.find((l) => l.channel === selectedChannel && l.status === "active") ??
     null;
+  const telegramLink = links.data?.find((l) => l.channel === "telegram" && l.status === "active");
+  const whatsappLink = links.data?.find((l) => l.channel === "whatsapp" && l.status === "active");
   const formatTime = useLocalTime();
 
   const handleOpenConnect = () => {
-    generateCode.mutate(undefined, {
+    setSelectedChannel("telegram");
+    generateCode.mutate({ channel: "telegram" }, {
       onSuccess: (data) => setCodeData(data),
     });
   };
 
   const handleRegenerate = () => {
-    generateCode.mutate(undefined, {
+    generateCode.mutate({ channel: selectedChannel }, {
       onSuccess: (data) => setCodeData(data),
     });
   };
@@ -182,15 +189,15 @@ export function Channels() {
             </h2>
             <span
               data-testid="channel-status-badge"
-              data-status={activeLink ? "connected" : "unlinked"}
+              data-status={telegramLink ? "connected" : "unlinked"}
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
-                activeLink
+                telegramLink
                   ? "border-border bg-success-subtle text-success"
                   : "border-border bg-surface-subtle text-secondary"
               }`}
             >
-              {activeLink ? <CheckIcon className="text-sm" /> : null}
-              {activeLink ? t("channels.connected") : t("channels.unlinked")}
+              {telegramLink ? <CheckIcon className="text-sm" /> : null}
+              {telegramLink ? t("channels.connected") : t("channels.unlinked")}
             </span>
           </div>
           <p className="mt-1 text-sm text-secondary">{t("channels.intro")}</p>
@@ -203,14 +210,14 @@ export function Channels() {
 
       {links.isPending ? (
         <p className="text-sm text-secondary">{t("common.loading")}</p>
-      ) : activeLink ? (
+      ) : telegramLink ? (
         <div className="flex flex-col gap-4 pt-2">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-control bg-surface-subtle p-3 border border-border/60">
               <p className="text-xs font-semibold uppercase tracking-wider text-secondary">{t("channels.telegramLabel")}</p>
               <p className="mt-1 text-sm font-semibold text-primary">
-                {activeLink.channel_username
-                  ? `@${activeLink.channel_username}`
+                {telegramLink.channel_username
+                  ? `@${telegramLink.channel_username}`
                   : "—"}
               </p>
             </div>
@@ -218,13 +225,13 @@ export function Channels() {
               <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 {t("channels.linkedAt", { time: "" }).split(":")[0]}
               </p>
-              <p className="mt-1 text-sm font-medium text-primary">{formatTime(activeLink.linked_at)}</p>
+              <p className="mt-1 text-sm font-medium text-primary">{formatTime(telegramLink.linked_at)}</p>
             </div>
           </div>
           <div>
             <Button
               variant="secondary"
-              onClick={() => setShowDisconnectDialog(true)}
+              onClick={() => { setSelectedChannel("telegram"); setShowDisconnectDialog(true); }}
               className="text-danger hover:bg-danger-subtle"
             >
               {t("channels.disconnect")}
@@ -245,6 +252,56 @@ export function Channels() {
         </div>
       )}
 
+      {whatsappLink || availability.data?.whatsapp ? (
+        <div className="flex flex-col gap-3 border-t border-border pt-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-heading font-semibold text-primary">
+              {t("channels.whatsappTitle")}
+            </h3>
+            <span
+              data-testid="whatsapp-status-badge"
+              data-status={whatsappLink ? "connected" : "unlinked"}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                whatsappLink
+                  ? "border-border bg-success-subtle text-success"
+                  : "border-border bg-surface-subtle text-secondary"
+              }`}
+            >
+              {whatsappLink ? <CheckIcon className="text-sm" /> : null}
+              {whatsappLink ? t("channels.connected") : t("channels.unlinked")}
+            </span>
+          </div>
+          <p className="text-sm text-secondary">{t("channels.whatsappIntro")}</p>
+          <div>
+            {whatsappLink ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSelectedChannel("whatsapp");
+                  setShowDisconnectDialog(true);
+                }}
+                className="text-danger hover:bg-danger-subtle"
+              >
+                {t("channels.whatsappDisconnect")}
+              </Button>
+            ) : (
+              <Button
+                disabled={generateCode.isPending}
+                onClick={() => {
+                  setSelectedChannel("whatsapp");
+                  generateCode.mutate(
+                    { channel: "whatsapp" },
+                    { onSuccess: (data) => setCodeData(data) },
+                  );
+                }}
+              >
+                {generateCode.isPending ? t("common.loading") : t("channels.whatsappConnect")}
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
+
       {codeData ? (
         <LinkCodeModal
           codeData={codeData}
@@ -256,8 +313,8 @@ export function Channels() {
 
       {showDisconnectDialog ? (
         <BottomSheet
-          title={t("channels.disconnectTitle")}
-          description={t("channels.disconnectBody")}
+          title={t(selectedChannel === "whatsapp" ? "channels.whatsappDisconnectTitle" : "channels.disconnectTitle")}
+          description={t(selectedChannel === "whatsapp" ? "channels.whatsappDisconnectBody" : "channels.disconnectBody")}
           onClose={() => {
             if (!unlink.isPending) setShowDisconnectDialog(false);
           }}
@@ -283,7 +340,7 @@ export function Channels() {
           }
         >
           <p className="py-2 text-sm text-secondary">
-            {t("channels.disconnectBody")}
+            {t(selectedChannel === "whatsapp" ? "channels.whatsappDisconnectBody" : "channels.disconnectBody")}
           </p>
         </BottomSheet>
       ) : null}

@@ -30,6 +30,7 @@ from app.identity.permissions import has_permission
 from app.inbox.image_erasure import erase_image_descriptions, export_image_descriptions
 from app.inbox.models import (
     Conversation,
+    ConversationFollowUp,
     InboundEvent,
     Message,
     MessageImageDescription,
@@ -44,6 +45,32 @@ from app.operations.models import DeletionTombstone, Operation
 from app.owner_requests.models import OwnerAnswer, OwnerQuestion
 
 SCHEMA_VERSION = "1.0"
+
+
+def _follow_up_export(
+    session: Session,
+    ctx: WorkspaceContext,
+    conversation_ids: list[uuid.UUID],
+) -> list[dict[str, Any]]:
+    rows = session.scalars(
+        select(ConversationFollowUp).where(
+            ConversationFollowUp.workspace_id == ctx.workspace_id,
+            ConversationFollowUp.conversation_id.in_(conversation_ids),
+        )
+    )
+    return [
+        {
+            "id": str(row.id),
+            "conversation_id": str(row.conversation_id),
+            "answer_draft_id": str(row.answer_draft_id),
+            "status": row.status,
+            "reason_code": row.reason_code,
+            "answered_at": row.answered_at.isoformat(),
+            "due_at": row.due_at.isoformat(),
+            "reply_draft_id": str(row.reply_draft_id) if row.reply_draft_id else None,
+        }
+        for row in rows
+    ]
 
 
 def export_conversation(
@@ -302,6 +329,7 @@ def export_conversation(
             }
             for m in messages
         ],
+        "conversation_follow_ups": _follow_up_export(session, ctx, [conversation.id]),
         "reply_drafts": [
             {
                 "id": str(d.id),
@@ -503,6 +531,7 @@ def export_customer(
 
     return {
         "schema_version": SCHEMA_VERSION,
+        "conversation_follow_ups": _follow_up_export(session, ctx, conv_ids),
         "exported_at": clock.now().isoformat(),
         "workspace": {
             "id": str(ctx.workspace_id),

@@ -10,6 +10,7 @@ export const STATUS_KEYS = [
   "on_hold",
   "sending",
   "publishing",
+  "processing",
   "checking",
   "sent",
   "published",

@@ -32,3 +32,5 @@ Each ADR records one significant decision: its context, the alternatives, the ch
 | [ADR-021](ADR-021-simulation-provenance-boundary.md) | Provider-result provenance; neutral uploads and internal simulator state | Accepted |
 | [ADR-022](ADR-022-privacy-redaction-and-audit-retention.md) | Bounded privacy erasure; append-only audit retention | Accepted |
 | [ADR-024](ADR-024-account-agent-and-delegated-autonomy.md) | Account agent with memory and delegated autonomy | Accepted target; implementation pending |
+| [ADR-027](ADR-027-whatsapp-owner-channel-scope.md) | WhatsApp owner channel: notifications and buttons only, no free-text commands | Accepted; implementation in Feature Phase 5 Track A |
+| [ADR-028](ADR-028-video-media-probing-and-storage.md) | Bounded video probing, original storage and JPEG thumbnails | Accepted; live acceptance pending |

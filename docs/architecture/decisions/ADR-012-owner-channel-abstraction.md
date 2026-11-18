@@ -2,6 +2,7 @@
 
 - **Status:** Accepted (choice of the second channel is provisional, see OQ-01)
 - **Date:** 2026-10-15
+- **Update 2026-11-18:** the WhatsApp adapter's scope is decided in [ADR-027](ADR-027-whatsapp-owner-channel-scope.md) (notifications and buttons only, no free-text commands).
 
 ## Context
 Owners should eventually issue commands, receive notifications, submit media and approve actions from a messenger (Telegram, WhatsApp) as well as the mobile web app. The core must not depend on any messaging provider. Platform facts are in [platform-capabilities.md §2–3](../../research/platform-capabilities.md): WhatsApp has per-message pricing, a 24-hour window with paid templates outside it, business verification, and January 2026 terms on AI assistants. Telegram is free and has 64-byte callback data.

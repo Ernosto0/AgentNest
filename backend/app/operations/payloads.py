@@ -21,6 +21,12 @@ class ReconcilePublishPayload(_Payload):
     operation_id: uuid.UUID
 
 
+class PollReelContainerPayload(_Payload):
+    """Poll a Reel container via backoff job until FINISHED or terminal outcome (IDs only)."""
+
+    operation_id: uuid.UUID
+
+
 class EmitEchoPayload(_Payload):
     """Simulator only: deliver the echo webhook of a message the mock "sent"."""
 

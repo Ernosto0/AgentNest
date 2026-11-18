@@ -3,10 +3,11 @@
 Instagram allows a reply for 24 hours after the customer's last message. Past that, nothing
 may be sent, so a draft still waiting for a person or for the send is retired here. (A pending
 approval normally expires first, five minutes before the window ends; this is the backstop for
-``needs_human`` and ``queued`` drafts, which have no approval clock of their own.)
+``needs_human`` and ``queued`` drafts, which have no approval clock of their own.) A person's
+reply with the Human Agent tag has a 7-day window and is retired only when that is over.
 """
 
-from sqlalchemy import select, text
+from sqlalchemy import or_, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.approvals import service as approvals
@@ -16,6 +17,7 @@ from app.inbox import attention, drafts
 from app.inbox.context import MESSAGING_WINDOW
 from app.inbox.models import Conversation, ReplyDraft
 from app.inbox.system import system_context
+from app.policy.message_tag import HUMAN_AGENT_WINDOW
 
 EXPIRABLE = ("pending_approval", "needs_human", "queued")
 BATCH = 100
@@ -42,7 +44,16 @@ def expire_closed_window_drafts(session_factory: sessionmaker[Session], clock: C
                     (Conversation.workspace_id == ReplyDraft.workspace_id)
                     & (Conversation.id == ReplyDraft.conversation_id),
                 )
-                .where(ReplyDraft.status.in_(EXPIRABLE), Conversation.last_inbound_at <= cutoff)
+                .where(
+                    ReplyDraft.status.in_(EXPIRABLE),
+                    Conversation.last_inbound_at <= cutoff,
+                    # A tagged reply waits for the 7-day window instead of the 24-hour one.
+                    or_(
+                        ReplyDraft.message_tag.is_(None),
+                        Conversation.last_inbound_at
+                        <= cutoff - (HUMAN_AGENT_WINDOW - MESSAGING_WINDOW),
+                    ),
+                )
                 .order_by(ReplyDraft.created_at)
                 .limit(BATCH)
             ).all()

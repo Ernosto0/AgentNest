@@ -45,7 +45,8 @@ export function contentBadge(
 ): ContentBadge {
   switch (item.status) {
     case "publishing":
-      return { status: item.operation?.status === "outcome_unknown" ? "checking" : "publishing" };
+      if (item.operation?.status === "outcome_unknown") return { status: "checking" };
+      return { status: item.operation?.processing ? "processing" : "publishing" };
     case "retry_scheduled": {
       const next = item.operation?.next_attempt_at ?? null;
       const time = next

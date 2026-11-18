@@ -361,6 +361,7 @@ class SecurityScanner:
             "/api/v1/webhooks/meta/deauthorize",
             "/api/v1/webhooks/meta/data-deletion",
             "/api/v1/webhooks/telegram",
+            "/api/v1/webhooks/whatsapp",
         }
         actual_exemptions = set(CSRF_EXEMPT_PATHS)
 

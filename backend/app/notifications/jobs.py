@@ -137,6 +137,15 @@ def deliver_channel_notification(ctx: JobContext) -> None:
         delivery = session.get(NotificationDelivery, delivery_id, with_for_update=True)
         if delivery is None:
             return
+        # Channel facts about the attempt (WhatsApp: send state, cost metadata, provider id) are
+        # kept on the ledger row; the retry/terminal flags only steer this job.
+        recorded = {
+            key: value
+            for key, value in result.metadata.items()
+            if key not in ("retryable", "terminal")
+        }
+        if recorded:
+            delivery.delivery_metadata = {**(delivery.delivery_metadata or {}), **recorded}
         if result.success:
             delivery.status = result.status if result.status in DELIVERY_STATUSES else "delivered"
             delivery.sent_at = result.delivered_at or ctx.clock.now()

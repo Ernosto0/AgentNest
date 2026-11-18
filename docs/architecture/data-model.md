@@ -36,6 +36,8 @@ erDiagram
   conversations ||--o{ reply_drafts : has
   workspaces ||--o{ content_items : plans
   media_assets ||--o{ content_items : "used by"
+  content_items ||--o{ content_item_media : orders
+  media_assets ||--o{ content_item_media : includes
   approvals ||--o| reply_drafts : authorises
   approvals ||--o| content_items : authorises
   approvals ||--o| owner_commands : confirms
@@ -96,7 +98,7 @@ Phase = the phase whose migration creates the table ([roadmap.md](../implementat
 | business_category | text not null | `CHECK in ('gym','pilates_studio','other')` |
 | market | text not null | `CHECK in ('tr','global')` |
 | default_locale | text not null | `tr` / `en` |
-| reply_languages | text[] not null default '{tr}' | subset of supported reply languages. The DB default applies to raw inserts only; `create_workspace` sets `[default_locale]` |
+| reply_languages | text[] not null default '{tr}' | subset of `tr, en, ru, de, ar`. The DB default applies to raw inserts only; `create_workspace` sets `[default_locale]` |
 | timezone | text not null | IANA name; validated in service against `zoneinfo.available_timezones()` |
 | currency | char(3) not null | ISO 4217 (`CHECK ~ '^[A-Z]{3}$'`); the service accepts only codes in current tender use (Babel/CLDR), not historic codes or `XXX` |
 | is_demo | boolean not null default false | only demo workspaces may use mock providers in production config |
@@ -207,7 +209,7 @@ Index: `(workspace_id, status)`, `(workspace_id, fact_key) where status = 'pendi
 | intent | text not null | from the intent list ([agent-runtime.md §4](agent-runtime.md)); the `CHECK` also allows `story_mention` (F-04, migration `0054`: the one thank-you for a story mention) |
 | example_questions | jsonb not null | list of strings (empty only for `story_mention`) |
 | answer_template | text not null | may contain `{{fact:key}}` placeholders |
-| language | text not null | |
+| language | text not null | `tr`, `en`, `ru`, `de`, `ar`; `ck_approved_answers_language` (migration `0100`). Downgrade fails if new-language rows remain |
 | status | text not null | `active`, `needs_review`, `archived` |
 | version | int not null | |
 | created_from_message_id | uuid null | |
@@ -368,6 +370,7 @@ Index: `(conversation_id, provider_timestamp)`.
 | conversation_id | uuid | composite FK |
 | covers_through_message_id | uuid not null | latest inbound included |
 | source | text not null | `ai`, `approved_answer`, `owner` |
+| message_tag | text null | `HUMAN_AGENT` for a person's reply sent 24 hours to 7 days after the customer's last message (migration `0091`). CHECK `message_tag_human_only`: only with `source = owner`, `origin = legacy`, `created_by_actor_type = user`. Covered by the approval payload hash |
 | language | text not null | |
 | intent | text null | |
 | flags | text[] not null default '{}' | e.g., `complaint`, `injection_suspected` |
@@ -397,7 +400,7 @@ The automatic transcript of one voice-note message. Separate from `messages` so 
 | reason_code | text null | required exactly when `status = failed`; `VOICE_*` codes in [background-jobs.md §6](background-jobs.md) |
 | source | text not null default `transcript` | check `= 'transcript'`: the label every reader must show ("Transcript (automatic)") |
 | text | text null | the transcript: customer speech, **untrusted data (INV-03)**, never a fact. Nulled by retention (365 days, with `messages.text`), provider deletion and every erasure path; `erased_at` records it |
-| language | text null | `tr`, `en`, `other` or null (no evidence); detected from the transcript text by `inbox/language.py`, the provider's guess is the fallback |
+| language | text null | `tr`, `en`, `ru`, `de`, `ar`, `other` or null (no evidence); detected from the transcript text by `inbox/language.py`, the provider's guess is the fallback |
 | provider, model | text null | set when the provider was called (a success, or a failure after the call); a success requires both |
 | duration_seconds | double null | from the container (MP4/M4A, WAV) or the provider |
 | audio_bytes | int null | size of the downloaded clip |
@@ -470,20 +473,47 @@ Indexes: `(workspace_id, created_at)` (rate limit), `(workspace_id, user_id, cre
 
 `sha256` is the hash of the stored (re-encoded) JPEG, not of the upload; `width`, `height` and `byte_size` describe it too. Constraints: `unique (workspace_id, id)` (target of the composite FK from `content_items`) and `unique (storage_backend, storage_key)`. Migration 0008.
 
+**`content_item_media`** (migration `0080`, Category C)
+
+| Column | Type | Notes |
+|---|---|---|
+| id, workspace_id | uuid not null | PK `id`; unique `(workspace_id, id)`; workspace FK cascades |
+| content_item_id | uuid not null | Composite tenant FK to `content_items`, `ON DELETE CASCADE` |
+| media_asset_id | uuid not null | Composite tenant FK to `media_assets`, no cascade (INV-01) |
+| position | int not null | 0-based contiguous application order; DB check `0 <= position < 20` |
+| created_at | timestamptz not null | Injected Clock |
+
+Unique `(content_item_id, position)` is `DEFERRABLE INITIALLY DEFERRED`; unique
+`(content_item_id, media_asset_id)` rejects duplicates. Indexes: `workspace_id` and
+`(workspace_id, content_item_id, position)`. ENABLE + FORCE RLS, `tenant_isolation_policy`
+for ALL with the workspace GUC in USING and WITH CHECK; runtime/migrator CRUD grants.
+
+A `feed_carousel` has null `content_items.media_asset_id` and its images live here; single-image
+types have no child rows. Drafts hold 0 to `CAROUSEL_MAX_ITEMS` images; submission requires
+`CAROUSEL_MIN_ITEMS = 2` through `CAROUSEL_MAX_ITEMS = 10` (product rule; Meta currently says up
+to 20). Each image obeys feed aspect limits and must be within 2% of the first image's ratio.
+Its shared caption follows feed image rules. The ordered IDs and SHA-256 values are approval
+payload data. Every template-rendered child's fact versions join the item's `fact_references`,
+so a price change reaches the entire carousel. Cleanup considers child references and applies
+the same published-media retention as single images.
+
 **`content_items`**
 | Column | Type | Notes |
 |---|---|---|
 | id, workspace_id | uuid | |
 | social_account_id | uuid null | composite FK; required at submit |
-| content_type | text not null | `feed_image`, `story_image` (check constraint) |
+| content_type | text not null | `feed_image`, `story_image`, `feed_carousel`, `reel` (check constraint, migrations `0080` / `0083`) |
 | status | text not null | [state-machines.md §5](state-machines.md) (check constraint); changes only through `content.transitions.apply` |
-| version | int not null default 1 | `>= 1`. Increments on a payload change (caption, overlay suggestions, media) and on re-approval (state-machines §5, G2). A title or a visual note is not a payload change |
+| version | int not null default 1 | `>= 1`. Increments on a payload change (caption, overlay suggestions, media, reel cover/offset/`share_to_feed`) and on re-approval (state-machines §5, G2). A title or a visual note is not a payload change |
 | title | text not null | internal label |
 | objective | text null | owner's request |
 | caption | text null | feed only; ≤ 2200 chars (**Instagram caption limit is an assumption to verify**, V-05). The *rendered* text: generation renders `{{fact:key}}` placeholders and stores the result, an edit is plain text (plan G6). The API stores up to 5000 characters; the 2200 limit is a submit rule |
 | overlay_text_suggestions | jsonb not null default '[]' | story only; list of strings (up to 10 of 500 characters at the API). Claim validation covers them too |
 | visual_notes | text null | concept for the owner |
-| media_asset_id | uuid null | composite FK |
+| media_asset_id | uuid null | composite FK (`media_assets` image or reel `video`) |
+| cover_media_asset_id | uuid null | composite FK on `(workspace_id, cover_media_asset_id) -> media_assets`; custom JPEG cover for `reel` (mutually exclusive with `thumb_offset_ms`, migration `0083`) |
+| thumb_offset_ms | int null | `reel` cover offset in milliseconds (`>= 0`, mutually exclusive with `cover_media_asset_id`, migration `0083`) |
+| share_to_feed | boolean null | `reel` feed-grid flag (`true` by default on `reel`, null on other types, migration `0083`) |
 | scheduled_at | timestamptz null | UTC |
 | schedule_input | jsonb null | what was asked for: `{mode: "local", local_date, local_time, timezone, ambiguous?}` (`ambiguous` when the local time exists twice and the earlier instant was taken, G13) or `{mode: "now"}`. Cleared when an approval expires |
 | approval_id | uuid null | current approval |
@@ -499,7 +529,7 @@ Indexes: `(workspace_id, created_at)` (rate limit), `(workspace_id, user_id, cre
 | created_at / updated_at | timestamptz | |
 | is_simulated | boolean not null default false | set from the target account at submit |
 
-Constraints: `unique (workspace_id, id)`; composite FKs `(workspace_id, social_account_id)`, `(workspace_id, media_asset_id)`, `(workspace_id, approval_id)` and `(workspace_id, agent_run_id)` to the parent's `(workspace_id, id)`, so an item can never point at another workspace's row (INV-01); `unique (workspace_id, created_by_user_id, client_request_id)`; `version >= 1`. `approval_id` is the current or latest approval and is kept after the item returns to `draft`, so the author can still see how it ended. Index: `(workspace_id, status, scheduled_at)`. Migration 0009.
+Constraints: `unique (workspace_id, id)`; composite FKs `(workspace_id, social_account_id)`, `(workspace_id, media_asset_id)`, `(workspace_id, cover_media_asset_id)`, `(workspace_id, approval_id)` and `(workspace_id, agent_run_id)` to the parent's `(workspace_id, id)`, so an item can never point at another workspace's row (INV-01); `unique (workspace_id, created_by_user_id, client_request_id)`; `version >= 1`. `approval_id` is the current or latest approval and is kept after the item returns to `draft`, so the author can still see how it ended. Index: `(workspace_id, status, scheduled_at)`. Migrations 0009, 0080, 0083.
 
 The facts a text states are recorded in `fact_references` (`referrer_type = 'content_item'`): the usable facts whose **current display** whole-token matches a critical value found in the caption or the suggestions (the matcher of an owner's own reply, made strict: `500 ₺` is not in `6.500 ₺`; a discount word counts only with the whole display of a `promotion.*` fact), plus every fact a generation rendered. They are replaced on every payload change, at generation, at submit and at re-approval. A value that matches is grounded (`matches_verified` in `validation.issues`) and does not block submission; any other claim issue does.
 
@@ -518,7 +548,7 @@ The facts a text states are recorded in `fact_references` (`referrer_type = 'con
 | attempts / max_attempts | int | |
 | next_attempt_at | timestamptz null | |
 | deadline_at | timestamptz null | no attempts after this |
-| provider_ref | jsonb not null default '{}' | `send_reply`: `{recipient_id, text_sha256, echo_mid?}` (a hash, never the text; used to recognise the echo and the lookup result). Publishing: e.g. `{"container_id": "..."}` |
+| provider_ref | jsonb not null default '{}' | `send_reply`: `{recipient_id, text_sha256, echo_mid?}` (a hash, never the text; used to recognise the echo and the lookup result). Publishing: `{"container_id": "..."}`; carousel: `{"children": [{"media_asset_id": "uuid", "container_id": "child-id"}], "container_id": "parent-id"}`; reel: `{"container_id": "...", "phase"?: "processing", "processing_started_at"?: "...", "polls"?: int, "recreations"?: int, "read_failures"?: int}`. Children are keyed by asset id, ordered by the plan; unknown assets are ignored. Never URLs or secrets |
 | result | jsonb not null default '{}' | e.g., `{"message_id": "..."}`, `{"media_id": "...", "permalink": "..."}` |
 | last_error_code / last_error_detail | text null | |
 | correlation_id | uuid | |
@@ -529,7 +559,7 @@ The facts a text states are recorded in `fact_references` (`referrer_type = 'con
 
 **`notifications`**: `id`, `workspace_id`, `recipient_user_id` (FK users), `type`, `severity` (`info`, `attention`, `critical`), `params` jsonb, `subject_type`, `subject_id`, `dedup_key` (`unique (recipient_user_id, dedup_key) where read_at is null and dedup_key is not null`), `is_simulated`, `read_at`.
 
-**`notification_deliveries`** (Phase 9; tenant): `id`, `workspace_id`, `notification_id`, `recipient_user_id`, `channel` (`web`, `telegram`, `web_push`; `web_push` since migration `0048`), `channel_link_id` (Telegram only), `status` (`pending`, `delivered`, `failed`, `skipped_quiet_hours`), `attempt_count`, `last_error` (a fixed reason code for `web_push`, never a URL or key), `sent_at`. This is the delivery ledger: one row per recipient per channel, written in the transaction that creates the notification, with the status the quiet-hours policy chose.
+**`notification_deliveries`** (Phase 9; tenant): `id`, `workspace_id`, `notification_id`, `recipient_user_id`, `channel` (`web`, `telegram`, `web_push`, `whatsapp`; WhatsApp allowed since `0070`), `channel_link_id` (external owner channel), `status` (`pending`, `delivered`, `failed`, `skipped_quiet_hours`), `attempt_count`, `last_error` (a fixed reason code for `web_push` and `whatsapp`, never a URL, key or provider text), `sent_at`, `delivery_metadata` (jsonb, default `{}`, since `0071`: channel facts only, never message text; for WhatsApp `send_state`, `wamid`, `cost`, `provider_status`, `billing`; index `ix_notification_deliveries_wamid` on `(workspace_id, delivery_metadata->>'wamid')`). This is the delivery ledger: one row per recipient per channel, written in the transaction that creates the notification, with the status the quiet-hours policy chose.
 
 
 **`workspace_plans`** (P-11; migration `0051`; tenant, RLS enabled and forced): one row per workspace, created on first use (existing workspaces were backfilled by the migration). `workspace_id` (PK, FK workspaces, cascade), `plan` (`starter`, `growth`, `pro`; the quotas 500, 2,500 and 7,500 live in one place, `app/plans/tiers.py`), `monthly_quota` (the plan's quota when it was set), `quota_override` (operator's per-workspace quota, null when unused), `status` (`trial`, `active`, `past_due`, `cancelled`; stored and shown, no behaviour attached yet), `period_start`, `period_end`, `anchor_day` (the day of month periods roll on; month-end days clamp), `period_id` (changes every period; keys the warning notifications), `used` (AI reply drafts counted in this period), `warned_80`, `warned_100`, `warned_paused` (each warning is sent once per period; reset with the period). Default for a new workspace: `growth`, `trial`, period starting at creation. Checks: positive quotas, `used >= 0`, `period_end > period_start`.
@@ -545,7 +575,7 @@ The facts a text states are recorded in `fact_references` (`referrer_type = 'con
 
 **`delegation_suggestions`** (Feature Phase 2, D-02; migration `0055`; tenant, RLS enabled and forced): the weekly "send this topic automatically?" proposal. `id`, `workspace_id`, `social_account_id` (composite FK `(workspace_id, social_account_id)` to `social_accounts`, cascade), `week` (date: Monday of the workspace-local week), `intent` (`hours` | `location_contact` | `services`), `action_class` (the automation class that intent maps to), `counts` (jsonb `{unchanged, edited, rejected, failed}` over the window: counts only, no customer text), `status` (`pending` | `accepted` | `dismissed` | `expired`), `created_at`, `expires_at` (7 days), `cooldown_until` (set on dismissal and on acceptance: that `action_class` is not suggested again until then), `decided_at`, `decided_by_user_id` (FK users, set null), `preview_hash` and `previewed_by` (the owner's preview of the exact `DelegationChange`; apply refuses without a matching one). `unique (workspace_id, week)` is the one-suggestion-per-week guarantee. Rows are written only by `agent/suggestions.py`; accepting one writes the `automation_policies` row in the same transaction as the delegation apply.
 
-**`channel_links`** (Phase 9, user-level, not tenant): `id`, `user_id`, `channel`, `external_user_id`, `external_chat_id`, `default_workspace_id`, `status` (`active`, `revoked`), `linked_at`, `revoked_at`. `unique (channel, external_user_id) where status='active'`.
+**`channel_links`** (Phase 9; tenant, forced RLS): `id`, `workspace_id`, `user_id`, `channel` (`telegram`, `whatsapp` since `0070`), `channel_user_id`, `channel_chat_id`, `channel_username`, `status` (`active`, `unlinked`), `linked_at`, `unlinked_at`, `last_inbound_at` (since `0071`; WhatsApp only: when the owner last wrote to the business number, the anchor of the 24-hour customer-service window). One active link per channel identity globally and per workspace/user/channel. WhatsApp stores the sender wa_id only here; audit metadata excludes it. `channel_link_codes.channel` allows the same channels; codes are hashed, expire in 15 minutes and are single-use.
 
 **`daily_reports`**: `id` (API `snapshot_id`), `workspace_id`, `local_date`, `revision`, `evidence_complete`, `timezone`, `period_start`, `period_end`, `metrics` jsonb (`{key: {value, breakdown?}}`), `definitions_version`, `has_simulated_data`, `generated_at`. Each generation is immutable after creation. Unique `(workspace_id, local_date, revision)` orders generations independently of clock/UUID ties; `(workspace_id, id)` supports tenant FKs. Generation takes a workspace row lock to allocate the next revision; ordinary historical reads select the latest revision. Regeneration inserts a new row and preserves all prior evidence.
 
@@ -560,10 +590,10 @@ All have `workspace_id` (for reset and isolation) and `social_account_id`.
 | Table | Purpose | Key constraint |
 |---|---|---|
 | `sim_inbound_messages` | Customer messages the simulator delivered (`sender_id`, `mid`, `received_at`); the mock derives the 24 h messaging window from these, independently of the application's `messages` | `unique (social_account_id, mid)` |
-| `sim_sent_messages` | Messages the simulator "delivered" (`message_id`, `recipient_id`, `text`, `sent_at`) | `unique (message_id)` |
-| `sim_containers` | Media containers (`container_id`, `media_type` IMAGE or STORIES, `media_url` (the `localmedia:` reference), `caption`, `status`, `ready_at`, `expires_at`, `published_media_id`). `status` stores `IN_PROGRESS`, `ERROR` or `PUBLISHED`; `FINISHED` and `EXPIRED` are derived from `ready_at`/`expires_at` and the clock | `unique (container_id)` |
-| `sim_published_media` | Published posts and stories (`media_id`, `container_id` referencing `sim_containers.container_id`, `permalink`, `published_at`) | `unique (container_id)`, so a container can never publish twice; `unique (media_id)` |
-| `sim_failure_rules` | Injected failures (`operation`, `mode`, `remaining` null = always, `retry_after_s`) | — |
+| `sim_sent_messages` | Messages the simulator "delivered" (`message_id`, `recipient_id`, `text`, `message_tag` (migration `0091`), `sent_at`) | `unique (message_id)` |
+| `sim_containers` | Media containers (`container_id`, `media_type` IMAGE, STORIES, CAROUSEL, or REELS, `media_url` nullable (the `localmedia:` reference; null for CAROUSEL), `is_carousel_item` boolean not null default false, `children` nullable JSONB ordered child-id array, `cover_url`, `thumb_offset_ms`, `share_to_feed`, `error_subcode`, `caption`, `status`, `ready_at`, `expires_at`, `published_media_id`). `status` stores `IN_PROGRESS`, `ERROR` or `PUBLISHED`; `FINISHED` and `EXPIRED` are derived from `ready_at`/`expires_at` and the clock | `unique (container_id)` |
+| `sim_published_media` | Published posts, stories, and reels (`media_id`, `container_id` referencing `sim_containers.container_id`, `permalink`, `published_at`) | `unique (container_id)`, so a container can never publish twice; `unique (media_id)` |
+| `sim_failure_rules` | Injected failures (`operation` including `create_reel_container`, `mode` including `slow_processing` and `processing_error`, `remaining` null = always, `retry_after_s`, `skip_first`, `delay_s`, `error_subcode`) | — |
 
 ### 3.10 Account agent core (Phase 7.5 Session 02, migration `0019`)
 
@@ -759,7 +789,7 @@ and intentionally refuses if new-action approval rows exist, preserving audit/ap
 
 ### Workspace brand and template images (F-07, migration 0058)
 
-`workspace_brand_settings` is a Category C tenant table (63 tables total), with ENABLE and FORCE
+`workspace_brand_settings` is a Category C tenant table (65 tables total), with ENABLE and FORCE
 RLS and `tenant_isolation_policy`; app/worker/migrator role grants match the other tenant tables.
 Columns: UUID `id` PK, unique `workspace_id` FK workspaces ON DELETE CASCADE, Text
 `primary_color` and `accent_color` (lowercase `#rrggbb`, database CHECK), nullable
@@ -783,3 +813,28 @@ Revision `0060` (`20261117_0060_price_card_command.py`, parent `0059`) adds
 previous set and refuses while approval history uses the new action. No tenant tables or
 columns are added. Existing `fact_references` link content items to `media_assets.render_record`
 fact IDs and recorded versions; image versions take precedence over caption grounding.
+
+**`whatsapp_webhook_events`** (Feature Phase 5, `0070`; global ingress, no tenant RLS): `message_id` text primary key, `received_at` timestamptz (injected Clock), `status` (`processed`, `ignored`, `failed`), nullable `wa_id_hash` (SHA-256 hex, never a number), nullable `error` (short reason code). Indexed by `received_at`; runtime app/worker roles have the same grants as `telegram_updates`. Atomic insert-or-skip deduplicates before tenant resolution. Processing exceptions roll back the insert so Meta can retry; reply failures after commit do not roll back links.
+
+### Video media assets — migration 0082
+
+`media_assets.kind text NOT NULL DEFAULT 'image'`, `ck_media_assets_kind`: image/video/video_thumbnail. Existing rows default to image. Nullable fields: duration_ms integer, video_codec text, audio_codec text, frame_rate numeric(7,3), bitrate_bps bigint, container text, video_warnings jsonb, thumbnail_media_asset_id uuid. Width/height store displayed dimensions after rotation; dimensions constraint stays.
+
+`ck_media_assets_video_fields` requires video duration_ms > 0, video_codec non-null, container mp4/mov and frame_rate > 0 (explicit non-null guards). All video fields and thumbnail reference must be null on other kinds. Composite FK `(workspace_id, thumbnail_media_asset_id)` references `(workspace_id,id)` with default NO ACTION so a single workspace purge DELETE can remove all media. Workspace/kind index supports quota reads. Existing forced RLS applies, no new table and CATEGORY_C table count unchanged. Downgrade refuses non-image assets. See ADR-028.
+
+### Conversation follow-ups (F-10, migration 0090, parent 0083 (re-chained at merge))
+
+`conversation_follow_ups`: UUID `id`, tenant `workspace_id`, `conversation_id`,
+`answer_draft_id`, `covers_through_message_id`, `answered_at`, `due_at`, `status`
+(scheduled/cancelled/skipped/drafted), nullable `reason_code`, nullable `reply_draft_id`,
+`is_simulated`, `created_at`, `updated_at`, nullable `drafted_at`. IDs/timestamps/codes only.
+Composite tenant FKs to conversations, both reply drafts and the covered message all cascade
+on deletion. Unique `(workspace_id, id)` and `(workspace_id, conversation_id)`; unique
+partial index on non-null `reply_draft_id`; index on `workspace_id`. Drafted iff reply ID
+is present; cancelled/skipped require a reason; due time cannot precede answer time.
+Category C with ENABLE/FORCE RLS and tenant USING/WITH CHECK policy (the 65th Category C table; `whatsapp_webhook_events` is global ingress and not Category C).
+
+Stored workspace settings add `follow_up_enabled=false`, `follow_up_hours=6` (1 to 20),
+`follow_up_text={tr:"", en:""}` (400 characters and 1000 UTF-8 bytes per custom template).
+Empty selects the neutral built-in default. Dedicated inbox settings endpoints validate
+placeholders against live facts; the generic workspace PATCH excludes these keys.

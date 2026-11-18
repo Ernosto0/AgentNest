@@ -187,6 +187,8 @@ def selection_refs(
             or (isinstance(item, ContentItem) and item.social_account_id not in (None, account_id))
         ):
             raise AppError("NOT_FOUND")
+        if isinstance(item, MediaAsset) and item.kind != "image":
+            raise AppError("MEDIA_KIND_INVALID")
         refs[f"selected_{name}_id"] = str(selected)
         if intake:
             refs[f"intake_{name}_id"] = str(selected)

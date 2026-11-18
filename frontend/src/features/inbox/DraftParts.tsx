@@ -5,6 +5,7 @@ import { ClockIcon } from "@/components/icons";
 import { formatVerifiedDate } from "@/components/formatVerifiedDate";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useWindowMinutes } from "./hooks";
+import { formatWindowTime } from "./labels";
 
 /** What a chip needs: the text, and where it comes from. A value found by matching (not rendered) has no version. */
 export interface ChipFact {
@@ -65,7 +66,7 @@ export function DraftText({ draft }: { draft: ReplyDraft }) {
     });
   parts.push(text.slice(cursor));
   return (
-    <p className="break-words whitespace-pre-wrap text-form text-primary leading-relaxed" data-testid="draft-text">
+    <p dir="auto" className="break-words whitespace-pre-wrap text-form text-primary leading-relaxed" data-testid="draft-text">
       {parts}
     </p>
   );
@@ -93,9 +94,42 @@ export function ReasonChips({ reasons }: { reasons: string[] }) {
  * Time left to answer (Instagram allows 24 hours after the customer's last message).
  * `compact` suits list rows: a short visible label with the full sentence for screen readers.
  */
-export function WindowTimer({ endsAt, compact = false }: { endsAt: string | null; compact?: boolean }) {
-  const { t } = useTranslation();
+export function WindowTimer({
+  endsAt,
+  compact = false,
+  state,
+  humanAgentUntil,
+}: {
+  endsAt: string | null;
+  compact?: boolean;
+  /** The server's window state; after 24 hours a person's own reply may still go out (Human Agent tag). */
+  state?: "open" | "human_agent_only" | "closed";
+  humanAgentUntil?: string | null;
+}) {
+  const { t, i18n } = useTranslation();
+  const { workspace } = useCurrentWorkspace();
   const minutes = useWindowMinutes(endsAt);
+  if (state === "human_agent_only" && humanAgentUntil) {
+    const until = formatWindowTime(humanAgentUntil, i18n.language, workspace.timezone);
+    const text = t("convo.window.humanAgentOnly", { until });
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 text-metadata font-medium text-attention"
+        data-testid="window-human-agent"
+        title={compact ? text : undefined}
+      >
+        <ClockIcon aria-hidden="true" className="shrink-0 text-sm" />
+        {compact ? (
+          <>
+            <span aria-hidden="true">{t("convo.window.humanAgentShort")}</span>
+            <span className="sr-only">{text}</span>
+          </>
+        ) : (
+          text
+        )}
+      </span>
+    );
+  }
   if (minutes === null) return null;
   const closed = minutes <= 0;
   const full = closed

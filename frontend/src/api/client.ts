@@ -8,8 +8,22 @@ const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 // The CSRF token belongs to the current session and comes from GET /auth/me.
 let csrfToken: string | null = null;
 
+export const API_BASE: string = import.meta.env.VITE_API_BASE_URL ?? "";
+
 export function setCsrfToken(token: string | null): void {
   csrfToken = token;
+}
+
+export function getCsrfToken(): string | null {
+  return csrfToken;
+}
+
+export function requestHeaders(method: string): Record<string, string> {
+  const headers: Record<string, string> = { "Accept-Language": i18n.language };
+  if (UNSAFE_METHODS.has(method.toUpperCase()) && csrfToken) {
+    headers["X-CSRF-Token"] = csrfToken;
+  }
+  return headers;
 }
 
 /**
@@ -18,15 +32,14 @@ export function setCsrfToken(token: string | null): void {
  */
 export function createApiClient(options: { fetch?: typeof fetch } = {}) {
   const client = createClient<paths>({
-    baseUrl: import.meta.env.VITE_API_BASE_URL ?? "",
+    baseUrl: API_BASE,
     credentials: "include",
     fetch: options.fetch ?? ((request) => globalThis.fetch(request)),
   });
   client.use({
     onRequest({ request }) {
-      request.headers.set("Accept-Language", i18n.language);
-      if (UNSAFE_METHODS.has(request.method) && csrfToken) {
-        request.headers.set("X-CSRF-Token", csrfToken);
+      for (const [k, v] of Object.entries(requestHeaders(request.method))) {
+        request.headers.set(k, v);
       }
       return request;
     },

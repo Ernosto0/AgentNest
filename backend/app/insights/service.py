@@ -126,6 +126,10 @@ def capture_media_snapshot(
     if not settings.insights_enabled or account.provider_kind not in settings.instagram_providers:
         return
 
+    # Album and reel insights are outside the verified contract; no provider request or metrics.
+    if media_kind in ("feed_carousel", "reel"):
+        return
+
     provider = get_provider(
         account.provider_kind,
         settings=settings,

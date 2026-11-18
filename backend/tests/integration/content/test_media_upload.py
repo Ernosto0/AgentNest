@@ -284,5 +284,16 @@ def test_the_media_asset_response_has_no_storage_details(env: Env) -> None:
         "original_filename",
         "rejection_code",
         "created_at",
+        "kind",
+        "duration_ms",
+        "video_codec",
+        "audio_codec",
+        "frame_rate",
+        "bitrate_bps",
+        "container",
+        "video_warnings",
+        "thumbnail_media_asset_id",
     }
+    assert body["kind"] == "image"
+    assert body["duration_ms"] is None and body["thumbnail_media_asset_id"] is None
     assert not re.search(r"storage|sha256|\.jpg", str(body))

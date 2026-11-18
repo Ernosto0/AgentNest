@@ -9,13 +9,14 @@ from sqlalchemy.orm import Session
 
 from app.ai.models import AgentRun
 from app.approvals import repository as approvals_repo
-from app.content import hooks, service, validation
+from app.content import carousel, hooks, service, validation
 from app.content.models import ContentItem, MediaAsset
 from app.content.schemas import (
     ContentApprovalStateOut,
     ContentCheckItemOut,
     ContentIssueOut,
     ContentItemOut,
+    ContentMediaItemOut,
     ContentOperationOut,
     ContentValidationOut,
     GenerationOut,
@@ -144,15 +145,48 @@ def generation_out(
 
 
 def media_deleted(session: Session, ctx: WorkspaceContext, item: ContentItem) -> bool:
-    """Whether the item's image was removed by the media cleanup (H18): the file is gone."""
+    """Whether the item's primary media was removed by the media cleanup (H18): the file is gone."""
+    if item.content_type == "feed_carousel":
+        return any(a.status == "deleted" for a in carousel.ordered_assets(session, ctx, item))
     if item.media_asset_id is None:
         return False
+    expected_kind = "video" if item.content_type == "reel" else "image"
     status = session.scalar(
         select(MediaAsset.status).where(
-            MediaAsset.workspace_id == ctx.workspace_id, MediaAsset.id == item.media_asset_id
+            MediaAsset.workspace_id == ctx.workspace_id,
+            MediaAsset.id == item.media_asset_id,
+            MediaAsset.kind == expected_kind,
         )
     )
     return status == "deleted"
+
+
+def cover_media_deleted(session: Session, ctx: WorkspaceContext, item: ContentItem) -> bool:
+    """Whether a reel's uploaded cover image was removed by media cleanup."""
+    if item.content_type != "reel" or item.cover_media_asset_id is None:
+        return False
+    status = session.scalar(
+        select(MediaAsset.status).where(
+            MediaAsset.workspace_id == ctx.workspace_id,
+            MediaAsset.id == item.cover_media_asset_id,
+            MediaAsset.kind == "image",
+        )
+    )
+    return status == "deleted"
+
+
+def _reel_video_duration_ms(
+    session: Session, ctx: WorkspaceContext, item: ContentItem
+) -> int | None:
+    if item.content_type != "reel" or item.media_asset_id is None:
+        return None
+    return session.scalar(
+        select(MediaAsset.duration_ms).where(
+            MediaAsset.workspace_id == ctx.workspace_id,
+            MediaAsset.id == item.media_asset_id,
+            MediaAsset.kind == "video",
+        )
+    )
 
 
 def item_out(
@@ -162,13 +196,16 @@ def item_out(
     *,
     template_states: dict[uuid.UUID, dict[str, Any]] | None = None,
 ) -> ContentItemOut:
+    template_asset_id = (
+        item.cover_media_asset_id if item.content_type == "reel" else item.media_asset_id
+    )
     if template_states is None:
         template_states = link.states(
             session,
             ctx,
-            link.records(session, ctx, [item.media_asset_id] if item.media_asset_id else []),
+            link.records(session, ctx, [template_asset_id] if template_asset_id else []),
         )
-    state = template_states.get(item.media_asset_id) if item.media_asset_id else None
+    state = template_states.get(template_asset_id) if template_asset_id else None
     template_image = (
         TemplateImageStateOut(
             **state,
@@ -181,6 +218,18 @@ def item_out(
     summary = hooks.get().operation_summary(session, ctx, item)
     return ContentItemOut(
         template_image=template_image,
+        media_items=[
+            ContentMediaItemOut(
+                media_asset_id=a.id,
+                position=i,
+                width=a.width,
+                height=a.height,
+                media_deleted=a.status == "deleted",
+            )
+            for i, a in enumerate(carousel.ordered_assets(session, ctx, item))
+        ]
+        if item.content_type == "feed_carousel"
+        else [],
         id=item.id,
         content_type=cast(Any, item.content_type),
         status=cast(Any, item.status),
@@ -193,6 +242,11 @@ def item_out(
         social_account_id=item.social_account_id,
         media_asset_id=item.media_asset_id,
         media_deleted=media_deleted(session, ctx, item),
+        cover_media_asset_id=item.cover_media_asset_id,
+        thumb_offset_ms=item.thumb_offset_ms,
+        share_to_feed=item.share_to_feed,
+        cover_media_deleted=cover_media_deleted(session, ctx, item),
+        video_duration_ms=_reel_video_duration_ms(session, ctx, item),
         scheduled_at=item.scheduled_at,
         schedule_local=schedule_local(item, ctx.timezone),
         approval_id=item.approval_id,
@@ -203,6 +257,7 @@ def item_out(
                 attempts=summary.attempts,
                 next_attempt_at=summary.next_attempt_at,
                 last_error_code=summary.last_error_code,
+                processing=summary.processing,
             )
             if summary
             else None

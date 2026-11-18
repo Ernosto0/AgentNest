@@ -26,6 +26,7 @@ const PUBLISH_ERROR_CODES = [
   "ACCOUNT_NEEDS_REAUTH",
   "OUTCOME_UNKNOWN",
   "OUTCOME_UNCONFIRMED",
+  "REEL_PROCESSING_TIMEOUT",
 ];
 
 describe.each([
@@ -106,7 +107,7 @@ describe("why a post is in trouble", () => {
         contentItem({
           status: "retry_scheduled",
           last_error_code: null,
-          operation: { status: "retry_wait", attempts: 1, next_attempt_at: null, last_error_code: "PROVIDER_UNAVAILABLE" },
+          operation: { status: "retry_wait", attempts: 1, next_attempt_at: null, last_error_code: "PROVIDER_UNAVAILABLE", processing: false },
         }),
       ),
     ).toBe("PROVIDER_UNAVAILABLE");
@@ -114,7 +115,7 @@ describe("why a post is in trouble", () => {
       failureCode(
         contentItem({
           status: "publishing",
-          operation: { status: "outcome_unknown", attempts: 1, next_attempt_at: null, last_error_code: null },
+          operation: { status: "outcome_unknown", attempts: 1, next_attempt_at: null, last_error_code: null, processing: false },
         }),
       ),
     ).toBe("OUTCOME_UNKNOWN");

@@ -52,7 +52,7 @@ APPROVAL_SUBJECT_TYPES = (
     "agent_action",
     "calendar_appointment",
 )
-DECISION_CHANNELS = ("web", "telegram", "policy")
+DECISION_CHANNELS = ("web", "telegram", "policy", "whatsapp")
 
 
 def _in(column: str, values: tuple[str, ...]) -> str:

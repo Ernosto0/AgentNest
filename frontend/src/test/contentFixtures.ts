@@ -28,6 +28,11 @@ export function contentItem(overrides: Partial<ContentItem> = {}): ContentItem {
     social_account_id: null,
     media_asset_id: null,
     media_deleted: false,
+    cover_media_asset_id: null,
+    cover_media_deleted: false,
+    thumb_offset_ms: null,
+    share_to_feed: overrides.content_type === "reel" ? true : null,
+    video_duration_ms: null,
     template_image: null,
     scheduled_at: null,
     schedule_local: null,
@@ -64,6 +69,7 @@ export function claimIssue(overrides: Partial<ContentIssue> = {}): ContentIssue 
 
 export function mediaAsset(overrides: Partial<MediaAsset> = {}): MediaAsset {
   return {
+    kind: "image",
     id: MEDIA_ID,
     status: "ready",
     width: 1080,

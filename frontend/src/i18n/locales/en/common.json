@@ -78,6 +78,7 @@
     "on_hold": "On hold",
     "sending": "Sending",
     "publishing": "Publishing",
+    "processing": "Processing",
     "checking": "Checking",
     "sent": "Sent",
     "published": "Published",
@@ -263,11 +264,32 @@
     "systemHealth": "System health"
   },
   "settings": {
+    "followUp": {
+      "ownerOnly": "Only the owner can change follow-up settings.",
+      "title": "Customer follow-up",
+      "description": "After a price or booking answer, prepare at most one follow-up per conversation, only inside the 24-hour window and only sent after your approval. Available for accounts using the previous topic assistant.",
+      "enabled": "Prepare a follow-up when the customer stays quiet",
+      "hours": "Wait this many hours",
+      "text": {
+        "tr": "Custom text (Turkish)",
+        "en": "Custom text (English)"
+      },
+      "templateHint": "Optional. Insert facts with {{fact:key}} placeholders; no literal prices, times, phone numbers or links.",
+      "saved": "Follow-up settings saved",
+      "errors": {
+        "LITERAL_VALUE": "Use fact placeholders for prices, times, contacts and links.",
+        "UNKNOWN_FACT": "This fact does not exist. Choose an existing fact key.",
+        "invalid": "Check this template and its length."
+      }
+    },
     "title": "Settings",
     "description": "Your account, this workspace, security and connected services.",
     "languages": {
       "tr": "Türkçe",
-      "en": "English"
+      "en": "English",
+      "ru": "Русский",
+      "de": "Deutsch",
+      "ar": "العربية"
     },
     "openSystemHealth": "View system health",
     "edit": "Edit",
@@ -324,6 +346,13 @@
       "timezoneChangeBody": "After saving, dates and times in this workspace, including when the daily report arrives, use {{zone}}.",
       "replyLanguages": "Customer reply languages",
       "replyLanguagesHint": "Messages in other languages are passed to your team.",
+      "replyLanguagesChoose": "Choose the languages AgentNest may draft customer replies in. The main language of the workspace is always on.",
+      "replyLanguagesMain": "Main language of the workspace",
+      "replyLanguagesCoverage": "Draft quality is tested only for the languages listed here. A message in any other language is always passed to your team.",
+      "replyLanguagesNewTitle": "Russian, German and Arabic are new",
+      "replyLanguagesNewBody": "Their drafts are tested with a fixed set of sample conversations, not yet with your own customers. Read each draft before you approve it. The account agent answers in Turkish and English only: if you use it, a Russian, German or Arabic conversation is passed to your team.",
+      "replyLanguagesAgentNote": "The account agent answers in Turkish and English only, so Russian, German and Arabic conversations are passed to your team.",
+      "replyLanguagesInvalid": "Choose at least one language from the list.",
       "created": "Created",
       "adminTitle": "Team and administration",
       "team": "Team members",
@@ -460,6 +489,26 @@
     "back": "Back to my workspaces"
   },
   "errors": {
+    "VIDEO_INVALID": {
+      "what": "The video cannot be accepted.",
+      "next": "Check the rejection reasons and export again."
+    },
+    "VIDEO_TOO_LARGE": {
+      "what": "The video exceeds the upload size limit.",
+      "next": "Choose a video no larger than 300 MB."
+    },
+    "VIDEO_STORAGE_QUOTA_EXCEEDED": {
+      "what": "This workspace has reached its video storage limit.",
+      "next": "Wait for retention cleanup or contact the workspace owner."
+    },
+    "VIDEO_PROBE_UNAVAILABLE": {
+      "what": "Video inspection is temporarily unavailable.",
+      "next": "Try again shortly or ask the administrator to check ffmpeg."
+    },
+    "MEDIA_KIND_INVALID": {
+      "what": "This field requires an image.",
+      "next": "Choose an image instead of a video or video thumbnail."
+    },
     "AUTH_REQUIRED": {
       "what": "You are not signed in.",
       "next": "Please sign in."
@@ -613,6 +662,10 @@
       "what": "We could not confirm whether it was published.",
       "next": "Check Instagram before posting it again."
     },
+    "REEL_PROCESSING_TIMEOUT": {
+      "what": "Instagram took too long to process this reel video.",
+      "next": "Check the video format or upload it again, then retry publishing."
+    },
     "REFERENCE_NOT_FOUND": {
       "what": "I could not find the post you mean.",
       "next": "Give its date or title, or pick it in Content."
@@ -692,6 +745,10 @@
     "WEBSITE_TOO_LARGE": {
       "what": "The website page is too large.",
       "next": "Try a smaller page containing business information."
+    },
+    "HUMAN_AGENT_NOT_ALLOWED": {
+      "what": "A reply after 24 hours can only be a message you typed yourself, not an assistant draft.",
+      "next": "Write the reply in your own words, then send it again."
     }
   },
   "connections": {
@@ -730,6 +787,17 @@
     "deleteConversationDataHint": "Deletion may wait until an ongoing send has been verified. Your connection is removed immediately."
   },
   "channels": {
+    "whatsappDisconnectTitle": "Disconnect WhatsApp",
+    "whatsappDisconnectBody": "Your WhatsApp account will be unlinked from this workspace. Continue?",
+    "whatsappTitle": "WhatsApp connection",
+    "whatsappIntro": "Link your account to the business number to get WhatsApp notifications and approval buttons.",
+    "whatsappConnect": "Connect WhatsApp",
+    "whatsappDisconnect": "Disconnect WhatsApp",
+    "whatsappModalTitle": "Link your WhatsApp account",
+    "whatsappModalDesc": "Send the link code to the business WhatsApp number.",
+    "openInWhatsApp": "Open in WhatsApp",
+    "whatsappStep1": "1. Open {{number}} in WhatsApp.",
+    "whatsappStep2": "2. Send {{code}}.",
     "telegramLabel": "Telegram",
     "title": "Telegram connection",
     "intro": "Connect your personal Telegram account to receive notifications, decide approvals, and submit commands.",

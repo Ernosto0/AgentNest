@@ -4,11 +4,17 @@ import { AlertIcon, MicIcon, SpinnerIcon } from "@/components/icons";
 
 type TranscriptStatus = "pending" | "succeeded" | "failed";
 
+/** The customer reply languages a transcript can be labelled with (everything else: "another language"). */
+const TRANSCRIPT_LANGUAGES = ["tr", "en", "ru", "de", "ar"] as const;
+function isReplyLanguage(language: string | null | undefined): language is (typeof TRANSCRIPT_LANGUAGES)[number] {
+  return TRANSCRIPT_LANGUAGES.some((code) => code === language);
+}
+
 /** The language code shown to the owner: Turkish, English, or "another language". */
 function useLanguageLabel(language: string | null | undefined): string | null {
   const { t } = useTranslation();
   if (!language) return null;
-  return t(`convo.transcript.languages.${language === "tr" || language === "en" ? language : "other"}`);
+  return t(`convo.transcript.languages.${isReplyLanguage(language) ? language : "other"}`);
 }
 
 /**
@@ -33,7 +39,7 @@ export function TranscriptBlock({
 }) {
   const { t, i18n } = useTranslation();
   const languageLabel = useLanguageLabel(language);
-  const spoken = language === "tr" || language === "en" ? language : undefined;
+  const spoken = isReplyLanguage(language) ? language : undefined;
 
   if (status === "pending") {
     return (
@@ -76,7 +82,7 @@ export function TranscriptBlock({
         ) : null}
       </figcaption>
       {text ? (
-        <blockquote lang={spoken} className="mt-1.5 text-[0.9375rem] leading-6 break-words whitespace-pre-wrap">
+        <blockquote lang={spoken} dir="auto" className="mt-1.5 text-[0.9375rem] leading-6 break-words whitespace-pre-wrap">
           {text}
         </blockquote>
       ) : (

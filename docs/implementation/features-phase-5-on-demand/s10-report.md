@@ -1,0 +1,45 @@
+# Feature Phase 5, Session 10: reply-language detection and claim-validator formats for ru, de, ar (F-11, part 1)
+
+**Status:** Done offline (backend, a small frontend type/i18n patch, docs). The live LLM quality in the new languages and the eval sets are **pending** (Session 11).
+**Baseline:** `1a58d41`. **Migration:** `0100` (`down_revision = "0061"`, Track D block). Nothing committed.
+**Trigger (OQ-11):** treated as confirmed by the owner's request to implement all Feature Phase 5 sessions (2026-11-17/18). Recorded in `mvp-scope.md` as "moved out of Deferred on 2026-11-18 at the owner's request; trigger evidence (the tourism segment starting, OQ-11) not yet recorded". No pilot feedback was invented.
+
+## What was delivered
+
+- **One list of reply languages** `backend/app/core/reply_languages.py`: `REPLY_LANGUAGES = (tr, en, ru, de, ar)`, `RTL_REPLY_LANGUAGES = {ar}`. UI locales (`SUPPORTED_LOCALES`, `ui_locale`, `default_locale`, catalogs) and content/post languages are unchanged.
+- **Detection** (`inbox/language.py`, deterministic, no dependency). Invisible marks and Arabic vocalisation are stripped first. Foreign script share >= 0.5 is script-dominant: Cyrillic gives `ru` only with a Russian word or `ы э ъ ё` and no Ukrainian/Belarusian letter; Arabic gives `ar` only with an Arabic word and no Persian/Urdu letter or Persian stop word; anything else in those scripts is `other`. Cyrillic/Arabic share >= 0.2 next to Latin text is a mixed script and gives `other`. Latin text: `de` has its own list (words that collide with English/Turkish removed), `ß` +2, `ä` +1 only after a German word; a `de` (or other non-tr/en) winner needs more than twice the runner-up (`MIXED_RATIO = 0.5`) or the result is `other`; one weak foreign hit never beats a tr/en winner; the tr/en tie still gives `None` (workspace default). Thresholds are named constants. A language not in the workspace's `reply_languages` stays unsupported (R4, `LANGUAGE_UNSUPPORTED`).
+- **Acceptance**: `WorkspacePatch`/`WorkspaceOut.reply_languages` use `ReplyLocale` (`tr en ru de ar`); `fr` is rejected. `reply_languages` has no DB constraint, so none was added. Migration `0100` widens `ck_approved_answers_language` to the five codes (downgrade restores `tr, en` and fails loudly if rows in other languages exist); the ORM constraint, `create_answer` and `ApprovedAnswerIn` follow.
+- **Downstream hard-codes fixed**: `inbox/service.py::_reply_language` now uses the workspace's real `reply_languages`; the learning-loop `answers._language`; `transcription._PROVIDER_LANGUAGES`; `DEFAULT_DISCLOSURE` gained ru/de/ar texts (the custom per-language suffix is Session 11); `draft_reply.LANGUAGES`; the fake provider's price-word recognition (ru/de/ar) so the offline pipeline answers; a German generic-price-word filter so an unknown product still fails closed.
+- **Escalation keywords** (`inbox/escalation.py`): complaint, refund, discount, legal, health/safety, abusive and personal-data words for ru, de, ar (not in the original brief; approved by the orchestrator). Matching runs on the same fold, with marks stripped.
+- **Account agent fails closed**: `agent/context.py` offers the agent only `tr`/`en`, so a Russian/German/Arabic message gives no agent language and the existing `AGENT_UNSUPPORTED_LANGUAGE` human path. The agent's calendar/booking text is hard-coded tr/en and was not translated.
+- **Formatting** (`knowledge/formatting.py`, data in `knowledge/reply_locale_data.py`): `_reply_locale` replaces `normalize_locale` in this module (a Russian reply no longer renders Turkish). de `1.234,50 €`, ru `1 234,50 ₽` (NBSP thousands separator), ar `1,234.50 ₺` (Western digits); symbol after the number with NBSP; `₺ € $ £ ₽` overrides, other currencies show the ISO code. Units, "closed", yes/no and enum labels per language. Hours use Babel day names; Arabic ranges have an LRM on both sides of the dash. `localized_text` for the new languages falls back en, workspace fallback, tr. New helpers `format_reply_date`, `format_reply_time` (not wired anywhere). tr and en output is unchanged.
+- **Claim validator** (`knowledge/claims.py`): `fold()` stays length-preserving and now maps Arabic-Indic and Persian digits, `٫ ٬ ٪`, `ё ä ß` and Arabic alef forms. Invisible marks (LRM/RLM/ALM, embeddings and isolates, zero-width characters, soft hyphen, BOM, tashkeel, tatweel) are removed through an index map after trusted spans are masked, so issue spans still index the original text; `strip_directional_marks` is exported. All patterns run for every locale. New: currency words/multipliers, percent and discount words, local time and date forms for de, ru, ar (both Arabic month systems), `HH.MM` stays a time, `18.11.` and `18.11.2026` are dates.
+- **Frontend (minimal)**: `openapi.json` and `schema.d.ts` patched for the two `reply_languages` enums; `settings.languages.ru|de|ar` in the tr and en locale files.
+- **Docs**: `mvp-scope.md` (F-11 row, Deferred row removed), `open-questions.md` OQ-11 status, ADR-016 addendum, `data-model.md`, `workflows.md` R4, `business-knowledge.md` §7.2.
+
+## Tests
+
+New: `tests/unit/inbox/test_language_detection_ru_de_ar.py`, `test_escalation_ru_de_ar.py`, `tests/unit/knowledge/test_claims_ru_de_ar.py`, `test_formatting_ru_de_ar.py`, `tests/integration/identity/test_reply_languages.py`, `tests/integration/agent/test_agent_language_failclosed.py`; extended `test_drafting_pipeline.py` (ru/de/ar draft through the fake provider with the language-specific disclosure; ru stays `LANGUAGE_UNSUPPORTED` when not enabled; German unknown product not guessed), `test_language_and_escalation.py`, `test_workspaces.py` (`de` is now valid, `fr` is the invalid example).
+The validator tests prove, per language, an invented price, time, date, percent, discount word, phone (Arabic-Indic digits) and bare number are caught with spans that quote the original text, including NBSP/U+202F/thin-space groupings, RLM/LRM/zero-width marks and Arabic-Indic or Persian digits; the correctly rendered fact values (with NBSP/LRM forms) and the disclosure suffix pass; plain text and small counts pass.
+
+## Checks (real results)
+
+- Backend: `ruff check` clean; `ruff format --check` clean (825 files); `mypy app` clean (434 files); `lint-imports` 24 kept, 0 broken.
+- `pytest tests/unit tests/contract tests/security tests/isolation`: 2940 passed, 18 skipped, 3 failed in the default shell. The 3 failures are environmental and pass when the env matches what the tests expect (`DEMO_TOOLS_ENABLED=true` for the two simulator/dev listing isolation tests, `LOG_FORMAT=json LOG_LEVEL=INFO` for the invite-secret log test); rerun with those variables: 3 passed. They do not touch this change.
+- Targeted integration: `test_reply_languages`, `test_agent_language_failclosed` and `test_drafting_pipeline`: 47 passed. `tests/integration/identity`, `agent/test_context_grounding`, `inbox/test_simulator` (with `DEMO_TOOLS_ENABLED=true`): 146 passed, 1 failed (`test_members_and_invites.py::test_owner_creates_an_invite_with_a_one_time_link`). That failure is environmental: the machine's `PUBLIC_BASE_URL` points at a Cloudflare tunnel, so the invite URL differs from the hard-coded `http://localhost:8000`; it does not touch this change. `tests/integration/knowledge` and `tests/integration/content` were not run to completion (the shared DB was too slow while other tracks ran their suites), so they are unverified here; the knowledge and content unit tests that cover `fold`/`validate_claims` callers passed.
+- Frontend (PowerShell): `typecheck`, `lint` and `i18n:check` pass (2765 keys). `npm test` and `build` were not run (only types and two locale keys changed).
+
+## Deviations and limitations
+
+- Arabic was added although OQ-11 names only Russian and German (it was in the session brief); the scope row and OQ-11 say so.
+- Spelled-out numbers (`fünfzig Euro`, `пятьсот рублей`, `خمسمائة ليرة`) are not caught, as for tr/en today.
+- Owner-entered `localized_text` and fact labels exist only in tr/en; the new languages fall back to en, then tr. Fact values (numbers, hours, phone) are rendered by code in the reply language.
+- The account agent and its calendar texts support tr/en only. Content/post and UI languages are unchanged. The custom disclosure suffix per new language is Session 11.
+- A few detection rules are special cases added to satisfy bilingual examples (a Russian greeting next to English words, `hallo` next to a tr/en winner give `other`); they err toward handing the conversation to a person.
+- Voice-note transcripts in the new languages still always require approval (R18).
+- The Codex sandbox left an empty `backend/.tmp/` (two ACL-locked subfolders, no files) that could not be deleted from this session; it holds nothing and shows nowhere in `git status`.
+- Live reply quality of the model in ru/de/ar, eval sets, the settings UI and RTL display in the inbox: pending (Session 11).
+
+## Questions
+
+- None blocking. Confirm that Arabic should ship with Russian and German (it follows the session brief, not the older OQ-11 wording).

@@ -12,7 +12,13 @@ from app.integrations.instagram.models import SocialAccount
 from app.jobs.models import Job
 from tests.helpers.env import Env, Role
 
-MOCK_CAPABILITIES = {"messaging": True, "publish_feed_image": True, "publish_story_image": True}
+MOCK_CAPABILITIES = {
+    "messaging": True,
+    "publish_feed_image": True,
+    "publish_feed_carousel": True,
+    "publish_story_image": True,
+    "publish_reel": True,
+}
 
 
 def make_item(
@@ -122,6 +128,43 @@ def make_media(
         width=width,
         height=height,
         sha256=sha256 or "a" * 64,
+        status=status,
+        created_by_user_id=env.owner.user.id,
+    )
+    env.session.add(asset)
+    env.session.flush()
+    return asset
+
+
+def make_video(
+    env: Env,
+    *,
+    duration_ms: int = 10_000,
+    width: int = 1080,
+    height: int = 1920,
+    status: str = "ready",
+    sha256: str | None = None,
+    warnings: list[str] | None = None,
+) -> MediaAsset:
+    """A ready MP4 video asset row for content/reel unit & integration tests."""
+    key = f"{env.workspace.id}/2026/01/{uuid.uuid4().hex}.mp4"
+    asset = MediaAsset(
+        workspace_id=env.workspace.id,
+        kind="video",
+        duration_ms=duration_ms,
+        video_codec="h264",
+        audio_codec="aac",
+        frame_rate=30,
+        bitrate_bps=4_000_000,
+        container="mp4",
+        video_warnings=warnings or [],
+        storage_backend="local",
+        storage_key=key,
+        mime_type="video/mp4",
+        byte_size=1024,
+        width=width,
+        height=height,
+        sha256=sha256 or "c" * 64,
         status=status,
         created_by_user_id=env.owner.user.id,
     )

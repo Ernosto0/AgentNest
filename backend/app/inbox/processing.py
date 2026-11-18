@@ -259,6 +259,9 @@ def _on_customer_message(
 
     controller = scoped_account(session, account.workspace_id, account.id)
     # The customer wrote again: whatever is waiting for a person is out of date.
+    from app.inbox.follow_up import cancel_on_inbound
+
+    cancel_on_inbound(session, clock, ctx, conversation)
     drafts.close_open_drafts(
         session,
         clock,

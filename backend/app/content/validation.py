@@ -12,6 +12,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from app.content.video_limits import MAX_DURATION_MS, MIN_DURATION_MS
 from app.core.i18n import t
 
 # --- codes ------------------------------------------------------------------------------------
@@ -35,7 +36,24 @@ PUBLISH_QUOTA_FORECAST_EXCEEDED = "PUBLISH_QUOTA_FORECAST_EXCEEDED"
 STORY_ASPECT_NOT_9_16 = "STORY_ASPECT_NOT_9_16"
 OVERLAY_TOO_LONG = "OVERLAY_TOO_LONG"
 
+CAROUSEL_TOO_FEW_ITEMS = "CAROUSEL_TOO_FEW_ITEMS"
+CAROUSEL_TOO_MANY_ITEMS = "CAROUSEL_TOO_MANY_ITEMS"
+CAROUSEL_MIXED_ASPECT_RATIO = "CAROUSEL_MIXED_ASPECT_RATIO"
+
+REEL_DURATION_OUT_OF_RANGE = "REEL_DURATION_OUT_OF_RANGE"
+REEL_COVER_OFFSET_INVALID = "REEL_COVER_OFFSET_INVALID"
+REEL_COVER_TOO_LARGE = "REEL_COVER_TOO_LARGE"
+REEL_ASPECT_NOT_9_16 = "REEL_ASPECT_NOT_9_16"
+REEL_RESOLUTION_BELOW_RECOMMENDED = "REEL_RESOLUTION_BELOW_RECOMMENDED"
+REEL_EDIT_LIST_PRESENT = "REEL_EDIT_LIST_PRESENT"
+
 ERROR_CODES = (
+    CAROUSEL_TOO_FEW_ITEMS,
+    CAROUSEL_TOO_MANY_ITEMS,
+    CAROUSEL_MIXED_ASPECT_RATIO,
+    REEL_DURATION_OUT_OF_RANGE,
+    REEL_COVER_OFFSET_INVALID,
+    REEL_COVER_TOO_LARGE,
     TEMPLATE_IMAGE_STALE,
     CONTENT_MEDIA_REQUIRED,
     MEDIA_NOT_READY,
@@ -52,10 +70,20 @@ ERROR_CODES = (
     CAPABILITY_MISSING,
     PUBLISH_QUOTA_FORECAST_EXCEEDED,
 )
-WARNING_CODES = (STORY_ASPECT_NOT_9_16, OVERLAY_TOO_LONG)
+WARNING_CODES = (
+    STORY_ASPECT_NOT_9_16,
+    OVERLAY_TOO_LONG,
+    REEL_ASPECT_NOT_9_16,
+    REEL_RESOLUTION_BELOW_RECOMMENDED,
+    REEL_EDIT_LIST_PRESENT,
+)
 ALL_CODES = ERROR_CODES + WARNING_CODES
 
 # --- limits -----------------------------------------------------------------------------------
+
+CAROUSEL_MIN_ITEMS = 2
+CAROUSEL_MAX_ITEMS = 10
+CAROUSEL_ASPECT_TOLERANCE = 0.02
 
 CAPTION_MAX_CHARS = 2200  # Instagram's caption limit (V-05, to verify)
 FEED_ASPECT_MIN = 4 / 5  # width / height
@@ -68,7 +96,16 @@ OVERLAY_MAX_LINE_CHARS = 40
 # Capability flag (``social_accounts.capabilities``) that publishing each content type needs.
 CAPABILITY_FOR_TYPE = {
     "feed_image": "publish_feed_image",
+    "feed_carousel": "publish_feed_carousel",
     "story_image": "publish_story_image",
+    "reel": "publish_reel",
+}
+
+REEL_COVER_MAX_BYTES = 8_000_000
+REEL_VIDEO_WARNINGS = {
+    "ASPECT_NOT_9_16": REEL_ASPECT_NOT_9_16,
+    "RESOLUTION_BELOW_RECOMMENDED": REEL_RESOLUTION_BELOW_RECOMMENDED,
+    "EDIT_LIST_PRESENT": REEL_EDIT_LIST_PRESENT,
 }
 
 
@@ -87,6 +124,29 @@ class MediaFacts:
     status: str
     width: int
     height: int
+
+
+@dataclass(frozen=True)
+class ReelVideoFacts:
+    status: str
+    kind: str
+    duration_ms: int | None
+    warnings: Sequence[str] = ()
+
+
+@dataclass(frozen=True)
+class ReelCoverFacts:
+    status: str
+    kind: str
+    mime_type: str
+    byte_size: int
+
+
+@dataclass(frozen=True)
+class ReelFacts:
+    video: ReelVideoFacts | None
+    cover: ReelCoverFacts | None = None
+    thumb_offset_ms: int | None = None
 
 
 @dataclass(frozen=True)
@@ -109,6 +169,8 @@ class SubmitFacts:
     account: AccountFacts | None  # ``None``: no usable account in the workspace
     quota_exceeded: bool
     stale_template_keys: tuple[str, ...] = ()
+    carousel_media: Sequence[MediaFacts] | None = None
+    reel: ReelFacts | None = None
 
 
 @dataclass(frozen=True)
@@ -143,11 +205,118 @@ def validate_submission(facts: SubmitFacts) -> SubmitValidation:
     is_story = facts.content_type == "story_image"
 
     if facts.stale_template_keys:
-        errors.append(
-            Issue(TEMPLATE_IMAGE_STALE, "media_asset_id", {"keys": list(facts.stale_template_keys)})
+        stale_field = (
+            "media_asset_ids"
+            if facts.content_type == "feed_carousel"
+            else ("cover_media_asset_id" if facts.content_type == "reel" else "media_asset_id")
         )
-    # Media: both formats are image posts.
-    if facts.media is None:
+        errors.append(
+            Issue(
+                TEMPLATE_IMAGE_STALE,
+                stale_field,
+                {"keys": list(facts.stale_template_keys)},
+            )
+        )
+    # Media: feed/story use an image, carousels an image list, reels a video plus optional cover.
+    if facts.content_type == "reel":
+        reel = facts.reel
+        video = reel.video if reel is not None else None
+        offset = reel.thumb_offset_ms if reel is not None else None
+        if video is None:
+            errors.append(Issue(CONTENT_MEDIA_REQUIRED, "media_asset_id"))
+            if offset is not None and offset < 0:
+                errors.append(
+                    Issue(
+                        REEL_COVER_OFFSET_INVALID,
+                        "thumb_offset_ms",
+                        {"thumb_offset_ms": offset, "duration_ms": None},
+                    )
+                )
+        elif video.status != "ready" or video.kind != "video":
+            errors.append(Issue(MEDIA_NOT_READY, "media_asset_id", {"status": video.status}))
+        else:
+            duration_ms = video.duration_ms
+            if duration_ms is None or not MIN_DURATION_MS <= duration_ms <= MAX_DURATION_MS:
+                errors.append(
+                    Issue(
+                        REEL_DURATION_OUT_OF_RANGE,
+                        "media_asset_id",
+                        {
+                            "duration_ms": duration_ms,
+                            "min_ms": MIN_DURATION_MS,
+                            "max_ms": MAX_DURATION_MS,
+                        },
+                    )
+                )
+            if offset is not None and (offset < 0 or duration_ms is None or offset >= duration_ms):
+                errors.append(
+                    Issue(
+                        REEL_COVER_OFFSET_INVALID,
+                        "thumb_offset_ms",
+                        {"thumb_offset_ms": offset, "duration_ms": duration_ms},
+                    )
+                )
+            for code in video.warnings:
+                mapped = REEL_VIDEO_WARNINGS.get(code)
+                if mapped is not None:
+                    warnings.append(Issue(mapped, "media_asset_id"))
+        if reel is not None and reel.cover is not None:
+            cover = reel.cover
+            if cover.status != "ready" or cover.kind != "image" or cover.mime_type != "image/jpeg":
+                errors.append(
+                    Issue(MEDIA_NOT_READY, "cover_media_asset_id", {"status": cover.status})
+                )
+            if cover.byte_size > REEL_COVER_MAX_BYTES:
+                errors.append(
+                    Issue(
+                        REEL_COVER_TOO_LARGE,
+                        "cover_media_asset_id",
+                        {"byte_size": cover.byte_size, "max_bytes": REEL_COVER_MAX_BYTES},
+                    )
+                )
+    elif facts.content_type == "feed_carousel":
+        images = facts.carousel_media or ()
+        count = len(images)
+        if not count:
+            errors.append(Issue(CONTENT_MEDIA_REQUIRED, "media_asset_ids"))
+        elif count < CAROUSEL_MIN_ITEMS:
+            errors.append(
+                Issue(
+                    CAROUSEL_TOO_FEW_ITEMS,
+                    "media_asset_ids",
+                    {"count": count, "min": CAROUSEL_MIN_ITEMS},
+                )
+            )
+        if count > CAROUSEL_MAX_ITEMS:
+            errors.append(
+                Issue(
+                    CAROUSEL_TOO_MANY_ITEMS,
+                    "media_asset_ids",
+                    {"count": count, "max": CAROUSEL_MAX_ITEMS},
+                )
+            )
+        positions = []
+        for index, image in enumerate(images):
+            field = f"media_asset_ids.{index}"
+            ratio = image.width / image.height
+            if image.status != "ready":
+                errors.append(Issue(MEDIA_NOT_READY, field, {"status": image.status}))
+            if not FEED_ASPECT_MIN <= ratio <= FEED_ASPECT_MAX:
+                errors.append(
+                    Issue(
+                        ASPECT_RATIO_OUT_OF_RANGE,
+                        field,
+                        {"width": image.width, "height": image.height},
+                    )
+                )
+            first_ratio = images[0].width / images[0].height
+            if index and abs(ratio - first_ratio) / first_ratio > CAROUSEL_ASPECT_TOLERANCE:
+                positions.append(index)
+        if positions:
+            errors.append(
+                Issue(CAROUSEL_MIXED_ASPECT_RATIO, "media_asset_ids", {"positions": positions})
+            )
+    elif facts.media is None:
         errors.append(Issue(CONTENT_MEDIA_REQUIRED, "media_asset_id"))
     elif facts.media.status != "ready":
         errors.append(Issue(MEDIA_NOT_READY, "media_asset_id", {"status": facts.media.status}))

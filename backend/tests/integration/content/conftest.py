@@ -45,6 +45,7 @@ def make_pub(
         values: dict[str, object] = {
             "media_local_root": str(media_root),
             "sim_container_delay_seconds": 0,
+            "sim_reel_processing_seconds": 0,
             **overrides,
         }
         cfg = settings.model_copy(update=values)

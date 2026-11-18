@@ -30,6 +30,7 @@ class OperationSummary:
     attempts: int
     next_attempt_at: datetime | None
     last_error_code: str | None
+    processing: bool = False
 
 
 OperationSummaryHook = Callable[[Session, WorkspaceContext, ContentItem], OperationSummary | None]

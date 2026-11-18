@@ -43,7 +43,7 @@ from app.core.email import send_workspace_deletion_email
 from app.core.errors import AppError
 from app.identity.models import Invite, User, Workspace, WorkspaceMember
 from app.identity.permissions import has_permission
-from app.inbox.models import Conversation, InboundEvent, Message, ReplyDraft
+from app.inbox.models import Conversation, ConversationFollowUp, InboundEvent, Message, ReplyDraft
 from app.integrations.instagram.models import SocialAccount
 from app.memory.models import (
     CustomerIdentity,
@@ -274,6 +274,7 @@ def purge_workspace(session: Session, clock: Clock, workspace_id: uuid.UUID) -> 
     # Delete workspace-scoped rows in foreign-key dependency order
     tables_to_purge = [
         Approval,
+        ConversationFollowUp,
         ReplyDraft,
         Message,
         Conversation,

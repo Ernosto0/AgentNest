@@ -116,3 +116,116 @@ def test_the_job_payload_carries_ids_only_and_the_key_is_per_version() -> None:
     }
     assert publish_job_key(CONTENT_ID, 3) == f"publish:{CONTENT_ID}:v3"
     assert publish_job_key(CONTENT_ID, 3) != publish_job_key(CONTENT_ID, 4)
+
+
+def test_carousel_order_is_bound_but_dictionary_key_order_is_not():
+    a, b = uuid.uuid4(), uuid.uuid4()
+    subject = item(content_type="feed_carousel", media_asset_id=None)
+    first = payload(subject, media_sha256=None, carousel_media=[(a, "a" * 64), (b, "b" * 64)])
+    same = payload(subject, media_sha256=None, carousel_media=[(a, "a" * 64), (b, "b" * 64)])
+    swapped = payload(subject, media_sha256=None, carousel_media=[(b, "b" * 64), (a, "a" * 64)])
+    assert first["media_items"] == [
+        {"position": 0, "media_asset_id": a, "sha256": "a" * 64},
+        {"position": 1, "media_asset_id": b, "sha256": "b" * 64},
+    ]
+    assert first["media_asset_id"] is first["media_sha256"] is None
+    assert approval_payload_hash(first) == approval_payload_hash(same)
+    assert approval_payload_hash(first) != approval_payload_hash(swapped)
+    reordered = {
+        **first,
+        "media_items": [dict(reversed(list(x.items()))) for x in first["media_items"]],
+    }
+    assert approval_payload_hash(first) == approval_payload_hash(reordered)
+
+
+def test_single_image_canonical_payload_is_unchanged_for_both_types():
+    for kind in ("feed_image", "story_image"):
+        subject = item(content_type=kind)
+        expected = {
+            "content_id": CONTENT_ID,
+            "version": 1,
+            "content_type": kind,
+            "social_account_id": ACCOUNT_ID,
+            "caption": None,
+            "overlay_text": list(subject.overlay_text_suggestions),
+            "media_asset_id": MEDIA_ID,
+            "media_sha256": "ab" * 32,
+            "scheduled_at": AT,
+        }
+        from app.core.canonical import canonical_json
+
+        assert canonical_json(payload(subject)) == canonical_json(expected)
+
+
+def test_reel_payload_binds_cover_offset_share_caption_and_video() -> None:
+    cover_id = uuid.uuid4()
+    base_item = item(
+        content_type="reel",
+        caption="Reel açıklama",
+        cover_media_asset_id=cover_id,
+        thumb_offset_ms=None,
+        share_to_feed=True,
+    )
+    base_p = payload(base_item, cover_sha256="cc" * 32)
+    base = approval_payload_hash(base_p)
+    assert set(base_p["reel"]) == {  # type: ignore[arg-type]
+        "cover_media_asset_id",
+        "cover_sha256",
+        "thumb_offset_ms",
+        "share_to_feed",
+    }
+
+    mutations = {
+        "cover_id": payload(
+            item(
+                content_type="reel",
+                caption="Reel açıklama",
+                cover_media_asset_id=uuid.uuid4(),
+                share_to_feed=True,
+            ),
+            cover_sha256="cc" * 32,
+        ),
+        "cover_sha": payload(base_item, cover_sha256="dd" * 32),
+        "offset": payload(
+            item(
+                content_type="reel",
+                caption="Reel açıklama",
+                cover_media_asset_id=None,
+                thumb_offset_ms=2500,
+                share_to_feed=True,
+            ),
+            cover_sha256=None,
+        ),
+        "share_to_feed": payload(
+            item(
+                content_type="reel",
+                caption="Reel açıklama",
+                cover_media_asset_id=cover_id,
+                thumb_offset_ms=None,
+                share_to_feed=False,
+            ),
+            cover_sha256="cc" * 32,
+        ),
+        "caption": payload(
+            item(
+                content_type="reel",
+                caption="Farklı",
+                cover_media_asset_id=cover_id,
+                share_to_feed=True,
+            ),
+            cover_sha256="cc" * 32,
+        ),
+        "video": payload(
+            item(
+                content_type="reel",
+                caption="Reel açıklama",
+                media_asset_id=uuid.uuid4(),
+                cover_media_asset_id=cover_id,
+                share_to_feed=True,
+            ),
+            cover_sha256="cc" * 32,
+        ),
+    }
+    hashes = {k: approval_payload_hash(v) for k, v in mutations.items()}
+    assert all(h != base for h in hashes.values())
+    assert len(set(hashes.values())) == len(hashes)

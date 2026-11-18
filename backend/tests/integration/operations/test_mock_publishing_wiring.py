@@ -28,8 +28,11 @@ MIGRATION = BACKEND_DIR / "migrations" / "versions" / "20261020_0011_phase_5_moc
 def test_mock_accounts_get_the_documented_capability_names() -> None:
     assert MOCK_CAPABILITIES == {
         "messaging": True,
+        "human_agent": True,
         "publish_feed_image": True,
+        "publish_feed_carousel": True,
         "publish_story_image": True,
+        "publish_reel": True,
         "comment_reply": True,
         "comment_moderate": True,
         "comment_private_reply": True,

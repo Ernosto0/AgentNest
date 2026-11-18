@@ -53,6 +53,9 @@ TRANSCRIPT_POLL_SECONDS = 30
 DEFAULT_DISCLOSURE = {
     "tr": "Bu yanıt otomatik olarak hazırlanmıştır.",
     "en": "This reply was prepared automatically.",
+    "ru": "Этот ответ подготовлен автоматически.",
+    "de": "Diese Antwort wurde automatisch erstellt.",
+    "ar": "تم إعداد هذا الرد تلقائيًا.",
 }
 
 

@@ -44,7 +44,7 @@ function withStatus(status: ContentStatus): ContentItem {
     status,
     operation:
       status === "retry_scheduled"
-        ? { status: "retry_wait", attempts: 1, next_attempt_at: RETRY_AT, last_error_code: "PROVIDER_UNAVAILABLE" }
+        ? { status: "retry_wait", attempts: 1, next_attempt_at: RETRY_AT, last_error_code: "PROVIDER_UNAVAILABLE", processing: false }
         : null,
   });
 }
@@ -110,7 +110,7 @@ describe("content status mapping (INV-18)", () => {
   it("shows 'Kontrol ediliyor' while a publish attempt has an unknown outcome", () => {
     const item = contentItem({
       status: "publishing",
-      operation: { status: "outcome_unknown", attempts: 1, next_attempt_at: null, last_error_code: null },
+      operation: { status: "outcome_unknown", attempts: 1, next_attempt_at: null, last_error_code: null, processing: false },
     });
     renderCard(item);
     expect(screen.getByText("Kontrol ediliyor")).toBeInTheDocument();
@@ -122,7 +122,7 @@ describe("content status mapping (INV-18)", () => {
     const badge = contentBadge(
       contentItem({
         status: "publishing",
-        operation: { status: "in_progress", attempts: 1, next_attempt_at: null, last_error_code: null },
+        operation: { status: "in_progress", attempts: 1, next_attempt_at: null, last_error_code: null, processing: false },
       }),
       i18n.t,
       "tr",
@@ -131,10 +131,30 @@ describe("content status mapping (INV-18)", () => {
     expect(badge).toEqual({ status: "publishing" });
   });
 
+  it("shows 'İşleniyor' while Instagram processes a reel container", () => {
+    const badge = contentBadge(
+      contentItem({
+        content_type: "reel",
+        status: "publishing",
+        operation: {
+          status: "in_progress",
+          attempts: 1,
+          next_attempt_at: "2026-04-20T16:10:00Z",
+          last_error_code: null,
+          processing: true,
+        },
+      }),
+      i18n.t,
+      "tr",
+      "Europe/Istanbul",
+    );
+    expect(badge).toEqual({ status: "processing" });
+  });
+
   it("says when a retry will happen, in the workspace time zone, and copes with no time", () => {
     const retry = contentItem({
       status: "retry_scheduled",
-      operation: { status: "retry_wait", attempts: 1, next_attempt_at: RETRY_AT, last_error_code: null },
+      operation: { status: "retry_wait", attempts: 1, next_attempt_at: RETRY_AT, last_error_code: null, processing: false },
     });
     expect(contentBadge(retry, i18n.t, "tr", "Europe/Istanbul")).toEqual({
       status: "retry_scheduled",

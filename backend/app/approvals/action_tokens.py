@@ -65,8 +65,13 @@ class ActionTokenService:
         clock: Clock,
         token_str: str,
         channel_user_id: str,
+        channel: str = "telegram",
     ) -> tuple[Approval, ActionToken]:
-        """Validate, bind-check and atomically consume an action token."""
+        """Validate, bind-check and atomically consume an action token.
+
+        ``channel`` is the owner channel the tap arrived on; the sender must be linked on that
+        channel and resolve to the token's bound member (Telegram by default, WhatsApp too).
+        """
         cleaned = token_str.strip()
         token_hash = hash_action_token(cleaned)
         now = clock.now()
@@ -109,7 +114,7 @@ class ActionTokenService:
 
         # 4. Verify channel_user_id resolves to the token's bound user_id (wrong user protection)
         resolved_channel = ChannelLinkService.resolve_channel_user(
-            db, channel="telegram", channel_user_id=channel_user_id
+            db, channel=channel, channel_user_id=channel_user_id
         )
         if resolved_channel is None:
             raise AppError("FORBIDDEN", reason="unlinked_channel_user")
@@ -139,6 +144,28 @@ class ActionTokenService:
         db.flush()
 
         return approval, token_record
+
+    @staticmethod
+    def lookup_action_token(db: Session, token_str: str) -> ActionToken | None:
+        """Read (never consume) the token record, for a channel to describe the current state of
+        a replayed button. The caller must still check that the asker is the token's member."""
+        token_hash = hash_action_token(token_str)
+        bind = db.get_bind()
+        if bind.dialect.name == "postgresql":
+            resolved = db.execute(
+                text(
+                    "SELECT id, workspace_id FROM public.resolve_action_token_by_hash(:token_hash)"
+                ),
+                {"token_hash": token_hash},
+            ).first()
+            if resolved is None:
+                return None
+            set_tenant_context(db, resolved.workspace_id)
+            return db.get(ActionToken, resolved.id)
+        record = db.scalar(select(ActionToken).where(ActionToken.token_hash == token_hash))
+        if record is not None:
+            set_tenant_context(db, record.workspace_id)
+        return record
 
 
 # Module-level aliases

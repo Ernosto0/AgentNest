@@ -5,17 +5,46 @@ only the mock provider understands (plan.md G3): the mock reads the JPEG back th
 storage. The Meta adapter refuses the local backend, because Meta needs a public URL.
 """
 
+import io
 import os
 import shutil
 import tempfile
 from datetime import timedelta
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, cast
 
 from app.core.clock import Clock
 from app.integrations.storage.base import StorageObjectNotFound, validate_key
 
 LOCAL_URL_SCHEME = "localmedia:"
+
+
+class _BoundedReader(io.RawIOBase):
+    """Read at most ``remaining`` bytes from an underlying seekable stream."""
+
+    def __init__(self, stream: BinaryIO, remaining: int) -> None:
+        self._stream = stream
+        self._remaining = remaining
+
+    def readable(self) -> bool:
+        return True
+
+    def read(self, size: int = -1) -> bytes:
+        if self.closed:
+            raise ValueError("read of closed stream")
+        if self._remaining <= 0 or size == 0:
+            return b""
+        to_read = self._remaining if size < 0 else min(size, self._remaining)
+        data = self._stream.read(to_read)
+        self._remaining -= len(data)
+        return data
+
+    def close(self) -> None:
+        if not self.closed:
+            try:
+                self._stream.close()
+            finally:
+                super().close()
 
 
 class LocalMediaStorage:
@@ -50,6 +79,17 @@ class LocalMediaStorage:
             return self._path(key).open("rb")
         except FileNotFoundError as exc:
             raise StorageObjectNotFound(key) from exc
+
+    def open_range(self, key: str, start: int, length: int) -> BinaryIO:
+        if start < 0 or length <= 0:
+            raise ValueError("range start must be >= 0 and length must be > 0")
+        stream = self.open(key)
+        try:
+            stream.seek(start)
+        except BaseException:
+            stream.close()
+            raise
+        return cast(BinaryIO, _BoundedReader(stream, length))
 
     def delete(self, key: str) -> None:
         self._path(key).unlink(missing_ok=True)

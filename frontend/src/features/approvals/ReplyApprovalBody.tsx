@@ -26,6 +26,7 @@ export function ReplyApprovalBody({ approval }: { approval: Approval }) {
         <FactsUsed facts={draft.data.facts_used} timeZone={workspace.timezone} className="mt-3 border-t border-border/60 pt-3" />
       </div>
       <ReasonChips reasons={draft.data.decision_reasons} />
+      {draft.data.intent === "follow_up" ? <p className="text-sm font-semibold">{t("answers.intent.follow_up")}</p> : null}
       <div>
         <Link
           to={`/w/${workspace.id}/inbox/${draft.data.conversation_id}`}

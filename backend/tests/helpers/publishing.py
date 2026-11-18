@@ -43,7 +43,13 @@ from app.operations import publish
 from app.operations.models import Operation
 from tests.factories import knowledge_ctx, workspace_with_members
 
-MOCK_CAPABILITIES = {"messaging": True, "publish_feed_image": True, "publish_story_image": True}
+MOCK_CAPABILITIES = {
+    "messaging": True,
+    "publish_feed_image": True,
+    "publish_feed_carousel": True,
+    "publish_story_image": True,
+    "publish_reel": True,
+}
 TRACKED = frozenset(
     {
         "get_publishing_quota",
@@ -194,6 +200,80 @@ class Publishing:
         self.session.commit()
         return item
 
+    def carousel(self, n: int = 3) -> ContentItem:
+        item, _ = service.create_draft(
+            self.session,
+            self.clock,
+            self.ctx,
+            content_type="feed_carousel",
+            title="Carousel",
+            caption="Merhaba",
+            media_asset_ids=[self.media().id for _ in range(n)],
+        )
+        return self.schedule(item)
+
+    def video(
+        self,
+        *,
+        duration_ms: int = 10_000,
+        warnings: tuple[str, ...] = (),
+        width: int = 1080,
+        height: int = 1920,
+        content: bytes | None = None,
+    ) -> MediaAsset:
+        raw = content or (b"FAKEVIDEO1 " + b"v" * 64)
+        key = build_key(self.workspace.id, uuid.uuid4(), self.clock.now(), ext="mp4")
+        self.storage.put(key, io.BytesIO(raw), "video/mp4")
+        asset = MediaAsset(
+            workspace_id=self.workspace.id,
+            kind="video",
+            duration_ms=duration_ms,
+            video_codec="h264",
+            audio_codec="aac",
+            frame_rate=30,
+            bitrate_bps=4_000_000,
+            container="mp4",
+            video_warnings=list(warnings),
+            storage_backend="local",
+            storage_key=key,
+            mime_type="video/mp4",
+            byte_size=len(raw),
+            width=width,
+            height=height,
+            sha256="c" * 64,
+            status="ready",
+            created_by_user_id=self.owner.id,
+        )
+        self.session.add(asset)
+        self.session.commit()
+        return asset
+
+    def reel(
+        self,
+        *,
+        duration_ms: int = 10_000,
+        warnings: tuple[str, ...] = (),
+        cover: MediaAsset | None = None,
+        thumb_offset_ms: int | None = None,
+        share_to_feed: bool = True,
+        caption: str = "Merhaba Reel",
+        scheduled: bool = True,
+    ) -> ContentItem:
+        video = self.video(duration_ms=duration_ms, warnings=warnings)
+        item, _ = service.create_draft(
+            self.session,
+            self.clock,
+            self.ctx,
+            content_type="reel",
+            title="Reel",
+            caption=caption,
+            media_asset_id=video.id,
+            cover_media_asset_id=cover.id if cover is not None else None,
+            thumb_offset_ms=thumb_offset_ms,
+            share_to_feed=share_to_feed,
+        )
+        return self.schedule(item) if scheduled else item
+
     def set_max_delay(self, minutes: int) -> None:
         """The workspace's ``publish_max_delay_minutes`` (read when an item is submitted)."""
         self.workspace.settings = {**self.workspace.settings, "publish_max_delay_minutes": minutes}
@@ -259,6 +339,17 @@ class Publishing:
             sleep=self.sleeper,
         )
 
+    def poll_reel(self, operation: Operation) -> publish.PublishOutcome:
+        return publish.poll_reel(
+            self.factory,  # type: ignore[arg-type]
+            self.clock,
+            self.settings,
+            self.workspace.id,
+            operation.id,
+            provider=self.provider,
+            sleep=self.sleeper,
+        )
+
     def process(self) -> int:
         """Run what is due the way the worker would (the job handlers read ``get_settings``,
         which the ``pub`` fixture points at this harness's settings)."""
@@ -273,6 +364,9 @@ class Publishing:
         *,
         remaining: int | None = 1,
         retry_after: int | None = None,
+        skip_first: int = 0,
+        delay_s: int | None = None,
+        error_subcode: int | None = None,
     ) -> None:
         self.session.add(
             SimFailureRule(
@@ -282,6 +376,9 @@ class Publishing:
                 mode=mode,
                 remaining=remaining,
                 retry_after_s=retry_after,
+                skip_first=skip_first,
+                delay_s=delay_s,
+                error_subcode=error_subcode,
             )
         )
         self.session.commit()
@@ -360,6 +457,10 @@ def committing_publishing(
     workspace, users = workspace_with_members(session, roles=("owner",))
     session.commit()
     cfg = settings.model_copy(
-        update={"media_local_root": str(media_root), "sim_container_delay_seconds": 0}
+        update={
+            "media_local_root": str(media_root),
+            "sim_container_delay_seconds": 0,
+            "sim_reel_processing_seconds": 0,
+        }
     )
     return Publishing(session, factory, clock, cfg, workspace, users["owner"])

@@ -141,7 +141,9 @@ def own_story(
     media_status = (
         session.scalar(
             select(MediaAsset.status).where(
-                MediaAsset.workspace_id == workspace_id, MediaAsset.id == item.media_asset_id
+                MediaAsset.workspace_id == workspace_id,
+                MediaAsset.id == item.media_asset_id,
+                MediaAsset.kind == "image",
             )
         )
         if item.media_asset_id is not None

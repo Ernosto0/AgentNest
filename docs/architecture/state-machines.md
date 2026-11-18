@@ -143,6 +143,7 @@ Notes:
 - Editing a `pending_approval` draft: version+1, previous approval `cancelled (SUBJECT_EDITED)`, a new approval is created (or self-approved if the editor has `reply.approve` and chooses "approve & send"). The edited text is re-validated by the claim validator; failures are shown inline and block sending until fixed or overridden by a fact update.
 - `failed` drafts can be retried by the user via "Send again", which creates a **new** draft (`source = owner`) with the same text. This is a new operation, and the UI warns if the failure was `OUTCOME_UNCONFIRMED` ("check Instagram first").
 - `blocked` reasons: `MESSAGING_WINDOW_CLOSED`, `ACCOUNT_NOT_CONNECTED`, `CAPABILITY_MISSING`.
+- A tagged person's reply (`message_tag = HUMAN_AGENT`) is retired at 7 days instead of 24 hours (`expired`, `MESSAGING_WINDOW_CLOSED`); at send time it is `cancelled` with `HUMAN_AGENT_DISABLED` (capability off) or `HUMAN_AGENT_AUTOMATED_SOURCE` (never expected: the database forbids it).
 
 **Conversation attention** (derived and stored for list filtering; updated in the same transaction as draft and message changes):
 - `needs_human` if the open draft is `needs_human`, or the last inbound has no draft because the conversation is in `human` mode.
@@ -151,6 +152,15 @@ Notes:
 - otherwise `none`.
 
 ---
+
+### Conversation follow-up (F-10)
+
+`scheduled -> drafted | cancelled | skipped`. Cancellation and skipping always record a
+reason. A later eligible sent pricing/booking answer may re-arm `scheduled`, `cancelled`
+or `skipped` in place, replacing the answer ID and due time; old jobs then no-op. `drafted`
+is final. A plain unique `(workspace_id, conversation_id)` constraint enforces one row;
+a conditional update plus row/conversation locks permits only one follow-up draft.
+Deleting a conversation, answer, covered message or follow-up draft cascades the row.
 
 ## 5. Content item
 
@@ -201,6 +211,25 @@ stateDiagram-v2
 | `succeed` / `retry` / `fail` | `publishing → published` / `retry_scheduled` / `failed`; `retry_scheduled → failed` | `fail` and `retry` record `last_error_code` |
 
 Notes:
+- `feed_carousel` adds no states. Changing its media list or order is a payload edit: version + 1,
+  pending approval cancelled (`SUBJECT_EDITED`), queued job cancelled, and back to draft. An
+  already approved version is stale; even direct DB reordering changes the bound payload hash.
+- A fact quoted by any template-rendered carousel image joins the existing price-change hold:
+  scheduled/retry items go `on_hold (FACT_CHANGED)`; pending approval returns to draft.
+- Session 05: carousel publishing uses the same operation key and states. Commit each child id,
+  then the parent `container_id`. On every run read the parent first: PUBLISHED finishes without
+  another publish; FINISHED permits publish; EXPIRED forgets only the parent. With no usable
+  parent, verify children in position order; recreate only expired/missing children. Children
+  share a five-minute poll budget; the parent has a fresh five-minute budget. Every wait is
+  outside a transaction and followed by a heartbeat. The recreation cap is per run across all
+  containers. Unknown publishes reconcile the parent; crashes before a parent resume children.
+- Session 07 (`reel`): adds no `ContentItem` or `Operation` states. Container creation (`T2`) sets
+  `op.provider_ref.phase = "processing"` and enqueues `poll_reel_container`; `publishing` +
+  `operation.processing` displays `"İşleniyor"` / `"Processing"` in the UI. Healthy polls advance
+  `op.started_at` before the 15 min stuck sweep while enforcing `REEL_PROCESSING_TIMEOUT` (30 min
+  -> `failed REEL_PROCESSING_TIMEOUT`). Editing `cover_media_asset_id`, `thumb_offset_ms`, or
+  `share_to_feed` is a payload edit (`version + 1`, pending approval cancelled, back to `draft`),
+  and custom template covers join `on_hold (FACT_CHANGED)`.
 - `publishing` includes waiting for container processing and reconciliation of `outcome_unknown` operations. The operation status distinguishes them, and the UI shows "Checking…" when the operation is `outcome_unknown`.
 - **Due-time checks** before `scheduled → publishing`: workspace active; approval `approved` and executable; `version == approval.subject_version`; account `connected` with the needed capability. If the account is `needs_reauth`/`disconnected` → `on_hold (ACCOUNT_UNAVAILABLE)`; it does not fail silently. A `degraded` account does not hold the item (Phase 6, H11): while `degraded_until > now` the item is rescheduled (`retry_scheduled`) for that instant; after it the publish is the half-open probe.
 - `cancel` during `publishing` is **not allowed** (`409 CONFLICT_STATE`): the outcome must be determined first.
@@ -291,3 +320,5 @@ publish jobs are cancelled/fenced by version. A confirmed pause and a version-bo
 the existing account active/paused states, advancing config_version/controller_epoch on each
 change. Re-pausing is a new state revision even though its state label stays paused.
 
+
+Session 05 sweep: submit quota forecast, ledger quota, calendar and reporting count ContentItem rows, so each carousel counts once without joining children. Notifications and failure detail use the existing item/operation states. Generation, templates, command-created content and the Phase 7.5 agent remain single-image/story only by design. Insights snapshot ingestion skips feed_carousel (album metrics are out of scope); provider calls return typed MEDIA_INSIGHTS_NOT_SUPPORTED for albums.

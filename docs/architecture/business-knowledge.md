@@ -125,6 +125,9 @@ This implements the original requirement: "If the website says 6,000 TRY while t
 - The renderer records the exact character spans of every rendered value, which the validator needs.
 
 ### 7.2 Claim validator (`validate_claims(text, render_result, locale) → ClaimReport`)
+
+F-11 (2026-11-18): the same patterns run in every locale, including German/Russian/Arabic currency words and multipliers, percentages/discount words, local time ranges and month-name dates, numeric dates, phones and bare numbers. Arabic-Indic and Persian digits and separators are canonicalised; ignored RTL/format marks, tashkeel and tatweel cannot hide values. Trusted spans are masked before stripping marks, and an index map preserves issue spans in the original text. Small cardinal numbers up to 20 remain allowed; spelled-out numbers are a known limitation.
+
 Scans the **final** text, excluding the spans produced by the renderer and the code-appended disclosure suffix. Any match of the following outside rendered spans is a violation:
 
 | Pattern class | Examples (tr / en) |

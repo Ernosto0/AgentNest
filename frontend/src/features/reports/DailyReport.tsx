@@ -58,6 +58,13 @@ export function DailyReport() {
         </Link>
       ) : null}
 
+      {canGenerate ? (
+        <Link to={`/w/${workspace.id}/more/reports/leads`} data-testid="leads-report-link"
+          className="inline-flex min-h-11 w-fit items-center text-sm font-semibold text-action underline underline-offset-2">
+          {t("reports.leads.title")}
+        </Link>
+      ) : null}
+
       {/* Date Stepper */}
       <div
         className="flex items-center justify-between gap-3 border-b border-border pb-3"

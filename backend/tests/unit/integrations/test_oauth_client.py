@@ -33,8 +33,11 @@ def test_authorize_and_capabilities(settings):
     assert not any(compute_capabilities([], True).values())
     assert compute_capabilities([SCOPES[2]], False) == {
         "messaging": False,
+        "human_agent": False,
         "publish_feed_image": True,
+        "publish_feed_carousel": True,
         "publish_story_image": False,
+        "publish_reel": True,
         "comments_permission": False,
         **dict.fromkeys(COMMENT_CAPABILITIES, False),
     }

@@ -4,6 +4,32 @@ import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
 import type { CalendarAppointment, CalendarConnection, ChannelLink, ChannelLinkCode, Invite, Member, PendingInvite, ReplyUsage, Role, SocialAccount, SystemHealth } from "@/api/types";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
+import type { FollowUpSettingsBody, FollowUpSettingsData } from "@/api/types";
+
+export const followUpSettingsKey = (ws: string) => ["follow-up-settings", ws] as const;
+
+export function useFollowUpSettings(ws: string) {
+  return useQuery<FollowUpSettingsData, AppError>({
+    queryKey: followUpSettingsKey(ws),
+    queryFn: () => unwrap(api.GET("/api/v1/workspaces/{workspace_id}/follow-up-settings", {
+      params: { path: { workspace_id: ws } },
+    })),
+    retry: false,
+  });
+}
+
+export function useSaveFollowUpSettings(ws: string) {
+  const client = useQueryClient();
+  return useMutation<FollowUpSettingsData, AppError, FollowUpSettingsBody>({
+    mutationFn: body => unwrap(api.PUT("/api/v1/workspaces/{workspace_id}/follow-up-settings", {
+      params: { path: { workspace_id: ws } }, body,
+    })),
+    onSuccess: data => {
+      client.setQueryData(followUpSettingsKey(ws), data);
+      return client.invalidateQueries({ queryKey: followUpSettingsKey(ws) });
+    },
+  });
+}
 
 export const systemHealthKey = (ws: string) => ["system-health", ws] as const;
 
@@ -281,8 +307,22 @@ export function useChannelLinks(ws: string) {
   });
 }
 
+/** Which optional owner channels the server has credentials for (WhatsApp is off by default). */
+export function useChannelAvailability(ws: string) {
+  return useQuery<{ whatsapp: boolean }, AppError>({
+    queryKey: ["channel-availability", ws] as const,
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/workspaces/{workspace_id}/channels/availability", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ),
+    retry: false,
+  });
+}
+
 export function useGenerateChannelLinkCode(ws: string) {
-  return useMutation<ChannelLinkCode, AppError, { channel?: "telegram" } | void>({
+  return useMutation<ChannelLinkCode, AppError, { channel?: "telegram" | "whatsapp" } | void>({
     mutationFn: (body) =>
       unwrap(
         api.POST("/api/v1/workspaces/{workspace_id}/channels/link-code", {

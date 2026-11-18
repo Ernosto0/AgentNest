@@ -209,7 +209,7 @@ class PasswordResetToken(UUIDPrimaryKeyMixin, Base):
     )
 
 
-CHANNEL_TYPES = ("telegram",)
+CHANNEL_TYPES = ("telegram", "whatsapp")
 CHANNEL_LINK_STATUSES = ("active", "unlinked")
 
 
@@ -248,6 +248,9 @@ class ChannelLink(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, TimestampMixin, Bas
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default="active")
     linked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     unlinked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # WhatsApp: when the owner last wrote to the business number. It anchors the 24-hour
+    # customer-service window (Feature Phase 5, Session 02). Never set for other channels.
+    last_inbound_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ChannelLinkCode(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):

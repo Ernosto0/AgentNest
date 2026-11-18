@@ -131,12 +131,15 @@ def test_connect_consumes_before_exchange_encrypts_and_whitelists_response(env, 
     assert account.capabilities == {
         "messaging": True,
         "publish_feed_image": False,
+        "publish_feed_carousel": False,
         "publish_story_image": False,
+        "publish_reel": False,
         "comments_permission": False,
         "comment_read": False,
         "comment_reply": False,
         "comment_moderate": False,
         "comment_private_reply": False,
+        "human_agent": False,
     }
     assert (
         TokenKeyRing(KEYS, "k1").decrypt(

@@ -157,7 +157,7 @@ The same pipeline (`interpret_command` → deterministic resolution → answer, 
 | R1 | Account not `connected`, or lacks `messaging` capability | blocked | `ACCOUNT_NOT_CONNECTED` / `CAPABILITY_MISSING` |
 | R2 | `now ≥ window_end − 5 min` | blocked | `MESSAGING_WINDOW_CLOSED` |
 | R3 | Conversation `handling_mode = human` | human_required | `HUMAN_TAKEOVER` |
-| R4 | Reply language not in `reply_languages` | human_required | `LANGUAGE_UNSUPPORTED` |
+| R4 | Reply language not in `reply_languages` (supported set: `tr`, `en`, `ru`, `de`, `ar`), or mixed/low-confidence foreign evidence (`other`) | human_required | `LANGUAGE_UNSUPPORTED` |
 | R5 | Intent ∈ {`complaint`, `refund_request`, `discount_request`, `sensitive`} **or** any flag ∈ {`complaint`, `refund`, `discount`, `legal`, `health_safety`, `abusive`, `personal_data`} (from the LLM **or** from keyword detection) | human_required | `INTENT_<NAME>` / `FLAG_<NAME>` |
 | R6 | Workspace escalation keyword matched | human_required | `ESCALATION_KEYWORD` |
 | R7 | Model output `needs_human = true` or `can_answer = false` | human_required | `MODEL_REQUESTED_HUMAN` |
@@ -190,6 +190,55 @@ The same pipeline (`interpret_command` → deterministic resolution → answer, 
 | Acceptance tests | AC-B1…B10, AC-G4, AC-G5. |
 
 ---
+
+### Follow-up message (F-10)
+
+Default off. A sent legacy assistant price/booking answer arms one durable check after
+`follow_up_hours` (1 to 20, default 6) of quiet. The job renders the selected TR/EN template
+from usable facts, validates claims and requests authorization with
+`FOLLOW_UP_REQUIRES_APPROVAL`. It never calls a model or sends automatically. Automatic
+follow-ups are a possible later step. Agent-controlled accounts are excluded.
+
+A customer message cancels scheduled checks and supersedes pending follow-up drafts; a
+queued follow-up is cancelled with `CUSTOMER_REPLIED`. Disabling the setting cancels at
+check time and rejects at send time. Human takeover, controller changes, disconnected
+accounts, another outbound reply and open drafts prevent drafting. At draft time the
+boundary is `last_inbound_at + 24h - 5m` (inclusive rejection); at send time the generic
+`last_inbound_at + 24h - 60s` gate expires the draft before creating an operation.
+Send additionally rejects a new inbound, disabled setting or human takeover. A drafted row
+is final even if its draft is later cancelled; no second follow-up is created.
+
+### Human Agent tag: a person's reply after 24 hours (F-10, Session 09)
+
+Instagram allows a **person's** reply up to 7 days after the customer's last message when the
+message carries `messaging_type=MESSAGE_TAG` and `tag=HUMAN_AGENT`
+([platform-capabilities.md §1.10](../research/platform-capabilities.md)). R2 above stays a
+24-hour rule, so no assistant draft, approved answer, follow-up or agent draft can ever reach
+the extended window. One pure function, `policy/message_tag.py::evaluate_message_tag`, decides
+for the manual reply path and for the send executor:
+
+| Window state (margin 2 min on creation, 60 s at send) | Capability `human_agent` on | Result |
+|---|---|---|
+| `open`: `now < last_inbound + 24h - margin` | any | normal reply, no tag |
+| `human_agent_only`: up to `last_inbound + 7d - margin` | yes | a reply typed by a person is accepted and carries `message_tag = HUMAN_AGENT` |
+| `human_agent_only` | no | 409 `MESSAGING_WINDOW_CLOSED` (a tagged draft that meets a switched-off capability at send time is cancelled `HUMAN_AGENT_DISABLED`) |
+| `closed` | any | 409 `MESSAGING_WINDOW_CLOSED` (send time: draft `expired`) |
+
+Only `submit_manual_reply` (and editing a draft that already carries the tag) asks for the
+tag. It is rejected with 409 `HUMAN_AGENT_NOT_ALLOWED` when the text was started from an
+assistant draft (`from_draft_id` of a non-owner draft) or equals a recent assistant draft or
+suggestion. The draft stores `reply_drafts.message_tag`; a CHECK constraint allows it only for
+`source = owner`, `origin = legacy`, `created_by_actor_type = user`; the approval payload
+includes `message_tag`, so the tag is covered by the hash. At send time `operations/send`
+re-runs the policy function from the stored draft (source, origin, actor, agent action,
+follow-up row, capability, window): an automated source is cancelled
+`HUMAN_AGENT_AUTOMATED_SOURCE`, a closed 7-day window expires the draft, and when the
+customer wrote again and the standard window is open the reply is sent without the tag. The
+`send_reply` ledger row records `provider_ref.message_tag`. The expiry sweep waits for the
+7-day window for tagged drafts. The capability `human_agent` is true for a Meta account only
+when it can message and `META_HUMAN_AGENT_ENABLED=true` (mock accounts: simulator support).
+The conversation API returns `window_state` (`open`, `human_agent_only`, `closed`) and
+`human_agent_until`.
 
 ## D. Human approval
 
@@ -228,6 +277,8 @@ The same pipeline (`interpret_command` → deterministic resolution → answer, 
 
 ## E. Content scheduling and publishing
 
+Carousel note (Session 05, workflow E step 6): the ledger commits ordered child ids before creating and committing the parent carousel container. Resume reads the parent first and publishes only after FINISHED in the current run; otherwise it verifies stored children before creating missing/expired ones. One carousel is one published post.
+
 **Goal:** Draft → validate → approve → schedule → execute → retry → confirm → report failure.
 
 | Aspect | Contract |
@@ -254,8 +305,10 @@ The same pipeline (`interpret_command` → deterministic resolution → answer, 
 5. **Approve later** (workflow D callback, `content/subject.py`, in the same transaction as the decision): the item must still be `pending_approval` at the approval's version, and the payload recomputed from the item must hash to the approval's `payload_hash`; otherwise `409 APPROVAL_STALE` and the approval stays pending. Approve → `pending_approval → scheduled` + enqueue as above. Reject → `rejected` with the decider's note. Expire → `draft (APPROVAL_EXPIRED)` with `scheduled_at` cleared (the owner picks a new time); the requester is notified by the approvals service (`approval.expired`), not by the callback.
 6. **Execute** (job `publish_content` at `run_at`) — `operations.execute_publish(content_id, version)`:
    1. [T1] Lock the item. If the status is not `scheduled`/`retry_scheduled` or the version differs → no-op (job succeeds). Due-time checks ([state-machines.md §5](state-machines.md)); account unavailable → `on_hold (ACCOUNT_UNAVAILABLE)` + notify, stop. `now > execute_before` → `failed (PUBLISH_DEADLINE_PASSED)` (the state table has no `scheduled → failed`: the executor first takes the item `scheduled → publishing` inside T1 and then `publishing → failed`; nothing else may fail a `scheduled` item). Quota check (G8): `get_publishing_quota` is read **before** T1, with no transaction open (inside T1 it would hold the item lock during an external call); T1 then locks and re-checks everything that is in the database. Exhausted (`used >= limit`) → `retry_scheduled` (`scheduled → publishing → retry_scheduled` inside T1, the table has no direct edge) at the instant the oldest post that has to leave the window does (24 h after it was published; `PublishingQuota` carries no timestamps, so the times come from the account's `published` items, or now + 1 h if they do not cover the count) when that is before `execute_before`, otherwise `failed (PUBLISH_DEADLINE_PASSED)`. The operation goes to `retry_wait` (attempts untouched, `next_attempt_at` set) and the job is rescheduled to that instant without spending an attempt. An unreadable quota is ignored: the provider enforces it at publish time (`ProviderRateLimited`, retried as in step 6). The due-time checks run in this order: workspace active, `execute_before` (a past deadline is `failed` whatever the account state), the approval (`assert_executable`, payload hash), account `connected` (or `degraded`, see below) with the capability for the type, media `ready`. A `degraded` account whose `degraded_until` is in the future reschedules the item like an exhausted quota does (`retry_scheduled`, reason `ACCOUNT_DEGRADED`, attempts untouched, job rescheduled to `degraded_until`; past `execute_before` it is `failed (PUBLISH_DEADLINE_PASSED)`); after `degraded_until` the publish is the half-open probe (H11). Get or create `operations(publish:{id}:v{version})`; if `succeeded` → repair to `published` and exit. Set operation `in_progress`, item `publishing`. Commit.
-   2. If there is no `provider_ref.container_id`: `create_media_container(spec with public_fetch_url(media, ttl))` → [T2] save `container_id`, commit.
-   3. Poll `get_container_status` (every 10 s, up to 5 min, measured with the injected `Clock` and waited with an injected sleeper, `heartbeat()` after each wait, no transaction open; after 5 min the operation becomes `outcome_unknown` and `reconcile_publish` is enqueued at +1 min): `IN_PROGRESS` → keep waiting; `ERROR` → permanent failure `MEDIA_REJECTED`; `EXPIRED` → clear `container_id` and go to step 2; `PUBLISHED` → step 5 (already published, reconcile); `FINISHED` → step 4.
+   2. If there is no `provider_ref.container_id`: `create_media_container(spec with public_fetch_url(media, ttl))` → [T2] save `container_id`, commit. For `reel` (`media_type="REELS"`), `T2` stores `{container_id, phase: "processing", processing_started_at, polls: 0, recreations}`, updates `op.next_attempt_at`, and enqueues `poll_reel_container` instead of sleeping or polling in-process.
+   3. Poll `get_container_status`:
+      - Images / carousels: poll every 10 s up to 5 min (`heartbeat()` after each wait, no transaction open; after 5 min `outcome_unknown` -> `reconcile_publish` at +1 min): `IN_PROGRESS` -> keep waiting; `ERROR` -> `MEDIA_REJECTED`; `EXPIRED` -> clear `container_id` and recreate (up to cap 2); `PUBLISHED` -> step 5; `FINISHED` -> step 4.
+      - Reels (`poll_reel_container` backoff job, `REEL_POLL_SCHEDULE = (15, 30, 60, 60, 120, 120, 180, 180, 300)` s): each poll runs with no DB transaction open across HTTP calls. `IN_PROGRESS` refreshes `op.started_at` and reschedules if `< REEL_PROCESSING_TIMEOUT` (30 min, else `failed REEL_PROCESSING_TIMEOUT`). `EXPIRED` or retryable subcodes (`SUBCODE_2207003`, `SUBCODE_2207032`, `SUBCODE_2207053`) recreate up to `MAX_CONTAINER_RECREATIONS = 2` (else `PROVIDER_UNAVAILABLE`). Other `ERROR` fails `MEDIA_REJECTED`. Container status read errors tolerate up to 5 `read_failures` without spending `attempts`, then hand off to `_record_error`. `FINISHED` proceeds to step 4; `PUBLISHED` to step 5.
    4. `publish_container(container_id)` → `media_id`. `ProviderOutcomeUnknown` → operation `outcome_unknown`, enqueue `reconcile_publish` (+1 min) which re-reads the container status (`PUBLISHED` → step 5; `FINISHED` → retry step 4; else per step 3).
    5. `get_media(media_id)` for the permalink (best effort; a read **before** T3, never inside it; after a reconciliation the media id comes from `ContainerStatus.media_id`). [T3] Operation `succeeded`. Item `published` (`published_at`, `external_media_id`, `external_permalink`). Notification `content.published`. Audit `content.published`.
    6. Errors (a `ProviderOutcomeUnknown` or an unexpected error from `create_media_container` / `get_container_status` has had no visible effect and is retried like a transient one; the same from `publish_container`, or its `CONTAINER_PUBLISHED` / `CONTAINER_NOT_READY` / `CONTAINER_EXPIRED` answers, is an unknown outcome): retryable (`ProviderTransientError`, `ProviderRateLimited`) → operation `retry_wait`, item `retry_scheduled`, job re-enqueued at backoff (1, 5, 15, 30 min; `retry_after` respected) while `< execute_before` and attempts < 5. Otherwise → `failed` + notification `content.failed`. Permanent (`ProviderInvalidRequest`, `MEDIA_REJECTED`, `ProviderPermissionError`) → `failed` immediately. Auth → workflow G: `health.handle_auth_error`, the operation `failed ACCOUNT_NEEDS_REAUTH`, the item `publishing → on_hold (ACCOUNT_UNAVAILABLE)` + `content.on_hold`. A permission error clears the account's `publish_<type>` capability and fails with `CAPABILITY_MISSING`. The retry delay is `max(backoff[attempt], Retry-After)`; the item fails instead when `now + delay >= execute_before` or the 5th attempt failed, and `content.failed` carries the code. The executor refuses by the item's status and version, so an approval that stays `approved` after a cancel or an edit cannot publish anything.
@@ -362,6 +415,8 @@ A separate, live report (`reporting/missed_customers.py`, row sets in `reporting
 | `unanswered_conversations` | Conversations whose last inbound message of the week has no outbound message after it by the end of the period |
 | `answered_questions` | Inbound messages the assistant answered: a sent draft (`source` ai or approved_answer, `intent` pricing or booking, as stored by the drafting pipeline) that covers the message and has a sent outbound message |
 | `after_hours_price_answers` | The subset of `answered_questions` with `intent = pricing` and an after-hours message |
+| `follow_ups_sent` | Real outbound messages linked through `conversation_follow_ups.reply_draft_id`, provider timestamp in the local week `[start, end)` |
+| `follow_up_replies` | Those follow-ups with a real inbound in the same conversation strictly after sending and within 24 hours inclusive; each follow-up counted once |
 
 Each number is compared with the previous full week (`previous_value`; the "four weeks before activation" baseline of the brief is not implemented). The drill-down lists the very row set of the number (the count of items equals the value).
 
@@ -425,3 +480,6 @@ their previous order. P-13's other UI-polish work is not closed by this change.
 
 
 Instagram imports reuse `extract_fact_candidates` and its deterministic excerpt/value checks. Import runs carry `input_snapshot.source = "instagram_profile"`; only segment metadata, flags, safe website prefill and completion time are kept there, never imported text. `knowledge.imports` separates gather/model calls from transactions and stores deduplicated, pending candidates with source provenance. Source gatherers plug into it: `profile_import` (Instagram) and `website_import` (F-09 part 2: `input_snapshot.source = "website"`, segments of origin `website_page`, the typed address stored as `website_url` and only its host in `notes.website_host`). The website gatherer fetches through the SSRF-safe fetcher (`app/integrations/web/`, [security-and-privacy.md §7](security-and-privacy.md)) with no transaction open, then converts HTML to text, splits it into 700-character chunks and keeps the first chunk of each page plus every chunk with a digit, `@`, `tel:` or `mailto:`; the shared pipeline drops injected chunks, caps the text and attributes each candidate to its page. No import verifies facts.
+
+
+Session 06 video ingest: `POST /media/video` authenticates and checks header envelope/quota before multipart parsing, copies/counts/hashes to private scratch, scans/probes, validates all rules, extracts and sanitizes a JPEG thumbnail, writes both objects between transactions, then inserts thumbnail and video with audit in one transaction. Failures remove both objects; probe unavailable is retryable 503. Videos and thumbnails share ready/deleted media states; the `reel` content type and asynchronous `poll_reel_container` publishing workflow are added in Session 07 (see Workflow E §6 lines 308–311). See ADR-028.

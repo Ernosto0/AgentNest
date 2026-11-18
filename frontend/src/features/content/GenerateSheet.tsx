@@ -99,6 +99,7 @@ export function GenerateSheet({
   const busy = generate.isPending || create.isPending;
 
   const submitAi = () => {
+    if (type === "feed_carousel" || type === "reel") return;
     generate.mutate(
       { content_type: type, objective: objective.trim(), notes: notes.trim() === "" ? null : notes.trim() },
       { onSuccess: (item) => setCreatedId(item.id) },
@@ -115,13 +116,16 @@ export function GenerateSheet({
     <fieldset className="flex flex-col gap-2.5" disabled={createdId !== null}>
       <legend className="text-sm font-semibold text-primary">{t("content.generate.typeLabel")}</legend>
       <div className="flex flex-wrap gap-4">
-        {(["feed_image", "story_image"] as const).map((option) => (
+        {(["feed_image", "story_image", "feed_carousel", "reel"] as const).map((option) => (
           <label key={option} className="flex min-h-11 items-center gap-2.5 cursor-pointer text-sm font-medium text-primary">
             <input
               type="radio"
               name="content-type"
               checked={type === option}
-              onChange={() => setType(option)}
+              onChange={() => {
+                setType(option);
+                if (option === "feed_carousel" || option === "reel") setMode("blank");
+              }}
               className="size-4 accent-action focus-visible:outline-2 focus-visible:outline-focus"
             />
             <span>{t(`content.type.${option}`)}</span>
@@ -146,7 +150,7 @@ export function GenerateSheet({
               role="tab"
               type="button"
               aria-selected={mode === option}
-              disabled={createdId !== null}
+              disabled={createdId !== null || (option === "ai" && (type === "feed_carousel" || type === "reel"))}
               onClick={() => setMode(option)}
               className={`inline-flex items-center gap-1.5 min-h-10 rounded-control px-4 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-60 ${
                 mode === option

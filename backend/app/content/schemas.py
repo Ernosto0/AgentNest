@@ -4,9 +4,12 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
-ContentType = Literal["feed_image", "story_image"]
+from app.content.validation import CAROUSEL_MAX_ITEMS
+from app.core.errors import AppError
+
+ContentType = Literal["feed_image", "story_image", "feed_carousel", "reel"]
 ContentStatus = Literal[
     "draft",
     "pending_approval",
@@ -41,6 +44,16 @@ OverlayList = Annotated[
 class MediaAssetOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    kind: Literal["image", "video", "video_thumbnail"] = "image"
+    duration_ms: int | None = None
+    video_codec: str | None = None
+    audio_codec: str | None = None
+    frame_rate: float | None = None
+    bitrate_bps: int | None = None
+    container: Literal["mp4", "mov"] | None = None
+    video_warnings: list[str] | None = None
+    thumbnail_media_asset_id: uuid.UUID | None = None
+
     id: uuid.UUID
     status: str
     width: int
@@ -58,6 +71,18 @@ class ContentCreate(BaseModel):
     caption: Caption | None = None
     overlay_text_suggestions: OverlayList = Field(default_factory=list)
     media_asset_id: uuid.UUID | None = None
+    media_asset_ids: list[uuid.UUID] | None = Field(default=None, max_length=CAROUSEL_MAX_ITEMS)
+    cover_media_asset_id: uuid.UUID | None = None
+    thumb_offset_ms: int | None = Field(default=None, ge=0)
+    share_to_feed: bool | None = None
+
+    @field_validator("media_asset_ids", mode="before")
+    @classmethod
+    def carousel_limit(cls, value: Any) -> Any:
+        if isinstance(value, list) and len(value) > CAROUSEL_MAX_ITEMS:
+            raise AppError("CAROUSEL_TOO_MANY_ITEMS", count=len(value), max=CAROUSEL_MAX_ITEMS)
+        return value
+
     client_request_id: Annotated[str, StringConstraints(min_length=1, max_length=100)] | None = None
 
 
@@ -65,7 +90,7 @@ class ContentGenerate(BaseModel):
     """Ask for an AI draft (plan.md G7). ``client_request_id`` is required: it makes a retry
     return the first draft instead of paying for a second generation."""
 
-    content_type: ContentType
+    content_type: Literal["feed_image", "story_image"]
     objective: Annotated[
         str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)
     ]
@@ -85,6 +110,17 @@ class ContentPatch(BaseModel):
     overlay_text_suggestions: OverlayList | None = None
     visual_notes: Annotated[str, StringConstraints(max_length=NOTES_MAX)] | None = None
     media_asset_id: uuid.UUID | None = None
+    media_asset_ids: list[uuid.UUID] | None = Field(default=None, max_length=CAROUSEL_MAX_ITEMS)
+    cover_media_asset_id: uuid.UUID | None = None
+    thumb_offset_ms: int | None = Field(default=None, ge=0)
+    share_to_feed: bool | None = None
+
+    @field_validator("media_asset_ids", mode="before")
+    @classmethod
+    def carousel_limit(cls, value: Any) -> Any:
+        if isinstance(value, list) and len(value) > CAROUSEL_MAX_ITEMS:
+            raise AppError("CAROUSEL_TOO_MANY_ITEMS", count=len(value), max=CAROUSEL_MAX_ITEMS)
+        return value
 
 
 class ContentIssueOut(BaseModel):
@@ -105,7 +141,8 @@ class ContentIssueOut(BaseModel):
 class ContentCheckItemOut(BaseModel):
     """One submit rule that was broken (``errors``) or only worth a look (``warnings``)
     (plan.md G17). ``field`` names what it is about (``caption``, ``media_asset_id``,
-    ``schedule``, ``scheduled_at``, ``social_account_id``, ``overlay_text_suggestions.{i}``);
+    ``media_asset_ids``, ``media_asset_ids.{index}``, ``schedule``, ``scheduled_at``,
+    ``social_account_id``, ``overlay_text_suggestions.{i}``);
     ``null`` for the claim check, whose ``params.issues`` lists the claim issues."""
 
     code: str
@@ -148,6 +185,7 @@ class ContentOperationOut(BaseModel):
     attempts: int
     next_attempt_at: datetime | None
     last_error_code: str | None
+    processing: bool = False
 
 
 class ScheduleLocalOut(BaseModel):
@@ -189,7 +227,16 @@ class TemplateImageRerenderIn(BaseModel):
     expected_version: int = Field(ge=1)
 
 
+class ContentMediaItemOut(BaseModel):
+    media_asset_id: uuid.UUID
+    position: int
+    width: int
+    height: int
+    media_deleted: bool
+
+
 class ContentItemOut(BaseModel):
+    media_items: list[ContentMediaItemOut] = Field(default_factory=list)
     template_image: TemplateImageStateOut | None
     id: uuid.UUID
     content_type: ContentType
@@ -205,6 +252,11 @@ class ContentItemOut(BaseModel):
     # The image was deleted when its retention ran out (media cleanup); the UI says so instead of
     # showing a broken image.
     media_deleted: bool
+    cover_media_asset_id: uuid.UUID | None = None
+    thumb_offset_ms: int | None = None
+    share_to_feed: bool | None = None
+    cover_media_deleted: bool = False
+    video_duration_ms: int | None = None
     scheduled_at: datetime | None
     schedule_local: ScheduleLocalOut | None
     approval_id: uuid.UUID | None

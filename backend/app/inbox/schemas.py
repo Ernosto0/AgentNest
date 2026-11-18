@@ -24,6 +24,10 @@ class ConversationOut(BaseModel):
     attention: Attention
     handling_mode: HandlingMode
     window_ends_at: datetime | None
+    # open: a normal reply; human_agent_only: only a person's own reply with the Human Agent tag,
+    # until ``human_agent_until``; closed: nothing can be sent until the customer writes again.
+    window_state: Literal["open", "human_agent_only", "closed"] = "closed"
+    human_agent_until: datetime | None = None
     is_simulated: bool
 
 
@@ -162,6 +166,8 @@ class ReplyDraftOut(BaseModel):
     window_ends_at: datetime | None
     created_at: datetime
     is_simulated: bool
+    # ``HUMAN_AGENT`` for a person's reply that goes out after the 24-hour window.
+    message_tag: Literal["HUMAN_AGENT"] | None = None
     # Non-empty when the reply was drafted from a voice-note transcript: a person must approve it.
     transcripts: list[DraftTranscriptOut] = Field(default_factory=list)
 
@@ -217,7 +223,7 @@ class ApprovedAnswerIn(StrictModel):
     # At least one, except for the story-mention thank-you (checked by the service).
     example_questions: list[str] = Field(max_length=10)
     answer_template: str = Field(min_length=1, max_length=2000)
-    language: Literal["tr", "en"]
+    language: Literal["tr", "en", "ru", "de", "ar"]
 
 
 class ApprovedAnswerPatch(StrictModel):

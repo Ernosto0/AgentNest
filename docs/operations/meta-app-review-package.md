@@ -54,6 +54,7 @@ AgentNest adheres strictly to the principle of least privilege. Only permissions
 | **`pages_manage_metadata`** | Advanced Access | **Required for Webhook Ingestion Delivery.** Subscribes the business's connected Facebook Page to Instagram webhook topic fields (`messages`, `message_reactions`, `feed`). Without this permission, Meta does not deliver real-time webhook events to AgentNest's server. | Immediately following OAuth token exchange, AgentNest executes `POST /{page_id}/subscribed_apps?subscribed_fields=messages,messaging_postbacks,message_reactions,feed`. This is an automated background configuration step. | No Page metadata is stored or modified beyond subscribing to the required webhook fields. |
 | **`pages_read_engagement`** | Advanced Access | **Required to identify connected Facebook Pages and retrieve Page Access Tokens.** Instagram Professional accounts are linked to Facebook Pages. AgentNest needs Page-level read engagement to query the associated Instagram Business Account ID. | When the user authorizes Meta Login, AgentNest calls `GET /me/accounts` to enumerate the Pages managed by the user, identifying the one connected to the target Instagram Professional account. | Stored as encrypted Page access tokens with AES-256-GCM. Unused Pages are discarded and never stored. |
 | **`instagram_business_manage_insights`** | Advanced Access | **Performance & Insights.** Enables collection of account and content performance metrics for the Today dashboard. | Queried via `GET /{ig-user-id}/insights` and `GET /{media-id}/insights`. Cached account metrics are displayed for 7/28-day windows with explicit history-coverage checks. Live Meta permission and data validation remain a separate release gate. | Aggregated metrics only; individual follower identities are never queried or stored. Snapshots are workspace-scoped and deleted with the workspace. |
+| **Human Agent** *(feature, Feature Phase 5 Session 09; request only when a pilot owner needs late replies)* | Advanced Access feature; needs App Review, Business Verification and possibly additional contracts ([Human Agent reference](https://developers.facebook.com/documentation/development/features-reference/human-agent.md), read 2026-11-18) | **Let a person on the business team answer a customer's support question after the 24-hour window, up to 7 days after the customer's last message.** Used when the business was closed (weekend, holiday) or the question took longer than a day. Never used for assistant replies. | In the inbox a conversation past 24 hours shows "Human Agent window: only your own typed reply, until <time>". A team member types the reply (not an assistant draft, not an edited assistant draft, not a follow-up), approves it, and it is sent with `messaging_type=MESSAGE_TAG` and `tag=HUMAN_AGENT`. The tag is rejected for every automated source by a deterministic rule (and a database constraint). It is on only when `META_HUMAN_AGENT_ENABLED=true` and the account can message. | The same stored message, approval and audit records as any reply; no new data is collected. |
 | **`instagram_content_publish`** *(Staged / Deferred)* | Staged (Phase 9) | **Scheduled Publishing of Feed Posts and Stories.** Allows business owners to schedule approved announcements and educational posts. | Deferred until post-pilot phase. Feature-flagged off (`META_STORIES_ENABLED=false`) in initial App Review submission to maintain minimal scope. | Assets stored in encrypted S3/R2 storage with pre-signed URLs. |
 
 ---
@@ -151,6 +152,17 @@ Meta requires video screencasts demonstrating each requested permission in an au
      `https://agentnest.io/api/v1/webhooks/meta/data-deletion/del_f49b1a0e8c724128`.
   6. User visits `https://agentnest.io/data-deletion`, enters the confirmation code, and sees a clean status confirmation: **Status: Deleted / Cleared**.
 
+### Screencast 5: Human Agent Reply After 24 Hours (Human Agent feature)
+- **Feature Demonstrated:** Human Agent (with `instagram_business_manage_messages`)
+- **Duration:** ~60 seconds. UI in English, with captions.
+- **Status:** **pending.** Record it only on a real dev-mode test account once Meta has granted the feature to the app (`META_HUMAN_AGENT_ENABLED=true`). The mock provider supports the tag for offline tests, but Meta requires the real experience.
+- **Video Script Steps:**
+  1. A test customer sends a question on Instagram. Do not reply for more than 24 hours (for the recording, use a conversation whose last customer message is older than a day).
+  2. In AgentNest **Inbox** open the conversation: the header says "Human Agent window: only your own typed reply, until <date and time>" and the assistant's drafts and follow-ups are not offered for sending.
+  3. The team member types a reply in their own words and sends it. Show that pasting the assistant's draft text is refused ("A reply after 24 hours can only be a message you typed yourself").
+  4. Show the approval and the sent state; show the reply arriving in the customer's Instagram inbox.
+  5. Show a conversation older than 7 days: the header says the reply window is closed and the reply box refuses to send.
+
 ---
 
 ## 6. Business Verification Prerequisites (`OQ-05`)
@@ -189,5 +201,6 @@ Before clicking "Submit for Review" in the Meta Developer Portal, verify:
 - [ ] **Screencasts:** High-resolution MP4/WebM files recorded for all 4 scenarios with English annotations or subtitles.
 - [ ] **Test User Credentials:** Valid username, password, and two-factor bypass instructions provided in reviewer notes.
 - [ ] **Comment permission:** `instagram_business_manage_comments` is in `SCOPES` (done, Feature Phase 3 Session 01); Session 02's real comment path works on a dev-mode test account; Screencast 3 is recorded on that account (not the mock); section 4.3 steps were run end to end; the carried-forward R75 items that affect what the reviewer sees are recorded in [platform-capabilities.md §1.8](../research/platform-capabilities.md).
+- [ ] **Human Agent (only if requested):** Business Verification is complete; Screencast 5 is recorded on a real dev-mode account; `META_HUMAN_AGENT_ENABLED` stays `false` until Meta grants the feature; V-HA in `platform-capabilities.md` is answered (request shape under Instagram Login, error when not granted, 7-day boundary).
 - [ ] **Feature Flags:** Verify `META_STORIES_ENABLED=false` and unsupported capabilities remain disabled in the production configuration.
 

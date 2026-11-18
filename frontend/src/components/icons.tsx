@@ -286,3 +286,9 @@ export const TrashIcon = (p: IconProps) => (
     <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3" />
   </Svg>
 );
+export const VideoIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="2.5" y="6" width="13.5" height="12" rx="2" />
+    <path d="m16 10 5.5-3v10L16 14Z" />
+  </Svg>
+);

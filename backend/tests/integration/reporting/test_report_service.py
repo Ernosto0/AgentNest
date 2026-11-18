@@ -174,7 +174,15 @@ def test_only_a_scheduled_run_announces_the_report_and_it_does_so_once(
     assert recipients == {env.env.owner.user.id, env.env.manager.user.id}
     sample = _notifications(env)[0]
     assert sample.severity == "info" and sample.is_simulated is True
-    assert sample.params == {"local_date": DAY.isoformat()}
+    # The date plus the three counts the WhatsApp daily-summary template carries (numbers only).
+    assert sample.params["local_date"] == DAY.isoformat()
+    assert set(sample.params) == {
+        "local_date",
+        "inbound_messages",
+        "replies_sent",
+        "pending_approvals",
+    }
+    assert all(isinstance(v, int) for k, v in sample.params.items() if k != "local_date")
     assert sample.dedup_key == f"report:{DAY.isoformat()}"
     assert sample.subject_type == "daily_report"
 

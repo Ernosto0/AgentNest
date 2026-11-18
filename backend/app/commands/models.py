@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, UUIDPrimaryKeyMixin, WorkspaceScopedMixin
 
-COMMAND_CHANNELS = ("web", "telegram")
+COMMAND_CHANNELS = ("web", "telegram", "whatsapp")
 COMMAND_STATUSES = (
     "interpreting",
     "needs_clarification",

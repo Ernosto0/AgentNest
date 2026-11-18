@@ -76,7 +76,7 @@ export function AgendaView({ draftCount, onWrite }: { draftCount: number; onWrit
     const day = itemDay(item, timezone);
     return day !== null && day > weekEnd;
   });
-  const posts = inWeek.filter((item) => item.content_type === "feed_image").length;
+  const posts = inWeek.filter((item) => item.content_type !== "story_image").length;
   const stories = inWeek.length - posts;
 
   return (

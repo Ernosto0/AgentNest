@@ -22,7 +22,9 @@
     },
     "type": {
       "feed_image": "Post",
-      "story_image": "Story"
+      "story_image": "Story",
+      "feed_carousel": "Carousel",
+      "reel": "Reel"
     },
     "status": {
       "soon": "shortly",
@@ -38,7 +40,9 @@
       "aiDraftHint": "Prepared by the assistant",
       "noText": "No text yet",
       "noImage": "No image yet",
+      "noVideo": "No video yet",
       "imageDeleted": "Image deleted",
+      "videoDeleted": "Video deleted",
       "imageFailed": "Image unavailable",
       "rejectedNote": "Note: {{note}}"
     },
@@ -99,10 +103,119 @@
         "SCHEDULE_TIME_NONEXISTENT": "There is no {{local_time}} on {{local_date}} in {{timezoneLabel}} (the clocks skip that hour). Choose another time.",
         "SCHEDULE_TOO_SOON_FOR_APPROVAL": "Someone has to approve this before it is published. Choose a time at least {{minutes}} minutes from now.",
         "PUBLISH_QUOTA_FORECAST_EXCEEDED": "Too many posts are already scheduled around this time. Choose another time.",
-        "TEMPLATE_IMAGE_STALE": "The image shows an old value ({{keys}}). Re-render it with the current value."
+        "TEMPLATE_IMAGE_STALE": "The image shows an old value ({{keys}}). Re-render it with the current value.",
+        "CAROUSEL_TOO_FEW_ITEMS": "Add at least 2 images.",
+        "CAROUSEL_TOO_MANY_ITEMS": "Use at most {{max}} images (currently {{count}}).",
+        "CAROUSEL_DUPLICATE_MEDIA": "Each image must be different.",
+        "CAROUSEL_MIXED_ASPECT_RATIO": "Images {{positions}} have a different aspect ratio from image 1.",
+        "REEL_DURATION_OUT_OF_RANGE": "The reel video must be between 3 seconds and 15 minutes.",
+        "REEL_COVER_OFFSET_INVALID": "The selected cover frame position is outside the video duration.",
+        "REEL_COVER_TOO_LARGE": "The cover image must be at most 8 MB.",
+        "REEL_ASPECT_NOT_9_16": "The video is not 9:16; Instagram may crop it or add blank bars.",
+        "REEL_RESOLUTION_BELOW_RECOMMENDED": "The video width is below the recommended 540 pixels.",
+        "REEL_EDIT_LIST_PRESENT": "This video contains an edit list; live compatibility with Instagram is not yet verified."
       }
     },
     "media": {
+      "videoReason": {
+        "EMPTY_FILE": {
+          "what": "The video file is empty.",
+          "next": "Choose a video and upload it again."
+        },
+        "NOT_A_VIDEO": {
+          "what": "This file is not a video.",
+          "next": "Choose an MP4 or MOV video."
+        },
+        "UNSUPPORTED_CONTAINER": {
+          "what": "This video container is not supported.",
+          "next": "Export as MP4 or MOV."
+        },
+        "CORRUPT_VIDEO": {
+          "what": "The video could not be read.",
+          "next": "Export the original video again and retry."
+        },
+        "NO_VIDEO_STREAM": {
+          "what": "This file has no video track.",
+          "next": "Choose a file with one video track."
+        },
+        "MULTIPLE_VIDEO_STREAMS": {
+          "what": "This file has multiple video tracks.",
+          "next": "Export a file with one video track."
+        },
+        "UNSUPPORTED_VIDEO_CODEC": {
+          "what": "The video codec is not supported.",
+          "next": "Export H.264 or HEVC video in MP4 or MOV."
+        },
+        "UNSUPPORTED_AUDIO_CODEC": {
+          "what": "The audio codec is not supported.",
+          "next": "Export with AAC audio or without audio."
+        },
+        "UNSUPPORTED_AUDIO_SAMPLE_RATE": {
+          "what": "The audio sample rate exceeds 48 kHz or is unknown.",
+          "next": "Export AAC audio at 48 kHz or lower."
+        },
+        "UNSUPPORTED_AUDIO_CHANNELS": {
+          "what": "The audio must be mono or stereo.",
+          "next": "Export AAC audio with one or two channels."
+        },
+        "UNSUPPORTED_PIXEL_FORMAT": {
+          "what": "The video must use 4:2:0 colour sampling.",
+          "next": "Export H.264 or HEVC with 4:2:0 colour sampling."
+        },
+        "INTERLACED": {
+          "what": "Interlaced video is not supported.",
+          "next": "Export as progressive video."
+        },
+        "DURATION_UNKNOWN": {
+          "what": "The video duration could not be determined.",
+          "next": "Export the video again and retry."
+        },
+        "DURATION_TOO_SHORT": {
+          "what": "The video is shorter than 3 seconds.",
+          "next": "Choose a video lasting at least 3 seconds."
+        },
+        "DURATION_TOO_LONG": {
+          "what": "The video is longer than 15 minutes.",
+          "next": "Trim it and upload again."
+        },
+        "FRAME_RATE_OUT_OF_RANGE": {
+          "what": "The frame rate must be between 23 and 60 FPS.",
+          "next": "Export at 23–60 FPS."
+        },
+        "WIDTH_TOO_LARGE": {
+          "what": "The displayed video width exceeds 1920 pixels.",
+          "next": "Export with a displayed width of at most 1920 pixels."
+        },
+        "RESOLUTION_TOO_LOW": {
+          "what": "The video dimensions are too small.",
+          "next": "Use a video at least 64 pixels wide and high."
+        },
+        "ASPECT_RATIO_OUT_OF_RANGE": {
+          "what": "The video aspect ratio is not supported.",
+          "next": "Use a width-to-height ratio between 0.1 and 10; 9:16 is recommended."
+        },
+        "BITRATE_TOO_HIGH": {
+          "what": "The video bitrate exceeds 25 Mbps.",
+          "next": "Export at 25 Mbps or lower."
+        },
+        "MOOV_NOT_AT_FRONT": {
+          "what": "The video is not optimized for streaming.",
+          "next": "Export with “Fast Start” or “optimize for web” enabled."
+        },
+        "EDIT_LIST_PRESENT": {
+          "what": "The video contains an edit list.",
+          "next": "Compatibility with Instagram has not been verified live."
+        },
+        "ASPECT_NOT_9_16": {
+          "what": "The video is not in the recommended 9:16 format.",
+          "next": "Instagram may crop the video or add blank space."
+        },
+        "RESOLUTION_BELOW_RECOMMENDED": {
+          "what": "The video is below the recommended 540-pixel width.",
+          "next": "A higher-resolution original may look better."
+        }
+      },
+      "videoPlaceholder": "Video",
       "label": "Image",
       "feedHint": "Add a portrait or square image for the post (between 4:5 and 1.91:1).",
       "storyHint": "Add a 9:16 image for the story. On Instagram the story text has to be on the image.",
@@ -230,6 +343,8 @@
       "rejected": "This item was rejected.",
       "rejectedBy": "{{name}} rejected it.",
       "rejectedNote": "Note: {{note}}",
+      "processing": "Instagram is processing this reel video. It will be published automatically when ready.",
+      "processingNext": "Next status check: {{when}} ({{zone}})",
       "rejectedNext": "You can edit it and send it again.",
       "expiredNote": "The approval expired.",
       "draftHold": {
@@ -274,7 +389,9 @@
       "title": "Permissions",
       "messaging": "Messaging",
       "publish_feed_image": "Publishing feed posts",
-      "publish_story_image": "Publishing stories"
+      "publish_story_image": "Publishing stories",
+      "publish_feed_carousel": "Publish carousels",
+      "publish_reel": "Publishing reels"
     },
     "when": {
       "today": "Today",
@@ -316,6 +433,7 @@
       "all": "All",
       "posts": "Posts",
       "stories": "Stories",
+      "reels": "Reels",
       "clear": "Clear filters",
       "noMatch": "Nothing matches these filters",
       "noMatchHint": "Try another word or show all formats.",
@@ -416,6 +534,57 @@
         "holdHint": "Re-render the image first; the item then needs approval again.",
         "done": "A new image was made. The item is a draft again and needs approval again before it can be scheduled."
       }
+    },
+    "carousel": {
+      "captionHint": "One caption for the whole carousel (up to 2,200 characters). Instagram has no per-image captions.",
+      "manualHint": "Start a blank carousel and upload your images. AI and templates are unavailable for carousels.",
+      "up": "Move image {{n}} up",
+      "down": "Move image {{n}} down",
+      "remove": "Remove image {{n}}",
+      "removeShort": "Remove",
+      "upload": "Add images",
+      "moved": "Image {{from}} moved to position {{to}}.",
+      "cap": "Maximum 10 images. Extra files were not uploaded.",
+      "waiting": "Waiting",
+      "uploading": "Uploading...",
+      "done": "Saved",
+      "error": "Failed",
+      "saving": "Saving order...",
+      "previous": "Previous image",
+      "next": "Next image",
+      "count_one": "{{count}} image",
+      "count_other": "{{count}} images",
+      "itemIssue": "Image {{n}}: {{message}}"
+    },
+    "reel": {
+      "manualHint": "Open a blank reel to upload your video and set its cover. AI generation and templates are not available for reels.",
+      "uploadVideo": "Upload video (MP4 or MOV)",
+      "replaceVideo": "Replace video",
+      "hint": "MP4 or MOV up to 300 MB, 3 seconds to 15 minutes.",
+      "uploading": "Uploading video… {{percent}}%",
+      "probing": "Processing the file…",
+      "cancelUpload": "Cancel",
+      "wrongFileType": "Choose an MP4 or MOV video file.",
+      "fileTooLarge": "The video must be at most 300 MB.",
+      "coverSection": "Reel cover",
+      "coverHint": "Use a frame from the video or upload a JPEG cover image (up to 8 MB).",
+      "framePosition": "Cover frame position: {{time}}",
+      "useThisFrame": "Use this frame",
+      "uploadCover": "Upload an image",
+      "useFirstFrame": "Use the first frame",
+      "coverWrongType": "Choose a JPEG cover image (.jpg or .jpeg).",
+      "coverTooLarge": "The cover image must be at most 8 MB.",
+      "coverUsingCustom": "Using uploaded cover image",
+      "coverUsingOffset": "Using frame at {{time}}",
+      "coverUsingDefault": "Using the first video frame",
+      "shareToFeed": "Also share to Instagram grid (Feed)",
+      "shareToFeedHint": "Show this reel in your main profile grid as well as the Reels tab.",
+      "notFactChecked": "Video and audio are not fact-checked automatically. Make sure prices, hours and claims in the video match your current business information.",
+      "warningsLabel": "Video checks",
+      "deleted": "This video was deleted after publishing and is no longer stored.",
+      "coverDeleted": "The custom cover image was deleted after publishing.",
+      "saving": "Saving…",
+      "previewLabel": "Reel preview"
     }
   }
 }

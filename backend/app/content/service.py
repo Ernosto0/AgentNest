@@ -27,7 +27,7 @@ from app.approvals import repository as approvals_repo
 from app.approvals import service as approvals
 from app.approvals.grants import record_policy_grant
 from app.audit import service as audit
-from app.content import grounding, hooks, media, scheduling, transitions, validation
+from app.content import carousel, grounding, hooks, media, scheduling, transitions, validation
 from app.content.models import ContentItem, MediaAsset
 from app.content.payload import (
     APPROVAL_ACTION,
@@ -37,7 +37,12 @@ from app.content.payload import (
     approval_summary,
     publish_job_key,
 )
-from app.content.templates.link import merge_references, records, render_references
+from app.content.templates.link import (
+    item_media_asset_ids,
+    item_render_references,
+    merge_references,
+    records,
+)
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
@@ -56,7 +61,15 @@ SUBJECT_EDITED = "SUBJECT_EDITED"
 SUBJECT_CANCELLED = "SUBJECT_CANCELLED"
 
 # The fields an approval binds (INV-16): changing one is a new version.
-PAYLOAD_FIELDS = ("caption", "overlay_text_suggestions", "media_asset_id")
+PAYLOAD_FIELDS = (
+    "caption",
+    "overlay_text_suggestions",
+    "media_asset_id",
+    "media_asset_ids",
+    "cover_media_asset_id",
+    "thumb_offset_ms",
+    "share_to_feed",
+)
 # Internal fields: changing them touches nothing that was approved.
 NOTE_FIELDS = ("title", "visual_notes")
 
@@ -138,6 +151,32 @@ def author_id(ctx: WorkspaceContext) -> uuid.UUID:
     return uuid.UUID(ctx.actor.id)
 
 
+def _check_reel_shape_fields(
+    content_type: str,
+    *,
+    cover_media_asset_id: uuid.UUID | None,
+    thumb_offset_ms: int | None,
+    share_to_feed: bool | None,
+    fields_sent: set[str] | frozenset[str] = frozenset(),
+) -> None:
+    has_reel_input = (
+        cover_media_asset_id is not None
+        or thumb_offset_ms is not None
+        or share_to_feed is not None
+        or bool(fields_sent & {"cover_media_asset_id", "thumb_offset_ms", "share_to_feed"})
+    )
+    if content_type != "reel":
+        if has_reel_input:
+            raise AppError("CONTENT_MEDIA_SHAPE_INVALID", reason="reel_fields_on_non_reel")
+        return
+    if "share_to_feed" in fields_sent and share_to_feed is None:
+        raise AppError("CONTENT_MEDIA_SHAPE_INVALID", reason="reel_share_to_feed_required")
+    if thumb_offset_ms is not None and thumb_offset_ms < 0:
+        raise AppError("CONTENT_MEDIA_SHAPE_INVALID", reason="reel_offset_negative")
+    if cover_media_asset_id is not None and thumb_offset_ms is not None:
+        raise AppError("CONTENT_MEDIA_SHAPE_INVALID", reason="reel_cover_and_offset_exclusive")
+
+
 def create_draft(
     session: Session,
     clock: Clock,
@@ -148,6 +187,11 @@ def create_draft(
     caption: str | None = None,
     overlay_text_suggestions: Sequence[str] | None = None,
     media_asset_id: uuid.UUID | None = None,
+    media_asset_ids: Sequence[uuid.UUID] | None = None,
+    cover_media_asset_id: uuid.UUID | None = None,
+    thumb_offset_ms: int | None = None,
+    share_to_feed: bool | None = None,
+    fields_set: set[str] | frozenset[str] = frozenset(),
     client_request_id: str | None = None,
 ) -> tuple[ContentItem, bool]:
     """A new ``draft``. Returns ``(item, created)``; with a ``client_request_id`` that this
@@ -157,8 +201,26 @@ def create_draft(
         existing = existing_for_request(session, ctx, user_id, client_request_id)
         if existing is not None:
             return existing, False
+    if content_type == "feed_carousel" and "media_asset_id" in fields_set:
+        raise AppError("CONTENT_MEDIA_SHAPE_INVALID", reason="carousel_single_media")
+    if content_type == "reel" and "media_asset_ids" in fields_set:
+        raise AppError("CONTENT_MEDIA_SHAPE_INVALID", reason="carousel_ids_on_reel")
+    _check_reel_shape_fields(
+        content_type,
+        cover_media_asset_id=cover_media_asset_id,
+        thumb_offset_ms=thumb_offset_ms,
+        share_to_feed=share_to_feed,
+        fields_sent=fields_set,
+    )
+    carousel.check_shape(session, ctx, content_type, media_asset_id, media_asset_ids)
+    expected_kind = "video" if content_type == "reel" else "image"
     if media_asset_id is not None:
-        media.get_asset(session, ctx, media_asset_id)  # 404 unless it is ours and ready
+        media.get_asset(session, ctx, media_asset_id, kind=expected_kind)
+    if cover_media_asset_id is not None:
+        media.get_asset(session, ctx, cover_media_asset_id, kind="image")
+    resolved_share = (
+        (True if share_to_feed is None else share_to_feed) if content_type == "reel" else None
+    )
 
     caption = _clean_text(caption)
     overlay = _clean_overlay(overlay_text_suggestions)
@@ -173,6 +235,9 @@ def create_draft(
         caption=caption,
         overlay_text_suggestions=overlay,
         media_asset_id=media_asset_id,
+        cover_media_asset_id=cover_media_asset_id,
+        thumb_offset_ms=thumb_offset_ms,
+        share_to_feed=resolved_share,
         validation=checked.report,
         created_by_user_id=user_id,
         client_request_id=client_request_id,
@@ -192,12 +257,14 @@ def create_draft(
         if winner is None:
             raise
         return winner, False
+    if content_type == "feed_carousel":
+        carousel.replace(session, clock, ctx, item, media_asset_ids or [])
     impact.replace_references(
         session,
         ctx,
         SUBJECT_TYPE,
         item.id,
-        merge_references(checked.references, render_references(session, ctx, item.media_asset_id)),
+        merge_references(checked.references, item_render_references(session, ctx, item)),
     )
     audit.record(
         session,
@@ -237,6 +304,25 @@ def update(
     if item.status not in transitions.EDITABLE_STATUSES:
         raise AppError("CONFLICT_STATE", entity="content_item", status=item.status)
 
+    ids = fields.get("media_asset_ids")
+    carousel.check_shape(
+        session,
+        ctx,
+        item.content_type,
+        fields.get("media_asset_id"),
+        ids,
+        single_sent="media_asset_id" in fields,
+    )
+    if "media_asset_ids" in fields and ids is None:
+        raise AppError("CONTENT_MEDIA_SHAPE_INVALID")
+    _check_reel_shape_fields(
+        item.content_type,
+        cover_media_asset_id=fields.get("cover_media_asset_id", item.cover_media_asset_id),
+        thumb_offset_ms=fields.get("thumb_offset_ms", item.thumb_offset_ms),
+        share_to_feed=fields.get("share_to_feed", item.share_to_feed),
+        fields_sent=set(fields) & {"cover_media_asset_id", "thumb_offset_ms", "share_to_feed"},
+    )
+    list_changed = ids is not None and list(ids) != carousel.ordered_asset_ids(session, ctx, item)
     wanted: dict[str, Any] = {}
     if "caption" in fields:
         wanted["caption"] = _clean_text(fields["caption"])
@@ -244,18 +330,27 @@ def update(
         wanted["overlay_text_suggestions"] = _clean_overlay(fields["overlay_text_suggestions"])
     if "media_asset_id" in fields:
         wanted["media_asset_id"] = fields["media_asset_id"]
+    if "cover_media_asset_id" in fields:
+        wanted["cover_media_asset_id"] = fields["cover_media_asset_id"]
+    if "thumb_offset_ms" in fields:
+        wanted["thumb_offset_ms"] = fields["thumb_offset_ms"]
+    if "share_to_feed" in fields:
+        wanted["share_to_feed"] = fields["share_to_feed"]
     if "title" in fields:
         wanted["title"] = fields["title"]
     if "visual_notes" in fields:
         wanted["visual_notes"] = _clean_text(fields["visual_notes"])
     changed = {k: v for k, v in wanted.items() if getattr(item, k) != v}
-    if not changed:
+    if not changed and not list_changed:
         session.commit()  # nothing to do; release the row lock
         return item
 
-    payload_changed = any(k in changed for k in PAYLOAD_FIELDS)
+    payload_changed = list_changed or any(k in changed for k in PAYLOAD_FIELDS)
+    expected_kind = "video" if item.content_type == "reel" else "image"
     if changed.get("media_asset_id") is not None:
-        media.get_asset(session, ctx, changed["media_asset_id"])
+        media.get_asset(session, ctx, changed["media_asset_id"], kind=expected_kind)
+    if changed.get("cover_media_asset_id") is not None:
+        media.get_asset(session, ctx, changed["cover_media_asset_id"], kind="image")
 
     # A title or a note touches nothing that was approved, so it is saved in place. Except on a
     # rejected or failed item (Q4): there any edit is a new version and a draft again, because the
@@ -298,12 +393,28 @@ def update(
         validation=checked.report,
         **changed,
     )
+    if list_changed and ids is not None:
+        carousel.replace(session, clock, ctx, item, ids)
+        audit.record(
+            session,
+            ctx,
+            "content.updated",
+            SUBJECT_TYPE,
+            item.id,
+            {
+                "fields": ["media_asset_ids", *sorted(changed)],
+                "version": item.version,
+                "content_type": item.content_type,
+            },
+            is_simulated=item.is_simulated,
+            clock=clock,
+        )
     impact.replace_references(
         session,
         ctx,
         SUBJECT_TYPE,
         item.id,
-        merge_references(checked.references, render_references(session, ctx, item.media_asset_id)),
+        merge_references(checked.references, item_render_references(session, ctx, item)),
     )
     if rerender_details is not None:
         audit.record(
@@ -377,6 +488,7 @@ class Checked:
     resolved: scheduling.ResolvedSchedule | None
     account: SocialAccount | None
     media: MediaAsset | None
+    carousel: tuple[MediaAsset, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -387,7 +499,8 @@ class Ready:
     result: validation.SubmitValidation
     resolved: scheduling.ResolvedSchedule
     account: SocialAccount
-    media: MediaAsset
+    media: MediaAsset | None
+    carousel: tuple[MediaAsset, ...] = ()
 
 
 def may_approve(ctx: WorkspaceContext) -> bool:
@@ -406,14 +519,43 @@ def _check(
     account_id: uuid.UUID | None = None,
 ) -> Checked:
     """Gather the facts of a submission and run the G17 rules. Changes nothing."""
-    asset = (
-        session.scalar(
-            select(MediaAsset).where(
-                MediaAsset.workspace_id == ctx.workspace_id, MediaAsset.id == item.media_asset_id
+    is_reel = item.content_type == "reel"
+    if is_reel:
+        asset = (
+            session.scalar(
+                select(MediaAsset).where(
+                    MediaAsset.workspace_id == ctx.workspace_id,
+                    MediaAsset.id == item.media_asset_id,
+                )
             )
+            if item.media_asset_id is not None
+            else None
         )
-        if item.media_asset_id is not None
-        else None
+        cover_asset = (
+            session.scalar(
+                select(MediaAsset).where(
+                    MediaAsset.workspace_id == ctx.workspace_id,
+                    MediaAsset.id == item.cover_media_asset_id,
+                )
+            )
+            if item.cover_media_asset_id is not None
+            else None
+        )
+    else:
+        asset = (
+            session.scalar(
+                select(MediaAsset).where(
+                    MediaAsset.workspace_id == ctx.workspace_id,
+                    MediaAsset.id == item.media_asset_id,
+                    MediaAsset.kind == "image",
+                )
+            )
+            if item.media_asset_id is not None
+            else None
+        )
+        cover_asset = None
+    carousel_assets = (
+        carousel.ordered_assets(session, ctx, item) if item.content_type == "feed_carousel" else ()
     )
     overlay = list(item.overlay_text_suggestions or [])
     claims = grounding.check(session, clock, ctx, grounding.texts_of(item.caption, overlay))
@@ -450,6 +592,33 @@ def _check(
         )
 
     usable_versions = {(f.fact_id, f.version) for f in usable_facts(session, clock, ctx)}
+    reel_facts = (
+        validation.ReelFacts(
+            video=(
+                validation.ReelVideoFacts(
+                    status=asset.status,
+                    kind=asset.kind,
+                    duration_ms=asset.duration_ms,
+                    warnings=tuple(asset.video_warnings or ()),
+                )
+                if asset is not None
+                else None
+            ),
+            cover=(
+                validation.ReelCoverFacts(
+                    status=cover_asset.status,
+                    kind=cover_asset.kind,
+                    mime_type=cover_asset.mime_type,
+                    byte_size=cover_asset.byte_size,
+                )
+                if cover_asset is not None
+                else None
+            ),
+            thumb_offset_ms=item.thumb_offset_ms,
+        )
+        if is_reel
+        else None
+    )
     result = validation.validate_submission(
         validation.SubmitFacts(
             content_type=item.content_type,
@@ -457,7 +626,7 @@ def _check(
             overlay_text_suggestions=overlay,
             media=(
                 validation.MediaFacts(asset.status, asset.width, asset.height)
-                if asset is not None
+                if asset is not None and not is_reel
                 else None
             ),
             claim_issues=claims.blocking,
@@ -468,17 +637,21 @@ def _check(
                 else None
             ),
             quota_exceeded=quota_exceeded,
+            carousel_media=tuple(
+                validation.MediaFacts(a.status, a.width, a.height) for a in carousel_assets
+            ),
+            reel=reel_facts,
             stale_template_keys=tuple(
                 used.key
                 for record in records(
-                    session, ctx, [item.media_asset_id] if item.media_asset_id else []
+                    session, ctx, item_media_asset_ids(session, ctx, item)
                 ).values()
                 for used in record.facts
                 if (used.fact_id, used.version) not in usable_versions
             ),
         )
     )
-    return Checked(claims, result, resolved, account, asset)
+    return Checked(claims, result, resolved, account, asset, carousel_assets)
 
 
 def validate(
@@ -515,14 +688,21 @@ def _require_valid(checked: Checked, locale: str) -> Ready:
         not checked.result.ok
         or checked.resolved is None
         or checked.account is None
-        or checked.media is None
+        or (checked.media is None and not checked.carousel)
     ):
         raise AppError(
             "CONTENT_VALIDATION_FAILED",
             errors=[validation.as_dict(i, locale) for i in checked.result.errors],
             warnings=[validation.as_dict(i, locale) for i in checked.result.warnings],
         )
-    return Ready(checked.claims, checked.result, checked.resolved, checked.account, checked.media)
+    return Ready(
+        checked.claims,
+        checked.result,
+        checked.resolved,
+        checked.account,
+        checked.media,
+        checked.carousel,
+    )
 
 
 def _max_delay(session: Session, ctx: WorkspaceContext) -> timedelta:
@@ -540,6 +720,14 @@ def _approval_arguments(
     """The keyword arguments of the approval of ``item`` as ``version``: exactly the payload the
     approver sees (plan.md G5), valid until the instant it would go out."""
     scheduled_at = ready.resolved.scheduled_at
+    cover_sha256: str | None = None
+    if item.content_type == "reel" and item.cover_media_asset_id is not None:
+        cover_sha256 = session.scalar(
+            select(MediaAsset.sha256).where(
+                MediaAsset.workspace_id == ctx.workspace_id,
+                MediaAsset.id == item.cover_media_asset_id,
+            )
+        )
     return {
         "action": APPROVAL_ACTION,
         "subject_type": SUBJECT_TYPE,
@@ -549,8 +737,10 @@ def _approval_arguments(
             item,
             version=version,
             social_account_id=ready.account.id,
-            media_sha256=ready.media.sha256,
+            media_sha256=ready.media.sha256 if ready.media else None,
+            carousel_media=[(a.id, a.sha256) for a in ready.carousel],
             scheduled_at=scheduled_at,
+            cover_sha256=cover_sha256,
         ),
         "summary": approval_summary(item, scheduled_at),
         "required_permission": APPROVAL_PERMISSION,
@@ -677,9 +867,7 @@ def apply_submit(
         ctx,
         SUBJECT_TYPE,
         item.id,
-        merge_references(
-            ready.claims.references, render_references(session, ctx, item.media_asset_id)
-        ),
+        merge_references(ready.claims.references, item_render_references(session, ctx, item)),
     )
     return item
 
@@ -735,9 +923,7 @@ def reapprove(
         ctx,
         SUBJECT_TYPE,
         item.id,
-        merge_references(
-            ready.claims.references, render_references(session, ctx, item.media_asset_id)
-        ),
+        merge_references(ready.claims.references, item_render_references(session, ctx, item)),
     )
     enqueue_publish(session, clock, item)
     session.commit()

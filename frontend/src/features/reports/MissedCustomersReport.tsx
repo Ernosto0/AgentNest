@@ -22,6 +22,8 @@ const TEXT_LINK =
 const METRIC_ORDER = [
   "after_hours_dms",
   "after_hours_price_answers",
+  "follow_ups_sent",
+  "follow_up_replies",
   "answered_questions",
   "unanswered_conversations",
   "first_reply_median_minutes",

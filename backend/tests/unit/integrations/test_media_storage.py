@@ -33,6 +33,43 @@ NOW = datetime(2026, 10, 5, 9, 30, tzinfo=UTC)
 KEY = f"{WS}/2026/10/{MEDIA}.jpg"
 
 
+@pytest.mark.parametrize("ext", ["mp4", "mov"])
+def test_video_keys(ext: str) -> None:
+    assert validate_key(build_key(WS, MEDIA, NOW, ext)).endswith("." + ext)
+    for prefix in ("../", "/"):
+        with pytest.raises(InvalidStorageKey):
+            validate_key(prefix + build_key(WS, MEDIA, NOW, ext))
+
+
+def test_s3_open_is_lazy_and_chunked() -> None:
+    class Body:
+        def __init__(self) -> None:
+            self.calls: list[int] = []
+            self.closed = False
+
+        def read(self, size: int = -1) -> bytes:
+            assert size == 65536
+            self.calls.append(size)
+            return b"x" * size
+
+        def close(self) -> None:
+            self.closed = True
+
+    body = Body()
+
+    class Client:
+        def get_object(self, **kwargs: Any) -> dict[str, Any]:
+            return {"Body": body}
+
+    storage = S3MediaStorage(bucket="private", client=cast(S3Client, Client()))
+    stream = storage.open(KEY)
+    assert body.calls == []
+    assert len(stream.read(65536)) == 65536
+    assert len(stream.read(65536)) == 65536
+    stream.close()
+    assert body.calls == [65536, 65536] and body.closed
+
+
 @pytest.fixture
 def storage(tmp_path: Path) -> LocalMediaStorage:
     return LocalMediaStorage(tmp_path / "media", FrozenClock(NOW))
@@ -269,3 +306,58 @@ def test_s3_registry_configures_sigv4_and_explicit_credentials(
     assert calls[0]["aws_secret_access_key"] == "synthetic-secret-key"
     assert calls[0]["config"].signature_version == "s3v4"
     assert calls[0]["config"].retries == {"max_attempts": 0}
+
+
+def test_local_open_range_reads_exact_slice(storage: LocalMediaStorage) -> None:
+    storage.put(KEY, io.BytesIO(b"0123456789abcdef"), "video/mp4")
+    with storage.open_range(KEY, 4, 6) as stream:
+        assert stream.read() == b"456789"
+    with storage.open_range(KEY, 10, 100) as stream:
+        assert stream.read() == b"abcdef"
+    with pytest.raises(ValueError, match="range"):
+        storage.open_range(KEY, -1, 5)
+    with pytest.raises(ValueError, match="range"):
+        storage.open_range(KEY, 0, 0)
+    with pytest.raises(StorageObjectNotFound):
+        storage.open_range(
+            f"{WS}/2026/10/{uuid.UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')}.jpg", 0, 4
+        )
+
+
+def test_s3_open_range_passes_range_header_and_maps_404(
+    s3_client: Any, s3_storage: S3MediaStorage
+) -> None:
+    source = io.BytesIO(b"456789")
+    body = StreamingBody(source, 6)
+    with Stubber(s3_client) as stub:
+        stub.add_response(
+            "get_object",
+            {"Body": body},
+            {"Bucket": "private-media", "Key": KEY, "Range": "bytes=4-9"},
+        )
+        with s3_storage.open_range(KEY, 4, 6) as stream:
+            assert stream.read() == b"456789"
+        assert source.closed
+        stub.add_client_error("get_object", "NoSuchKey", http_status_code=404)
+        with pytest.raises(StorageObjectNotFound):
+            s3_storage.open_range(KEY, 0, 4)
+        stub.assert_no_pending_responses()
+
+
+def test_parse_byte_range_cases() -> None:
+    from app.content.media import parse_byte_range
+
+    assert parse_byte_range(None, 100) == "full"
+    assert parse_byte_range("bytes=0-9", 100) == (0, 9)
+    assert parse_byte_range("bytes=90-500", 100) == (90, 99)
+    assert parse_byte_range("bytes=25-", 100) == (25, 99)
+    assert parse_byte_range("bytes=-15", 100) == (85, 99)
+    assert parse_byte_range("bytes=-200", 100) == (0, 99)
+    assert parse_byte_range("bytes=100-105", 100) == "unsatisfiable"
+    assert parse_byte_range("bytes=100-", 100) == "unsatisfiable"
+    assert parse_byte_range("bytes=-0", 100) == "unsatisfiable"
+    assert parse_byte_range("bytes=0-0", 0) == "unsatisfiable"
+    assert parse_byte_range("bytes=0-1, 2-3", 100) == "full"
+    assert parse_byte_range("items=0-5", 100) == "full"
+    assert parse_byte_range("bytes=50-10", 100) == "full"
+    assert parse_byte_range("bytes=-", 100) == "full"

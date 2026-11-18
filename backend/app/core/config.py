@@ -47,6 +47,9 @@ _SECRET_FIELDS = frozenset(
         "sentry_dsn",
         "telegram_bot_token",
         "telegram_webhook_secret",
+        "whatsapp_access_token",
+        "whatsapp_app_secret",
+        "whatsapp_webhook_verify_token",
         "google_client_secret",
         "web_push_vapid_private_key",
     }
@@ -167,6 +170,9 @@ class Settings(BaseSettings):
     meta_graph_api_version: str = "v25.0"
     meta_oauth_redirect_uri: str = "http://localhost:8000/oauth/instagram/callback"
     meta_stories_enabled: bool = True
+    # Human Agent message tag (7-day manual replies). Set true only after Meta granted the
+    # "Human Agent" feature to the app (App Review, Advanced Access, business verification).
+    meta_human_agent_enabled: bool = False
     meta_request_comment_scope: bool = True
     comment_private_reply_limit_scope: Literal["commenter", "comment"] = "commenter"
     insights_enabled: bool = Field(default=True)
@@ -182,6 +188,15 @@ class Settings(BaseSettings):
     circuit_cooldown_minutes: int = Field(default=10, ge=1)
 
     # --- Media (Phase 5, ADR-015). The local backend keeps the demo credential-free. ---
+    video_prober: Literal["ffmpeg", "fake"] = "ffmpeg"
+    video_ffprobe_path: str = "ffprobe"
+    video_ffmpeg_path: str = "ffmpeg"
+    video_probe_timeout_seconds: int = Field(default=30, ge=1)
+    video_thumbnail_timeout_seconds: int = Field(default=30, ge=1)
+    video_probe_max_concurrency: int = Field(default=2, ge=1)
+    media_max_video_bytes: int = Field(default=300_000_000, ge=1)
+    media_video_workspace_quota_bytes: int = Field(default=2 * 1024**3, ge=1)
+    media_scratch_dir: str = ""
     media_storage_backend: Literal["local", "s3"] = "local"
     # Relative paths resolve against ``backend/`` (see ``media_root``).
     media_local_root: str = "./var/media"
@@ -197,6 +212,7 @@ class Settings(BaseSettings):
 
     # --- Mock publishing (Phase 5, integrations.md §3.3) ---
     sim_container_delay_seconds: int = Field(default=2, ge=0)
+    sim_reel_processing_seconds: int = Field(default=20, ge=0)
     publish_daily_limit: int = Field(default=50, ge=1)
 
     # --- Retention (Phase 6, security-and-privacy.md section 8). Global values; per-workspace
@@ -235,6 +251,46 @@ class Settings(BaseSettings):
     telegram_bot_username: str | None = None
     telegram_bot_token: SecretStr | None = None
     telegram_webhook_secret: SecretStr | None = None
+
+    # --- Owner messaging channel: WhatsApp (Feature Phase 5, ADR-027) ---
+    whatsapp_access_token: SecretStr | None = None
+    whatsapp_app_secret: SecretStr | None = None
+    whatsapp_webhook_verify_token: SecretStr | None = None
+    whatsapp_phone_number_id: str | None = None
+    whatsapp_display_phone_number: str | None = None
+    whatsapp_api_version: str = "v27.0"
+    whatsapp_api_base_url: str = "https://graph.facebook.com"
+    # Set to true only after Meta shows every template of the registry as approved. While false,
+    # a message outside the 24-hour window fails with "whatsapp_templates_not_approved" and no
+    # template is sent (a session message inside the window is unaffected).
+    whatsapp_templates_approved: bool = False
+
+    @field_validator("whatsapp_display_phone_number")
+    @classmethod
+    def _whatsapp_number(cls, value: str | None) -> str | None:
+        if value and (not value.isascii() or not value.isdigit()):
+            raise ValueError("WHATSAPP_DISPLAY_PHONE_NUMBER must contain international digits only")
+        return value
+
+    @property
+    def whatsapp_configured(self) -> bool:
+        return all(self._whatsapp_credentials().values())
+
+    def _whatsapp_credentials(self) -> dict[str, str]:
+        return {
+            "WHATSAPP_ACCESS_TOKEN": self.whatsapp_access_token.get_secret_value().strip()
+            if self.whatsapp_access_token
+            else "",
+            "WHATSAPP_APP_SECRET": self.whatsapp_app_secret.get_secret_value().strip()
+            if self.whatsapp_app_secret
+            else "",
+            "WHATSAPP_WEBHOOK_VERIFY_TOKEN": (
+                self.whatsapp_webhook_verify_token.get_secret_value().strip()
+                if self.whatsapp_webhook_verify_token
+                else ""
+            ),
+            "WHATSAPP_PHONE_NUMBER_ID": (self.whatsapp_phone_number_id or "").strip(),
+        }
 
     # --- Owner notifications: Web Push (F-01). All three empty = push is off. ---
     # VAPID keys are generated once by ``uv run python -m app.cli generate-vapid-keys``. The public
@@ -370,8 +426,18 @@ class Settings(BaseSettings):
             problems.append("LLM_MODEL_DEFAULT must be set when LLM_PROVIDER=openai.")
         if self.website_import_fetcher == "fake":
             problems.append("WEBSITE_IMPORT_FETCHER must not be fake in production.")
+        if self.video_prober == "fake":
+            problems.append("VIDEO_PROBER must not be fake in production.")
         if self.transcription_provider == "fake":
             problems.append("TRANSCRIPTION_PROVIDER must be 'openai' or 'off' in production.")
+        wa_credentials = self._whatsapp_credentials()
+        wa_credentials["WHATSAPP_DISPLAY_PHONE_NUMBER"] = (
+            self.whatsapp_display_phone_number or ""
+        ).strip()
+        if any(wa_credentials.values()):
+            for variable, value in wa_credentials.items():
+                if not value:
+                    problems.append(f"{variable} must be set when WhatsApp is configured.")
         # Telegram configuration checks in production (Phase 9, ADR-012)
         tg_token = (
             self.telegram_bot_token.get_secret_value().strip() if self.telegram_bot_token else ""

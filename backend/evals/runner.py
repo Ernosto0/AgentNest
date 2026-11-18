@@ -40,6 +40,7 @@ from app.content import generation, grounding
 from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
 from app.inbox.context import (
+    DEFAULT_DISCLOSURE,
     TRANSCRIPT_ROLE,
     Disclosure,
     DraftContext,
@@ -464,7 +465,7 @@ def _draft_context(dataset: Dataset, case: Case) -> DraftContext:
         escalation_keywords=[
             str(k) for k in (keywords_fact.value.get("items", []) if keywords_fact else [])
         ],
-        disclosure=Disclosure(True, "Bu yanıt otomatik olarak hazırlanmıştır."),
+        disclosure=Disclosure(True, DEFAULT_DISCLOSURE.get(code or "tr", DEFAULT_DISCLOSURE["tr"])),
         window_end=DRAFT_NOW + timedelta(hours=20),
         readiness_level="ready",
         auto_replies_last_hour=0,
@@ -508,6 +509,9 @@ def eval_draft_case(provider: LLMProvider, model: str, dataset: Dataset, case: C
 
     if "intent" in expect and plan.intent != expect["intent"]:
         result.fail(f"intent {plan.intent!r}, expected {expect['intent']!r}")
+    if "language" in expect and (plan.language or "none") != expect["language"]:
+        # The reply language chosen for the case (``none``: unsupported, a person answers).
+        result.fail(f"reply language {plan.language!r}, expected {expect['language']!r}")
     if "decision" in expect and decision.outcome != expect["decision"]:
         result.fail(
             f"decision {decision.outcome!r} {list(decision.reasons)}, "

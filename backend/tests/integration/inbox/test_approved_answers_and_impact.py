@@ -108,7 +108,7 @@ def test_a_placeholder_for_a_fact_that_does_not_exist_is_refused(inbox: InboxEnv
     "patch",
     [
         {"intent": "nonsense"},
-        {"language": "de"},
+        {"language": "fr"},
         {"title": ""},
         {"example_questions": []},
         {"answer_template": ""},

@@ -32,6 +32,8 @@ interface ContentPreviewProps {
   mediaId: string | null;
   /** The image was deleted when its retention ended. */
   mediaDeleted?: boolean;
+  coverMediaId?: string | null;
+  coverMediaDeleted?: boolean;
   /** i18n keys of the labels, so the schedule sheet and the approval sheet each keep their own wording. */
   labels: {
     media: string;
@@ -53,19 +55,25 @@ export function ContentPreview({
   overlay,
   mediaId,
   mediaDeleted = false,
+  coverMediaId = null,
+  coverMediaDeleted = false,
   labels,
 }: ContentPreviewProps) {
   const { t } = useTranslation();
   const isStory = contentType === "story_image";
+  const isReel = contentType === "reel";
+  const displayMediaId = isReel && coverMediaId && !coverMediaDeleted ? coverMediaId : mediaId;
   const lines = overlay.filter((text) => text.trim() !== "");
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2.5 text-sm text-primary" data-testid="content-preview">
       <dt className="font-medium text-secondary">{t(labels.media)}</dt>
       <dd className="min-w-0">
-        {mediaId && mediaDeleted ? (
-          <span data-testid="preview-media-deleted" className="text-secondary">{t("content.media.deleted")}</span>
-        ) : mediaId ? (
-          <MediaThumb mediaId={mediaId} />
+        {mediaId && mediaDeleted && !(isReel && coverMediaId && !coverMediaDeleted) ? (
+          <span data-testid="preview-media-deleted" className="text-secondary">
+            {t(isReel ? "content.reel.deleted" : "content.media.deleted")}
+          </span>
+        ) : displayMediaId ? (
+          <MediaThumb mediaId={displayMediaId} />
         ) : (
           <span className="text-secondary">{t(labels.noMedia)}</span>
         )}

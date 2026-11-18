@@ -273,13 +273,30 @@ def generate_daily_report(
             permission="reports.view",
             type=DAILY_READY,
             severity="info",
-            params={"local_date": local_date.isoformat()},
+            params={"local_date": local_date.isoformat(), **_summary_counts(report)},
             subject_type="daily_report",
             subject_id=report_id,
             dedup_key=f"report:{local_date.isoformat()}",
             is_simulated=report.has_simulated_data,
         )
     return report
+
+
+# The three numbers the WhatsApp daily-summary template carries. Counts only, never text.
+_SUMMARY_COUNT_KEYS = {
+    "inbound_messages": "inbound_messages",
+    "replies_sent": "replies_sent",
+    "pending_approvals": "pending_approvals_now",
+}
+
+
+def _summary_counts(report: Report) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for param, metric in _SUMMARY_COUNT_KEYS.items():
+        value = report.value(metric)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            counts[param] = int(value)
+    return counts
 
 
 def known_keys(report: Report) -> list[str]:

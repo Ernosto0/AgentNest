@@ -12,6 +12,7 @@ const TR_LABELS: Record<(typeof STATUS_KEYS)[number], string> = {
   on_hold: "Beklemede",
   sending: "Gönderiliyor",
   publishing: "Yayınlanıyor",
+  processing: "İşleniyor",
   checking: "Kontrol ediliyor",
   sent: "Gönderildi",
   published: "Yayınlandı",

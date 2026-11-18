@@ -342,6 +342,8 @@ export function ScheduleSheet({ item, mode, onClose, onEditText }: ScheduleSheet
               overlay={item.overlay_text_suggestions}
               mediaId={item.media_asset_id}
               mediaDeleted={item.media_deleted}
+              coverMediaId={item.cover_media_asset_id}
+              coverMediaDeleted={item.cover_media_deleted}
               labels={SUMMARY_LABELS}
             />
           </div>

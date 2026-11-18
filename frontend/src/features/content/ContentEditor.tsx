@@ -20,7 +20,9 @@ import {
   TITLE_MAX,
 } from "./limits";
 import { blockingIssueMessage, checkMessage } from "./messages";
+import { CarouselMedia } from "./CarouselMedia";
 import { MediaUpload } from "./MediaUpload";
+import { ReelMedia } from "./ReelMedia";
 import { TemplateImageSheet } from "./TemplateImageSheet";
 import { editVoidsApproval, isEditable } from "./status";
 
@@ -162,7 +164,7 @@ function ReadOnlyText({ item }: { item: ContentItem }) {
           {t("content.media.deleted")}
         </p>
       ) : null}
-      {item.content_type === "feed_image" && item.caption ? (
+      {item.content_type !== "story_image" && item.caption ? (
         <div className="rounded-panel border border-border bg-surface-subtle/50 p-4">
           <p className="break-words whitespace-pre-wrap text-primary text-base leading-relaxed">{item.caption}</p>
         </div>
@@ -210,6 +212,7 @@ export function ContentEditor({
   const [conflict, setConflict] = useState(false);
   const [saved, setSaved] = useState(false);
   const [checks, setChecks] = useState<ContentValidation | null>(null);
+  const [carouselBusy, setCarouselBusy] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
 
   const isStory = item.content_type === "story_image";
@@ -227,8 +230,8 @@ export function ContentEditor({
   const anyDirty = dirty.title || dirty.caption || dirty.overlay || dirty.notes;
   useDirtyForm(anyDirty);
   useEffect(() => {
-    onDirtyChange?.(anyDirty || patch.isPending);
-  }, [anyDirty, patch.isPending, onDirtyChange]);
+    onDirtyChange?.(anyDirty || patch.isPending || carouselBusy);
+  }, [anyDirty, patch.isPending, carouselBusy, onDirtyChange]);
 
   if (!isEditable(item.status)) {
     return <div className="grid min-w-0 gap-6 min-[1200px]:grid-cols-2"><ReadOnlyText item={item} /><PostPreview key={item.media_asset_id} item={item} caption={caption} overlay={overlay} account={account} /></div>;
@@ -290,7 +293,7 @@ export function ContentEditor({
 
   const mediaWarnings = (checks?.warnings ?? []).filter((w) => w.field === "media_asset_id");
   const issues = item.validation.issues;
-  const busy = patch.isPending;
+  const busy = patch.isPending || carouselBusy;
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -310,6 +313,11 @@ export function ContentEditor({
         </div>
       ) : null}
 
+      {item.content_type === "feed_carousel" ? (
+        <CarouselMedia item={item} workspaceId={workspace.id} disabled={busy} onBusyChange={setCarouselBusy} />
+      ) : item.content_type === "reel" ? (
+        <ReelMedia item={item} workspaceId={workspace.id} onCheck={runCheck} disabled={busy} onBusyChange={setCarouselBusy} />
+      ) : <>
       <MediaUpload
         workspaceId={workspace.id}
         contentType={item.content_type}
@@ -332,6 +340,7 @@ export function ContentEditor({
         />
       ) : null}
 
+      </>}
       {isStory ? (
         <fieldset className="flex flex-col gap-2.5">
           <legend className="text-sm font-semibold text-primary">{t("content.editor.overlayLabel")}</legend>

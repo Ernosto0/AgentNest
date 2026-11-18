@@ -3,6 +3,7 @@
 """
 
 from typing import Any
+from unittest.mock import patch
 
 from pydantic import SecretStr
 
@@ -17,9 +18,12 @@ def test_init_sentry_returns_false_when_dsn_empty() -> None:
 
 def test_init_sentry_initializes_when_dsn_configured() -> None:
     settings = Settings(sentry_dsn=SecretStr("https://pubkey@sentry.example.com/123"))
-    # Should succeed or gracefully handle test environment
-    result = init_sentry(settings)
-    assert result is True
+    # Do not install global HTTP instrumentation or send telemetry from offline tests.
+    with patch("sentry_sdk.init") as initialize:
+        assert init_sentry(settings) is True
+    initialize.assert_called_once()
+    assert initialize.call_args.kwargs["dsn"] == "https://pubkey@sentry.example.com/123"
+    assert initialize.call_args.kwargs["before_send"] is scrub_sentry_event
 
 
 def test_scrub_sentry_event_strips_sensitive_headers_and_cookies() -> None:

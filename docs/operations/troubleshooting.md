@@ -35,3 +35,11 @@
 | (Phase 8) `scripts/deploy.sh` exits `2` (`Another deployment or rollback is already in progress`) | Concurrent deploy/rollback holding `.deploy.lock` | Wait for the active deploy to finish; verify no `scripts/deploy.py` process is running before removing a stale lockfile |
 | (Phase 8) `scripts/rollback.sh` exits `3` (`Refusing image-only rollback`) | Database `current_revision` advanced past the rollback image's `head_revision` | Do not force an older image onto a newer schema; either deploy a forward-fix image matching `current_revision` or restore the database backup ([deployment-runbook.md](deployment-runbook.md)) |
 | (Phase 8) `scripts/deploy.sh` fails at `/readyz` readiness gate | Database unreachable, pending migration, or container crash loop | Inspect the diagnostic `docker compose ps -a` and container log output emitted by `scripts/deploy.py`; run `./scripts/rollback.sh` if no forward migration was applied |
+
+### Video upload failures
+
+503 VIDEO_PROBE_UNAVAILABLE: check ffprobe/ffmpeg installation, scratch disk permissions/capacity, timeout and concurrent load; retry later. It is not a permanent file rejection. Fake is for tests/demos only. MOOV_NOT_AT_FRONT: export with Fast Start / optimize for web (TR: Hızlı başlatma / web için optimize et), or remux locally: `ffmpeg -i input.mp4 -c copy -movflags +faststart output.mp4`. This is an owner-operated repair, not server transcoding. Adding `-map_metadata -1` can remove metadata; verify output and privacy requirements yourself. VIDEO_INVALID exposes every rejection in params.reasons. H.264/HEVC video, AAC audio, MP4/MOV are accepted. 409 quota includes thumbnail bytes; retention is the current cost control.
+
+### Reel container processing failures (Session 07)
+
+`REEL_PROCESSING_TIMEOUT`: Meta took more than 30 minutes (`REEL_PROCESSING_TIMEOUT`) to move the container from `IN_PROGRESS` to `FINISHED` while `poll_reel_container` polled along `15, 30, 60, 60, 120, 120, 180, 180, 300` s intervals. Check video encoding/bitrate and network reachability of `public_fetch_url`, re-upload or export again if needed, and resubmit. Transient container error subcodes `2207003`, `2207032`, and `2207053` recreate the container up to `MAX_CONTAINER_RECREATIONS = 2` automatically; permanent subcodes (`MEDIA_REJECTED`) fail immediately without publishing.

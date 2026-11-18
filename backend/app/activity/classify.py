@@ -99,6 +99,7 @@ RULES: dict[str, Rule] = {
     "calendar.appointment_booked": Rule("success"),
     # Members
     "member.joined": Rule("success"),
+    "leads.exported": Rule("success"),
     # System and security
     "auth.login_failed": Rule("warning"),
     "auth.login_throttled": Rule("warning"),

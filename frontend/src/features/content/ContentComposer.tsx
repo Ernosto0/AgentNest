@@ -1,6 +1,6 @@
 import { useId, useState, type Ref } from "react";
 import { useTranslation } from "react-i18next";
-import type { ContentType } from "@/api/types";
+import type { ContentType as ApiContentType } from "@/api/types";
 import { Button } from "@/components/Button";
 import { ImageIcon, PlusIcon, SparkIcon } from "@/components/icons";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
@@ -9,9 +9,11 @@ import { useCurrentWorkspace } from "@/features/workspaces/context";
 import type { NewContentMode } from "./GenerateSheet";
 import { OBJECTIVE_MAX } from "./limits";
 
+type ContentType = ApiContentType;
+
 export type StartContent = (mode: NewContentMode, type: ContentType, objective?: string) => void;
 
-const TYPES: readonly ContentType[] = ["feed_image", "story_image"];
+const TYPES: readonly ContentType[] = ["feed_image", "story_image", "feed_carousel", "reel"];
 
 /**
  * The page's one place to start content. A brief typed here opens the existing draft sheet with
@@ -25,7 +27,7 @@ export function ContentComposer({
 }: {
   onStart: StartContent;
   /** Start a new draft from a template image (the type is the composer's feed or story choice). */
-  onTemplate?: (type: ContentType) => void;
+  onTemplate?: (type: Exclude<ContentType, "feed_carousel" | "reel">) => void;
   inputRef?: Ref<HTMLInputElement>;
 }) {
   const { t } = useTranslation();
@@ -45,6 +47,7 @@ export function ContentComposer({
         className="flex flex-col gap-3 lg:flex-row lg:items-center"
         onSubmit={(event) => {
           event.preventDefault();
+          if (type === "feed_carousel" || type === "reel") return;
           onStart("ai", type, objective.trim());
           setObjective("");
         }}
@@ -94,7 +97,7 @@ export function ContentComposer({
             </div>
           </fieldset>
           <div className="flex flex-1 basis-60 flex-wrap items-center gap-2 sm:flex-none sm:basis-auto">
-            <Button type="submit" className="flex-1 whitespace-nowrap sm:flex-none">
+            <Button disabled={type === "feed_carousel" || type === "reel"} type="submit" className="flex-1 whitespace-nowrap sm:flex-none">
               <SparkIcon className="text-base" />
               <span>{t("content.actions.newDraft")}</span>
             </Button>
@@ -102,7 +105,7 @@ export function ContentComposer({
               <PlusIcon className="text-base" />
               <span>{t("content.actions.blankDraft")}</span>
             </Button>
-            {onTemplate ? (
+            {onTemplate && type !== "feed_carousel" && type !== "reel" ? (
               <Button variant="ghost" onClick={() => onTemplate(type)} className="flex-1 px-3 whitespace-nowrap hover:bg-surface/70 sm:flex-none">
                 <ImageIcon className="text-base" />
                 <span>{t("content.actions.newFromTemplate")}</span>
@@ -112,7 +115,15 @@ export function ContentComposer({
         </div>
       </form>
       <div id={ids.hint} className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs text-secondary">
-        <span>{t("content.composer.hint")}</span>
+        <span>
+          {t(
+            type === "reel"
+              ? "content.reel.manualHint"
+              : type === "feed_carousel"
+                ? "content.carousel.manualHint"
+                : "content.composer.hint",
+          )}
+        </span>
         {account ? (
           <span className="inline-flex items-center gap-1.5">
             <span aria-hidden="true">·</span>

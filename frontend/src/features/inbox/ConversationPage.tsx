@@ -23,7 +23,7 @@ import {
 } from "./hooks";
 import { ImageDescriptionBlock } from "./ImageDescriptionBlock";
 import { CustomerAvatar, FOCUS, PANE } from "./InboxParts";
-import { customerLabel, daysAgo } from "./labels";
+import { customerLabel, daysAgo, formatWindowTime } from "./labels";
 import { ReplyComposer } from "./ReplyComposer";
 import { StoryNote } from "./StoryNote";
 import { TranscriptBlock } from "./TranscriptBlock";
@@ -102,7 +102,7 @@ function Thread({ messages, canManage }: { messages: Message[]; canManage: boole
                 }`}
               >
                 {message.text !== null ? (
-                  <p className="text-[0.9375rem] leading-6">{message.text}</p>
+                  <p dir="auto" className="text-[0.9375rem] leading-6">{message.text}</p>
                 ) : message.attachments.some((a) => a.type === "audio") ? (
                   <p className="inline-flex items-center gap-2 text-[0.9375rem] leading-6">
                     <MicIcon aria-hidden="true" className="shrink-0" />
@@ -243,7 +243,7 @@ function MoreActions({ conversationId }: { conversationId: string }) {
 
 /** One conversation: the messages, the assistant's draft for the last question, and your reply. */
 export function ConversationPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { workspace, role } = useCurrentWorkspace();
   const { conversationId = "" } = useParams();
   const detail = useConversation(workspace.id, conversationId);
@@ -290,7 +290,9 @@ export function ConversationPage() {
     accounts.data && accounts.data.length > 1
       ? accounts.data.find((a) => a.id === conversation.social_account_id)?.username ?? null
       : null;
-  const windowClosed = windowMinutes !== null && windowMinutes <= 0;
+  const windowState = conversation.window_state;
+  const humanAgentOnly = windowState === "human_agent_only" && Boolean(conversation.human_agent_until);
+  const windowClosed = humanAgentOnly ? false : windowMinutes !== null && windowMinutes <= 0;
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -314,7 +316,11 @@ export function ConversationPage() {
                     {human ? t("convo.handledByYou") : t("convo.assistantHandles")}
                   </span>
                   {accountName ? <span className="truncate">@{accountName}</span> : null}
-                  <WindowTimer endsAt={conversation.window_ends_at} />
+                  <WindowTimer
+                    endsAt={conversation.window_ends_at}
+                    state={conversation.window_state}
+                    humanAgentUntil={conversation.human_agent_until}
+                  />
                 </p>
               </div>
             </div>
@@ -357,6 +363,15 @@ export function ConversationPage() {
 
         {/* Your own reply is a separate action from approving the assistant's. */}
         <div className="flex flex-col gap-3 border-t border-border p-3 sm:p-4">
+          {humanAgentOnly && conversation.human_agent_until ? (
+            <p data-testid="human-agent-hint" className="flex items-start gap-2.5 rounded-xl bg-surface-subtle px-3.5 py-2.5 text-metadata text-secondary">
+              <ClockIcon aria-hidden="true" className="mt-0.5 shrink-0 text-base text-attention" />
+              <span>
+                <strong className="font-semibold text-primary">{t("convo.window.humanAgentTitle")}</strong>{" "}
+                {t("convo.window.humanAgentHint", { until: formatWindowTime(conversation.human_agent_until, i18n.language, workspace.timezone) })}
+              </span>
+            </p>
+          ) : null}
           {windowClosed ? (
             <p className="flex items-start gap-2.5 rounded-xl bg-surface-subtle px-3.5 py-2.5 text-metadata text-secondary">
               <ClockIcon aria-hidden="true" className="mt-0.5 shrink-0 text-base text-danger" />

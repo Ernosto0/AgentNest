@@ -39,6 +39,7 @@ const PRESENTATION: Record<StatusKey, { tone: Tone; icon: Icon; spins?: boolean 
   on_hold: { tone: "orange", icon: PauseIcon },
   sending: { tone: "blue", icon: SpinnerIcon, spins: true },
   publishing: { tone: "blue", icon: SpinnerIcon, spins: true },
+  processing: { tone: "blue", icon: SpinnerIcon, spins: true },
   checking: { tone: "blue", icon: MagnifierIcon },
   sent: { tone: "green", icon: CheckIcon },
   published: { tone: "green", icon: CheckIcon },

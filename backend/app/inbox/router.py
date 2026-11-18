@@ -6,12 +6,14 @@ import uuid
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_clock, require_membership
+from app.api.deps import get_app_settings, get_clock, require_membership
 from app.core.clock import Clock
+from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.db import get_db
 from app.core.pagination import Page
-from app.inbox import answers, drafts, service, views
+from app.inbox import answers, drafts, follow_up_settings, human_agent, service, views
+from app.inbox.follow_up_settings import FollowUpSettingsIn, FollowUpSettingsOut
 from app.inbox.models import Conversation, ReplyDraft
 from app.inbox.schemas import (
     AnswerFromMessageIn,
@@ -25,17 +27,57 @@ from app.inbox.schemas import (
     ReplyDraftOut,
     ReplyWithWarningsOut,
 )
+from app.integrations.instagram import queries
 from app.knowledge import approved_answers
 from app.knowledge.models import ApprovedAnswer
 
 router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["inbox"])
 
 
+@router.get("/follow-up-settings", response_model=FollowUpSettingsOut)
+def get_follow_up_settings(
+    ctx: WorkspaceContext = Depends(require_membership("reply.write")),
+    db: Session = Depends(get_db),
+) -> FollowUpSettingsOut:
+    return follow_up_settings.get(db, ctx)
+
+
+@router.put("/follow-up-settings", response_model=FollowUpSettingsOut)
+def put_follow_up_settings(
+    body: FollowUpSettingsIn,
+    ctx: WorkspaceContext = Depends(require_membership("workspace.manage")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+) -> FollowUpSettingsOut:
+    return follow_up_settings.put(db, clock, ctx, body)
+
+
+def _human_agent_flags(
+    db: Session, ctx: WorkspaceContext, settings: Settings, conversations: list[Conversation]
+) -> dict[uuid.UUID, bool]:
+    """Per conversation: may a person reply after the 24-hour window (capability flag)?"""
+    by_account: dict[uuid.UUID, bool] = {}
+    for account_id in {c.social_account_id for c in conversations if c.social_account_id}:
+        account = queries.get_account_in_workspace(db, ctx.workspace_id, account_id)
+        by_account[account_id] = human_agent.available(settings, account)
+    return {
+        c.id: by_account.get(c.social_account_id, False) if c.social_account_id else False
+        for c in conversations
+    }
+
+
 def _conversation_out(
-    db: Session, ctx: WorkspaceContext, conversation: Conversation
+    db: Session,
+    ctx: WorkspaceContext,
+    conversation: Conversation,
+    clock: Clock,
+    settings: Settings,
 ) -> ConversationOut:
     last = views.last_messages(db, ctx, [conversation.id]).get(conversation.id)
-    return views.conversation_out(conversation, last)
+    flags = _human_agent_flags(db, ctx, settings, [conversation])
+    return views.conversation_out(
+        conversation, last, now=clock.now(), human_agent_available=flags[conversation.id]
+    )
 
 
 def _draft_out(db: Session, ctx: WorkspaceContext, draft: ReplyDraft) -> ReplyDraftOut:
@@ -66,10 +108,19 @@ def list_conversations(
     attention: str = Query(default="any"),
     ctx: WorkspaceContext = Depends(require_membership("reply.write")),
     db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
 ) -> Page[ConversationOut]:
     found = service.list_conversations(db, ctx, attention_filter=attention)
     last = views.last_messages(db, ctx, [c.id for c in found])
-    return Page(items=[views.conversation_out(c, last.get(c.id)) for c in found])
+    flags = _human_agent_flags(db, ctx, settings, found)
+    now = clock.now()
+    return Page(
+        items=[
+            views.conversation_out(c, last.get(c.id), now=now, human_agent_available=flags[c.id])
+            for c in found
+        ]
+    )
 
 
 @router.get("/conversations/{conversation_id}", response_model=ConversationDetailOut)
@@ -77,6 +128,8 @@ def get_conversation(
     conversation_id: uuid.UUID,
     ctx: WorkspaceContext = Depends(require_membership("reply.write")),
     db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
 ) -> ConversationDetailOut:
     conversation = service.get_conversation(db, ctx, conversation_id)
     open_draft = drafts.get_open_draft(db, ctx.workspace_id, conversation.id)
@@ -86,7 +139,7 @@ def get_conversation(
         if open_draft is None or d.id != open_draft.id
     ]
     return ConversationDetailOut(
-        conversation=_conversation_out(db, ctx, conversation),
+        conversation=_conversation_out(db, ctx, conversation, clock, settings),
         messages=views.messages_out(
             db, ctx, conversation, service.recent_messages(db, ctx, conversation)
         ),
@@ -101,8 +154,11 @@ def takeover(
     ctx: WorkspaceContext = Depends(require_membership("conversation.takeover")),
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
 ) -> ConversationOut:
-    return _conversation_out(db, ctx, service.takeover(db, clock, ctx, conversation_id))
+    return _conversation_out(
+        db, ctx, service.takeover(db, clock, ctx, conversation_id), clock, settings
+    )
 
 
 @router.post("/conversations/{conversation_id}/release", response_model=ConversationOut)
@@ -111,8 +167,11 @@ def release(
     ctx: WorkspaceContext = Depends(require_membership("conversation.takeover")),
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
 ) -> ConversationOut:
-    return _conversation_out(db, ctx, service.release(db, clock, ctx, conversation_id))
+    return _conversation_out(
+        db, ctx, service.release(db, clock, ctx, conversation_id), clock, settings
+    )
 
 
 @router.post("/conversations/{conversation_id}/suggest-reply", status_code=202)
@@ -135,6 +194,7 @@ def submit_reply(
     ctx: WorkspaceContext = Depends(require_membership("reply.write")),
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
 ) -> ReplyWithWarningsOut:
     draft, warnings = service.submit_manual_reply(
         db,
@@ -144,6 +204,7 @@ def submit_reply(
         text=body.text,
         client_request_id=body.client_request_id,
         from_draft_id=body.from_draft_id,
+        settings=settings,
     )
     return ReplyWithWarningsOut(draft=_draft_out(db, ctx, draft), warnings=warnings)
 
@@ -167,6 +228,7 @@ def edit_draft(
     ctx: WorkspaceContext = Depends(require_membership("reply.write")),
     db: Session = Depends(get_db),
     clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
 ) -> ReplyWithWarningsOut:
     draft, warnings = service.edit_draft(
         db,
@@ -176,6 +238,7 @@ def edit_draft(
         text=body.text,
         expected_version=body.expected_version,
         approve=body.approve,
+        settings=settings,
     )
     return ReplyWithWarningsOut(draft=_draft_out(db, ctx, draft), warnings=warnings)
 

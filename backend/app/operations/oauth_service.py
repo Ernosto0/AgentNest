@@ -230,6 +230,7 @@ def complete_callback(
                 exchanged.granted_scopes,
                 settings.meta_stories_enabled,
                 account.comment_automation_enabled,
+                settings.meta_human_agent_enabled,
             )
             account.granted_scopes = exchanged.granted_scopes
             ring = TokenKeyRing(

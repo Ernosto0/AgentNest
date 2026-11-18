@@ -49,9 +49,12 @@ def test_create_workspace_makes_the_creator_the_owner(
     assert body["settings"] == {
         "automation_reviewed_at": None,
         "disclosure_enabled": True,
-        "disclosure_text": {"tr": "", "en": ""},
+        "disclosure_text": {"tr": "", "en": "", "ru": "", "de": "", "ar": ""},
         "daily_report_hour": 20,
         "publish_max_delay_minutes": 1440,
+        "follow_up_enabled": False,
+        "follow_up_hours": 6,
+        "follow_up_text": {"tr": "", "en": ""},
     }
 
     member = db_session.get(WorkspaceMember, (uuid.UUID(body["id"]), user.id))
@@ -292,7 +295,7 @@ def test_patch_by_non_member_is_404_even_with_a_valid_csrf_token(
         ({"timezone": "Mars/Base"}, "timezone", "invalid_timezone"),
         ({"currency": "ZZZ"}, "currency", "invalid_currency"),
         ({"reply_languages": []}, "reply_languages", "too_short"),
-        ({"reply_languages": ["de"]}, "reply_languages.0", "invalid_choice"),
+        ({"reply_languages": ["fr"]}, "reply_languages.0", "invalid_choice"),
         ({"settings": {"daily_report_hour": 25}}, "settings.daily_report_hour", "invalid"),
         ({"settings": {"surprise": 1}}, "settings.surprise", "invalid"),
         ({"is_demo": True}, "is_demo", "invalid"),

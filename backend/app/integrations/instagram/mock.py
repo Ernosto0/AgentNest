@@ -24,6 +24,7 @@ from app.core.clock import Clock
 from app.integrations.instagram import webhook_format
 from app.integrations.instagram.base import (
     MOCK_PRIVATE_REPLY_WINDOW,
+    SUPPORTED_MESSAGE_TAGS,
     AccountInsightsMetric,
     AccountProfile,
     AccountRef,
@@ -64,13 +65,16 @@ from app.integrations.storage.base import MediaStorage, StorageObjectNotFound
 from app.integrations.storage.local import parse_local_url
 
 MESSAGING_WINDOW = timedelta(hours=24)
+HUMAN_AGENT_WINDOW = timedelta(days=7)  # a message with the HUMAN_AGENT tag
 MAX_TEXT_BYTES = 1000
 DEFAULT_RETRY_AFTER_S = 30
 CONTAINER_LIFETIME = timedelta(hours=24)
 QUOTA_WINDOW = timedelta(hours=24)
 DEFAULT_CONTAINER_DELAY_S = 2
+DEFAULT_REEL_PROCESSING_S = 20
 DEFAULT_DAILY_PUBLISH_LIMIT = 50
 JPEG_MAGIC = b"\xff\xd8\xff"
+FAKE_VIDEO_MAGIC = b"FAKEVIDEO1 "
 PERMALINK_BASE = "https://instagram.example/sim"
 
 SessionFactory = Callable[[], Session]
@@ -159,6 +163,7 @@ class MockInstagramProvider:
         *,
         storage: MediaStorage | None = None,
         container_delay_s: int = DEFAULT_CONTAINER_DELAY_S,
+        reel_processing_s: int = DEFAULT_REEL_PROCESSING_S,
         daily_publish_limit: int = DEFAULT_DAILY_PUBLISH_LIMIT,
     ) -> None:
         self._session_factory = session_factory
@@ -166,6 +171,7 @@ class MockInstagramProvider:
         self._codec = webhook_format.WebhookCodec(app_secret, synthetic_comments=True)
         self._storage = storage
         self._container_delay = timedelta(seconds=container_delay_s)
+        self._reel_delay = timedelta(seconds=reel_processing_s)
         self._daily_publish_limit = daily_publish_limit
 
     # --- webhooks -----------------------------------------------------------------------------
@@ -457,6 +463,10 @@ class MockInstagramProvider:
             rule = session.scalars(stmt).first()
             if rule is None:
                 return None
+            if rule.skip_first > 0:
+                rule.skip_first -= 1
+                session.commit()
+                return None
             if rule.remaining is not None:
                 rule.remaining -= 1
             session.commit()
@@ -553,17 +563,22 @@ class MockInstagramProvider:
     def _effective_status(self, container: SimContainer) -> ContainerStatus:
         """What the provider would report now. Only ``ERROR`` and ``PUBLISHED`` are stored; a
         container that was not published expires 24 h after creation, and one that is still
-        ``IN_PROGRESS`` finishes at ``ready_at``."""
+        waiting finishes (or surfaces a delayed processing error) at ``ready_at``."""
         if container.status == "PUBLISHED":
             return ContainerStatus("PUBLISHED", media_id=container.published_media_id)
         now = self._clock.now()
         if now >= container.expires_at:
             return ContainerStatus("EXPIRED")
+        if now < container.ready_at:
+            return ContainerStatus("IN_PROGRESS")
         if container.status == "ERROR":
-            return ContainerStatus("ERROR", "simulated media processing error")
-        if now >= container.ready_at:
-            return ContainerStatus("FINISHED")
-        return ContainerStatus("IN_PROGRESS")
+            detail = (
+                f"SUBCODE_{container.error_subcode}"
+                if container.error_subcode is not None
+                else "simulated media processing error"
+            )
+            return ContainerStatus("ERROR", detail)
+        return ContainerStatus("FINISHED")
 
     def get_container_status(self, account: AccountRef, container_id: str) -> ContainerStatus:
         rule = self._consume_failure(account, "container_status")
@@ -573,6 +588,9 @@ class MockInstagramProvider:
             container = self._find_container(session, account, container_id, lock=True)
             if rule is not None and container.status == "IN_PROGRESS":
                 container.status = "ERROR"  # processing failed, and it stays failed
+                container.ready_at = min(container.ready_at, self._clock.now())
+                if rule.error_subcode is not None:
+                    container.error_subcode = rule.error_subcode
                 session.commit()
             return self._effective_status(container)
 
@@ -617,7 +635,14 @@ class MockInstagramProvider:
 
     # --- side effects (operations only, INV-15) -----------------------------------------------
 
-    def _window_open(self, session: Session, account: AccountRef, recipient_id: str) -> bool:
+    def _window_open(
+        self,
+        session: Session,
+        account: AccountRef,
+        recipient_id: str,
+        message_tag: str | None = None,
+    ) -> bool:
+        """24 hours for a normal message; 7 days when the message carries the Human Agent tag."""
         last = session.scalar(
             select(SimInboundMessage.received_at)
             .where(
@@ -628,9 +653,16 @@ class MockInstagramProvider:
             .order_by(SimInboundMessage.received_at.desc())
             .limit(1)
         )
-        return last is not None and self._clock.now() < last + MESSAGING_WINDOW
+        window = HUMAN_AGENT_WINDOW if message_tag == "HUMAN_AGENT" else MESSAGING_WINDOW
+        return last is not None and self._clock.now() < last + window
 
-    def send_text_message(self, account: AccountRef, recipient_id: str, text: str) -> SendResult:
+    def send_text_message(
+        self,
+        account: AccountRef,
+        recipient_id: str,
+        text: str,
+        message_tag: str | None = None,
+    ) -> SendResult:
         rule = self._consume_failure(account, "send")
         if rule is not None and rule.mode != "timeout_after_success":
             self._raise_for(rule)
@@ -638,8 +670,10 @@ class MockInstagramProvider:
             raise ProviderInvalidRequest("EMPTY_TEXT")
         if len(text.encode("utf-8")) > MAX_TEXT_BYTES:
             raise ProviderInvalidRequest("TEXT_TOO_LONG")
+        if message_tag is not None and message_tag not in SUPPORTED_MESSAGE_TAGS:
+            raise ProviderInvalidRequest("UNSUPPORTED_MESSAGE_TAG")
         with self._session_factory() as session:
-            if not self._window_open(session, account, recipient_id):
+            if not self._window_open(session, account, recipient_id, message_tag):
                 raise ProviderWindowClosed()
             message_id = f"mock-mid-{uuid.uuid4().hex}"
             session.add(
@@ -649,6 +683,7 @@ class MockInstagramProvider:
                     message_id=message_id,
                     recipient_id=recipient_id,
                     text=text,
+                    message_tag=message_tag,
                     sent_at=self._clock.now(),
                 )
             )
@@ -657,50 +692,135 @@ class MockInstagramProvider:
             raise ProviderOutcomeUnknown("simulated timeout after the message was accepted")
         return SendResult(message_id=message_id)
 
-    def _check_fetchable_jpeg(self, image_url: str) -> None:
-        """Resolve the ``localmedia:`` reference through the storage and check the JPEG magic
-        bytes, as Instagram fetches the URL and refuses anything that is not a JPEG."""
+    def _parse_and_check_local_url(self, media_url: str, *, label: str) -> str:
         if self._storage is None:
             raise RuntimeError("the mock provider was built without a media storage")
         try:
-            key, expires = parse_local_url(image_url)
+            key, expires = parse_local_url(media_url)
         except ValueError as exc:
-            raise ProviderInvalidRequest("MEDIA_REJECTED", "image URL is not fetchable") from exc
+            raise ProviderInvalidRequest("MEDIA_REJECTED", f"{label} URL is not fetchable") from exc
         if self._clock.now().timestamp() >= expires:
-            raise ProviderInvalidRequest("MEDIA_REJECTED", "image URL has expired")
+            raise ProviderInvalidRequest("MEDIA_REJECTED", f"{label} URL has expired")
+        return key
+
+    def _check_fetchable_jpeg(self, image_url: str) -> None:
+        """Resolve the ``localmedia:`` reference through the storage and check the JPEG magic
+        bytes, as Instagram fetches the URL and refuses anything that is not a JPEG."""
+        key = self._parse_and_check_local_url(image_url, label="image")
         try:
-            with self._storage.open(key) as handle:
+            with self._storage.open(key) as handle:  # type: ignore[union-attr]
                 head = handle.read(len(JPEG_MAGIC))
         except StorageObjectNotFound as exc:
             raise ProviderInvalidRequest("MEDIA_REJECTED", "image not found") from exc
         if head != JPEG_MAGIC:
             raise ProviderInvalidRequest("MEDIA_REJECTED", "image is not a JPEG")
 
+    def _check_fetchable_video(self, video_url: str) -> None:
+        """Resolve the ``localmedia:`` reference through storage and verify fake/MP4/MOV header."""
+        key = self._parse_and_check_local_url(video_url, label="video")
+        try:
+            with self._storage.open(key) as handle:  # type: ignore[union-attr]
+                head = handle.read(len(FAKE_VIDEO_MAGIC))
+        except StorageObjectNotFound as exc:
+            raise ProviderInvalidRequest("MEDIA_REJECTED", "video not found") from exc
+        if not head:
+            raise ProviderInvalidRequest("MEDIA_REJECTED", "video is empty")
+        if head.startswith(FAKE_VIDEO_MAGIC) or (len(head) >= 8 and head[4:8] == b"ftyp"):
+            return
+        raise ProviderInvalidRequest("MEDIA_REJECTED", "video is not MP4 or MOV")
+
     def create_media_container(self, account: AccountRef, spec: ContainerSpec) -> str:
-        rule = self._consume_failure(account, "create_container")
-        if rule is not None and rule.mode != "timeout_after_success":
+        operation = (
+            "create_carousel_container"
+            if spec.media_type == "CAROUSEL"
+            else "create_reel_container"
+            if spec.media_type == "REELS"
+            else "create_carousel_item"
+            if spec.is_carousel_item
+            else "create_container"
+        )
+        rule = self._consume_failure(account, operation)
+        if rule is not None and rule.mode not in (
+            "timeout_after_success",
+            "slow_processing",
+            "processing_error",
+        ):
             self._raise_for(rule)
         if spec.media_type == "STORIES" and spec.caption:
             raise ProviderInvalidRequest("CAPTION_NOT_ALLOWED", "a story has no caption")
-        self._check_fetchable_jpeg(spec.image_url)
+        if spec.media_type == "REELS":
+            if spec.video_url is None:
+                raise ProviderInvalidRequest("MEDIA_REJECTED")
+            self._check_fetchable_video(spec.video_url)
+            if spec.cover_url is not None:
+                self._check_fetchable_jpeg(spec.cover_url)
+        elif spec.media_type != "CAROUSEL":
+            if spec.image_url is None:
+                raise ProviderInvalidRequest("MEDIA_REJECTED")
+            self._check_fetchable_jpeg(spec.image_url)
         now = self._clock.now()
         container_id = f"mock-container-{uuid.uuid4().hex}"
+        default_delay = self._reel_delay if spec.media_type == "REELS" else self._container_delay
+        delay = (
+            timedelta(seconds=rule.delay_s)
+            if rule is not None and rule.delay_s is not None
+            else default_delay
+        )
+        initial_status = (
+            "ERROR" if rule is not None and rule.mode == "processing_error" else "IN_PROGRESS"
+        )
+        error_subcode = (
+            rule.error_subcode if rule is not None and rule.mode == "processing_error" else None
+        )
         with self._session_factory() as session:
+            if spec.media_type == "CAROUSEL":
+                if len(spec.children) < 2:
+                    raise ProviderInvalidRequest("TOO_FEW_CHILDREN")
+                if len(spec.children) > 20:
+                    raise ProviderInvalidRequest("TOO_MANY_CHILDREN")
+                for child_id in spec.children:
+                    try:
+                        child = self._find_container(session, account, child_id, lock=True)
+                    except ProviderInvalidRequest as exc:
+                        raise ProviderInvalidRequest("CHILD_NOT_FOUND") from exc
+                    state = self._effective_status(child).status_code
+                    if state == "EXPIRED":
+                        raise ProviderInvalidRequest("CHILD_EXPIRED")
+                    if not child.is_carousel_item or state != "FINISHED":
+                        raise ProviderInvalidRequest("CHILD_NOT_READY")
+                    used = session.scalar(
+                        select(SimContainer.id)
+                        .where(
+                            SimContainer.workspace_id == account.workspace_id,
+                            SimContainer.social_account_id == account.social_account_id,
+                            SimContainer.status == "PUBLISHED",
+                            SimContainer.children.contains([child_id]),
+                        )
+                        .limit(1)
+                    )
+                    if used is not None:
+                        raise ProviderInvalidRequest("CHILD_NOT_READY")
             session.add(
                 SimContainer(
                     workspace_id=account.workspace_id,
                     social_account_id=account.social_account_id,
                     container_id=container_id,
                     media_type=spec.media_type,
-                    media_url=spec.image_url,
+                    media_url=spec.video_url if spec.media_type == "REELS" else spec.image_url,
+                    is_carousel_item=spec.is_carousel_item,
+                    children=list(spec.children) if spec.children else None,
+                    cover_url=spec.cover_url,
+                    thumb_offset_ms=spec.thumb_offset_ms,
+                    share_to_feed=spec.share_to_feed,
                     caption=spec.caption,
-                    status="IN_PROGRESS",
-                    ready_at=now + self._container_delay,
+                    status=initial_status,
+                    error_subcode=error_subcode,
+                    ready_at=now + delay,
                     expires_at=now + CONTAINER_LIFETIME,
                 )
             )
             session.commit()
-        if rule is not None:  # timeout_after_success: the container exists, the answer is lost
+        if rule is not None and rule.mode == "timeout_after_success":
             raise ProviderOutcomeUnknown("simulated timeout after the container was created")
         return container_id
 
@@ -711,6 +831,8 @@ class MockInstagramProvider:
         media_id = f"mock-media-{uuid.uuid4().hex}"
         with self._session_factory() as session:
             container = self._find_container(session, account, container_id, lock=True)
+            if container.is_carousel_item:
+                raise ProviderInvalidRequest("CONTAINER_NOT_PUBLISHABLE")
             status = self._effective_status(container).status_code
             if status != "FINISHED":
                 raise ProviderInvalidRequest(
@@ -779,6 +901,8 @@ class MockInstagramProvider:
     def get_media_insights(
         self, account: AccountRef, media_id: str, media_type: str
     ) -> MediaInsightsData:
+        if media_type in ("feed_carousel", "CAROUSEL", "carousel", "reel", "REELS"):
+            raise ProviderInvalidRequest("MEDIA_INSIGHTS_NOT_SUPPORTED")
         h = hash(media_id) % 100
         if media_type == "story_image" or media_type == "story":
             return MediaInsightsData(

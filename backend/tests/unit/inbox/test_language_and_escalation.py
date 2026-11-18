@@ -46,10 +46,7 @@ def test_english_is_recognised(text: str) -> None:
 @pytest.mark.parametrize(
     "text",
     [
-        "Привет, сколько стоит абонемент?",
-        "مرحبا كم السعر",
         "你好，多少钱",
-        "Wie viel kostet die Mitgliedschaft? Hallo",
         "Bonjour, combien coûte l'abonnement ? merci",
         "Hola, cuánto cuesta la mensualidad, gracias",
         "Ciao, quanto costa? grazie",
@@ -103,7 +100,7 @@ def test_an_unsupported_language_is_never_answered_in_the_default() -> None:
     chosen = choose_reply_language(
         ["Привет, сколько стоит?"], default_locale="tr", reply_languages=["tr", "en"]
     )
-    assert (chosen.code, chosen.detected) == (None, "other")
+    assert (chosen.code, chosen.detected) == (None, "ru")
 
 
 # --- escalation keywords ---------------------------------------------------------------------

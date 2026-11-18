@@ -15,7 +15,7 @@ from sqlalchemy import Select, and_, exists, false, func, or_, select
 from sqlalchemy.orm import Session, aliased
 
 from app.core.context import WorkspaceContext
-from app.inbox.models import Conversation, Message, ReplyDraft
+from app.inbox.models import Conversation, ConversationFollowUp, Message, ReplyDraft
 from app.integrations.instagram.models import SocialAccount
 from app.knowledge.models import BusinessFact, FactCandidate
 from app.knowledge.values import WEEKDAYS
@@ -269,7 +269,64 @@ def after_hours_prices(
     return answered_questions(session, ctx, start, end, now, after=True)
 
 
+def follow_ups_sent(
+    session: Session,
+    ctx: WorkspaceContext,
+    start: datetime,
+    end: datetime,
+    now: datetime,
+    *,
+    replied: bool = False,
+) -> Select[Any]:
+    query = select(
+        *_row(
+            "message",
+            Message.id,
+            Message.provider_timestamp,
+            Message.is_simulated,
+            Message.conversation_id,
+        )
+    ).where(
+        real_message(Message, ctx),
+        Message.direction == "outbound",
+        Message.provider_timestamp >= start,
+        Message.provider_timestamp < end,
+        exists().where(
+            ConversationFollowUp.workspace_id == ctx.workspace_id,
+            ConversationFollowUp.reply_draft_id == Message.reply_draft_id,
+            ConversationFollowUp.is_simulated.is_(False),
+        ),
+    )
+    if replied:
+        inbound = aliased(Message)
+        query = query.where(
+            exists().where(
+                real_message(inbound, ctx),
+                inbound.conversation_id == Message.conversation_id,
+                inbound.direction == "inbound",
+                inbound.provider_timestamp > Message.provider_timestamp,
+                inbound.provider_timestamp <= Message.provider_timestamp + timedelta(hours=24),
+                inbound.provider_timestamp <= now,
+            )
+        )
+    return query
+
+
+def follow_up_replies(
+    session: Session,
+    ctx: WorkspaceContext,
+    start: datetime,
+    end: datetime,
+    now: datetime,
+) -> Select[Any]:
+    return follow_ups_sent(session, ctx, start, end, now, replied=True)
+
+
 WEEKLY_DEFINITIONS: tuple[Definition, ...] = (
+    Definition("follow_ups_sent", "period", "missed_customers", False, "count", follow_ups_sent),
+    Definition(
+        "follow_up_replies", "period", "missed_customers", False, "count", follow_up_replies
+    ),
     Definition("after_hours_dms", "period", "missed_customers", False, "count", after_hours),
     Definition(
         "first_reply_median_minutes",

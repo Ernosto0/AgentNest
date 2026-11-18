@@ -555,6 +555,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whatsapp Handshake */
+        get: operations["whatsapp_handshake_api_v1_webhooks_whatsapp_get"];
+        put?: never;
+        /** Whatsapp Webhook */
+        post: operations["whatsapp_webhook_api_v1_webhooks_whatsapp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces": {
         parameters: {
             query?: never;
@@ -1656,6 +1674,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/channels/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Channel Availability
+         * @description Which optional owner channels this server has credentials for (no secrets, no numbers).
+         */
+        get: operations["get_channel_availability_api_v1_workspaces__workspace_id__channels_availability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/channels/link-code": {
         parameters: {
             query?: never;
@@ -2398,6 +2436,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/follow-up-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Follow Up Settings */
+        get: operations["get_follow_up_settings_api_v1_workspaces__workspace_id__follow_up_settings_get"];
+        /** Put Follow Up Settings */
+        put: operations["put_follow_up_settings_api_v1_workspaces__workspace_id__follow_up_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/home/attention": {
         parameters: {
             query?: never;
@@ -2541,6 +2597,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/leads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Leads */
+        get: operations["get_leads_api_v1_workspaces__workspace_id__leads_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/leads/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Leads */
+        post: operations["export_leads_api_v1_workspaces__workspace_id__leads_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/learning/month": {
         parameters: {
             query?: never;
@@ -2575,6 +2665,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/media/video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Video */
+        post: operations["upload_video_api_v1_workspaces__workspace_id__media_video_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/media/{media_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Media Metadata */
+        get: operations["media_metadata_api_v1_workspaces__workspace_id__media__media_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/media/{media_id}/content": {
         parameters: {
             query?: never;
@@ -2584,7 +2708,7 @@ export interface paths {
         };
         /**
          * Media Content
-         * @description The stored JPEG, for authenticated members only. Never a bucket URL (ADR-015).
+         * @description Stored media for authenticated members only. Never a bucket URL (ADR-015).
          */
         get: operations["media_content_api_v1_workspaces__workspace_id__media__media_id__content_get"];
         put?: never;
@@ -3228,6 +3352,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/webhooks/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whatsapp Handshake */
+        get: operations["whatsapp_handshake_webhooks_whatsapp_get"];
+        put?: never;
+        /** Whatsapp Webhook */
+        post: operations["whatsapp_webhook_webhooks_whatsapp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3617,7 +3759,7 @@ export interface components {
              * Language
              * @enum {string}
              */
-            language: "tr" | "en";
+            language: "tr" | "en" | "ru" | "de" | "ar";
             /** Title */
             title: string;
         };
@@ -4030,10 +4172,21 @@ export interface components {
              */
             changed: boolean;
         };
+        /** ChannelAvailabilityOut */
+        ChannelAvailabilityOut: {
+            /** Whatsapp */
+            whatsapp: boolean;
+        };
         /** ChannelLinkCodeOut */
         ChannelLinkCodeOut: {
             /** Bot Username */
             bot_username?: string | null;
+            /**
+             * Channel
+             * @default telegram
+             * @enum {string}
+             */
+            channel: "telegram" | "whatsapp";
             /** Code */
             code: string;
             /** Deep Link Url */
@@ -4043,15 +4196,17 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /** Whatsapp Number */
+            whatsapp_number?: string | null;
         };
         /** ChannelLinkCodeRequest */
         ChannelLinkCodeRequest: {
             /**
              * Channel
              * @default telegram
-             * @constant
+             * @enum {string}
              */
-            channel: "telegram";
+            channel: "telegram" | "whatsapp";
         };
         /** ChannelLinkOut */
         ChannelLinkOut: {
@@ -4290,7 +4445,8 @@ export interface components {
          * ContentCheckItemOut
          * @description One submit rule that was broken (``errors``) or only worth a look (``warnings``)
          *     (plan.md G17). ``field`` names what it is about (``caption``, ``media_asset_id``,
-         *     ``schedule``, ``scheduled_at``, ``social_account_id``, ``overlay_text_suggestions.{i}``);
+         *     ``media_asset_ids``, ``media_asset_ids.{index}``, ``schedule``, ``scheduled_at``,
+         *     ``social_account_id``, ``overlay_text_suggestions.{i}``);
          *     ``null`` for the claim check, whose ``params.issues`` lists the claim issues.
          */
         ContentCheckItemOut: {
@@ -4315,11 +4471,19 @@ export interface components {
              * Content Type
              * @enum {string}
              */
-            content_type: "feed_image" | "story_image";
+            content_type: "feed_image" | "story_image" | "feed_carousel" | "reel";
+            /** Cover Media Asset Id */
+            cover_media_asset_id?: string | null;
             /** Media Asset Id */
             media_asset_id?: string | null;
+            /** Media Asset Ids */
+            media_asset_ids?: string[] | null;
             /** Overlay Text Suggestions */
             overlay_text_suggestions?: string[];
+            /** Share To Feed */
+            share_to_feed?: boolean | null;
+            /** Thumb Offset Ms */
+            thumb_offset_ms?: number | null;
             /** Title */
             title: string;
         };
@@ -4372,7 +4536,14 @@ export interface components {
              * Content Type
              * @enum {string}
              */
-            content_type: "feed_image" | "story_image";
+            content_type: "feed_image" | "story_image" | "feed_carousel" | "reel";
+            /** Cover Media Asset Id */
+            cover_media_asset_id?: string | null;
+            /**
+             * Cover Media Deleted
+             * @default false
+             */
+            cover_media_deleted: boolean;
             /**
              * Created At
              * Format: date-time
@@ -4403,6 +4574,8 @@ export interface components {
             media_asset_id: string | null;
             /** Media Deleted */
             media_deleted: boolean;
+            /** Media Items */
+            media_items?: components["schemas"]["ContentMediaItemOut"][];
             /** Objective */
             objective: string | null;
             operation: components["schemas"]["ContentOperationOut"] | null;
@@ -4415,6 +4588,8 @@ export interface components {
             schedule_local: components["schemas"]["ScheduleLocalOut"] | null;
             /** Scheduled At */
             scheduled_at: string | null;
+            /** Share To Feed */
+            share_to_feed?: boolean | null;
             /** Social Account Id */
             social_account_id: string | null;
             /**
@@ -4423,6 +4598,8 @@ export interface components {
              */
             status: "draft" | "pending_approval" | "scheduled" | "publishing" | "retry_scheduled" | "on_hold" | "published" | "rejected" | "failed" | "cancelled";
             template_image: components["schemas"]["TemplateImageStateOut"] | null;
+            /** Thumb Offset Ms */
+            thumb_offset_ms?: number | null;
             /** Title */
             title: string;
             /**
@@ -4433,8 +4610,26 @@ export interface components {
             validation: components["schemas"]["ContentValidationOut"];
             /** Version */
             version: number;
+            /** Video Duration Ms */
+            video_duration_ms?: number | null;
             /** Visual Notes */
             visual_notes: string | null;
+        };
+        /** ContentMediaItemOut */
+        ContentMediaItemOut: {
+            /** Height */
+            height: number;
+            /**
+             * Media Asset Id
+             * Format: uuid
+             */
+            media_asset_id: string;
+            /** Media Deleted */
+            media_deleted: boolean;
+            /** Position */
+            position: number;
+            /** Width */
+            width: number;
         };
         /** ContentOperationOut */
         ContentOperationOut: {
@@ -4444,6 +4639,11 @@ export interface components {
             last_error_code: string | null;
             /** Next Attempt At */
             next_attempt_at: string | null;
+            /**
+             * Processing
+             * @default false
+             */
+            processing: boolean;
             /** Status */
             status: string;
         };
@@ -4455,12 +4655,20 @@ export interface components {
         ContentPatch: {
             /** Caption */
             caption?: string | null;
+            /** Cover Media Asset Id */
+            cover_media_asset_id?: string | null;
             /** Expected Version */
             expected_version: number;
             /** Media Asset Id */
             media_asset_id?: string | null;
+            /** Media Asset Ids */
+            media_asset_ids?: string[] | null;
             /** Overlay Text Suggestions */
             overlay_text_suggestions?: string[] | null;
+            /** Share To Feed */
+            share_to_feed?: boolean | null;
+            /** Thumb Offset Ms */
+            thumb_offset_ms?: number | null;
             /** Title */
             title?: string | null;
             /** Visual Notes */
@@ -4584,6 +4792,8 @@ export interface components {
              * @enum {string}
              */
             handling_mode: "automatic" | "human";
+            /** Human Agent Until */
+            human_agent_until?: string | null;
             /**
              * Id
              * Format: uuid
@@ -4599,6 +4809,12 @@ export interface components {
             social_account_id?: string | null;
             /** Window Ends At */
             window_ends_at: string | null;
+            /**
+             * Window State
+             * @default closed
+             * @enum {string}
+             */
+            window_state: "open" | "human_agent_only" | "closed";
         };
         /** CustomerMessageIn */
         CustomerMessageIn: {
@@ -4708,13 +4924,31 @@ export interface components {
             /** Next Version */
             next_version: number;
         };
-        /** DisclosureText */
+        /**
+         * DisclosureText
+         * @description The notice appended to automatic replies, per reply language. Empty: the built-in text.
+         */
         DisclosureText: {
+            /**
+             * Ar
+             * @default
+             */
+            ar: string;
+            /**
+             * De
+             * @default
+             */
+            de: string;
             /**
              * En
              * @default
              */
             en: string;
+            /**
+             * Ru
+             * @default
+             */
+            ru: string;
             /**
              * Tr
              * @default
@@ -5018,16 +5252,20 @@ export interface components {
         };
         /** FailureRuleIn */
         FailureRuleIn: {
+            /** Delay S */
+            delay_s?: number | null;
+            /** Error Subcode */
+            error_subcode?: number | null;
             /**
              * Mode
              * @enum {string}
              */
-            mode: "transient" | "rate_limited" | "auth_revoked" | "permission_missing" | "invalid_media" | "timeout_after_success" | "window_closed";
+            mode: "transient" | "rate_limited" | "auth_revoked" | "permission_missing" | "invalid_media" | "timeout_after_success" | "window_closed" | "slow_processing" | "processing_error";
             /**
              * Operation
              * @enum {string}
              */
-            operation: "send" | "lookup" | "echo" | "create_container" | "container_status" | "publish" | "refresh" | "profile" | "comment_reply" | "comment_hide" | "comment_unhide" | "comment_delete" | "comment_lookup" | "comment_private_reply" | "private_reply_lookup" | "any";
+            operation: "send" | "lookup" | "echo" | "create_container" | "create_carousel_item" | "create_carousel_container" | "create_reel_container" | "container_status" | "publish" | "refresh" | "profile" | "comment_reply" | "comment_hide" | "comment_unhide" | "comment_delete" | "comment_lookup" | "comment_private_reply" | "private_reply_lookup" | "any";
             /**
              * Remaining
              * @default 1
@@ -5035,9 +5273,18 @@ export interface components {
             remaining: number | null;
             /** Retry After S */
             retry_after_s?: number | null;
+            /**
+             * Skip First
+             * @default 0
+             */
+            skip_first: number;
         };
         /** FailureRuleOut */
         FailureRuleOut: {
+            /** Delay S */
+            delay_s?: number | null;
+            /** Error Subcode */
+            error_subcode?: number | null;
             /**
              * Id
              * Format: uuid
@@ -5051,6 +5298,48 @@ export interface components {
             remaining: number | null;
             /** Retry After S */
             retry_after_s: number | null;
+            /** Skip First */
+            skip_first: number;
+        };
+        /** FollowUpSettingsIn */
+        FollowUpSettingsIn: {
+            /** Enabled */
+            enabled: boolean;
+            /** Hours */
+            hours: number;
+            text: components["schemas"]["FollowUpText"];
+        };
+        /** FollowUpSettingsOut */
+        FollowUpSettingsOut: {
+            default_text: components["schemas"]["FollowUpText"];
+            /** Enabled */
+            enabled: boolean;
+            /** Hours */
+            hours: number;
+            /**
+             * Max Hours
+             * @default 20
+             */
+            max_hours: number;
+            /**
+             * Min Hours
+             * @default 1
+             */
+            min_hours: number;
+            text: components["schemas"]["FollowUpText"];
+        };
+        /** FollowUpText */
+        FollowUpText: {
+            /**
+             * En
+             * @default
+             */
+            en: string;
+            /**
+             * Tr
+             * @default
+             */
+            tr: string;
         };
         /** GenerateReportRequest */
         GenerateReportRequest: {
@@ -5340,6 +5629,65 @@ export interface components {
             /** Tr */
             tr?: string | null;
         };
+        /** LeadExportRequest */
+        LeadExportRequest: {
+            /** From */
+            from?: string | null;
+            /** To */
+            to?: string | null;
+        };
+        /** LeadListOut */
+        LeadListOut: {
+            /**
+             * Has Simulated Data
+             * @default false
+             * @constant
+             */
+            has_simulated_data: false;
+            /** Items */
+            items: components["schemas"]["LeadOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /**
+             * Period From
+             * Format: date
+             */
+            period_from: string;
+            /**
+             * Period To
+             * Format: date
+             */
+            period_to: string;
+            /** Timezone */
+            timezone: string;
+            /** Total */
+            total: number;
+        };
+        /** LeadOut */
+        LeadOut: {
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Customer Handle */
+            customer_handle: string | null;
+            /**
+             * Intent
+             * @enum {string}
+             */
+            intent: "pricing" | "booking";
+            /** Last Question */
+            last_question: string | null;
+            /**
+             * Last Question At
+             * Format: date-time
+             */
+            last_question_at: string;
+            link: components["schemas"]["ReportLinkOut"];
+        };
         /** LearnedFact */
         LearnedFact: {
             /** Category */
@@ -5454,13 +5802,23 @@ export interface components {
         };
         /** MediaAssetOut */
         MediaAssetOut: {
+            /** Audio Codec */
+            audio_codec?: string | null;
+            /** Bitrate Bps */
+            bitrate_bps?: number | null;
             /** Byte Size */
             byte_size: number;
+            /** Container */
+            container?: ("mp4" | "mov") | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+            /** Duration Ms */
+            duration_ms?: number | null;
+            /** Frame Rate */
+            frame_rate?: number | null;
             /** Height */
             height: number;
             /**
@@ -5468,6 +5826,12 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Kind
+             * @default image
+             * @enum {string}
+             */
+            kind: "image" | "video" | "video_thumbnail";
             /** Mime Type */
             mime_type: string;
             /** Original Filename */
@@ -5476,6 +5840,12 @@ export interface components {
             rejection_code: string | null;
             /** Status */
             status: string;
+            /** Thumbnail Media Asset Id */
+            thumbnail_media_asset_id?: string | null;
+            /** Video Codec */
+            video_codec?: string | null;
+            /** Video Warnings */
+            video_warnings?: string[] | null;
             /** Width */
             width: number;
         };
@@ -6446,6 +6816,8 @@ export interface components {
             is_simulated: boolean;
             /** Language */
             language: string | null;
+            /** Message Tag */
+            message_tag?: "HUMAN_AGENT" | null;
             /** Rendered Facts */
             rendered_facts: components["schemas"]["RenderedFactOut"][];
             /**
@@ -6944,13 +7316,23 @@ export interface components {
         };
         /** TemplateImageOut */
         TemplateImageOut: {
+            /** Audio Codec */
+            audio_codec?: string | null;
+            /** Bitrate Bps */
+            bitrate_bps?: number | null;
             /** Byte Size */
             byte_size: number;
+            /** Container */
+            container?: ("mp4" | "mov") | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+            /** Duration Ms */
+            duration_ms?: number | null;
+            /** Frame Rate */
+            frame_rate?: number | null;
             /** Height */
             height: number;
             /**
@@ -6958,6 +7340,12 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Kind
+             * @default image
+             * @enum {string}
+             */
+            kind: "image" | "video" | "video_thumbnail";
             /** Mime Type */
             mime_type: string;
             /** Original Filename */
@@ -6967,6 +7355,12 @@ export interface components {
             render_record: components["schemas"]["RenderRecord"];
             /** Status */
             status: string;
+            /** Thumbnail Media Asset Id */
+            thumbnail_media_asset_id?: string | null;
+            /** Video Codec */
+            video_codec?: string | null;
+            /** Video Warnings */
+            video_warnings?: string[] | null;
             /** Width */
             width: number;
         };
@@ -7435,7 +7829,7 @@ export interface components {
             /** Name */
             name: string;
             /** Reply Languages */
-            reply_languages: ("tr" | "en")[];
+            reply_languages: ("tr" | "en" | "ru" | "de" | "ar")[];
             settings: components["schemas"]["WorkspaceSettings"];
             /** Slug */
             slug: string;
@@ -7460,7 +7854,7 @@ export interface components {
             /** Name */
             name?: string | null;
             /** Reply Languages */
-            reply_languages?: ("tr" | "en")[] | null;
+            reply_languages?: ("tr" | "en" | "ru" | "de" | "ar")[] | null;
             settings?: components["schemas"]["WorkspaceSettingsPatch"] | null;
             /** Timezone */
             timezone?: string | null;
@@ -7483,6 +7877,17 @@ export interface components {
              */
             disclosure_enabled: boolean;
             disclosure_text?: components["schemas"]["DisclosureText"];
+            /**
+             * Follow Up Enabled
+             * @default false
+             */
+            follow_up_enabled: boolean;
+            /**
+             * Follow Up Hours
+             * @default 6
+             */
+            follow_up_hours: number;
+            follow_up_text?: components["schemas"]["FollowUpText"];
             /**
              * Publish Max Delay Minutes
              * @default 1440
@@ -8440,6 +8845,46 @@ export interface operations {
         };
     };
     telegram_webhook_api_v1_webhooks_telegram_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    whatsapp_handshake_api_v1_webhooks_whatsapp_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    whatsapp_webhook_api_v1_webhooks_whatsapp_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -10857,6 +11302,37 @@ export interface operations {
             };
         };
     };
+    get_channel_availability_api_v1_workspaces__workspace_id__channels_availability_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelAvailabilityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     generate_channel_link_code_api_v1_workspaces__workspace_id__channels_link_code_post: {
         parameters: {
             query?: never;
@@ -12412,6 +12888,72 @@ export interface operations {
             };
         };
     };
+    get_follow_up_settings_api_v1_workspaces__workspace_id__follow_up_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_follow_up_settings_api_v1_workspaces__workspace_id__follow_up_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowUpSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowUpSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_home_attention_api_v1_workspaces__workspace_id__home_attention_get: {
         parameters: {
             query?: never;
@@ -12707,6 +13249,77 @@ export interface operations {
             };
         };
     };
+    get_leads_api_v1_workspaces__workspace_id__leads_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeadListOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_leads_api_v1_workspaces__workspace_id__leads_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     monthly_learning_api_v1_workspaces__workspace_id__learning_month_get: {
         parameters: {
             query?: never;
@@ -12755,6 +13368,76 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAssetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_video_api_v1_workspaces__workspace_id__media_video_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAssetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    media_metadata_api_v1_workspaces__workspace_id__media__media_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                media_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13987,6 +14670,46 @@ export interface operations {
         };
     };
     telegram_webhook_webhooks_telegram_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    whatsapp_handshake_webhooks_whatsapp_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    whatsapp_webhook_webhooks_whatsapp_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -11,7 +11,7 @@ approves it again, because the schedule it was approved for may have passed.
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.clock import Clock
@@ -21,6 +21,7 @@ from app.inbox.payloads import SendReplyPayload
 from app.integrations.instagram import queries
 from app.jobs.queue import enqueue, expedite
 from app.operations.send import SEND_MARGIN
+from app.policy.message_tag import HUMAN_AGENT_WINDOW
 
 
 def resume_queued_replies(
@@ -57,7 +58,12 @@ def resume_queued_replies(
             ReplyDraft.workspace_id == workspace_id,
             ReplyDraft.status == "queued",
             Conversation.social_account_id == social_account_id,
-            Conversation.last_inbound_at > now - MESSAGING_WINDOW + SEND_MARGIN,
+            or_(
+                Conversation.last_inbound_at > now - MESSAGING_WINDOW + SEND_MARGIN,
+                # a person's tagged reply waits for the 7-day window
+                (ReplyDraft.message_tag.is_not(None))
+                & (Conversation.last_inbound_at > now - HUMAN_AGENT_WINDOW + SEND_MARGIN),
+            ),
         )
         .order_by(ReplyDraft.created_at, ReplyDraft.id)
     ).all()

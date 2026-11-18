@@ -36,6 +36,9 @@ export const noContent = () => new Response(null, { status: 204 });
 
 /** Requests every screen makes in the background; a test overrides them to assert on them. */
 const BACKGROUND: [RegExp, () => Response][] = [
+  [/^GET \/api\/v1\/workspaces\/[^/]+\/follow-up-settings$/, () => json({ enabled: false, hours: 6, text: { tr: "", en: "" }, default_text: { tr: "Başka bir konuda yardımcı olabilir miyiz?", en: "Can we help further?" }, min_hours: 1, max_hours: 20 })],
+  // Existing fixtures are images; video tests override this metadata lookup explicitly.
+  [/^GET \/api\/v1\/workspaces\/[^/]+\/media\/[^/]+$/, () => json({ kind: "image" })],
   // Neutral brand until a test overrides it.
   [/^GET \/api\/v1\/workspaces\/[^/]+\/brand$/, () => json({ primary_color: "#f4f4f5", accent_color: "#3f3f46", logo_media_asset_id: null, is_default: true, logo_width: null, logo_height: null })],
   [

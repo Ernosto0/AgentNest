@@ -93,6 +93,9 @@ def load_dataset(task: str, path: Path) -> Dataset:
     fixture = load_fixture(data.get("fixtures", {}).get("facts", "demo_gym"))
     cases: list[Case] = []
     seen: set[str] = set()
+    # ``defaults``: inputs every case of the file starts from (a case's own value wins), e.g.
+    # ``languages`` for the Russian, German and Arabic sets.
+    defaults = {k: v for k, v in data.get("defaults", {}).items() if k in INPUT_KEYS}
     for raw in data["cases"]:
         if raw["id"] in seen:
             raise ValueError(f"{path.name}: duplicate case id {raw['id']!r}")
@@ -103,7 +106,11 @@ def load_dataset(task: str, path: Path) -> Dataset:
                 locale=raw.get("locale", fixture.default_locale),
                 hard=bool(raw.get("hard", False)),
                 tags=tuple(raw.get("tags", ())),
-                inputs={k: raw[k] for k in INPUT_KEYS if k in raw},
+                inputs={
+                    k: raw[k] if k in raw else defaults[k]
+                    for k in INPUT_KEYS
+                    if k in raw or k in defaults
+                },
                 expect=raw.get("expect", {}),
             )
         )

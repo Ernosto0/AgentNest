@@ -33,7 +33,7 @@ from app.core.context import WorkspaceContext
 from app.core.errors import AppError, RetryableError
 from app.core.ids import new_id
 from app.core.logging import get_logger
-from app.inbox import attention, drafts
+from app.inbox import attention, drafts, human_agent
 from app.inbox.approval_payload import approval_payload
 from app.inbox.context import MESSAGING_WINDOW
 from app.inbox.models import Conversation, ReplyDraft
@@ -63,6 +63,7 @@ from app.operations.resolution import (
     set_operation,
     text_sha256,
 )
+from app.policy.message_tag import HUMAN_AGENT_WINDOW, WINDOW_CLOSED
 
 log = get_logger(__name__)
 
@@ -93,6 +94,7 @@ class _Prepared:
     provider_kind: str
     recipient_id: str
     text: str
+    message_tag: str | None = None  # HUMAN_AGENT only; never set for an automated draft
 
 
 def execute_send_reply(
@@ -120,9 +122,16 @@ def execute_send_reply(
     error: Exception | None = None
     message_id: str | None = None
     try:  # no transaction is open here
-        message_id = sender.send_text_message(
-            prepared.account, prepared.recipient_id, prepared.text
-        ).message_id
+        if prepared.message_tag is None:
+            sent = sender.send_text_message(prepared.account, prepared.recipient_id, prepared.text)
+        else:
+            sent = sender.send_text_message(
+                prepared.account,
+                prepared.recipient_id,
+                prepared.text,
+                message_tag=prepared.message_tag,
+            )
+        message_id = sent.message_id
     except Exception as exc:
         error = exc
 
@@ -205,17 +214,6 @@ def _prepare(
         return _skip(f"in_flight:{draft.status}")
     if draft.status != "queued":
         return _skip(f"not_queued:{draft.status}")
-    if (
-        controller
-        and draft.origin != "agent"
-        and draft.source != "owner"
-        and (
-            controller.controller_mode == "agent"
-            or draft.validation.get("controller_cutover_generation", 0)
-            != controller.cutover_generation
-        )
-    ):
-        return _cancel_queued(session, clock, ctx, draft, ref, "CONTROLLER_CHANGED")
 
     conversation = lock_conversation(session, draft)
     account = queries.get_account_in_workspace(
@@ -230,10 +228,51 @@ def _prepare(
     window_end = (
         conversation.last_inbound_at + MESSAGING_WINDOW if conversation.last_inbound_at else None
     )
+    message_tag: str | None = None
+    if draft.message_tag is not None:
+        # The Human Agent tag: the same deterministic rule that admitted the reply decides again,
+        # from the stored draft. An automated source, a switched-off capability or a window that
+        # is over rejects it; inside the standard window it is sent as a normal message.
+        decision = human_agent.decide_for_draft(
+            session,
+            draft,
+            now=now,
+            last_inbound_at=conversation.last_inbound_at,
+            human_agent_available=human_agent.available(settings, account),
+            margin=SEND_MARGIN,
+        )
+        if not decision.allowed:
+            reason = decision.reasons[0]
+            if reason == WINDOW_CLOSED:
+                drafts.transition(session, clock, ctx, draft, "expire", reason=WINDOW_CLOSED)
+                attention.refresh(session, conversation)
+                return SendOutcome("expired", error_code=WINDOW_CLOSED)
+            return _cancel_queued(session, clock, ctx, draft, conversation, reason)
+        if decision.use_tag and conversation.last_inbound_at is not None:
+            message_tag = draft.message_tag
+            window_end = conversation.last_inbound_at + HUMAN_AGENT_WINDOW
     if window_end is None or now >= window_end - SEND_MARGIN:
         drafts.transition(session, clock, ctx, draft, "expire", reason="MESSAGING_WINDOW_CLOSED")
         attention.refresh(session, conversation)
         return SendOutcome("expired", error_code="MESSAGING_WINDOW_CLOSED")
+
+    if (
+        controller
+        and draft.origin != "agent"
+        and draft.source != "owner"
+        and (
+            controller.controller_mode == "agent"
+            or draft.validation.get("controller_cutover_generation", 0)
+            != controller.cutover_generation
+        )
+    ):
+        return _cancel_queued(session, clock, ctx, draft, ref, "CONTROLLER_CHANGED")
+
+    from app.inbox.follow_up import send_rejection
+
+    follow_up_reason = send_rejection(session, ctx, conversation, draft)
+    if follow_up_reason:
+        return _cancel_queued(session, clock, ctx, draft, conversation, follow_up_reason)
 
     if draft.origin == "agent":
         try:
@@ -310,6 +349,7 @@ def _prepare(
     operation.provider_ref = {
         "recipient_id": conversation.customer_external_id,
         "text_sha256": text_sha256(draft.text),
+        **({"message_tag": message_tag} if message_tag else {}),
     }
     drafts.transition(session, clock, ctx, draft, "start_send")
     attention.refresh(session, conversation)
@@ -321,6 +361,7 @@ def _prepare(
         provider_kind=account.provider_kind,
         recipient_id=conversation.customer_external_id,
         text=draft.text,
+        message_tag=message_tag,
     )
 
 

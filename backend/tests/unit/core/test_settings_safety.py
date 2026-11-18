@@ -70,6 +70,14 @@ def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "TELEGRAM_BOT_USERNAME",
         "TELEGRAM_BOT_TOKEN",
         "TELEGRAM_WEBHOOK_SECRET",
+        "WHATSAPP_ACCESS_TOKEN",
+        "WHATSAPP_APP_SECRET",
+        "WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+        "WHATSAPP_PHONE_NUMBER_ID",
+        "WHATSAPP_DISPLAY_PHONE_NUMBER",
+        "WHATSAPP_API_VERSION",
+        "WHATSAPP_API_BASE_URL",
+        "WHATSAPP_TEMPLATES_APPROVED",
         "CALENDAR_ENABLED_PROVIDERS",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
@@ -581,3 +589,36 @@ def test_phase8_environment_variables_are_documented() -> None:
         assert f"`{name.upper()}`" in docs, (
             f"{name.upper()} is missing from environment-variables.md"
         )
+
+
+WHATSAPP_VALUES = {
+    "whatsapp_access_token": "synthetic-wa-access",
+    "whatsapp_app_secret": "synthetic-wa-secret",
+    "whatsapp_webhook_verify_token": "synthetic-wa-verify",
+    "whatsapp_phone_number_id": "123",
+    "whatsapp_display_phone_number": "905551112233",
+}
+
+
+@pytest.mark.parametrize("missing", list(WHATSAPP_VALUES))
+def test_whatsapp_production_requires_complete_credentials(missing: str) -> None:
+    values = {key: value for key, value in WHATSAPP_VALUES.items() if key != missing}
+    with pytest.raises(ConfigError) as caught:
+        prod(**values)
+    assert missing.upper() in str(caught.value)
+    assert all(value not in str(caught.value) for value in WHATSAPP_VALUES.values())
+
+
+def test_whatsapp_off_and_complete_credentials_and_redaction() -> None:
+    assert not prod().whatsapp_configured
+    settings = prod(**WHATSAPP_VALUES)
+    assert settings.whatsapp_configured
+    public = settings.public_dict()
+    for key in ("whatsapp_access_token", "whatsapp_app_secret", "whatsapp_webhook_verify_token"):
+        assert key not in public and WHATSAPP_VALUES[key] not in str(public)
+    assert not Settings(_env_file=None, whatsapp_access_token=" ").whatsapp_configured
+
+
+def test_whatsapp_number_requires_international_digits() -> None:
+    with pytest.raises(ValueError, match="international digits"):
+        Settings(_env_file=None, whatsapp_display_phone_number="+90 555")

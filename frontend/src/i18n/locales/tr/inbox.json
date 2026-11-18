@@ -34,6 +34,9 @@
       "languages": {
         "tr": "Türkçe",
         "en": "İngilizce",
+        "ru": "Rusça",
+        "de": "Almanca",
+        "ar": "Arapça",
         "other": "Başka bir dil"
       },
       "mayHaveErrors": "Bir makine yazdı, bu yüzden hata içerebilir.",
@@ -115,7 +118,11 @@
       "hoursShort_other": "{{count}} sa kaldı",
       "minutesShort_one": "{{count}} dk kaldı",
       "minutesShort_other": "{{count}} dk kaldı",
-      "closedHint": "Instagram, müşterinin son mesajından sonraki 24 saat içinde yanıt verilmesine izin verir. Müşteri yeniden yazdığında tekrar yanıt verebilirsiniz."
+      "closedHint": "Instagram, müşterinin son mesajından sonraki 24 saat içinde yanıt verilmesine izin verir. Müşteri yeniden yazdığında tekrar yanıt verebilirsiniz.",
+      "humanAgentOnly": "İnsan Temsilcisi süresi: yalnızca kendi yazdığınız yanıt, {{until}} tarihine kadar",
+      "humanAgentShort": "İnsan Temsilcisi süresi",
+      "humanAgentTitle": "24 saatlik yanıt süresi doldu.",
+      "humanAgentHint": "Instagram’ın İnsan Temsilcisi etiketiyle, kendi yazdığınız bir yanıtı {{until}} tarihine kadar yine gönderebilirsiniz. Asistan taslakları ve otomatik takip mesajları şu an gönderilemez."
     },
     "status": {
       "pending_approval": "Onay bekliyor",
@@ -212,12 +219,14 @@
       "LLM_REFUSED": "Asistan yanıtlamayı reddetti",
       "ATTACHMENT_ONLY": "Yalnızca fotoğraf veya dosya",
       "TRANSCRIPT_REQUIRES_APPROVAL": "Sesli mesajdan yazıldı, bu yüzden her zaman sizin onayınız gerekir",
+      "FOLLOW_UP_REQUIRES_APPROVAL": "Bu takip mesajı her zaman onayınızı gerektirir",
       "INJECTION_SUSPECTED": "Asistana talimat vermeye çalışıyor gibi görünüyor",
       "MESSAGING_WINDOW_CLOSED": "Yanıt süresi doldu",
       "ACCOUNT_NOT_CONNECTED": "Instagram hesabı bağlı değil",
       "CAPABILITY_MISSING": "Mesaj izni eksik",
       "OWNER_REPLY": "Siz yazdınız",
-      "OWNER_EDIT": "Siz düzenlediniz"
+      "OWNER_EDIT": "Siz düzenlediniz",
+      "HUMAN_AGENT_TAG": "Kendi yanıtınız olarak İnsan Temsilcisi etiketiyle gönderilir"
     },
     "removed": "Bu mesaj kaldırıldı.",
     "assistantHandles": "Asistan yürütüyor",
@@ -324,6 +333,7 @@
       "services": "Hizmetler",
       "booking": "Rezervasyon",
       "promotions": "Kampanyalar",
+      "follow_up": "Takip mesajı",
       "story_mention": "Hikâye etiketi teşekkürü"
     },
     "lang": {
@@ -371,6 +381,12 @@
       "denied": "Bu site için bildirimler tarayıcı ayarlarında engellenmiş.",
       "subscribed": "Abone olundu: {{label}}",
       "removed": "Bu cihaz kaldırıldı."
-    }
+    },
+    "skipFirst": "Önce başarılı çağrı sayısı",
+    "createCarouselItem": "Kaydırmalı görseli oluştur",
+    "createCarouselContainer": "Kaydırmalı gönderi kapsayıcısını oluştur",
+    "createReelContainer": "Reels kapsayıcısını oluştur",
+    "delayS": "Gecikme (sn)",
+    "errorSubcode": "Alt hata kodu"
   }
 }

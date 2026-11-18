@@ -92,6 +92,9 @@ def record_delivered(
     if conversation.last_message_at is None or sent_at > conversation.last_message_at:
         conversation.last_message_at = sent_at
     drafts.transition(session, clock, ctx, draft, "succeed")
+    from app.inbox.follow_up import schedule_after_answer
+
+    schedule_after_answer(session, clock, ctx, conversation, draft, sent_at=sent_at)
     if draft.validation.get("privacy_redacted"):
         draft.text = None
     attention.refresh(session, conversation)

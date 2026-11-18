@@ -263,6 +263,92 @@ describe("SettingsPage", () => {
     expect(details.getByText(/^Berlin \(GMT/)).toBeInTheDocument();
   });
 
+  it("lets the owner choose reply languages, keeps the main one on and warns about coverage (F-11)", async () => {
+    let current = workspace(WS_GOLKENT);
+    const requests = mockApi(
+      routes({
+        [`GET ${BASE}`]: () => json(current),
+        [`PATCH ${BASE}`]: (req) => {
+          current = { ...current, ...(req.body as Partial<Workspace>) };
+          return json(current);
+        },
+      }),
+    );
+    renderApp(PAGE);
+    const user = userEvent.setup();
+
+    const details = within(await screen.findByRole("region", { name: "Çalışma alanı bilgileri" }));
+    await user.click(details.getByRole("button", { name: /Düzenle/ }));
+    const group = within(details.getByRole("group", { name: "Müşteri yanıt dilleri" }));
+    // The main language is always on and cannot be switched off.
+    expect(group.getByRole("checkbox", { name: "Türkçe" })).toBeChecked();
+    expect(group.getByRole("checkbox", { name: "Türkçe" })).toBeDisabled();
+    expect(group.getByText("Çalışma alanının ana dili")).toBeInTheDocument();
+    for (const name of ["English", "Русский", "Deutsch", "العربية"]) {
+      expect(group.getByRole("checkbox", { name })).not.toBeChecked();
+    }
+    // The coverage line is always there; the stronger notice only once a new language is chosen.
+    expect(group.getByText(/yalnızca burada listelenen diller için test edilmiştir/)).toBeInTheDocument();
+    expect(details.queryByText("Rusça, Almanca ve Arapça yenidir")).toBeNull();
+
+    await user.click(group.getByRole("checkbox", { name: "العربية" }));
+    await user.click(group.getByRole("checkbox", { name: "Русский" }));
+    const notice = details.getByText("Rusça, Almanca ve Arapça yenidir");
+    expect(notice).toBeInTheDocument();
+    expect(details.getByText(/Hesap temsilcisi yalnızca Türkçe ve İngilizce yanıt verir/)).toBeInTheDocument();
+    await user.click(details.getByRole("button", { name: "Değişiklikleri kaydet" }));
+
+    await waitFor(() => expect(requests.find((r) => r.method === "PATCH")?.body).toEqual({ reply_languages: ["tr", "ru", "ar"] }));
+    expect(await details.findByText("Çalışma alanı bilgileri kaydedildi.")).toBeInTheDocument();
+    expect(details.getByText("Türkçe, Русский, العربية")).toBeInTheDocument();
+    // Saved: the read-only row repeats that the account agent hands these conversations to a person.
+    expect(details.getByText(/Hesap temsilcisi yalnızca Türkçe ve İngilizce yanıt verir; bu yüzden/)).toBeInTheDocument();
+  });
+
+  it("sends no language change when the selection is untouched, and can switch a language off again", async () => {
+    let current = workspace(WS_GOLKENT, { reply_languages: ["tr", "de"] });
+    const requests = mockApi(
+      routes({
+        [`GET ${BASE}`]: () => json(current),
+        [`PATCH ${BASE}`]: (req) => {
+          current = { ...current, ...(req.body as Partial<Workspace>) };
+          return json(current);
+        },
+      }),
+    );
+    renderApp(PAGE);
+    const user = userEvent.setup();
+
+    const details = within(await screen.findByRole("region", { name: "Çalışma alanı bilgileri" }));
+    expect(details.getByText("Türkçe, Deutsch")).toBeInTheDocument();
+    await user.click(details.getByRole("button", { name: /Düzenle/ }));
+    const group = within(details.getByRole("group", { name: "Müşteri yanıt dilleri" }));
+    expect(group.getByRole("checkbox", { name: "Deutsch" })).toBeChecked();
+    expect(details.getByText("Rusça, Almanca ve Arapça yenidir")).toBeInTheDocument();
+    expect(details.getByRole("button", { name: "Değişiklikleri kaydet" })).toBeDisabled(); // nothing changed
+
+    await user.click(group.getByRole("checkbox", { name: "Deutsch" }));
+    expect(details.queryByText("Rusça, Almanca ve Arapça yenidir")).toBeNull();
+    await user.click(details.getByRole("button", { name: "Değişiklikleri kaydet" }));
+    await waitFor(() => expect(requests.find((r) => r.method === "PATCH")?.body).toEqual({ reply_languages: ["tr"] }));
+  });
+
+  it("shows a server rejection of the reply languages next to the list", async () => {
+    mockApi(
+      routes({
+        [`PATCH ${BASE}`]: () => problem(422, "VALIDATION_ERROR", { errors: [{ field: "reply_languages", code: "invalid" }] }),
+      }),
+    );
+    renderApp(PAGE);
+    const user = userEvent.setup();
+
+    const details = within(await screen.findByRole("region", { name: "Çalışma alanı bilgileri" }));
+    await user.click(details.getByRole("button", { name: /Düzenle/ }));
+    await user.click(details.getByRole("checkbox", { name: "English" }));
+    await user.click(details.getByRole("button", { name: "Değişiklikleri kaydet" }));
+    expect(await details.findByText("Listeden en az bir dil seçin.")).toBeInTheDocument();
+  });
+
   it("shows a server rejection of the workspace edit without losing the input", async () => {
     mockApi(routes({ [`PATCH ${BASE}`]: () => problem(403, "FORBIDDEN") }));
     renderApp(PAGE);

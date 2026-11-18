@@ -7,6 +7,7 @@ matters: ``app.core.canonical`` sorts keys.
 """
 
 import uuid
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
@@ -40,9 +41,11 @@ def approval_payload(
     *,
     version: int,
     social_account_id: uuid.UUID,
-    media_sha256: str,
+    media_sha256: str | None,
     scheduled_at: datetime,
     fact_versions: list[list[Any]] | None = None,
+    carousel_media: Sequence[tuple[uuid.UUID, str]] | None = None,
+    cover_sha256: str | None = None,
 ) -> dict[str, Any]:
     """The canonical payload of a submission of ``item`` as version ``version`` (plan.md G5).
 
@@ -50,7 +53,7 @@ def approval_payload(
     story (the story itself publishes no text). ``version`` and the schedule are passed in
     because a re-approval binds the *next* version and a new instant.
     """
-    payload = {
+    payload: dict[str, Any] = {
         "content_id": item.id,
         "version": version,
         "content_type": item.content_type,
@@ -61,6 +64,20 @@ def approval_payload(
         "media_sha256": media_sha256,
         "scheduled_at": scheduled_at,
     }
+    if item.content_type == "feed_carousel":
+        payload["media_asset_id"] = None
+        payload["media_sha256"] = None
+        payload["media_items"] = [
+            {"position": i, "media_asset_id": id, "sha256": sha}
+            for i, (id, sha) in enumerate(carousel_media or ())
+        ]
+    elif item.content_type == "reel":
+        payload["reel"] = {
+            "cover_media_asset_id": item.cover_media_asset_id,
+            "cover_sha256": cover_sha256,
+            "thumb_offset_ms": item.thumb_offset_ms,
+            "share_to_feed": item.share_to_feed,
+        }
     if fact_versions is not None:
         payload["fact_versions"] = fact_versions
     return payload

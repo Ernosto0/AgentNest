@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
+from app.core.reply_languages import REPLY_LANGUAGES
 from app.inbox import drafts
 from app.inbox.language import detect_language
 from app.inbox.models import Message
@@ -117,4 +118,4 @@ def _preceding_question(session: Session, ctx: WorkspaceContext, message: Messag
 
 def _language(text: str) -> str:
     detected = detect_language(text)
-    return detected if detected in ("tr", "en") else "tr"
+    return detected if detected in REPLY_LANGUAGES else "tr"

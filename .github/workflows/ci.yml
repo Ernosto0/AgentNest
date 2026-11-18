@@ -62,6 +62,8 @@ jobs:
         run: uv run lint-imports
       - name: Dependency audit (pip-audit)
         run: uv run pip-audit
+      - name: Install video inspection binaries
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - name: Tests (unit, integration, isolation, security, jobs)
         run: bash ../.github/scripts/offline-tests.sh uv run pytest --junitxml=var/ci/backend.xml
       # Deterministic fake provider: proves the pipeline (prompts, schemas, resolver, extraction

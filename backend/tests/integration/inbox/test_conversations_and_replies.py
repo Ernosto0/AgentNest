@@ -61,6 +61,7 @@ def test_the_list_row_has_what_the_screen_needs(inbox: InboxEnv, gym) -> None:
     assert set(row) == {
         "id", "customer_handle", "customer_number", "last_message_preview", "last_message_at",
         "attention", "handling_mode", "window_ends_at", "is_simulated", "social_account_id",
+        "window_state", "human_agent_until",
     }  # fmt: skip
 
 

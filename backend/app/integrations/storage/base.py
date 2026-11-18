@@ -11,8 +11,8 @@ from datetime import datetime
 from typing import BinaryIO, Protocol
 
 _UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-KEY_RE = re.compile(rf"^{_UUID}/[0-9]{{4}}/(?:0[1-9]|1[0-2])/{_UUID}\.(?:jpg|png)$")
-KEY_EXTENSIONS = frozenset({"jpg", "png"})
+KEY_RE = re.compile(rf"^{_UUID}/[0-9]{{4}}/(?:0[1-9]|1[0-2])/{_UUID}\.(?:jpg|png|mp4|mov)$")
+KEY_EXTENSIONS = frozenset({"jpg", "png", "mp4", "mov"})
 
 
 class InvalidStorageKey(ValueError):
@@ -50,6 +50,10 @@ class MediaStorage(Protocol):
 
     def open(self, key: str) -> BinaryIO:
         """Open the object for reading (binary). Raises ``StorageObjectNotFound``."""
+        ...
+
+    def open_range(self, key: str, start: int, length: int) -> BinaryIO:
+        """Open ``length`` bytes starting at ``start``. Raises ``StorageObjectNotFound``."""
         ...
 
     def delete(self, key: str) -> None:

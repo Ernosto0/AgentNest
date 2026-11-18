@@ -43,6 +43,8 @@ function wrapLazy(element: ReactElement) {
   return <Suspense fallback={null}>{element}</Suspense>;
 }
 
+const LeadsList = lazyNamed(() => import("@/features/reports/LeadsList"), "LeadsList");
+
 const AgentPage = lazyNamed(() => import("@/features/agent/AgentPage"), "AgentPage");
 const TestChatPage = lazyNamed(() => import("@/features/test-chat/TestChatPage"), "TestChatPage");
 const NotificationCenter = lazyNamed(
@@ -167,6 +169,7 @@ export const appRoutes: RouteObject[] = [
           { path: "more/automation", element: wrapLazy(<AutomationSettings />) },
           { path: "more/reports", element: wrapLazy(<DailyReport />) },
           { path: "more/reports/:date/:key", element: wrapLazy(<MetricItems />) },
+          { path: "more/reports/leads", element: wrapLazy(<LeadsList />) },
           { path: "more/reports/missed-customers", element: wrapLazy(<MissedCustomersReport />) },
           { path: "more/reports/missed-customers/:week/:key", element: wrapLazy(<MissedCustomerItems />) },
           { path: "more/activity", element: wrapLazy(<ActivityFeed />) },

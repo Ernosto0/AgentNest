@@ -101,6 +101,8 @@ class Harness:
         *,
         remaining: int | None = 1,
         retry_after: int | None = None,
+        delay_s: int | None = None,
+        error_subcode: int | None = None,
     ) -> None:
         self.session.add(
             SimFailureRule(
@@ -110,9 +112,16 @@ class Harness:
                 mode=mode,
                 remaining=remaining,
                 retry_after_s=retry_after,
+                delay_s=delay_s,
+                error_subcode=error_subcode,
             )
         )
         self.session.commit()
+
+    def video_url(self, data: bytes = b"FAKEVIDEO1 test", *, ttl_s: int = 3600) -> str:
+        key = build_key(self.workspace_id, uuid.uuid4(), self.clock.now(), ext="mp4")
+        self.storage.put(key, io.BytesIO(data), "video/mp4")
+        return self.storage.public_fetch_url(key, ttl_s)
 
     def sent(self) -> list[SimSentMessage]:
         self.session.expire_all()
@@ -148,6 +157,69 @@ def jpeg_bytes() -> bytes:
     out = io.BytesIO()
     Image.new("RGB", (1080, 1350), "navy").save(out, "JPEG")
     return out.getvalue()
+
+
+def test_carousel_contract_child_states_order_quota_and_isolation(h):
+    children = tuple(
+        h.provider.create_media_container(
+            h.account,
+            ContainerSpec(
+                "IMAGE",
+                h.image_url(),
+                is_carousel_item=True,
+            ),
+        )
+        for _ in range(3)
+    )
+    with pytest.raises(ProviderInvalidRequest, match="CHILD_NOT_READY"):
+        h.provider.create_media_container(
+            h.account, ContainerSpec("CAROUSEL", None, children=children)
+        )
+    h.clock.advance(seconds=CONTAINER_DELAY_S)
+    with pytest.raises(ProviderInvalidRequest, match="CONTAINER_NOT_PUBLISHABLE"):
+        h.provider.publish_container(h.account, children[0])
+    foreign = AccountRef(uuid.uuid4(), uuid.uuid4(), "foreign")
+    with pytest.raises(ProviderInvalidRequest, match="CONTAINER_NOT_FOUND"):
+        h.provider.get_container_status(foreign, children[0])
+    with pytest.raises(ProviderInvalidRequest, match="CHILD_NOT_FOUND"):
+        h.provider.create_media_container(
+            foreign, ContainerSpec("CAROUSEL", None, children=children)
+        )
+    parent = h.provider.create_media_container(
+        h.account, ContainerSpec("CAROUSEL", None, "caption", children=children)
+    )
+    row = next(c for c in h.containers() if c.container_id == parent)
+    assert row.children == list(children) and row.caption == "caption" and row.media_url is None
+    h.clock.advance(seconds=CONTAINER_DELAY_S)
+    h.provider.publish_container(h.account, parent)
+    assert len(h.published()) == 1 and h.provider.get_publishing_quota(h.account).used == 1
+    with pytest.raises(ProviderInvalidRequest, match="CHILD_NOT_READY"):
+        h.provider.create_media_container(
+            h.account, ContainerSpec("CAROUSEL", None, children=children)
+        )
+
+
+def test_carousel_failure_skip_first_and_old_create_operation(h):
+    h.fail("create_container", "invalid_media")
+    h.session.add(
+        SimFailureRule(
+            workspace_id=h.account.workspace_id,
+            social_account_id=h.account.social_account_id,
+            operation="create_carousel_item",
+            mode="transient",
+            remaining=1,
+            skip_first=1,
+        )
+    )
+    h.session.commit()
+    spec = ContainerSpec("IMAGE", h.image_url(), is_carousel_item=True)
+    h.provider.create_media_container(h.account, spec)
+    with pytest.raises(ProviderTransientError):
+        h.provider.create_media_container(h.account, spec)
+    h.provider.create_media_container(h.account, spec)
+    with pytest.raises(ProviderInvalidRequest) as rejected:
+        h.container()
+    assert rejected.value.request_code == "MEDIA_REJECTED"
 
 
 @pytest.fixture
@@ -1104,3 +1176,57 @@ def test_profile_reads_consume_scripted_auth_failure(h: Harness, method: str) ->
     h.fail("profile", "auth_revoked")
     with pytest.raises(ProviderAuthError):
         getattr(h.provider, method)(h.account, *([12] if method == "list_recent_captions" else []))
+
+
+def test_reels_container_processing_error_and_video_fetch_checks(h: Harness) -> None:
+    from tests.helpers.videos import mp4
+
+    # Non-MP4 bytes rejected
+    with pytest.raises(ProviderInvalidRequest) as exc_info:
+        h.provider.create_media_container(
+            h.account,
+            ContainerSpec("REELS", video_url=h.video_url(b"not-a-video"), share_to_feed=True),
+        )
+    assert exc_info.value.request_code == "MEDIA_REJECTED"
+
+    # Real MP4 ftyp signature accepted; slow_processing honors delay_s
+    h.fail("create_reel_container", "slow_processing", delay_s=45)
+    cid = h.provider.create_media_container(
+        h.account,
+        ContainerSpec(
+            "REELS",
+            video_url=h.video_url(mp4()),
+            cover_url=h.image_url(),
+            share_to_feed=False,
+            caption="Reel",
+        ),
+    )
+    assert h.provider.get_container_status(h.account, cid).status_code == "IN_PROGRESS"
+    h.clock.advance(seconds=44)
+    assert h.provider.get_container_status(h.account, cid).status_code == "IN_PROGRESS"
+    h.clock.advance(seconds=1)
+    assert h.provider.get_container_status(h.account, cid).status_code == "FINISHED"
+    mid = h.provider.publish_container(h.account, cid)
+    assert h.provider.get_container_status(h.account, cid).status_code == "PUBLISHED"
+    assert h.provider.get_media(h.account, mid).media_id == mid
+    assert h.provider.get_publishing_quota(h.account).used == 1
+
+    # processing_error surfaces error_subcode only after ready_at
+    h.fail("create_reel_container", "processing_error", delay_s=10, error_subcode=2207026)
+    bad_cid = h.provider.create_media_container(
+        h.account,
+        ContainerSpec(
+            "REELS",
+            video_url=h.video_url(),
+            thumb_offset_ms=500,
+            share_to_feed=True,
+        ),
+    )
+    assert h.provider.get_container_status(h.account, bad_cid).status_code == "IN_PROGRESS"
+    h.clock.advance(seconds=10)
+    bad_status = h.provider.get_container_status(h.account, bad_cid)
+    assert bad_status.status_code == "ERROR"
+    assert bad_status.error_detail == "SUBCODE_2207026"
+
+    with pytest.raises(ProviderInvalidRequest, match="MEDIA_INSIGHTS_NOT_SUPPORTED"):
+        h.provider.get_media_insights(h.account, mid, "reel")

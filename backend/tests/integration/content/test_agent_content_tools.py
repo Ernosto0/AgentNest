@@ -377,3 +377,45 @@ def test_owner_task_loop_prepares_schedules_waits_for_verified_publish_then_comp
     pub.session.expire_all()
     assert pub.session.get(AgentSession, goal.id).status == "completed"
     assert len(fake.step_calls) == 4 and len(pub.posts()) == 1
+
+
+@pytest.mark.parametrize("name", ["content.publish", "content.schedule"])
+def test_agent_explicitly_refuses_a_manual_carousel(pub, name):
+    ctx = arm(pub)
+    item, _ = service.create_draft(
+        pub.session,
+        pub.clock,
+        pub.ctx,
+        content_type="feed_carousel",
+        title="Carousel",
+        caption="Merhaba",
+        media_asset_ids=[pub.media().id, pub.media().id],
+    )
+    tool(pub, ctx, "content.read", kind="content", limit=10, cursor=None)
+    arguments = {"content_id": str(item.id), "expected_version": 1}
+    if name == "content.schedule":
+        arguments.update(local_date="2026-01-15", local_time="19:00")
+    response = build_default_broker().dispatch(
+        pub.session, pub.clock, ctx, name=name, version="v1", arguments=arguments
+    )
+    assert not response.ok
+    assert pub.reload(item).status == "draft" and item.approval_id is None
+    assert pub.operation(item) is None and pub.calls == []
+
+
+def test_agent_cannot_prepare_a_carousel_even_with_automatic_delegation(pub):
+    ctx = arm(pub)
+    response = build_default_broker().dispatch(
+        pub.session,
+        pub.clock,
+        ctx,
+        name="content.prepare",
+        version="v1",
+        arguments={
+            "content_type": "feed_carousel",
+            "title": "Carousel",
+            "media_asset_id": None,
+            "caption": None,
+        },
+    )
+    assert not response.ok and pub.calls == []

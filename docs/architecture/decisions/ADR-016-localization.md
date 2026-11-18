@@ -42,3 +42,10 @@ Turkish-first, English later, one codebase. The original spec forbids scattered 
 
 ## Revisit when
 - More UI languages are added. Consider a translation management workflow (Weblate/Crowdin) when contributors translate.
+
+
+## Addendum 2026-11-18: customer reply languages (F-11, Session 10)
+
+Reply languages are `tr, en, ru, de, ar`, independently of the unchanged `tr/en` UI and content/post locales. Detection is deterministic script and word-list evidence: foreign-script dominance at 0.5 of letters; Cyrillic/Arabic mixed with Latin at 0.2 escalates; a dominant Russian/Arabic script needs at least one word-score hit (distinctive Russian letters score two), with neighbouring-language exclusions. German uses noncolliding words, `ß` (+2), and `ä` (+1 only with a German word). Non-TR/EN Latin winners require runner-up evidence strictly below half their score; close foreign competitors and explicit bilingual greetings escalate. TR/EN retain the one-point margin. Low-confidence recognised foreign text is `other`, giving `LANGUAGE_UNSUPPORTED` under R4.
+
+All claim patterns run for every reply locale. Arabic/Persian digits, decimal/thousands/percent separators and letter variants are folded; invisible bidi/format marks and Arabic vocalisation are removed with an index map, after trusted-span masking, preserving original issue offsets. Reply facts use Babel `ru_RU`, `de_DE`, `ar` (Western digits), with NBSP money spacing and LRM around Arabic time-range dashes. Owner fact text falls back to English, workspace fallback, then Turkish; it is not translated. The account-agent calendar path remains tr/en and fails closed for new languages. Spelled-out numeric claims remain outside validator coverage; live LLM quality, eval sets, settings UI and RTL display acceptance are pending Session 11.

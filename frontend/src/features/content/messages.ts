@@ -1,5 +1,7 @@
 import type { TFunction } from "i18next";
 import type { ContentCheckItem, ContentIssue } from "@/api/types";
+import { carouselMessage } from "./carousel";
+import { reelMessage } from "./reel";
 import { timezoneCity } from "./schedule";
 
 /** Every submit item code of plan.md G17 (observability §4.2); `messages.test` pins a text for each. */
@@ -20,6 +22,9 @@ export const SUBMIT_ITEM_CODES = [
   "PUBLISH_QUOTA_FORECAST_EXCEEDED",
   "STORY_ASPECT_NOT_9_16",
   "OVERLAY_TOO_LONG",
+  "REEL_DURATION_OUT_OF_RANGE",
+  "REEL_COVER_OFFSET_INVALID",
+  "REEL_COVER_TOO_LARGE",
 ] as const;
 
 /** The item codes that are about the time, shown next to the date and time fields. */
@@ -32,7 +37,14 @@ export const SCHEDULE_ITEM_CODES: readonly string[] = [
 ];
 
 /** Capabilities an account can hold (plan.md G4); an unknown one is shown as its own name. */
-export const CAPABILITY_KEYS = ["messaging", "publish_feed_image", "publish_story_image", "comments_permission"] as const;
+export const CAPABILITY_KEYS = [
+  "messaging",
+  "publish_feed_image",
+  "publish_feed_carousel",
+  "publish_story_image",
+  "publish_reel",
+  "comments_permission",
+] as const;
 
 export function capabilityLabel(capability: string, t: TFunction): string {
   return (CAPABILITY_KEYS as readonly string[]).includes(capability)
@@ -49,13 +61,18 @@ export function timezoneLabel(timezone: string, t: TFunction): string {
 }
 
 /** Plain-language text for a submit rule (plan.md G17): our catalog first, then the server's own message. */
-export function checkMessage(item: Pick<ContentCheckItem, "code" | "params" | "message">, t: TFunction): string {
+export function checkMessage(item: Pick<ContentCheckItem, "code" | "params" | "message"> & { field?: string | null }, t: TFunction): string {
   const params: Record<string, unknown> = { ...item.params };
   if (typeof params.timezone === "string") params.timezoneLabel = timezoneLabel(params.timezone, t);
-  return t(`content.editor.checks.${item.code}`, {
-    ...params,
-    defaultValue: item.message ?? item.code,
-  });
+  const message =
+    carouselMessage(item.code, params, t) ??
+    reelMessage(item.code, params, t) ??
+    t(`content.editor.checks.${item.code}`, {
+      ...params,
+      defaultValue: item.message ?? item.code,
+    });
+  const match = item.field?.match(/^media_asset_ids\.(\d+)$/);
+  return match ? t("content.carousel.itemIssue", { n: Number(match[1]) + 1, message }) : message;
 }
 
 /** The sentence for a claim issue that blocks (a grounded one is shown as a fact chip instead). */

@@ -22,6 +22,7 @@ from app.identity.permissions import has_permission
 from app.notifications.catalog import spec_for
 from app.notifications.models import Notification
 from app.notifications.push_dispatch import dispatch_web_push
+from app.notifications.whatsapp_dispatch import dispatch_whatsapp
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 100
@@ -77,6 +78,8 @@ def notify(
     if notification is not None:
         # Web Push (opt-in, quiet-hours policy): a ledger row and a job, in this transaction.
         dispatch_web_push(session, clock, ctx, notification)
+        # WhatsApp (ADR-027): only for an owner with a linked number; same ledger and policy.
+        dispatch_whatsapp(session, clock, ctx, notification)
     return notification
 
 

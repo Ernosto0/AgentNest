@@ -184,9 +184,195 @@ def test_as_dict_carries_the_localised_message_only_when_asked() -> None:
 
 
 def test_every_item_code_has_a_text_in_both_languages() -> None:
-    assert len(set(v.ALL_CODES)) == len(v.ALL_CODES) == 17
+    assert len(set(v.ALL_CODES)) == len(v.ALL_CODES) == 26
     for locale in ("tr", "en"):
         keys = catalog_keys(locale)
         for code in v.ALL_CODES:
             assert f"content.issue.{code}" in keys, (locale, code)
             assert t(f"content.issue.{code}", locale) != f"content.issue.{code}"
+
+
+def carousel(**overrides: Any) -> v.SubmitFacts:
+    return facts(
+        **{
+            "content_type": "feed_carousel",
+            "media": None,
+            "carousel_media": [v.MediaFacts("ready", 1080, 1350)] * v.CAROUSEL_MIN_ITEMS,
+            "account": v.AccountFacts(True, {"publish_feed_carousel": True}),
+            **overrides,
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    ("count", "expected"),
+    [
+        (0, v.CONTENT_MEDIA_REQUIRED),
+        (1, v.CAROUSEL_TOO_FEW_ITEMS),
+        (v.CAROUSEL_MIN_ITEMS, None),
+        (v.CAROUSEL_MAX_ITEMS, None),
+        (v.CAROUSEL_MAX_ITEMS + 1, v.CAROUSEL_TOO_MANY_ITEMS),
+    ],
+)
+def test_carousel_count(count, expected):
+    result = v.validate_submission(
+        carousel(carousel_media=[v.MediaFacts("ready", 1080, 1350)] * count)
+    )
+    assert codes(result.errors) == ([expected] if expected else [])
+    if result.errors:
+        assert result.errors[0].field == "media_asset_ids"
+
+
+@pytest.mark.parametrize(
+    ("image", "expected"),
+    [
+        (v.MediaFacts("deleted", 1080, 1350), v.MEDIA_NOT_READY),
+        (v.MediaFacts("ready", 1080, 1920), v.ASPECT_RATIO_OUT_OF_RANGE),
+    ],
+)
+def test_carousel_per_item_errors(image, expected):
+    result = v.validate_submission(
+        carousel(carousel_media=[v.MediaFacts("ready", 1080, 1350), image])
+    )
+    issue = next(i for i in result.errors if i.code == expected)
+    assert issue.field == "media_asset_ids.1"
+
+
+@pytest.mark.parametrize(("width", "height", "mixed"), [(1080, 566, True), (1090, 1350, False)])
+def test_carousel_relative_ratio(width, height, mixed):
+    result = v.validate_submission(
+        carousel(
+            carousel_media=[v.MediaFacts("ready", 1080, 1350), v.MediaFacts("ready", width, height)]
+        )
+    )
+    issues = [i for i in result.errors if i.code == v.CAROUSEL_MIXED_ASPECT_RATIO]
+    assert bool(issues) == mixed
+    if mixed:
+        assert issues[0].params == {"positions": [1]}
+
+
+@pytest.mark.parametrize(
+    ("changes", "code"),
+    [
+        ({"caption": None}, v.CAPTION_REQUIRED),
+        ({"caption": "a" * (v.CAPTION_MAX_CHARS + 1)}, v.CAPTION_TOO_LONG),
+        ({"account": v.AccountFacts(True, {"publish_feed_image": True})}, v.CAPABILITY_MISSING),
+    ],
+)
+def test_carousel_caption_and_capability(changes, code):
+    assert codes(v.validate_submission(carousel(**changes)).errors) == [code]
+
+
+def reel(**overrides: Any) -> v.SubmitFacts:
+    return facts(
+        **{
+            "content_type": "reel",
+            "media": None,
+            "reel": v.ReelFacts(
+                video=v.ReelVideoFacts("ready", "video", 15_000, ()),
+                cover=None,
+                thumb_offset_ms=None,
+            ),
+            "account": v.AccountFacts(True, {"publish_reel": True}),
+            **overrides,
+        }
+    )
+
+
+def test_reel_happy_path_and_non_blocking_warnings() -> None:
+    result = v.validate_submission(
+        reel(
+            reel=v.ReelFacts(
+                video=v.ReelVideoFacts(
+                    "ready",
+                    "video",
+                    15_000,
+                    ("ASPECT_NOT_9_16", "RESOLUTION_BELOW_RECOMMENDED", "EDIT_LIST_PRESENT"),
+                )
+            )
+        )
+    )
+    assert result.ok
+    assert codes(result.warnings) == [
+        v.REEL_ASPECT_NOT_9_16,
+        v.REEL_RESOLUTION_BELOW_RECOMMENDED,
+        v.REEL_EDIT_LIST_PRESENT,
+    ]
+
+
+@pytest.mark.parametrize(
+    ("duration_ms", "expected"),
+    [
+        (None, v.REEL_DURATION_OUT_OF_RANGE),
+        (v.MIN_DURATION_MS - 1, v.REEL_DURATION_OUT_OF_RANGE),
+        (v.MIN_DURATION_MS, None),
+        (v.MAX_DURATION_MS, None),
+        (v.MAX_DURATION_MS + 1, v.REEL_DURATION_OUT_OF_RANGE),
+    ],
+)
+def test_reel_duration_bounds(duration_ms: int | None, expected: str | None) -> None:
+    res = v.validate_submission(
+        reel(reel=v.ReelFacts(video=v.ReelVideoFacts("ready", "video", duration_ms)))
+    )
+    assert codes(res.errors) == ([expected] if expected else [])
+
+
+@pytest.mark.parametrize(
+    ("offset", "valid"),
+    [(0, True), (14_999, True), (15_000, False), (-1, False), (20_000, False)],
+)
+def test_reel_thumb_offset_bounds(offset: int, valid: bool) -> None:
+    res = v.validate_submission(
+        reel(
+            reel=v.ReelFacts(
+                video=v.ReelVideoFacts("ready", "video", 15_000),
+                thumb_offset_ms=offset,
+            )
+        )
+    )
+    assert codes(res.errors) == ([] if valid else [v.REEL_COVER_OFFSET_INVALID])
+
+
+def test_reel_video_and_cover_errors() -> None:
+    assert codes(v.validate_submission(reel(reel=v.ReelFacts(video=None))).errors) == [
+        v.CONTENT_MEDIA_REQUIRED
+    ]
+    assert codes(
+        v.validate_submission(
+            reel(reel=v.ReelFacts(video=v.ReelVideoFacts("deleted", "video", 15_000)))
+        ).errors
+    ) == [v.MEDIA_NOT_READY]
+    assert codes(
+        v.validate_submission(
+            reel(reel=v.ReelFacts(video=v.ReelVideoFacts("ready", "image", 15_000)))
+        ).errors
+    ) == [v.MEDIA_NOT_READY]
+
+    bad_cover_kind = v.ReelCoverFacts("ready", "video", "image/jpeg", 1000)
+    bad_cover_mime = v.ReelCoverFacts("ready", "image", "image/png", 1000)
+    big_cover = v.ReelCoverFacts("ready", "image", "image/jpeg", v.REEL_COVER_MAX_BYTES + 1)
+    ok_cover = v.ReelCoverFacts("ready", "image", "image/jpeg", v.REEL_COVER_MAX_BYTES)
+    video = v.ReelVideoFacts("ready", "video", 15_000)
+
+    assert codes(v.validate_submission(reel(reel=v.ReelFacts(video, bad_cover_kind))).errors) == [
+        v.MEDIA_NOT_READY
+    ]
+    assert codes(v.validate_submission(reel(reel=v.ReelFacts(video, bad_cover_mime))).errors) == [
+        v.MEDIA_NOT_READY
+    ]
+    assert codes(v.validate_submission(reel(reel=v.ReelFacts(video, big_cover))).errors) == [
+        v.REEL_COVER_TOO_LARGE
+    ]
+    assert v.validate_submission(reel(reel=v.ReelFacts(video, ok_cover))).ok
+
+
+@pytest.mark.parametrize(
+    ("changes", "code"),
+    [
+        ({"caption": None}, v.CAPTION_REQUIRED),
+        ({"caption": "a" * (v.CAPTION_MAX_CHARS + 1)}, v.CAPTION_TOO_LONG),
+        ({"account": v.AccountFacts(True, {"publish_feed_image": True})}, v.CAPABILITY_MISSING),
+    ],
+)
+def test_reel_caption_and_capability(changes: dict[str, Any], code: str) -> None:
+    assert codes(v.validate_submission(reel(**changes)).errors) == [code]

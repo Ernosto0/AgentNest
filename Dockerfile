@@ -53,6 +53,12 @@ RUN uv sync --frozen --no-dev --no-install-project
 # --- Stage 4: Non-root backend runtime (API, worker, migrations, CLI) ------------------------
 FROM python:3.12-slim-bookworm AS backend
 
+ARG FFMPEG_DEBIAN_VERSION=7:5.1.9-0+deb12u1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends "ffmpeg=${FFMPEG_DEBIAN_VERSION}" \
+    && test "$(dpkg-query -W -f='${Version}' ffmpeg)" = "${FFMPEG_DEBIAN_VERSION}" \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --system --gid 10001 agentnest \
     && useradd --system --uid 10001 --gid 10001 --home-dir /app --no-create-home --shell /usr/sbin/nologin agentnest \
     && mkdir -p /app/backend/var/media /app/frontend/dist \

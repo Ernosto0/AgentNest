@@ -57,3 +57,7 @@ class MediaStorage(Protocol):
 
 ## Revisit when
 - Video/Reels support is added: introduce ffprobe validation and possibly a transcoding worker queue.
+
+## Addendum (Feature Phase 5, Session 06)
+
+The earlier “Video: not accepted in MVP” statement is superseded for upload/storage by [ADR-028](ADR-028-video-media-probing-and-storage.md). Video assets are private MP4/MOV originals plus JPEG thumbnails; no transcoding, Reel type, upload UI or publishing yet (Session 07). Original video metadata is retained. Video storage is capped at 300 MB/file and 2 GiB/workspace including thumbnails; 7/90-day retention applies.

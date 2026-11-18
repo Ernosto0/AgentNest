@@ -88,6 +88,7 @@ def get_provider(
             secret,
             storage=_mock_storage(settings, clock),
             container_delay_s=settings.sim_container_delay_seconds,
+            reel_processing_s=settings.sim_reel_processing_seconds,
             daily_publish_limit=settings.publish_daily_limit,
         )
     if kind == "meta":

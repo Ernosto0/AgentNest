@@ -35,11 +35,15 @@ def operation_summary(
     op = _operation(session, ctx, item)
     if op is None:
         return None
+    processing = op.status == "in_progress" and bool(
+        op.provider_ref and op.provider_ref.get("phase") == "processing"
+    )
     return hooks.OperationSummary(
         status=op.status,
         attempts=op.attempts,
         next_attempt_at=op.next_attempt_at,
         last_error_code=op.last_error_code,
+        processing=processing,
     )
 
 

@@ -251,6 +251,9 @@ def set_failure_rule(
     mode: str,
     remaining: int | None,
     retry_after_s: int | None,
+    skip_first: int = 0,
+    delay_s: int | None = None,
+    error_subcode: int | None = None,
 ) -> SimFailureRule:
     account = mock_account(session, workspace_id)
     rule = SimFailureRule(
@@ -260,6 +263,9 @@ def set_failure_rule(
         mode=mode,
         remaining=remaining,
         retry_after_s=retry_after_s,
+        skip_first=skip_first,
+        delay_s=delay_s,
+        error_subcode=error_subcode,
     )
     session.add(rule)
     session.commit()

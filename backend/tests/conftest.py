@@ -10,6 +10,8 @@ from collections.abc import Callable, Iterator
 
 # --- environment must be fixed before the app is imported -------------------------------
 os.environ["APP_ENV"] = "test"
+# Test apps must never initialize telemetry from a developer .env.
+os.environ["SENTRY_DSN"] = ""
 os.environ["COOKIE_SECURE"] = "false"
 os.environ["INSTAGRAM_ENABLED_PROVIDERS"] = "mock"
 os.environ.setdefault("LOG_LEVEL", "WARNING")
@@ -47,7 +49,7 @@ def settings() -> Settings:
     database = make_url(cfg.database_url).database or ""
     # Safety: never run destructive test setup against a development database.
     assert database.endswith("_test"), f"refusing to run tests against database {database!r}"
-    return cfg
+    return cfg.model_copy(update={"video_prober": "fake"})
 
 
 @pytest.fixture(scope="session")

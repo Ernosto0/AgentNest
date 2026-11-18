@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from app.core.pagination import Page as Page  # re-exported: the list envelope lives in core
 
 Locale = Literal["tr", "en"]
+ReplyLocale = Literal["tr", "en", "ru", "de", "ar"]
 Role = Literal["owner", "manager", "staff"]
 # ADR-023: keep in sync with ``models.BUSINESS_CATEGORIES`` (checked by a unit test).
 BusinessCategory = Literal[
@@ -36,14 +37,27 @@ class StrictModel(BaseModel):
 
 
 class DisclosureText(StrictModel):
+    """The notice appended to automatic replies, per reply language. Empty: the built-in text."""
+
     tr: str = Field(default="", max_length=500)
     en: str = Field(default="", max_length=500)
+    ru: str = Field(default="", max_length=500)
+    de: str = Field(default="", max_length=500)
+    ar: str = Field(default="", max_length=500)
+
+
+class FollowUpText(StrictModel):
+    tr: str = Field(default="", max_length=400)
+    en: str = Field(default="", max_length=400)
 
 
 class WorkspaceSettings(StrictModel):
     """Validates ``workspaces.settings`` (data-model.md §3.1)."""
 
     disclosure_enabled: bool = True
+    follow_up_enabled: bool = False
+    follow_up_hours: int = Field(default=6, ge=1, le=20)
+    follow_up_text: FollowUpText = Field(default_factory=FollowUpText)
     disclosure_text: DisclosureText = Field(default_factory=DisclosureText)
     daily_report_hour: int = Field(default=20, ge=0, le=23)
     publish_max_delay_minutes: int = Field(default=1440, ge=1, le=1440)
@@ -154,7 +168,7 @@ class WorkspacePatch(StrictModel):
     business_category: BusinessCategory | None = None
     market: Market | None = None
     default_locale: Locale | None = None
-    reply_languages: list[Locale] | None = Field(default=None, min_length=1)
+    reply_languages: list[ReplyLocale] | None = Field(default=None, min_length=1)
     timezone: str | None = Field(default=None, min_length=1, max_length=64)
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     settings: WorkspaceSettingsPatch | None = None
@@ -167,7 +181,7 @@ class WorkspaceOut(BaseModel):
     business_category: BusinessCategory
     market: Market
     default_locale: Locale
-    reply_languages: list[Locale]
+    reply_languages: list[ReplyLocale]
     timezone: str
     currency: str
     is_demo: bool
@@ -243,14 +257,20 @@ class PasswordResetConfirm(StrictModel):
 
 
 class ChannelLinkCodeRequest(StrictModel):
-    channel: Literal["telegram"] = "telegram"
+    channel: Literal["telegram", "whatsapp"] = "telegram"
 
 
 class ChannelLinkCodeOut(BaseModel):
+    channel: Literal["telegram", "whatsapp"] = "telegram"
+    whatsapp_number: str | None = None
     code: str
     expires_at: datetime
     bot_username: str | None = None
     deep_link_url: str | None = None
+
+
+class ChannelAvailabilityOut(BaseModel):
+    whatsapp: bool
 
 
 class ChannelLinkOut(BaseModel):

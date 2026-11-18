@@ -12,7 +12,7 @@ from app.inbox.models import Conversation, ReplyDraft
 
 
 def approval_payload(draft: ReplyDraft, conversation: Conversation) -> dict[str, Any]:
-    return {
+    payload: dict[str, Any] = {
         "social_account_id": str(conversation.social_account_id),
         "conversation_id": str(conversation.id),
         "recipient_id": conversation.customer_external_id,
@@ -20,6 +20,9 @@ def approval_payload(draft: ReplyDraft, conversation: Conversation) -> dict[str,
         "draft_id": str(draft.id),
         "draft_version": draft.version,
     }
+    if draft.message_tag:  # bound to the approval: a tag cannot be added or dropped afterwards
+        payload["message_tag"] = draft.message_tag
+    return payload
 
 
 def approval_summary(

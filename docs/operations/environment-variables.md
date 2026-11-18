@@ -94,6 +94,7 @@ A customer's photo or screenshot is downloaded and sent to the LLM provider's vi
 | `META_GRAPH_API_VERSION` | `v25.0` (verify current at P7) | pinned | |
 | `META_OAUTH_REDIRECT_URI` | `http://localhost:8000/oauth/instagram/callback` | `https://<domain>/oauth/instagram/callback` | Must match the app config |
 | `META_STORIES_ENABLED` | `true` | capability switch | Live story support remains pending V-03; the switch alone does not establish it |
+| `META_HUMAN_AGENT_ENABLED` | `false` | capability switch | Turns on the `human_agent` capability of Meta accounts that can message (computed at connection or reconnection; the send path also re-checks this setting). Set it only after Meta granted the Human Agent feature to the app. It lets a person's own typed reply go out up to 7 days after the customer's last message with the `HUMAN_AGENT` tag; assistant drafts, follow-ups and agent drafts never use it. Mock accounts carry the capability without this setting. Pending V-HA |
 | `TOKEN_ENCRYPTION_KEYS` 🔒 | empty | required if meta | `k1:<base64-32-bytes>[,k2:…]` |
 | `TOKEN_ENCRYPTION_ACTIVE_KEY_ID` | empty | required if meta | |
 | `TOKEN_REFRESH_DAYS_BEFORE_EXPIRY` | `20` | `20` | Positive refresh horizon in days; refresh jobs are implemented in Session 3 |
@@ -115,6 +116,7 @@ A customer's photo or screenshot is downloaded and sent to the LLM provider's vi
 | `S3_BUCKET` | empty | required if s3 | Private bucket |
 | `S3_ACCESS_KEY_ID` 🔒, `S3_SECRET_ACCESS_KEY` 🔒 | empty | required if s3 | |
 | `SIM_CONTAINER_DELAY_SECONDS` | `2` | `2` | Mock container processing time: a container is `IN_PROGRESS` for this long after creation, then `FINISHED`. `0` finishes at once |
+| `SIM_REEL_PROCESSING_SECONDS` | `20` | `20` | Mock Reel container processing time: a `REELS` container stays `IN_PROGRESS` for this long before transitioning to `FINISHED` (or `ERROR`). `0` finishes at once |
 | `PUBLISH_DAILY_LIMIT` | `50` | `50` | Conservative (OQ-18). Posts per rolling 24 h: the mock reports it as the quota `limit` and refuses to publish beyond it (`ProviderRateLimited`) |
 
 ## Retention (Phase 6; final values Phase 8)
@@ -222,3 +224,33 @@ Manual Phase 7 probes read process environment variables directly, not applicati
 | `META_LIVE_PROBE_RECORD` | empty | Optional append-only JSONL path for sanitized HTTP codes, booleans/counts and truncated SHA-256 recipient hash. No raw tokens, IDs, names or text. |
 
 All live results remain pending. No network client is constructed without both credentials; CI always skips the new marker. No automatic webhook subscription is performed; see [rollout](account-agent-rollout.md#real-account-comment-to-dm-rollout-feature-phase-3).
+
+## WhatsApp owner channel (Feature Phase 5, ADR-027)
+
+All credentials empty means WhatsApp is off. Production requires the complete credential
+set and display number if any is set. The version and origin defaults do not enable it.
+
+| Variable | dev | prod | Description |
+|---|---|---|---|
+| `WHATSAPP_ACCESS_TOKEN` 🔒 | empty | required if enabled | Permanent access token from a Meta business system user |
+| `WHATSAPP_APP_SECRET` 🔒 | empty | required if enabled | Meta developer app, App settings > Basic; signs raw webhook bytes |
+| `WHATSAPP_WEBHOOK_VERIFY_TOKEN` 🔒 | empty | required if enabled | Random string also entered in Meta's webhook configuration |
+| `WHATSAPP_PHONE_NUMBER_ID` | empty | required if enabled | Sending number ID from WhatsApp Manager |
+| `WHATSAPP_DISPLAY_PHONE_NUMBER` | empty | required if enabled | International digits only; used in the `wa.me` linking URL |
+| `WHATSAPP_API_VERSION` | `v27.0` | same | Graph API version, configurable |
+| `WHATSAPP_API_BASE_URL` | `https://graph.facebook.com` | same | Graph API origin; tests use a mock transport |
+| `WHATSAPP_TEMPLATES_APPROVED` | `false` | `true` only once Meta approved the templates | While `false`, a message outside the 24-hour window fails with `whatsapp_templates_not_approved` and no template is sent; session messages inside the window are unaffected |
+
+### Video media (Session 06)
+
+| Variable | Default | Meaning |
+|---|---|---|
+| VIDEO_PROBER | ffmpeg | ffmpeg or fake; **never fake in production** |
+| VIDEO_FFPROBE_PATH | ffprobe | Executable, resolved at call time |
+| VIDEO_FFMPEG_PATH | ffmpeg | Thumbnail executable |
+| VIDEO_PROBE_TIMEOUT_SECONDS | 30 | >=1; kill process group on timeout on POSIX |
+| VIDEO_THUMBNAIL_TIMEOUT_SECONDS | 30 | >=1; thumbnail wall limit |
+| VIDEO_PROBE_MAX_CONCURRENCY | 2 | Per-process binary semaphore; >=1 |
+| MEDIA_MAX_VIDEO_BYTES | 300000000 | Decimal 300 MB; keep Caddy video envelope in sync |
+| MEDIA_VIDEO_WORKSPACE_QUOTA_BYTES | 2147483648 | 2 GiB including thumbnails |
+| MEDIA_SCRATCH_DIR | empty | OS temp directory; writable, about 2x upload disk per request |

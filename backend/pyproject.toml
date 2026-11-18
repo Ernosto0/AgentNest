@@ -82,6 +82,7 @@ markers = [
     "meta_live: needs live Meta credentials (never run in CI)",
     "meta_comments_live: explicit manual Meta comment probes (never run in CI)",
     "telegram_live: needs live Telegram credentials (never run in CI)",
+    "whatsapp_live: needs live WhatsApp Cloud API credentials (never run in CI)",
 ]
 
 [tool.importlinter]
@@ -158,6 +159,7 @@ source_modules = [
     "app.knowledge.impact",
     "app.integrations",
     "app.integrations.storage.s3",
+    "app.integrations.video",
     "app.integrations.instagram.meta",
     "app.integrations.instagram.oauth",
     "app.integrations.instagram.error_mapping",
@@ -181,6 +183,9 @@ source_modules = [
     "app.inbox.language",
     "app.inbox.escalation",
     "app.inbox.reply_workflow",
+    "app.inbox.follow_up",
+    "app.inbox.follow_up_settings",
+    "app.inbox.human_agent",
     "app.inbox.service",
     "app.inbox.views",
     "app.inbox.schemas",
@@ -209,6 +214,7 @@ source_modules = [
     "app.policy.classes",
     "app.policy.schemas",
     "app.policy.rules_reply",
+    "app.policy.message_tag",
     "app.policy.engine",
     "app.ai",
     "app.approvals.service",
@@ -231,6 +237,12 @@ source_modules = [
     "app.integrations.channels.telegram.handlers",
     "app.integrations.channels.telegram.models",
     "app.integrations.channels.telegram.webhook_format",
+    "app.integrations.channels.whatsapp",
+    "app.integrations.channels.whatsapp.client",
+    "app.integrations.channels.whatsapp.adapter",
+    "app.integrations.channels.whatsapp.dispatcher",
+    "app.integrations.channels.whatsapp.models",
+    "app.integrations.channels.whatsapp.webhook_format",
     "app.commands.service",
     "app.commands.repository",
     "app.commands.models",
@@ -400,7 +412,12 @@ allow_indirect_imports = true  # the registry builds adapters; only direct use i
 [[tool.importlinter.contracts]]
 name = "the policy rules are pure"
 type = "forbidden"
-source_modules = ["app.policy.rules_reply", "app.policy.engine", "app.policy.classes"]
+source_modules = [
+    "app.policy.rules_reply",
+    "app.policy.message_tag",
+    "app.policy.engine",
+    "app.policy.classes",
+]
 forbidden_modules = [
     "app.ai",
     "app.integrations",
@@ -498,6 +515,7 @@ forbidden_modules = [
 ignore_imports = [
     "app.reporting.router -> app.api.deps",
     "app.reporting.missed_router -> app.api.deps",
+    "app.reporting.leads_router -> app.api.deps",
     "app.reporting.home_router -> app.api.deps",
 ]
 
@@ -524,6 +542,7 @@ allow_indirect_imports = true
 ignore_imports = [
     "app.reporting.router -> app.api.deps",
     "app.reporting.missed_router -> app.api.deps",
+    "app.reporting.leads_router -> app.api.deps",
     "app.integrations.channels.telegram.handlers -> app.reporting.service",
     "app.integrations.channels.telegram.handlers -> app.reporting.periods",
 ]
@@ -620,4 +639,64 @@ forbidden_modules = [
     "app.identity", "app.knowledge", "app.audit", "app.jobs", "app.ai", "app.approvals",
     "app.notifications", "app.commands", "app.inbox", "app.policy", "app.operations",
     "app.content", "app.integrations.instagram", "app.integrations.llm", "app.demo", "app.api",
+]
+
+[[tool.importlinter.contracts]]
+id = "whatsapp-registry-only"
+name = "only the channel registry and the WhatsApp webhook router import the WhatsApp channel adapter (ADR-027)"
+type = "forbidden"
+source_modules = [
+    "app.commands",
+    "app.approvals",
+    "app.inbox",
+    "app.policy",
+    "app.identity",
+    "app.knowledge",
+    "app.core",
+    "app.audit",
+    "app.jobs",
+    "app.ai",
+    "app.notifications",
+    "app.operations",
+    "app.content",
+    "app.reporting",
+    "app.activity",
+    "app.retention",
+    "app.api",
+    "app.owner_requests",
+    "app.integrations.channels.base",
+    "app.integrations.channels.telegram",
+    "app.integrations.channels.web_push",
+    "app.memory",
+    "app.insights",
+    "app.plans",
+    "app.comments",
+    "app.waitlist",
+    "app.agent",
+]
+forbidden_modules = ["app.integrations.channels.whatsapp"]
+allow_indirect_imports = true
+
+ignore_imports = [
+    "app.api.v1.whatsapp_webhook_router -> app.integrations.channels.whatsapp.client",
+    "app.api.v1.whatsapp_webhook_router -> app.integrations.channels.whatsapp.dispatcher",
+    "app.api.v1.whatsapp_webhook_router -> app.integrations.channels.whatsapp.webhook_format",
+]
+
+[[tool.importlinter.contracts]]
+id = "whatsapp-no-commands-or-ai"
+name = "WhatsApp never imports commands, AI or Instagram (ADR-027)"
+type = "forbidden"
+source_modules = ["app.integrations.channels.whatsapp"]
+forbidden_modules = ["app.commands", "app.ai", "app.agent", "app.integrations.llm", "app.integrations.instagram"]
+
+[[tool.importlinter.contracts]]
+name = "Video adapters import only core"
+type = "forbidden"
+source_modules = ["app.integrations.video"]
+forbidden_modules = [
+    "app.identity", "app.knowledge", "app.audit", "app.jobs", "app.ai", "app.approvals",
+    "app.notifications", "app.commands", "app.inbox", "app.policy", "app.operations",
+    "app.content", "app.agent", "app.reporting", "app.calendar", "app.demo", "app.api",
+    "app.integrations.storage", "app.integrations.instagram", "app.integrations.llm",
 ]

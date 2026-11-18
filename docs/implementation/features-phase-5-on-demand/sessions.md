@@ -1,6 +1,6 @@
 # Feature Phase 5: On Demand
 
-**Status:** Planned. Nothing in this file is implemented yet.
+**Status:** Implemented and verified offline (2026-11-18). All 12 sessions across all five tracks are implemented and verified offline, stopped for review, nothing committed, live items pending. See the five track summaries: [Track A: WhatsApp](../phase-summaries/features-phase-5-whatsapp-summary.md), [Track B: Media](../phase-summaries/features-phase-5-media-summary.md), [Track C: Follow-up](../phase-summaries/features-phase-5-followup-summary.md), [Track D: Languages](../phase-summaries/features-phase-5-languages-summary.md), [Track E: Leads](../phase-summaries/features-phase-5-leads-summary.md).
 **Source:** [pre-launch-feature-recommendations.md](../../review/pre-launch-feature-recommendations.md) §4, step 5.
 **Features:** F-06 (WhatsApp owner channel), F-08 (carousels and Reels), F-10 (customer follow-up and the 7-day human reply), F-11 (more reply languages), F-12 (light lead list with export).
 **Sessions:** 12 in five independent tracks. Do not start a track until its trigger is met. Within a track, run sessions in order. Some tracks may never be needed.

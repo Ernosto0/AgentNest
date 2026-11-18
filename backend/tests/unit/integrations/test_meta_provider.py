@@ -35,6 +35,44 @@ FIXTURES = Path(__file__).parents[2] / "contract" / "fixtures" / "meta"
 TOKEN = "synthetic-sensitive-bearer"
 
 
+@pytest.mark.parametrize(
+    ("spec", "body"),
+    [
+        (
+            ContainerSpec("IMAGE", "https://example.test/child.jpg", is_carousel_item=True),
+            {"image_url": "https://example.test/child.jpg", "is_carousel_item": "true"},
+        ),
+        (
+            ContainerSpec("CAROUSEL", None, "album", children=("child-1", "child-2")),
+            {"media_type": "CAROUSEL", "children": "child-1,child-2", "caption": "album"},
+        ),
+    ],
+)
+def test_carousel_exact_body(clock, spec, body):
+    api = API(clock, {"id": "container-1"})
+    assert api.provider.create_media_container(api.account, spec) == "container-1"
+    assert json.loads(api.requests[0].content) == body
+    assert api.provider.publish_container(api.account, "container-1") == "container-1"
+    assert json.loads(api.requests[1].content) == {"creation_id": "container-1"}
+
+
+@pytest.mark.parametrize(
+    ("kind", "url", "caption", "child", "children"),
+    [
+        ("IMAGE", None, None, False, ()),
+        ("IMAGE", "https://example.test/a.jpg", "caption", True, ()),
+        ("STORIES", "https://example.test/a.jpg", None, True, ()),
+        ("CAROUSEL", None, None, False, ("one",)),
+        ("CAROUSEL", None, None, False, tuple(str(i) for i in range(21))),
+        ("CAROUSEL", "https://example.test/a.jpg", None, False, ("one", "two")),
+        ("IMAGE", "https://example.test/a.jpg", None, False, ("one", "two")),
+    ],
+)
+def test_container_spec_invalid_shape(kind, url, caption, child, children):
+    with pytest.raises(ValueError):
+        ContainerSpec(kind, url, caption, child, children)
+
+
 def fixture(name: str) -> dict[str, Any]:
     return json.loads((FIXTURES / f"{name}.json").read_text())
 
@@ -523,3 +561,107 @@ def test_profile_reads_auth_error(clock: FrozenClock, method: str) -> None:
 def test_bad_caption_timestamp_is_absent(clock: FrozenClock, timestamp: Any) -> None:
     api = API(clock, {"data": [{"id": "one", "timestamp": timestamp}]})
     assert api.provider.list_recent_captions(api.account, 12)[0].posted_at is None
+
+
+@pytest.mark.parametrize(
+    ("spec", "expected_body"),
+    [
+        (
+            ContainerSpec(
+                "REELS",
+                video_url="https://example.test/reel.mp4",
+                cover_url="https://example.test/cover.jpg",
+                share_to_feed=True,
+                caption="Reel caption",
+            ),
+            {
+                "media_type": "REELS",
+                "video_url": "https://example.test/reel.mp4",
+                "cover_url": "https://example.test/cover.jpg",
+                "share_to_feed": "true",
+                "caption": "Reel caption",
+            },
+        ),
+        (
+            ContainerSpec(
+                "REELS",
+                video_url="https://example.test/reel.mp4",
+                thumb_offset_ms=2500,
+                share_to_feed=False,
+                caption="With offset",
+            ),
+            {
+                "media_type": "REELS",
+                "video_url": "https://example.test/reel.mp4",
+                "thumb_offset": "2500",
+                "share_to_feed": "false",
+                "caption": "With offset",
+            },
+        ),
+        (
+            ContainerSpec(
+                "REELS",
+                video_url="https://example.test/reel.mp4",
+                share_to_feed=True,
+            ),
+            {
+                "media_type": "REELS",
+                "video_url": "https://example.test/reel.mp4",
+                "share_to_feed": "true",
+            },
+        ),
+    ],
+)
+def test_reel_container_request_shapes(
+    clock: FrozenClock, spec: ContainerSpec, expected_body: dict[str, str]
+) -> None:
+    api = API(clock, {"id": "reel-c-1"})
+    assert api.provider.create_media_container(api.account, spec) == "reel-c-1"
+    (request,) = api.requests
+    assert json.loads(request.content) == expected_body
+
+
+def test_reel_rejects_both_cover_and_offset_and_non_https_urls(clock: FrozenClock) -> None:
+    with pytest.raises(ValueError, match="cover_url and thumb_offset_ms"):
+        ContainerSpec(
+            "REELS",
+            video_url="https://example.test/reel.mp4",
+            cover_url="https://example.test/cover.jpg",
+            thumb_offset_ms=100,
+            share_to_feed=True,
+        )
+    api = API(clock)
+    with pytest.raises(ProviderInvalidRequest, match="MEDIA_URL_NOT_PUBLIC"):
+        api.provider.create_media_container(
+            api.account,
+            ContainerSpec("REELS", video_url="http://example.test/reel.mp4", share_to_feed=True),
+        )
+    with pytest.raises(ProviderInvalidRequest, match="MEDIA_URL_NOT_PUBLIC"):
+        api.provider.create_media_container(
+            api.account,
+            ContainerSpec(
+                "REELS",
+                video_url="https://example.test/reel.mp4",
+                cover_url="localmedia:x?exp=1",
+                share_to_feed=True,
+            ),
+        )
+    assert api.requests == [] and api.tokens == 0
+
+
+def test_reel_container_error_subcode_extraction_never_leaks_free_text(clock: FrozenClock) -> None:
+    api = API(
+        clock,
+        {"id": "c1", "status_code": "ERROR", "status": "Error: media failed with subcode 2207053."},
+    )
+    status = api.provider.get_container_status(api.account, "c1")
+    assert status.status_code == "ERROR"
+    assert status.error_detail == "SUBCODE_2207053"
+
+    api_plain = API(clock, {"id": "c2", "status_code": "ERROR", "status": "some raw text"})
+    status_plain = api_plain.provider.get_container_status(api_plain.account, "c2")
+    assert status_plain.status_code == "ERROR"
+    assert status_plain.error_detail == "MEDIA_PROCESSING_ERROR"
+
+    with pytest.raises(ProviderInvalidRequest, match="MEDIA_INSIGHTS_NOT_SUPPORTED"):
+        api.provider.get_media_insights(api.account, "m1", "REELS")

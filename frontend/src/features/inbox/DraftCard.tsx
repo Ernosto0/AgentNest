@@ -87,7 +87,7 @@ export function DraftCard({
             {ORIGIN_ICON[draft.source]}
           </span>
           <h3 id={`draft-${draft.id}-title`} className="font-heading text-base leading-snug font-semibold tracking-tight text-primary">
-            {t(`convo.draft.origin.${draft.source}`)}
+            {draft.intent === "follow_up" ? t("answers.intent.follow_up") : t(`convo.draft.origin.${draft.source}`)}
           </h3>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -110,7 +110,7 @@ export function DraftCard({
       {draft.text === null && draft.suggestion_text ? (
         <div className="rounded-xl border border-dashed border-action/25 bg-surface px-4 py-3">
           <p className="text-xs font-semibold tracking-wide text-secondary uppercase">{t("convo.draft.suggestionTitle")}</p>
-          <p className="mt-1.5 text-[0.9375rem] leading-6 break-words whitespace-pre-wrap text-primary">{draft.suggestion_text}</p>
+          <p dir="auto" className="mt-1.5 text-[0.9375rem] leading-6 break-words whitespace-pre-wrap text-primary" data-testid="draft-suggestion-text">{draft.suggestion_text}</p>
           {onUseSuggestion ? (
             <Button variant="secondary" className="mt-3" onClick={() => onUseSuggestion(draft.suggestion_text ?? "")}>
               <PencilIcon aria-hidden="true" className="text-base text-action" />
@@ -151,6 +151,7 @@ export function DraftCard({
           </label>
           <textarea
             id={`edit-${draft.id}`}
+            dir="auto"
             value={editText}
             onChange={(event) => setEditText(event.target.value)}
             rows={4}

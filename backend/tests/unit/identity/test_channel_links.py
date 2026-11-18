@@ -96,7 +96,7 @@ def test_generate_link_code_rejects_unsupported_channel(
     )
 
     with pytest.raises(AppError) as exc_info:
-        generate_link_code(db_session, test_clock, ctx, channel="whatsapp")
+        generate_link_code(db_session, test_clock, ctx, channel="unsupported")
     assert exc_info.value.code == "VALIDATION_FAILED"
 
 

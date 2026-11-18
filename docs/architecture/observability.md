@@ -67,6 +67,7 @@ Defined in `app/core/errors.py` (single source). Each code has: HTTP status (if 
 | `MEDIA_INVALID` | 422 | — | The file is not a supported image / upload a JPEG or PNG |
 | `MEDIA_TOO_LARGE` | 413 | — | The file exceeds 8 MB |
 | `MESSAGING_WINDOW_CLOSED` | — | no | Instagram allows replies only within 24 h / reply in the Instagram app |
+| `HUMAN_AGENT_NOT_ALLOWED` | 409 | no | A reply after 24 h must be typed by a person, not an assistant draft |
 | `ACCOUNT_NOT_CONNECTED` | — | no | No Instagram account connected / connect in Settings |
 | `ACCOUNT_NEEDS_REAUTH` | — | no | Instagram connection must be renewed / open Instagram connection and reconnect |
 | `ACCOUNT_MISMATCH` | 400 | — | A different Instagram account was authorised / sign in with the original account |
@@ -102,7 +103,7 @@ Reason codes are not errors. They explain *why* something was decided or changed
 
 | Group | Codes |
 |---|---|
-| Reply policy ([workflows.md §C.1](workflows.md)) | `ACCOUNT_NOT_CONNECTED`, `CAPABILITY_MISSING`, `MESSAGING_WINDOW_CLOSED`, `HUMAN_TAKEOVER`, `LANGUAGE_UNSUPPORTED`, `INTENT_COMPLAINT`, `INTENT_REFUND_REQUEST`, `INTENT_DISCOUNT_REQUEST`, `INTENT_SENSITIVE`, `INTENT_UNSUPPORTED`, `FLAG_COMPLAINT`, `FLAG_REFUND`, `FLAG_DISCOUNT`, `FLAG_LEGAL`, `FLAG_HEALTH_SAFETY`, `FLAG_ABUSIVE`, `FLAG_PERSONAL_DATA`, `ESCALATION_KEYWORD`, `MODEL_REQUESTED_HUMAN`, `FACT_NOT_USABLE`, `GROUNDING_FAILED`, `LLM_UNAVAILABLE`, `LLM_BUDGET_EXCEEDED`, `LLM_OUTPUT_INVALID`, `ATTACHMENT_ONLY`, `INJECTION_SUSPECTED`, `AUTOMATION_OFF`, `POLICY_REQUIRES_APPROVAL`, `READINESS_NOT_READY`, `AUTO_RATE_GUARD`, `CONTAINS_<CLASS>` (`PRICING`, `HOURS`, `LOCATION_CONTACT`, `SERVICES`, `BOOKING`, `PROMOTIONS`, `GENERAL_FAQ`), `POLICY_AUTO` |
+| Reply policy ([workflows.md §C.1](workflows.md)) | `ACCOUNT_NOT_CONNECTED`, `CAPABILITY_MISSING`, `MESSAGING_WINDOW_CLOSED`, `HUMAN_TAKEOVER`, `LANGUAGE_UNSUPPORTED`, `INTENT_COMPLAINT`, `INTENT_REFUND_REQUEST`, `INTENT_DISCOUNT_REQUEST`, `INTENT_SENSITIVE`, `INTENT_UNSUPPORTED`, `FLAG_COMPLAINT`, `FLAG_REFUND`, `FLAG_DISCOUNT`, `FLAG_LEGAL`, `FLAG_HEALTH_SAFETY`, `FLAG_ABUSIVE`, `FLAG_PERSONAL_DATA`, `ESCALATION_KEYWORD`, `MODEL_REQUESTED_HUMAN`, `FACT_NOT_USABLE`, `GROUNDING_FAILED`, `LLM_UNAVAILABLE`, `LLM_BUDGET_EXCEEDED`, `LLM_OUTPUT_INVALID`, `ATTACHMENT_ONLY`, `INJECTION_SUSPECTED`, `AUTOMATION_OFF`, `POLICY_REQUIRES_APPROVAL`, `READINESS_NOT_READY`, `AUTO_RATE_GUARD`, `HUMAN_AGENT_TAG` (a note on a person's tagged reply, not a policy outcome), `HUMAN_AGENT_DISABLED` and `HUMAN_AGENT_AUTOMATED_SOURCE` (send-time cancel reasons of a tagged draft), `CONTAINS_<CLASS>` (`PRICING`, `HOURS`, `LOCATION_CONTACT`, `SERVICES`, `BOOKING`, `PROMOTIONS`, `GENERAL_FAQ`), `POLICY_AUTO` |
 | Content hold (`content_items.hold_reason`) | `FACT_CHANGED`, `ACCOUNT_UNAVAILABLE`, `APPROVAL_EXPIRED` |
 | Approval cancellation (`approvals.cancel_reason`) | `SUBJECT_EDITED`, `SUPERSEDED`, `FACT_CHANGED`, `WITHDRAWN`, `SUBJECT_CANCELLED` |
 | Draft supersession | `NEW_INBOUND`, `OWNER_REPLIED_NATIVELY`, `OWNER_REPLIED`, `FACT_CHANGED`, `REGENERATED` |
@@ -118,14 +119,17 @@ Item codes are not error codes: they are the entries of `errors` (blocking) and 
 | `CAPTION_REQUIRED` | error | `caption` | | A feed post needs a caption |
 | `CAPTION_TOO_LONG` | error | `caption` | `length`, `max` (2200) | |
 | `CAPTION_NOT_ALLOWED` | error | `caption` | | A story is published without a caption |
-| `ASPECT_RATIO_OUT_OF_RANGE` | error | `media_asset_id` | `width`, `height` | Feed images must be 4:5 to 1.91:1 |
+| `CAROUSEL_TOO_FEW_ITEMS` | error | `media_asset_ids` | `count`, `min` | At least 2 images at submit |
+| `CAROUSEL_TOO_MANY_ITEMS` | error | `media_asset_ids` | `count`, `max` | At most 10 images (product rule) |
+| `CAROUSEL_MIXED_ASPECT_RATIO` | error | `media_asset_ids` | `positions` | Zero-based offending positions; 2% relative tolerance from image 0 |
+| `ASPECT_RATIO_OUT_OF_RANGE` | error | `media_asset_id` | `width`, `height` | Feed images must be 4:5 to 1.91:1; carousel fields are `media_asset_ids.{index}` |
 | `CLAIM_VALIDATION_FAILED` | error | `null` | `issues[]` | The claim validator's issues over the caption **and** the overlay suggestions: `{code, field, span, text, matches_verified, fact_key}` |
 | `SCHEDULE_IN_PAST` | error | `schedule` | | Earlier than now - 1 min |
 | `SCHEDULE_TOO_FAR` | error | `schedule` | | Later than now + 60 days |
 | `SCHEDULE_TIME_NONEXISTENT` | error | `schedule` | `local_date`, `local_time`, `timezone` | The local time falls in a DST gap (G13) |
 | `SCHEDULE_TOO_SOON_FOR_APPROVAL` | error | `schedule` | `minutes` (15) | The item will wait for an approver (staff, or no `self_approve`) and is less than 15 minutes ahead; "now" is impossible for staff |
 | `ACCOUNT_NOT_CONNECTED` | error | `social_account_id` | | No active account, or it is not `connected` |
-| `CAPABILITY_MISSING` | error | `social_account_id` | `capability` | The account lacks `publish_feed_image` / `publish_story_image` |
+| `CAPABILITY_MISSING` | error | `social_account_id` | `capability` | The account lacks `publish_feed_image` / `publish_story_image` / `publish_feed_carousel` / `publish_reel` |
 | `PUBLISH_QUOTA_FORECAST_EXCEEDED` | error | `scheduled_at` | | More than `PUBLISH_DAILY_LIMIT` posts in a rolling 24 h window around the time |
 | `STORY_ASPECT_NOT_9_16` | warning | `media_asset_id` | `width`, `height` | A story image far from 9:16 may be cropped |
 | `OVERLAY_TOO_LONG` | warning | `overlay_text_suggestions.{i}` | | More than 3 lines or a line over 40 characters |
@@ -188,7 +192,7 @@ Written in the same transaction as the change ([INV-12](../invariants.md)). `met
 | Operations & accounts | `operation.started`, `operation.succeeded`, `operation.failed`, `operation.outcome_unknown`, `operation.reconciled`, `social_account.connected`, `social_account.degraded`, `social_account.needs_reauth`, `social_account.disconnected`, `account.reconnected`, `account.comment_automation_changed`, `social_account.token_refreshed` (implemented offline in Phase 7 Session 3) |
 | Account agent | `agent.event_recorded`, `agent.action_proposed`, `agent.session_transition`, `agent.thread_transition`, `agent.step_transition`, `agent.action_transition`, `agent.delegation_applied`, `agent.delegation_suggested`, `agent.delegation_suggestion_previewed`, `agent.delegation_suggestion_accepted` (the same transaction also writes `policy.updated`), `agent.delegation_suggestion_dismissed`, `agent.action_authorized`, `agent.action_cancelled`, `agent.content_applied`, `agent.state_changed`, `agent.personality_changed` (Phase 7.5, ID/version/reason metadata only) |
 | Customer memory | `memory.written`, `memory.corrected`, `memory.forgotten`, `memory.erased` (identity ID, generation and revision only; never customer/source bodies) |
-| System | `webhook.signature_invalid`, `report.generated`, `retention.cleanup_ran`, `demo.reset` (on the **new** workspace; metadata `previous_workspace_id`), `demo.failure_rule_set` |
+| System | `webhook.signature_invalid`, `report.generated`, `leads.exported` (Activity group `system`, success; metadata only `period_from`, `period_to`, `row_count`, `truncated`, `columns`; never customer data), `retention.cleanup_ran`, `demo.reset` (on the **new** workspace; metadata `previous_workspace_id`), `demo.failure_rule_set` |
 
 **Account audit names.** Every status change of a social account is audited as `social_account.<new status>` (entity type `social_account`; the previous status is in the metadata), which is what the code does (`operations/accounts.transition_account`). The one exception is the reconnect of a simulated account, which has a name of its own, `account.reconnected` (Phase 5, passed as `audit_action`). Earlier drafts of these docs called the status changes `account.connected`, `account.disconnected` and `account.status_changed`; those names are not used.
 
@@ -208,6 +212,15 @@ The endpoint accepts group `type` and workspace-local `date` filters, and pages 
 - **Levels, routine detail and grouping** are derived at read time from the action, the actor type and whitelisted metadata codes (`app/activity/classify.py`, `describe.py`), never stored, so `audit_logs` stays insert-only and old rows are classified like new ones. Operator alerts (`security.operator_alert_fired` / `_resolved`, `security.alert_delivery_failed`) are workspace entries only when their condition belongs to that workspace; an aggregated dead-job alert (`dead_job:<type>`, `agent_health:dead_job:<type>`) is attributed to a workspace only when every dead job of that type belongs to it, otherwise it is system-level. Each re-notification after a cooldown is its own audit row (`is_refire`, `notification_count`); the feed names the condition and groups them, it does not drop them.
 - **Coverage rule:** every action in the table above and every action the code writes has a group and `activity.<action>` texts in both languages; a unit test fails otherwise. A new audit action therefore needs a catalog row, an entry in `groups.py` and two texts in the same change.
 - **Actions found in the code and added to the catalog in Phase 6:** `message.native_reply_recorded` (the catalog said `message.native_reply_detected`), `conversation.release` (it said `conversation.released`), `reply_draft.<status>`, `reply.outcome_unconfirmed`, `reply.late_confirmation`, `approval.granted`. `reply_draft.superseded` is now one of the `reply_draft.<status>` entries.
+
+F-10 audit actions (same transaction, no customer/template text):
+
+| Action | Resource | Detail |
+|---|---|---|
+| `follow_up.settings_changed` | workspace | Changed setting key names only |
+| `follow_up.drafted` | conversation_follow_up | Conversation/draft IDs and approval reason code |
+| `follow_up.skipped` | conversation_follow_up | Conversation/answer IDs and reason code |
+| `follow_up.cancelled` | conversation_follow_up | Conversation/answer IDs and reason code |
 
 ## 6. System health panel (owner/manager, Phase 6)
 
@@ -252,3 +265,18 @@ Template audit metadata: `brand.updated` records the effective colours and logo 
 atomically with brand settings. `media.template_rendered` records template, format and
 `facts:[{fact_id,key,version}]`, atomically with the asset and ordinary `media.uploaded`.
 It contains no free text, rendered values or storage credentials.
+
+
+Carousel error additions (migration 0080): `CONTENT_MEDIA_SHAPE_INVALID` (422),
+`CAROUSEL_DUPLICATE_MEDIA` (422), `CAROUSEL_TOO_MANY_ITEMS` (422), and
+Carousel publishing reuses the existing create/status/publish error mapping; an invalid child is `MEDIA_REJECTED`, an ambiguous publish is `OUTCOME_UNKNOWN`.
+The existing `content.updated` audit names `media_asset_ids` for list/order changes, without
+recording the list. Creation and edit continue using the existing content audit actions.
+
+### Video upload codes and audits (Session 06)
+
+VIDEO_INVALID 422, VIDEO_TOO_LARGE 413, VIDEO_STORAGE_QUOTA_EXCEEDED 409, VIDEO_PROBE_UNAVAILABLE 503 retryable, MEDIA_KIND_INVALID 422. `media.rejected` records primary reason, all reasons, sanitized original_filename and byte_size; oversize uses TOO_LARGE. Unavailable tools are never audited as invalid media. `media.uploaded` for video records kind, duration_ms, width, height, video_codec, container, byte_size, sha256 and warning codes (no storage key). `media.deleted` retains the existing retention audit. Reason codes and bilingual what/next text are in the core and frontend videoReason catalogs; raw ffmpeg stderr and file contents are not logged.
+
+### Reel upload, validation, and polling codes (Session 07)
+
+Migration `0083` adds `reel` and asynchronous container polling (`poll_reel_container`): `REEL_DURATION_OUT_OF_RANGE` (submit error when `< 3 s` or `> 15 min`), `REEL_COVER_OFFSET_INVALID` (`thumb_offset_ms < 0` or `>= duration_ms`), `REEL_COVER_TOO_LARGE` (`> 8 MB`), plus video warnings `REEL_ASPECT_NOT_9_16`, `REEL_RESOLUTION_BELOW_RECOMMENDED`, and `REEL_EDIT_LIST_PRESENT`. `REEL_PROCESSING_TIMEOUT` (30 min cap) fails the operation and notifies `content.failed` in TR/EN. Transient container processing error subcodes `2207003`, `2207032`, and `2207053` trigger container recreation up to `MAX_CONTAINER_RECREATIONS = 2`.

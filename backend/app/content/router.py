@@ -7,12 +7,14 @@ import uuid
 from collections.abc import Iterator
 from typing import BinaryIO
 
-from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
+from starlette.datastructures import UploadFile as StarletteUploadFile
 
 from app.api.deps import get_app_settings, get_clock, require_membership
-from app.content import generation, media, service
+from app.content import generation, media, service, video_ingest
 from app.content.schemas import (
     ContentCreate,
     ContentGenerate,
@@ -29,6 +31,7 @@ from app.content.schemas import (
 )
 from app.content.service import ScheduleRequest
 from app.content.templates import link
+from app.content.video import Issue
 from app.content.views import check_out, item_out
 from app.core.clock import Clock
 from app.core.config import Settings
@@ -38,6 +41,7 @@ from app.core.errors import AppError
 from app.core.pagination import Page
 from app.integrations.storage.base import MediaStorage, StorageObjectNotFound
 from app.integrations.storage.registry import get_media_storage
+from app.integrations.video.registry import get_video_prober
 
 router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["content"])
 
@@ -73,28 +77,148 @@ def upload_media(
     return MediaAssetOut.model_validate(asset)
 
 
-@router.get("/media/{media_id}/content")
-def media_content(
+def _video_precheck(
+    db: Session, clock: Clock, settings: Settings, ctx: WorkspaceContext, declared: int
+) -> None:
+    """Header guards before any body byte is read (sync: runs in the thread pool)."""
+    if declared > settings.media_max_video_bytes + video_ingest.MULTIPART_ALLOWANCE_BYTES:
+        video_ingest.reject(
+            db,
+            clock,
+            ctx,
+            None,
+            declared,
+            (Issue("TOO_LARGE", settings.media_max_video_bytes, declared),),
+            too_large=True,
+        )
+    video_ingest.check_quota(db, settings, ctx, declared)
+    db.commit()
+
+
+@router.post(
+    "/media/video",
+    response_model=MediaAssetOut,
+    status_code=201,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "multipart/form-data": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["file"],
+                        "properties": {"file": {"type": "string", "format": "binary"}},
+                    }
+                }
+            },
+        }
+    },
+)
+async def upload_video(
+    request: Request,
+    ctx: WorkspaceContext = Depends(require_membership("content.edit")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+    storage: MediaStorage = Depends(get_storage),
+) -> MediaAssetOut:
+    # No File dependency: guards and auth run BEFORE Starlette consumes the body. A request
+    # without a usable Content-Length (chunked) is untrusted: Starlette would spool it to disk
+    # before our byte counter runs, so it is refused as too large (browsers always send one).
+    try:
+        declared = max(0, int(request.headers.get("content-length", "")))
+    except ValueError:
+        declared = settings.media_max_video_bytes + video_ingest.MULTIPART_ALLOWANCE_BYTES + 1
+    await run_in_threadpool(_video_precheck, db, clock, settings, ctx, declared)
+    async with request.form(max_files=1, max_fields=0) as form:
+        file = form.get("file")
+        if not isinstance(file, StarletteUploadFile):
+            raise AppError(
+                "VALIDATION_FAILED", errors=[{"field": "file", "code": "required", "params": {}}]
+            )
+        asset = await run_in_threadpool(
+            video_ingest.ingest_video,
+            db,
+            clock,
+            settings,
+            storage,
+            ctx,
+            file.file,
+            file.filename,
+            get_video_prober(settings),
+        )
+    return MediaAssetOut.model_validate(asset)
+
+
+@router.get("/media/{media_id}", response_model=MediaAssetOut)
+def media_metadata(
     media_id: uuid.UUID,
     ctx: WorkspaceContext = Depends(require_membership()),
     db: Session = Depends(get_db),
+) -> MediaAssetOut:
+    return MediaAssetOut.model_validate(media.get_asset(db, ctx, media_id, kind=None))
+
+
+@router.get("/media/{media_id}/content", response_model=None)
+def media_content(
+    media_id: uuid.UUID,
+    request: Request,
+    ctx: WorkspaceContext = Depends(require_membership()),
+    db: Session = Depends(get_db),
     storage: MediaStorage = Depends(get_storage),
-) -> StreamingResponse:
-    """The stored JPEG, for authenticated members only. Never a bucket URL (ADR-015)."""
-    asset = media.get_asset(db, ctx, media_id)
+) -> Response:
+    """Stored media for authenticated members only. Never a bucket URL (ADR-015)."""
+    asset = media.get_asset(db, ctx, media_id, kind=None)
+    key, mime_type, byte_size, sha256 = (
+        asset.storage_key,
+        asset.mime_type,
+        asset.byte_size,
+        asset.sha256,
+    )
+    db.commit()  # no transaction while storage is opened or streamed
+    etag = f'"{sha256}"'
+    base_headers = {
+        "Accept-Ranges": "bytes",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, max-age=3600",
+        "Content-Disposition": "inline",
+        "ETag": etag,
+    }
+    if_range = request.headers.get("if-range")
+    parsed_range = (
+        "full"
+        if if_range is not None and if_range.strip() != etag
+        else media.parse_byte_range(request.headers.get("range"), byte_size)
+    )
+    if parsed_range == "unsatisfiable":
+        return Response(
+            status_code=416,
+            headers={**base_headers, "Content-Range": f"bytes */{byte_size}"},
+        )
     try:
-        stream = storage.open(asset.storage_key)
+        if isinstance(parsed_range, tuple):
+            start, end = parsed_range
+            length = end - start + 1
+            stream = storage.open_range(key, start, length)
+            return StreamingResponse(
+                _chunks(stream),
+                status_code=206,
+                media_type=mime_type,
+                headers={
+                    **base_headers,
+                    "Content-Length": str(length),
+                    "Content-Range": f"bytes {start}-{end}/{byte_size}",
+                },
+            )
+        stream = storage.open(key)
     except StorageObjectNotFound as exc:
         raise AppError("NOT_FOUND") from exc
     return StreamingResponse(
         _chunks(stream),
-        media_type=asset.mime_type,
+        media_type=mime_type,
         headers={
-            "Content-Length": str(asset.byte_size),
-            "X-Content-Type-Options": "nosniff",
-            "Cache-Control": "private, max-age=3600",
-            "Content-Disposition": "inline",
-            "ETag": f'"{asset.sha256}"',
+            **base_headers,
+            "Content-Length": str(byte_size),
         },
     )
 
@@ -111,9 +235,13 @@ def list_content_items(
     db: Session = Depends(get_db),
 ) -> Page[ContentItemOut]:
     items = service.list_items(db, ctx, tab=tab, status=status, limit=limit)
-    states = link.states(
-        db, ctx, link.records(db, ctx, [i.media_asset_id for i in items if i.media_asset_id])
-    )
+    template_asset_ids = [
+        aid
+        for i in items
+        if (aid := i.cover_media_asset_id if i.content_type == "reel" else i.media_asset_id)
+        is not None
+    ]
+    states = link.states(db, ctx, link.records(db, ctx, template_asset_ids))
     return Page(items=[item_out(db, ctx, item, template_states=states) for item in items])
 
 
@@ -134,6 +262,11 @@ def create_content_item(
         caption=body.caption,
         overlay_text_suggestions=body.overlay_text_suggestions,
         media_asset_id=body.media_asset_id,
+        media_asset_ids=body.media_asset_ids,
+        cover_media_asset_id=body.cover_media_asset_id,
+        thumb_offset_ms=body.thumb_offset_ms,
+        share_to_feed=body.share_to_feed,
+        fields_set=body.model_fields_set,
         client_request_id=body.client_request_id,
     )
     if not created:

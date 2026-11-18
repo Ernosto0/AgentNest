@@ -127,7 +127,9 @@ export function LibraryView({
                 options={[
                   { value: "all", label: t("content.filters.all") },
                   { value: "feed_image", label: t("content.filters.posts") },
+                  { value: "feed_carousel", label: t("content.type.feed_carousel") },
                   { value: "story_image", label: t("content.filters.stories") },
+                  { value: "reel", label: t("content.filters.reels") },
                 ]}
               />
             </div>

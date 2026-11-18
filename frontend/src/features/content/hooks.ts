@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, unwrap } from "@/api/client";
-import type { AppError } from "@/api/errors";
+import { API_BASE, api, requestHeaders, unwrap } from "@/api/client";
+import { AppError, parseProblem } from "@/api/errors";
 import type {
   ContentCreateBody,
   ContentItem,
@@ -11,6 +11,7 @@ import type {
   ContentValidation,
   MediaAsset,
 } from "@/api/types";
+import { mediaPreviewId } from "./mediaPreview";
 import { newRequestId } from "@/features/commands/hooks";
 
 export const contentListKey = (ws: string, tab: ContentTab) => ["content-items", ws, tab] as const;
@@ -117,7 +118,7 @@ export function useCreateContent(ws: string) {
 }
 
 export interface GenerateInput {
-  content_type: ContentType;
+  content_type: Exclude<ContentType, "feed_carousel" | "reel">;
   objective: string;
   notes?: string | null;
 }
@@ -283,19 +284,123 @@ export function useUploadMedia(ws: string) {
   });
 }
 
+export interface VideoUploadProgress {
+  loaded: number;
+  total: number | null;
+  percent: number | null;
+}
+
+/** Upload a reel video via XHR so large uploads report byte progress and support cancel. */
+export function useUploadVideo(ws: string) {
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [probing, setProbing] = useState(false);
+  const [progress, setProgress] = useState<VideoUploadProgress | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
+
+  useEffect(() => () => xhrRef.current?.abort(), []);
+
+  const cancel = () => {
+    xhrRef.current?.abort();
+  };
+
+  const reset = () => {
+    setError(null);
+    setProgress(null);
+    setProbing(false);
+  };
+
+  const upload = (file: File): Promise<MediaAsset | null> => {
+    xhrRef.current?.abort();
+    const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
+    setIsPending(true);
+    setProbing(false);
+    setProgress({ loaded: 0, total: file.size || null, percent: 0 });
+    setError(null);
+
+    return new Promise<MediaAsset | null>((resolve, reject) => {
+      xhr.open("POST", `${API_BASE}/api/v1/workspaces/${ws}/media/video`);
+      xhr.withCredentials = true;
+      for (const [k, v] of Object.entries(requestHeaders("POST"))) {
+        xhr.setRequestHeader(k, v);
+      }
+
+      xhr.upload.onprogress = (event) => {
+        const total = event.lengthComputable && event.total > 0 ? event.total : file.size || null;
+        const percent = total ? Math.min(100, Math.round((event.loaded / total) * 100)) : null;
+        setProgress({ loaded: event.loaded, total, percent });
+        if (percent !== null && percent >= 100) {
+          setProbing(true);
+        }
+      };
+
+      const finish = () => {
+        if (xhrRef.current === xhr) xhrRef.current = null;
+        setIsPending(false);
+        setProbing(false);
+      };
+
+      xhr.onload = () => {
+        finish();
+        let body: unknown = null;
+        try {
+          body = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+        } catch {
+          // non-JSON response falls through as null
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(body as MediaAsset);
+          return;
+        }
+        const err = parseProblem(xhr.status, body);
+        setError(err);
+        reject(err);
+      };
+
+      xhr.onerror = () => {
+        finish();
+        const err = new AppError("NETWORK_ERROR", 0);
+        setError(err);
+        reject(err);
+      };
+
+      xhr.onabort = () => {
+        finish();
+        resolve(null);
+      };
+
+      const form = new FormData();
+      form.append("file", file);
+      xhr.send(form);
+    });
+  };
+
+  return { upload, cancel, reset, isPending, probing, progress, error };
+}
+
 /**
  * The stored image as a blob URL. The endpoint needs the session, so an <img src> cannot load it
  * directly: it is fetched with the cookie and shown from memory (the URL is revoked on change).
  */
 export function useMediaPreview(ws: string, mediaId: string | null) {
-  const query = useQuery<Blob, AppError>({
-    queryKey: mediaBlobKey(ws, mediaId ?? ""),
+  const metadata = useQuery<MediaAsset, AppError>({
+    queryKey: ["media-asset", ws, mediaId],
     enabled: mediaId !== null,
+    staleTime: Infinity,
+    queryFn: async () => unwrap(api.GET("/api/v1/workspaces/{workspace_id}/media/{media_id}", {
+      params: { path: { workspace_id: ws, media_id: mediaId ?? "" } },
+    })),
+  });
+  const previewId = mediaPreviewId(metadata.data ? { ...metadata.data, id: mediaId ?? metadata.data.id } : null);
+  const query = useQuery<Blob, AppError>({
+    queryKey: mediaBlobKey(ws, previewId ?? ""),
+    enabled: previewId !== null,
     staleTime: Infinity,
     queryFn: async () =>
       (await unwrap(
         api.GET("/api/v1/workspaces/{workspace_id}/media/{media_id}/content", {
-          params: { path: { workspace_id: ws, media_id: mediaId ?? "" } },
+          params: { path: { workspace_id: ws, media_id: previewId ?? "" } },
           parseAs: "blob",
         }),
       )) as Blob,
@@ -313,5 +418,12 @@ export function useMediaPreview(ws: string, mediaId: string | null) {
       setUrl(null);
     };
   }, [blob]);
-  return { url, isPending: query.isPending && mediaId !== null, error: query.error };
+  return {
+    url: previewId ? url : null,
+    isPending: mediaId !== null && (metadata.isPending || (previewId !== null && query.isPending)),
+    error: metadata.error ?? query.error,
+    kind: metadata.data?.kind,
+    durationMs: metadata.data?.duration_ms,
+    asset: metadata.data ?? null,
+  };
 }

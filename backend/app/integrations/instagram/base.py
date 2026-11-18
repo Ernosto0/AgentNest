@@ -16,6 +16,7 @@ from typing import Any, Literal, Protocol
 ProviderKind = Literal["mock", "meta"]
 META_PRIVATE_REPLY_WINDOW = timedelta(days=7) - timedelta(minutes=10)
 MOCK_PRIVATE_REPLY_WINDOW = timedelta(days=7)  # Provisional simulator fixture only.
+SUPPORTED_MESSAGE_TAGS = ("HUMAN_AGENT",)  # the only tag documented for Instagram Messaging
 EventType = Literal["message", "echo", "delete", "reaction", "read", "postback", "other", "comment"]
 
 
@@ -102,9 +103,51 @@ class OutboundMessageInfo:
 # Content publishing shapes (integrations.md §3.1).
 @dataclass(frozen=True)
 class ContainerSpec:
-    media_type: Literal["IMAGE", "STORIES"]
-    image_url: str
+    media_type: Literal["IMAGE", "STORIES", "CAROUSEL", "REELS"]
+    image_url: str | None = None
     caption: str | None = None
+    is_carousel_item: bool = False
+    children: tuple[str, ...] = ()
+    video_url: str | None = None
+    cover_url: str | None = None
+    thumb_offset_ms: int | None = None
+    share_to_feed: bool | None = None
+
+    def __post_init__(self) -> None:
+        if self.thumb_offset_ms is not None and self.thumb_offset_ms < 0:
+            raise ValueError("thumb_offset_ms must be >= 0")
+        has_reel_fields = any(
+            v is not None
+            for v in (self.video_url, self.cover_url, self.thumb_offset_ms, self.share_to_feed)
+        )
+        if self.media_type == "REELS":
+            if (
+                not self.video_url
+                or self.share_to_feed is None
+                or self.image_url is not None
+                or self.children
+                or self.is_carousel_item
+            ):
+                raise ValueError(
+                    "REELS requires video_url and share_to_feed and forbids "
+                    "image_url, children, and is_carousel_item"
+                )
+            if self.cover_url is not None and self.thumb_offset_ms is not None:
+                raise ValueError("REELS forbids setting both cover_url and thumb_offset_ms")
+            return
+        if has_reel_fields:
+            raise ValueError("reel fields are only allowed when media_type is REELS")
+        if self.media_type == "CAROUSEL":
+            if (
+                self.image_url is not None
+                or self.is_carousel_item
+                or not 2 <= len(self.children) <= 20
+            ):
+                raise ValueError("carousel requires 2..20 children and no image URL")
+        elif not self.image_url or self.children:
+            raise ValueError("image requires a URL and no children")
+        if self.is_carousel_item and (self.media_type != "IMAGE" or self.caption is not None):
+            raise ValueError("carousel child requires IMAGE and no caption")
 
 
 @dataclass(frozen=True)
@@ -182,8 +225,16 @@ class InstagramProvider(Protocol):
 
     # --- side effects: operations only (INV-15) ---
     def send_text_message(
-        self, account: AccountRef, recipient_id: str, text: str
-    ) -> SendResult: ...
+        self,
+        account: AccountRef,
+        recipient_id: str,
+        text: str,
+        message_tag: str | None = None,
+    ) -> SendResult:
+        """``message_tag`` is ``HUMAN_AGENT`` only for a person's reply after the 24-hour window
+        (Meta: ``messaging_type=MESSAGE_TAG`` and ``tag=HUMAN_AGENT``); the caller decides, the
+        provider only carries it."""
+        ...
 
     def perform_comment_effect(
         self,

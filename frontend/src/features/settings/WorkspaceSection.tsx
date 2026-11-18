@@ -4,18 +4,29 @@ import { Button } from "@/components/Button";
 import { useDirtyForm } from "@/components/DirtyForms";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { Notice } from "@/components/Feedback";
-import { SelectField } from "@/components/FormFields";
+import { ChoiceField, SelectField } from "@/components/FormFields";
 import { CheckIcon, InfoIcon, PencilIcon, StoreIcon, UsersIcon } from "@/components/icons";
 import { TextField } from "@/components/TextField";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { useUpdateWorkspace } from "@/features/workspaces/hooks";
 import { timezoneOptions } from "@/features/workspaces/wizardDefaults";
 import { BrandSection } from "./BrandSection";
+import { FollowUpSettings } from "./FollowUpSettings";
 import { useMembers } from "./hooks";
 import { DetailRow, LinkRow, PanelTitle, SettingsPanel, SettingsSection, TEXT_ACTION } from "./SettingsParts";
 import { currencyLabel, timezoneLabel, timezoneOffset } from "./workspaceLabels";
 
 const NAME_MAX = 100; // workspaces.name (identity schemas `Name`)
+/** The customer reply languages the backend accepts (`ReplyLocale`), in the order they are listed. */
+const REPLY_LANGUAGES = ["tr", "en", "ru", "de", "ar"] as const;
+type ReplyLanguage = (typeof REPLY_LANGUAGES)[number];
+/** Languages added in Feature Phase 5: the account agent does not answer in them (Track D). */
+const NEW_REPLY_LANGUAGES: readonly ReplyLanguage[] = ["ru", "de", "ar"];
+
+/** The selection in a stable order, with the main language always included. */
+function orderReplyLanguages(selected: readonly string[], main: string): ReplyLanguage[] {
+  return REPLY_LANGUAGES.filter((code) => code === main || selected.includes(code));
+}
 
 export function WorkspaceSection() {
   const { t } = useTranslation();
@@ -28,6 +39,7 @@ export function WorkspaceSection() {
     <SettingsSection id="workspace" title={t("settings.nav.workspace")} description={t("settings.workspace.description")}>
       <WorkspaceDetails canEdit={role === "owner"} />
       <BrandSection />
+      <FollowUpSettings />
 
       <SettingsPanel aria-label={t("settings.workspace.adminTitle")}>
         <LinkRow
@@ -58,7 +70,8 @@ function WorkspaceDetails({ canEdit }: { canEdit: boolean }) {
   const language = i18n.language;
   const replyLanguages = [workspace.default_locale, ...workspace.reply_languages.filter((l) => l !== workspace.default_locale)]
     .filter((l) => workspace.reply_languages.includes(l))
-    .map((l) => t(`settings.languages.${l}`, { lng: l }));
+    .map((l) => t(`settings.languages.${l}`));
+  const hasNewLanguage = workspace.reply_languages.some((l) => NEW_REPLY_LANGUAGES.includes(l));
 
   return (
     <SettingsPanel as="section" aria-labelledby="settings-workspace-details">
@@ -110,7 +123,10 @@ function WorkspaceDetails({ canEdit }: { canEdit: boolean }) {
           <DetailRow term={t("settings.workspace.timezone")} hint={t("settings.workspace.timezoneHint")}>
             {timezoneLabel(workspace.timezone, language)}
           </DetailRow>
-          <DetailRow term={t("settings.workspace.replyLanguages")} hint={t("settings.workspace.replyLanguagesHint")}>
+          <DetailRow
+            term={t("settings.workspace.replyLanguages")}
+            hint={`${t("settings.workspace.replyLanguagesHint")}${hasNewLanguage ? ` ${t("settings.workspace.replyLanguagesAgentNote")}` : ""}`}
+          >
             {replyLanguages.join(", ")}
           </DetailRow>
           <DetailRow term={t("settings.workspace.created")}>
@@ -122,13 +138,18 @@ function WorkspaceDetails({ canEdit }: { canEdit: boolean }) {
   );
 }
 
-/** Owner-only edit of the two details that are safe to change after setup: name and time zone. */
+/** Owner-only edit of the details that are safe to change after setup: name, time zone and reply languages. */
 function WorkspaceEditForm({ onDone }: { onDone: (saved: boolean) => void }) {
   const { t, i18n } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   const update = useUpdateWorkspace(workspace.id);
   const [name, setName] = useState(workspace.name);
   const [timezone, setTimezone] = useState(workspace.timezone);
+  const initialLanguages = useMemo(
+    () => orderReplyLanguages(workspace.reply_languages, workspace.default_locale),
+    [workspace.reply_languages, workspace.default_locale],
+  );
+  const [languages, setLanguages] = useState<ReplyLanguage[]>(initialLanguages);
   const [nameError, setNameError] = useState<string | undefined>();
   const zones = useMemo(() => timezoneOptions(workspace.timezone), [workspace.timezone]);
   const zoneLabels = useMemo(() => {
@@ -140,15 +161,21 @@ function WorkspaceEditForm({ onDone }: { onDone: (saved: boolean) => void }) {
       }),
     );
   }, [zones, i18n.language]);
+  const languagesChanged = languages.length !== initialLanguages.length || languages.some((l) => !initialLanguages.includes(l));
   const changes = {
     ...(name.trim() !== workspace.name ? { name: name.trim() } : {}),
     ...(timezone !== workspace.timezone ? { timezone } : {}),
+    ...(languagesChanged ? { reply_languages: languages } : {}),
   };
   const dirty = Object.keys(changes).length > 0;
   useDirtyForm(dirty && !update.isSuccess);
 
   const serverNameError = update.error?.fieldErrors.find((e) => e.field === "name");
   const serverZoneError = update.error?.fieldErrors.find((e) => e.field === "timezone");
+  const serverLanguageError = update.error?.fieldErrors.find((e) => e.field === "reply_languages");
+  const newLanguageSelected = languages.some((l) => NEW_REPLY_LANGUAGES.includes(l));
+  const toggleLanguage = (code: ReplyLanguage, on: boolean) =>
+    setLanguages((current) => orderReplyLanguages(on ? [...current, code] : current.filter((l) => l !== code), workspace.default_locale));
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -188,7 +215,30 @@ function WorkspaceEditForm({ onDone }: { onDone: (saved: boolean) => void }) {
           {t("settings.workspace.timezoneChangeBody", { zone: timezoneLabel(timezone, i18n.language) })}
         </Notice>
       ) : null}
-      {update.isError && !serverNameError && !serverZoneError ? <ErrorMessage error={update.error} /> : null}
+      <fieldset className="flex min-w-0 flex-col gap-0.5" aria-describedby="reply-languages-coverage">
+        <legend className="text-body font-medium text-primary">{t("settings.workspace.replyLanguages")}</legend>
+        <p className="mb-1 text-metadata text-secondary">{t("settings.workspace.replyLanguagesChoose")}</p>
+        {REPLY_LANGUAGES.map((code) => (
+          <ChoiceField
+            key={code}
+            label={t(`settings.languages.${code}`)}
+            hint={code === workspace.default_locale ? t("settings.workspace.replyLanguagesMain") : undefined}
+            checked={languages.includes(code)}
+            disabled={code === workspace.default_locale}
+            onChange={(event) => toggleLanguage(code, event.target.checked)}
+          />
+        ))}
+        <p id="reply-languages-coverage" className="mt-1 text-metadata text-secondary">
+          {t("settings.workspace.replyLanguagesCoverage")}
+        </p>
+        {serverLanguageError ? <p className="text-body text-danger">{t("settings.workspace.replyLanguagesInvalid")}</p> : null}
+      </fieldset>
+      {newLanguageSelected ? (
+        <Notice tone="attention" title={t("settings.workspace.replyLanguagesNewTitle")}>
+          {t("settings.workspace.replyLanguagesNewBody")}
+        </Notice>
+      ) : null}
+      {update.isError && !serverNameError && !serverZoneError && !serverLanguageError ? <ErrorMessage error={update.error} /> : null}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" pending={update.isPending} disabled={!dirty}>
           {t("settings.saveChanges")}

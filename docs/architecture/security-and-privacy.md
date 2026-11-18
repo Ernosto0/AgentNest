@@ -131,6 +131,7 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 | Owner test chat | The text an owner types into the test chat (F-02) is not customer data. It is stored in `assistant_test_turns` (scrubbed on reset, deleted after 2 days) and sent to the LLM provider like a customer message. It reaches no conversation, message, memory or report and is never sent to Instagram. It is limited per workspace so it cannot be used as a free LLM. | S1 |
 | Transparency | Template text for the business's privacy notice (aydınlatma metni) describing automated assistance and processors; automation disclosure option (OQ-13) | P |
 | Cross-border transfers | Sub-processor register (provider, location, transfer mechanism); KVKK standard-contract notification (5 business days) where applicable; hosting region decision (OQ-04) | P |
+| Lead export (F-12) | `reports.view` (owner/manager); four columns only (handle, last question, local date, conversation link), audited with counts and period dates only, formula-escaped before download; keep safely and delete when no longer needed (KVKK). | P |
 | Data subject requests | Owner-initiated export and deletion of a customer's conversation (by conversation) | P |
 | Security of processing | This document | S1/P |
 | Breach response | Runbook: detection sources, assessment, KVKK notification timelines (to confirm with counsel), customer communication | P |
@@ -207,3 +208,7 @@ Session 4 adds owner-only controls, safe translated callback banners and explici
 ### Profile import text (F-09 Session 01)
 
 Bio and captions are untrusted: injection detection drops the whole suspicious segment before truncation (700 characters each) and the bounded 8000-character model input remains in the existing labelled untrusted data section. Deterministic excerpt attribution and value parsing run again before storage. Imports never verify facts. No raw imported text is kept in jobs, snapshots, logs or model output records: only candidates/excerpts, provenance, segment counts/lengths/dates and injection flags are persisted, plus a bounded HTTP(S) website URL for Session 02 prefill. Candidate evidence URLs must start with HTTPS at storage and response time. Mock provenance is labelled `simulated` and completion audits carry `is_simulated`. Website fetching is not implemented in Session 01.
+
+### Untrusted video parsing (Session 06)
+
+See ADR-028. Body-size header guard before parsing; bounded disk copy; scratch file 0600 in a private directory; forced MOV/MP4 demuxer and file-only protocol whitelist; argument lists/no shell; minimal environment; timeout/process-group kill; POSIX CPU/address-space/output/descriptor/core rlimits; bounded concurrency. Windows development skips rlimits and relies on timeout. Residual risk: ffmpeg CVEs in thumbnail codecs/demuxers; original video metadata (including QuickTime GPS) is not stripped. Files remain authenticated/private. Instagram metadata stripping is unverified; a lossless metadata-removing remux is a follow-up option, not implemented.

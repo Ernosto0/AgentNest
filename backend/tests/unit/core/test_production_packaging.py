@@ -53,7 +53,13 @@ def test_dockerfile_defines_multistage_nonroot_build_with_frozen_deps() -> None:
     arg_lines = [
         line.strip() for line in dockerfile.splitlines() if line.strip().startswith("ARG ")
     ]
-    assert arg_lines == ['ARG VITE_API_BASE_URL=""']
+    assert arg_lines == ['ARG VITE_API_BASE_URL=""', "ARG FFMPEG_DEBIAN_VERSION=7:5.1.9-0+deb12u1"]
+    assert (
+        'apt-get install -y --no-install-recommends "ffmpeg=${FFMPEG_DEBIAN_VERSION}"' in dockerfile
+    )
+    assert "rm -rf /var/lib/apt/lists/*" in dockerfile
+    assert "dpkg-query -W -f='${Version}' ffmpeg" in dockerfile
+    assert dockerfile.index("apt-get install") < dockerfile.index("USER agentnest:agentnest")
 
     # Non-root execution in final backend runtime stage
     assert "groupadd --system --gid 10001 agentnest" in dockerfile
@@ -106,6 +112,11 @@ def test_caddyfile_routes_and_security_headers() -> None:
         in caddyfile
     )
     assert "reverse_proxy {$API_UPSTREAM:api:8000}" in caddyfile
+
+    assert "@video_upload path_regexp ^/api/v1/workspaces/[^/]+/media/video$" in caddyfile
+    assert "request_body @video_upload" in caddyfile and "max_size 310MB" in caddyfile
+    assert "@other_uploads not path_regexp" in caddyfile
+    assert "request_body @other_uploads" in caddyfile and "max_size 10MB" in caddyfile
 
     # SPA fallback for deep links
     assert "try_files {path} /index.html" in caddyfile

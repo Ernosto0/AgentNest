@@ -80,8 +80,13 @@ export type ActivitySummary = Schemas["ActivitySummaryOut"];
 export type DailyReport = Schemas["DailyReportOut"];
 export type ReportMetric = Schemas["MetricOut"];
 export type MetricItems = Schemas["MetricItemsOut"];
+export type LeadList = Schemas["LeadListOut"];
+export type Lead = Schemas["LeadOut"];
+export type LeadExport = Schemas["LeadExportRequest"];
 export type MissedCustomerReport = Schemas["MissedCustomerReportOut"];
 export type MissedMetric = Schemas["WeeklyMetricOut"];
+export type FollowUpSettingsBody = Schemas["FollowUpSettingsIn"];
+export type FollowUpSettingsData = Schemas["FollowUpSettingsOut"];
 export type MetricItem = Schemas["MetricItemOut"];
 
 // Phase 6: system health and the connection.

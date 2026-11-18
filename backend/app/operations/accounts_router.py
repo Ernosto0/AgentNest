@@ -146,7 +146,10 @@ def set_comment_automation(
     before = account.comment_automation_enabled
     account.comment_automation_enabled = body.enabled
     account.capabilities = compute_capabilities(
-        account.granted_scopes, settings.meta_stories_enabled, body.enabled
+        account.granted_scopes,
+        settings.meta_stories_enabled,
+        body.enabled,
+        settings.meta_human_agent_enabled,
     )
     if before != body.enabled:
         audit.record(

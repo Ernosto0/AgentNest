@@ -25,13 +25,14 @@ from app.ai.schemas import (
     ReplyProposal,
 )
 from app.ai.tasks.matching import match_facts, match_price_facts, tokens
+from app.core.reply_languages import REPLY_LANGUAGES
 from app.integrations.llm.base import LLMMessage
 from app.integrations.llm.fake import fake_implementation
-from app.knowledge.claims import fold
+from app.knowledge.claims import fold, strip_directional_marks
 from app.knowledge.render import placeholder_keys
 
 TASK = "draft_reply"
-LANGUAGES = ("tr", "en")
+LANGUAGES = REPLY_LANGUAGES
 
 
 TRANSCRIPT_LABEL = "customer (voice note, automatic transcript, may contain transcription errors)"
@@ -122,22 +123,56 @@ LEGAL = re.compile(
     r"avukat|\bdava|mahkeme|hukuk|tuketici hakem|lawyer|lawsuit|legal action|\bsue\b"
 )
 HEALTH = re.compile(r"sakatlan|yaralan|ambulans|hastane|injur|accident|hospital")
-PROMOTION = re.compile(r"kampanya|promosyon|deneme|ucretsiz|bedava|\bfree\b|trial|promotion")
-PRICING = re.compile(r"fiyat|ucret|ne kadar|kac (?:tl|para|lira)|tarife|\bprice|how much|\bcost")
+PROMOTION = re.compile(
+    r"kampanya|promosyon|deneme|ucretsiz|bedava|\bfree\b|trial|promotion"
+    r"|бесплатн|пробн|акци[яию]|kostenlos|gratis|probetraining|probestunde|مجان|تجريب"
+)
+# The Russian, German and Arabic words (F-11) run on the reply-language fold: umlauts and ss are
+# folded (``öffnungszeiten`` -> ``offnungszeiten``), Arabic alef forms and ya are unified.
+PRICING = re.compile(
+    r"fiyat|ucret|ne kadar|kac (?:tl|para|lira)|tarife|\bprice|how much|\bcost"
+    r"|\bсколько\s+(?:стоит|стоят|будет|платить)|стоимост|\bцен\w*|прайс|тариф"
+    r"|\bkostet|\bkosten\b|\bpreis"
+    r"|سعر|اسعار|تكلف|بكم|ثمن"
+)
 HOURS = re.compile(
     r"\bsaat|acik mi|kacta|kapanis|acilis|calisma|opening|closing|\bhours\b|what time"
+    r"|\bчасы\s+работы|график|режим\s+работы|во\s+сколько\s+(?:вы\s+)?(?:откры|закры|работа)"
+    r"|до\s+скольки|когда\s+(?:вы\s+)?(?:откры|работа|закрыва)"
+    r"|offnungszeit|oeffnungszeit|geoffnet|\boffnet\b|\boffnen\b|schlies|wann\s+(?:habt|haben)"
+    r"|ساعات\s+(?:ال)?(?:عمل|دوام)|اوقات\s+(?:ال)?(?:عمل|دوام)|مواعيد\s+(?:ال)?(?:عمل|دوام)"
+    r"|متي\s+(?:ت|ي)(?:فتح|غلق|عمل)|دوام|مفتوح"
 )
-LOCATION = re.compile(r"nerede|adres|konum|yol tarifi|\bwhere\b|address|location|directions")
-CONTACT = re.compile(r"telefon|numara|iletisim|whatsapp|phone|contact|call you")
-BOOKING = re.compile(r"rezervasyon|randevu|kayit ol|nasil kayit|\bbook|reserv|appointment|sign up")
+LOCATION = re.compile(
+    r"nerede|adres|konum|yol tarifi|\bwhere\b|address|location|directions"
+    r"|\bадрес|где\s+(?:вы\s+)?(?:находит|располож)|как\s+(?:вас\s+)?(?:найти|добраться|проехать)"
+    r"|\badresse|\bwo\s+(?:seid|sind|befindet)|anfahrt|standort|wegbeschreibung"
+    r"|عنوان|اين\s+(?:تقعون|موقع|مكان|انتم)|موقع"
+)
+CONTACT = re.compile(
+    r"telefon|numara|iletisim|whatsapp|phone|contact|call you"
+    r"|\bтелефон|связаться|ватсап|номер\s+телефона|telefon|kontakt|erreichen|anrufen|rufnummer"
+    r"|هاتف|تلفون|جوال|تواصل|واتساب|رقم"
+)
+BOOKING = re.compile(
+    r"rezervasyon|randevu|kayit ol|nasil kayit|\bbook|reserv|appointment|sign up"
+    r"|записа|\bзапис[ьи]\b|бронир|резерв"
+    r"|\bbuchen|buchung|reservier|\btermin|anmeld"
+    r"|حجز|احجز|موعد|اسجل|تسجيل"
+)
 # Sector-neutral words only (ADR-023): a question about a particular service is recognised by
 # the labels of the workspace's own ``service.*`` facts instead.
 SERVICES = re.compile(
     r"hizmet|\bders|\burun|\bmenu|neler var|satiyor"
     r"|classes|services|products|\boffer|do you have|do you sell"
+    r"|услуг|занят|тренировк|курс|angebot|kurse|leistung|dienstleistung|habt\s+ihr"
+    r"|خدمات|دروس|حصص|دورات"
 )
 GREETING = re.compile(
-    r"^(merhaba|selam|gunaydin|iyi gunler|hello|hi|hey|good (?:morning|evening))\b"
+    r"^(merhaba|selam|gunaydin|iyi gunler|hello|hi|hey|good (?:morning|evening)"
+    r"|привет|здравствуйте|добрый\s+(?:день|вечер)|доброе\s+утро"
+    r"|hallo|guten\s+(?:tag|morgen|abend)|servus|moin"
+    r"|مرحبا|اهلا|السلام\s+عليكم|صباح\s+الخير|مساء\s+الخير)\b"
 )
 
 TEXT = {
@@ -166,6 +201,45 @@ TEXT = {
         "plain": "{ph}",
         "services": "Our services:\n{lines}",
         "promo": "Our current offer: {ph}",
+    },
+    "ru": {
+        "greeting": "Здравствуйте! Чем мы можем вам помочь?",
+        "price_one": "Здравствуйте! {label}: {ph}.",
+        "price_many": "Здравствуйте! Наши цены:\n{lines}",
+        "hours": "Часы работы: {ph}",
+        "address": "Наш адрес: {ph}",
+        "phone": "Телефон: {ph}",
+        "email": "Эл. почта: {ph}",
+        "line": "- {label}: {ph}",
+        "plain": "{ph}",
+        "services": "Наши услуги:\n{lines}",
+        "promo": "Наше предложение: {ph}",
+    },
+    "de": {
+        "greeting": "Hallo! Wie können wir Ihnen helfen?",
+        "price_one": "Hallo! {label}: {ph}.",
+        "price_many": "Hallo! Unsere Preise:\n{lines}",
+        "hours": "Unsere Öffnungszeiten: {ph}",
+        "address": "Unsere Adresse: {ph}",
+        "phone": "Telefon: {ph}",
+        "email": "E-Mail: {ph}",
+        "line": "- {label}: {ph}",
+        "plain": "{ph}",
+        "services": "Unser Angebot:\n{lines}",
+        "promo": "Unser aktuelles Angebot: {ph}",
+    },
+    "ar": {
+        "greeting": "مرحبًا! كيف يمكننا مساعدتك؟",
+        "price_one": "مرحبًا! {label}: {ph}.",
+        "price_many": "مرحبًا! أسعارنا:\n{lines}",
+        "hours": "ساعات العمل: {ph}",
+        "address": "عنواننا: {ph}",
+        "phone": "الهاتف: {ph}",
+        "email": "البريد الإلكتروني: {ph}",
+        "line": "- {label}: {ph}",
+        "plain": "{ph}",
+        "services": "خدماتنا:\n{lines}",
+        "promo": "عرضنا الحالي: {ph}",
     },
 }
 
@@ -254,7 +328,16 @@ def _price_reply(
         return _cannot(task_input, "pricing")
     # The product is recognised by the labels of the workspace's own prices (ADR-023), so no
     # sector-specific key is ever assumed. Generic price words never select a product.
-    is_specific, matched = match_price_facts(folded, prices)
+    price_query = folded
+    if task_input.reply_language == "de":
+        # Generic German price words are not product names. Unknown products still fail closed.
+        price_query = re.sub(
+            r"\b(?:wie|viel|kostet|kosten|preis|preise|bitte|hallo|danke|was|ist|sind|eure|euer"
+            r"|ihre|ihr|die|der|das|den|dem|ein|eine|einen|mir|uns|mal|gerne|mit)\b",
+            " ",
+            price_query,
+        )
+    is_specific, matched = match_price_facts(price_query, prices)
     if is_specific and not matched:
         # "how much is this?" under a story: the story's title says which product it means.
         title = _story_title(task_input)
@@ -318,7 +401,7 @@ def _list_reply(
 def fake_draft_reply(task_input: DraftReplyInput, schema: Any = None) -> ReplyProposal:
     strings = TEXT.get(task_input.reply_language, TEXT["en"])
     text = _recent_customer_text(task_input)
-    folded = fold(text)
+    folded = fold(strip_directional_marks(text))
 
     flags: list[str] = []
     intent = "other"

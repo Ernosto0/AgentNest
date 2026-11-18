@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.approvals import repository as approvals_repo
 from app.core.context import WorkspaceContext
 from app.identity.models import User
-from app.inbox import stories
+from app.inbox import human_agent, stories
 from app.inbox.attention import customer_number
 from app.inbox.context import MESSAGING_WINDOW
 from app.inbox.models import (
@@ -35,6 +35,7 @@ from app.inbox.schemas import (
     ValidationOut,
 )
 from app.knowledge.sources import FactSource, fact_sources, unique_sources
+from app.policy.message_tag import HUMAN_AGENT_WINDOW, WindowState
 
 PREVIEW_CHARS = 80
 
@@ -72,7 +73,24 @@ def _preview(message: Message | None) -> str | None:
     return text[:PREVIEW_CHARS] or None
 
 
-def conversation_out(conversation: Conversation, last: Message | None) -> ConversationOut:
+def conversation_out(
+    conversation: Conversation,
+    last: Message | None,
+    *,
+    now: datetime | None = None,
+    human_agent_available: bool = False,
+) -> ConversationOut:
+    state: WindowState = "closed"
+    until: datetime | None = None
+    if now is not None:
+        state = human_agent.state_for(
+            conversation.last_inbound_at,
+            now,
+            human_agent_available=human_agent_available,
+            margin=human_agent.NEW_REPLY_MARGIN,
+        )
+        if state == "human_agent_only" and conversation.last_inbound_at is not None:
+            until = conversation.last_inbound_at + HUMAN_AGENT_WINDOW
     return ConversationOut(
         id=conversation.id,
         social_account_id=conversation.social_account_id,
@@ -83,6 +101,8 @@ def conversation_out(conversation: Conversation, last: Message | None) -> Conver
         attention=conversation.attention,
         handling_mode=conversation.handling_mode,
         window_ends_at=window_end(conversation),
+        window_state=state,
+        human_agent_until=until,
         is_simulated=conversation.is_simulated,
     )
 
@@ -355,5 +375,6 @@ def draft_out(
         window_ends_at=window_end(conversation),
         created_at=draft.created_at,
         is_simulated=draft.is_simulated,
+        message_tag="HUMAN_AGENT" if draft.message_tag == "HUMAN_AGENT" else None,
         transcripts=draft_transcripts_out(session, ctx, draft),
     )

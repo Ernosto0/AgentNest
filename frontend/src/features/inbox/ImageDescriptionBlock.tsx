@@ -68,14 +68,14 @@ export function ImageDescriptionBlock({
         </span>
       </figcaption>
       {item.description ? (
-        <p className="mt-1.5 text-[0.9375rem] leading-6 break-words whitespace-pre-wrap">{item.description}</p>
+        <p dir="auto" className="mt-1.5 text-[0.9375rem] leading-6 break-words whitespace-pre-wrap">{item.description}</p>
       ) : (
         <p className="mt-1.5 text-metadata text-secondary italic">{t("convo.imageDescription.erased")}</p>
       )}
       {item.visible_text ? (
         <div className="mt-2" data-testid="image-description-text">
           <p className="text-xs font-semibold text-secondary">{t("convo.imageDescription.visibleText")}</p>
-          <blockquote className="mt-1 border-l-2 border-border pl-2.5 text-[0.9375rem] leading-6 break-words whitespace-pre-wrap">
+          <blockquote dir="auto" className="mt-1 border-s-2 border-border ps-2.5 text-[0.9375rem] leading-6 break-words whitespace-pre-wrap">
             {item.visible_text}
           </blockquote>
         </div>

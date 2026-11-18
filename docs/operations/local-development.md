@@ -64,6 +64,20 @@ To test the Owner Messaging Channel locally with a live Telegram bot without exp
    ```
 4. The runner invokes `getUpdates` with long-polling timeouts, tracks `update_id` offsets, deduplicates via `telegram_updates`, and routes updates through `process_update`. Optional CLI flags: `--timeout <seconds>` (default 30), `--limit <count>` (default 100). Stop cleanly with Ctrl+C.
 
+### WhatsApp owner channel (optional, needs a Meta number)
+
+The channel is off without credentials. Offline tests use `httpx.MockTransport`; nothing
+in CI calls Meta. There is no polling mode.
+
+To try it live, configure a Meta app with the WhatsApp product and a test number, then set
+the WhatsApp variables in `.env` (see [environment variables](environment-variables.md)).
+Use `https://<public host>/api/v1/webhooks/whatsapp` as the webhook callback, enter the same
+verify token and subscribe to the `messages` field. POST deliveries require the app-secret
+HMAC signature over the raw body. In Settings, generate a WhatsApp link code and send it
+to the business number, using the `wa.me` link if available. This inbound message opens
+the service window for the fixed confirmation reply. Free text never runs a command.
+Live number, webhook and message results remain **pending** until recorded.
+
 From Windows PowerShell 5.1 the same commands read, for example: `cd backend; uv run uvicorn app.main:create_app --factory --reload --port 8000`.
 
 Logs go to **stderr** (console format in development, JSON in production), so stdout stays clean for machine-readable CLI output.
@@ -295,3 +309,9 @@ npm run build        # static files in landing/dist/
 ```
 
 Without `VITE_WAITLIST_ENDPOINT` (locally `http://localhost:8000/api/v1/waitlist`) the form runs in preview mode (see [environment-variables.md](environment-variables.md)). Details: [landing/README.md](../../landing/README.md).
+
+Carousel simulator failures (Session 05): failure rules accept `create_carousel_item` or `create_carousel_container` and optional `skip_first` (non-negative, default 0), to let matching calls succeed before consuming `remaining`. `create_container` still targets only single-image/story containers. The dev panel exposes these operations and the skip count.
+
+### Local video uploads
+
+Install both binaries: Windows `winget install Gyan.FFmpeg`, macOS `brew install ffmpeg`, Debian/Ubuntu `apt install ffmpeg`. Without them video upload returns retryable 503 VIDEO_PROBE_UNAVAILABLE. `VIDEO_PROBER=fake` supports demos and tests without binaries; never use fake in production (configuration refuses it). The real-binary integration test skips when either binary is absent. Windows uses wall timeouts without POSIX rlimits. No Docker or live Meta run is needed for fake tests.

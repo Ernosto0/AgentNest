@@ -81,6 +81,7 @@ RESTORED_FENCED_CODE = "RESTORED_FROM_BACKUP_FENCED"
 RESTORED_HOLD_REASON = "RESTORED_FROM_BACKUP"
 
 OUTBOUND_FENCED_JOB_TYPES = (
+    "follow_up_check",
     "send_reply",
     "publish_content",
     "agent_wake",
@@ -96,6 +97,7 @@ REQUIRED_CORE_TABLES = (
     "conversations",
     "messages",
     "reply_drafts",
+    "conversation_follow_ups",
     "operations",
     "audit_logs",
     "fact_versions",

@@ -136,6 +136,11 @@ PUSH_TYPES: dict[str, str] = {
     "account.needs_reauth": "failures",
 }
 
+# WhatsApp (F-06, ADR-027): the same types as Web Push plus the daily summary. Linking the number is
+# the opt-in (there is no per-category preference yet). The text is fixed per type, in
+# ``integrations/channels/whatsapp/templates.py``; customer text is never included.
+WHATSAPP_TYPES: frozenset[str] = frozenset(PUSH_TYPES) | {"report.daily_ready"}
+
 FRONTEND_FILE = (
     Path(__file__).resolve().parents[3]
     / "frontend"

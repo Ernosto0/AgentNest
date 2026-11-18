@@ -19,6 +19,8 @@ const KEYS = new Set([
   "unanswered_conversations",
   "answered_questions",
   "after_hours_price_answers",
+  "follow_ups_sent",
+  "follow_up_replies",
 ]);
 
 /** The records behind one number of the weekly report. Their count is the number. */

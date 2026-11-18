@@ -72,6 +72,64 @@ class Studio:
         self.session.flush()
         return asset
 
+    def video_asset(
+        self,
+        created_at: datetime,
+        *,
+        thumbnail: MediaAsset | None = None,
+        status: str = "ready",
+    ) -> MediaAsset:
+        key = build_key(self.workspace.id, uuid.uuid4(), created_at, "mp4")
+        self.storage.put(key, io.BytesIO(b"\x00\x00\x00\x20ftypisom"), "video/mp4")
+        asset = MediaAsset(
+            workspace_id=self.workspace.id,
+            kind="video",
+            duration_ms=10000,
+            video_codec="h264",
+            audio_codec="aac",
+            frame_rate=30,
+            bitrate_bps=2_000_000,
+            container="mp4",
+            thumbnail_media_asset_id=thumbnail.id if thumbnail else None,
+            storage_backend="local",
+            storage_key=key,
+            mime_type="video/mp4",
+            byte_size=16,
+            width=1080,
+            height=1920,
+            sha256="b" * 64,
+            status=status,
+            created_at=created_at,
+        )
+        self.session.add(asset)
+        self.session.flush()
+        return asset
+
+    def thumbnail_asset(
+        self,
+        created_at: datetime,
+        *,
+        status: str = "ready",
+    ) -> MediaAsset:
+        key = build_key(self.workspace.id, uuid.uuid4(), created_at, "jpg")
+        self.storage.put(key, io.BytesIO(b"\xff\xd8jpegthumb"), "image/jpeg")
+        asset = MediaAsset(
+            workspace_id=self.workspace.id,
+            kind="video_thumbnail",
+            storage_backend="local",
+            storage_key=key,
+            mime_type="image/jpeg",
+            byte_size=11,
+            width=1080,
+            height=1920,
+            sha256="c" * 64,
+            status=status,
+            created_at=created_at,
+        )
+        self.session.add(asset)
+        self.session.flush()
+        return asset
+
     def item(
         self, asset: MediaAsset, status: str, *, published_at: datetime | None = None
     ) -> ContentItem:
@@ -311,3 +369,55 @@ def test_the_content_detail_says_the_image_was_deleted(
     assert (
         env.call(env.owner, "GET", f"/media/{published.media_asset_id}/content").status_code == 404
     )
+
+
+# --- video and thumbnail retention ------------------------------------------------------------
+
+
+def test_orphan_video_and_thumbnail_deleted_together_after_7_days(
+    studio: Studio, shared_session_factory: SessionFactory
+) -> None:
+    young_thumb = studio.thumbnail_asset(ago(7, -1))
+    young_video = studio.video_asset(ago(7, -1), thumbnail=young_thumb)
+
+    old_thumb = studio.thumbnail_asset(ago(7, 1))
+    old_video = studio.video_asset(ago(7, 1), thumbnail=old_thumb)
+
+    assert studio.run(shared_session_factory) == 2
+
+    assert (young_video.status, studio.has_file(young_video)) == ("ready", True)
+    assert (young_thumb.status, studio.has_file(young_thumb)) == ("ready", True)
+    assert (old_video.status, studio.has_file(old_video)) == ("deleted", False)
+    assert (old_thumb.status, studio.has_file(old_thumb)) == ("deleted", False)
+
+
+def test_thumbnail_kept_while_parent_video_is_kept_by_content_item(
+    studio: Studio, shared_session_factory: SessionFactory
+) -> None:
+    old_thumb = studio.thumbnail_asset(ago(30))
+    video = studio.video_asset(ago(30), thumbnail=old_thumb)
+    studio.item(video, "scheduled")
+
+    assert studio.run(shared_session_factory) == 0
+    assert (video.status, studio.has_file(video)) == ("ready", True)
+    assert (old_thumb.status, studio.has_file(old_thumb)) == ("ready", True)
+
+
+def test_video_cleanup_crash_safety_finishes_thumbnail_on_next_run(
+    studio: Studio, shared_session_factory: SessionFactory
+) -> None:
+    old_thumb = studio.thumbnail_asset(ago(30))
+    old_video = studio.video_asset(ago(30), thumbnail=old_thumb)
+
+    # Simulate a crash after the video pass: video row is deleted, its file is gone,
+    # but the thumbnail row is still ready with its file intact.
+    (studio.settings.media_root / old_video.storage_key).unlink()
+    old_video.status = "deleted"
+    old_video.deleted_at = NOW
+    studio.session.commit()
+
+    assert (old_thumb.status, studio.has_file(old_thumb)) == ("ready", True)
+
+    # Next cleanup run processes the orphan thumbnail whose parent video is now deleted
+    assert studio.run(shared_session_factory) == 1
+    assert (old_thumb.status, studio.has_file(old_thumb)) == ("deleted", False)

@@ -18,7 +18,7 @@ from app.agent.tools.broker import BrokerContext, ToolInputError
 from app.content import grounding, scheduling, service, transitions
 from app.content.models import ContentItem, MediaAsset
 from app.content.payload import approval_payload, approval_summary
-from app.content.templates.link import merge_references, render_references
+from app.content.templates.link import item_render_references, merge_references
 from app.core.canonical import canonical_json, payload_hash
 from app.core.clock import Clock
 from app.core.config import get_settings
@@ -71,7 +71,11 @@ def _references(
 
 def publication_current(db: Session, clock: Clock, item: ContentItem, action: AgentAction) -> bool:
     """Keep fact versions bound even if an edit preserves a fact's displayed value."""
-    if not action.content_intent or item.version != action.version:
+    if (
+        item.content_type in ("feed_carousel", "reel")
+        or not action.content_intent
+        or item.version != action.version
+    ):
         return False
     from app.inbox.system import system_context
 
@@ -158,7 +162,7 @@ def read(db: Session, clock: Clock, context: BrokerContext, args: BaseModel) -> 
             )
         )
     else:
-        query = query.where(MediaAsset.status == "ready")
+        query = query.where(MediaAsset.status == "ready", MediaAsset.kind == "image")
     if request.cursor:
         query = query.where(model.id > request.cursor)
     rows = cast(
@@ -212,6 +216,8 @@ def read(db: Session, clock: Clock, context: BrokerContext, args: BaseModel) -> 
 def _item(db: Session, context: BrokerContext, request: Target) -> ContentItem:
     task = _task(db, context)
     item = service.get_item(db, context.workspace, request.content_id, lock=True)
+    if item.content_type in ("feed_carousel", "reel"):
+        raise ToolInputError("carousel or reel content is not available to the agent")
     if item.social_account_id not in (None, context.account_id):
         raise ToolInputError("wrong account")
     if not _selected(db, task, "content", item.id):
@@ -233,7 +239,9 @@ def _selected(db: Session, task: OwnerTask, kind: str, selected: uuid.UUID) -> b
     if kind == "media":
         count = db.scalar(
             select(func.count(MediaAsset.id)).where(
-                MediaAsset.workspace_id == task.workspace_id, MediaAsset.status == "ready"
+                MediaAsset.workspace_id == task.workspace_id,
+                MediaAsset.status == "ready",
+                MediaAsset.kind == "image",
             )
         )
     else:
@@ -324,6 +332,8 @@ def prepare(db: Session, clock: Clock, context: BrokerContext, args: BaseModel) 
             MediaAsset.status == "ready",
         )
     )
+    if asset is not None and asset.kind != "image":
+        return {"status": "refused", "reason": "MEDIA_KIND_INVALID"}
     if asset is None or task.read_refs.get(f"media:{asset.id}") != asset.sha256:
         raise ToolInputError("read and select ready media first")
     if not _selected(db, task, "media", asset.id):
@@ -375,6 +385,8 @@ def _publish_intent(
         account_id=context.account_id,
     )
     ready = service._require_valid(checked, context.workspace.locale)
+    if item.content_type in ("feed_carousel", "reel") or ready.media is None:
+        raise ToolInputError("carousel or reel content is not available to the agent")
     references = _references(db, clock, context.workspace, item, ready.claims.references)
     payload = approval_payload(
         item,
@@ -511,6 +523,7 @@ def execute(db: Session, clock: Clock, action: AgentAction) -> None:
         if (
             asset is None
             or asset.workspace_id != ctx.workspace_id
+            or asset.kind != "image"
             or asset.status != "ready"
             or asset.sha256 != intent["media_sha256"]
             or payload_hash(intent) != action.payload_hash
@@ -552,7 +565,7 @@ def execute(db: Session, clock: Clock, action: AgentAction) -> None:
             item.id,
             merge_references(
                 sorted(set(claims.references) | set(rendered.facts if rendered else ())),
-                render_references(db, ctx, item.media_asset_id),
+                item_render_references(db, ctx, item),
             ),
         )
         action.payload_ref = item.id
@@ -563,6 +576,8 @@ def execute(db: Session, clock: Clock, action: AgentAction) -> None:
         }
     else:
         item = service.get_item(db, ctx, uuid.UUID(action.target_ref), lock=True)
+        if item.content_type in ("feed_carousel", "reel"):
+            raise AppError("APPROVAL_STALE")
         if item.version != action.version or item.social_account_id not in (
             None,
             context.account_id,
@@ -654,7 +669,7 @@ def execute(db: Session, clock: Clock, action: AgentAction) -> None:
                     item.id,
                     merge_references(
                         [(uuid.UUID(fid), ver) for fid, ver in intent["fact_refs"]],
-                        render_references(db, ctx, item.media_asset_id),
+                        item_render_references(db, ctx, item),
                     ),
                 )
                 service.enqueue_publish(db, clock, item)
