@@ -299,8 +299,11 @@ def run_retention(
     messages = run_tenant(
         _null_columns(
             Message,
-            ["text"],
-            and_(Message.provider_timestamp < text_cutoff, Message.text.is_not(None)),
+            ["text", "agent_enquiry_intent"],
+            and_(
+                Message.provider_timestamp < text_cutoff,
+                or_(Message.text.is_not(None), Message.agent_enquiry_intent.is_not(None)),
+            ),
         )
     )
     # A voice-note transcript is the customer's speech as text: it goes with the message text.

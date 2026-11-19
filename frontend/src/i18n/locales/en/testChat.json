@@ -68,6 +68,13 @@
     },
     "reasonFallback": "The assistant’s rules asked for a person to check this.",
     "reason": {
+      "SANDBOX_CALENDAR_SIMULATED": "This practice request would use the calendar. No real availability was checked and no appointment was changed.",
+      "SANDBOX_OWNER_INPUT_REQUIRED": "The Agent would ask you for more information. Practice does not send you a notification.",
+      "AGENT_INACTIVE": "Your Account Agent is paused or unavailable, so it would not send a reply.",
+      "AGENT_SETTINGS_CHANGED": "Your Agent settings changed during practice. Try the message again with your current settings.",
+      "AGENT_HANDOFF": "The Agent handed this request to a person instead of proposing a reply.",
+      "AGENT_STEP_LIMIT": "The Agent reached its limit for this practice request and would need a person to continue.",
+      "AGENT_CONTEXT_LIMIT": "This practice conversation is too large for the Agent. Start a fresh practice chat.",
       "POLICY_REQUIRES_APPROVAL": "Your settings ask you to approve replies before they are sent.",
       "POLICY_AUTO": "Your settings let the assistant send this kind of reply by itself.",
       "basic_verified_topic": "This is a basic verified question and your settings allow sending automatically.",

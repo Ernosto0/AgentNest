@@ -688,7 +688,7 @@ def erase_account(db: Session, clock: Clock, workspace: uuid.UUID, account: uuid
     db.execute(
         update(Message)
         .where(Message.workspace_id == workspace, Message.social_account_id == account)
-        .values(text=None, attachments=[])
+        .values(text=None, attachments=[], agent_enquiry_intent=None)
     )
     from app.inbox.image_erasure import erase_image_descriptions
     from app.inbox.models import MessageImageDescription, MessageTranscript

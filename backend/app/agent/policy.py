@@ -157,6 +157,45 @@ _MIXED_SERVICES_AND_PRICES = re.compile(
     r"|(?:خدمات\s*و\s*اسعار|خدمات\s*و\s*سعر)"
 )
 
+# A greeting is not evidence that the rest of the request is a basic question. In
+# particular, a model-selected fact must never turn an unknown customer request
+# into an automatic-send grant. Split additional requests conservatively; a
+# phrase we cannot classify stays a human decision even if another phrase is FAQ.
+_REQUEST_PARTS = re.compile(
+    r"[,،\n;?!؟]+|\s+(?:and|also|ve|ayrica|und|ausserdem|и|также|و)\s+", re.I
+)
+_GREETING_SEPARATORS = re.compile(r"^[\s,.:!؟!?—–-]+|[\s,.:!؟!?—–-]+$")
+
+
+def has_unrecognized_request(text: str | None) -> bool:
+    """Reject an unclassified request alongside an otherwise basic phrase.
+
+    This only restricts authority. Matching a fact in the proposed reply is not
+    evidence about the customer's request, and greeting words cover themselves
+    rather than arbitrary text after them.
+    """
+    folded = fold(strip_directional_marks(text or ""))
+    for part in _REQUEST_PARTS.split(folded):
+        part = _GREETING_SEPARATORS.sub("", part).strip()
+        if not part:
+            continue
+        # Remove a greeting prefix to inspect the substantive request after it.
+        greeting = _TOPIC_PATTERNS[Topic.GREETING].match(part)
+        while greeting:
+            part = _GREETING_SEPARATORS.sub("", part[greeting.end() :]).strip()
+            if not part:
+                break
+            greeting = _TOPIC_PATTERNS[Topic.GREETING].match(part)
+        if not part:
+            continue
+        if not any(
+            pattern.search(part)
+            for topic, pattern in _TOPIC_PATTERNS.items()
+            if topic != Topic.GREETING
+        ):
+            return True
+    return False
+
 
 @dataclass(frozen=True)
 class PolicyClassification:
@@ -437,13 +476,11 @@ def classify_request(
     resolved_topic: Topic | None = None
     if substantive_topics:
         resolved_topic = next(iter(substantive_topics))
-    elif fact_topics:
-        resolved_topic = next(iter(fact_topics))
     elif has_greeting:
         resolved_topic = Topic.GREETING
 
     # 8. Unclear or Unrecognized Request
-    if resolved_topic is None:
+    if resolved_topic is None or has_unrecognized_request(inbound_text):
         return PolicyClassification(
             topics=(),
             primary_topic=Topic.UNKNOWN.value,

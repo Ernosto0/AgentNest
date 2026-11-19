@@ -347,6 +347,16 @@ Constraints: `unique (workspace_id) where status <> 'disconnected'` (one active 
 Index: `(workspace_id, attention, last_message_at desc)`.
 
 **`messages`**
+
+Pilot review correction (2026-11-19, migration `0102`): nullable checked
+`agent_enquiry_intent` is `pricing` or `booking`. It records scoped Account Agent customer
+enquiry evidence on the original message, before a reply draft/calendar mutation is required.
+It stores no extra customer text, does not authorize an action and never proves conversion.
+Typed inbound text and completed voice transcripts use deterministic topic detection;
+customer-origin calendar availability/book tools can record booking evidence before refusal.
+The column inherits `messages` RLS/runtime privileges and provenance. Provider deletion,
+conversation/customer/account erasure and message-text retention clear it; expired/deleted
+sources cannot regain it from late media completion. Data-subject exports include the enum.
 | Column | Type | Notes |
 |---|---|---|
 | id, workspace_id | uuid | |

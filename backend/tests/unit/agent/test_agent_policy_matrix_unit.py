@@ -22,6 +22,35 @@ from app.agent.policy import (
     evaluate_action_policy,
 )
 
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I need a bespoke arrangement for my entire team",
+        "Hello, could you arrange airport transfers for our entire team?",
+        "What are your opening hours, could you arrange airport transfers for our entire team?",
+        "What are your opening hours and could you arrange airport transfers for our entire team?",
+    ],
+)
+def test_unknown_request_cannot_be_promoted_by_model_selected_facts(text):
+    classification = classify_request(
+        action_type="dm.send",
+        surface="dm",
+        inbound_text=text,
+        template="{{fact:pricing.monthly}}",
+        prices_shared=True,
+    )
+    assert not classification.is_basic
+    assert (
+        evaluate_action_policy(
+            ActionRule(mode="automatic"),
+            classification,
+            base_decision=Decision("automatic", "delegated"),
+        ).kind
+        == "ask"
+    )
+
+
 # Helper fixtures & shortcuts
 AUTO_RULE = ActionRule(mode="automatic")
 ASK_RULE = ActionRule(mode="ask")

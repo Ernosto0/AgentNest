@@ -83,10 +83,12 @@ def _reserve_repair(deps: RunnerDeps, workspace_id: uuid.UUID, run_id: uuid.UUID
 def run_step(
     deps: RunnerDeps,
     ctx: WorkspaceContext,
-    step_id: uuid.UUID,
+    step_id: uuid.UUID | None,
     request: LLMStepRequest,
     *,
     job_id: uuid.UUID | None = None,
+    test_turn_id: uuid.UUID | None = None,
+    allow_repair: bool = True,
 ) -> StepOutcome:
     """Call a model once (one schema repair allowed), with no open DB transaction."""
     if request.task != "account_agent_step":
@@ -109,11 +111,27 @@ def run_step(
                 AgentStep.workspace_id == ctx.workspace_id, AgentStep.id == step_id
             )
         )
-        if step is None:
+        if test_turn_id is not None:
+            from app.inbox.models import AssistantTestTurn
+
+            turn = session.scalar(
+                select(AssistantTestTurn).where(
+                    AssistantTestTurn.workspace_id == ctx.workspace_id,
+                    AssistantTestTurn.id == test_turn_id,
+                    AssistantTestTurn.status == "pending",
+                )
+            )
+            if step_id is not None or turn is None:
+                raise ValueError("invalid isolated Agent practice turn")
+        elif step is None:
             raise ValueError("agent step not found in workspace")
-        if step.status != "model_pending":
+        if step is not None and step.status != "model_pending":
             raise ValueError("agent step is not waiting for a model result")
-        if session.scalar(select(AgentRun.id).where(AgentRun.agent_step_id == step.id)) is not None:
+        if (
+            step is not None
+            and session.scalar(select(AgentRun.id).where(AgentRun.agent_step_id == step.id))
+            is not None
+        ):
             raise ValueError(
                 "agent step already has model-call evidence; recovery must claim a new step"
             )
@@ -130,16 +148,21 @@ def run_step(
         )
         run = AgentRun(
             workspace_id=ctx.workspace_id,
-            agent_step_id=step.id,
+            agent_step_id=step.id if step is not None else None,
             task="account_agent_step",
             status="running",
             provider=deps.provider.name,
             model=model,
-            prompt_version="v1",
+            prompt_version="practice_v1" if test_turn_id is not None else "v1",
             input_snapshot={
                 "message_count": len(request.messages),
                 "tool_names": [item.name for item in request.tools],
                 "observation_count": len(request.observations),
+                **(
+                    {"test_turn_id": str(test_turn_id), "is_simulated": True}
+                    if test_turn_id is not None
+                    else {}
+                ),
             },
             is_fake=deps.provider.is_fake,
             job_id=job_id,
@@ -173,7 +196,7 @@ def run_step(
                     consumed_input = (consumed_input or 0) + exc.usage.input_tokens
                 if exc.usage.output_tokens is not None:
                     consumed_output = (consumed_output or 0) + exc.usage.output_tokens
-            if attempt:
+            if attempt or not allow_repair:
                 break
             if not _reserve_repair(deps, ctx.workspace_id, run_id):
                 budget_exhausted = True

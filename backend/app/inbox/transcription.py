@@ -250,24 +250,22 @@ def wake_drafting(
             and thread.controller_epoch == controller.controller_epoch
             and controller.state in {"active", "paused"}
         ):
-            from app.agent.repository import record_thread_event
+            from app.agent.media import wake_for_media
 
             kind = (
                 "message.transcript_ready"
                 if row.status == "succeeded"
                 else "message.transcription_failed"
             )
-            record_thread_event(
+            wake_for_media(
                 session,
                 clock,
-                workspace_id=row.workspace_id,
-                account_id=conversation.social_account_id,
-                thread_id=thread.id,
+                message=message,
+                thread=thread,
                 kind=kind,
                 source_kind="message_transcript",
                 source_key=f"transcript:{row.id}",
-                source_id=row.id,
-                source_version=1,
+                source_id=str(row.id),
             )
         return
     now = clock.now()
@@ -475,6 +473,16 @@ def transcribe_voice_note(job: JobContext) -> None:
             row.duration_seconds, row.audio_bytes = duration, audio_bytes
             row.completed_at = job.clock.now()
             session.flush()
+            from app.agent.enquiries import record_message_enquiry
+
+            record_message_enquiry(
+                session,
+                job.clock,
+                workspace_id=message.workspace_id,
+                account_id=message.social_account_id,
+                message_id=message.id,
+                text=row.text,
+            )
             _record(
                 session,
                 job.clock,

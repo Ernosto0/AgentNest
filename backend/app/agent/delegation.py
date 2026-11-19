@@ -462,7 +462,7 @@ def _resolve_classification(
     from app.agent.knowledge import prices_shared
     from app.agent.policy import MUTATION_ACTIONS, classify_request
     from app.comments.models import PrivateReplyOpportunity, PublicComment, PublicCommentAction
-    from app.inbox.models import Message, ReplyDraft
+    from app.inbox.models import ReplyDraft
     from app.policy.transcripts import recent_transcript_present
 
     surface = thread.surface if thread else "dm"
@@ -473,12 +473,14 @@ def _resolve_classification(
     if action.action_type == "dm.send":
         draft = session.get(ReplyDraft, action.payload_ref) if action.payload_ref else None
         if draft is not None:
-            msg = (
-                session.get(Message, draft.covers_through_message_id)
-                if draft.covers_through_message_id
+            from app.agent.reply_evidence import escalation_keywords, response_evidence
+
+            evidence = (
+                response_evidence(session, thread, draft.covers_through_message_id)
+                if thread is not None and draft.covers_through_message_id
                 else None
             )
-            inbound_text = msg.text if msg else None
+            inbound_text = evidence.text if evidence else None
             proposal = draft.validation.get("agent_proposal") or {}
             template = draft.template
             owner_ans = bool(proposal.get("owner_answer"))
@@ -488,20 +490,6 @@ def _resolve_classification(
                 if draft.conversation_id
                 else False
             )
-            image_inj = False
-            if msg:
-                from app.inbox.models import MessageImageDescription
-
-                img_inj_row = session.scalar(
-                    select(MessageImageDescription.id)
-                    .where(
-                        MessageImageDescription.workspace_id == ctx.workspace_id,
-                        MessageImageDescription.message_id == msg.id,
-                        MessageImageDescription.injection_suspected.is_(True),
-                    )
-                    .limit(1)
-                )
-                image_inj = img_inj_row is not None
             shared = prices_shared(session, clock, ctx)
             return classify_request(
                 action_type=action.action_type,
@@ -512,7 +500,8 @@ def _resolve_classification(
                 customer_clarification=cust_clar,
                 prices_shared=shared,
                 recent_transcript=has_transcript,
-                image_injection=image_inj,
+                image_injection=evidence.image_injection if evidence else False,
+                workspace_escalation_keywords=escalation_keywords(session, clock, ctx),
             )
 
     if action.action_type in ("comment.reply", "comment.hide", "comment.unhide", "comment.delete"):

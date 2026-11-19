@@ -478,19 +478,17 @@ class TestVoiceNotesAndImageDescriptions:
         db.scalars.return_value.one_or_none.side_effect = [msg, conv]
         db.scalar.side_effect = [agent, thread]
 
-        with patch("app.agent.repository.record_thread_event") as mock_record:
+        with patch("app.agent.media.wake_for_media") as mock_record:
             wake_drafting(db, clock, transcript, correlation_id=None)
             mock_record.assert_called_once_with(
                 db,
                 clock,
-                workspace_id=ws_id,
-                account_id=acc_id,
-                thread_id=thread_id,
+                message=msg,
+                thread=thread,
                 kind="message.transcript_ready",
                 source_kind="message_transcript",
                 source_key=f"transcript:{transcript_id}",
-                source_id=transcript_id,
-                source_version=1,
+                source_id=str(transcript_id),
             )
 
         # Transcript rule forces approval floor in policy even under automatic mode
@@ -601,19 +599,17 @@ class TestVoiceNotesAndImageDescriptions:
         db.scalars.return_value.one_or_none.side_effect = [msg, conv]
         db.scalar.side_effect = [agent, thread]
 
-        with patch("app.agent.repository.record_thread_event") as mock_record:
+        with patch("app.agent.media.wake_for_media") as mock_record:
             wake_after_image_description(db, clock, img_desc, correlation_id=None)
             mock_record.assert_called_once_with(
                 db,
                 clock,
-                workspace_id=ws_id,
-                account_id=acc_id,
-                thread_id=thread_id,
+                message=msg,
+                thread=thread,
                 kind="message.image_described",
                 source_kind="message_image_description",
                 source_key=f"image_desc:{desc_id}",
-                source_id=desc_id,
-                source_version=1,
+                source_id=str(desc_id),
             )
 
 

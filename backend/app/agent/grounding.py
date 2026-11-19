@@ -6,6 +6,7 @@ an arbitrary model span, authorize an effect or make a business availability pro
 
 import re
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -20,7 +21,7 @@ from app.core.clock import Clock
 from app.inbox.models import Message
 from app.knowledge.claims import length_issue, validate_claims
 from app.knowledge.models import BusinessFact
-from app.knowledge.render import RenderResult, placeholder_keys, render
+from app.knowledge.render import RenderableFact, RenderResult, placeholder_keys, render
 from app.knowledge.sources import span_records
 
 
@@ -221,11 +222,34 @@ def validate_reply(
         row.id: row.current_version for row in rows
     }:
         return GroundedReply(errors=("SOURCE_STALE_OR_FORGED",))
-    rendered: RenderResult = render(
-        proposal.template,
-        [as_usable(row, context.workspace, proposal.language) for row in rows],
-        proposal.language,
+    return validate_template_reply(
+        proposal, [as_usable(row, context.workspace, proposal.language) for row in rows]
     )
+
+
+def validate_template_reply(
+    proposal: ReplyValidationArgs, facts: Sequence[RenderableFact]
+) -> GroundedReply:
+    """Pure template grounding shared by the live broker and isolated Agent practice.
+
+    Callers supply only current, visible, usable facts. Every source reference must match
+    exactly; practice cannot invent an exception for values that the live validator rejects.
+    Non-template attribution requires its own persisted live or simulated evidence.
+    """
+    if proposal.calendar_evidence or proposal.owner_answer or proposal.customer_clarification:
+        return GroundedReply(errors=("SOURCE_SCOPE_INVALID",))
+    keys = placeholder_keys(proposal.template)
+    selected = [fact for fact in facts if fact.key in keys]
+    evidence = {source.id: source.version for source in proposal.fact_sources}
+    if len(evidence) != len(proposal.fact_sources):
+        return GroundedReply(errors=("SOURCE_DUPLICATE",))
+    if len(keys) > 20:
+        return GroundedReply(errors=("SOURCE_LIMIT",))
+    if set(keys) != {fact.key for fact in selected} or evidence != {
+        fact.fact_id: fact.version for fact in selected
+    }:
+        return GroundedReply(errors=("SOURCE_STALE_OR_FORGED",))
+    rendered: RenderResult = render(proposal.template, selected, proposal.language)
     if not rendered.ok:
         return GroundedReply(errors=("RENDER_INVALID",))
     claims = validate_claims(rendered.text, rendered, proposal.language)

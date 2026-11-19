@@ -47,7 +47,7 @@ ATTENTION_STATES = ("none", "needs_approval", "needs_human", "failed")
 DIRECTIONS = ("inbound", "outbound")
 SENDER_KINDS = ("customer", "business_app", "business_native")
 DRAFT_SOURCES = ("ai", "approved_answer", "owner")
-DRAFT_DECISIONS = ("auto", "approval_required", "human_required", "blocked", "automatic", "ask")
+DRAFT_DECISIONS = ("auto", "approval_required", "human_required", "blocked")
 DRAFT_STATUSES = (
     "pending_approval",
     "needs_human",
@@ -224,6 +224,10 @@ class Message(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
         ),
         CheckConstraint(_in("direction", DIRECTIONS), name="direction"),
         CheckConstraint(_in("sender_kind", SENDER_KINDS), name="sender_kind"),
+        CheckConstraint(
+            "agent_enquiry_intent IS NULL OR agent_enquiry_intent IN ('pricing', 'booking')",
+            name="agent_enquiry_intent",
+        ),
         # INV-06: one row per provider message id and account.
         Index(
             "uq_messages_account_external_id",
@@ -241,6 +245,7 @@ class Message(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     sender_kind: Mapped[str] = mapped_column(Text, nullable=False)
     external_message_id: Mapped[str | None] = mapped_column(Text)
     text: Mapped[str | None] = mapped_column(Text)
+    agent_enquiry_intent: Mapped[str | None] = mapped_column(Text)
     attachments: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB, nullable=False, server_default=sql_text("'[]'::jsonb")
     )

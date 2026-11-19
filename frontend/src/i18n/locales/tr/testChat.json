@@ -68,6 +68,13 @@
     },
     "reasonFallback": "Asistanın kuralları, bunu bir kişinin kontrol etmesini istedi.",
     "reason": {
+      "SANDBOX_CALENDAR_SIMULATED": "Bu deneme talebi takvimi kullanırdı. Gerçek müsaitlik kontrol edilmedi ve hiçbir randevu değiştirilmedi.",
+      "SANDBOX_OWNER_INPUT_REQUIRED": "Asistan sizden ek bilgi isterdi. Deneme sırasında size bildirim gönderilmez.",
+      "AGENT_INACTIVE": "Hesap asistanınız duraklatılmış veya kullanılamıyor; bu nedenle yanıt göndermezdi.",
+      "AGENT_SETTINGS_CHANGED": "Deneme sırasında asistan ayarlarınız değişti. Mesajı güncel ayarlarınızla tekrar deneyin.",
+      "AGENT_HANDOFF": "Asistan yanıt önermek yerine bu talebi bir kişiye yönlendirdi.",
+      "AGENT_STEP_LIMIT": "Asistan bu deneme talebi için işlem sınırına ulaştı; devam etmek için bir kişi gerekir.",
+      "AGENT_CONTEXT_LIMIT": "Bu deneme konuşması asistan için çok uzun. Yeni bir deneme sohbeti başlatın.",
       "POLICY_REQUIRES_APPROVAL": "Ayarlarınız, yanıtların gönderilmeden önce sizin onayınızı istiyor.",
       "POLICY_AUTO": "Ayarlarınız, asistanın bu tür yanıtları kendisinin göndermesine izin veriyor.",
       "basic_verified_topic": "Bu temel ve doğrulanmış bir sorudur; ayarlarınız otomatik gönderime izin verir.",

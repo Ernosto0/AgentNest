@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.agent.delegation import authorize_action, record_effect_grant
 from app.agent.grounding import ReplyValidationArgs, validate_reply
 from app.agent.models import ACTIVE_RUN_STATES, AgentAction, AgentEvent, AgentSession, AgentThread
+from app.agent.reply_evidence import latest_customer_message, response_evidence
 from app.agent.repository import admit_action, scoped_thread
 from app.agent.tools.broker import BrokerContext, ToolInputError
 from app.core.canonical import payload_hash
@@ -163,9 +164,9 @@ def send(
     )
     owner_source = None
     if proposal.owner_answer:
-        from app.owner_requests.service import evidence
+        from app.owner_requests.service import evidence as owner_evidence
 
-        owner_source = evidence(
+        owner_source = owner_evidence(
             db, clock, context, proposal.owner_answer.id, proposal.owner_answer.version
         )
     media_event = event is not None and (
@@ -232,22 +233,34 @@ def send(
             .limit(1)
         )
     if newest is None:
-        newest = db.scalar(
-            select(Message)
+        raise ToolInputError("no response obligation")
+    if media_event:
+        original_message = newest
+        newest = latest_customer_message(db, thread)
+        if newest is None:
+            raise ToolInputError("no response obligation")
+        if original_message.id not in response_evidence(db, thread, newest.id).message_ids:
+            return {"valid": True, "status": "already_answered"}
+    evidence = response_evidence(db, thread, newest.id)
+    if evidence.media_pending:
+        # Media completion will wake this *same* customer obligation. Do not
+        # send a first reply from incomplete context and a second after OCR/STT.
+        return {"valid": False, "status": "waiting_media", "reason": "MEDIA_PROCESSING"}
+    if media_event:
+        # Defense in depth for old queued media events: the completion is not
+        # an independently evidenced new customer question.
+        covered = db.scalar(
+            select(ReplyDraft.id)
             .where(
-                Message.conversation_id == conversation.id,
-                Message.workspace_id == thread.workspace_id,
-                Message.social_account_id == thread.social_account_id,
-                Message.direction == "inbound",
-                Message.is_deleted.is_(False),
-            )
-            .order_by(
-                Message.provider_timestamp.desc(), Message.created_at.desc(), Message.id.desc()
+                ReplyDraft.workspace_id == thread.workspace_id,
+                ReplyDraft.conversation_id == conversation.id,
+                ReplyDraft.covers_through_message_id == newest.id,
+                ReplyDraft.status == "sent",
             )
             .limit(1)
         )
-    if newest is None:
-        raise ToolInputError("no response obligation")
+        if covered is not None:
+            return {"valid": True, "status": "already_answered", "draft_id": str(covered)}
     if proposal.owner_answer:
         from app.inbox.context import MESSAGING_WINDOW
         from app.operations.send import SEND_MARGIN
@@ -411,45 +424,23 @@ def revalidate(db: Session, clock: Clock, draft: ReplyDraft, conversation: Conve
     checked = validate_reply(db, clock, context, proposal)
     if not (checked.valid and checked.text == draft.text):
         return False
-    if action.policy_grant is not None:
-        from app.agent.knowledge import prices_shared
-        from app.agent.policy import classify_request
-        from app.policy.transcripts import recent_transcript_present
+    from app.agent.knowledge import prices_shared
+    from app.agent.policy import classify_request
+    from app.agent.reply_evidence import escalation_keywords
 
-        if recent_transcript_present(db, thread.workspace_id, conversation.id):
-            return False
-
-        msg = (
-            db.get(Message, draft.covers_through_message_id)
-            if draft.covers_through_message_id
-            else None
-        )
-        if msg:
-            img_inj = db.scalar(
-                select(MessageImageDescription.id)
-                .where(
-                    MessageImageDescription.workspace_id == thread.workspace_id,
-                    MessageImageDescription.message_id == msg.id,
-                    MessageImageDescription.injection_suspected.is_(True),
-                )
-                .limit(1)
-            )
-            if img_inj is not None:
-                return False
-
-        re_check = classify_request(
-            action_type="dm.send",
-            surface="dm",
-            inbound_text=msg.text if msg else None,
-            template=draft.template,
-            used_fact_keys=[
-                str(f["key"]) for f in checked.rendered if isinstance(f, dict) and "key" in f
-            ],
-            owner_answer=bool(proposal.owner_answer),
-            customer_clarification=bool(proposal.customer_clarification),
-            prices_shared=prices_shared(db, clock, context.workspace),
-            recent_transcript=False,
-        )
-        if not re_check.is_basic or re_check.is_blocked:
-            return False
-    return True
+    evidence = response_evidence(db, thread, draft.covers_through_message_id)
+    if not evidence.message_ids or evidence.media_pending:
+        return False
+    re_check = classify_request(
+        action_type="dm.send",
+        surface="dm",
+        inbound_text=evidence.text,
+        template=draft.template,
+        owner_answer=bool(proposal.owner_answer),
+        customer_clarification=bool(proposal.customer_clarification),
+        prices_shared=prices_shared(db, clock, context.workspace),
+        recent_transcript=recent_transcript_present(db, thread.workspace_id, conversation.id),
+        image_injection=evidence.image_injection,
+        workspace_escalation_keywords=escalation_keywords(db, clock, context.workspace),
+    )
+    return not (re_check.is_blocked or (action.policy_grant is not None and not re_check.is_basic))

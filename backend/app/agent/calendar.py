@@ -130,6 +130,9 @@ def availability(
     db: Session, clock: Clock, context: BrokerContext, args: BaseModel
 ) -> dict[str, Any]:
     req = CalendarAvailabilityArgs.model_validate(args)
+    from app.agent.enquiries import record_thread_enquiry
+
+    record_thread_enquiry(db, clock, context)
     tz, _ = _tz(db, context.workspace.workspace_id)
     w_start = datetime.combine(req.local_date, time(0, 0), tzinfo=tz).astimezone(UTC)
     w_end = datetime.combine(
@@ -238,6 +241,9 @@ def _requester_user_id(context: BrokerContext) -> uuid.UUID | None:
 
 def book(db: Session, clock: Clock, context: BrokerContext, args: BaseModel) -> dict[str, Any]:
     req = CalendarBookArgs.model_validate(args)
+    from app.agent.enquiries import record_thread_enquiry
+
+    record_thread_enquiry(db, clock, context)
     thread = scoped_thread(
         db, context.workspace.workspace_id, context.account_id, context.thread_id, lock=True
     )

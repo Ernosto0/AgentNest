@@ -209,6 +209,15 @@ Session 4 adds owner-only controls, safe translated callback banners and explici
 
 Bio and captions are untrusted: injection detection drops the whole suspicious segment before truncation (700 characters each) and the bounded 8000-character model input remains in the existing labelled untrusted data section. Deterministic excerpt attribution and value parsing run again before storage. Imports never verify facts. No raw imported text is kept in jobs, snapshots, logs or model output records: only candidates/excerpts, provenance, segment counts/lengths/dates and injection flags are persisted, plus a bounded HTTP(S) website URL for Session 02 prefill. Candidate evidence URLs must start with HTTPS at storage and response time. Mock provenance is labelled `simulated` and completion audits carry `is_simulated`. Website fetching is not implemented in Session 01.
 
+### Account Agent enquiry metadata (pilot review correction, 2026-11-19)
+
+The optional `messages.agent_enquiry_intent` enum (`pricing`/`booking`) stores only coarse
+reporting evidence against the original customer message; no separate lead text/contact
+copy is retained. Existing message RLS, provenance filters and data-subject export apply.
+Provider deletion, conversation/customer/account erasure and message-text retention clear
+the enum. A late transcript/tool completion rejects erased or expired source messages and
+cannot restore it. Model answers and enquiry labels do not establish appointment conversion.
+
 ### Untrusted video parsing (Session 06)
 
 See ADR-028. Body-size header guard before parsing; bounded disk copy; scratch file 0600 in a private directory; forced MOV/MP4 demuxer and file-only protocol whitelist; argument lists/no shell; minimal environment; timeout/process-group kill; POSIX CPU/address-space/output/descriptor/core rlimits; bounded concurrency. Windows development skips rlimits and relies on timeout. Residual risk: ffmpeg CVEs in thumbnail codecs/demuxers; original video metadata (including QuickTime GPS) is not stripped. Files remain authenticated/private. Instagram metadata stripping is unverified; a lossless metadata-removing remux is a follow-up option, not implemented.

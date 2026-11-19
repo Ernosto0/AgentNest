@@ -2,7 +2,9 @@
 
 Legacy intents qualify regardless of draft status. Agent drafts additionally qualify
 through persisted pricing-fact impact references (the missed report's PRICE_CATEGORY).
-No inference from customer text, human handling, memory, or an invented resolved flag.
+Original Agent messages also carry a minimal persisted enquiry enum, captured at ingestion,
+transcription or a calendar tool request before an action can fail. No report-time inference
+from customer text, human handling, memory, or an invented resolved flag.
 """
 
 import unicodedata
@@ -166,7 +168,21 @@ def lead_rows(ctx: WorkspaceContext, start: datetime, end: datetime) -> Select[A
         Message.provider_timestamp < end,
         has_booking_action,
     )
-    pairs = draft_pairs.union(action_pairs).cte("qualifying_questions")
+    enquiry_pairs = select(
+        Message.conversation_id,
+        Message.id.label("message_id"),
+        Message.provider_timestamp.label("at"),
+        Message.text,
+        Message.agent_enquiry_intent.label("intent"),
+    ).where(
+        real_message(Message, ctx),
+        Message.direction == "inbound",
+        Message.sender_kind == "customer",
+        Message.provider_timestamp >= start,
+        Message.provider_timestamp < end,
+        Message.agent_enquiry_intent.in_(LEAD_INTENTS),
+    )
+    pairs = draft_pairs.union(action_pairs, enquiry_pairs).cte("qualifying_questions")
     first = (
         select(pairs.c.conversation_id, func.min(pairs.c.at).label("first_at"))
         .group_by(pairs.c.conversation_id)

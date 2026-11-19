@@ -351,19 +351,17 @@ def test_wake_drafting_for_agent_controller_succeeded() -> None:
     db.scalars.return_value.one_or_none.side_effect = [msg, conv]
     db.scalar.side_effect = [agent, thread]
 
-    with patch("app.agent.repository.record_thread_event") as mock_record:
+    with patch("app.agent.media.wake_for_media") as mock_record:
         wake_drafting(db, clock, transcript, correlation_id=None)
         mock_record.assert_called_once_with(
             db,
             clock,
-            workspace_id=ws_id,
-            account_id=acc_id,
-            thread_id=thread_id,
+            message=msg,
+            thread=thread,
             kind="message.transcript_ready",
             source_kind="message_transcript",
             source_key=f"transcript:{transcript_id}",
-            source_id=transcript_id,
-            source_version=1,
+            source_id=str(transcript_id),
         )
 
 
@@ -413,19 +411,17 @@ def test_wake_drafting_for_agent_controller_failed() -> None:
     db.scalars.return_value.one_or_none.side_effect = [msg, conv]
     db.scalar.side_effect = [agent, thread]
 
-    with patch("app.agent.repository.record_thread_event") as mock_record:
+    with patch("app.agent.media.wake_for_media") as mock_record:
         wake_drafting(db, clock, transcript, correlation_id=None)
         mock_record.assert_called_once_with(
             db,
             clock,
-            workspace_id=ws_id,
-            account_id=acc_id,
-            thread_id=thread_id,
+            message=msg,
+            thread=thread,
             kind="message.transcription_failed",
             source_kind="message_transcript",
             source_key=f"transcript:{transcript_id}",
-            source_id=transcript_id,
-            source_version=1,
+            source_id=str(transcript_id),
         )
 
 
@@ -469,7 +465,7 @@ def test_wake_drafting_respects_human_takeover() -> None:
     db.scalars.return_value.one_or_none.side_effect = [msg, conv]
     db.scalar.side_effect = [agent, thread]
 
-    with patch("app.agent.repository.record_thread_event") as mock_record:
+    with patch("app.agent.media.wake_for_media") as mock_record:
         wake_drafting(db, clock, transcript, correlation_id=None)
         mock_record.assert_not_called()
 
@@ -514,7 +510,7 @@ def test_wake_drafting_respects_epoch_mismatch() -> None:
     db.scalars.return_value.one_or_none.side_effect = [msg, conv]
     db.scalar.side_effect = [agent, thread]
 
-    with patch("app.agent.repository.record_thread_event") as mock_record:
+    with patch("app.agent.media.wake_for_media") as mock_record:
         wake_drafting(db, clock, transcript, correlation_id=None)
         mock_record.assert_not_called()
 
@@ -530,7 +526,7 @@ def test_wake_drafting_respects_deleted_message() -> None:
     db = MagicMock()
     db.scalars.return_value.one_or_none.return_value = msg
 
-    with patch("app.agent.repository.record_thread_event") as mock_record:
+    with patch("app.agent.media.wake_for_media") as mock_record:
         wake_drafting(db, clock, transcript, correlation_id=None)
         mock_record.assert_not_called()
 
@@ -619,19 +615,17 @@ def test_wake_after_image_description_for_agent_succeeded() -> None:
     db.scalars.return_value.one_or_none.side_effect = [msg, conv]
     db.scalar.side_effect = [agent, thread]
 
-    with patch("app.agent.repository.record_thread_event") as mock_record:
+    with patch("app.agent.media.wake_for_media") as mock_record:
         wake_after_image_description(db, clock, img_desc, correlation_id=None)
         mock_record.assert_called_once_with(
             db,
             clock,
-            workspace_id=ws_id,
-            account_id=acc_id,
-            thread_id=thread_id,
+            message=msg,
+            thread=thread,
             kind="message.image_described",
             source_kind="message_image_description",
             source_key=f"image_desc:{img_desc_id}",
-            source_id=img_desc_id,
-            source_version=1,
+            source_id=str(img_desc_id),
         )
 
 
@@ -682,19 +676,17 @@ def test_wake_after_image_description_for_agent_failed() -> None:
     db.scalars.return_value.one_or_none.side_effect = [msg, conv]
     db.scalar.side_effect = [agent, thread]
 
-    with patch("app.agent.repository.record_thread_event") as mock_record:
+    with patch("app.agent.media.wake_for_media") as mock_record:
         wake_after_image_description(db, clock, img_desc, correlation_id=None)
         mock_record.assert_called_once_with(
             db,
             clock,
-            workspace_id=ws_id,
-            account_id=acc_id,
-            thread_id=thread_id,
+            message=msg,
+            thread=thread,
             kind="message.image_description_failed",
             source_kind="message_image_description",
             source_key=f"image_desc:{img_desc_id}",
-            source_id=img_desc_id,
-            source_version=1,
+            source_id=str(img_desc_id),
         )
 
 
@@ -742,7 +734,7 @@ def test_wake_after_image_description_respects_human_takeover() -> None:
     db.scalars.return_value.one_or_none.side_effect = [msg, conv]
     db.scalar.side_effect = [agent, thread]
 
-    with patch("app.agent.repository.record_thread_event") as mock_record:
+    with patch("app.agent.media.wake_for_media") as mock_record:
         wake_after_image_description(db, clock, img_desc, correlation_id=None)
         mock_record.assert_not_called()
 
@@ -986,6 +978,7 @@ def test_dm_revalidate_fences_recent_transcript() -> None:
 def test_dm_revalidate_fences_image_injection() -> None:
     """revalidate() refuses automatic send if an image description has suspected injection."""
     from app.agent.dm import revalidate
+    from app.agent.reply_evidence import ReplyEvidence
     from app.identity.models import Workspace
 
     ws_id = uuid.uuid4()
@@ -1056,7 +1049,13 @@ def test_dm_revalidate_fences_image_injection() -> None:
 
     with (
         patch("app.agent.dm.validate_reply") as mock_val,
-        patch("app.policy.transcripts.recent_transcript_present", return_value=False),
+        patch("app.agent.dm.recent_transcript_present", return_value=False),
+        patch(
+            "app.agent.dm.response_evidence",
+            return_value=ReplyEvidence("Hello", (msg_id,), image_injection=True),
+        ),
+        patch("app.agent.reply_evidence.escalation_keywords", return_value=[]),
+        patch("app.agent.knowledge.prices_shared", return_value=False),
     ):
         mock_val.return_value = MagicMock(valid=True, text="Hello!")
         assert revalidate(db, clock, draft, conv) is False

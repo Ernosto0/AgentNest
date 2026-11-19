@@ -200,11 +200,28 @@ def _on_test_draft_dead(job: JobContext, error_code: str) -> None:
         return
     with job.session_factory() as session:
         prepared = sandbox.prepare(session, job.clock, job.workspace_id, payload.turn_id)
+        agent_practice = (
+            sandbox.prepare_agent_practice(session, job.clock, prepared)
+            if prepared is not None
+            else None
+        )
         session.commit()
     if prepared is None:
         return
     with job.session_factory() as session:
-        sandbox.apply_plan(session, job.clock, prepared, failed_plan(prepared, "LLM_UNAVAILABLE"))
+        if agent_practice is not None:
+            from app.agent.practice import PracticeResult
+
+            sandbox.apply_agent_practice(
+                session,
+                job.clock,
+                agent_practice,
+                PracticeResult("human_required", ("LLM_UNAVAILABLE",)),
+            )
+        else:
+            sandbox.apply_plan(
+                session, job.clock, prepared, failed_plan(prepared, "LLM_UNAVAILABLE")
+            )
         session.commit()
 
 
@@ -225,8 +242,23 @@ def assistant_test_draft(job: JobContext) -> None:
         return
     with job.session_factory() as session:  # [T1] read-only
         prepared = sandbox.prepare(session, job.clock, job.workspace_id, payload.turn_id)
+        agent_practice = (
+            sandbox.prepare_agent_practice(session, job.clock, prepared)
+            if prepared is not None
+            else None
+        )
         session.commit()
     if prepared is None:  # reset, answered or gone: nothing to do
+        return
+    if agent_practice is not None:
+        from app.agent.practice import run_practice
+
+        result = run_practice(
+            runner_deps(job.session_factory, job.clock), agent_practice, job_id=job.job_id
+        )
+        with job.session_factory() as session:
+            sandbox.apply_agent_practice(session, job.clock, agent_practice, result)
+            session.commit()
         return
     plan = make_plan(  # no transaction is open here
         runner_deps(job.session_factory, job.clock), prepared, job.correlation_id, job.job_id

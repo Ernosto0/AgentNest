@@ -270,24 +270,22 @@ def wake_after_image_description(
             and thread.controller_epoch == controller.controller_epoch
             and controller.state in {"active", "paused"}
         ):
-            from app.agent.repository import record_thread_event
+            from app.agent.media import wake_for_media
 
             kind = (
                 "message.image_described"
                 if row.status == "succeeded"
                 else "message.image_description_failed"
             )
-            record_thread_event(
+            wake_for_media(
                 session,
                 clock,
-                workspace_id=row.workspace_id,
-                account_id=conversation.social_account_id,
-                thread_id=thread.id,
+                message=message,
+                thread=thread,
                 kind=kind,
                 source_kind="message_image_description",
                 source_key=f"image_desc:{row.id}",
-                source_id=row.id,
-                source_version=1,
+                source_id=str(row.id),
             )
         return
     now = clock.now()

@@ -99,6 +99,7 @@ def process_inbound_event(
         ).one_or_none()
         if message is not None:
             message.is_deleted = True
+            message.agent_enquiry_intent = None
             erase_transcripts(
                 session,
                 clock.now(),
@@ -274,6 +275,15 @@ def _on_customer_message(
     from app.agent.control import ensure_thread
 
     if controller.controller_mode == "agent":
+        from app.agent.enquiries import record_message_enquiry
+
+        record_message_enquiry(
+            session,
+            clock,
+            workspace_id=account.workspace_id,
+            account_id=account.id,
+            message_id=message_id,
+        )
         thread = ensure_thread(session, conversation, controller)
         if thread.handling_mode == "agent":
             add_event_and_wake(

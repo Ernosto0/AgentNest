@@ -320,6 +320,7 @@ def export_conversation(
                 "sender_kind": m.sender_kind,
                 "external_message_id": m.external_message_id,
                 "text": m.text,
+                "agent_enquiry_intent": m.agent_enquiry_intent,
                 "attachments": m.attachments,
                 "transcript": transcripts.get(m.id),
                 "image_descriptions": image_descriptions.get(m.id, []),
@@ -436,6 +437,7 @@ def export_customer(
                 "direction": m.direction,
                 "sender_kind": m.sender_kind,
                 "text": m.text,
+                "agent_enquiry_intent": m.agent_enquiry_intent,
                 "attachments": m.attachments,
                 "transcript": transcripts.get(m.id),
                 "image_descriptions": image_descriptions.get(m.id, []),
@@ -653,7 +655,7 @@ def erase_conversation(
             Message.workspace_id == ctx.workspace_id,
             Message.conversation_id == conversation.id,
         )
-        .values(text=None, attachments=[], is_deleted=True)
+        .values(text=None, attachments=[], is_deleted=True, agent_enquiry_intent=None)
     )
     erase_transcripts(
         session,
@@ -972,7 +974,7 @@ def erase_customer(
                 Message.workspace_id == ctx.workspace_id,
                 Message.conversation_id.in_(conv_ids),
             )
-            .values(text=None, attachments=[], is_deleted=True)
+            .values(text=None, attachments=[], is_deleted=True, agent_enquiry_intent=None)
         )
         erase_transcripts(
             session,

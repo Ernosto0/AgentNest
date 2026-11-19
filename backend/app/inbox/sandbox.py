@@ -1,9 +1,10 @@
 """The owner's "try your assistant" chat (F-02): test customer messages answered with the draft the
 assistant would produce, the decision and the facts behind it, and **nothing else**.
 
-The drafting pipeline is the real one: the same facts, the same language choice, the same model
-task (``drafting.make_plan``), the same claim validator and the same policy engine
-(``reply_workflow.decide``). What is different is what happens to the result. A real draft becomes
+Legacy-controlled workspaces use ``drafting.make_plan`` and ``reply_workflow.decide``.
+Agent-controlled workspaces use the production Agent step provider, prompt and tool schemas
+through ``agent.practice`` with pure shared grounding/policy and an isolated tool adapter.
+What is different is what happens to the result. A real draft becomes
 a ``reply_drafts`` row with an approval, a send job, a notification and a customer memory; a test
 turn becomes one ``assistant_test_turns`` row and stops there. The sandbox never touches
 ``conversations``, ``messages``, ``reply_drafts``, ``approvals``, ``operations``,
@@ -15,31 +16,21 @@ Drafting is asynchronous like every other draft: ``submit_message`` stores the t
 """
 
 import uuid
-from datetime import datetime, timedelta
-from typing import Any, Literal
+from datetime import UTC, datetime, time, timedelta
+from typing import TYPE_CHECKING, Any, Literal
 
 from sqlalchemy import delete, func, select, tuple_
 from sqlalchemy.orm import Session
 
 from app.agent.delegation import (
     ActionRule,
-    Mode,
     current_delegation,
 )
-from app.agent.delegation import (
-    Decision as AgentPolicyDecision,
-)
 from app.agent.models import AccountAgent
-from app.agent.policy import (
-    Topic,
-    classify_request,
-    evaluate_action_policy,
-)
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
-from app.core.reply_languages import is_reply_language
 from app.identity.models import Workspace
 from app.inbox.context import (
     MESSAGING_WINDOW,
@@ -58,6 +49,9 @@ from app.knowledge.render import placeholder_keys
 from app.knowledge.sources import fact_sources, unique_sources
 from app.policy import service as policy_service
 from app.policy.rules_reply import APPROVAL, AUTO
+
+if TYPE_CHECKING:
+    from app.agent.practice import PracticeResult, PracticeSnapshot
 
 MAX_MESSAGE_CHARS = 500
 HISTORY_TURNS = 5  # earlier test messages shown to the model as the conversation so far
@@ -248,7 +242,7 @@ def _scrub(turn: AssistantTestTurn) -> None:
 def prepare(
     session: Session, clock: Clock, workspace_id: uuid.UUID, turn_id: uuid.UUID
 ) -> DraftContext | None:
-    """The drafting context of a pending turn (read-only), or ``None`` if there is nothing to do:
+    """The business/test-history snapshot of a pending turn (read-only), or ``None``:
     the turn is gone, already answered or reset, or the workspace no longer exists."""
     turn = session.scalars(
         select(AssistantTestTurn).where(
@@ -339,9 +333,8 @@ def _facts_used(session: Session, context: DraftContext, plan: DraftPlan) -> lis
 def get_controller_mode(session: Session, workspace_id: uuid.UUID) -> Literal["legacy", "agent"]:
     """Detect the selected controller mode for the workspace.
 
-    Checks AccountAgent for the workspace's primary account:
-    is controller_mode == 'agent' and state == 'active'?
-    If yes, practice chat runs in Agent dry-run mode.
+    Checks AccountAgent for the workspace's primary account. A paused Agent stays
+    an Agent controller and its practice result is blocked, never legacy-generated.
     If no account is connected or controller_mode == 'legacy', practice chat runs in Legacy mode.
     """
     account_agent = session.scalar(
@@ -357,11 +350,7 @@ def get_controller_mode(session: Session, workspace_id: uuid.UUID) -> Literal["l
         )
         .order_by(AccountAgent.created_at.desc())
     )
-    if (
-        account_agent is not None
-        and account_agent.controller_mode == "agent"
-        and account_agent.state == "active"
-    ):
+    if account_agent is not None and account_agent.controller_mode == "agent":
         return "agent"
 
     direct_agent = session.scalar(
@@ -369,105 +358,218 @@ def get_controller_mode(session: Session, workspace_id: uuid.UUID) -> Literal["l
         .where(AccountAgent.workspace_id == workspace_id)
         .order_by(AccountAgent.created_at.desc())
     )
-    if (
-        direct_agent is not None
-        and direct_agent.controller_mode == "agent"
-        and direct_agent.state == "active"
-    ):
+    if direct_agent is not None and direct_agent.controller_mode == "agent":
         social = session.get(SocialAccount, direct_agent.social_account_id)
-        if social is None or social.status != "disconnected":
+        if social is not None and social.status != "disconnected":
             return "agent"
 
     return "legacy"
 
 
-def evaluate_agent_dry_run(
-    session: Session,
-    context: DraftContext,
-    plan: DraftPlan,
-    customer_text: str,
-) -> tuple[str, list[str]]:
-    """Determine truthful Account Agent decision and reasons for a dry-run turn.
+def prepare_agent_practice(
+    session: Session, clock: Clock, context: DraftContext
+) -> "PracticeSnapshot | None":
+    """Capture only business settings/knowledge and the signed-in user's test history.
 
-    Reuses production Agent language selection, grounding, and semi-automation policy
-    matrix without executing any live side effects.
+    This never assembles a production customer thread, memory, owner answers or calendar.
     """
-    # 1. Language validation (supports TR, EN, RU, DE, AR; fails closed on unsupported)
-    if context.language.code is None or not is_reply_language(context.language.code):
-        return ("ask", ["LANGUAGE_UNSUPPORTED"])
+    from dataclasses import replace
 
-    # 2. Grounding & claim validator check (INV-02)
-    if plan.grounding_failed or (plan.validation and not plan.validation.get("passed", True)):
-        return ("ask", ["GROUNDING_FAILED"])
-    if plan.text is None and not plan.suggestion_text:
-        return ("ask", ["FACT_NOT_USABLE"])
+    from app.agent.delegation import _grantor_still_owner
+    from app.agent.knowledge import as_usable, visible_predicate
+    from app.agent.models import AgentAction
+    from app.agent.personality import read_personality
+    from app.agent.practice import PracticeSnapshot
+    from app.integrations.calendar.queries import has_connected_calendar
+    from app.knowledge.models import BusinessFact
 
-    # 3. Topic classification against semi-automation policy matrix
-    used_keys = placeholder_keys(plan.template or "")
-    classification = classify_request(
-        action_type="dm.send",
-        surface="dm",
-        inbound_text=customer_text,
-        template=plan.template,
-        used_fact_keys=used_keys,
-        owner_answer=False,
-        customer_clarification=False,
-        prices_shared=(context.price_disclosure == "share"),
-        recent_transcript=False,
-        image_injection=False,
-        workspace_escalation_keywords=context.escalation_keywords,
-    )
-
-    # 4. Lookup active AccountAgent and current delegation
-    account_agent = session.scalar(
+    account = session.scalar(
         select(AccountAgent)
-        .where(AccountAgent.workspace_id == context.workspace_id)
+        .join(
+            SocialAccount,
+            (SocialAccount.id == AccountAgent.social_account_id)
+            & (SocialAccount.workspace_id == AccountAgent.workspace_id),
+        )
+        .where(
+            AccountAgent.workspace_id == context.workspace_id,
+            SocialAccount.status != "disconnected",
+        )
         .order_by(AccountAgent.created_at.desc())
     )
-    rule_mode: Mode = "off"
-    if account_agent is not None:
-        delegation = current_delegation(
-            session, context.workspace_id, account_agent.social_account_id
+    if account is None or account.controller_mode != "agent":
+        return None
+    social = session.get(SocialAccount, account.social_account_id)
+    language = context.language.code or context.ctx.locale
+    rows = list(
+        session.scalars(
+            select(BusinessFact)
+            .where(visible_predicate(session, clock, context.ctx))
+            .order_by(BusinessFact.key)
+            .limit(20)
         )
-        if delegation is not None:
-            raw_policy = delegation.policy if isinstance(delegation.policy, dict) else {}
-            actions_dict = raw_policy.get("actions", {})
-            dm_rule = actions_dict.get("dm.send", {})
-            if isinstance(dm_rule, dict):
-                mode_val = dm_rule.get("mode", "off")
-                if mode_val in ("automatic", "ask", "off"):
-                    rule_mode = mode_val
-            elif isinstance(dm_rule, ActionRule):
-                rule_mode = dm_rule.mode
+    )
+    facts = [as_usable(row, context.ctx, language) for row in rows]
+    # The production agent's approved-answer query performs dependency/claim validation.
+    from app.agent.knowledge import answers_page
+    from app.knowledge.approved_answers import AnswerView
 
-    # 5. Evaluate action policy
-    base_decision = AgentPolicyDecision(rule_mode, f"delegation_{rule_mode}")
-    rule_obj = ActionRule(mode=rule_mode)
-    agent_decision = evaluate_action_policy(rule_obj, classification, base_decision=base_decision)
+    safe = answers_page(session, clock, context.ctx, language=language, limit=10)
+    answers = [
+        AnswerView(
+            uuid.UUID(row["id"]),
+            row["title"],
+            "",
+            (),
+            row["template"],
+            row["language"],
+            "active",
+            row["version"],
+        )
+        for row in safe["answers"]
+    ]
+    delegation = current_delegation(session, context.workspace_id, account.social_account_id)
+    rule = ActionRule(mode="off")
+    if delegation is not None:
+        rule = ActionRule.model_validate(delegation.policy.get("actions", {}).get("dm.send", {}))
+    from app.plans import service as usage
 
-    # 6. Map to truthful decision and reason codes
-    if classification.is_blocked or agent_decision.kind == "blocked":
-        decision = "blocked"
-        reasons = [agent_decision.reason]
-    elif agent_decision.kind == "automatic":
-        decision = "automatic"
-        reason = "basic_verified_topic" if classification.is_basic else agent_decision.reason
-        reasons = [reason]
-    else:  # "ask" or "off"
-        decision = "ask"
-        if classification.reason == "booking_enquiry_requires_approval":
-            reasons = ["booking_enquiry_requires_approval"]
-        elif (
-            classification.primary_topic == Topic.COMPLAINT.value
-            or "complaint" in classification.reason
-        ):
-            reasons = ["complex_topic_complaint"]
-        elif classification.reason:
-            reasons = [classification.reason]
-        else:
-            reasons = [agent_decision.reason]
+    quota_available = not usage.is_paused(session, clock, context.workspace_id)
+    if rule.max_per_day is not None and delegation is not None:
+        day_start = datetime.combine(clock.now().astimezone(UTC).date(), time.min, tzinfo=UTC)
+        used = (
+            session.scalar(
+                select(func.count(AgentAction.id)).where(
+                    AgentAction.workspace_id == context.workspace_id,
+                    AgentAction.social_account_id == account.social_account_id,
+                    AgentAction.action_type == "dm.send",
+                    AgentAction.delegation_version == delegation.version,
+                    AgentAction.status.in_(
+                        ("authorized", "queued", "in_progress", "succeeded", "outcome_unknown")
+                    ),
+                    AgentAction.authorized_at >= day_start,
+                )
+            )
+            or 0
+        )
+        quota_available = quota_available and used < rule.max_per_day
+    voice = read_personality(account)
+    return PracticeSnapshot(
+        replace(
+            context,
+            facts=facts,
+            approved_answers=answers,
+            account_status=social.status if social is not None else "disconnected",
+            account_capabilities=dict(social.capabilities) if social is not None else {},
+        ),
+        account.social_account_id,
+        account.config_version,
+        delegation.version if delegation else None,
+        rule,
+        voice.version,
+        voice.personality.model_dump(),
+        voice.goals,
+        calendar_connected=has_connected_calendar(session, context.workspace_id),
+        active=account.state == "active"
+        and social is not None
+        and social.status in ("connected", "degraded")
+        and delegation is not None
+        and _grantor_still_owner(session, context.workspace_id, delegation.grantor_user_id),
+        quota_available=quota_available,
+    )
 
-    return decision, reasons
+
+def apply_agent_practice(
+    session: Session, clock: Clock, snapshot: "PracticeSnapshot", result: "PracticeResult"
+) -> AssistantTestTurn | None:
+    """Persist a pure Agent simulation result on its isolated turn only."""
+    from dataclasses import replace
+
+    from app.agent.grounding import ReplyValidationArgs, validate_template_reply
+    from app.agent.knowledge import as_usable, visible_predicate
+    from app.knowledge.models import BusinessFact
+
+    context = snapshot.context
+    turn = session.scalar(
+        select(AssistantTestTurn)
+        .where(
+            AssistantTestTurn.workspace_id == context.workspace_id,
+            AssistantTestTurn.id == context.conversation_id,
+        )
+        .with_for_update()
+    )
+    if turn is None or turn.status != "pending":
+        return None
+    account = session.scalar(
+        select(AccountAgent).where(
+            AccountAgent.workspace_id == context.workspace_id,
+            AccountAgent.social_account_id == snapshot.account_id,
+        )
+    )
+    delegation = current_delegation(session, context.workspace_id, snapshot.account_id)
+    if (
+        account is None
+        or account.controller_mode != "agent"
+        or account.config_version != snapshot.config_version
+        or (delegation.version if delegation else None) != snapshot.delegation_version
+    ):
+        result = replace(
+            result,
+            decision="human_required",
+            text=None,
+            rendered=(),
+            reasons=("AGENT_SETTINGS_CHANGED",),
+        )
+    elif result.template and result.text:
+        rows = list(
+            session.scalars(
+                select(BusinessFact).where(
+                    visible_predicate(session, clock, context.ctx),
+                    BusinessFact.key.in_(placeholder_keys(result.template)),
+                )
+            )
+        )
+        proposal = ReplyValidationArgs(
+            template=result.template,
+            language=result.language,
+            fact_sources=[
+                {"id": key, "version": version}
+                for key, version in {
+                    str(span["fact_id"]): int(str(span["version"])) for span in result.rendered
+                }.items()
+            ],
+        )
+        checked = validate_template_reply(
+            proposal, [as_usable(row, context.ctx, result.language or "tr") for row in rows]
+        )
+        if not checked.valid or checked.text != result.text:
+            result = replace(
+                result, decision="human_required", text=None, rendered=(), reasons=("FACT_CHANGED",)
+            )
+    turn.source = "agent"
+    turn.status = "ready"
+    turn.language = result.language or context.language.code
+    turn.intent = None
+    turn.decision = result.decision
+    turn.decision_reasons = list(result.reasons)
+    turn.draft_text = result.text if result.decision in ("auto", "approval_required") else None
+    turn.suggestion_text = None
+    turn.flags = []
+    turn.facts_used = [
+        {
+            "key": source.key,
+            "label": source.label,
+            "display": source.display,
+            "verified_at": source.verified_at.isoformat() if source.verified_at else None,
+        }
+        for source in unique_sources(
+            fact_sources(
+                session, context.workspace_id, list(result.rendered), turn.language or "tr"
+            )
+        )
+    ]
+    turn.agent_run_id = result.agent_run_ids[-1] if result.agent_run_ids else None
+    turn.completed_at = clock.now()
+    return turn
 
 
 def apply_plan(
@@ -485,42 +587,6 @@ def apply_plan(
     ).one_or_none()
     if turn is None or turn.status != "pending":
         return None
-
-    mode = get_controller_mode(session, context.workspace_id)
-    if mode == "agent":
-        decision_outcome, reasons = evaluate_agent_dry_run(
-            session, context, plan, turn.customer_text or ""
-        )
-        sendable = (
-            decision_outcome in ("automatic", "auto", "ask", "approval_required")
-            and not plan.grounding_failed
-        )
-        turn.status = "ready"
-        turn.language = plan.language
-        turn.intent = plan.intent
-        turn.source = "agent"
-        turn.flags = sorted(
-            {*plan.model_flags, *plan.keyword_flags}
-            | ({"injection_suspected"} if plan.injection else set())
-        )
-        if decision_outcome == "blocked":
-            turn.draft_text = None
-            turn.suggestion_text = None
-        elif decision_outcome in ("automatic", "auto"):
-            turn.draft_text = plan.text
-            turn.suggestion_text = None
-        else:  # ask / approval_required
-            turn.draft_text = plan.text if sendable and plan.text is not None else None
-            turn.suggestion_text = (
-                None if sendable and plan.text is not None else (plan.suggestion_text or plan.text)
-            )
-
-        turn.decision = decision_outcome
-        turn.decision_reasons = list(reasons)
-        turn.facts_used = _facts_used(session, context, plan)
-        turn.agent_run_id = plan.agent_run_ids[-1] if plan.agent_run_ids else None
-        turn.completed_at = clock.now()
-        return turn
 
     decision = decide(
         context, plan, policy_service.get_policies(session, context.workspace_id), clock.now()

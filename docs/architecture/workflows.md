@@ -330,6 +330,19 @@ Carousel note (Session 05, workflow E step 6): the ledger commits ordered child 
 
 ## F. Daily report
 
+**Account Agent call-back enquiries (pilot review correction, 2026-11-19)**
+
+The lead list includes `messages.agent_enquiry_intent` independently of reply drafts and
+calendar mutation actions. Enquiry evidence is recorded in the same transaction as a typed
+Agent inbound message or successful voice transcript, or when the current customer's scoped
+calendar availability/book tool is invoked before provider availability/admission checks.
+Retries and media completion update that original message rather than adding another enquiry.
+Owner tasks and unrelated/latest-message fallback cannot create leads. Queries still enforce
+real provider/message/conversation provenance, deletion and workspace/period boundaries.
+Existing linked, confirmed appointment rules decide conversion; a question, availability
+check, pending approval or failed provider operation does not. Live data retention removes the
+enquiry signal with the message text and saved historical report evidence remains unchanged.
+
 **Goal:** Deterministic aggregation of persisted records into a localised summary.
 
 | Aspect | Contract |
