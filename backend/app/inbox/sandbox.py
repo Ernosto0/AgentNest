@@ -16,15 +16,30 @@ Drafting is asynchronous like every other draft: ``submit_message`` stores the t
 
 import uuid
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy import delete, func, select, tuple_
 from sqlalchemy.orm import Session
 
+from app.agent.delegation import (
+    ActionRule,
+    Mode,
+    current_delegation,
+)
+from app.agent.delegation import (
+    Decision as AgentPolicyDecision,
+)
+from app.agent.models import AccountAgent
+from app.agent.policy import (
+    Topic,
+    classify_request,
+    evaluate_action_policy,
+)
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
+from app.core.reply_languages import is_reply_language
 from app.identity.models import Workspace
 from app.inbox.context import (
     MESSAGING_WINDOW,
@@ -37,7 +52,9 @@ from app.inbox.models import AssistantTestTurn
 from app.inbox.payloads import AssistantTestDraftPayload
 from app.inbox.reply_workflow import decide
 from app.inbox.system import system_context
+from app.integrations.instagram.models import SocialAccount
 from app.jobs.queue import enqueue
+from app.knowledge.render import placeholder_keys
 from app.knowledge.sources import fact_sources, unique_sources
 from app.policy import service as policy_service
 from app.policy.rules_reply import APPROVAL, AUTO
@@ -319,6 +336,140 @@ def _facts_used(session: Session, context: DraftContext, plan: DraftPlan) -> lis
     ]
 
 
+def get_controller_mode(session: Session, workspace_id: uuid.UUID) -> Literal["legacy", "agent"]:
+    """Detect the selected controller mode for the workspace.
+
+    Checks AccountAgent for the workspace's primary account:
+    is controller_mode == 'agent' and state == 'active'?
+    If yes, practice chat runs in Agent dry-run mode.
+    If no account is connected or controller_mode == 'legacy', practice chat runs in Legacy mode.
+    """
+    account_agent = session.scalar(
+        select(AccountAgent)
+        .join(
+            SocialAccount,
+            (SocialAccount.id == AccountAgent.social_account_id)
+            & (SocialAccount.workspace_id == AccountAgent.workspace_id),
+        )
+        .where(
+            AccountAgent.workspace_id == workspace_id,
+            SocialAccount.status != "disconnected",
+        )
+        .order_by(AccountAgent.created_at.desc())
+    )
+    if (
+        account_agent is not None
+        and account_agent.controller_mode == "agent"
+        and account_agent.state == "active"
+    ):
+        return "agent"
+
+    direct_agent = session.scalar(
+        select(AccountAgent)
+        .where(AccountAgent.workspace_id == workspace_id)
+        .order_by(AccountAgent.created_at.desc())
+    )
+    if (
+        direct_agent is not None
+        and direct_agent.controller_mode == "agent"
+        and direct_agent.state == "active"
+    ):
+        social = session.get(SocialAccount, direct_agent.social_account_id)
+        if social is None or social.status != "disconnected":
+            return "agent"
+
+    return "legacy"
+
+
+def evaluate_agent_dry_run(
+    session: Session,
+    context: DraftContext,
+    plan: DraftPlan,
+    customer_text: str,
+) -> tuple[str, list[str]]:
+    """Determine truthful Account Agent decision and reasons for a dry-run turn.
+
+    Reuses production Agent language selection, grounding, and semi-automation policy
+    matrix without executing any live side effects.
+    """
+    # 1. Language validation (supports TR, EN, RU, DE, AR; fails closed on unsupported)
+    if context.language.code is None or not is_reply_language(context.language.code):
+        return ("ask", ["LANGUAGE_UNSUPPORTED"])
+
+    # 2. Grounding & claim validator check (INV-02)
+    if plan.grounding_failed or (plan.validation and not plan.validation.get("passed", True)):
+        return ("ask", ["GROUNDING_FAILED"])
+    if plan.text is None and not plan.suggestion_text:
+        return ("ask", ["FACT_NOT_USABLE"])
+
+    # 3. Topic classification against semi-automation policy matrix
+    used_keys = placeholder_keys(plan.template or "")
+    classification = classify_request(
+        action_type="dm.send",
+        surface="dm",
+        inbound_text=customer_text,
+        template=plan.template,
+        used_fact_keys=used_keys,
+        owner_answer=False,
+        customer_clarification=False,
+        prices_shared=(context.price_disclosure == "share"),
+        recent_transcript=False,
+        image_injection=False,
+        workspace_escalation_keywords=context.escalation_keywords,
+    )
+
+    # 4. Lookup active AccountAgent and current delegation
+    account_agent = session.scalar(
+        select(AccountAgent)
+        .where(AccountAgent.workspace_id == context.workspace_id)
+        .order_by(AccountAgent.created_at.desc())
+    )
+    rule_mode: Mode = "off"
+    if account_agent is not None:
+        delegation = current_delegation(
+            session, context.workspace_id, account_agent.social_account_id
+        )
+        if delegation is not None:
+            raw_policy = delegation.policy if isinstance(delegation.policy, dict) else {}
+            actions_dict = raw_policy.get("actions", {})
+            dm_rule = actions_dict.get("dm.send", {})
+            if isinstance(dm_rule, dict):
+                mode_val = dm_rule.get("mode", "off")
+                if mode_val in ("automatic", "ask", "off"):
+                    rule_mode = mode_val
+            elif isinstance(dm_rule, ActionRule):
+                rule_mode = dm_rule.mode
+
+    # 5. Evaluate action policy
+    base_decision = AgentPolicyDecision(rule_mode, f"delegation_{rule_mode}")
+    rule_obj = ActionRule(mode=rule_mode)
+    agent_decision = evaluate_action_policy(rule_obj, classification, base_decision=base_decision)
+
+    # 6. Map to truthful decision and reason codes
+    if classification.is_blocked or agent_decision.kind == "blocked":
+        decision = "blocked"
+        reasons = [agent_decision.reason]
+    elif agent_decision.kind == "automatic":
+        decision = "automatic"
+        reason = "basic_verified_topic" if classification.is_basic else agent_decision.reason
+        reasons = [reason]
+    else:  # "ask" or "off"
+        decision = "ask"
+        if classification.reason == "booking_enquiry_requires_approval":
+            reasons = ["booking_enquiry_requires_approval"]
+        elif (
+            classification.primary_topic == Topic.COMPLAINT.value
+            or "complaint" in classification.reason
+        ):
+            reasons = ["complex_topic_complaint"]
+        elif classification.reason:
+            reasons = [classification.reason]
+        else:
+            reasons = [agent_decision.reason]
+
+    return decision, reasons
+
+
 def apply_plan(
     session: Session, clock: Clock, context: DraftContext, plan: DraftPlan
 ) -> AssistantTestTurn | None:
@@ -334,6 +485,43 @@ def apply_plan(
     ).one_or_none()
     if turn is None or turn.status != "pending":
         return None
+
+    mode = get_controller_mode(session, context.workspace_id)
+    if mode == "agent":
+        decision_outcome, reasons = evaluate_agent_dry_run(
+            session, context, plan, turn.customer_text or ""
+        )
+        sendable = (
+            decision_outcome in ("automatic", "auto", "ask", "approval_required")
+            and not plan.grounding_failed
+        )
+        turn.status = "ready"
+        turn.language = plan.language
+        turn.intent = plan.intent
+        turn.source = "agent"
+        turn.flags = sorted(
+            {*plan.model_flags, *plan.keyword_flags}
+            | ({"injection_suspected"} if plan.injection else set())
+        )
+        if decision_outcome == "blocked":
+            turn.draft_text = None
+            turn.suggestion_text = None
+        elif decision_outcome in ("automatic", "auto"):
+            turn.draft_text = plan.text
+            turn.suggestion_text = None
+        else:  # ask / approval_required
+            turn.draft_text = plan.text if sendable and plan.text is not None else None
+            turn.suggestion_text = (
+                None if sendable and plan.text is not None else (plan.suggestion_text or plan.text)
+            )
+
+        turn.decision = decision_outcome
+        turn.decision_reasons = list(reasons)
+        turn.facts_used = _facts_used(session, context, plan)
+        turn.agent_run_id = plan.agent_run_ids[-1] if plan.agent_run_ids else None
+        turn.completed_at = clock.now()
+        return turn
+
     decision = decide(
         context, plan, policy_service.get_policies(session, context.workspace_id), clock.now()
     )

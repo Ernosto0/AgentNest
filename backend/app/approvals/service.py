@@ -160,7 +160,11 @@ def request(
             permission=required_permission,
             type="approval.requested",
             severity="attention",
-            params={"action": action, "summary": approval.summary},
+            params={
+                "action": action,
+                "summary": approval.summary,
+                "expires_at": expires_at.isoformat(),
+            },
             subject_type="approval",
             subject_id=approval.id,
             dedup_key=f"approval:{approval.id}",

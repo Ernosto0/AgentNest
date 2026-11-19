@@ -33,6 +33,7 @@ const draft = (overrides: Partial<TestChatDraft> = {}): TestChatDraft => ({
 });
 const turn = (overrides: Partial<TestChatTurn> = {}): TestChatTurn => ({
   id: "70000000-0000-4000-8000-000000000001",
+  controller_mode: "legacy",
   status: "ready",
   customer_text: "How much is the monthly membership?",
   created_at: "2026-11-15T09:00:00Z",
@@ -41,7 +42,13 @@ const turn = (overrides: Partial<TestChatTurn> = {}): TestChatTurn => ({
   is_simulated: true,
   ...overrides,
 });
-const chat = (items: TestChatTurn[] = [], extra: Partial<TestChatState> = {}): TestChatState => ({ items, remaining_this_hour: 18, remaining_today: 55, ...extra });
+const chat = (items: TestChatTurn[] = [], extra: Partial<TestChatState> = {}): TestChatState => ({
+  controller_mode: "legacy",
+  items,
+  remaining_this_hour: 18,
+  remaining_today: 55,
+  ...extra,
+});
 
 const FACTS = [
   fact(),
@@ -50,12 +57,12 @@ const FACTS = [
   fact({ id: "f0000000-0000-4000-8000-000000000004", key: "hours.weekdays", category: "hours", label: { tr: "Hafta içi saatleri", en: "Weekday hours" }, display: "09:00-21:00" }),
 ];
 
-function setup(role = "owner", routes: Parameters<typeof mockApi>[0] = {}, facts = FACTS) {
-  const me = { ...ME, user: { ...ME.user, ui_locale: "en" }, memberships: ME.memberships.map((m) => (m.workspace_id === WS_GOLKENT ? { ...m, role } : m)) };
+function setup(role = "owner", routes: Parameters<typeof mockApi>[0] = {}, facts = FACTS, locale: "tr" | "en" = "en") {
+  const me = { ...ME, user: { ...ME.user, ui_locale: locale }, memberships: ME.memberships.map((m) => (m.workspace_id === WS_GOLKENT ? { ...m, role } : m)) };
   return mockApi({
     "GET /api/v1/meta": () => json(META),
     "GET /api/v1/auth/me": () => json(me),
-    [`GET ${base}`]: () => json(workspace(WS_GOLKENT, { default_locale: "en" })),
+    [`GET ${base}`]: () => json(workspace(WS_GOLKENT, { default_locale: locale })),
     [`GET ${base}/readiness`]: () => json(READINESS),
     [`GET ${base}/facts`]: () => json({ items: facts, next_cursor: null }),
     ...routes,
@@ -235,6 +242,66 @@ describe("FactsUsed", () => {
     expect(container).toBeEmptyDOMElement();
     rerender(<FactsUsed facts={[]} emptyLabel="No saved business facts were used." />);
     expect(screen.getByTestId("facts-used-empty")).toHaveTextContent("No saved business facts were used.");
+  });
+
+  it("displays controller mode badge and decision badge correctly", async () => {
+    setup("owner", {
+      [`GET ${chatPath}`]: () =>
+        json(
+          chat(
+            [
+              turn({
+                controller_mode: "agent",
+                draft: draft({ decision: "auto", reasons: ["basic_verified_topic"] }),
+              }),
+            ],
+            { controller_mode: "agent" },
+          ),
+        ),
+    });
+    await open();
+
+    // Check header/intro controller badge
+    const badges = await screen.findAllByTestId("controller-badge");
+    expect(badges.length).toBeGreaterThanOrEqual(1);
+    expect(badges[0]).toHaveTextContent("Account Agent");
+
+    // Check decision badge
+    const decisionBadge = screen.getByTestId("decision-badge");
+    expect(decisionBadge).toHaveTextContent("Auto-Send");
+    expect(screen.getByTestId("decision")).toHaveTextContent("This is a basic verified question and your settings allow sending automatically.");
+  });
+
+  it("displays Turkish controller badge and decision badge correctly", async () => {
+    setup(
+      "owner",
+      {
+        [`GET ${chatPath}`]: () =>
+          json(
+            chat(
+              [
+                turn({
+                  controller_mode: "legacy",
+                  draft: draft({ decision: "approval_required", reasons: ["booking_enquiry_requires_approval"] }),
+                }),
+              ],
+              { controller_mode: "legacy" },
+            ),
+          ),
+      },
+      FACTS,
+      "tr",
+    );
+    await i18n.changeLanguage("tr");
+    renderApp(`/w/${WS_GOLKENT}/more/agent/test`);
+    await screen.findByRole("heading", { name: "Asistanınızı deneyin", level: 1 });
+
+    const badges = await screen.findAllByTestId("controller-badge");
+    expect(badges[0]).toHaveTextContent("Standart Asistan");
+
+    const decisionBadge = screen.getByTestId("decision-badge");
+    expect(decisionBadge).toHaveTextContent("Onay Bekliyor");
+    expect(screen.getByTestId("decision")).toHaveTextContent("Randevu ve rezervasyon talepleri her zaman onayınızı gerektirir.");
   });
 });
 

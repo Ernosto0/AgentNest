@@ -953,20 +953,30 @@ def _prepare(
             ):
                 _terminal(db, clock, action, "failed", "SLOT_UNAVAILABLE")
                 return None
+            cid = (
+                uuid.UUID(str(intent["customer_identity_id"]))
+                if intent.get("customer_identity_id")
+                else None
+            )
+            conv_id = (
+                uuid.UUID(str(intent["conversation_id"])) if intent.get("conversation_id") else None
+            )
+            if (cid is None or conv_id is None) and action.thread_id:
+                from app.agent.models import AgentThread
+
+                thr = db.get(AgentThread, action.thread_id)
+                if thr is not None:
+                    if cid is None and thr.customer_identity_id:
+                        cid = thr.customer_identity_id
+                    if conv_id is None and thr.dm_conversation_id:
+                        conv_id = thr.dm_conversation_id
+
             appt = CalendarAppointment(
                 id=action.payload_ref or new_id(),
                 workspace_id=workspace_id,
                 calendar_connection_id=conn.id,
-                conversation_id=(
-                    uuid.UUID(str(intent["conversation_id"]))
-                    if intent.get("conversation_id")
-                    else None
-                ),
-                customer_identity_id=(
-                    uuid.UUID(str(intent["customer_identity_id"]))
-                    if intent.get("customer_identity_id")
-                    else None
-                ),
+                conversation_id=conv_id,
+                customer_identity_id=cid,
                 title=title,
                 description=desc,
                 customer_name=intent.get("customer_name"),

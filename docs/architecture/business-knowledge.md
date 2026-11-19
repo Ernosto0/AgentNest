@@ -168,7 +168,8 @@ Content created before `fact_references` existed, or edited manually without pla
 ## 9. Approved answers
 
 - Created by owners/managers, either from scratch or from a sent reply ("save as approved answer"). In the latter case, rendered values in the text are converted back to placeholders where they match fact renderings exactly.
-- They can be used by `draft_reply` verbatim (`approved_answer_id`). They are still rendered, validated and policy-checked.
+- Authored, queried, and matched across all supported customer reply languages (`tr`, `en`, `ru`, `de`, `ar`), while workspace administration and user interface remain in Turkish and English (`tr`, `en`).
+- They can be used by `draft_reply` verbatim (`approved_answer_id`) and by Account Agent reply paths (`knowledge.answers` and `reply.validate`). They are still rendered, validated and policy-checked.
 - Status `needs_review` after a referenced fact changes. They remain usable because the values are placeholders, but the owner is asked to check the wording.
 
 ## 10. Seed data for the demo (fictional)

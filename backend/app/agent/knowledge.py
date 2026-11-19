@@ -15,6 +15,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from app.ai.injection import neutralise_untrusted
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
+from app.core.reply_languages import REPLY_LANGUAGES
 from app.knowledge.claims import validate_claims
 from app.knowledge.formatting import format_value
 from app.knowledge.models import ApprovedAnswer, BusinessFact, FactCandidate, FactReference
@@ -148,7 +149,7 @@ def answers_page(
     cursor: uuid.UUID | None = None,
     relevant_to: str = "",
 ) -> dict[str, Any]:
-    if language not in {"tr", "en"} or not 1 <= limit <= 10:
+    if language not in REPLY_LANGUAGES or not 1 <= limit <= 10:
         raise ValueError("invalid answer page")
     # A reference is invalid if its current fact is absent, hidden, unusable or changed.
     visible = visible_predicate(db, clock, ctx)

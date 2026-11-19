@@ -21,6 +21,7 @@ from app.notifications.delivery_ledger import (  # noqa: F401  (dispatch is re-e
 )
 from app.notifications.models import (
     DELIVERY_STATUSES,
+    Notification,
     NotificationDelivery,
 )
 
@@ -64,6 +65,7 @@ def deliver_channel_notification(ctx: JobContext) -> None:
 
         user = session.get(User, recipient_user_id)
         workspace = session.get(Workspace, workspace_id)
+        notification = session.get(Notification, delivery.notification_id)
         member = session.scalar(
             select(WorkspaceMember).where(
                 WorkspaceMember.workspace_id == workspace_id,
@@ -71,18 +73,50 @@ def deliver_channel_notification(ctx: JobContext) -> None:
             )
         )
         link = session.get(ChannelLink, channel_link_id) if channel_link_id else None
+        if (
+            notification is None
+            or notification.workspace_id != workspace_id
+            or notification.recipient_user_id != recipient_user_id
+        ):
+            delivery.status = "failed"
+            delivery.last_error = "notification_not_found"
+            session.commit()
+            return
+        if notification.is_simulated and channel_name in ("telegram", "whatsapp"):
+            delivery.status = "failed"
+            delivery.last_error = "simulated_notification_not_sent"
+            session.commit()
+            return
         # Web and Web Push are tied to the user and their devices, not to a chat link.
         needs_link = channel_name not in ("web", "web_push")
         if (
             member is None
             or user is None
             or not user.is_active
-            or (needs_link and (link is None or link.status != "active"))
+            or (
+                needs_link
+                and (
+                    link is None
+                    or link.status != "active"
+                    or link.workspace_id != workspace_id
+                    or link.user_id != recipient_user_id
+                    or link.channel != channel_name
+                )
+            )
         ):
             delivery.status = "failed"
             delivery.last_error = "recipient_not_member_or_unlinked"
             session.commit()
             return
+
+        if channel_name in ("telegram", "whatsapp"):
+            from app.identity.channels import is_channel_enabled
+
+            if not is_channel_enabled(session, workspace_id, recipient_user_id, channel_name):
+                delivery.status = "failed"
+                delivery.last_error = "channel_disabled_by_preference"
+                session.commit()
+                return
 
         recipient = ChannelRecipient(
             user_id=recipient_user_id,

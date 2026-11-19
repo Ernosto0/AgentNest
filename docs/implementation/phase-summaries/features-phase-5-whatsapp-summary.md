@@ -6,6 +6,9 @@
 - **Status:** Implemented offline, stopped for review. Nothing is committed. Everything live is **pending**.
 - **Trigger:** OQ-01 was treated as answered by the owner's request of 2026-11-17/18 to implement all Feature Phase 5 sessions. Trigger evidence (pilot owners will not use Telegram or push) is **not yet recorded**; no pilot feedback was invented.
 
+> [!NOTE] Current Status (Date: 2026-11-19)
+> The code for this feature phase was subsequently committed to `main` (`e1c9f13`). Its functionality has been integrated, verified offline, and extended to Account Agent pilot readiness in Sessions 00–10 of the `answeres2.md` plan. The original historical test records and offline verification below are preserved intact. Remaining live provider verifications (live Meta WhatsApp Business API number, template approvals, live webhook deliveries) are cataloged as pending live verification runbooks in Session 11 (`docs/implementation/account-agent-pilot-readiness/s11-report.md`).
+
 ## 1. What the track delivers
 
 WhatsApp as an optional, off-by-default second owner channel that is deliberately narrower than Telegram: notifications, fixed replies and approve/reject buttons only. Owner free text never reaches commands, the agent or any LLM, and never decides anything.

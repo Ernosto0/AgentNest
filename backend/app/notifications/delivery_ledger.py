@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.clock import Clock
@@ -36,7 +37,25 @@ def dispatch_channel_notification(
     channel_link_id: uuid.UUID | None = None,
     correlation_id: uuid.UUID | None = None,
 ) -> NotificationDelivery:
-    """Evaluate delivery policy, record a delivery ledger entry, and enqueue if eligible."""
+    """Evaluate delivery policy, record a delivery ledger entry, and enqueue if eligible.
+
+    Idempotent per ``(workspace_id, notification_id, recipient_user_id, channel)`` so repeated
+    calls for the same notification, recipient, and channel never create duplicate ledger rows or
+    jobs.
+    """
+    existing = session.scalar(
+        select(NotificationDelivery)
+        .where(
+            NotificationDelivery.workspace_id == workspace_id,
+            NotificationDelivery.notification_id == notification.id,
+            NotificationDelivery.recipient_user_id == recipient.user_id,
+            NotificationDelivery.channel == channel,
+        )
+        .limit(1)
+    )
+    if existing is not None:
+        return existing
+
     decision = evaluate_delivery_policy(notification, recipient, clock, channel=channel)
 
     delivery = NotificationDelivery(
@@ -58,6 +77,7 @@ def dispatch_channel_notification(
             DeliverChannelNotificationPayload(delivery_id=delivery.id),
             workspace_id=workspace_id,
             correlation_id=correlation_id,
+            dedup_key=f"deliver_channel_notification:{delivery.id}",
             clock=clock,
         )
 

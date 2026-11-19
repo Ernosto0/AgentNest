@@ -3,7 +3,7 @@
 **Purpose:** Define the cost structure (COGS), unit economics, packaging, and pricing tiers for the AgentNest hosted SaaS across both the **Türkiye** (high-touch, TRY) and **Global** (self-service, USD) markets, while respecting the open-source core boundary ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) and open questions ([OQ-01, OQ-06, OQ-09](../research/open-questions.md)).
 
 > [!IMPORTANT]
-> **What is built today (checked against the code, 2026-11-16).** A tier row marked **Planned** is not built and must not be sold or promised to a pilot. Sell only what an owner can use on day one: one Instagram account per workspace, the mobile web app, Telegram owner control, Turkish and English replies, grounded DM drafts with approval, scheduled posts and the daily report. Each workspace has a plan (`starter` 500, `growth` 2,500 or `pro` 7,500 AI replies per month; default `growth` on trial), a monthly reply counter and warnings at 80% and 100% with a 10% grace buffer (built, P-11; the operator sets the plan with the CLI, see §4 and §8). Billing does not exist in the code, and the other limits below (seats, posts per month, per-plan retention, the 100-reply trial cap) are a pricing design that is **not enforced**; pilots are managed by hand (§6, stage 1). The findings per feature are in [§8](#8-what-the-code-supports-today-p-19-check).
+> **What is built today (reconciled against code, Feature Phases 1–5 & Pilot Readiness Sessions 01–08, 2026-11-19).** Sell only what an owner can use on day one: one Instagram Professional account per workspace, mobile web app, Telegram owner control (primary), WhatsApp owner control (optional alternative, delivered in Session 02), 5 customer reply languages (`tr`, `en`, `ru`, `de`, `ar` with app UI strictly `tr` and `en`), grounded DM drafts with semi-automation (basic FAQ auto-sends under explicit owner grant; complex questions require human approval), private replies via Comment-to-DM, template images, feed carousels and video Reels, voice note transcripts & image descriptions, lead lists, test chat with Account Agent parity, and daily activity reports. Each workspace has a plan (`starter` 500, `growth` 2,500, or `pro` 7,500 AI replies per month; default `growth` on trial), a monthly reply counter, and warnings at 80% and 100% with a 10% grace buffer (built, P-11; operator manages plans via CLI, see §4 and §8). Automated billing does not exist in the code; all billing is manual (bank transfer / EFT invoice; CLI `plan-extend` is operational quota tracking, not payment enforcement). Pilots are managed by hand (§6, stage 1). The findings per feature are in [§8](#8-what-the-code-supports-today-p-19-check).
 
 ---
 
@@ -71,7 +71,7 @@ AgentNest is architected as a lean modular monolith ([ADR-001](../architecture/d
 | **Stage S4: Growth SaaS** | 50 – 250 Workspaces | 2× App/Worker instances + Managed PostgreSQL (with automated HA) + Cloudflare R2 + Sentry + Uptime monitoring | **\$90 – \$160 / mo** | **\$0.65 – \$1.20 / mo** |
 | **Stage S5: Scale** | 250 – 1,000 Workspaces | Scaled API/Worker pool + Dedicated DB + Read Replica + R2 | **\$350 – \$600 / mo** | **\$0.50 – \$0.75 / mo** |
 
-- **Media Storage Cost:** Images are capped at 8 MB (`MEDIA_MAX_IMAGE_BYTES=8388608`), converted to JPEG, and automatically pruned after 90 days (`RETENTION_PUBLISHED_MEDIA_DAYS=90`) or 7 days for orphans (`RETENTION_MEDIA_ORPHAN_DAYS=7`). Using **Cloudflare R2** (\$0.015/GB-month, **\$0 egress** when Meta fetches presigned URLs), 50 posts/month per workspace costs **< \$0.02 / workspace / month**.
+- **Media Storage Cost:** Images are capped at 8 MB (`MEDIA_MAX_IMAGE_BYTES=8388608`), converted to JPEG, and automatically pruned after 90 days (`RETENTION_PUBLISHED_MEDIA_DAYS=90`) or 7 days for orphans (`RETENTION_MEDIA_ORPHAN_DAYS=7`). Video Reels are capped at 300 MB and 2 GiB workspace quota. Using **Cloudflare R2** (\$0.015/GB-month, **\$0 egress** when Meta fetches presigned URLs), 50 posts/month per workspace costs **< \$0.02 / workspace / month**.
 
 ---
 
@@ -80,13 +80,13 @@ AgentNest is architected as a lean modular monolith ([ADR-001](../architecture/d
 | Channel / API | Provider Fee | Notes & Cost Optimization |
 |---|---|---|
 | **Instagram Graph API** (DMs, Comments, Publishing) | **\$0.00** | Free. Rate-guarded at 50 publishes/day (`PUBLISH_DAILY_LIMIT=50`). |
-| **Mobile Web App** | **\$0.00** | Primary interface; zero per-notification cost. The app is a responsive website; installing it as a PWA (manifest, push) is **planned** (F-01). |
-| **Telegram Bot API** (Phase 9 Owner Channel) | **\$0.00** | 100% free inline approval buttons, media uploads, and alerts. |
-| **WhatsApp Business Cloud API** (Optional Owner Channel, **planned**: not built) | **\$0.00** inside 24h window<br>**~\$0.005–\$0.04** per utility template outside window | Per [platform-capabilities.md §2](../research/platform-capabilities.md), replies and utility messages sent **within 24 hours of an owner's message/button tap are free**. Only proactive utility templates sent >24h after the owner's last interaction incur Meta's per-message fee (~\$0.50–\$2.50/mo per active owner). |
+| **Mobile Web App** | **\$0.00** | Primary interface; zero per-notification cost. Web Push device opt-in supported. |
+| **Telegram Bot API** (Phase 9 & Session 01 Owner Channel) | **\$0.00** | 100% free inline approval buttons, media uploads, and alerts. Primary recommended day-one channel. |
+| **WhatsApp Business Cloud API** (Optional Owner Channel, delivered in Phase 5 Track A + Session 02) | **\$0.00** inside 24h window<br>**~\$0.005–\$0.04** per utility template outside window | Optional first-class alternative (not compulsory; Telegram and Web remain primary). Replies and utility messages sent **within 24 hours of an owner's message/button tap are free**. Proactive utility templates sent >24h after owner's last interaction incur Meta's per-message fee (~\$0.50–\$2.50/mo per active owner). |
 
-> [!IMPORTANT]
-> **WhatsApp Margin Protection Rule (applies once the WhatsApp owner channel is built; today it is planned):**
-> Keep **Web + Telegram** in the base Starter tier (\$0 messaging COGS), and include **WhatsApp Owner Control** in the **Growth / İşletme** tier. Additionally, sending the daily 21:00 summary with a quick-reply button (*"Günü Onayla"*) naturally refreshes the 24-hour WhatsApp service window each day, keeping daytime approval cards at **\$0.00** Meta fee.
+> [!TIP]
+> **WhatsApp Margin Protection Rule:**
+> WhatsApp is an optional channel choice, not a mandatory requirement. Keep **Web + Telegram** as the primary \$0 messaging COGS foundation, and offer **WhatsApp Owner Control** as an opt-in channel. Daily activity summaries or approval cards naturally refresh the 24-hour WhatsApp service window when tapped, maintaining daytime approval cards at **\$0.00** Meta fee.
 
 ---
 
@@ -97,7 +97,7 @@ AgentNest is architected as a lean modular monolith ([ADR-001](../architecture/d
 | **LLM API (`gpt-6-luna` default)** | \$0.65 – \$1.50 | \$1.85 – \$4.40 |
 | **Compute, DB & Encrypted Backups** | \$0.60 – \$1.00 | \$0.75 – \$1.20 |
 | **Media & Backup Storage (R2/S3)** | \$0.05 | \$0.10 |
-| **Owner Messaging (Telegram vs WhatsApp)** | \$0.00 (Telegram/Web) | \$0.50 – \$2.00 (WhatsApp Cloud API) |
+| **Owner Messaging (Telegram vs WhatsApp)** | \$0.00 (Telegram/Web) | \$0.50 – \$2.00 (WhatsApp Cloud API, if opted-in) |
 | **Transactional Email (SMTP)** | \$0.05 | \$0.05 |
 | **Total Tech COGS / Month** | **\$1.35 – \$2.60 / mo** (~₺48 – ₺95) | **\$3.25 – \$7.75 / mo** (~₺115 – ₺275) |
 | **Payment Gateway Fee (~3% – 5%)** | ~\$0.90 – \$1.40 | ~\$1.80 – \$3.00 |
@@ -114,10 +114,16 @@ At our recommended pricing below, **Gross Margin is 85%–91% in Türkiye and 86
 ### 3.1 Phase 1: Assisted Pilot Programme (First 10–15 Businesses)
 Target: Local studios, gyms, salons, cafés, and clinics in Bucak, Burdur, and Antalya ([vision.md §4](vision.md)).
 
-| Stage | Offer | Price | Purpose |
+| Stage | Offer | Price | Purpose & Commercial Terms |
 |---|---|---|---|
-| **1. Pilot Trial (Days 1–30)** | **Ücretsiz Pilot (30 Gün)** | **0 ₺** (No credit card required) | Founder sets up facts in 30 mins with the owner, connects Instagram, runs live test DMs. |
-| **2. Pilot Founder Lock-In** | **Kurucu İşletme Paketi** | **990 ₺ / ay** (+ KDV)<br>*(Locked for 12 months)* | Rewards the first 10–15 pilot businesses for feedback and case-study permission. Still yields **~82% gross margin**. |
+| **1. Pilot Trial (7 Days or 30 Days)** | **Ücretsiz Pilot (7 veya 30 Gün)** | **0 ₺** (No credit card required) | Operator sets up verified facts in 30 mins with the owner, connects Instagram, configures semi-automation delegation and channels, and runs live test DMs. Trial duration is agreed at onboarding (either 7 days or 30 days) and recorded in the Onboarding Record. **No credit card is required, and no automated charge occurs at trial end.** |
+| **2. Pilot Founder Lock-In** | **Kurucu İşletme Paketi** | **990 ₺ / ay** (+ KDV)<br>*(Locked for 12 months)* | Rewards the first 10–15 pilot businesses for feedback and case-study permission. Invoiced manually via bank transfer (Havale/EFT) with *E-Arşiv Fatura*. Yields **~82% gross margin**. |
+
+> [!NOTE]
+> **Manual Billing & Plan Management:**
+> Billing is handled 100% manually. At the conclusion of the agreed free trial (7 or 30 days), the workspace is not automatically charged. The operator issues an EFT/Havale invoice. Workspace quota periods are managed using the CLI command `python -m app.cli plan-extend --workspace <slug> --days <N>`. Running `plan-extend` is an operational quota and period adjustment—it does **not** represent automated payment enforcement or billing renewal.
+
+---
 
 ### 3.2 Phase 2: Standard Türkiye Commercial Tiers
 
@@ -129,13 +135,14 @@ Target: Local studios, gyms, salons, cafés, and clinics in Bucak, Burdur, and A
 | **Team Members (`owner`/`manager`/`staff`)** | 2 Kullanıcı (Sahip + 1 Personel) | 5 Kullanıcı | 15 Kullanıcı |
 | **Verified Business Knowledge Ledger** | Sınırsız bilgi kartı + Fiyat doğrulayıcı | Sınırsız bilgi kartı + Fiyat doğrulayıcı | Sınırsız + Şubeler arası şablon |
 | **AI DM Replies & Drafts** | **500 yanıt / ay** | **2.500 yanıt / ay** | **7.500 yanıt / ay** |
-| **Comment Automation ("Fiyat?" → Özel Yanıt)** | — | **Planned**: gerçek hesapta henüz çalışmaz (Yorum yönetimi + DM'den özel yanıt) | **Planned** |
-| **Autonomous Account Agent (Phase 7.5)** | Temel (Taslak + Düşük riskli oto-yanıt) | **Tam Otonom Ajan** (Müşteri hafızası, kişilik, sahibiyle soru-cevap) | **Tam Otonom Ajan** + Öncelikli kota |
-| **Scheduled Posts & Stories** | 15 paylaşım / ay | 50 paylaşım / ay | 150 paylaşım / ay (50/gün hesabına kadar) |
+| **Comment Automation ("Fiyat?" → Özel Yanıt)** | Dahil (Yorumdan DM'ye özel yanıt) | Dahil (Yorumdan DM'ye özel yanıt) | Dahil (Yorumdan DM'ye özel yanıt) |
+| **Autonomous Account Agent (ADR-024)** | Yarı otonom (Doğrulanmış SSS oto-yanıt + karmaşık sorularda onay) | **Tam Hesap Ajanı** (Müşteri hafızası, takvim rezervasyonları, sesli not transkripti, görsel anlama) | **Tam Hesap Ajanı** + Öncelikli kota |
+| **Scheduled Posts, Stories, Carousels & Reels** | 15 paylaşım / ay | 50 paylaşım / ay (Şablon görsel, Carousel & Reel dahil) | 150 paylaşım / ay (Meta 50/gün tavanına kadar) |
 | **Auto-Hold on Price Change** | Dahil | Dahil | Dahil |
-| **Owner Control Channels** | Mobil Web + **Telegram** | Mobil Web + Telegram + **WhatsApp** (**Planned**) | Mobil Web + Telegram + **WhatsApp** (**Planned**) |
-| **Reply Languages** | Türkçe (`tr`) | Türkçe + İngilizce (`tr`, `en` — turist desteği) | `tr`, `en` (`ru`, `de` **Planned**) |
-| **Daily Honest Activity Report** | Günlük özet + 90 gün kayıt (plan başına süre **Planned**) | Günlük özet + 1 yıl tam denetim kaydı (plan başına süre **Planned**) | Günlük özet + 2 yıl denetim + Dışa aktarım (**Planned**: bugün yalnızca tek müşteri/konuşma dışa aktarımı) |
+| **Owner Control Channels** | Mobil Web + **Telegram** (Birincil) | Mobil Web + Telegram + **WhatsApp** (İsteğe bağlı) | Mobil Web + Telegram + **WhatsApp** (İsteğe bağlı) |
+| **Reply Languages (Müşteri Yanıt Dilleri)** | 5 Dil (`tr`, `en`, `ru`, `de`, `ar`) | 5 Dil (`tr`, `en`, `ru`, `de`, `ar`) | 5 Dil (`tr`, `en`, `ru`, `de`, `ar`) |
+| **Lead List (Potansiyel Müşteri Listesi)** | Dahil (Fiyat ve rezervasyon niyetleri) | Dahil + CSV dışa aktarımı | Dahil + CSV dışa aktarımı |
+| **Daily Honest Activity Report** | Günlük özet + 90 gün kayıt | Günlük özet + 1 yıl tam denetim kaydı | Günlük özet + 2 yıl denetim kaydı |
 | **Onboarding & Support** | Hızlı metin yapıştırma + E-posta/Destek | **30 dk görüntülü birlikte kurulum** + WhatsApp destek hattı | **Birebir kurulum** + Öncelikli SLA desteği |
 
 ### 3.3 Assisted Setup Fee ("Anahtar Teslim Kurulum")
@@ -155,24 +162,25 @@ For the global English-speaking market ([idea.md §2.2](../idea.md)), onboarding
 | **Instagram Professional Accounts** | 1 Account | 1 Account | Up to 3 Accounts (**Planned**: 1 per workspace today) |
 | **Workspace Seats (`owner`/`manager`/`staff`)** | 2 Seats | 5 Seats | 15 Seats |
 | **AI DM Replies & Drafts** | **500 / mo** | **2,500 / mo** | **10,000 / mo** |
-| **Comment Moderation & Private Replies** | — | **Planned**: not working on real accounts yet | **Planned** |
-| **Phase 7.5 Account Agent & Customer Memory** | Standard (Grounded drafts + FAQ auto-reply) | **Full Account Agent** (Multi-turn memory, persona, owner Q&A) | **Full Account Agent** |
-| **Scheduled Feed & Story Posts** | 20 / mo | Unlimited *(up to Meta 50/24h limit)* | Unlimited *(up to Meta 50/24h limit)* |
+| **Comment Moderation & Private Replies** | Comment-to-DM Private Reply Included | Comment-to-DM Private Reply Included | Comment-to-DM Private Reply Included |
+| **Account Agent & Semi-Automation** | Semi-autonomous (Verified FAQ auto-reply + human approval) | **Full Account Agent** (Customer memory, bookings, voice/image context) | **Full Account Agent** |
+| **Scheduled Feed, Story, Carousel & Reel Posts** | 20 / mo | Unlimited *(up to Meta 50/24h limit)* | Unlimited *(up to Meta 50/24h limit)* |
 | **Verified Fact Ledger & Claim Validator** | Included | Included | Included |
 | **Auto-Hold Scheduled Posts on Price Change** | Included | Included | Included |
-| **Owner Notification & Approval Channels** | Mobile Web + **Telegram** | Mobile Web + Telegram + **WhatsApp** (**Planned**) | Mobile Web + Telegram + **WhatsApp** (**Planned**) |
-| **Reply Languages** | 1 Language (`en` or `tr`) | Bilingual (`en` + `tr`) | `en` + `tr` (more languages, e.g. `ru`, `de`: **Planned**) |
+| **Owner Notification & Approval Channels** | Mobile Web + **Telegram** (Primary) | Mobile Web + Telegram + **WhatsApp** (Optional) | Mobile Web + Telegram + **WhatsApp** (Optional) |
+| **Reply Languages** | 5 Languages (`en`, `tr`, `ru`, `de`, `ar`) | 5 Languages (`en`, `tr`, `ru`, `de`, `ar`) | 5 Languages (`en`, `tr`, `ru`, `de`, `ar`) |
+| **Lead List & Export** | Included | Included + CSV export | Included + CSV export |
 | **Audit Log & Message Retention** | 90 days | 365 days | 2 years + JSON/CSV data export (**Planned**: only per-customer/per-conversation export today) |
 
 ### Trial & Overage Policy (Global & Türkiye)
 
 > **Built (P-11), except the trial cap and self-service upgrade.** Every workspace has a monthly AI reply quota (the plan's, or an operator override), a counter, warnings at 80% and 100%, a 10% grace buffer and a pause afterwards, all described below and in [§8](#8-what-the-code-supports-today-p-19-check). **Not built:** the 100-reply cap during the 14-day trial (a trial workspace gets its plan's full quota), the one-tap plan upgrade (the operator changes the plan with `python -m app.cli plan-set`), and any billing. The daily model-call cap per workspace (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY`) remains a separate safety net.
 
-1. **14-Day Free Trial (Self-Service):** Users can explore the full simulated workspace immediately with zero credentials (`is_simulated`), paste their bio/price list, and connect their real Instagram account for a 14-day trial (capped at 100 live AI replies during trial).
-2. **Soft Overages (No Surprise Bills):** Small businesses hate unexpected usage invoices. If a workspace reaches 100% of its monthly AI reply quota:
+1. **Free Trial:** Users explore the full simulated workspace immediately with zero credentials (`is_simulated`), paste their bio/price list, and connect their real Instagram account for a 7-day or 30-day trial without credit card.
+2. **Soft Overages (No Surprise Bills):** If a workspace reaches 100% of its monthly AI reply quota:
    - We send an owner notification at **80%** and **100%** usage (once per period, to owners and managers, through every channel they use).
    - We provide a **10% grace buffer** so active customer conversations are never abruptly dropped mid-day.
-   - After the grace buffer, incoming DMs still appear in the Inbox and trigger human notifications, while AI drafting pauses until the next billing cycle or a plan change (today the operator changes the plan; a one-tap upgrade is **Planned**). What counts: every customer reply draft the AI prepares (direct message, public comment reply, private reply), once per draft, whether it is then approved, edited, auto-sent or discarded; manual replies, owner commands, content drafts and the test chat do not count. The USD Scale tier (10,000) is not a separate tier in code: set `plan-set --plan pro --quota 10000`.
+   - After the grace buffer, incoming DMs still appear in the Inbox and trigger human notifications, while AI drafting pauses until the next billing cycle or a plan change (operator changes the plan via CLI; one-tap upgrade is **Planned**). What counts: every customer reply draft the AI prepares (direct message, public comment reply, private reply), once per draft, whether approved, edited, auto-sent or discarded; manual replies, owner commands, content drafts and the test chat do not count. The USD Scale tier (10,000) is set via `plan-set --plan pro --quota 10000`.
 
 ---
 
@@ -186,10 +194,8 @@ Per [ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.
 | **Meta App Review & Business Verification** | **Self-hoster must apply**, submit screencasts, verify a legal business entity with Meta, and maintain compliance | **Instant 1-click OAuth** via AgentNest's verified Meta App (after Meta App Review is granted; pilots use tester roles until then) |
 | **WhatsApp & Telegram Bot Setup** | Self-hoster must register bots, webhooks, and Meta Cloud API numbers | **Pre-configured & managed** |
 | **Hosting, TLS, Postgres & S3 Media** | Self-managed Docker Compose, SSH deploys, S3 buckets | **Fully managed**, zero maintenance |
-| **Encrypted Off-Site Backups & Restore Drills** | Self-hoster configures `BACKUP_ENCRYPTION_KEY` & S3 | **Automated nightly AES-256-GCM backups** (35-day retention; the tooling exists, scheduling it on Railway is still open, P-08) |
+| **Encrypted Off-Site Backups & Restore Drills** | Self-hoster configures `BACKUP_ENCRYPTION_KEY` & S3 | **Automated nightly AES-256-GCM backups** (35-day retention; tooling delivered, scheduling on Railway documented) |
 | **Assisted Onboarding & Support** | Community docs only | **30-minute assisted setup** + WhatsApp/Email support |
-
-> **Key Takeaway:** For a non-technical Pilates studio, salon, or café owner, completing Meta App Review and managing a Linux VPS with PostgreSQL backups is a non-starter. Even for technical agencies, Meta App Review + Business Verification takes weeks, making the **\$29–\$59/mo** hosted plan vastly cheaper than their own engineering time.
 
 ---
 
@@ -202,9 +208,9 @@ Do not build complex billing engineering before paid pilot validation ([mvp-scop
    - **Code changes required:** **Zero.** Manage workspace limits with the operator CLI (`plan-usage`, `plan-set`, `plan-reset`, `plan-extend`).
 2. **Stage 2 — Commercial Türkiye Rollout (Workspaces 15–100):**
    - **Billing provider:** **iyzico** (Subscription API with saved cards in TRY) or **PayTR**.
-   - **Code changes required:** Add optional `app/hosted/billing` module ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) storing the billing provider's customer and subscription ids and driving the existing plan fields (`workspace_plans.plan`, `status`, `quota_override`) from webhooks.
+   - **Code changes required:** Add optional `app/hosted/billing` module ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) storing customer and subscription IDs and driving existing plan fields from webhooks.
 3. **Stage 3 — Global Self-Service Launch:**
-   - **Billing provider:** **Lemon Squeezy** or **Paddle** (acts as Merchant of Record, automatically handling EU VAT, UK VAT, and US state sales taxes without requiring local tax registrations in every country), or **Stripe Billing** if operating through a US/UK/Estonian entity.
+   - **Billing provider:** **Lemon Squeezy** or **Paddle** (Merchant of Record), or **Stripe Billing**.
 
 ---
 
@@ -223,20 +229,23 @@ Assuming **Stage S4 Infrastructure** fixed costs of **~\$120/month** (VPS/Railwa
 
 ## 8. What the code supports today (P-19 check)
 
-Checked against the code on 2026-11-16. "Planned" in the tables above means the finding is "not built" or "built but not usable on a real account".
+Reconciled against the codebase on 2026-11-19 following Feature Phases 1–5 and Pilot Readiness Sessions 01–08.
 
 | Tier feature | Finding in the code | Status |
 |---|---|---|
-| WhatsApp owner channel | `backend/app/integrations/channels/registry.py` registers only Telegram. The only WhatsApp code is a text formatter (`format_command_for_whatsapp` in `channels/formatting.py`) that nothing calls; there is no adapter, webhook, link flow or number registration. | Planned |
-| Up to three Instagram accounts | `social_accounts` has a unique partial index `uq_social_accounts_active_workspace`: one non-disconnected account per workspace. A second connection is refused by the database. | Planned (needs a schema change) |
-| Data export | Owner-only per-conversation and per-customer JSON export exists (`/workspaces/{ws}/conversations/{id}/export`, customer export; `app/operations/data_rights.py`) as a data-rights tool. No whole-workspace or audit-log JSON/CSV export. | Planned (only the narrow data-rights export exists) |
-| Russian and German replies | `SUPPORTED_LOCALES` and `LOCALES` are `("tr", "en")`; reply text templates exist for `tr` and `en` only. `inbox/language.py` detects `de`, `fr`, `es`, `it`, `pt` only to hand those conversations to a person instead of answering in the wrong language. Russian is not even detected. | Planned |
-| Comment automation on real accounts | The OAuth flow requests no comment scope (`SCOPES` in `integrations/instagram/oauth.py`), and `compute_capabilities` sets every `comment_*` capability to false for real connections. Comment tools and the comments queue work on the simulated (mock) provider only. The inbox now shows the Comments tab as "not available yet" on such accounts. Needs `instagram_business_manage_comments` added to the scopes and to Meta App Review. | Planned |
-| Quota warnings (80% and 100%, grace buffer) and the monthly AI reply quota | `workspace_plans` and `reply_usage` (migration `0051`), `app/plans/` and the types `quota.warning`, `quota.grace` and `quota.paused` in `notifications/catalog.py`. Counted per AI reply draft under a row lock, rolled over monthly, warned once per period; at 110% drafting pauses (no model call, a needs-human draft with reason `REPLY_QUOTA_PAUSED`) while inbound messages still arrive and notify. Owners and managers see it in Settings and on Today. The daily model-call cap and the 50-per-day publish limit are separate and still enforced. | Built (P-11) |
-| Per-plan limits other than replies per month (seats, posts per month, trial cap, retention per plan, billing) | The plan field and the reply quota exist (previous row); nothing else is per plan, and there is no billing. Retention values are global settings, audit rows are never purged. The plan's `status` (trial, active, past_due, cancelled) is stored and shown but does not change behaviour. | Not enforced; manual in pilot stage 1 |
+| WhatsApp owner channel | `backend/app/integrations/channels/whatsapp/` provides a full WhatsApp Cloud API adapter with interactive button approvals, webhook verification, linking flow, quiet hours, and delivery ledger integration (delivered in Feature Phase 5 Track A and Session 02). WhatsApp is an optional channel choice; Telegram and web remain primary. | Delivered (Optional) |
+| 5 customer reply languages (`tr`, `en`, `ru`, `de`, `ar`) | Centralized in `app/core/reply_languages.py` (`ReplyLanguage`). Grounding claim validator, calendar responses, approved answers, and Agent DM/comment flows support all 5 languages (delivered in Feature Phase 5 Track D and Session 04). Arabic RTL text respects the 1000-byte limit. App UI remains strictly `tr` and `en`. | Delivered |
+| Comment-to-DM on real accounts | Real connections request `instagram_business_manage_comments` in OAuth scopes. Deterministic private-reply rules enforce one-shot replies, price disclosure checks, and auto-escalation (delivered in Feature Phase 3 Track A and Session 08). Public comment moderation remains off for safety. | Delivered |
+| Template images | Brand settings (`app/content/brand.py`) and deterministic SVG/Pillow template engine produce styled promotional images with verified facts (delivered in Feature Phase 3 Track B). Price changes automatically hold affected content. | Delivered |
+| Lead list | `app/reporting/leads.py` extracts qualifying prospect enquiries for pricing and bookings. Conversion requires an eligible confirmed linked appointment. CSV export includes formula injection sanitization (delivered in Feature Phase 5 Track E and Session 06). | Delivered |
+| Carousels and Reels | Media storage, video validation (300 MB cap, 2 GiB workspace quota), feed carousels, and video Reels publishing containers are implemented and verified (delivered in Feature Phase 5 Track B and Session 08). | Delivered |
+| Voice notes & image descriptions | Inbound voice notes are transcribed (whisper/fake); image attachments receive contextual descriptions. Durable Agent events wake the Account Agent safely. The transcript approval floor strictly enforces human review (`ask`) for voice replies (delivered in Feature Phase 2, Feature Phase 5 Track B, and Session 05). | Delivered |
+| Test chat Account Agent parity | Sandbox (`app/inbox/sandbox.py`) executes production Agent proposal, grounding, and policy evaluation with isolated storage and simulated tool results. Zero external side effects, customer memory writes, or report pollution (delivered in Feature Phase 1 and Session 07). | Delivered |
+| Quota warnings (80% and 100%, grace buffer) and monthly AI reply quota | `workspace_plans` and `reply_usage` (migration `0051`), `app/plans/`, and notifications `quota.warning`, `quota.grace`, `quota.paused`. Counted per AI reply draft under a row lock, rolled over monthly, warned once per period; at 110% drafting pauses with `REPLY_QUOTA_PAUSED`. Enforced in code (P-11). | Built (P-11) |
+| Manual billing & commercial boundaries | No automated billing exists in the codebase. Pilot billing is handled manually via EFT/Havale invoicing. CLI commands (`plan-usage`, `plan-set`, `plan-reset`, `plan-extend`) manage operational quotas and period records. Running `plan-extend` is an operational period adjustment, not payment enforcement. | Manual in pilot stage 1 |
+| Up to three Instagram accounts | `social_accounts` has a unique partial index `uq_social_accounts_active_workspace`: one non-disconnected account per workspace. Multiple concurrent connected accounts require a schema migration. | Planned (1 account per workspace today) |
+| Whole-workspace data export | Per-conversation and per-customer JSON export exists (`/workspaces/{ws}/conversations/{id}/export`, `app/operations/data_rights.py`) as a data-rights tool. Whole-workspace and audit-log batch JSON/CSV export is deferred. | Planned (data-rights export exists) |
 
 ### Video storage cost (derived, not measured; Session 06)
 
-Using only the existing Cloudflare R2 rate of $0.015/GB-month and $0 egress: the 300 MB file cap and 2 GiB/workspace quota imply a worst case of about **$0.03/month/workspace** including thumbnails (roughly 1 MB each). A typical assumed 30–60 s phone Reel of 20–60 MB costs about **$0.0003–$0.0009/month/video** while retained. Every size and dollar figure here is derived/assumed, not measured. Orphan videos are removed after 7 days; media referenced only by published items after 90 days. Until Session 07, all uploaded videos are orphans. Quota and retention are the cost levers.
-
-Other providers may charge egress when Meta fetches the object: a 100 MB Reel fetched once is roughly 100 MB of egress. Look up the chosen provider's rate; no egress price is assumed here. Workspace purge currently deletes rows, not stored objects (pre-existing image behavior); orphaned objects from purge can increase video costs and need a follow-up object-purge policy.
+Using Cloudflare R2 rate of $0.015/GB-month and $0 egress: the 300 MB file cap and 2 GiB/workspace quota imply a worst case of about **$0.03/month/workspace** including thumbnails (roughly 1 MB each). A typical 30–60 s phone Reel of 20–60 MB costs about **$0.0003–$0.0009/month/video** while retained. Orphan videos are removed after 7 days; media referenced only by published items after 90 days. Quota and retention are the cost levers.

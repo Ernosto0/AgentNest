@@ -822,7 +822,18 @@
     "step1": "1. Telegram uygulamasında @{{bot}} botunu açın.",
     "step2": "2. Bota /link {{code}} komutunu gönderin.",
     "openInTelegram": "Telegram'da aç",
-    "close": "Kapat"
+    "close": "Kapat",
+    "preferencesTitle": "Bildirim kanalları",
+    "preferencesDesc": "Onay ve uyarı bildirimlerini nereden almak istediğinizi seçin. Uygulama içi bildirimler her zaman etkindir.",
+    "appOnly": "Yalnızca Uygulama",
+    "appOnlyActive": "Yalnızca uygulama içi bildirimler etkin",
+    "appOnlyDesc": "Harici kanallar kapatılır; tüm bildirimler ve onaylar yalnızca web uygulamasından yönetilir.",
+    "disabled": "Devre dışı",
+    "unconfigured": "Yapılandırılmadı",
+    "deliveryFailure": "Teslimat hatası",
+    "deliveryFailureNote": "Son bildirim bu kanala iletilemedi.",
+    "enableTelegram": "Telegram bildirimlerini etkinleştir",
+    "enableWhatsApp": "WhatsApp bildirimlerini etkinleştir"
   },
   "calendar": {
     "title": "Google Takvim bağlantısı",

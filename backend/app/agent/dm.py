@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Any
 
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from app.agent.delegation import authorize_action, record_effect_grant
@@ -16,13 +16,62 @@ from app.agent.tools.broker import BrokerContext, ToolInputError
 from app.core.canonical import payload_hash
 from app.core.clock import Clock
 from app.inbox.approval_payload import approval_payload
-from app.inbox.models import Conversation, Message, ReplyDraft
+from app.inbox.models import (
+    Conversation,
+    Message,
+    MessageImageDescription,
+    MessageTranscript,
+    ReplyDraft,
+)
 from app.inbox.payloads import SendReplyPayload
 from app.jobs.queue import enqueue
 from app.knowledge import impact
 from app.operations.models import Operation
 from app.plans import service as usage
 from app.policy.transcripts import recent_transcript_present
+
+
+def determine_draft_intent(
+    db: Session,
+    proposal: ReplyValidationArgs,
+    newest: Message,
+) -> str | None:
+    # 1. Calendar evidence indicates booking intent
+    if proposal.calendar_evidence is not None:
+        return "booking"
+
+    # 2. Check if proposal uses pricing facts or price template
+    if proposal.template and (
+        "{{fact:pricing." in proposal.template
+        or "{{fact:policy.price_answer_text}}" in proposal.template
+    ):
+        return "pricing"
+    if proposal.fact_sources:
+        from app.knowledge.models import BusinessFact
+
+        fact_ids = [ref.id for ref in proposal.fact_sources]
+        pricing_fact_exists = db.scalar(
+            select(
+                exists().where(
+                    BusinessFact.id.in_(fact_ids),
+                    BusinessFact.category == "pricing",
+                )
+            )
+        )
+        if pricing_fact_exists:
+            return "pricing"
+
+    # 3. Check customer inbound text topics
+    if newest.text:
+        from app.agent.policy import Topic, detect_inbound_topics
+
+        inbound_topics, _, _ = detect_inbound_topics(newest.text)
+        if Topic.BOOKING_MUTATION in inbound_topics:
+            return "booking"
+        if Topic.PRICING in inbound_topics:
+            return "pricing"
+
+    return None
 
 
 def action_result(db: Session, action: AgentAction) -> dict[str, Any]:
@@ -119,10 +168,22 @@ def send(
         owner_source = evidence(
             db, clock, context, proposal.owner_answer.id, proposal.owner_answer.version
         )
-    customer_event = (
-        event is not None
-        and event.source_kind in {"message", "customer_message", "inbound_message"}
-        and event.kind == "customer_message"
+    media_event = event is not None and (
+        (
+            event.source_kind == "message_transcript"
+            and event.kind in {"message.transcript_ready", "message.transcription_failed"}
+        )
+        or (
+            event.source_kind == "message_image_description"
+            and event.kind in {"message.image_described", "message.image_description_failed"}
+        )
+    )
+    customer_event = event is not None and (
+        (
+            event.source_kind in {"message", "customer_message", "inbound_message"}
+            and event.kind == "customer_message"
+        )
+        or media_event
     )
     owner_event = (
         event is not None
@@ -134,22 +195,57 @@ def send(
     )
     if event is None or goal is None or not (customer_event or owner_event):
         raise ToolInputError("no independently evidenced customer response obligation")
-    try:
-        source_message_id = owner_source[2].id if owner_source else uuid.UUID(event.source_id or "")
-    except ValueError as exc:
-        raise ToolInputError("invalid customer response obligation") from exc
-    newest = db.scalar(
-        select(Message)
-        .where(
-            Message.conversation_id == conversation.id,
-            Message.workspace_id == thread.workspace_id,
-            Message.social_account_id == thread.social_account_id,
-            Message.id == source_message_id,
-            Message.direction == "inbound",
-            Message.is_deleted.is_(False),
+
+    source_message_id: uuid.UUID | None = None
+    if owner_source:
+        source_message_id = owner_source[2].id
+    elif event.source_kind == "message_transcript" and event.source_id:
+        try:
+            t_row = db.get(MessageTranscript, uuid.UUID(event.source_id))
+            source_message_id = t_row.message_id if t_row else None
+        except ValueError:
+            source_message_id = None
+    elif event.source_kind == "message_image_description" and event.source_id:
+        try:
+            img_row = db.get(MessageImageDescription, uuid.UUID(event.source_id))
+            source_message_id = img_row.message_id if img_row else None
+        except ValueError:
+            source_message_id = None
+    else:
+        try:
+            source_message_id = uuid.UUID(event.source_id or "")
+        except ValueError:
+            source_message_id = None
+
+    newest: Message | None = None
+    if source_message_id is not None:
+        newest = db.scalar(
+            select(Message)
+            .where(
+                Message.conversation_id == conversation.id,
+                Message.workspace_id == thread.workspace_id,
+                Message.social_account_id == thread.social_account_id,
+                Message.id == source_message_id,
+                Message.direction == "inbound",
+                Message.is_deleted.is_(False),
+            )
+            .limit(1)
         )
-        .limit(1)
-    )
+    if newest is None:
+        newest = db.scalar(
+            select(Message)
+            .where(
+                Message.conversation_id == conversation.id,
+                Message.workspace_id == thread.workspace_id,
+                Message.social_account_id == thread.social_account_id,
+                Message.direction == "inbound",
+                Message.is_deleted.is_(False),
+            )
+            .order_by(
+                Message.provider_timestamp.desc(), Message.created_at.desc(), Message.id.desc()
+            )
+            .limit(1)
+        )
     if newest is None:
         raise ToolInputError("no response obligation")
     if proposal.owner_answer:
@@ -168,6 +264,7 @@ def send(
     if not usage.consume(db, clock, thread.workspace_id, f"dm:{thread.id}:{thread.event_cursor}"):
         usage.notify_paused_conversation(db, clock, thread.workspace_id, conversation.id)
         return {"status": "quota_paused", "reason": usage.PAUSED_REASON}
+    draft_intent = determine_draft_intent(db, proposal, newest)
     draft = ReplyDraft(
         id=uuid.uuid4(),
         workspace_id=thread.workspace_id,
@@ -175,6 +272,7 @@ def send(
         covers_through_message_id=newest.id,
         source="ai",
         language=proposal.language,
+        intent=draft_intent,
         template=proposal.template,
         text=validated.text,
         validation={
@@ -311,4 +409,47 @@ def revalidate(db: Session, clock: Clock, draft: ReplyDraft, conversation: Conve
     except ValueError:
         return False
     checked = validate_reply(db, clock, context, proposal)
-    return checked.valid and checked.text == draft.text
+    if not (checked.valid and checked.text == draft.text):
+        return False
+    if action.policy_grant is not None:
+        from app.agent.knowledge import prices_shared
+        from app.agent.policy import classify_request
+        from app.policy.transcripts import recent_transcript_present
+
+        if recent_transcript_present(db, thread.workspace_id, conversation.id):
+            return False
+
+        msg = (
+            db.get(Message, draft.covers_through_message_id)
+            if draft.covers_through_message_id
+            else None
+        )
+        if msg:
+            img_inj = db.scalar(
+                select(MessageImageDescription.id)
+                .where(
+                    MessageImageDescription.workspace_id == thread.workspace_id,
+                    MessageImageDescription.message_id == msg.id,
+                    MessageImageDescription.injection_suspected.is_(True),
+                )
+                .limit(1)
+            )
+            if img_inj is not None:
+                return False
+
+        re_check = classify_request(
+            action_type="dm.send",
+            surface="dm",
+            inbound_text=msg.text if msg else None,
+            template=draft.template,
+            used_fact_keys=[
+                str(f["key"]) for f in checked.rendered if isinstance(f, dict) and "key" in f
+            ],
+            owner_answer=bool(proposal.owner_answer),
+            customer_clarification=bool(proposal.customer_clarification),
+            prices_shared=prices_shared(db, clock, context.workspace),
+            recent_transcript=False,
+        )
+        if not re_check.is_basic or re_check.is_blocked:
+            return False
+    return True

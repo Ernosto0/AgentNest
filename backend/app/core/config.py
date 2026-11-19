@@ -252,6 +252,15 @@ class Settings(BaseSettings):
     telegram_bot_token: SecretStr | None = None
     telegram_webhook_secret: SecretStr | None = None
 
+    @property
+    def telegram_configured(self) -> bool:
+        return bool(
+            self.telegram_bot_token
+            and self.telegram_bot_token.get_secret_value().strip()
+            and self.telegram_bot_username
+            and self.telegram_bot_username.strip()
+        )
+
     # --- Owner messaging channel: WhatsApp (Feature Phase 5, ADR-027) ---
     whatsapp_access_token: SecretStr | None = None
     whatsapp_app_secret: SecretStr | None = None

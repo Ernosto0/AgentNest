@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ChannelLink } from "@/api/types";
 import { ME, READINESS, WS_GOLKENT, workspace } from "@/test/fixtures";
-import { json, mockApi } from "@/test/mockApi";
+import { json, mockApi, type RecordedRequest } from "@/test/mockApi";
 import { renderApp } from "@/test/renderApp";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -24,7 +24,7 @@ function activeLink(overrides: Partial<ChannelLink> = {}): ChannelLink {
 function routes(
   ws: string,
   links: () => ChannelLink[],
-  extra: Record<string, () => Response> = {},
+  extra: Record<string, (req: RecordedRequest) => Response> = {},
 ) {
   const base = `/api/v1/workspaces/${ws}`;
   return {
@@ -231,6 +231,134 @@ describe("Owner Messaging Channel Settings (Telegram)", () => {
     await user.click(confirmBtn);
 
     await waitFor(() => expect(deleteCalled).toBe(true));
+  });
+});
+
+describe("Notification Channel Preferences (Explicit Channel Choice)", () => {
+  const basePreferences = {
+    telegram: true,
+    whatsapp: false,
+    app_only: false,
+    channels: {
+      telegram: {
+        status: "connected",
+        enabled: true,
+        configured: true,
+        linked: true,
+        last_error: null,
+      },
+      whatsapp: {
+        status: "unlinked",
+        enabled: false,
+        configured: true,
+        linked: false,
+        last_error: null,
+      },
+    },
+  };
+
+  it("renders explicit channel preferences and switches to app-only", async () => {
+    const user = userEvent.setup();
+    let currentPrefs = { ...basePreferences };
+    let putBody: unknown = null;
+
+    mockApi(
+      routes(WS_GOLKENT, () => [activeLink()], {
+        [`GET /api/v1/workspaces/${WS_GOLKENT}/channels/preferences`]: () => json(currentPrefs),
+        [`PUT /api/v1/workspaces/${WS_GOLKENT}/channels/preferences`]: (req) => {
+          putBody = req.body;
+          currentPrefs = {
+            ...currentPrefs,
+            telegram: false,
+            whatsapp: false,
+            app_only: true,
+            channels: {
+              ...currentPrefs.channels,
+              telegram: { ...currentPrefs.channels.telegram, status: "disabled", enabled: false },
+            },
+          };
+          return json(currentPrefs);
+        },
+      }),
+    );
+
+    renderApp(PAGE(WS_GOLKENT));
+
+    expect(await screen.findByText("Bildirim kanalları")).toBeInTheDocument();
+    const appOnlyBtn = screen.getByTestId("app-only-button");
+    expect(appOnlyBtn).toBeInTheDocument();
+
+    await user.click(appOnlyBtn);
+
+    await waitFor(() => expect(putBody).toEqual({ app_only: true }));
+    expect(await screen.findByTestId("app-only-active-notice")).toHaveTextContent(
+      "Yalnızca uygulama içi bildirimler etkin",
+    );
+    expect(screen.getByTestId("channel-status-badge")).toHaveAttribute("data-status", "disabled");
+  });
+
+  it("truthfully renders delivery-failure status when a channel has a delivery error", async () => {
+    mockApi(
+      routes(WS_GOLKENT, () => [activeLink()], {
+        [`GET /api/v1/workspaces/${WS_GOLKENT}/channels/preferences`]: () =>
+          json({
+            ...basePreferences,
+            channels: {
+              ...basePreferences.channels,
+              telegram: {
+                status: "delivery_failure",
+                enabled: true,
+                configured: true,
+                linked: true,
+                last_error: "ambiguous_transport_timeout",
+              },
+            },
+          }),
+      }),
+    );
+
+    renderApp(PAGE(WS_GOLKENT));
+
+    await waitFor(() => {
+      const statusBadge = screen.getByTestId("channel-status-badge");
+      expect(statusBadge).toHaveAttribute("data-status", "delivery_failure");
+    });
+    const statusBadge = screen.getByTestId("channel-status-badge");
+    expect(statusBadge).toHaveTextContent("Teslimat hatası");
+    expect(await screen.findByTestId("telegram-delivery-failure-note")).toHaveTextContent(
+      "Son bildirim bu kanala iletilemedi.",
+    );
+  });
+
+  it("allows toggling an individual channel on and off", async () => {
+    const user = userEvent.setup();
+    let putBody: unknown = null;
+
+    mockApi(
+      routes(WS_GOLKENT, () => [activeLink()], {
+        [`GET /api/v1/workspaces/${WS_GOLKENT}/channels/preferences`]: () => json(basePreferences),
+        [`PUT /api/v1/workspaces/${WS_GOLKENT}/channels/preferences`]: (req) => {
+          putBody = req.body;
+          return json({
+            ...basePreferences,
+            telegram: false,
+            channels: {
+              ...basePreferences.channels,
+              telegram: { ...basePreferences.channels.telegram, status: "disabled", enabled: false },
+            },
+          });
+        },
+      }),
+    );
+
+    renderApp(PAGE(WS_GOLKENT));
+
+    const toggle = await screen.findByTestId("toggle-telegram-preference");
+    expect(toggle).toBeChecked();
+
+    await user.click(toggle);
+
+    await waitFor(() => expect(putBody).toEqual({ telegram: false }));
   });
 });
 

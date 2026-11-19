@@ -102,6 +102,10 @@ export type ReplyUsage = Schemas["UsageOut"];
 export type ChannelLink = Schemas["ChannelLinkOut"];
 export type ChannelLinkCode = Schemas["ChannelLinkCodeOut"];
 export type ChannelLinkCodeRequest = Schemas["ChannelLinkCodeRequest"];
+export type ChannelAvailability = Schemas["ChannelAvailabilityOut"];
+export type ChannelDeliveryStatus = Schemas["ChannelDeliveryStatusOut"];
+export type ChannelPreferences = Schemas["ChannelPreferencesOut"];
+export type ChannelPreferencesIn = Schemas["ChannelPreferencesIn"];
 
 // Google Calendar & appointments integration
 export type CalendarConnection = Schemas["CalendarConnectionOut"];

@@ -20,8 +20,6 @@ const NAME_MAX = 100; // workspaces.name (identity schemas `Name`)
 /** The customer reply languages the backend accepts (`ReplyLocale`), in the order they are listed. */
 const REPLY_LANGUAGES = ["tr", "en", "ru", "de", "ar"] as const;
 type ReplyLanguage = (typeof REPLY_LANGUAGES)[number];
-/** Languages added in Feature Phase 5: the account agent does not answer in them (Track D). */
-const NEW_REPLY_LANGUAGES: readonly ReplyLanguage[] = ["ru", "de", "ar"];
 
 /** The selection in a stable order, with the main language always included. */
 function orderReplyLanguages(selected: readonly string[], main: string): ReplyLanguage[] {
@@ -71,7 +69,6 @@ function WorkspaceDetails({ canEdit }: { canEdit: boolean }) {
   const replyLanguages = [workspace.default_locale, ...workspace.reply_languages.filter((l) => l !== workspace.default_locale)]
     .filter((l) => workspace.reply_languages.includes(l))
     .map((l) => t(`settings.languages.${l}`));
-  const hasNewLanguage = workspace.reply_languages.some((l) => NEW_REPLY_LANGUAGES.includes(l));
 
   return (
     <SettingsPanel as="section" aria-labelledby="settings-workspace-details">
@@ -125,7 +122,7 @@ function WorkspaceDetails({ canEdit }: { canEdit: boolean }) {
           </DetailRow>
           <DetailRow
             term={t("settings.workspace.replyLanguages")}
-            hint={`${t("settings.workspace.replyLanguagesHint")}${hasNewLanguage ? ` ${t("settings.workspace.replyLanguagesAgentNote")}` : ""}`}
+            hint={t("settings.workspace.replyLanguagesHint")}
           >
             {replyLanguages.join(", ")}
           </DetailRow>
@@ -173,7 +170,6 @@ function WorkspaceEditForm({ onDone }: { onDone: (saved: boolean) => void }) {
   const serverNameError = update.error?.fieldErrors.find((e) => e.field === "name");
   const serverZoneError = update.error?.fieldErrors.find((e) => e.field === "timezone");
   const serverLanguageError = update.error?.fieldErrors.find((e) => e.field === "reply_languages");
-  const newLanguageSelected = languages.some((l) => NEW_REPLY_LANGUAGES.includes(l));
   const toggleLanguage = (code: ReplyLanguage, on: boolean) =>
     setLanguages((current) => orderReplyLanguages(on ? [...current, code] : current.filter((l) => l !== code), workspace.default_locale));
 
@@ -233,11 +229,6 @@ function WorkspaceEditForm({ onDone }: { onDone: (saved: boolean) => void }) {
         </p>
         {serverLanguageError ? <p className="text-body text-danger">{t("settings.workspace.replyLanguagesInvalid")}</p> : null}
       </fieldset>
-      {newLanguageSelected ? (
-        <Notice tone="attention" title={t("settings.workspace.replyLanguagesNewTitle")}>
-          {t("settings.workspace.replyLanguagesNewBody")}
-        </Notice>
-      ) : null}
       {update.isError && !serverNameError && !serverZoneError && !serverLanguageError ? <ErrorMessage error={update.error} /> : null}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" pending={update.isPending} disabled={!dirty}>

@@ -15,11 +15,15 @@ from app.core.context import WorkspaceContext
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.identity.channels import ChannelLinkService
+from app.identity.models import CHANNEL_TYPES
 from app.identity.schemas import (
     ChannelAvailabilityOut,
+    ChannelDeliveryStatusOut,
     ChannelLinkCodeOut,
     ChannelLinkCodeRequest,
     ChannelLinkOut,
+    ChannelPreferencesIn,
+    ChannelPreferencesOut,
 )
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/channels", tags=["channels"])
@@ -66,7 +70,85 @@ def get_channel_availability(
     settings: Settings = Depends(get_app_settings),
 ) -> ChannelAvailabilityOut:
     """Which optional owner channels this server has credentials for (no secrets, no numbers)."""
-    return ChannelAvailabilityOut(whatsapp=settings.whatsapp_configured)
+    return ChannelAvailabilityOut(
+        whatsapp=settings.whatsapp_configured,
+        telegram=settings.telegram_configured,
+    )
+
+
+@router.get("/preferences", response_model=ChannelPreferencesOut)
+def get_channel_preferences(
+    ctx: WorkspaceContext = Depends(require_membership("settings.view")),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_app_settings),
+) -> ChannelPreferencesOut:
+    """Get the current user's notification channel preferences and status in this workspace."""
+    if ctx.actor.type != "user" or not ctx.actor.id:
+        raise AppError("FORBIDDEN")
+    user_id = uuid.UUID(ctx.actor.id)
+    prefs = ChannelLinkService.get_channel_preferences(db, ctx.workspace_id, user_id)
+    channels_status = {
+        ch: ChannelDeliveryStatusOut(
+            **ChannelLinkService.get_channel_delivery_status(
+                db, settings, ctx.workspace_id, user_id, ch
+            )
+        )
+        for ch in CHANNEL_TYPES
+    }
+    app_only = not any(prefs.values())
+    return ChannelPreferencesOut(
+        telegram=prefs.get("telegram", False),
+        whatsapp=prefs.get("whatsapp", False),
+        app_only=app_only,
+        channels=channels_status,
+    )
+
+
+@router.put("/preferences", response_model=ChannelPreferencesOut)
+def update_channel_preferences(
+    body: ChannelPreferencesIn,
+    ctx: WorkspaceContext = Depends(require_membership("settings.view")),
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    settings: Settings = Depends(get_app_settings),
+) -> ChannelPreferencesOut:
+    """Update notification channel preferences for the current user."""
+    if ctx.actor.type != "user" or not ctx.actor.id:
+        raise AppError("FORBIDDEN")
+    user_id = uuid.UUID(ctx.actor.id)
+
+    if body.app_only is True:
+        if body.telegram is True or body.whatsapp is True:
+            raise AppError("VALIDATION_FAILED", reason="app_only_conflict")
+        changes = {"telegram": False, "whatsapp": False}
+    else:
+        changes = {}
+        if body.telegram is not None:
+            changes["telegram"] = body.telegram
+        if body.whatsapp is not None:
+            changes["whatsapp"] = body.whatsapp
+        if body.app_only is False and not changes:
+            raise AppError("VALIDATION_FAILED", reason="specify_channel_or_app_only")
+
+    ChannelLinkService.set_channel_preferences(db, clock, ctx, user_id, changes)
+    db.commit()
+
+    prefs = ChannelLinkService.get_channel_preferences(db, ctx.workspace_id, user_id)
+    channels_status = {
+        ch: ChannelDeliveryStatusOut(
+            **ChannelLinkService.get_channel_delivery_status(
+                db, settings, ctx.workspace_id, user_id, ch
+            )
+        )
+        for ch in CHANNEL_TYPES
+    }
+    app_only = not any(prefs.values())
+    return ChannelPreferencesOut(
+        telegram=prefs.get("telegram", False),
+        whatsapp=prefs.get("whatsapp", False),
+        app_only=app_only,
+        channels=channels_status,
+    )
 
 
 @router.get("/links", response_model=list[ChannelLinkOut])

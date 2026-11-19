@@ -226,7 +226,7 @@ def wake_drafting(
     ).one_or_none()
     if conversation is None:
         return
-    from app.agent.models import AccountAgent
+    from app.agent.models import AccountAgent, AgentThread
 
     controller = session.scalar(
         select(AccountAgent).where(
@@ -235,6 +235,40 @@ def wake_drafting(
         )
     )
     if controller is not None and controller.controller_mode == "agent":
+        thread = session.scalar(
+            select(AgentThread).where(
+                AgentThread.workspace_id == row.workspace_id,
+                AgentThread.social_account_id == conversation.social_account_id,
+                AgentThread.surface == "dm",
+                (AgentThread.dm_conversation_id == conversation.id)
+                | (AgentThread.source_ref == str(conversation.id)),
+            )
+        )
+        if (
+            thread is not None
+            and thread.handling_mode == "agent"
+            and thread.controller_epoch == controller.controller_epoch
+            and controller.state in {"active", "paused"}
+        ):
+            from app.agent.repository import record_thread_event
+
+            kind = (
+                "message.transcript_ready"
+                if row.status == "succeeded"
+                else "message.transcription_failed"
+            )
+            record_thread_event(
+                session,
+                clock,
+                workspace_id=row.workspace_id,
+                account_id=conversation.social_account_id,
+                thread_id=thread.id,
+                kind=kind,
+                source_kind="message_transcript",
+                source_key=f"transcript:{row.id}",
+                source_id=row.id,
+                source_version=1,
+            )
         return
     now = clock.now()
     keys = [draft_reply_key(conversation.id, requested=True)]

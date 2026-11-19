@@ -133,6 +133,34 @@ def add_event_and_wake(
     return event
 
 
+def record_thread_event(
+    session: Session,
+    clock: Clock,
+    *,
+    workspace_id: uuid.UUID,
+    account_id: uuid.UUID,
+    thread_id: uuid.UUID,
+    kind: str,
+    source_kind: str,
+    source_key: str,
+    source_id: str | uuid.UUID | None,
+    source_version: int = 1,
+) -> AgentEvent:
+    """Convenience helper for recording a scoped AgentEvent and waking the thread."""
+    return add_event_and_wake(
+        session,
+        workspace_id=workspace_id,
+        account_id=account_id,
+        thread_id=thread_id,
+        kind=kind,
+        source_kind=source_kind,
+        source_key=source_key,
+        source_id=str(source_id) if source_id is not None else None,
+        source_version=source_version,
+        clock=clock,
+    )
+
+
 def stable_intent_key(
     *,
     account_id: uuid.UUID,

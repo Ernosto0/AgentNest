@@ -822,7 +822,18 @@
     "step1": "1. Open @{{bot}} on Telegram.",
     "step2": "2. Send the command /link {{code}} to the bot.",
     "openInTelegram": "Open in Telegram",
-    "close": "Close"
+    "close": "Close",
+    "preferencesTitle": "Notification channels",
+    "preferencesDesc": "Choose where you receive approval and alert notifications. In-app notifications are always active.",
+    "appOnly": "App only",
+    "appOnlyActive": "Only in-app notifications are active",
+    "appOnlyDesc": "External channels are turned off; all notifications and approvals are managed inside the web app.",
+    "disabled": "Disabled",
+    "unconfigured": "Unconfigured",
+    "deliveryFailure": "Delivery failure",
+    "deliveryFailureNote": "The last notification could not be delivered to this channel.",
+    "enableTelegram": "Enable Telegram notifications",
+    "enableWhatsApp": "Enable WhatsApp notifications"
   },
   "calendar": {
     "title": "Google Calendar connection",

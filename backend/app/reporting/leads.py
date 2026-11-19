@@ -11,16 +11,24 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import Select, case, exists, func, literal, or_, select, true
+from sqlalchemy import Select, String, case, exists, func, literal, or_, select, true
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
+from app.agent.models import AgentAction, AgentEvent, AgentThread
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
-from app.inbox.models import Conversation, Message, ReplyDraft
+from app.inbox.models import (
+    Conversation,
+    Message,
+    MessageImageDescription,
+    MessageTranscript,
+    ReplyDraft,
+)
 from app.integrations.calendar.models import CalendarAppointment
 from app.knowledge.models import BusinessFact, FactReference
+from app.operations.models import Operation
 from app.reporting.links import Link, conversation_link
 from app.reporting.missed_customers import PRICE_CATEGORY
 from app.reporting.periods import day_bounds, local_date_of
@@ -86,7 +94,7 @@ def lead_rows(ctx: WorkspaceContext, start: datetime, end: datetime) -> Select[A
         BusinessFact.id == FactReference.fact_id,
         BusinessFact.category == PRICE_CATEGORY,
     )
-    pairs = (
+    draft_pairs = (
         select(
             Message.conversation_id,
             Message.id.label("message_id"),
@@ -113,8 +121,52 @@ def lead_rows(ctx: WorkspaceContext, start: datetime, end: datetime) -> Select[A
                 (ReplyDraft.origin == "agent") & agent_price,
             ),
         )
-        .cte("qualifying_questions")
     )
+    has_booking_action = exists().where(
+        AgentThread.workspace_id == ctx.workspace_id,
+        AgentThread.dm_conversation_id == Message.conversation_id,
+        AgentAction.workspace_id == ctx.workspace_id,
+        AgentAction.thread_id == AgentThread.id,
+        AgentAction.action_type.in_(("calendar.book", "calendar.reschedule")),
+        or_(
+            exists().where(
+                AgentEvent.workspace_id == ctx.workspace_id,
+                AgentEvent.id == AgentAction.initiating_event_id,
+                or_(
+                    (AgentEvent.source_kind == "message")
+                    & (AgentEvent.source_id == func.cast(Message.id, String)),
+                    exists().where(
+                        MessageTranscript.workspace_id == ctx.workspace_id,
+                        func.cast(MessageTranscript.id, String) == AgentEvent.source_id,
+                        MessageTranscript.message_id == Message.id,
+                    ),
+                    exists().where(
+                        MessageImageDescription.workspace_id == ctx.workspace_id,
+                        func.cast(MessageImageDescription.id, String) == AgentEvent.source_id,
+                        MessageImageDescription.message_id == Message.id,
+                    ),
+                ),
+            ),
+            (
+                AgentAction.initiating_event_id.is_(None)
+                & (Message.provider_timestamp <= AgentAction.created_at)
+            ),
+        ),
+    )
+    action_pairs = select(
+        Message.conversation_id,
+        Message.id.label("message_id"),
+        Message.provider_timestamp.label("at"),
+        Message.text,
+        literal("booking").label("intent"),
+    ).where(
+        real_message(Message, ctx),
+        Message.direction == "inbound",
+        Message.provider_timestamp >= start,
+        Message.provider_timestamp < end,
+        has_booking_action,
+    )
+    pairs = draft_pairs.union(action_pairs).cte("qualifying_questions")
     first = (
         select(pairs.c.conversation_id, func.min(pairs.c.at).label("first_at"))
         .group_by(pairs.c.conversation_id)
@@ -131,11 +183,25 @@ def lead_rows(ctx: WorkspaceContext, start: datetime, end: datetime) -> Select[A
         )
         .cte("last_questions")
     )
+    unconfirmed_operation = exists().where(
+        Operation.workspace_id == ctx.workspace_id,
+        Operation.operation_type == "calendar_create_event",
+        Operation.subject_id == CalendarAppointment.id,
+        Operation.status != "succeeded",
+    )
+    unconfirmed_agent_booking = exists().where(
+        AgentAction.workspace_id == ctx.workspace_id,
+        AgentAction.action_type == "calendar.book",
+        AgentAction.payload_ref == CalendarAppointment.id,
+        AgentAction.status != "succeeded",
+    )
     converted = exists().where(
         CalendarAppointment.workspace_id == ctx.workspace_id,
         CalendarAppointment.conversation_id == first.c.conversation_id,
         CalendarAppointment.status != "cancelled",
         CalendarAppointment.created_at >= first.c.first_at,
+        ~unconfirmed_operation,
+        ~unconfirmed_agent_booking,
     )
     return (
         select(last, Conversation.customer_handle)

@@ -8,6 +8,9 @@
 - **Status:** **Implemented and verified offline. Stopped for review.** Nothing was run against Instagram, a real customer website, a real model, or a device.
 - **Date:** 2026-11-17
 
+> [!NOTE] Current Status (Date: 2026-11-19)
+> The code for this feature phase was subsequently committed to `main` (`e1c9f13`). Its functionality has been integrated, verified offline, and extended to Account Agent pilot readiness in Sessions 00–10 of the `answeres2.md` plan. The original historical test records and offline verification below are preserved intact. Remaining live provider verifications (live Instagram profile/captions import, live website imports across small-business sites, settled pricing) are cataloged as pending live verification runbooks in Session 11 (`docs/implementation/account-agent-pilot-readiness/s11-report.md`).
+
 ---
 
 ## 1. Executive summary

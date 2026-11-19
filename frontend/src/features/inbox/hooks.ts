@@ -292,7 +292,7 @@ export function useCreateAnswer(ws: string) {
   return useMutation<
     ApprovedAnswer,
     AppError,
-    { title: string; intent: string; question: string; template: string; language: "tr" | "en" }
+    { title: string; intent: string; question: string; template: string; language: "tr" | "en" | "ru" | "de" | "ar" }
   >({
     mutationFn: ({ title, intent, question, template, language }) =>
       unwrap(

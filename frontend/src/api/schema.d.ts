@@ -1754,6 +1754,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/channels/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Channel Preferences
+         * @description Get the current user's notification channel preferences and status in this workspace.
+         */
+        get: operations["get_channel_preferences_api_v1_workspaces__workspace_id__channels_preferences_get"];
+        /**
+         * Update Channel Preferences
+         * @description Update notification channel preferences for the current user.
+         */
+        put: operations["update_channel_preferences_api_v1_workspaces__workspace_id__channels_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/commands": {
         parameters: {
             query?: never;
@@ -3813,7 +3837,7 @@ export interface components {
              * Decision
              * @enum {string}
              */
-            decision: "auto" | "approval_required" | "human_required" | "blocked";
+            decision: "auto" | "approval_required" | "human_required" | "blocked" | "automatic" | "ask";
             /** Facts Used */
             facts_used: components["schemas"]["FactUsedOut"][];
             /** Flags */
@@ -3836,6 +3860,12 @@ export interface components {
         };
         /** AssistantChatOut */
         AssistantChatOut: {
+            /**
+             * Controller Mode
+             * @default legacy
+             * @enum {string}
+             */
+            controller_mode: "legacy" | "agent";
             /** Items */
             items: components["schemas"]["AssistantChatTurnOut"][];
             /** Remaining This Hour */
@@ -3852,6 +3882,12 @@ export interface components {
         AssistantChatTurnOut: {
             /** Completed At */
             completed_at: string | null;
+            /**
+             * Controller Mode
+             * @default legacy
+             * @enum {string}
+             */
+            controller_mode: "legacy" | "agent";
             /**
              * Created At
              * Format: date-time
@@ -4174,8 +4210,29 @@ export interface components {
         };
         /** ChannelAvailabilityOut */
         ChannelAvailabilityOut: {
+            /**
+             * Telegram
+             * @default true
+             */
+            telegram: boolean;
             /** Whatsapp */
             whatsapp: boolean;
+        };
+        /** ChannelDeliveryStatusOut */
+        ChannelDeliveryStatusOut: {
+            /** Configured */
+            configured: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Last Error */
+            last_error?: string | null;
+            /** Linked */
+            linked: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "connected" | "unlinked" | "disabled" | "unconfigured" | "delivery_failure";
         };
         /** ChannelLinkCodeOut */
         ChannelLinkCodeOut: {
@@ -4226,6 +4283,28 @@ export interface components {
             linked_at: string;
             /** Status */
             status: string;
+        };
+        /** ChannelPreferencesIn */
+        ChannelPreferencesIn: {
+            /** App Only */
+            app_only?: boolean | null;
+            /** Telegram */
+            telegram?: boolean | null;
+            /** Whatsapp */
+            whatsapp?: boolean | null;
+        };
+        /** ChannelPreferencesOut */
+        ChannelPreferencesOut: {
+            /** App Only */
+            app_only: boolean;
+            /** Channels */
+            channels: {
+                [key: string]: components["schemas"]["ChannelDeliveryStatusOut"];
+            };
+            /** Telegram */
+            telegram: boolean;
+            /** Whatsapp */
+            whatsapp: boolean;
         };
         /** ClarificationAnswer */
         ClarificationAnswer: {
@@ -11417,6 +11496,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_channel_preferences_api_v1_workspaces__workspace_id__channels_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelPreferencesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_channel_preferences_api_v1_workspaces__workspace_id__channels_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChannelPreferencesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelPreferencesOut"];
+                };
             };
             /** @description Validation Error */
             422: {

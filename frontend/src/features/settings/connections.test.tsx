@@ -39,6 +39,8 @@ function routes(ws: string, accounts: () => SocialAccount[], extra: Record<strin
     [`GET ${base}/social-accounts`]: () => json({ items: accounts(), next_cursor: null }),
     [`GET ${base}/calendar`]: () => json({ items: [] }),
     [`GET ${base}/channels/links`]: () => json([]),
+    [`GET ${base}/channels/availability`]: () => json({ telegram: true, whatsapp: true }),
+    [`GET ${base}/channels/preferences`]: () => json({ channel_choice: "telegram", telegram_enabled: false, whatsapp_enabled: false, app_enabled: true }),
     ...extra,
   };
 }

@@ -141,6 +141,30 @@ PUSH_TYPES: dict[str, str] = {
 # ``integrations/channels/whatsapp/templates.py``; customer text is never included.
 WHATSAPP_TYPES: frozenset[str] = frozenset(PUSH_TYPES) | {"report.daily_ready"}
 
+# Telegram (ADR-012, Session 01): approvals, owner questions, operational failures, quota
+# warnings and existing report-ready notifications. Routine info notifications and weekly
+# delegation suggestions stay in-app.
+TELEGRAM_TYPES: frozenset[str] = frozenset(
+    {
+        "approval.requested",
+        "approval.expired",
+        "owner_question.requested",
+        "owner_question.window_closed",
+        "content.failed",
+        "content.on_hold",
+        "reply.failed",
+        "conversation.needs_human",
+        "account.needs_reauth",
+        "account.degraded",
+        "account.permission_missing",
+        "quota.warning",
+        "quota.grace",
+        "quota.paused",
+        "report.daily_ready",
+        "report.missed_customers_ready",
+    }
+)
+
 FRONTEND_FILE = (
     Path(__file__).resolve().parents[3]
     / "frontend"

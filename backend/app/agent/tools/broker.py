@@ -16,7 +16,7 @@ from app.ai.injection import neutralise_untrusted
 from app.core.clock import Clock
 from app.core.context import WorkspaceContext
 from app.core.errors import AppError
-from app.inbox.models import Message
+from app.inbox.models import Message, MessageImageDescription, MessageTranscript
 from app.integrations.llm.steps import LLMToolDefinition
 
 Capability = Literal["public_read", "private_read", "internal_write", "external_effect"]
@@ -197,7 +197,7 @@ class AnswersReadArgs(BaseModel):
     model_config = ConfigDict(extra="forbid")
     limit: int = Field(ge=1, le=10)
     cursor: uuid.UUID | None
-    language: Literal["tr", "en"]
+    language: Literal["tr", "en", "ru", "de", "ar"]
 
 
 def _answers_read(
@@ -268,6 +268,7 @@ def _thread_read(
         .order_by(Message.provider_timestamp.desc(), Message.created_at.desc(), Message.id.desc())
         .limit(request.limit)
     ).all()
+    from app.agent.context import format_message_text_with_media
     from app.memory.service import source_visible
 
     identity_id = session.scalar(
@@ -278,20 +279,35 @@ def _thread_read(
         )
     )
     rows = [row for row in rows if source_visible(session, identity_id, row)]
+    message_ids = [item.id for item in rows]
+    transcripts: dict[uuid.UUID, MessageTranscript] = {}
+    image_descs: dict[tuple[uuid.UUID, int], MessageImageDescription] = {}
+    if message_ids:
+        transcripts = {
+            t.message_id: t
+            for t in session.scalars(
+                select(MessageTranscript).where(
+                    MessageTranscript.workspace_id == context.workspace.workspace_id,
+                    MessageTranscript.message_id.in_(message_ids),
+                )
+            )
+        }
+        image_descs = {
+            (d.message_id, d.attachment_index): d
+            for d in session.scalars(
+                select(MessageImageDescription).where(
+                    MessageImageDescription.workspace_id == context.workspace.workspace_id,
+                    MessageImageDescription.message_id.in_(message_ids),
+                )
+            )
+        }
     return {
         "messages": [
             {
                 "id": str(item.id),
                 "direction": item.direction,
                 "text": neutralise_untrusted(
-                    (item.text or "")[:1000]
-                    or (
-                        "[attachment: "
-                        + ", ".join(str(a.get("type", "file")) for a in item.attachments)
-                        + "]"
-                        if item.attachments
-                        else ""
-                    )
+                    format_message_text_with_media(item, transcripts, image_descs, max_chars=1000)
                 ),
             }
             for item in reversed(rows)

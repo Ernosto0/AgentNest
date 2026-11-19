@@ -293,16 +293,14 @@ describe("SettingsPage", () => {
 
     await user.click(group.getByRole("checkbox", { name: "العربية" }));
     await user.click(group.getByRole("checkbox", { name: "Русский" }));
-    const notice = details.getByText("Rusça, Almanca ve Arapça yenidir");
-    expect(notice).toBeInTheDocument();
-    expect(details.getByText(/Hesap temsilcisi yalnızca Türkçe ve İngilizce yanıt verir/)).toBeInTheDocument();
+    expect(details.queryByText("Rusça, Almanca ve Arapça yenidir")).toBeNull();
     await user.click(details.getByRole("button", { name: "Değişiklikleri kaydet" }));
 
     await waitFor(() => expect(requests.find((r) => r.method === "PATCH")?.body).toEqual({ reply_languages: ["tr", "ru", "ar"] }));
     expect(await details.findByText("Çalışma alanı bilgileri kaydedildi.")).toBeInTheDocument();
     expect(details.getByText("Türkçe, Русский, العربية")).toBeInTheDocument();
-    // Saved: the read-only row repeats that the account agent hands these conversations to a person.
-    expect(details.getByText(/Hesap temsilcisi yalnızca Türkçe ve İngilizce yanıt verir; bu yüzden/)).toBeInTheDocument();
+    // The obsolete warning that account agent only supports TR/EN is removed.
+    expect(details.queryByText(/Hesap temsilcisi yalnızca Türkçe ve İngilizce yanıt verir/)).toBeNull();
   });
 
   it("sends no language change when the selection is untouched, and can switch a language off again", async () => {
@@ -324,7 +322,7 @@ describe("SettingsPage", () => {
     await user.click(details.getByRole("button", { name: /Düzenle/ }));
     const group = within(details.getByRole("group", { name: "Müşteri yanıt dilleri" }));
     expect(group.getByRole("checkbox", { name: "Deutsch" })).toBeChecked();
-    expect(details.getByText("Rusça, Almanca ve Arapça yenidir")).toBeInTheDocument();
+    expect(details.queryByText("Rusça, Almanca ve Arapça yenidir")).toBeNull();
     expect(details.getByRole("button", { name: "Değişiklikleri kaydet" })).toBeDisabled(); // nothing changed
 
     await user.click(group.getByRole("checkbox", { name: "Deutsch" }));

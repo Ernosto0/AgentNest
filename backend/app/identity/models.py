@@ -274,3 +274,21 @@ class ChannelLinkCode(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class ChannelPreference(UUIDPrimaryKeyMixin, WorkspaceScopedMixin, TimestampMixin, Base):
+    """``channel_preferences``: per-user notification channel opt-ins (Session 02)."""
+
+    __tablename__ = "channel_preferences"
+    __table_args__ = (
+        workspace_unique_constraint(),
+        UniqueConstraint("workspace_id", "user_id", "channel"),
+        CheckConstraint(_in("channel", CHANNEL_TYPES), name="channel"),
+        Index("ix_channel_preferences_user", "workspace_id", "user_id"),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    channel: Mapped[str] = mapped_column(Text, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))

@@ -60,7 +60,7 @@ class CalendarEvidence(BaseModel):
 class ReplyValidationArgs(BaseModel):
     model_config = ConfigDict(extra="forbid")
     template: str = Field(max_length=900)
-    language: Literal["tr", "en"]
+    language: Literal["tr", "en", "ru", "de", "ar"]
     fact_sources: list[FactEvidence] = Field(default_factory=list, max_length=20)
     customer_clarification: CustomerClarification | None = None
     owner_answer: OwnerAnswerEvidence | None = None
@@ -130,10 +130,15 @@ def validate_reply(
         _, answer, _ = resolved
         # Entire reply is server-rendered. No arbitrary numeric/span exemption and
         # no owner answer ID is ever offered to business-fact render/claim validation.
-        owner_text = (
-            f"İşletmenin bu talebinize yanıtı: {answer.body}"
-            if proposal.language == "tr"
-            else f"The business's answer to your request: {answer.body}"
+        owner_texts = {
+            "tr": f"İşletmenin bu talebinize yanıtı: {answer.body}",
+            "en": f"The business's answer to your request: {answer.body}",
+            "ru": f"Ответ бизнеса на ваш запрос: {answer.body}",
+            "de": f"Die Antwort des Unternehmens auf Ihre Anfrage: {answer.body}",
+            "ar": f"رد الشركة على طلبك: {answer.body}",
+        }
+        owner_text = owner_texts.get(
+            proposal.language, f"The business's answer to your request: {answer.body}"
         )
         if length_issue(owner_text, max_bytes=1000):
             return GroundedReply(errors=("REPLY_LENGTH_INVALID",))
@@ -164,12 +169,33 @@ def validate_reply(
         pattern = _DATE if source.kind == "date" else _TIME
         if pattern.fullmatch(value) is None:
             return GroundedReply(errors=("CUSTOMER_VALUE_INVALID",))
-        label = "tarih" if source.kind == "date" else "saat"
-        question = (
-            f"“{value}” belirttiniz. Tercih ettiğiniz {label} bu mu?"
-            if proposal.language == "tr"
-            else f"You mentioned “{value}”. Is that your preferred {source.kind}?"
-        )
+        clarification_templates = {
+            "tr": {
+                "date": f"“{value}” belirttiniz. Tercih ettiğiniz tarih bu mu?",
+                "time": f"“{value}” belirttiniz. Tercih ettiğiniz saat bu mu?",
+            },
+            "en": {
+                "date": f"You mentioned “{value}”. Is that your preferred date?",
+                "time": f"You mentioned “{value}”. Is that your preferred time?",
+            },
+            "ru": {
+                "date": f"Вы указали «{value}». Это ваша желаемая дата?",
+                "time": f"Вы указали «{value}». Это ваше желаемое время?",
+            },
+            "de": {
+                "date": f"Sie haben „{value}“ angegeben. Ist das Ihr bevorzugtes Datum?",
+                "time": f"Sie haben „{value}“ angegeben. Ist das Ihre bevorzugte Uhrzeit?",
+            },
+            "ar": {
+                "date": f'لقد ذكرت "{value}". هل هذا هو التاريخ المفضل لديك؟',
+                "time": f'لقد ذكرت "{value}". هل هذا هو الوقت المفضل لديك؟',
+            },
+        }
+        question = clarification_templates.get(proposal.language, clarification_templates["en"])[
+            source.kind
+        ]
+        if length_issue(question, max_bytes=1000):
+            return GroundedReply(errors=("REPLY_LENGTH_INVALID",))
         return GroundedReply(question, customer_source=source.message_id)
     keys = placeholder_keys(proposal.template)
     if len(keys) > 20:

@@ -88,6 +88,27 @@ All paths below have the existing `/api/v1/workspaces/{workspace_id}` prefix, CS
 
 The Session 03 decision service reads current membership for human-task requesters and the grantor, account state/capability, action-scoped facts and limits. `automatic` stores a policy grant on `agent_actions` with exact hash, target, action/version, delegation/version/grantor and controller epoch; `ask` creates a single-use `agent_action` approval whose hash equals the exact effect payload hash. The two are distinguishable. A projected automatic DM or publish subject obtains a policy-channel approval only through `record_effect_grant`, which verifies action type, subject type, required permission and exact payload hash. The existing send/publish executors additionally call `fence_action` for agent-origin subjects before creating an operation. They retain their own provider capability, window/media/quota and exact subject checks. Session 07 owns DM projection and Session 13 owns content projection; neither may bypass these checks. Existing legacy automation/approvals retain their original behavior.
 
+### 4.1 Basic-versus-Complex Reply Policy Matrix (Pilot Semi-Automation)
+
+Under the pilot semi-automation model (`answeres2.md` §5 & Session 03), action delegation is governed by an authoritative server-side deterministic policy matrix (`app.agent.policy`).
+
+| Request / Action Category | Matrix Policy Handling | Enforcement & Invariants |
+|---|---|---|
+| **Greeting; verified hours, location/contact, service descriptions** | Automatic when owner grants `mode="automatic"` AND all existing checks pass. | Topic rule permits automatic execution; if owner configured `ask`, it stays `ask` (restricts, never broadens). |
+| **Standard verified price question** | Automatic only when price disclosure is allowed (`prices_shared == True`), surface is private (`dm.send` or `comment.private_reply`), and requested price is verified and usable. | Public comments (`comment.reply`) strictly forbid public price disclosure; restricted to `ask` / human review. |
+| **Mixed topics or unclear request; missing/stale/conflicting info** | Propose safe clarification or require approval/owner input; never guess a business value. | Inbound text with multiple substantive topics (e.g. hours + pricing), unrecognized intent, or conflicting facts restricts `automatic` to `ask`. |
+| **Custom quote, exception, discount or negotiation** | Owner approval/input required. | Inbound requests for discounts, promo codes, student deals, negotiations, or custom quotes restrict `automatic` to `ask`. |
+| **Complaint, refund, legal/health-sensitive request, suspected injection, abusive** | Preserve applicable human-handoff or block rule; approval is not a way around a blocked action. | Evaluates deterministic keywords (`escalation.py`) and injection signals (`injection.py`) across all 5 languages. Yields `blocked` / `cancelled`. |
+| **Voice-derived reply** | Approval required under the existing transcript rule (`recent_transcript_present`). | Code inspects stored transcript rows (Rule F-03); restricts `automatic` to `ask`. |
+| **Pilot mutations (calendar booking/reschedule/cancel; publishing; destructive moderation)** | Retain separately configured action authority; propose approval for pilot mutations rather than treating them as basic FAQ replies. | Calendar actions, `content.publish`, `comment.delete`, and `comment.hide` propose approval (`ask`). |
+
+#### Core Architectural Guarantees:
+1. **Topic Rule Restricts, Never Broadens (INV-04):** A reply can be `automatic` ONLY when the action grant permits it (`rule.mode == "automatic"`) AND the server-side topic/evidence classification admits it as `basic` AND every existing safety check passes (valid facts, public/private boundary, messaging window, quotas). A topic rule can restrict an action grant to `ask`, but NEVER broaden it to `automatic`. Legacy `automation_policies` must not become an implicit Agent grant.
+2. **Deterministic Server-Side Classification (INV-04):** Do NOT trust a model-provided `basic` or `safe` flag as authorization! The server inspects the customer's inbound message(s), detected intent/topics across five supported languages (`tr`, `en`, `ru`, `de`, `ar`), and referenced facts. Classification evidence and reason codes are persisted in `AgentAction.policy_grant` / `AgentAction.outcome_code`. Unrecognized, mixed, or conflicting classifications require human review (`ask`).
+3. **Dual Surface Enforcement:** Basic-versus-complex policy applies to `dm.send`, `comment.reply`, and `comment.private_reply`. Public comments continue to enforce price-disclosure restrictions (never disclose prices in public comments) and public/private boundaries.
+4. **Recheck at Decision and Send Execution:** `ApprovalService.decide` (`on_decided` callback) and send executors (`operations/send.py`, `operations/public_comments.py`, `operations/private_reply.py`) call `revalidate` and `fence_action` immediately before dispatch. Revocation, delegation change, paused agent, stale facts, revoked price disclosure, or closed messaging window invalidates the unexecuted grant.
+
+
 Session 08 owns **agent memory and derived summary** inspection, correction, forgetting and account-disconnect/retention erasure. It must expose an internal, customer-scoped export/erase service for its own records that Phase 8 P8-05 can call; no existing general customer export/deletion route is claimed. The current code has only `data.export`/`data.delete` permission constants. Phase 8 owns the general data-subject export/deletion API, cross-domain orchestration and Meta callbacks. Session 08 tests its service and ensures that memory never survives an existing disconnect-erasure request or source deletion. A Session 08 report must state any Phase 8 dependency honestly rather than claiming full data-rights acceptance from a memory table alone. Personal source bodies, memory, summaries and prompt snapshots follow explicit retention/erasure rules; only minimal content-free action/operation evidence can survive an unresolved side effect until reconciliation ends.
 
 ## Session 06 runtime boundary: context, voice and grounding
@@ -103,7 +124,8 @@ version metadata. Examples are delimited untrusted data, never delegation or fac
 
 The actual coordinator calls `app.agent.context.assemble`: at most eight non-deleted DM
 turns, four relevant visible facts and two active approved answers, current persona and
-server-selected TR/EN language. Public contexts do not query DM turns. All owner/customer
+server-selected reply language across all five supported customer reply languages (`tr`, `en`, `ru`, `de`, `ar`).
+Public contexts do not query DM turns. All owner/customer
 and retrieved text is neutralized inside an untrusted section; a separate server-generated
 source table supplies fact IDs/versions/placeholders. Summaries remain absent until Session 08.
 Knowledge relevance is a bounded lexical key/label/title search, not a semantic search guarantee.
@@ -114,7 +136,7 @@ keyset bound. Internal escalation/brand/schedule categories and the price-disclo
 fact are withheld; missing/unusable disclosure defaults to no money/pricing values. Pending
 contests, validity dates in workspace time, archives and unverified facts are excluded in SQL.
 Each item includes ID, version, placeholder, validity and `public_business` visibility.
-`knowledge.answers` v1 uses `{limit:1..10,cursor:uuid|null,language:tr|en}`. Only active,
+`knowledge.answers` v1 uses `{limit:1..10,cursor:uuid|null,language:tr|en|ru|de|ar}`. Only active,
 current usable/visible dependency versions pass its SQL predicate; each bounded page also
 re-renders and claim-validates templates with at most 20 dependencies. Malformed legacy
 rows can underfill a page; callers follow its scan cursor. No raw customer example questions
@@ -122,7 +144,7 @@ are returned. The result carries answer and fact source IDs/versions. Neither pa
 legacy all-facts/all-answers collection.
 
 `reply.validate` v1 and `validate_reply` are the shared pre-send contract for Session 07:
-`{template,language,fact_sources:[{id,version}],customer_clarification:null|{message_id,start,end,kind}}`.
+`{template,language:tr|en|ru|de|ar,fact_sources:[{id,version}],customer_clarification:null|{message_id,start,end,kind}}`.
 Exact currently visible fact versions must match every placeholder. Literal critical values
 still fail the existing renderer/claim validator. A customer date/time clarification requires
 an empty business template and no fact sources, a current same-thread inbound source span,

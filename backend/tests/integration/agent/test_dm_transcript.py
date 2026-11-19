@@ -81,3 +81,23 @@ def test_an_automatic_dm_delegation_still_asks_when_a_voice_note_is_in_the_conve
         approval = db.get(Approval, action.approval_id)
         assert approval.status == "pending" and approval.subject_type == "agent_action"
         assert action.policy_grant is None  # no automatic grant was ever recorded
+
+
+def test_voice_only_inbound_generates_approval_required_draft(session_factory, clock, monkeypatch):
+    world = setup(session_factory, clock, "automatic")
+    fake = FakeLLMProvider()
+    monkeypatch.setattr("app.agent.jobs.deps_for", lambda _: deps(session_factory, clock, fake))
+    deliver_with_voice(session_factory, clock, world, None, voice=True)
+    reply(fake, "Hello! How can I help you?")
+    fake.queue_step(result())
+    drain(session_factory, clock)
+    with session_factory() as db:
+        sent = db.scalars(select(SimSentMessage)).all()
+        action = db.scalar(select(AgentAction))
+        transcripts = db.scalars(select(MessageTranscript)).all()
+        assert [t.status for t in transcripts] == ["succeeded"]
+        assert sent == []
+        assert action.status == "waiting_approval"
+        approval = db.get(Approval, action.approval_id)
+        assert approval.status == "pending" and approval.subject_type == "agent_action"
+        assert action.policy_grant is None

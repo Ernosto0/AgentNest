@@ -271,6 +271,28 @@ class ChannelLinkCodeOut(BaseModel):
 
 class ChannelAvailabilityOut(BaseModel):
     whatsapp: bool
+    telegram: bool = True
+
+
+class ChannelDeliveryStatusOut(BaseModel):
+    status: Literal["connected", "unlinked", "disabled", "unconfigured", "delivery_failure"]
+    enabled: bool
+    configured: bool
+    linked: bool
+    last_error: str | None = None
+
+
+class ChannelPreferencesIn(StrictModel):
+    telegram: bool | None = None
+    whatsapp: bool | None = None
+    app_only: bool | None = None
+
+
+class ChannelPreferencesOut(BaseModel):
+    telegram: bool
+    whatsapp: bool
+    app_only: bool
+    channels: dict[str, ChannelDeliveryStatusOut]
 
 
 class ChannelLinkOut(BaseModel):

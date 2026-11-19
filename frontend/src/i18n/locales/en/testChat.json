@@ -9,6 +9,15 @@
     "title": "Try your assistant",
     "intro": "Write the way a customer would. You will see the reply your assistant would give, which facts it used and what would happen next.",
     "simulatedNote": "Practice only: nothing here is sent to anyone, reaches Instagram or counts in your reports.",
+    "controller": {
+      "agent": "Account Agent",
+      "legacy": "Standard Assistant"
+    },
+    "badge": {
+      "autoSend": "Auto-Send",
+      "needsApproval": "Needs Approval",
+      "blocked": "Blocked"
+    },
     "open": "Try your assistant",
     "back": "Back to the assistant",
     "staffOnly": "Only owners and managers can try the assistant.",
@@ -36,7 +45,15 @@
         "title": "Would be sent automatically",
         "detail": "With your current settings the assistant would send this reply by itself."
       },
+      "automatic": {
+        "title": "Would be sent automatically",
+        "detail": "With your current settings the assistant would send this reply by itself."
+      },
       "approval_required": {
+        "title": "Would wait for your approval",
+        "detail": "You would see this as a draft and decide before anything is sent."
+      },
+      "ask": {
         "title": "Would wait for your approval",
         "detail": "You would see this as a draft and decide before anything is sent."
       },
@@ -53,6 +70,24 @@
     "reason": {
       "POLICY_REQUIRES_APPROVAL": "Your settings ask you to approve replies before they are sent.",
       "POLICY_AUTO": "Your settings let the assistant send this kind of reply by itself.",
+      "basic_verified_topic": "This is a basic verified question and your settings allow sending automatically.",
+      "basic_greeting": "This is a standard greeting and can be answered automatically.",
+      "basic_verified_hours": "This question is answered using your verified working hours.",
+      "basic_verified_location_contact": "This question is answered using your verified address and contact details.",
+      "basic_verified_services": "This question is answered using your verified service descriptions.",
+      "basic_verified_pricing": "This question is answered using your verified prices.",
+      "booking_enquiry_requires_approval": "Appointment and booking inquiries always require your approval.",
+      "complex_topic_complaint": "Complaints always require human attention.",
+      "escalation_complaint": "Complaints always require human attention.",
+      "complex_discount_or_negotiation": "Discount and price negotiation requests require your approval.",
+      "mixed_topics": "This message touches multiple topics and requires human review.",
+      "conflicting_topics_and_facts": "The information in the message conflicts with your saved facts.",
+      "voice_transcript_requires_approval": "Replies to voice notes always require your approval.",
+      "pilot_mutation_requires_approval": "Calendar and publication actions require your approval.",
+      "price_disclosure_not_allowed": "Price sharing is turned off in your settings.",
+      "price_disclosure_forbidden_in_public": "Prices are never shared publicly in comment replies.",
+      "delegation_ask": "Your settings require you to check this reply before sending.",
+      "delegation_off": "Automated replies are turned off for this action.",
       "AUTOMATION_OFF": "Automatic replies are turned off for this topic.",
       "READINESS_NOT_READY": "Setup is not finished yet, so replies wait for your approval.",
       "AUTO_RATE_GUARD": "Many automatic replies went out recently, so this one waits for you.",

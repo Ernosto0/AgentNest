@@ -333,6 +333,24 @@
       "noChanges": "Henüz değişiklik yok. Uygulamadan önce her zaman tam değişiklikler gösterilir.",
       "previewNone": "Bu sürümde değişen işlem yok.",
       "keepEditing": "Düzenlemeye devam et"
+    },
+    "policyMatrix": {
+      "title": "Yarı Otomasyon İlkesi (Temel ve Karmaşık Konular)",
+      "subtitle": "Asistan bir işlem için Otomatik olarak ayarlansa bile, yalnızca temel doğrulanmış sorular doğrudan gönderilir; karmaşık veya hassas konular her zaman onayınıza gelir.",
+      "autoHeader": "Otomatik Gönderilenler (Temel Sorular)",
+      "autoDescription": "İşlem yetkisi Otomatik olduğunda ve doğrulanmış bilgiler mevcut olduğunda doğrudan yanıtlanır:",
+      "autoGreeting": "Selamlama ve genel karşılama mesajları",
+      "autoHours": "Doğrulanmış çalışma ve mesai saatleri",
+      "autoLocation": "Doğrulanmış adres, konum ve iletişim bilgileri",
+      "autoServices": "Doğrulanmış hizmet ve menü açıklamaları",
+      "autoPricing": "Standart doğrulanmış fiyatlar (yalnızca fiyat paylaşımı açıkken ve özel mesajlarda)",
+      "askHeader": "Onay Gerektirenler (Karmaşık Konular)",
+      "askDescription": "Yetki Otomatik olsa dahi asistan yanıtı hazırlar ve onayınıza sunar:",
+      "askDiscounts": "İndirim, kupon, pazarlık ve özel teklif talepleri",
+      "askComplaints": "Şikayet, memnuniyetsizlik, iade ve yasal/sağlık talepleri",
+      "askVoice": "Müşterinin sesli mesaj gönderdiği konuşmalardaki yanıtlar",
+      "askMutations": "Randevu alma, erteleme, iptal veya içerik yayınlama",
+      "askMixed": "Birden fazla konuyu içeren, çelişkili veya belirsiz sorular"
     }
   }
 }

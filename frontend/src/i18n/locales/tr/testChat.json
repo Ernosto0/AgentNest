@@ -9,6 +9,15 @@
     "title": "Asistanınızı deneyin",
     "intro": "Bir müşteri gibi yazın. Asistanınızın vereceği yanıtı, hangi bilgileri kullandığını ve sonrasında ne olacağını görürsünüz.",
     "simulatedNote": "Yalnızca deneme: burada yazılanlar kimseye gönderilmez, Instagram’a ulaşmaz ve raporlarınıza sayılmaz.",
+    "controller": {
+      "agent": "Hesap Ajanı",
+      "legacy": "Standart Asistan"
+    },
+    "badge": {
+      "autoSend": "Otomatik Gönderim",
+      "needsApproval": "Onay Bekliyor",
+      "blocked": "Engellendi"
+    },
     "open": "Asistanınızı deneyin",
     "back": "Asistana dön",
     "staffOnly": "Asistanı yalnızca sahipler ve yöneticiler deneyebilir.",
@@ -36,7 +45,15 @@
         "title": "Kendiliğinden gönderilirdi",
         "detail": "Mevcut ayarlarınızla asistan bu yanıtı kendisi gönderirdi."
       },
+      "automatic": {
+        "title": "Kendiliğinden gönderilirdi",
+        "detail": "Mevcut ayarlarınızla asistan bu yanıtı kendisi gönderirdi."
+      },
       "approval_required": {
+        "title": "Onayınızı beklerdi",
+        "detail": "Bunu taslak olarak görürdünüz ve hiçbir şey gitmeden önce siz karar verirdiniz."
+      },
+      "ask": {
         "title": "Onayınızı beklerdi",
         "detail": "Bunu taslak olarak görürdünüz ve hiçbir şey gitmeden önce siz karar verirdiniz."
       },
@@ -53,6 +70,24 @@
     "reason": {
       "POLICY_REQUIRES_APPROVAL": "Ayarlarınız, yanıtların gönderilmeden önce sizin onayınızı istiyor.",
       "POLICY_AUTO": "Ayarlarınız, asistanın bu tür yanıtları kendisinin göndermesine izin veriyor.",
+      "basic_verified_topic": "Bu temel ve doğrulanmış bir sorudur; ayarlarınız otomatik gönderime izin verir.",
+      "basic_greeting": "Bu standart bir selamlamadır ve kendiliğinden yanıtlanabilir.",
+      "basic_verified_hours": "Bu soru doğrulanmış çalışma saatleriniz kullanılarak yanıtlanır.",
+      "basic_verified_location_contact": "Bu soru doğrulanmış adres ve iletişim bilgilerinizle yanıtlanır.",
+      "basic_verified_services": "Bu soru doğrulanmış hizmet açıklamalarınızla yanıtlanır.",
+      "basic_verified_pricing": "Bu soru doğrulanmış fiyatlarınızla yanıtlanır.",
+      "booking_enquiry_requires_approval": "Randevu ve rezervasyon talepleri her zaman onayınızı gerektirir.",
+      "complex_topic_complaint": "Şikayetler her zaman bir kişinin ilgilenmesini gerektirir.",
+      "escalation_complaint": "Şikayetler her zaman bir kişinin ilgilenmesini gerektirir.",
+      "complex_discount_or_negotiation": "İndirim ve fiyat pazarlığı talepleri onayınızı gerektirir.",
+      "mixed_topics": "Bu mesaj birden fazla konuyu içeriyor ve bir kişinin incelemesini gerektirir.",
+      "conflicting_topics_and_facts": "Mesajdaki bilgiler kayıtlı işletme bilgilerinizle çelişiyor.",
+      "voice_transcript_requires_approval": "Sesli mesajlara verilen yanıtlar her zaman onayınızı gerektirir.",
+      "pilot_mutation_requires_approval": "Takvim ve paylaşım işlemleri onayınızı gerektirir.",
+      "price_disclosure_not_allowed": "Fiyat paylaşımı ayarlarınızda kapalıdır.",
+      "price_disclosure_forbidden_in_public": "Yorum yanıtlarında fiyatlar asla herkese açık paylaşılmaz.",
+      "delegation_ask": "Ayarlarınız bu yanıtı göndermeden önce sizin kontrol etmenizi istiyor.",
+      "delegation_off": "Bu işlem için otomatik yanıt kapalıdır.",
       "AUTOMATION_OFF": "Bu konuda otomatik yanıt kapalı.",
       "READINESS_NOT_READY": "Kurulum henüz bitmedi; bu yüzden yanıtlar onayınızı bekler.",
       "AUTO_RATE_GUARD": "Yakın zamanda çok sayıda otomatik yanıt gitti; bu yüzden bu yanıt sizi bekler.",

@@ -22,6 +22,7 @@ from app.identity.permissions import has_permission
 from app.notifications.catalog import spec_for
 from app.notifications.models import Notification
 from app.notifications.push_dispatch import dispatch_web_push
+from app.notifications.telegram_dispatch import dispatch_telegram
 from app.notifications.whatsapp_dispatch import dispatch_whatsapp
 
 DEFAULT_LIMIT = 50
@@ -80,6 +81,8 @@ def notify(
         dispatch_web_push(session, clock, ctx, notification)
         # WhatsApp (ADR-027): only for an owner with a linked number; same ledger and policy.
         dispatch_whatsapp(session, clock, ctx, notification)
+        # Telegram (ADR-012): only for an active member with a linked Telegram chat.
+        dispatch_telegram(session, clock, ctx, notification)
     return notification
 
 

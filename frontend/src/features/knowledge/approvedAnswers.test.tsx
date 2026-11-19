@@ -159,6 +159,57 @@ describe("ApprovedAnswers", () => {
     });
   });
 
+  it("offers all five reply languages and creates an Arabic answer", async () => {
+    const user = userEvent.setup();
+    let createdBody: Record<string, unknown> | null = null;
+
+    mockApi(
+      routes({
+        [`POST ${BASE}/approved-answers`]: (req) => {
+          createdBody = req.body as Record<string, unknown>;
+          return json({
+            id: "ans-ar",
+            title: createdBody.title as string,
+            intent: createdBody.intent as string,
+            language: createdBody.language as string,
+            status: "active",
+            example_questions: createdBody.example_questions as string[],
+            answer_template: createdBody.answer_template as string,
+            created_from_message_id: null,
+            version: 1,
+            updated_at: "2026-11-01T12:00:00Z",
+          });
+        },
+      }),
+    );
+
+    renderApp(`/w/${WS_GOLKENT}/more/knowledge/answers`);
+    expect(await screen.findByRole("heading", { name: "Yeni onaylı yanıt" })).toBeInTheDocument();
+
+    const langSelect = screen.getByLabelText("Dil");
+    const options = Array.from(langSelect.querySelectorAll("option")).map((o) => o.value);
+    expect(options).toEqual(["tr", "en", "ru", "de", "ar"]);
+
+    await user.selectOptions(langSelect, "ar");
+    await user.type(screen.getByLabelText("Başlık"), "معلومات الاتصال");
+    await user.type(screen.getByLabelText("Müşterilerin sorduğu bir soru"), "ما هو رقم الهاتف؟");
+    fireEvent.change(screen.getByLabelText("Yanıt"), {
+      target: { value: "يمكنكم الاتصال بنا عبر {{fact:contact.phone}}." },
+    });
+
+    await user.click(screen.getByRole("button", { name: "Yanıtı kaydet" }));
+
+    await waitFor(() => {
+      expect(createdBody).toMatchObject({
+        title: "معلومات الاتصال",
+        intent: "faq",
+        language: "ar",
+        example_questions: ["ما هو رقم الهاتف؟"],
+        answer_template: "يمكنكم الاتصال بنا عبر {{fact:contact.phone}}.",
+      });
+    });
+  });
+
   it("creates the story-mention thank-you without an example question", async () => {
     const user = userEvent.setup();
     let createdBody: Record<string, unknown> | null = null;

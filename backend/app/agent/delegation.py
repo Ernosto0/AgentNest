@@ -7,7 +7,7 @@ never authority: this module checks the current account grant and stores exact e
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import func, select
@@ -451,6 +451,110 @@ def fence_action(
     return action
 
 
+def _resolve_classification(
+    session: Session,
+    clock: Clock,
+    ctx: WorkspaceContext,
+    action: AgentAction,
+    thread: AgentThread | None,
+    require_human: bool,
+) -> Any:
+    from app.agent.knowledge import prices_shared
+    from app.agent.policy import MUTATION_ACTIONS, classify_request
+    from app.comments.models import PrivateReplyOpportunity, PublicComment, PublicCommentAction
+    from app.inbox.models import Message, ReplyDraft
+    from app.policy.transcripts import recent_transcript_present
+
+    surface = thread.surface if thread else "dm"
+
+    if action.action_type in MUTATION_ACTIONS:
+        return classify_request(action_type=action.action_type, surface=surface)
+
+    if action.action_type == "dm.send":
+        draft = session.get(ReplyDraft, action.payload_ref) if action.payload_ref else None
+        if draft is not None:
+            msg = (
+                session.get(Message, draft.covers_through_message_id)
+                if draft.covers_through_message_id
+                else None
+            )
+            inbound_text = msg.text if msg else None
+            proposal = draft.validation.get("agent_proposal") or {}
+            template = draft.template
+            owner_ans = bool(proposal.get("owner_answer"))
+            cust_clar = bool(proposal.get("customer_clarification"))
+            has_transcript = require_human or (
+                recent_transcript_present(session, ctx.workspace_id, draft.conversation_id)
+                if draft.conversation_id
+                else False
+            )
+            image_inj = False
+            if msg:
+                from app.inbox.models import MessageImageDescription
+
+                img_inj_row = session.scalar(
+                    select(MessageImageDescription.id)
+                    .where(
+                        MessageImageDescription.workspace_id == ctx.workspace_id,
+                        MessageImageDescription.message_id == msg.id,
+                        MessageImageDescription.injection_suspected.is_(True),
+                    )
+                    .limit(1)
+                )
+                image_inj = img_inj_row is not None
+            shared = prices_shared(session, clock, ctx)
+            return classify_request(
+                action_type=action.action_type,
+                surface="dm",
+                inbound_text=inbound_text,
+                template=template,
+                owner_answer=owner_ans,
+                customer_clarification=cust_clar,
+                prices_shared=shared,
+                recent_transcript=has_transcript,
+                image_injection=image_inj,
+            )
+
+    if action.action_type in ("comment.reply", "comment.hide", "comment.unhide", "comment.delete"):
+        subject = (
+            session.get(PublicCommentAction, action.payload_ref) if action.payload_ref else None
+        )
+        if subject is not None:
+            comment = session.get(PublicComment, subject.comment_id) if subject.comment_id else None
+            inbound_text = comment.text if comment else None
+            proposal = subject.proposal or {}
+            template = proposal.get("template") if isinstance(proposal, dict) else None
+            return classify_request(
+                action_type=action.action_type,
+                surface="comment",
+                inbound_text=inbound_text,
+                template=template,
+                prices_shared=False,  # prices never in public comments
+                recent_transcript=False,
+            )
+
+    if action.action_type == "comment.private_reply":
+        row = (
+            session.get(PrivateReplyOpportunity, action.payload_ref) if action.payload_ref else None
+        )
+        if row is not None:
+            comment = session.get(PublicComment, row.comment_id) if row.comment_id else None
+            inbound_text = comment.text if comment else None
+            proposal = row.proposal or {}
+            template = proposal.get("template") if isinstance(proposal, dict) else None
+            shared = prices_shared(session, clock, ctx)
+            return classify_request(
+                action_type=action.action_type,
+                surface="comment",
+                inbound_text=inbound_text,
+                template=template,
+                prices_shared=shared,
+                recent_transcript=False,
+            )
+
+    return None
+
+
 def authorize_action(
     session: Session,
     clock: Clock,
@@ -464,6 +568,7 @@ def authorize_action(
     claims_valid: bool,
     quota_available: bool,
     require_human: bool = False,
+    classification: Any = None,
 ) -> Decision:
     """Authorize a scoped proposed action; call with facts from server-owned domain checks."""
     candidate = session.scalar(
@@ -568,10 +673,26 @@ def authorize_action(
     )
     if decision.kind not in ("automatic", "ask"):
         return decision
-    if require_human and decision.kind == "automatic":
+
+    # Evaluate Topic / Basic-vs-Complex Semi-Automation Policy (INV-04)
+    if classification is None:
+        classification = _resolve_classification(session, clock, ctx, action, thread, require_human)
+
+    if classification is not None:
+        from app.agent.policy import evaluate_action_policy
+
+        decision = evaluate_action_policy(rule, classification, base_decision=decision)
+        if decision.kind == "blocked":
+            action.status = "cancelled"
+            action.outcome_code = decision.reason
+            session.flush()
+            return decision
+    elif require_human and decision.kind == "automatic":
         decision = Decision("ask", "explicit_approval_requested")
+
     action.delegation_version = delegation.version
     action.execute_before = clock.now() + timedelta(hours=24)
+    action.outcome_code = classification.reason if classification else decision.reason
     if decision.kind == "automatic":
         action.authorized_at = clock.now()
         action.policy_grant = {
@@ -587,6 +708,7 @@ def authorize_action(
             if action.initiating_event_id
             else None,
             "execute_before": action.execute_before.isoformat(),
+            "classification": classification.to_dict() if classification else None,
         }
         action.status = "authorized"
         audit.record(
@@ -595,7 +717,11 @@ def authorize_action(
             "agent.action_authorized",
             "agent_action",
             action.id,
-            {"delegation_version": delegation.version, "mode": "automatic"},
+            {
+                "delegation_version": delegation.version,
+                "mode": "automatic",
+                "reason": action.outcome_code,
+            },
             clock=clock,
         )
     else:
@@ -619,6 +745,8 @@ def authorize_action(
                 "action_type": action.action_type,
                 "target_ref": action.target_ref,
                 "payload_hash": action.payload_hash,
+                "classification": classification.to_dict() if classification else None,
+                "reason": action.outcome_code,
             },
             required_permission=permission,
             expires_at=action.execute_before,

@@ -1270,7 +1270,9 @@
               "auto",
               "approval_required",
               "human_required",
-              "blocked"
+              "blocked",
+              "automatic",
+              "ask"
             ],
             "title": "Decision",
             "type": "string"
@@ -1372,6 +1374,15 @@
       },
       "AssistantChatOut": {
         "properties": {
+          "controller_mode": {
+            "default": "legacy",
+            "enum": [
+              "legacy",
+              "agent"
+            ],
+            "title": "Controller Mode",
+            "type": "string"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/AssistantChatTurnOut"
@@ -1422,6 +1433,15 @@
               }
             ],
             "title": "Completed At"
+          },
+          "controller_mode": {
+            "default": "legacy",
+            "enum": [
+              "legacy",
+              "agent"
+            ],
+            "title": "Controller Mode",
+            "type": "string"
           },
           "created_at": {
             "format": "date-time",
@@ -2386,6 +2406,11 @@
       },
       "ChannelAvailabilityOut": {
         "properties": {
+          "telegram": {
+            "default": true,
+            "title": "Telegram",
+            "type": "boolean"
+          },
           "whatsapp": {
             "title": "Whatsapp",
             "type": "boolean"
@@ -2395,6 +2420,52 @@
           "whatsapp"
         ],
         "title": "ChannelAvailabilityOut",
+        "type": "object"
+      },
+      "ChannelDeliveryStatusOut": {
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "linked": {
+            "title": "Linked",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "connected",
+              "unlinked",
+              "disabled",
+              "unconfigured",
+              "delivery_failure"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "enabled",
+          "configured",
+          "linked"
+        ],
+        "title": "ChannelDeliveryStatusOut",
         "type": "object"
       },
       "ChannelLinkCodeOut": {
@@ -2513,6 +2584,77 @@
           "status"
         ],
         "title": "ChannelLinkOut",
+        "type": "object"
+      },
+      "ChannelPreferencesIn": {
+        "additionalProperties": false,
+        "properties": {
+          "app_only": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Only"
+          },
+          "telegram": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telegram"
+          },
+          "whatsapp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp"
+          }
+        },
+        "title": "ChannelPreferencesIn",
+        "type": "object"
+      },
+      "ChannelPreferencesOut": {
+        "properties": {
+          "app_only": {
+            "title": "App Only",
+            "type": "boolean"
+          },
+          "channels": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ChannelDeliveryStatusOut"
+            },
+            "title": "Channels",
+            "type": "object"
+          },
+          "telegram": {
+            "title": "Telegram",
+            "type": "boolean"
+          },
+          "whatsapp": {
+            "title": "Whatsapp",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "telegram",
+          "whatsapp",
+          "app_only",
+          "channels"
+        ],
+        "title": "ChannelPreferencesOut",
         "type": "object"
       },
       "ClarificationAnswer": {
@@ -19293,6 +19435,102 @@
           }
         },
         "summary": "Unlink Channel",
+        "tags": [
+          "channels"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/channels/preferences": {
+      "get": {
+        "description": "Get the current user's notification channel preferences and status in this workspace.",
+        "operationId": "get_channel_preferences_api_v1_workspaces__workspace_id__channels_preferences_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelPreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Channel Preferences",
+        "tags": [
+          "channels"
+        ]
+      },
+      "put": {
+        "description": "Update notification channel preferences for the current user.",
+        "operationId": "update_channel_preferences_api_v1_workspaces__workspace_id__channels_preferences_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChannelPreferencesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelPreferencesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Channel Preferences",
         "tags": [
           "channels"
         ]

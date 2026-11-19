@@ -10,12 +10,14 @@ import secrets
 import string
 import uuid
 from datetime import datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.audit import service as audit_service
 from app.core.clock import Clock
+from app.core.config import Settings
 from app.core.context import ActorRef, WorkspaceContext
 from app.core.db import set_tenant_context
 from app.core.errors import AppError
@@ -24,10 +26,12 @@ from app.identity.models import (
     CHANNEL_TYPES,
     ChannelLink,
     ChannelLinkCode,
+    ChannelPreference,
     User,
     Workspace,
     WorkspaceMember,
 )
+from app.notifications.models import NotificationDelivery
 
 MAX_ACTIVE_LINK_CODES = 3
 LINK_CODE_EXPIRY_MINUTES = 15
@@ -299,6 +303,31 @@ class ChannelLinkService:
         db.add(new_link)
         db.flush()
 
+        # Ensure channel preference is enabled for active link (Session 02)
+        pref = db.scalar(
+            select(ChannelPreference).where(
+                ChannelPreference.workspace_id == target_workspace_id,
+                ChannelPreference.user_id == target_user_id,
+                ChannelPreference.channel == channel,
+            )
+        )
+        if pref is None:
+            db.add(
+                ChannelPreference(
+                    id=new_id(),
+                    workspace_id=target_workspace_id,
+                    user_id=target_user_id,
+                    channel=channel,
+                    enabled=True,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+        else:
+            pref.enabled = True
+            pref.updated_at = now
+        db.flush()
+
         audit_service.record(
             db,
             ctx=None,
@@ -344,6 +373,18 @@ class ChannelLinkService:
         now = clock.now()
         link.status = "unlinked"
         link.unlinked_at = now
+
+        # Update preference to disabled upon unlink
+        pref = db.scalar(
+            select(ChannelPreference).where(
+                ChannelPreference.workspace_id == ctx.workspace_id,
+                ChannelPreference.user_id == link.user_id,
+                ChannelPreference.channel == link.channel,
+            )
+        )
+        if pref is not None:
+            pref.enabled = False
+            pref.updated_at = now
         db.flush()
 
         audit_service.record(
@@ -402,6 +443,18 @@ class ChannelLinkService:
 
         link.status = "unlinked"
         link.unlinked_at = now
+
+        # Update preference to disabled upon unlink
+        pref = db.scalar(
+            select(ChannelPreference).where(
+                ChannelPreference.workspace_id == link.workspace_id,
+                ChannelPreference.user_id == link.user_id,
+                ChannelPreference.channel == channel,
+            )
+        )
+        if pref is not None:
+            pref.enabled = False
+            pref.updated_at = now
         db.flush()
 
         audit_service.record(
@@ -503,6 +556,161 @@ class ChannelLinkService:
             stmt = stmt.where(ChannelLink.channel == channel)
         return list(db.scalars(stmt).all())
 
+    @staticmethod
+    def is_channel_enabled(
+        db: Session,
+        workspace_id: uuid.UUID,
+        user_id: uuid.UUID,
+        channel: str,
+    ) -> bool:
+        """Check if notifications are enabled for this channel for the user in this workspace."""
+        pref = db.scalar(
+            select(ChannelPreference.enabled).where(
+                ChannelPreference.workspace_id == workspace_id,
+                ChannelPreference.user_id == user_id,
+                ChannelPreference.channel == channel,
+            )
+        )
+        if pref is not None:
+            return pref
+        # Fallback when no preference row exists: enabled if active link exists
+        link = db.scalar(
+            select(ChannelLink.id).where(
+                ChannelLink.workspace_id == workspace_id,
+                ChannelLink.user_id == user_id,
+                ChannelLink.channel == channel,
+                ChannelLink.status == "active",
+            )
+        )
+        return link is not None
+
+    @staticmethod
+    def get_channel_preferences(
+        db: Session,
+        workspace_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> dict[str, bool]:
+        """Get enabled status for each supported channel."""
+        return {
+            ch: ChannelLinkService.is_channel_enabled(db, workspace_id, user_id, ch)
+            for ch in CHANNEL_TYPES
+        }
+
+    @staticmethod
+    def set_channel_preferences(
+        db: Session,
+        clock: Clock,
+        ctx: WorkspaceContext,
+        user_id: uuid.UUID,
+        changes: dict[str, bool],
+    ) -> dict[str, bool]:
+        """Update channel notification preferences for the given user in this workspace."""
+        if any(ch not in CHANNEL_TYPES for ch in changes):
+            raise AppError("VALIDATION_FAILED", supported=list(CHANNEL_TYPES))
+        now = clock.now()
+        for ch, enabled in changes.items():
+            row = db.scalar(
+                select(ChannelPreference)
+                .where(
+                    ChannelPreference.workspace_id == ctx.workspace_id,
+                    ChannelPreference.user_id == user_id,
+                    ChannelPreference.channel == ch,
+                )
+                .with_for_update()
+            )
+            if row is None:
+                db.add(
+                    ChannelPreference(
+                        id=new_id(),
+                        workspace_id=ctx.workspace_id,
+                        user_id=user_id,
+                        channel=ch,
+                        enabled=enabled,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                )
+            elif row.enabled != enabled:
+                row.enabled = enabled
+                row.updated_at = now
+        db.flush()
+
+        audit_service.record(
+            db,
+            ctx=ctx,
+            action="channel_preference.updated",
+            resource_type="channel_preference",
+            resource_id=user_id,
+            metadata={"changes": changes, "user_id": str(user_id)},
+            clock=clock,
+        )
+
+        return ChannelLinkService.get_channel_preferences(db, ctx.workspace_id, user_id)
+
+    @staticmethod
+    def get_channel_delivery_status(
+        db: Session,
+        settings: Settings,
+        workspace_id: uuid.UUID,
+        user_id: uuid.UUID,
+        channel: str,
+    ) -> dict[str, Any]:
+        """Derive truthful channel status:
+        connected, unlinked, disabled, unconfigured, or delivery_failure.
+        """
+        configured = (
+            settings.telegram_configured
+            if channel == "telegram"
+            else settings.whatsapp_configured
+            if channel == "whatsapp"
+            else False
+        )
+        link = db.scalar(
+            select(ChannelLink).where(
+                ChannelLink.workspace_id == workspace_id,
+                ChannelLink.user_id == user_id,
+                ChannelLink.channel == channel,
+                ChannelLink.status == "active",
+            )
+        )
+        linked = link is not None
+        enabled = ChannelLinkService.is_channel_enabled(db, workspace_id, user_id, channel)
+
+        latest_delivery = db.scalar(
+            select(NotificationDelivery)
+            .where(
+                NotificationDelivery.workspace_id == workspace_id,
+                NotificationDelivery.recipient_user_id == user_id,
+                NotificationDelivery.channel == channel,
+            )
+            .order_by(NotificationDelivery.created_at.desc())
+            .limit(1)
+        )
+        last_error: str | None = None
+        last_delivery_failed = False
+        if latest_delivery is not None and latest_delivery.status == "failed":
+            last_delivery_failed = True
+            last_error = latest_delivery.last_error
+
+        if not configured:
+            status = "unconfigured"
+        elif not linked:
+            status = "unlinked"
+        elif not enabled:
+            status = "disabled"
+        elif last_delivery_failed:
+            status = "delivery_failure"
+        else:
+            status = "connected"
+
+        return {
+            "status": status,
+            "enabled": enabled,
+            "configured": configured,
+            "linked": linked,
+            "last_error": last_error,
+        }
+
 
 # Module-level aliases
 generate_link_code = ChannelLinkService.generate_link_code
@@ -511,3 +719,7 @@ unlink_by_user = ChannelLinkService.unlink_by_user
 unlink_by_channel = ChannelLinkService.unlink_by_channel
 resolve_channel_user = ChannelLinkService.resolve_channel_user
 list_links_for_user = ChannelLinkService.list_links_for_user
+is_channel_enabled = ChannelLinkService.is_channel_enabled
+get_channel_preferences = ChannelLinkService.get_channel_preferences
+set_channel_preferences = ChannelLinkService.set_channel_preferences
+get_channel_delivery_status = ChannelLinkService.get_channel_delivery_status

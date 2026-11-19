@@ -291,9 +291,33 @@ def book(db: Session, clock: Clock, context: BrokerContext, args: BaseModel) -> 
             customer_contact = customer_contact or (
                 f"@{conv.customer_handle}" if conv.customer_handle else None
             )
+        if thread.customer_identity_id is None:
+            from app.memory.service import resolve_identity
+
+            resolve_identity(db, clock, thread)
 
     goal, event = _active_goal_and_event(db, thread)
     appt_id = new_id()
+    msg_id = (
+        event.source_id if event and event.source_kind == "message" and event.source_id else None
+    )
+    if not msg_id and context.surface == "dm" and thread.dm_conversation_id:
+        from app.inbox.models import Message
+
+        latest_inbound = db.scalar(
+            select(Message.id)
+            .where(
+                Message.workspace_id == thread.workspace_id,
+                Message.conversation_id == thread.dm_conversation_id,
+                Message.direction == "inbound",
+                Message.is_deleted.is_(False),
+            )
+            .order_by(Message.provider_timestamp.desc(), Message.id.desc())
+            .limit(1)
+        )
+        if latest_inbound:
+            msg_id = str(latest_inbound)
+
     intent_payload: dict[str, Any] = {
         "appointment_id": str(appt_id),
         "title": req.title.strip(),
@@ -311,6 +335,8 @@ def book(db: Session, clock: Clock, context: BrokerContext, args: BaseModel) -> 
             str(thread.customer_identity_id) if thread.customer_identity_id else None
         ),
         "created_by_source": context.source,
+        "intent": "booking",
+        "message_id": msg_id,
     }
     p_hash = payload_hash(intent_payload)
     target_ref = f"calendar:{conn.id}:{req.local_date.isoformat()}T{req.local_time}"
@@ -407,6 +433,11 @@ def modify(db: Session, clock: Clock, context: BrokerContext, args: BaseModel) -
         "customer_name": appt.customer_name,
         "timezone": tz_name,
         "reason": req.reason,
+        "conversation_id": str(thread.dm_conversation_id) if thread.dm_conversation_id else None,
+        "customer_identity_id": (
+            str(thread.customer_identity_id) if thread.customer_identity_id else None
+        ),
+        "intent": "booking" if req.operation == "reschedule" else "calendar_cancel",
     }
 
     if req.operation == "reschedule":
@@ -527,7 +558,7 @@ def render_calendar_reply(
     context: BrokerContext,
     thread: AgentThread,
     evidence: CalendarEvidence,
-    language: Literal["tr", "en"],
+    language: Literal["tr", "en", "ru", "de", "ar"],
 ) -> GroundedReply:
     tz, _ = _tz(db, context.workspace.workspace_id)
     if evidence.kind in ("booked", "rescheduled", "cancelled"):
@@ -552,31 +583,50 @@ def render_calendar_reply(
         s_str = ls.strftime("%H:%M")
         e_str = le.strftime("%H:%M")
         if evidence.kind == "booked":
-            text = (
-                f"Randevunuz {d_str} tarihinde {s_str}–{e_str} saatleri için "
-                f"oluşturuldu ({appt.title})."
-                if language == "tr"
-                else (
+            booked_templates = {
+                "tr": (
+                    f"Randevunuz {d_str} tarihinde {s_str}–{e_str} saatleri için "
+                    f"oluşturuldu ({appt.title})."
+                ),
+                "en": (
                     f"Your appointment ({appt.title}) has been scheduled for "
                     f"{d_str} at {s_str}–{e_str}."
-                )
-            )
+                ),
+                "ru": (f"Ваша запись ({appt.title}) оформлена на {d_str} с {s_str} до {e_str}."),
+                "de": (
+                    f"Ihr Termin ({appt.title}) wurde für den {d_str} von "
+                    f"{s_str} bis {e_str} vereinbart."
+                ),
+                "ar": f"تم حجز موعدك ({appt.title}) بتاريخ {d_str} من {s_str} إلى {e_str}.",
+            }
+            text = booked_templates.get(language, booked_templates["en"])
         elif evidence.kind == "rescheduled":
-            text = (
-                f"Randevunuz {d_str} tarihinde {s_str}–{e_str} saatlerine "
-                f"güncellendi ({appt.title})."
-                if language == "tr"
-                else (
+            rescheduled_templates = {
+                "tr": (
+                    f"Randevunuz {d_str} tarihinde {s_str}–{e_str} saatlerine "
+                    f"güncellendi ({appt.title})."
+                ),
+                "en": (
                     f"Your appointment ({appt.title}) has been rescheduled to "
                     f"{d_str} at {s_str}–{e_str}."
-                )
-            )
+                ),
+                "ru": (f"Ваша запись ({appt.title}) перенесена на {d_str} с {s_str} до {e_str}."),
+                "de": (
+                    f"Ihr Termin ({appt.title}) wurde auf den {d_str} von "
+                    f"{s_str} bis {e_str} verschoben."
+                ),
+                "ar": f"تمت إعادة جدولة موعدك ({appt.title}) إلى {d_str} من {s_str} إلى {e_str}.",
+            }
+            text = rescheduled_templates.get(language, rescheduled_templates["en"])
         else:
-            text = (
-                f"{d_str} tarihli {s_str} randevunuz ({appt.title}) iptal edildi."
-                if language == "tr"
-                else f"Your appointment ({appt.title}) on {d_str} at {s_str} has been cancelled."
-            )
+            cancelled_templates = {
+                "tr": f"{d_str} tarihli {s_str} randevunuz ({appt.title}) iptal edildi.",
+                "en": f"Your appointment ({appt.title}) on {d_str} at {s_str} has been cancelled.",
+                "ru": f"Ваша запись ({appt.title}) на {d_str} в {s_str} отменена.",
+                "de": f"Ihr Termin ({appt.title}) am {d_str} um {s_str} wurde storniert.",
+                "ar": f"تم إلغاء موعدك ({appt.title}) بتاريخ {d_str} في {s_str}.",
+            }
+            text = cancelled_templates.get(language, cancelled_templates["en"])
         if length_issue(text, max_bytes=1000):
             return GroundedReply(errors=("REPLY_LENGTH_INVALID",))
         return GroundedReply(text)
@@ -597,15 +647,28 @@ def render_calendar_reply(
             return GroundedReply(errors=("CALENDAR_SOURCE_INVALID",))
         d_str = str(pending.content_intent.get("local_date") or "")
         s_str = str(pending.content_intent.get("local_time") or "")
-        text = (
-            f"{d_str} tarihi saat {s_str} için randevu talebiniz alındı ve "
-            "işletme onayına iletildi."
-            if language == "tr"
-            else (
+        pending_templates = {
+            "tr": (
+                f"{d_str} tarihi saat {s_str} için randevu talebiniz alındı ve "
+                "işletme onayına iletildi."
+            ),
+            "en": (
                 f"Your appointment request for {d_str} at {s_str} has been received "
                 "and sent for owner approval."
-            )
-        )
+            ),
+            "ru": (
+                f"Ваш запрос на запись на {d_str} в {s_str} получен и "
+                "передан на подтверждение владельцу."
+            ),
+            "de": (
+                f"Ihre Terminanfrage für den {d_str} um {s_str} wurde empfangen "
+                "und an das Unternehmen zur Bestätigung weitergeleitet."
+            ),
+            "ar": f"تم استلام طلب موعدك بتاريخ {d_str} في {s_str} وإرساله لموافقة المسؤول.",
+        }
+        text = pending_templates.get(language, pending_templates["en"])
+        if length_issue(text, max_bytes=1000):
+            return GroundedReply(errors=("REPLY_LENGTH_INVALID",))
         return GroundedReply(text)
 
     if evidence.kind == "available_slot":
@@ -632,15 +695,25 @@ def render_calendar_reply(
         )
         if avail.requested_slot_available is not True:
             return GroundedReply(errors=("CALENDAR_SOURCE_INVALID",))
-        text = (
-            f"{evidence.local_date} tarihinde saat {evidence.local_start_time} "
-            "randevu için müsaittir."
-            if language == "tr"
-            else (
+        slot_templates = {
+            "tr": (
+                f"{evidence.local_date} tarihinde saat {evidence.local_start_time} "
+                "randevu için müsaittir."
+            ),
+            "en": (
                 f"{evidence.local_date} at {evidence.local_start_time} is available "
                 "for an appointment."
-            )
-        )
+            ),
+            "ru": f"{evidence.local_date} в {evidence.local_start_time} свободно для записи.",
+            "de": (
+                f"{evidence.local_date} um {evidence.local_start_time} "
+                "ist für einen Termin verfügbar."
+            ),
+            "ar": f"التاريخ {evidence.local_date} في {evidence.local_start_time} متاح لحجز موعد.",
+        }
+        text = slot_templates.get(language, slot_templates["en"])
+        if length_issue(text, max_bytes=1000):
+            return GroundedReply(errors=("REPLY_LENGTH_INVALID",))
         return GroundedReply(text)
 
     return GroundedReply(errors=("CALENDAR_SOURCE_INVALID",))

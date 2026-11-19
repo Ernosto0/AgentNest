@@ -22,6 +22,7 @@ from app.core.clock import Clock
 from app.core.config import get_settings
 from app.core.context import WorkspaceContext
 from app.core.logging import get_logger
+from app.identity.channels import is_channel_enabled
 from app.identity.models import ChannelLink
 from app.integrations.channels.base import ChannelRecipient
 from app.notifications.catalog import WHATSAPP_TYPES
@@ -46,6 +47,13 @@ def dispatch_whatsapp(
         return None
     try:
         with session.begin_nested():
+            if not is_channel_enabled(
+                session,
+                notification.workspace_id,
+                notification.recipient_user_id,
+                WHATSAPP_CHANNEL,
+            ):
+                return None
             link = session.scalar(
                 select(ChannelLink).where(
                     ChannelLink.workspace_id == notification.workspace_id,

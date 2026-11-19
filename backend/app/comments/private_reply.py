@@ -111,7 +111,24 @@ def eligibility(db: Session, clock: Clock, action: AgentAction) -> bool:
         "customer",
     )
     checked = validate_reply(db, clock, ctx, ReplyValidationArgs.model_validate(row.proposal))
-    return checked.valid and checked.text == row.text
+    if not (checked.valid and checked.text == row.text):
+        return False
+    if action.policy_grant is not None:
+        from app.agent.knowledge import prices_shared
+        from app.agent.policy import classify_request
+
+        proposal_dict = row.proposal if isinstance(row.proposal, dict) else {}
+        re_check = classify_request(
+            action_type="comment.private_reply",
+            surface="comment",
+            inbound_text=comment.text,
+            template=proposal_dict.get("template"),
+            prices_shared=prices_shared(db, clock, ctx.workspace),
+            recent_transcript=False,
+        )
+        if not re_check.is_basic or re_check.is_blocked:
+            return False
+    return True
 
 
 def propose(db: Session, clock: Clock, ctx: BrokerContext, args: BaseModel) -> dict[str, object]:

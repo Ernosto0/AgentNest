@@ -233,3 +233,52 @@ class ApprovedAnswerPatch(StrictModel):
     example_questions: list[str] | None = Field(default=None, max_length=10)
     answer_template: str | None = Field(default=None, max_length=2000)
     status: Literal["active", "archived"] | None = None
+
+
+# --- Test Chat (F-02, Session 07) -----------------------------------------------------------------
+
+
+class AssistantChatMessageIn(StrictModel):
+    text: str = Field(min_length=1, max_length=500)
+
+
+class FactUsedOut(BaseModel):
+    key: str
+    label: str
+    display: str  # the value as it appears in the reply
+    verified_at: datetime | None  # when the owner last verified the fact
+
+
+class AssistantChatDraftOut(BaseModel):
+    # What the assistant would send; null when a person has to answer (decision human_required
+    # or blocked), when ``suggestion_text`` may hold wording to start from.
+    text: str | None
+    suggestion_text: str | None
+    decision: Literal["auto", "approval_required", "human_required", "blocked", "automatic", "ask"]
+    reasons: list[str]  # policy reason codes, e.g. POLICY_REQUIRES_APPROVAL, basic_verified_topic
+    facts_used: list[FactUsedOut]
+    language: str | None
+    intent: str | None
+    flags: list[str]
+
+
+class AssistantChatTurnOut(BaseModel):
+    id: uuid.UUID
+    status: Literal["pending", "ready"]
+    customer_text: str
+    created_at: datetime
+    completed_at: datetime | None
+    draft: AssistantChatDraftOut | None  # null while pending
+    is_simulated: Literal[True] = True
+    controller_mode: Literal["legacy", "agent"] = "legacy"
+
+
+class AssistantChatOut(BaseModel):
+    items: list[AssistantChatTurnOut]  # the signed-in user's chat, oldest first
+    remaining_this_hour: int
+    remaining_today: int
+    controller_mode: Literal["legacy", "agent"] = "legacy"
+
+
+class AssistantChatResetOut(BaseModel):
+    cleared: int

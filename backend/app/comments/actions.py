@@ -296,5 +296,21 @@ def revalidate(db: Session, clock: Clock, action: AgentAction) -> bool:
         validated = validate_reply(
             db, clock, ctx, ReplyValidationArgs.model_validate(subject.proposal)
         )
-        return validated.valid and validated.text == subject.text
+        if not (validated.valid and validated.text == subject.text):
+            return False
+        if action.policy_grant is not None:
+            from app.agent.policy import classify_request
+
+            proposal_dict = subject.proposal if isinstance(subject.proposal, dict) else {}
+            re_check = classify_request(
+                action_type="comment.reply",
+                surface="comment",
+                inbound_text=comment.text,
+                template=proposal_dict.get("template"),
+                prices_shared=False,  # prices never in public comments
+                recent_transcript=False,
+            )
+            if not re_check.is_basic or re_check.is_blocked:
+                return False
+        return True
     return True

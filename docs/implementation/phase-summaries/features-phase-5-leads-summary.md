@@ -8,6 +8,9 @@
 - **Status:** **Implemented and verified offline. Stopped for review.** Not tried by a pilot owner or on a real phone.
 - **Date:** 2026-11-18
 
+> [!NOTE] Current Status (Date: 2026-11-19)
+> The code for this feature phase was subsequently committed to `main` (`e1c9f13`). Its functionality has been integrated, verified offline, and extended to Account Agent pilot readiness in Sessions 00–10 of the `answeres2.md` plan (specifically Session 06). The original historical test records and offline verification below are preserved intact. Remaining live provider verifications (live lead export checks and conversion deduplication on production UI) are cataloged as pending live verification runbooks in Session 11 (`docs/implementation/account-agent-pilot-readiness/s11-report.md`).
+
 ---
 
 ## 1. Executive summary

@@ -257,7 +257,12 @@ Disconnect accepts optional `{delete_conversation_data: false}`. Tokens are clea
 | `POST /webhooks/meta/deauthorize`, `POST /webhooks/meta/data-deletion` | Phase 8 |
 | `GET /api/v1/data-deletion-status/{code}` | public status page data (Phase 8) |
 | `POST /webhooks/telegram` | Phase 9 |
-| `POST /…/channel-links/code` | one-time linking code (Phase 9) |
+| `POST /api/v1/workspaces/{ws}/channels/link-code` | one-time linking code for Telegram or WhatsApp (Phase 9 & ADR-027) |
+| `GET /api/v1/workspaces/{ws}/channels/availability` | server credential availability for optional owner channels (`whatsapp`, `telegram`) |
+| `GET /api/v1/workspaces/{ws}/channels/links` | active channel links for the current user in this workspace |
+| `DELETE /api/v1/workspaces/{ws}/channels/links/{link_id}` | unlink an active channel link |
+| `GET /api/v1/workspaces/{ws}/channels/preferences` | user channel notification preferences (`telegram`, `whatsapp`, `app_only`, and truthful channel delivery status: `connected`, `unlinked`, `disabled`, `unconfigured`, `delivery_failure`) |
+| `PUT /api/v1/workspaces/{ws}/channels/preferences` | update user notification channel preferences (`{telegram?, whatsapp?, app_only?}`) |
 
 ### 2.10 Dev and demo (mounted only when `DEMO_TOOLS_ENABLED=true`; [INV-20](../invariants.md))
 | Method & path | Notes |

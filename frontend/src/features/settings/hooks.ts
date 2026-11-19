@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api, unwrap } from "@/api/client";
 import type { AppError } from "@/api/errors";
-import type { CalendarAppointment, CalendarConnection, ChannelLink, ChannelLinkCode, Invite, Member, PendingInvite, ReplyUsage, Role, SocialAccount, SystemHealth } from "@/api/types";
+import type { CalendarAppointment, CalendarConnection, ChannelAvailability, ChannelLink, ChannelLinkCode, ChannelPreferences, ChannelPreferencesIn, Invite, Member, PendingInvite, ReplyUsage, Role, SocialAccount, SystemHealth } from "@/api/types";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import type { FollowUpSettingsBody, FollowUpSettingsData } from "@/api/types";
 
@@ -309,7 +309,7 @@ export function useChannelLinks(ws: string) {
 
 /** Which optional owner channels the server has credentials for (WhatsApp is off by default). */
 export function useChannelAvailability(ws: string) {
-  return useQuery<{ whatsapp: boolean }, AppError>({
+  return useQuery<ChannelAvailability, AppError>({
     queryKey: ["channel-availability", ws] as const,
     queryFn: () =>
       unwrap(
@@ -318,6 +318,38 @@ export function useChannelAvailability(ws: string) {
         }),
       ),
     retry: false,
+  });
+}
+
+export const channelPreferencesKey = (ws: string) => ["channel-preferences", ws] as const;
+
+export function useChannelPreferences(ws: string) {
+  return useQuery<ChannelPreferences, AppError>({
+    queryKey: channelPreferencesKey(ws),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/workspaces/{workspace_id}/channels/preferences", {
+          params: { path: { workspace_id: ws } },
+        }),
+      ),
+    retry: false,
+  });
+}
+
+export function useUpdateChannelPreferences(ws: string) {
+  const queryClient = useQueryClient();
+  return useMutation<ChannelPreferences, AppError, ChannelPreferencesIn>({
+    mutationFn: (body) =>
+      unwrap(
+        api.PUT("/api/v1/workspaces/{workspace_id}/channels/preferences", {
+          params: { path: { workspace_id: ws } },
+          body,
+        }),
+      ),
+    onSuccess: (data) => {
+      queryClient.setQueryData(channelPreferencesKey(ws), data);
+      queryClient.invalidateQueries({ queryKey: channelLinksKey(ws) });
+    },
   });
 }
 
@@ -349,6 +381,7 @@ export function useUnlinkChannel(ws: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: channelLinksKey(ws) });
+      queryClient.invalidateQueries({ queryKey: channelPreferencesKey(ws) });
     },
   });
 }

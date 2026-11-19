@@ -34,7 +34,7 @@ from collections.abc import Sequence
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.ai.injection import detect_injection
@@ -52,13 +52,19 @@ from app.audit import service as audit
 from app.core.clock import Clock
 from app.core.errors import RetryableError
 from app.identity.models import Workspace
-from app.inbox.models import Message, MessageImageDescription
-from app.inbox.payloads import DescribeMessageImagePayload, describe_message_image_key
+from app.inbox.models import Conversation, Message, MessageImageDescription
+from app.inbox.payloads import (
+    DescribeMessageImagePayload,
+    DraftReplyPayload,
+    describe_message_image_key,
+    draft_reply_key,
+)
 from app.inbox.system import system_context
 from app.integrations.instagram.models import SocialAccount
 from app.integrations.vision import get_image_fetcher
 from app.integrations.vision.errors import ImageError, ImageRejected
 from app.integrations.vision.images import resolved_media_type
+from app.jobs.models import Job
 from app.jobs.queue import enqueue
 from app.jobs.registry import JobContext, job_handler
 
@@ -144,7 +150,9 @@ def request_image_descriptions(
         session.add(row)
         url = attachment.get("url")
         if not isinstance(url, str) or not url:
-            _mark_failed(session, clock, row, "IMAGE_URL_MISSING", correlation_id=correlation_id)
+            _mark_failed(
+                session, clock, row, "IMAGE_URL_MISSING", correlation_id=correlation_id, wake=False
+            )
             continue
         session.flush()
         enqueue(
@@ -197,6 +205,7 @@ def _mark_failed(
     media_type: str | None = None,
     image_bytes: int | None = None,
     agent_run_id: uuid.UUID | None = None,
+    wake: bool = True,
 ) -> None:
     row.status, row.reason_code = "failed", reason
     row.description = row.visible_text = row.looks_like = None
@@ -208,6 +217,99 @@ def _mark_failed(
     session.flush()
     _record(
         session, clock, row, "message.image_description_failed", {"reason": reason}, correlation_id
+    )
+    if wake and reason != "IMAGE_SOURCE_GONE":
+        wake_after_image_description(session, clock, row, correlation_id)
+
+
+def wake_after_image_description(
+    session: Session,
+    clock: Clock,
+    row: MessageImageDescription,
+    correlation_id: uuid.UUID | None,
+) -> None:
+    """Make the agent or legacy draft job look at the conversation again now that this
+    image is final.
+    """
+    message = session.scalars(
+        select(Message).where(
+            Message.workspace_id == row.workspace_id, Message.id == row.message_id
+        )
+    ).one_or_none()
+    if message is None or message.is_deleted or message.direction != "inbound":
+        return
+    conversation = session.scalars(
+        select(Conversation).where(
+            Conversation.workspace_id == row.workspace_id,
+            Conversation.id == message.conversation_id,
+        )
+    ).one_or_none()
+    if conversation is None:
+        return
+    from app.agent.models import AccountAgent, AgentThread
+
+    controller = session.scalar(
+        select(AccountAgent).where(
+            AccountAgent.workspace_id == row.workspace_id,
+            AccountAgent.social_account_id == conversation.social_account_id,
+        )
+    )
+    if controller is not None and controller.controller_mode == "agent":
+        thread = session.scalar(
+            select(AgentThread).where(
+                AgentThread.workspace_id == row.workspace_id,
+                AgentThread.social_account_id == conversation.social_account_id,
+                AgentThread.surface == "dm",
+                (AgentThread.dm_conversation_id == conversation.id)
+                | (AgentThread.source_ref == str(conversation.id)),
+            )
+        )
+        if (
+            thread is not None
+            and thread.handling_mode == "agent"
+            and thread.controller_epoch == controller.controller_epoch
+            and controller.state in {"active", "paused"}
+        ):
+            from app.agent.repository import record_thread_event
+
+            kind = (
+                "message.image_described"
+                if row.status == "succeeded"
+                else "message.image_description_failed"
+            )
+            record_thread_event(
+                session,
+                clock,
+                workspace_id=row.workspace_id,
+                account_id=conversation.social_account_id,
+                thread_id=thread.id,
+                kind=kind,
+                source_kind="message_image_description",
+                source_key=f"image_desc:{row.id}",
+                source_id=row.id,
+                source_version=1,
+            )
+        return
+    now = clock.now()
+    keys = [draft_reply_key(conversation.id, requested=True)]
+    if conversation.handling_mode == "automatic":
+        key = draft_reply_key(conversation.id)
+        enqueue(
+            session,
+            "draft_reply",
+            DraftReplyPayload(conversation_id=conversation.id),
+            workspace_id=row.workspace_id,
+            correlation_id=correlation_id,
+            run_at=now,
+            dedup_key=key,
+            clock=clock,
+        )
+        keys.append(key)
+    session.execute(
+        update(Job)
+        .where(Job.dedup_key.in_(keys), Job.status == "queued", Job.run_at > now)
+        .values(run_at=now)
+        .execution_options(synchronize_session=False)
     )
 
 
@@ -420,6 +522,7 @@ def describe_message_image(job: JobContext) -> None:
                 },
                 job.correlation_id,
             )
+            wake_after_image_description(session, job.clock, row, job.correlation_id)
         session.commit()
 
 

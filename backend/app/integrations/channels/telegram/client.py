@@ -26,12 +26,17 @@ class TelegramApiError(Exception):
         error_code: int | None = None,
         description: str | None = None,
         raw_response: dict[str, Any] | None = None,
+        *,
+        retryable: bool = False,
+        ambiguous: bool = False,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.error_code = error_code
         self.description = description
         self.raw_response = raw_response
+        self.retryable = retryable
+        self.ambiguous = ambiguous
 
 
 def _clean_token(token: str | SecretStr | None) -> str:
@@ -78,6 +83,12 @@ class TelegramClient:
     def _file_url(self, file_path: str) -> str:
         return f"{self.base_url}/file/bot{self._get_token()}/{file_path.lstrip('/')}"
 
+    def _redact(self, value: str | None) -> str:
+        text = str(value or "")
+        if self._raw_token:
+            text = text.replace(self._raw_token, "[redacted]")
+        return text
+
     def _request(
         self,
         method: str,
@@ -103,7 +114,12 @@ class TelegramClient:
                 timeout=req_timeout,
             )
         except httpx.RequestError as exc:
-            raise TelegramApiError(f"Telegram transport error: {exc}") from exc
+            safe_exc = self._redact(str(exc))
+            raise TelegramApiError(
+                f"Telegram transport error: {safe_exc}",
+                retryable=False,
+                ambiguous=True,
+            ) from None
 
         try:
             body = resp.json()
@@ -111,18 +127,23 @@ class TelegramClient:
             body = None
 
         if resp.status_code >= 400:
-            desc = body.get("description") if isinstance(body, dict) else resp.text
+            raw_desc = body.get("description") if isinstance(body, dict) else resp.text
+            desc = self._redact(raw_desc) if isinstance(raw_desc, str) else None
             err_code = body.get("error_code") if isinstance(body, dict) else resp.status_code
+            is_retryable = resp.status_code == 429 or 500 <= resp.status_code < 600
             raise TelegramApiError(
                 f"Telegram API error {err_code}: {desc}",
                 status_code=resp.status_code,
                 error_code=err_code,
                 description=desc,
                 raw_response=body if isinstance(body, dict) else None,
+                retryable=is_retryable,
+                ambiguous=False,
             )
 
         if not isinstance(body, dict) or not body.get("ok"):
-            desc = body.get("description") if isinstance(body, dict) else "Unknown API error"
+            raw_desc = body.get("description") if isinstance(body, dict) else "Unknown API error"
+            desc = self._redact(raw_desc) if isinstance(raw_desc, str) else "Unknown API error"
             err_code = body.get("error_code") if isinstance(body, dict) else None
             raise TelegramApiError(
                 f"Telegram API returned not ok: {desc}",
@@ -130,6 +151,8 @@ class TelegramClient:
                 error_code=err_code,
                 description=desc,
                 raw_response=body if isinstance(body, dict) else None,
+                retryable=False,
+                ambiguous=not isinstance(body, dict),
             )
 
         return body.get("result")
@@ -326,6 +349,12 @@ class AsyncTelegramClient:
     def _file_url(self, file_path: str) -> str:
         return f"{self.base_url}/file/bot{self._get_token()}/{file_path.lstrip('/')}"
 
+    def _redact(self, value: str | None) -> str:
+        text = str(value or "")
+        if self._raw_token:
+            text = text.replace(self._raw_token, "[redacted]")
+        return text
+
     async def _request(
         self,
         method: str,
@@ -351,7 +380,12 @@ class AsyncTelegramClient:
                 timeout=req_timeout,
             )
         except httpx.RequestError as exc:
-            raise TelegramApiError(f"Telegram transport error: {exc}") from exc
+            safe_exc = self._redact(str(exc))
+            raise TelegramApiError(
+                f"Telegram transport error: {safe_exc}",
+                retryable=False,
+                ambiguous=True,
+            ) from None
 
         try:
             body = resp.json()
@@ -359,18 +393,23 @@ class AsyncTelegramClient:
             body = None
 
         if resp.status_code >= 400:
-            desc = body.get("description") if isinstance(body, dict) else resp.text
+            raw_desc = body.get("description") if isinstance(body, dict) else resp.text
+            desc = self._redact(raw_desc) if isinstance(raw_desc, str) else None
             err_code = body.get("error_code") if isinstance(body, dict) else resp.status_code
+            is_retryable = resp.status_code == 429 or 500 <= resp.status_code < 600
             raise TelegramApiError(
                 f"Telegram API error {err_code}: {desc}",
                 status_code=resp.status_code,
                 error_code=err_code,
                 description=desc,
                 raw_response=body if isinstance(body, dict) else None,
+                retryable=is_retryable,
+                ambiguous=False,
             )
 
         if not isinstance(body, dict) or not body.get("ok"):
-            desc = body.get("description") if isinstance(body, dict) else "Unknown API error"
+            raw_desc = body.get("description") if isinstance(body, dict) else "Unknown API error"
+            desc = self._redact(raw_desc) if isinstance(raw_desc, str) else "Unknown API error"
             err_code = body.get("error_code") if isinstance(body, dict) else None
             raise TelegramApiError(
                 f"Telegram API returned not ok: {desc}",
@@ -378,6 +417,8 @@ class AsyncTelegramClient:
                 error_code=err_code,
                 description=desc,
                 raw_response=body if isinstance(body, dict) else None,
+                retryable=False,
+                ambiguous=not isinstance(body, dict),
             )
 
         return body.get("result")

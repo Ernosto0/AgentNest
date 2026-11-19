@@ -218,6 +218,21 @@ sequenceDiagram
 
 **Linking:** the user generates an 8-character one-time alphanumeric code in the web app (`Settings -> Channels / Connections`), valid for 10 minutes, and sends `/link <code>` to the bot. The adapter validates the code and creates a `channel_links` row (`migration 0038`). Unlinking is available both from the web UI and via `/unlink` in chat.
 
+### 5.1a Explicit Notification-Channel Choice and Preferences (Session 02)
+
+To ensure pilot owners have full control over notification routing, notification channels are governed by an explicit per-workspace, per-user preference contract (`channel_preferences` table, `migration 0101`):
+- **Contract & Scope:** `channel_preferences(id, workspace_id, user_id, channel, enabled, created_at, updated_at)` with unique constraints on `(workspace_id, id)` and `(workspace_id, user_id, channel)`. Row-Level Security (RLS) is strictly enforced with `tenant_isolation_policy` (`INV-01`).
+- **Channel Choices:** Owners can opt into **Telegram**, **WhatsApp**, or select **App-only** (`app_only: true`), which disables all external messaging channels. Selecting multiple external channels (e.g. Telegram and WhatsApp simultaneously) is supported. Web Push remains a separate device-level opt-in (`push_preferences`).
+- **Truthful Status Representation:** Channels report one of five mutually exclusive states based on persisted facts:
+  1. `unconfigured`: Server lacks credentials for the channel (`telegram_configured == False` or `whatsapp_configured == False`).
+  2. `unlinked`: Server is configured, but the user has no active link in `channel_links`.
+  3. `disabled`: User has an active link, but has toggled channel preferences to `enabled=False` (or selected app-only).
+  4. `delivery_failure`: User has an active link and enabled preference, but the most recent `notification_deliveries` row has `status == "failed"`.
+  5. `connected`: Channel is configured, linked, enabled, and healthy.
+- **Migration & Seeding Guarantees:** Migration 0101 seeds active links as `enabled=True` to preserve existing notification delivery without unsolicited subscriptions. Redeeming a link code sets `enabled=True`; unlinking sets `enabled=False`.
+- **Queued Delivery Recheck:** In addition to dispatch-time checks in `dispatch_telegram` and `dispatch_whatsapp`, `deliver_channel_notification` (`jobs.py`) rechecks `is_channel_enabled` before sending. If an owner disables a channel while a delivery is queued, the worker safely marks `delivery.status = "failed"` with `last_error = "channel_disabled_by_preference"` and terminates without calling external APIs.
+- **Delivery Isolation:** A failure in one channel never suppresses the in-app alert or impedes delivery to another selected channel. Foreign-workspace preference updates are rejected with 404 (`INV-01`).
+
 ### 5.2 Web channel (MVP)
 - Commands: `POST /commands`. Results: polled command resource. Notifications: `notifications` table + bell. Approvals: approval screens.
 - `deliver_notification()` is a no-op beyond the stored notification.
@@ -233,7 +248,22 @@ A phone or browser notification for the owner. `WebPushChannel` (`app.integratio
 - **Client:** `frontend/public/sw.js` shows the payload (plain text) and opens the same-origin `url`. The opt-in lives in Settings next to Telegram; the app offers it once, after the owner's first approval; on iOS Safari outside an installed app it shows an "Add to Home Screen" guide instead, because iOS delivers pushes only to an installed web app (iOS 16.4 or later).
 - **Not verified offline:** delivery through a real push service to a real Android or iOS device. See the Session 04 report for the manual steps.
 
-### 5.3 Telegram (Phase 9)
+### 5.3 Telegram (Phase 9 & Account Agent Pilot Readiness)
+- **Dispatch Flow:** `notify()` dispatches Telegram notifications in the caller's transaction via `dispatch_telegram()`. When the notification type is supported (`catalog.TELEGRAM_TYPES`: approvals, owner questions, operational failures, quota warnings, report-ready alerts) and the recipient is an active workspace member with an active `telegram` `ChannelLink`, `dispatch_channel_notification()` evaluates quiet hours (22:00–08:00 local; critical/2h-expiry bypass), records an idempotent `notification_deliveries` row, and enqueues `deliver_channel_notification`.
+- **Worker Execution and Transaction Isolation:** `deliver_channel_notification` runs outside any database transaction. Before calling Telegram, the worker marks `delivery.metadata["send_state"] = "sending"` and commits. Inbound and outbound worker phases recheck active workspace membership and active channel link status; inactive or unlinked recipients terminate with status `failed` without external HTTP calls.
+- **Delivery Ambiguity and Retry Guarantees (`INV-05`, `INV-06`):**
+  - **429 and 5xx:** transient errors mark the delivery retryable and schedule exponential backoff up to 3 attempts.
+  - **4xx client errors:** permanent rejections (e.g. chat blocked, bot kicked) fail terminally without retries.
+  - **Transport timeouts & missing message IDs:** an HTTP timeout, network interruption, or response missing `message_id` after `sendMessage` is classified as `ambiguous`. To prevent duplicate messages on owner phones, the delivery fails terminally with `last_error="ambiguous_transport_timeout"` or `"ambiguous_missing_message_id"` and is **never** blindly resent.
+  - **Stale sending marker:** a crashed worker leaves `send_state="sending"`; a subsequent retry recognizes the stale attempt and fails safely instead of risking a double send.
+  - **Bot token redaction:** bot tokens are strictly scrubbed from all logged and persisted error descriptions.
+- **Account Agent Informed Approval Previews (`ADR-024`):** For `approval.subject_type == "agent_action"`, Telegram approval messages render rich, human-readable previews:
+  - `dm.send`: recipient handle, incoming message snippet, proposed reply text, and verified fact source citations (D-01).
+  - `comment.reply` & `comment.private_reply`: commenter handle, post context, and proposed reply.
+  - `comment.hide/unhide/delete`: target comment snippet and moderation reason.
+  - `content.prepare/schedule/publish`: content type, caption snippet, media count, and scheduled time.
+  - `calendar.book/reschedule/cancel`: service name, customer name/phone, and appointment start/end times in workspace timezone.
+  - Tapping inline `act:<token>` buttons executes `ApprovalService.decide` atomically via single-use action tokens. Free text never approves.
 - **Inbound Endpoint:** `POST /webhooks/telegram` router in `app.api.v1.webhooks`. Enforces `X-Telegram-Bot-Api-Secret-Token` matching `TELEGRAM_WEBHOOK_SECRET` (returns HTTP 401 on mismatch when configured).
 - **Update Deduplication (`INV-06`):** Durable ledger `telegram_updates` (`migration 0040`). Duplicate `update_id` deliveries return status `duplicate` without re-executing actions or dispatching duplicate outbound API calls.
 - **Local Development Polling:** CLI runner `python -m app.cli telegram-poll` uses `getUpdates` long-polling with identical routing and deduplication logic, eliminating the need for public webhooks or tunnels during development.

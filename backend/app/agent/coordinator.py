@@ -919,7 +919,15 @@ def wait_resolved(db: Session, deps: RunnerDeps, goal: AgentSession, thread: Age
                 .where(
                     AgentEvent.thread_id == thread.id,
                     AgentEvent.cursor > goal.activation_cursor,
-                    AgentEvent.source_kind.in_(("message", "customer_message", "inbound_message")),
+                    AgentEvent.source_kind.in_(
+                        (
+                            "message",
+                            "customer_message",
+                            "inbound_message",
+                            "message_transcript",
+                            "message_image_description",
+                        )
+                    ),
                     AgentEvent.kind.not_in(("echo", "own_message", "outbound_message")),
                 )
                 .limit(1)

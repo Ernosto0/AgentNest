@@ -121,7 +121,7 @@ describe("workspace wizard", () => {
     expect(await screen.findByText(/İşletme bilgilerinizi henüz eklemediniz/)).toBeVisible();
     await user.click(await screen.findByRole("button", { name: "Saat kaçta açıksınız?" }));
     expect(await screen.findByText("Asistanınız yazıyor…")).toBeVisible();
-    expect(screen.getByTestId("simulated-badge")).toBeVisible();
+    expect(screen.getAllByTestId("simulated-badge")[0]).toBeVisible();
     expect(requests.find((r) => r.path === `${chatPath}/messages`)?.body).toEqual({ text: "Saat kaçta açıksınız?" });
     expect(router.state.location.pathname).toBe("/workspaces/new");
     await user.click(screen.getByRole("button", { name: "İşletme bilgilerine devam et" }));

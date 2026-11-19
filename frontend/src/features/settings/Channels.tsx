@@ -9,9 +9,11 @@ import { useCurrentWorkspace } from "@/features/workspaces/context";
 import {
   useChannelAvailability,
   useChannelLinks,
+  useChannelPreferences,
   useGenerateChannelLinkCode,
   useLocalTime,
   useUnlinkChannel,
+  useUpdateChannelPreferences,
 } from "./hooks";
 
 function LinkCodeModal({
@@ -145,8 +147,10 @@ export function Channels() {
   const { workspace } = useCurrentWorkspace();
   const links = useChannelLinks(workspace.id);
   const availability = useChannelAvailability(workspace.id);
+  const preferences = useChannelPreferences(workspace.id);
   const generateCode = useGenerateChannelLinkCode(workspace.id);
   const unlink = useUnlinkChannel(workspace.id);
+  const updatePreferences = useUpdateChannelPreferences(workspace.id);
 
   const [selectedChannel, setSelectedChannel] = useState<"telegram" | "whatsapp">("telegram");
   const [codeData, setCodeData] = useState<ChannelLinkCode | null>(null);
@@ -158,6 +162,13 @@ export function Channels() {
   const telegramLink = links.data?.find((l) => l.channel === "telegram" && l.status === "active");
   const whatsappLink = links.data?.find((l) => l.channel === "whatsapp" && l.status === "active");
   const formatTime = useLocalTime();
+
+  const telegramStatus =
+    preferences.data?.channels?.telegram?.status ??
+    (telegramLink ? "connected" : "unlinked");
+  const whatsappStatus =
+    preferences.data?.channels?.whatsapp?.status ??
+    (whatsappLink ? "connected" : "unlinked");
 
   const handleOpenConnect = () => {
     setSelectedChannel("telegram");
@@ -181,6 +192,28 @@ export function Channels() {
 
   return (
     <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5 shadow-xs">
+      <div className="flex flex-col gap-3 rounded-control border border-border/80 bg-surface-subtle/50 p-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">{t("channels.preferencesTitle")}</h3>
+            <p className="text-xs text-secondary">{t("channels.preferencesDesc")}</p>
+          </div>
+          <Button
+            variant={preferences.data?.app_only ? "primary" : "secondary"}
+            disabled={updatePreferences.isPending || preferences.data?.app_only}
+            onClick={() => updatePreferences.mutate({ app_only: true })}
+            data-testid="app-only-button"
+          >
+            {t("channels.appOnly")}
+          </Button>
+        </div>
+        {preferences.data?.app_only ? (
+          <p className="text-xs font-medium text-action" data-testid="app-only-active-notice">
+            {t("channels.appOnlyActive")}
+          </p>
+        ) : null}
+      </div>
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -189,15 +222,19 @@ export function Channels() {
             </h2>
             <span
               data-testid="channel-status-badge"
-              data-status={telegramLink ? "connected" : "unlinked"}
+              data-status={telegramStatus}
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
-                telegramLink
+                telegramStatus === "connected"
                   ? "border-border bg-success-subtle text-success"
+                  : telegramStatus === "delivery_failure"
+                  ? "border-border bg-danger-subtle text-danger"
                   : "border-border bg-surface-subtle text-secondary"
               }`}
             >
-              {telegramLink ? <CheckIcon className="text-sm" /> : null}
-              {telegramLink ? t("channels.connected") : t("channels.unlinked")}
+              {telegramStatus === "connected" ? <CheckIcon className="text-sm" /> : null}
+              {telegramStatus === "delivery_failure"
+                ? t("channels.deliveryFailure")
+                : t(`channels.${telegramStatus}`)}
             </span>
           </div>
           <p className="mt-1 text-sm text-secondary">{t("channels.intro")}</p>
@@ -205,8 +242,10 @@ export function Channels() {
       </div>
 
       {links.isError ? <ErrorMessage error={links.error} /> : null}
+      {preferences.isError ? <ErrorMessage error={preferences.error} /> : null}
       {generateCode.isError ? <ErrorMessage error={generateCode.error} /> : null}
       {unlink.isError ? <ErrorMessage error={unlink.error} /> : null}
+      {updatePreferences.isError ? <ErrorMessage error={updatePreferences.error} /> : null}
 
       {links.isPending ? (
         <p className="text-sm text-secondary">{t("common.loading")}</p>
@@ -227,6 +266,28 @@ export function Channels() {
               </p>
               <p className="mt-1 text-sm font-medium text-primary">{formatTime(telegramLink.linked_at)}</p>
             </div>
+          </div>
+          <div className="flex items-center justify-between rounded-control border border-border/60 bg-surface-subtle p-3">
+            <div>
+              <p className="text-sm font-medium text-primary">{t("channels.enableTelegram")}</p>
+              {telegramStatus === "delivery_failure" ? (
+                <p className="text-xs text-danger" data-testid="telegram-delivery-failure-note">
+                  {t("channels.deliveryFailureNote")}
+                </p>
+              ) : null}
+            </div>
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label={t("channels.enableTelegram")}
+              data-testid="toggle-telegram-preference"
+              checked={preferences.data ? preferences.data.telegram : true}
+              disabled={updatePreferences.isPending}
+              onChange={(e) => {
+                updatePreferences.mutate({ telegram: e.target.checked });
+              }}
+              className="h-5 w-5 rounded border-border text-action focus:ring-focus"
+            />
           </div>
           <div>
             <Button
@@ -260,18 +321,46 @@ export function Channels() {
             </h3>
             <span
               data-testid="whatsapp-status-badge"
-              data-status={whatsappLink ? "connected" : "unlinked"}
+              data-status={whatsappStatus}
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
-                whatsappLink
+                whatsappStatus === "connected"
                   ? "border-border bg-success-subtle text-success"
+                  : whatsappStatus === "delivery_failure"
+                  ? "border-border bg-danger-subtle text-danger"
                   : "border-border bg-surface-subtle text-secondary"
               }`}
             >
-              {whatsappLink ? <CheckIcon className="text-sm" /> : null}
-              {whatsappLink ? t("channels.connected") : t("channels.unlinked")}
+              {whatsappStatus === "connected" ? <CheckIcon className="text-sm" /> : null}
+              {whatsappStatus === "delivery_failure"
+                ? t("channels.deliveryFailure")
+                : t(`channels.${whatsappStatus}`)}
             </span>
           </div>
           <p className="text-sm text-secondary">{t("channels.whatsappIntro")}</p>
+          {whatsappLink ? (
+            <div className="flex items-center justify-between rounded-control border border-border/60 bg-surface-subtle p-3">
+              <div>
+                <p className="text-sm font-medium text-primary">{t("channels.enableWhatsApp")}</p>
+                {whatsappStatus === "delivery_failure" ? (
+                  <p className="text-xs text-danger" data-testid="whatsapp-delivery-failure-note">
+                    {t("channels.deliveryFailureNote")}
+                  </p>
+                ) : null}
+              </div>
+              <input
+                type="checkbox"
+                role="switch"
+                aria-label={t("channels.enableWhatsApp")}
+                data-testid="toggle-whatsapp-preference"
+                checked={preferences.data ? preferences.data.whatsapp : true}
+                disabled={updatePreferences.isPending}
+                onChange={(e) => {
+                  updatePreferences.mutate({ whatsapp: e.target.checked });
+                }}
+                className="h-5 w-5 rounded border-border text-action focus:ring-focus"
+              />
+            </div>
+          ) : null}
           <div>
             {whatsappLink ? (
               <Button

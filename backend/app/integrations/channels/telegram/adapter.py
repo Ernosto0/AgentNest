@@ -1,9 +1,11 @@
-"""Telegram OwnerChannel adapter (ADR-012, Phase 9 Session 04 & 06)."""
+"""Telegram OwnerChannel adapter (ADR-012, Phase 9 Session 04 & 06, Session 01)."""
 
 from __future__ import annotations
 
 import contextlib
 import html
+import logging
+import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -18,18 +20,120 @@ from app.approvals.models import Approval
 from app.core.clock import Clock
 from app.core.config import get_settings
 from app.core.context import ActorRef
-from app.identity.models import User, Workspace, WorkspaceMember
+from app.identity.models import ChannelLink, User, Workspace, WorkspaceMember
 from app.identity.service import workspace_context
 from app.integrations.channels.base import ChannelRecipient, DeliveryResult, OwnerChannel
-from app.integrations.channels.telegram.client import TelegramClient
+from app.integrations.channels.telegram.client import TelegramApiError, TelegramClient
 from app.notifications.models import Notification, NotificationDelivery
 from app.notifications.quota_text import TEXT as QUOTA_TEXT
+
+_log = logging.getLogger(__name__)
 
 SEVERITY_ICONS: dict[str, str] = {
     "critical": "🚨",
     "attention": "⚠️",
     "info": "ℹ️",
 }
+
+_LOCALIZED_NOTIFICATION_TEXT: dict[str, dict[str, tuple[str, str]]] = {
+    "approval.requested": {
+        "tr": ("Onayınız bekleniyor", "Kararınızı bekleyen bir işlem var."),
+        "en": ("Approval needed", "Something is waiting for your decision."),
+    },
+    "approval.expired": {
+        "tr": ("Onay süresi doldu", "Bekleyen bir onay isteğinin süresi doldu."),
+        "en": ("Approval expired", "A pending approval request has expired."),
+    },
+    "owner_question.requested": {
+        "tr": ("Asistanınızın bir sorusu var", "Yanıtlamak için uygulamayı açın."),
+        "en": ("Your assistant has a question", "Open the app to answer it."),
+    },
+    "owner_question.window_closed": {
+        "tr": (
+            "Bir soru yanıtsız kaldı",
+            "24 saatlik mesajlaşma penceresi kapandı. Ne olduğunu görmek için uygulamayı açın.",
+        ),
+        "en": (
+            "A question went unanswered",
+            "The 24-hour messaging window closed. Open the app to see what happened.",
+        ),
+    },
+    "content.failed": {
+        "tr": ("Bir paylaşım yayınlanamadı", "Ne olduğunu görmek için uygulamayı açın."),
+        "en": ("A post could not be published", "Open the app to see what happened."),
+    },
+    "content.on_hold": {
+        "tr": ("Paylaşım beklemeye alındı", "Planlanan paylaşım kontrolünüzü bekliyor."),
+        "en": ("Post placed on hold", "A scheduled post needs your review."),
+    },
+    "reply.failed": {
+        "tr": ("Bir yanıt gönderilemedi", "Ne olduğunu görmek için uygulamayı açın."),
+        "en": ("A reply was not sent", "Open the app to see what happened."),
+    },
+    "conversation.needs_human": {
+        "tr": (
+            "Görüşme ilgilenmenizi bekliyor",
+            "Bir müşteri görüşmesi insan müdahalesi bekliyor.",
+        ),
+        "en": (
+            "Conversation needs your attention",
+            "A customer conversation requires human attention.",
+        ),
+    },
+    "account.needs_reauth": {
+        "tr": (
+            "Instagram bağlantısı yenilenmeli",
+            "Hesabı yeniden bağlamak için uygulamayı açın.",
+        ),
+        "en": (
+            "Instagram needs to be reconnected",
+            "Open the app to reconnect your account.",
+        ),
+    },
+    "account.degraded": {
+        "tr": (
+            "Instagram bağlantısında gecikme",
+            "Geçici bağlantı sorunları yaşanıyor; otomatik olarak yeniden denenecek.",
+        ),
+        "en": (
+            "Instagram connection degraded",
+            "Temporary connection issues detected; retrying automatically.",
+        ),
+    },
+    "account.permission_missing": {
+        "tr": (
+            "Instagram izni eksik",
+            "Gerekli izinleri vermek için hesabınızı uygulamada yeniden bağlayın.",
+        ),
+        "en": (
+            "Instagram permission missing",
+            "Reconnect your account in the app to grant the required permissions.",
+        ),
+    },
+    "report.daily_ready": {
+        "tr": ("Günlük rapor hazır", "Günlük özet raporunuzu uygulamada görüntüleyebilirsiniz."),
+        "en": ("Daily report ready", "Your daily summary report is ready in the app."),
+    },
+    "report.missed_customers_ready": {
+        "tr": (
+            "Kaçırılan müşteri raporu hazır",
+            "Haftalık kaçırılan müşteri özetinizi uygulamada inceleyin.",
+        ),
+        "en": (
+            "Missed-customer report ready",
+            "Review your weekly missed-customer summary in the app.",
+        ),
+    },
+}
+
+
+def _terminal(reason: str, **metadata: Any) -> DeliveryResult:
+    return DeliveryResult(
+        success=False,
+        status="failed",
+        error_message=reason,
+        metadata={"terminal": True, **metadata},
+    )
 
 
 def _format_time_tz(dt: datetime, tz_name: str | None) -> str:
@@ -98,26 +202,39 @@ def _fact_source_lines(
     return [f"<b>{title}:</b>", *lines] if lines else []
 
 
-def _format_notification_text(notification: Notification) -> str:
+def _format_notification_text(notification: Notification, locale: str | None = None) -> str:
     icon = SEVERITY_ICONS.get(notification.severity, "ℹ️")
+    is_tr = (locale or "tr").lower().startswith("tr")
+    lang = "tr" if is_tr else "en"
+    params = notification.params if isinstance(notification.params, dict) else {}
+    localized = _LOCALIZED_NOTIFICATION_TEXT.get(notification.type, {}).get(lang)
+
     raw_title = (
-        notification.params.get("title")
+        params.get("title")
+        or (localized[0] if localized else None)
         or notification.type.replace(".", " ").replace("_", " ").title()
     )
+    raw_body = (
+        params.get("message") or params.get("body") or (localized[1] if localized else "") or ""
+    )
     title = html.escape(str(raw_title))
-    body = html.escape(
-        str(notification.params.get("message") or notification.params.get("body") or "")
+    body = html.escape(str(raw_body))
+
+    sim_badge = (
+        "🧪 <b>[SİMÜLASYON]</b>\n"
+        if (notification.is_simulated and is_tr)
+        else ("🧪 <b>[SIMULATED]</b>\n" if notification.is_simulated else "")
     )
 
-    lines = [f"{icon} <b>{title}</b>"]
+    lines = [f"{sim_badge}{icon} <b>{title}</b>"]
     if body:
         lines.append("")
         lines.append(body)
 
     other_params = {
         k: v
-        for k, v in notification.params.items()
-        if k not in ("title", "message", "body", "link_url")
+        for k, v in params.items()
+        if k not in ("title", "message", "body", "link_url", "summary")
     }
     if other_params:
         lines.append("")
@@ -125,6 +242,509 @@ def _format_notification_text(notification: Notification) -> str:
             lines.append(f"• <i>{html.escape(str(k))}</i>: {html.escape(str(v))}")
 
     return "\n".join(lines)
+
+
+def _append_reply_draft_lines(
+    session: Session,
+    lines: list[str],
+    *,
+    draft: Any,
+    conv: Any,
+    account: Any,
+    approval: Approval,
+    recipient: ChannelRecipient,
+    is_tr: bool,
+    sim_badge: str,
+) -> None:
+    from app.inbox.models import Message
+
+    account_name = f"@{account.username}" if account and account.username else "Instagram"
+    last_inbound = None
+    if conv is not None:
+        last_inbound = session.scalar(
+            select(Message)
+            .where(Message.conversation_id == conv.id, Message.direction == "inbound")
+            .order_by(Message.provider_timestamp.desc())
+            .limit(1)
+        )
+
+    heading = "Onay İsteği: Müşteri Yanıtı" if is_tr else "Approval Request: Customer Reply"
+    lines.append(f"{sim_badge}💬 <b>{heading}</b>")
+    lines.append("")
+    lines.append(f"• <b>{'Hesap' if is_tr else 'Account'}:</b> {html.escape(account_name)}")
+    if conv is not None and conv.customer_handle:
+        c_label = "Müşteri" if is_tr else "Customer"
+        lines.append(f"• <b>{c_label}:</b> @{html.escape(conv.customer_handle)}")
+    if last_inbound is not None and last_inbound.text:
+        msg_label = "Gelen Mesaj" if is_tr else "Incoming Message"
+        msg_text = html.escape(last_inbound.text[:200])
+        lines.append(f'• <b>{msg_label}:</b> <i>"{msg_text}"</i>')
+    summary_dict = approval.summary if isinstance(approval.summary, dict) else {}
+    proposed = (
+        draft.text
+        if draft is not None and draft.text
+        else str(summary_dict.get("text") or summary_dict.get("proposed_text") or "")
+    )
+    rep_label = "Önerilen Yanıt" if is_tr else "Proposed Reply"
+    lines.append(f"• <b>{rep_label}:</b>\n<blockquote>{html.escape(proposed)}</blockquote>")
+    room = TELEGRAM_TEXT_BUDGET - len("\n".join(lines)) - EXPIRY_LINE_CHARS
+    fact_lines = _fact_source_lines(session, draft, recipient.timezone, is_tr, room)
+    if fact_lines:
+        lines.append("")
+        lines.extend(fact_lines)
+
+
+def _append_agent_action_lines(
+    session: Session,
+    lines: list[str],
+    *,
+    approval: Approval,
+    recipient: ChannelRecipient,
+    is_tr: bool,
+    sim_badge: str,
+) -> None:
+    """Format an informed description for Account Agent approvals (subject_type='agent_action')."""
+    from app.agent.models import AgentAction
+    from app.comments.models import (
+        PrivateReplyOpportunity,
+        PublicComment,
+        PublicCommentAction,
+        PublicMedia,
+    )
+    from app.content.models import ContentItem
+    from app.inbox.models import Conversation, ReplyDraft
+    from app.integrations.calendar.models import CalendarAppointment
+    from app.integrations.instagram.models import SocialAccount
+
+    action = session.get(AgentAction, approval.subject_id)
+    if action is not None and action.workspace_id != approval.workspace_id:
+        action = None
+
+    summary = approval.summary if isinstance(approval.summary, dict) else {}
+    action_type = (
+        action.action_type
+        if action is not None
+        else str(summary.get("action_type") or approval.action)
+    )
+    account = (
+        session.get(SocialAccount, action.social_account_id)
+        if action is not None and action.social_account_id
+        else None
+    )
+    account_name = f"@{account.username}" if account and account.username else "Instagram"
+
+    # 1. Account Agent DM Reply (dm.send)
+    if action_type == "dm.send":
+        draft = (
+            session.get(ReplyDraft, action.payload_ref)
+            if action is not None and action.payload_ref
+            else None
+        )
+        if draft is None and action is not None:
+            draft = session.scalar(
+                select(ReplyDraft)
+                .where(
+                    ReplyDraft.workspace_id == action.workspace_id,
+                    ReplyDraft.agent_action_id == action.id,
+                )
+                .limit(1)
+            )
+        if draft is not None and draft.workspace_id != approval.workspace_id:
+            draft = None
+        conv = session.get(Conversation, draft.conversation_id) if draft is not None else None
+        if conv is None and action is not None and action.target_ref:
+            with contextlib.suppress(ValueError):
+                cand_conv = session.get(Conversation, uuid.UUID(action.target_ref))
+                if cand_conv is not None and cand_conv.workspace_id == approval.workspace_id:
+                    conv = cand_conv
+        if account is None and conv is not None:
+            account = session.get(SocialAccount, conv.social_account_id)
+        _append_reply_draft_lines(
+            session,
+            lines,
+            draft=draft,
+            conv=conv,
+            account=account,
+            approval=approval,
+            recipient=recipient,
+            is_tr=is_tr,
+            sim_badge=sim_badge,
+        )
+        return
+
+    # 2. Account Agent Comment Reply / Private Reply / Moderation
+    if action_type in (
+        "comment.reply",
+        "comment.private_reply",
+        "comment.hide",
+        "comment.unhide",
+        "comment.delete",
+    ):
+        comment: PublicComment | None = None
+        proposed_text: str | None = None
+        if action_type == "comment.private_reply":
+            opp = (
+                session.get(PrivateReplyOpportunity, action.payload_ref)
+                if action is not None and action.payload_ref
+                else None
+            )
+            if opp is not None and opp.workspace_id == approval.workspace_id:
+                comment = session.get(PublicComment, opp.comment_id)
+                proposed_text = opp.text
+        else:
+            pub_act = (
+                session.get(PublicCommentAction, action.payload_ref)
+                if action is not None and action.payload_ref
+                else None
+            )
+            if pub_act is not None and pub_act.workspace_id == approval.workspace_id:
+                comment = session.get(PublicComment, pub_act.comment_id)
+                proposed_text = pub_act.text
+        if comment is None and action is not None and action.target_ref:
+            with contextlib.suppress(ValueError):
+                cand_comment = session.get(PublicComment, uuid.UUID(action.target_ref))
+                if cand_comment is not None and cand_comment.workspace_id == approval.workspace_id:
+                    comment = cand_comment
+        media = (
+            session.get(PublicMedia, comment.media_id)
+            if comment is not None and comment.media_id
+            else None
+        )
+        headings = {
+            "comment.reply": (
+                "Onay İsteği: Yorum Yanıtı",
+                "Approval Request: Comment Reply",
+            ),
+            "comment.private_reply": (
+                "Onay İsteği: Yorumdan Özel Yanıt (DM)",
+                "Approval Request: Private Reply to Comment",
+            ),
+            "comment.hide": (
+                "Onay İsteği: Yorum Gizleme",
+                "Approval Request: Hide Comment",
+            ),
+            "comment.unhide": (
+                "Onay İsteği: Yorum Görünür Yapma",
+                "Approval Request: Unhide Comment",
+            ),
+            "comment.delete": (
+                "Onay İsteği: Yorum Silme",
+                "Approval Request: Delete Comment",
+            ),
+        }
+        tr_h, en_h = headings[action_type]
+        lines.append(f"{sim_badge}💬 <b>{tr_h if is_tr else en_h}</b>")
+        lines.append("")
+        lines.append(f"• <b>{'Hesap' if is_tr else 'Account'}:</b> {html.escape(account_name)}")
+        if media is not None and media.caption:
+            post_label = "Gönderi" if is_tr else "Post"
+            lines.append(f"• <b>{post_label}:</b> {html.escape(_clip(media.caption.strip(), 120))}")
+        if comment is not None and comment.text:
+            c_label = "Yorum" if is_tr else "Comment"
+            lines.append(f'• <b>{c_label}:</b> <i>"{html.escape(comment.text[:200])}"</i>')
+        if not proposed_text:
+            raw_prop = summary.get("text") or summary.get("proposed_text")
+            if isinstance(raw_prop, str) and raw_prop.strip():
+                proposed_text = raw_prop.strip()
+        if proposed_text:
+            rep_label = "Önerilen Yanıt" if is_tr else "Proposed Reply"
+            lines.append(
+                f"• <b>{rep_label}:</b>\n<blockquote>{html.escape(proposed_text)}</blockquote>"
+            )
+        return
+
+    # 3. Account Agent Content Actions (prepare, schedule, publish, cancel)
+    if action_type in (
+        "content.prepare",
+        "content.schedule",
+        "content.publish",
+        "content.cancel",
+    ):
+        item = (
+            session.get(ContentItem, action.payload_ref)
+            if action is not None and action.payload_ref
+            else None
+        )
+        if item is None and action is not None and action.target_ref:
+            with contextlib.suppress(ValueError):
+                cand_item = session.get(ContentItem, uuid.UUID(action.target_ref))
+                if cand_item is not None and cand_item.workspace_id == approval.workspace_id:
+                    item = cand_item
+        if item is not None and item.workspace_id != approval.workspace_id:
+            item = None
+        intent: dict[str, Any] = (
+            dict(action.content_intent)
+            if action is not None and isinstance(action.content_intent, dict)
+            else {}
+        )
+        raw_req = intent.get("request")
+        req_dict: dict[str, Any] = dict(raw_req) if isinstance(raw_req, dict) else {}
+        raw_payload = intent.get("payload")
+        payload_dict: dict[str, Any] = dict(raw_payload) if isinstance(raw_payload, dict) else {}
+
+        content_headings = {
+            "content.prepare": (
+                "Onay İsteği: Paylaşım Taslağı",
+                "Approval Request: Content Draft",
+            ),
+            "content.schedule": (
+                "Onay İsteği: Paylaşım Planı",
+                "Approval Request: Content Schedule",
+            ),
+            "content.publish": (
+                "Onay İsteği: Paylaşım Yayınlama",
+                "Approval Request: Content Publication",
+            ),
+            "content.cancel": (
+                "Onay İsteği: Paylaşım İptali",
+                "Approval Request: Cancel Content",
+            ),
+        }
+        tr_h, en_h = content_headings[action_type]
+        lines.append(f"{sim_badge}📸 <b>{tr_h if is_tr else en_h}</b>")
+        lines.append("")
+        lines.append(f"• <b>{'Hesap' if is_tr else 'Account'}:</b> {html.escape(account_name)}")
+
+        raw_type = (
+            (item.content_type if item is not None else None)
+            or payload_dict.get("content_type")
+            or req_dict.get("content_type")
+            or summary.get("content_type")
+        )
+        if isinstance(raw_type, str) and raw_type.strip():
+            c_type = raw_type.replace("_", " ").title()
+            lines.append(f"• <b>{'Tür' if is_tr else 'Type'}:</b> {html.escape(c_type)}")
+
+        raw_title = (
+            (item.title if item is not None and item.title else None)
+            or req_dict.get("title")
+            or summary.get("title")
+        )
+        if isinstance(raw_title, str) and raw_title.strip():
+            lines.append(
+                f"• <b>{'Başlık' if is_tr else 'Title'}:</b> {html.escape(raw_title.strip())}"
+            )
+
+        raw_caption = (
+            (item.caption if item is not None and item.caption else None)
+            or intent.get("rendered_caption")
+            or payload_dict.get("caption")
+            or summary.get("caption")
+        )
+        if isinstance(raw_caption, str) and raw_caption.strip():
+            cap_label = "Açıklama" if is_tr else "Caption"
+            escaped_cap = html.escape(raw_caption.strip())
+            lines.append(f"• <b>{cap_label}:</b>\n<blockquote>{escaped_cap}</blockquote>")
+
+        sched_str: str | None = None
+        if item is not None and item.scheduled_at is not None:
+            sched_str = _format_time_tz(item.scheduled_at, recipient.timezone)
+        else:
+            raw_sched = payload_dict.get("scheduled_at") or summary.get("scheduled_at")
+            if isinstance(raw_sched, str) and raw_sched.strip():
+                with contextlib.suppress(ValueError):
+                    parsed_dt = datetime.fromisoformat(raw_sched.replace("Z", "+00:00"))
+                    sched_str = _format_time_tz(parsed_dt, recipient.timezone)
+                if sched_str is None:
+                    sched_str = raw_sched.strip()
+        if sched_str:
+            time_label = "Planlanan Zaman" if is_tr else "Scheduled Time"
+            lines.append(f"• <b>{time_label}:</b> {html.escape(sched_str)}")
+        return
+
+    # 4. Account Agent Calendar Actions (calendar.book, calendar.reschedule, calendar.cancel)
+    if action_type in ("calendar.book", "calendar.reschedule", "calendar.cancel"):
+        cal_intent: dict[str, Any] = (
+            dict(action.content_intent)
+            if action is not None and isinstance(action.content_intent, dict)
+            else {}
+        )
+        appt = (
+            session.get(CalendarAppointment, action.payload_ref)
+            if action is not None and action.payload_ref
+            else None
+        )
+        if appt is not None and appt.workspace_id != approval.workspace_id:
+            appt = None
+
+        cal_headings = {
+            "calendar.book": (
+                "Onay İsteği: Randevu Oluşturma",
+                "Approval Request: Book Appointment",
+            ),
+            "calendar.reschedule": (
+                "Onay İsteği: Randevu Değişikliği",
+                "Approval Request: Reschedule Appointment",
+            ),
+            "calendar.cancel": (
+                "Onay İsteği: Randevu İptali",
+                "Approval Request: Cancel Appointment",
+            ),
+        }
+        tr_h, en_h = cal_headings[action_type]
+        lines.append(f"{sim_badge}📅 <b>{tr_h if is_tr else en_h}</b>")
+        lines.append("")
+        lines.append(f"• <b>{'Hesap' if is_tr else 'Account'}:</b> {html.escape(account_name)}")
+
+        appt_title = (
+            cal_intent.get("title")
+            or summary.get("title")
+            or (appt.title if appt is not None else None)
+        )
+        if isinstance(appt_title, str) and appt_title.strip():
+            t_label = "Hizmet / Başlık" if is_tr else "Service / Title"
+            lines.append(f"• <b>{t_label}:</b> {html.escape(appt_title.strip())}")
+
+        cust_name = (
+            cal_intent.get("customer_name")
+            or summary.get("customer_name")
+            or (appt.customer_name if appt is not None else None)
+        )
+        cust_contact = cal_intent.get("customer_contact") or (
+            appt.customer_contact if appt is not None else None
+        )
+        if isinstance(cust_name, str) and cust_name.strip():
+            c_label = "Müşteri" if is_tr else "Customer"
+            c_val = cust_name.strip()
+            if (
+                isinstance(cust_contact, str)
+                and cust_contact.strip()
+                and cust_contact.strip().lstrip("@") != c_val.lstrip("@")
+            ):
+                c_val = f"{c_val} ({cust_contact.strip()})"
+            lines.append(f"• <b>{c_label}:</b> {html.escape(c_val)}")
+
+        local_date = cal_intent.get("local_date") or summary.get("local_date")
+        local_time = cal_intent.get("local_time") or summary.get("local_time")
+        tz_label = (
+            cal_intent.get("timezone")
+            or summary.get("timezone")
+            or (appt.timezone if appt is not None else None)
+            or recipient.timezone
+        )
+        new_when = (
+            f"{local_date} {local_time}".strip()
+            if (local_date or local_time)
+            else (_format_time_tz(appt.start_at, str(tz_label)) if appt is not None else "")
+        )
+        if new_when:
+            dt_label = "Tarih / Saat" if is_tr else "Date / Time"
+            if action_type == "calendar.reschedule" and appt is not None:
+                old_when = _format_time_tz(appt.start_at, str(tz_label))
+                if old_when != new_when:
+                    new_when = f"{old_when} → {new_when}"
+            if isinstance(tz_label, str) and tz_label.strip():
+                new_when = f"{new_when} ({tz_label.strip()})"
+            lines.append(f"• <b>{dt_label}:</b> {html.escape(new_when)}")
+
+        duration = cal_intent.get("duration_minutes") or summary.get("duration_minutes")
+        if isinstance(duration, int) and duration > 0:
+            d_label = "Süre" if is_tr else "Duration"
+            d_unit = "dk" if is_tr else "min"
+            lines.append(f"• <b>{d_label}:</b> {duration} {d_unit}")
+
+        note_or_reason = cal_intent.get("reason") or cal_intent.get("description")
+        if isinstance(note_or_reason, str) and note_or_reason.strip():
+            n_label = "Not / Neden" if is_tr else "Notes / Reason"
+            lines.append(f"• <b>{n_label}:</b> {html.escape(note_or_reason.strip())}")
+        return
+
+    # Fallback for any other agent_action
+    req_label = "Onay İsteği" if is_tr else "Approval Request"
+    lines.append(f"{sim_badge}⚡ <b>{req_label}: {html.escape(action_type)}</b>")
+    lines.append("")
+    lines.append(f"• <b>{'Hesap' if is_tr else 'Account'}:</b> {html.escape(account_name)}")
+    for k, v in summary.items():
+        if k not in ("payload_hash", "action_type"):
+            lines.append(f"• <b>{html.escape(str(k))}:</b> {html.escape(str(v))}")
+
+
+def _send_with_ledger_fence(
+    client: TelegramClient,
+    session: Session,
+    clock: Clock,
+    delivery: NotificationDelivery,
+    *,
+    chat_id: str,
+    text: str,
+    reply_markup: dict[str, Any] | None = None,
+    extra: dict[str, Any] | None = None,
+) -> DeliveryResult:
+    """Commit the ``send_state='sending'`` marker and any minted tokens before the HTTP call.
+
+    Guarantees:
+    - No DB transaction is open while calling Telegram (INV: no external call in a DB transaction).
+    - Single-use action tokens exist in Postgres before Telegram can deliver the inline buttons.
+    - A transport timeout, a 2xx response missing ``message_id``, or a crash after ``send_message``
+      is recorded as ``ambiguous`` (terminal) and is never blindly resent.
+    - Explicit HTTP 429 or 5xx responses leave ``send_state='not_sent'`` and mark ``retryable=True``
+      for worker backoff.
+    """
+    extra_meta = dict(extra or {})
+    previous = dict(delivery.delivery_metadata or {})
+    delivery.delivery_metadata = {
+        **previous,
+        "send_state": "sending",
+        "send_started_at": clock.now().isoformat(),
+        **extra_meta,
+    }
+    session.commit()
+
+    try:
+        res = client.send_message(
+            chat_id=chat_id,
+            text=text,
+            parse_mode="HTML",
+            reply_markup=reply_markup,
+        )
+    except TelegramApiError as exc:
+        code = exc.error_code if isinstance(exc.error_code, int) else exc.status_code
+        _log.warning("telegram_send_failed status=%s code=%s", exc.status_code, code)
+        if exc.ambiguous:
+            return _terminal(
+                "telegram_send_ambiguous",
+                ambiguous=True,
+                send_state="ambiguous",
+                **extra_meta,
+            )
+        if exc.retryable:
+            return DeliveryResult(
+                success=False,
+                status="failed",
+                error_message=f"telegram_retryable:{code}",
+                metadata={"retryable": True, "send_state": "not_sent", **extra_meta},
+            )
+        reason = f"telegram_rejected:{code}" if code is not None else str(exc)
+        return _terminal(reason, send_state="not_sent", **extra_meta)
+    except Exception:
+        _log.warning("telegram_send_unexpected_error")
+        return _terminal(
+            "telegram_send_ambiguous",
+            ambiguous=True,
+            send_state="ambiguous",
+            **extra_meta,
+        )
+
+    msg_id = (
+        str(res.get("message_id")).strip()
+        if isinstance(res, dict) and res.get("message_id") is not None
+        else ""
+    )
+    if not msg_id:
+        return _terminal(
+            "telegram_send_ambiguous",
+            ambiguous=True,
+            send_state="ambiguous",
+            **extra_meta,
+        )
+
+    return DeliveryResult(
+        success=True,
+        status="delivered",
+        delivered_at=clock.now(),
+        external_message_id=msg_id,
+        metadata={"send_state": "sent", "message_id": msg_id, **extra_meta},
+    )
 
 
 def _deliver_approval_notification(
@@ -139,20 +759,19 @@ def _deliver_approval_notification(
     """Format and send approval.requested notification with single-use action buttons."""
     chat_id = recipient.channel_chat_id or recipient.channel_user_id
     if not chat_id:
-        return DeliveryResult(
-            success=False,
-            status="failed",
-            error_message="Recipient missing Telegram chat ID",
-        )
+        return _terminal("Recipient missing Telegram chat ID", send_state="not_sent")
+
+    if approval.workspace_id != delivery.workspace_id:
+        return _terminal("approval_not_found", send_state="not_sent")
+    if approval.status != "pending" or approval.expires_at <= clock.now():
+        return _terminal("approval_not_pending", send_state="not_sent")
 
     # 1. Resolve workspace, user and member context to generate single-use action tokens
     workspace = session.get(Workspace, delivery.workspace_id)
     user = session.get(User, recipient.user_id)
-    if workspace is None or user is None:
-        return DeliveryResult(
-            success=False,
-            status="failed",
-            error_message="Workspace or user missing for approval notification",
+    if workspace is None or user is None or not user.is_active:
+        return _terminal(
+            "Workspace or user missing for approval notification", send_state="not_sent"
         )
 
     member = session.scalar(
@@ -162,11 +781,7 @@ def _deliver_approval_notification(
         )
     )
     if member is None:
-        return DeliveryResult(
-            success=False,
-            status="failed",
-            error_message="Recipient is no longer a workspace member",
-        )
+        return _terminal("Recipient is no longer a workspace member", send_state="not_sent")
     role = member.role
     ctx = workspace_context(workspace, ActorRef.user(user.id), role)
 
@@ -190,44 +805,23 @@ def _deliver_approval_notification(
 
     lines: list[str] = []
     if approval.subject_type == "reply_draft":
-        from app.inbox.models import Conversation, Message, ReplyDraft
+        from app.inbox.models import Conversation, ReplyDraft
         from app.integrations.instagram.models import SocialAccount
 
         draft = session.get(ReplyDraft, approval.subject_id)
         conv = session.get(Conversation, draft.conversation_id) if draft else None
         account = session.get(SocialAccount, conv.social_account_id) if conv else None
-        account_name = f"@{account.username}" if account and account.username else "Instagram"
-
-        last_inbound = None
-        if conv:
-            last_inbound = session.scalar(
-                select(Message)
-                .where(Message.conversation_id == conv.id, Message.direction == "inbound")
-                .order_by(Message.provider_timestamp.desc())
-                .limit(1)
-            )
-
-        heading = "Onay İsteği: Müşteri Yanıtı" if is_tr else "Approval Request: Customer Reply"
-        title = f"{sim_badge}💬 <b>{heading}</b>"
-        lines.append(title)
-        lines.append("")
-        lines.append(f"• <b>{'Hesap' if is_tr else 'Account'}:</b> {html.escape(account_name)}")
-        if conv and conv.customer_handle:
-            c_label = "Müşteri" if is_tr else "Customer"
-            lines.append(f"• <b>{c_label}:</b> @{html.escape(conv.customer_handle)}")
-        if last_inbound and last_inbound.text:
-            msg_label = "Gelen Mesaj" if is_tr else "Incoming Message"
-            msg_text = html.escape(last_inbound.text[:200])
-            lines.append(f'• <b>{msg_label}:</b> <i>"{msg_text}"</i>')
-        proposed = draft.text if draft and draft.text else str(approval.summary.get("text", ""))
-        rep_label = "Önerilen Yanıt" if is_tr else "Proposed Reply"
-        lines.append(f"• <b>{rep_label}:</b>\n<blockquote>{html.escape(proposed)}</blockquote>")
-        # Telegram caps a message at 4096 characters; the expiry line follows, so keep room for it.
-        room = TELEGRAM_TEXT_BUDGET - len("\n".join(lines)) - EXPIRY_LINE_CHARS
-        fact_lines = _fact_source_lines(session, draft, recipient.timezone, is_tr, room)
-        if fact_lines:
-            lines.append("")
-            lines.extend(fact_lines)
+        _append_reply_draft_lines(
+            session,
+            lines,
+            draft=draft,
+            conv=conv,
+            account=account,
+            approval=approval,
+            recipient=recipient,
+            is_tr=is_tr,
+            sim_badge=sim_badge,
+        )
 
     elif approval.subject_type == "content_item":
         from app.content.models import ContentItem
@@ -260,6 +854,16 @@ def _deliver_approval_notification(
             sched_str = _format_time_tz(item.scheduled_at, recipient.timezone)
             time_label = "Planlanan Zaman" if is_tr else "Scheduled Time"
             lines.append(f"• <b>{time_label}:</b> {sched_str}")
+
+    elif approval.subject_type == "agent_action":
+        _append_agent_action_lines(
+            session,
+            lines,
+            approval=approval,
+            recipient=recipient,
+            is_tr=is_tr,
+            sim_badge=sim_badge,
+        )
 
     elif approval.action == "command.make_price_card":
         heading = "Fiyat kartı oluştur" if is_tr else "Make a price card"
@@ -319,33 +923,16 @@ def _deliver_approval_notification(
         ]
     }
 
-    try:
-        res = client.send_message(
-            chat_id=chat_id,
-            text=text,
-            parse_mode="HTML",
-            reply_markup=reply_markup,
-        )
-        msg_id = (
-            str(res.get("message_id"))
-            if isinstance(res, dict) and res.get("message_id") is not None
-            else None
-        )
-        return DeliveryResult(
-            success=True,
-            status="delivered",
-            delivered_at=clock.now(),
-            external_message_id=msg_id,
-            metadata={"message_id": msg_id, "approval_id": str(approval.id)}
-            if msg_id
-            else {"approval_id": str(approval.id)},
-        )
-    except Exception as exc:
-        return DeliveryResult(
-            success=False,
-            status="failed",
-            error_message=str(exc),
-        )
+    return _send_with_ledger_fence(
+        client,
+        session,
+        clock,
+        delivery,
+        chat_id=str(chat_id),
+        text=text,
+        reply_markup=reply_markup,
+        extra={"approval_id": str(approval.id)},
+    )
 
 
 def _deliver_owner_question_notification(
@@ -360,11 +947,10 @@ def _deliver_owner_question_notification(
     """Format and send owner_question notification prompting for business information."""
     chat_id = recipient.channel_chat_id or recipient.channel_user_id
     if not chat_id:
-        return DeliveryResult(
-            success=False,
-            status="failed",
-            error_message="Recipient missing Telegram chat ID",
-        )
+        return _terminal("Recipient missing Telegram chat ID", send_state="not_sent")
+
+    if question.workspace_id != delivery.workspace_id:
+        return _terminal("question_not_found", send_state="not_sent")
 
     from app.inbox.models import Message
     from app.integrations.instagram.models import SocialAccount
@@ -432,33 +1018,16 @@ def _deliver_owner_question_notification(
         ]
     }
 
-    try:
-        res = client.send_message(
-            chat_id=chat_id,
-            text=text,
-            parse_mode="HTML",
-            reply_markup=reply_markup,
-        )
-        msg_id = (
-            str(res.get("message_id"))
-            if isinstance(res, dict) and res.get("message_id") is not None
-            else None
-        )
-        return DeliveryResult(
-            success=True,
-            status="delivered",
-            delivered_at=clock.now(),
-            external_message_id=msg_id,
-            metadata={"message_id": msg_id, "question_id": str(question.id)}
-            if msg_id
-            else {"question_id": str(question.id)},
-        )
-    except Exception as exc:
-        return DeliveryResult(
-            success=False,
-            status="failed",
-            error_message=str(exc),
-        )
+    return _send_with_ledger_fence(
+        client,
+        session,
+        clock,
+        delivery,
+        chat_id=str(chat_id),
+        text=text,
+        reply_markup=reply_markup,
+        extra={"question_id": str(question.id)},
+    )
 
 
 class TelegramChannel(OwnerChannel):
@@ -483,13 +1052,36 @@ class TelegramChannel(OwnerChannel):
         recipient: ChannelRecipient,
     ) -> DeliveryResult:
         """Deliver one notification to the recipient on Telegram."""
+        previous = dict(delivery.delivery_metadata or {})
+        if previous.get("send_state") == "sending":
+            return _terminal(
+                "telegram_send_state_unknown",
+                ambiguous=True,
+                send_state="ambiguous",
+            )
+
         notification = session.get(Notification, delivery.notification_id)
         if notification is None:
-            return DeliveryResult(
-                success=False,
-                status="failed",
-                error_message=f"Notification record not found: {delivery.notification_id}",
+            return _terminal(
+                f"Notification record not found: {delivery.notification_id}",
+                send_state="not_sent",
             )
+        if (
+            notification.workspace_id != delivery.workspace_id
+            or notification.recipient_user_id != recipient.user_id
+        ):
+            return _terminal("notification_not_found", send_state="not_sent")
+
+        if delivery.channel_link_id is not None:
+            link = session.get(ChannelLink, delivery.channel_link_id)
+            if (
+                link is None
+                or link.workspace_id != delivery.workspace_id
+                or link.user_id != recipient.user_id
+                or link.channel != "telegram"
+                or link.status != "active"
+            ):
+                return _terminal("recipient_not_linked", send_state="not_sent")
 
         if notification.type == "approval.requested" and notification.subject_id is not None:
             approval = session.get(Approval, notification.subject_id)
@@ -524,43 +1116,23 @@ class TelegramChannel(OwnerChannel):
 
         chat_id = recipient.channel_chat_id or recipient.channel_user_id
         if not chat_id:
-            return DeliveryResult(
-                success=False,
-                status="failed",
-                error_message="Recipient missing Telegram chat ID",
-            )
+            return _terminal("Recipient missing Telegram chat ID", send_state="not_sent")
 
         if notification.type in QUOTA_TEXT:
             locale = "tr" if (recipient.ui_locale or "tr").lower().startswith("tr") else "en"
             title, body = QUOTA_TEXT[notification.type][locale]
             text = f"<b>{title}</b>\n\n{body}"
         else:
-            text = _format_notification_text(notification)
+            text = _format_notification_text(notification, recipient.ui_locale)
 
-        try:
-            res = self.client.send_message(
-                chat_id=chat_id,
-                text=text,
-                parse_mode="HTML",
-            )
-            msg_id = (
-                str(res.get("message_id"))
-                if isinstance(res, dict) and res.get("message_id") is not None
-                else None
-            )
-            return DeliveryResult(
-                success=True,
-                status="delivered",
-                delivered_at=clock.now(),
-                external_message_id=msg_id,
-                metadata={"message_id": msg_id} if msg_id else {},
-            )
-        except Exception as exc:
-            return DeliveryResult(
-                success=False,
-                status="failed",
-                error_message=str(exc),
-            )
+        return _send_with_ledger_fence(
+            self.client,
+            session,
+            clock,
+            delivery,
+            chat_id=str(chat_id),
+            text=text,
+        )
 
     def render_command_result(
         self,

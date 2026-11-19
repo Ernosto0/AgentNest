@@ -47,7 +47,7 @@ ATTENTION_STATES = ("none", "needs_approval", "needs_human", "failed")
 DIRECTIONS = ("inbound", "outbound")
 SENDER_KINDS = ("customer", "business_app", "business_native")
 DRAFT_SOURCES = ("ai", "approved_answer", "owner")
-DRAFT_DECISIONS = ("auto", "approval_required", "human_required", "blocked")
+DRAFT_DECISIONS = ("auto", "approval_required", "human_required", "blocked", "automatic", "ask")
 DRAFT_STATUSES = (
     "pending_approval",
     "needs_human",

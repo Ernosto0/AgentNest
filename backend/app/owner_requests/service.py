@@ -189,9 +189,12 @@ def ask(db: Session, clock: Clock, context: Any, args: BaseModel) -> dict[str, A
     notify(db, clock, context.workspace, q, "owner_question.requested")
     audit(db, clock, context.workspace, q, "owner_question.created")
     if request.holding_response:
+        import typing
+
         from app.agent.context import assemble
         from app.agent.dm import send
         from app.agent.grounding import ReplyValidationArgs
+        from app.core.reply_languages import REPLY_LANGUAGES
         from app.inbox.context import MESSAGING_WINDOW
         from app.inbox.models import Conversation
         from app.operations.send import SEND_MARGIN
@@ -201,19 +204,24 @@ def ask(db: Session, clock: Clock, context: Any, args: BaseModel) -> dict[str, A
         if (
             conversation
             and conversation.last_inbound_at
-            and language in {"tr", "en"}
+            and language in REPLY_LANGUAGES
             and clock.now() < conversation.last_inbound_at + MESSAGING_WINDOW - SEND_MARGIN
+            and language is not None
         ):
-            template = (
-                "Bu talebiniz için işletmeden bilgi istedim."
-                if language == "tr"
-                else "I've asked the business for information about your request."
-            )
+            holding_templates = {
+                "tr": "Bu talebiniz için işletmeden bilgi istedim.",
+                "en": "I've asked the business for information about your request.",
+                "ru": "Я запросил информацию по вашему вопросу у бизнеса.",
+                "de": "Ich habe beim Unternehmen Informationen zu Ihrer Anfrage angefordert.",
+                "ar": "لقد طلبت من الشركة معلومات بخصوص طلبك.",
+            }
+            template = holding_templates.get(language, holding_templates["en"])
+            valid_lang = typing.cast(Literal["tr", "en", "ru", "de", "ar"], language)
             holding = send(
                 db,
                 clock,
                 context,
-                ReplyValidationArgs(template=template, language=language),
+                ReplyValidationArgs(template=template, language=valid_lang),
                 semantic_slot=f"holding:{q.id}",
             )
             if holding.get("action_id"):

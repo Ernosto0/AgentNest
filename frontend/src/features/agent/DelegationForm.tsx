@@ -100,6 +100,76 @@ export function DelegationForm({
             );
           })}
         </ul>
+
+        <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/80 bg-surface-subtle/50 p-3.5 sm:p-4">
+          <div className="min-w-0">
+            <h3 className="font-heading text-sm font-semibold tracking-tight text-primary">
+              {t("agent.policyMatrix.title")}
+            </h3>
+            <p className="mt-0.5 text-xs text-secondary leading-snug">
+              {t("agent.policyMatrix.subtitle")}
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-2 rounded-lg border border-success/20 bg-surface p-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-success">
+                <SparkIcon aria-hidden="true" className="size-4 shrink-0" />
+                <span>{t("agent.policyMatrix.autoHeader")}</span>
+              </div>
+              <ul className="flex flex-col gap-1.5 text-xs text-secondary">
+                <li className="flex items-start gap-1.5">
+                  <span className="text-success select-none">•</span>
+                  <span>{t("agent.policyMatrix.autoGreeting")}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-success select-none">•</span>
+                  <span>{t("agent.policyMatrix.autoHours")}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-success select-none">•</span>
+                  <span>{t("agent.policyMatrix.autoLocation")}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-success select-none">•</span>
+                  <span>{t("agent.policyMatrix.autoServices")}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-success select-none">•</span>
+                  <span>{t("agent.policyMatrix.autoPricing")}</span>
+                </li>
+              </ul>
+            </div>
+            <div className="flex flex-col gap-2 rounded-lg border border-attention/20 bg-surface p-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-attention">
+                <HandIcon aria-hidden="true" className="size-4 shrink-0" />
+                <span>{t("agent.policyMatrix.askHeader")}</span>
+              </div>
+              <ul className="flex flex-col gap-1.5 text-xs text-secondary">
+                <li className="flex items-start gap-1.5">
+                  <span className="text-attention select-none">•</span>
+                  <span>{t("agent.policyMatrix.askDiscounts")}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-attention select-none">•</span>
+                  <span>{t("agent.policyMatrix.askComplaints")}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-attention select-none">•</span>
+                  <span>{t("agent.policyMatrix.askVoice")}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-attention select-none">•</span>
+                  <span>{t("agent.policyMatrix.askMutations")}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-attention select-none">•</span>
+                  <span>{t("agent.policyMatrix.askMixed")}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         {!owner ? (
           <p className="flex items-start gap-2 rounded-xl bg-info-subtle px-3.5 py-2.5 text-metadata text-info">
             <InfoIcon aria-hidden="true" className="mt-0.5 shrink-0" />

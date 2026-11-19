@@ -338,7 +338,10 @@
     },
     "lang": {
       "tr": "Turkish",
-      "en": "English"
+      "en": "English",
+      "ru": "Russian",
+      "de": "German",
+      "ar": "Arabic"
     }
   },
   "devPanel": {

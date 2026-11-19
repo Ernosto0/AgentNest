@@ -333,6 +333,24 @@
       "noChanges": "No changes yet. Applying always shows the exact changes first.",
       "previewNone": "No actions change in this version.",
       "keepEditing": "Keep editing"
+    },
+    "policyMatrix": {
+      "title": "Semi-Automation Policy (Basic vs. Complex Topics)",
+      "subtitle": "Even when an action is set to Automatic, only basic verified questions send automatically; complex or sensitive requests always require your approval.",
+      "autoHeader": "Automatically Answered (Basic Questions)",
+      "autoDescription": "Sent directly when granted Automatic mode and backed by verified facts:",
+      "autoGreeting": "Greetings and polite welcome replies",
+      "autoHours": "Verified operating and business hours",
+      "autoLocation": "Verified address, location, and phone/contact details",
+      "autoServices": "Verified service descriptions and menu offerings",
+      "autoPricing": "Standard verified prices (only when price disclosure is allowed and in private DMs)",
+      "askHeader": "Requires Approval (Complex Questions)",
+      "askDescription": "Even under Automatic mode, the assistant drafts the action and waits for your approval:",
+      "askDiscounts": "Discounts, coupons, price negotiations & custom quotes",
+      "askComplaints": "Complaints, dissatisfaction, refunds, and legal or health/safety matters",
+      "askVoice": "Replies in conversations containing customer voice notes",
+      "askMutations": "Appointment booking, rescheduling, cancellations & publishing",
+      "askMixed": "Mixed topics, conflicting information, or unclear requests"
     }
   }
 }

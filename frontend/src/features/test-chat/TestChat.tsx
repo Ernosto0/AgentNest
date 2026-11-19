@@ -21,9 +21,62 @@ import {
 } from "./hooks";
 import { buildSuggestions } from "./suggestions";
 
-const DECISION_TONE = { auto: "success", approval_required: "info", human_required: "attention", blocked: "danger" } as const;
+const DECISION_TONE = {
+  auto: "success",
+  automatic: "success",
+  approval_required: "info",
+  ask: "info",
+  human_required: "attention",
+  blocked: "danger",
+} as const;
 /** Say so when only a few test messages are left; stay quiet while there are plenty. */
 const LOW_QUOTA = 5;
+
+export function ControllerBadge({ mode, compact = false }: { mode?: "legacy" | "agent"; compact?: boolean }) {
+  const { t } = useTranslation();
+  const isAgent = mode === "agent";
+  const size = compact ? "px-1.5 py-px text-[11px] leading-4" : "px-2 py-1 text-metadata";
+  return (
+    <span
+      data-testid="controller-badge"
+      data-controller={mode || "legacy"}
+      className={`inline-flex shrink-0 items-center rounded-full font-semibold tracking-wide ring-1 ring-inset ${size} ${
+        isAgent
+          ? "bg-action/10 text-action ring-action/30"
+          : "bg-surface-subtle text-secondary ring-border"
+      }`}
+    >
+      {isAgent ? t("testChat.controller.agent") : t("testChat.controller.legacy")}
+    </span>
+  );
+}
+
+export function DecisionBadge({ decision }: { decision: TestChatDraft["decision"] }) {
+  const { t } = useTranslation();
+  const isAuto = decision === "auto" || decision === "automatic";
+  const isBlocked = decision === "blocked" || decision === "human_required";
+  const style = isAuto
+    ? "bg-success-subtle text-success ring-success/30"
+    : isBlocked
+      ? "bg-danger-subtle text-danger ring-danger/30"
+      : "bg-info-subtle text-info ring-info/30";
+
+  const labelKey = isAuto
+    ? "testChat.badge.autoSend"
+    : isBlocked
+      ? "testChat.badge.blocked"
+      : "testChat.badge.needsApproval";
+
+  return (
+    <span
+      data-testid="decision-badge"
+      data-decision={decision}
+      className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-metadata font-semibold tracking-wide ring-1 ring-inset ${style}`}
+    >
+      {t(labelKey)}
+    </span>
+  );
+}
 
 /** The draft text, with the ⟦ ⟧ markers the server puts around unverified values shown as highlights. */
 function MarkedText({ text }: { text: string }) {
@@ -54,7 +107,10 @@ function DecisionNote({ draft }: { draft: TestChatDraft }) {
   const { t } = useTranslation();
   const sentences = useReasonSentences(draft.reasons);
   return (
-    <div data-testid="decision" data-decision={draft.decision}>
+    <div data-testid="decision" data-decision={draft.decision} className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <DecisionBadge decision={draft.decision} />
+      </div>
       <Notice title={t(`testChat.decision.${draft.decision}.title`)} tone={DECISION_TONE[draft.decision]}>
         <p>{t(`testChat.decision.${draft.decision}.detail`)}</p>
         {sentences.length > 0 ? (
@@ -79,6 +135,7 @@ function Reply({ turn, timeZone }: { turn: TestChatTurn; timeZone: string }) {
     <div className="flex w-full min-w-0 max-w-[96%] flex-col gap-3 self-start rounded-2xl rounded-bl-md border border-border bg-surface p-3.5" data-testid="assistant-reply">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-metadata font-semibold text-secondary">{t("testChat.assistantLabel")}</span>
+        <ControllerBadge mode={turn.controller_mode} compact />
         <SimulatedBadge compact />
       </div>
       {draft === null ? (
@@ -200,6 +257,10 @@ export function TestChat({ workspace }: { workspace: Workspace }) {
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <Notice title={t("testChat.simulatedNote")} tone="info">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <ControllerBadge mode={chat.data?.controller_mode} />
+          <SimulatedBadge />
+        </div>
         <p>{t("testChat.intro")}</p>
       </Notice>
 
