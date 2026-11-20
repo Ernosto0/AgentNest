@@ -49,7 +49,7 @@ export function AppShell() {
     <aside data-testid="desktop-sidebar" className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-y-auto border-r border-navigation-selected bg-navigation px-3 py-6 text-navigation-text shadow-sm md:flex min-[1200px]:w-60 ${expanded ? "w-60" : "w-24"}`}>
       <div className="mb-6 flex min-w-0 items-center gap-3 px-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navigation-selected text-navigation-selected-text">
-          <span className="font-heading text-lg font-bold tracking-wider">A</span>
+          <span className="font-heading text-lg font-bold tracking-wider">{productName.charAt(0) || "P"}</span>
         </div>
         <div className={`min-w-0 flex flex-col ${expanded ? "" : "hidden min-[1200px]:flex"}`}>
           <span title={productName} className="truncate font-heading text-lg font-bold tracking-tight text-white">

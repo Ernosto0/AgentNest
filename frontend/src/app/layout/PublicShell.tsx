@@ -16,7 +16,7 @@ export function PublicShell({ title, description, children, action, onLanguageCh
     <aside aria-label={t("entry.brandRegion")} className="relative hidden min-h-dvh flex-col justify-between bg-navigation border-r border-navigation-selected p-12 text-navigation-text lg:flex xl:p-16 overflow-hidden">
       <div className="flex items-center gap-3 relative z-10">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navigation-selected text-navigation-selected-text">
-          <span className="font-heading text-lg font-bold">A</span>
+          <span className="font-heading text-lg font-bold">{name.charAt(0) || "P"}</span>
         </div>
         <p className="font-heading text-2xl font-bold tracking-tight text-white">{name}</p>
       </div>
