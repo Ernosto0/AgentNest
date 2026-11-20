@@ -23,6 +23,8 @@ This folder is the **primary engineering specification**. It is written in Engli
 ```
 docs/
 ├── README.md                     ← you are here
+├── candidate-domains.md          verified brand & domain candidates (.com/.ai) for OQ-10 & P-07
+├── candidate-domains.pdf         formal PDF report of available domain candidates
 ├── idea.md                       original specification (historical input, unchanged)
 ├── invariants.md                 non-negotiable engineering invariants (INV-01…20)
 ├── glossary.md                   one meaning per term; canonical code names
