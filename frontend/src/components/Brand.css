@@ -4,7 +4,7 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: calc(var(--pivoris-size) * 0.18);
+  gap: calc(var(--pivoris-size) * 0.16);
   height: var(--pivoris-size);
   vertical-align: middle;
   color: inherit;

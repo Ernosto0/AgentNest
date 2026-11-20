@@ -1,13 +1,19 @@
 # Pivoris brand identity
 
-The official symbol is the supplied root `logo.svg`. Its path, nine-unit stroke,
-round joins and round caps stay unchanged. The component crops and centers the
-viewport optically; icon exports translate and scale the entire symbol uniformly.
+The official symbol is the supplied root `logo.svg`, refined with a higher bowl
+return so its vertical stem reads clearly as a P. The bowl now meets the stem at
+y=52 rather than y=65, leaving an 18-unit lower stem. The original rounded upper
+shoulder, outer dimensions, nine-unit stroke, joins and caps are retained. The
+component crops and centers the viewport optically; icon exports translate and
+scale the entire symbol uniformly.
 
 The lowercase wordmark starts with the bundled **Manrope variable font at 680**.
 Its open bowls and restrained geometry complement the existing Manrope headings
-and Inter interface. Hand-set letter spacing and circular `i` dots echo the
-monogram's rounded terminals. The wordmark ships as SVG outlines, so no additional
+and Inter interface. The signature feature is a custom `v` with a softly rounded
+vertex, retaining its original terminals, diagonal weight and advance width.
+Spacing around `iv`, `vo` and `ri` is optically tightened. The circular `i` dots
+from the first identity remain unchanged, keeping the detail focused. The
+wordmark ships as SVG outlines, so no additional
 font request, fallback lettering or font-loading layout shift is introduced.
 Manrope is licensed under SIL OFL 1.1; provenance and license remain in both apps'
 `public/fonts/` directories. The customized wordmark is artwork, not a modified
@@ -30,8 +36,8 @@ builds and existing Docker build contexts.
 Variants are `horizontal` (default), `wordmark` and `monogram`. Sizes are `xs`
 (20px), `sm` (28px), `md` (36px) and `lg` (40px). All dimensions scale with root
 text size. The wordmark is 80% of the selected height; symbol-to-wordmark spacing
-is 18%. The landing navigation and public phone header use a 24px compact size
-below 360px.
+is 16%, slightly tighter than the first identity's 18%. The landing navigation
+and public phone header use a 24px compact size below 360px.
 
 Tone `inherit` (default) follows the surrounding semantic text color and supports
 the landing theme toggle. `light` uses forest green `#253b31` on light surfaces;
@@ -99,3 +105,9 @@ header, and expanded/collapsed sidebar. Workspace API responses were fictional
 local fixtures. Browser checks found no JavaScript errors or horizontal overflow.
 At 320px, compact navigation artwork and shrinkable hero grid children prevent
 clipping. No business logic or API behavior changed.
+
+The refinement pass additionally compares both identities at actual navbar and
+compact sizes, and monograms at 16/24/32px on both surfaces. Both production
+builds (including TypeScript checks), frontend lint, and the 17-test PWA suite
+pass. Generated artwork is consistent across both apps, all ICO/PNG dimensions
+are verified, and the maskable symbol stays within the safe circle.

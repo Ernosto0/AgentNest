@@ -36,8 +36,8 @@ pen = SVGPathPen(
     glyphs, ntos=lambda value: f"{value:.2f}".rstrip("0").rstrip(".") if value else "0"
 )
 cursor = 0
-# Hand-set pairs in font units: tighter pi / iv, open vo / ri, and a quiet finish.
-spacing = [-32, -22, -5, -18, -14, -18, 0]
+# Hand-set pairs in font units. Pull i/v and v/o into the diagonals' white space.
+spacing = [-32, -38, -26, -18, -22, -18, 0]
 for index, letter in enumerate("pivoris"):
     if letter == "i":
         # Keep the original stem; replace its square dot with a circular dot that
@@ -56,6 +56,15 @@ for index, letter in enumerate("pivoris"):
         pen.curveTo((cx - r, cy - k), (cx - k, cy - r), (cx, cy - r))
         pen.curveTo((cx + k, cy - r), (cx + r, cy - k), (cx + r, cy))
         pen.closePath()
+    elif letter == "v":
+        # The signature detail: soften the existing v's vertex, keeping its
+        # original top terminals, advance and diagonal weight. The i dots stay
+        # unchanged; there is no second decorative motif.
+        parse_path(
+            "M40 1080H275.2L532 330Q550 278 568 330L824.4 1080H1060"
+            "L680 58Q658 0 598 0H502Q442 0 420 58Z",
+            TransformPen(pen, (1, 0, 0, -1, cursor, 0)),
+        )
     else:
         glyphs[letter].draw(TransformPen(pen, (1, 0, 0, -1, cursor, 0)))
     cursor += glyphs[letter].width + spacing[index]
