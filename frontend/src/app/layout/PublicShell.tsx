@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { Brand } from "@/components/Brand";
 import { useMeta } from "@/features/auth/hooks";
 import type { Language } from "@/i18n";
 
@@ -14,12 +15,7 @@ export function PublicShell({ title, description, children, action, onLanguageCh
   const name = meta.data?.product_name ?? t("app.name");
   return <div className="min-h-dvh bg-canvas text-primary lg:grid lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
     <aside aria-label={t("entry.brandRegion")} className="relative hidden min-h-dvh flex-col justify-between bg-navigation border-r border-navigation-selected p-12 text-navigation-text lg:flex xl:p-16 overflow-hidden">
-      <div className="flex items-center gap-3 relative z-10">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navigation-selected text-navigation-selected-text">
-          <span className="font-heading text-lg font-bold">{name.charAt(0) || "P"}</span>
-        </div>
-        <p className="font-heading text-2xl font-bold tracking-tight text-white">{name}</p>
-      </div>
+      <Brand size="lg" tone="dark" label={name} className="relative z-10" />
       <div className="my-16 max-w-md relative z-10">
         <p className="font-heading text-4xl leading-tight font-bold tracking-tight xl:text-5xl text-white">{t("entry.brandTitle")}</p>
         <p className="mt-6 text-lg leading-relaxed text-navigation-text">{t("entry.brandDetail")}</p>
@@ -27,7 +23,7 @@ export function PublicShell({ title, description, children, action, onLanguageCh
       <p className="text-metadata text-navigation-text/80 relative z-10">{t("entry.brandFooter")}</p>
     </aside>
     <main className="mx-auto flex min-h-dvh w-full min-w-0 max-w-2xl flex-col px-4 py-6 sm:px-8 lg:px-12 lg:py-10">
-      <div className="flex flex-wrap items-center justify-between gap-4"><p className="font-heading text-xl font-bold tracking-tight text-primary lg:hidden">{name}</p><div className="ml-auto flex flex-wrap items-center gap-2"><LanguageSwitch onChange={onLanguageChange} />{action}</div></div>
+      <div className="flex flex-wrap items-center justify-between gap-4"><span className="lg:hidden"><Brand label={name} className="pivoris-brand--navigation" /></span><div className="ml-auto flex flex-wrap items-center gap-2"><LanguageSwitch onChange={onLanguageChange} />{action}</div></div>
       <div className="my-auto flex min-w-0 flex-col gap-6 py-10 lg:py-12"><header><h1 className="type-page break-words">{title}</h1>{description ? <p className="mt-3 max-w-prose text-form text-secondary">{description}</p> : null}</header>{children}</div>
     </main>
   </div>;

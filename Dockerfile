@@ -19,9 +19,11 @@ COPY frontend/index.html frontend/tsconfig.json frontend/tsconfig.app.json front
 COPY frontend/src ./src
 COPY frontend/public ./public
 
-# Only VITE_API_BASE_URL is accepted at build time (empty = same origin; ADR-017 / INV-10).
+# Public browser configuration only (empty API base = same origin; ADR-017 / INV-10).
 ARG VITE_API_BASE_URL=""
+ARG VITE_PUBLIC_URL=""
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_PUBLIC_URL=${VITE_PUBLIC_URL}
 
 RUN npm run build
 

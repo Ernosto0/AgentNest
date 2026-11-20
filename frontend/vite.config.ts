@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+import { loadEnv } from "vite";
 
 // The API serves /api, /webhooks and /oauth. The proxy keeps the SPA and the API on one
 // origin in development, so the session cookie is first-party and CORS is not involved.
@@ -10,37 +11,44 @@ const proxy = Object.fromEntries(
   ["/api", "/webhooks", "/oauth"].map((path) => [path, { target: API_TARGET, changeOrigin: false }]),
 );
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
-  },
-  server: { port: 5173, proxy },
-  preview: { port: 5173, proxy },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("react-dom") || id.includes("/react/")) return "react";
-            if (id.includes("react-router")) return "router";
-            if (id.includes("@tanstack")) return "query";
-            if (id.includes("lucide-react")) return "icons";
-          }
-          return undefined;
+export default defineConfig(({ mode }) => {
+  const publicUrl = loadEnv(mode, ".", "VITE_").VITE_PUBLIC_URL;
+  const socialImage = publicUrl ? new URL("social-card.png", `${publicUrl.replace(/\/$/, "")}/`).href : "/social-card.png";
+  return {
+    plugins: [react(), tailwindcss(), {
+      name: "pivoris-social-image",
+      transformIndexHtml: (html) => html.replaceAll('content="/social-card.png"', `content="${socialImage}"`),
+    }],
+    resolve: {
+      alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    },
+    server: { port: 5173, proxy },
+    preview: { port: 5173, proxy },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("node_modules")) {
+              if (id.includes("react-dom") || id.includes("/react/")) return "react";
+              if (id.includes("react-router")) return "router";
+              if (id.includes("@tanstack")) return "query";
+              if (id.includes("lucide-react")) return "icons";
+            }
+            return undefined;
+          },
         },
       },
     },
-  },
-  test: {
-    environment: "jsdom",
-    // Each worker owns a jsdom app. Bound memory/CPU use on the Windows demo machine.
-    maxWorkers: 4,
-    globals: true,
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}"],
-    css: false,
-    // Node cannot build a Request from a relative URL (browsers can), so tests use an absolute one.
-    env: { VITE_API_BASE_URL: "http://localhost" },
-  },
+    test: {
+      environment: "jsdom",
+      // Each worker owns a jsdom app. Bound memory/CPU use on the Windows demo machine.
+      maxWorkers: 4,
+      globals: true,
+      setupFiles: ["./src/test/setup.ts"],
+      include: ["src/**/*.test.{ts,tsx}"],
+      css: false,
+      // Node cannot build a Request from a relative URL (browsers can), so tests use an absolute one.
+      env: { VITE_API_BASE_URL: "http://localhost" },
+    },
+  };
 });

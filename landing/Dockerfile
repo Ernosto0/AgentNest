@@ -17,8 +17,10 @@ COPY public ./public
 # Optional build-time settings (see README). Empty: the form runs in preview mode, no WhatsApp link.
 ARG VITE_WAITLIST_ENDPOINT=""
 ARG VITE_WAITLIST_WHATSAPP=""
+ARG VITE_PUBLIC_URL=""
 ENV VITE_WAITLIST_ENDPOINT=${VITE_WAITLIST_ENDPOINT} \
     VITE_WAITLIST_WHATSAPP=${VITE_WAITLIST_WHATSAPP}
+ENV VITE_PUBLIC_URL=${VITE_PUBLIC_URL}
 
 RUN npm run build
 

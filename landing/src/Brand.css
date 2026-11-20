@@ -1,0 +1,35 @@
+/* Brand artwork only. UI typography and colour tokens remain owned by each app. */
+.pivoris-brand {
+  --pivoris-size: 2.25rem;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: calc(var(--pivoris-size) * 0.18);
+  height: var(--pivoris-size);
+  vertical-align: middle;
+  color: inherit;
+  line-height: 1;
+}
+.pivoris-brand--xs { --pivoris-size: 1.25rem; }
+.pivoris-brand--sm { --pivoris-size: 1.75rem; }
+.pivoris-brand--lg { --pivoris-size: 2.5rem; }
+@media (max-width: 359px) {
+  .pivoris-brand--navigation { --pivoris-size: 1.5rem; }
+}
+.pivoris-brand[data-tone="light"] { color: #253b31; }
+.pivoris-brand[data-tone="dark"] { color: #edf5ec; }
+.pivoris-brand__symbol {
+  display: block;
+  flex: none;
+  width: var(--pivoris-size);
+  height: var(--pivoris-size);
+}
+.pivoris-brand__wordmark {
+  display: block;
+  flex: none;
+  width: auto;
+  height: calc(var(--pivoris-size) * 0.8);
+}
+@media (forced-colors: active) {
+  .pivoris-brand[data-tone] { color: CanvasText; }
+}

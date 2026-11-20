@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { PRODUCT_NAME } from './brand'
+import { Brand } from './BrandIdentity'
 import { copy, type Copy, type Lang, type PostStatus } from './copy'
 import { PACKAGE_PRICE, appLink } from './config'
 import { DraftDemo } from './DraftDemo'
@@ -11,7 +12,6 @@ import {
   ArrowUpIcon,
   Badge,
   BookIcon,
-  BrandMark,
   CalendarIcon,
   ChartIcon,
   ChatIcon,
@@ -203,8 +203,7 @@ function SiteHeader({
     >
       <div className={`${container} flex h-16 items-center gap-4`}>
         <a href="#" className="flex items-center gap-2.5 rounded-control" aria-label={PRODUCT_NAME}>
-          <BrandMark name={PRODUCT_NAME} />
-          <span className="font-heading text-lg font-bold tracking-tight">{PRODUCT_NAME}</span>
+          <Brand className="pivoris-brand--navigation" />
         </a>
 
         <nav aria-label={t.nav.menu} className="ml-6 hidden items-center gap-1 lg:flex">
@@ -307,7 +306,7 @@ function Hero({ t, heroRef }: { t: Copy; heroRef: RefObject<HTMLElement | null> 
       </div>
 
       <div className={`${container} relative grid items-center gap-14 pt-10 pb-24 md:pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14 lg:pb-28`}>
-        <div className="max-w-[40rem]">
+        <div className="min-w-0 max-w-[40rem]">
           <p className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-[0.8125rem] font-medium">
             <span aria-hidden className="relative flex size-2">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-50 motion-reduce:hidden" />
@@ -834,10 +833,7 @@ function SiteFooter({ t }: { t: Copy }) {
     <footer className="border-t border-border bg-canvas pb-24 md:pb-0">
       <div className={`${container} grid gap-8 py-12 md:grid-cols-[minmax(0,1fr)_auto] md:items-start`}>
         <div className="max-w-md">
-          <div className="flex items-center gap-2.5">
-            <BrandMark name={PRODUCT_NAME} size="sm" />
-            <span className="font-heading font-bold">{PRODUCT_NAME}</span>
-          </div>
+          <Brand label={PRODUCT_NAME} />
           <p className="mt-3 text-sm text-secondary">{t.footer.tagline}</p>
         </div>
         <nav aria-label={t.nav.menu} className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
@@ -875,7 +871,7 @@ function MobileCta({ t, hidden }: { t: Copy; hidden: boolean }) {
     >
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-sm font-semibold">{PRODUCT_NAME}</p>
+          <Brand variant="wordmark" size="xs" label={PRODUCT_NAME} />
           <p className="truncate text-xs text-secondary">{t.mobileCta.sub}</p>
         </div>
         <a href="#pilot" tabIndex={hidden ? -1 : undefined} className={`${buttonPrimary} shrink-0`}>

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { DirtyForms } from "@/components/DirtyForms";
 import { Button } from "@/components/Button";
+import { Brand } from "@/components/Brand";
 import { MagnifierIcon, MenuIcon } from "@/components/icons";
 import { useMeta } from "@/features/auth/hooks";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -47,20 +48,15 @@ export function AppShell() {
   return <DirtyForms><div className="flex min-h-dvh flex-col bg-canvas text-primary md:flex-row">
     <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-30 focus:rounded-control focus:bg-surface focus:p-3 focus:outline-2 focus:outline-focus">{t("app.skipToContent")}</a>
     <aside data-testid="desktop-sidebar" className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-y-auto border-r border-navigation-selected bg-navigation px-3 py-6 text-navigation-text shadow-sm md:flex min-[1200px]:w-60 ${expanded ? "w-60" : "w-24"}`}>
-      <div className="mb-6 flex min-w-0 items-center gap-3 px-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navigation-selected text-navigation-selected-text">
-          <span className="font-heading text-lg font-bold tracking-wider">{productName.charAt(0) || "P"}</span>
-        </div>
+      <Link to={prefix} aria-label={productName} className="mb-6 flex min-w-0 items-center gap-3 rounded-control px-3 focus-visible:outline-2 focus-visible:outline-focus-inverse">
+        <Brand variant="monogram" size="lg" tone="dark" />
         <div className={`min-w-0 flex flex-col ${expanded ? "" : "hidden min-[1200px]:flex"}`}>
-          <span title={productName} className="truncate font-heading text-lg font-bold tracking-tight text-white">
-            {productName}
-          </span>
-          <span className="text-[11px] font-medium tracking-wide text-navigation-text">
+          <Brand variant="wordmark" size="sm" tone="dark" />
+          <span title={workspace.name} className="truncate text-[11px] font-medium tracking-wide text-navigation-text">
             {workspace.name}
           </span>
         </div>
-        {!expanded ? <span aria-hidden="true" className="sr-only text-center min-[1200px]:hidden">{t("shell.compactBrand")}</span> : null}
-      </div>
+      </Link>
       <button type="button" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} aria-controls="desktop-destinations" className="mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl text-navigation-text hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-focus-inverse min-[1200px]:hidden"><MenuIcon className="text-xl" /><span className={expanded ? "" : "sr-only"}>{t("shell.expandNavigation")}</span></button>
       <nav id="desktop-destinations" aria-label={t("nav.label")} className="flex flex-col gap-6 flex-1">
         {groups.map(group => <div key={group.labelKey}>
@@ -81,6 +77,7 @@ export function AppShell() {
     <div className="flex min-w-0 flex-1 flex-col">
       <header className="relative z-20 md:sticky md:top-0 flex min-w-0 flex-wrap items-center gap-3 border-b border-border/80 bg-surface/90 px-4 py-3 backdrop-blur-md shadow-2xs md:px-6 min-[1200px]:px-8">
         <div className="ml-auto flex w-full min-w-0 max-w-full items-center justify-between gap-2.5 md:w-auto md:justify-start">
+          <Link to={prefix} aria-label={productName} className="shrink-0 rounded-control text-action focus-visible:outline-2 focus-visible:outline-focus md:hidden"><Brand variant="monogram" /></Link>
           <WorkspaceSwitcher />
           <div className="hidden md:block"><Button ref={trigger} variant="ghost" onClick={() => setLauncher("pointer")} aria-haspopup="dialog" className="min-w-11 rounded-xl border border-border/80 bg-surface-subtle/80 px-3 hover:bg-surface-subtle hover:border-border transition-all shadow-2xs min-[1200px]:min-w-60 min-[1200px]:justify-start"><MagnifierIcon className="text-xl text-secondary" /><span className="sr-only min-[1200px]:not-sr-only min-[1200px]:flex-1 min-[1200px]:text-left whitespace-nowrap text-secondary font-medium">{t("shell.openLauncher")}</span><kbd className="hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-mono text-secondary min-[1200px]:inline font-semibold">{t("shell.shortcut")}</kbd></Button></div>
           <NotificationBell />

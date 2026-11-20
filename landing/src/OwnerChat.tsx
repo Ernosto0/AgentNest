@@ -1,7 +1,7 @@
-import { PRODUCT_NAME } from './brand'
+import { Brand } from './BrandIdentity'
 import type { ChatMessage, Copy } from './copy'
 import { PhoneFrame } from './PhoneFrame'
-import { BrandMark, ImageIcon, SendIcon } from './ui'
+import { ImageIcon, SendIcon } from './ui'
 
 type Command = Copy['owner']['commands'][number]
 
@@ -20,7 +20,7 @@ export function OwnerChat({ t, selected }: { t: Copy['owner']; selected: Command
     <PhoneFrame label={t.example} clock="09:15">
       <div className="flex h-[36rem] flex-col">
         <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
-          <BrandMark name={PRODUCT_NAME} size="sm" />
+          <Brand variant="monogram" size="sm" />
           <div className="flex min-w-0 flex-col leading-tight">
             <span className="truncate text-sm font-semibold">{t.bot}</span>
             <span className="text-xs text-secondary">{t.botSub}</span>

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { PRODUCT_NAME } from './brand'
+import { Brand } from './BrandIdentity'
 import type { Copy } from './copy'
 import {
   Badge,
-  BrandMark,
   CheckIcon,
   ChatIcon,
   ClockIcon,
@@ -24,16 +24,16 @@ export function HeroPreview({ t }: { t: Copy['preview'] }) {
   const queueIcons = [<ClockIcon key="c" />, <HandIcon key="h" />, <PauseIcon key="p" />]
 
   return (
-    <figure className="relative mx-auto w-full max-w-[36rem] lg:mr-0">
+    <figure className="relative mx-auto w-full min-w-0 max-w-[36rem] lg:mr-0">
       <figcaption className="mb-3 flex justify-end">
         <ExampleLabel>{t.example}</ExampleLabel>
       </figcaption>
 
       <div className="overflow-hidden rounded-frame border border-border bg-surface shadow-frame">
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <BrandMark name={PRODUCT_NAME} size="sm" />
+          <Brand variant="monogram" size="sm" />
           <div className="flex min-w-0 flex-col leading-tight">
-            <span className="font-heading text-sm font-bold">{PRODUCT_NAME}</span>
+            <Brand variant="wordmark" size="xs" label={PRODUCT_NAME} />
             <span className="text-xs text-secondary">{t.screen}</span>
           </div>
           <span aria-hidden className="ml-auto flex gap-1.5">

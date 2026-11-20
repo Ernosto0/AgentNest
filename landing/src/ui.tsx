@@ -67,19 +67,6 @@ export const SunIcon = (p: IconProps) => (
 export const PencilIcon = (p: IconProps) => <Svg {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></Svg>
 export const RotateIcon = (p: IconProps) => <Svg {...p}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></Svg>
 
-/** The app's brand tile: the initial on the selected-navigation green. */
-export function BrandMark({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
-  const box = size === 'sm' ? 'size-8 rounded-lg text-sm' : 'size-9 rounded-[0.7rem] text-base'
-  return (
-    <span
-      aria-hidden
-      className={`grid shrink-0 place-items-center bg-band font-heading font-extrabold text-band-accent ${box}`}
-    >
-      {name.slice(0, 1)}
-    </span>
-  )
-}
-
 export type Tone = 'neutral' | 'attention' | 'info' | 'success' | 'danger' | 'brand'
 
 const TONES: Record<Tone, string> = {

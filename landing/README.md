@@ -1,6 +1,6 @@
 # Landing page
 
-The public pilot-waitlist page. It is a separate static site and shares no code with `frontend/`.
+The public pilot-waitlist page. It is a separate static site that builds independently from `frontend/`.
 React + TypeScript + Vite + Tailwind, Turkish and English, light and dark.
 
 ```
@@ -20,6 +20,9 @@ npm run typecheck
   Re-check the copy, including the pilot price
   wording in the FAQ, against the product before publishing.
 - **Product name** is a single constant in `src/brand.ts`.
+- **Brand identity**: `BrandIdentity.tsx` and `Brand.css` are generated from the
+  shared canonical sources in `scripts/brand/`. See [brand usage and regeneration](../docs/product/brand-identity.md).
+  Set `VITE_PUBLIC_URL` at build time for absolute social-card image URLs.
 - **Waitlist**: the form posts to the Pivoris backend, `POST /api/v1/waitlist`. Set
   `VITE_WAITLIST_ENDPOINT` at build time to that full URL (for example
   `https://<api-host>/api/v1/waitlist`; locally `http://localhost:8000/api/v1/waitlist`). The body is
