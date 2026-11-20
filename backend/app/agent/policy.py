@@ -162,7 +162,9 @@ _MIXED_SERVICES_AND_PRICES = re.compile(
 # into an automatic-send grant. Split additional requests conservatively; a
 # phrase we cannot classify stays a human decision even if another phrase is FAQ.
 _REQUEST_PARTS = re.compile(
-    r"[,،\n;?!؟]+|\s+(?:and|also|ve|ayrica|und|ausserdem|и|также|و)\s+", re.I
+    r"[,،\n;؛?!؟]+|(?<!\d)[.:]|[.:](?!\d)"
+    r"|\s+(?:and|also|ve|ayrica|und|ausserdem|и|также|و)\s+",
+    re.I,
 )
 _GREETING_SEPARATORS = re.compile(r"^[\s,.:!؟!?—–-]+|[\s,.:!؟!?—–-]+$")
 

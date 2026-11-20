@@ -10,7 +10,8 @@ from app.agent.dm import revalidate, send
 from app.agent.grounding import ReplyValidationArgs
 from app.agent.media import wake_for_media
 from app.agent.models import AgentAction, AgentThread
-from app.agent.reply_evidence import response_evidence
+from app.agent.policy import classify_request
+from app.agent.reply_evidence import MAX_RESPONSE_MESSAGES, response_evidence
 from app.agent.tools.broker import BrokerContext
 from app.inbox.models import Conversation, Message, MessageImageDescription, ReplyDraft
 from app.inbox.service import release
@@ -31,6 +32,37 @@ def inbound(factory, clock, world, text):
             .where(Message.direction == "inbound")
             .order_by(Message.created_at.desc())
         )
+
+
+def legacy_history(
+    factory,
+    anchor_id,
+    text,
+    *,
+    seconds_before=2,
+    direction="inbound",
+    attachments=None,
+):
+    """Existing inbox history predates Agent adoption and has no AgentEvent."""
+    with factory() as db:
+        anchor = db.get(Message, anchor_id)
+        row = Message(
+            workspace_id=anchor.workspace_id,
+            social_account_id=anchor.social_account_id,
+            conversation_id=anchor.conversation_id,
+            direction=direction,
+            sender_kind="customer" if direction == "inbound" else "business_native",
+            text=text,
+            attachments=attachments or [],
+            provider_timestamp=anchor.provider_timestamp - timedelta(seconds=seconds_before),
+            created_at=anchor.created_at - timedelta(seconds=seconds_before),
+            is_simulated=anchor.is_simulated,
+        )
+        db.add(row)
+        db.flush()
+        row_id = row.id
+        db.commit()
+        return row_id
 
 
 def propose(factory, clock, world):
@@ -230,3 +262,154 @@ def test_send_time_revalidation_checks_all_response_messages(session_factory, cl
         draft = db.scalar(select(ReplyDraft))
         db.flush()
         assert not revalidate(db, clock, draft, db.get(Conversation, draft.conversation_id))
+
+
+@pytest.mark.parametrize("signal", ["complaint", "image_injection"])
+def test_unrecorded_history_cannot_be_ignored_after_agent_adoption(session_factory, clock, signal):
+    world = setup(session_factory, clock)
+    latest = inbound(session_factory, clock, world, "Hello")
+    first = legacy_history(
+        session_factory,
+        latest,
+        "This service is terrible" if signal == "complaint" else "Hello",
+        attachments=[{"type": "image"}] if signal == "image_injection" else [],
+    )
+    if signal == "image_injection":
+        image(session_factory, world, first, injection=True)
+    result = propose(session_factory, clock, world)
+    with session_factory() as db:
+        evidence = response_evidence(db, db.scalar(select(AgentThread)), latest)
+        assert set(evidence.message_ids) == {first, latest}
+        action = db.get(AgentAction, result["action_id"])
+        assert action.status == "cancelled"
+        assert action.outcome_code == (
+            "escalation_complaint" if signal == "complaint" else "injection_suspected"
+        )
+        assert not db.scalars(select(SimSentMessage)).all()
+
+
+def test_manual_reply_discharges_unrecorded_legacy_history(session_factory, clock):
+    world = setup(session_factory, clock)
+    latest = inbound(session_factory, clock, world, "Hello")
+    first = legacy_history(session_factory, latest, "This service is terrible", seconds_before=3)
+    legacy_history(
+        session_factory, latest, "We resolved your concern", seconds_before=1, direction="outbound"
+    )
+    result = propose(session_factory, clock, world)
+    assert result["status"] == "queued"
+    with session_factory() as db:
+        evidence = response_evidence(db, db.scalar(select(AgentThread)), latest)
+        assert evidence.message_ids == (latest,)
+        assert first not in evidence.message_ids
+
+
+@pytest.mark.parametrize("excluded", ["deleted", "another_conversation"])
+def test_history_expansion_keeps_deleted_and_other_customer_messages_out(
+    session_factory, clock, excluded
+):
+    world = setup(session_factory, clock)
+    latest = inbound(session_factory, clock, world, "Hello")
+    first = legacy_history(session_factory, latest, "This service is terrible")
+    with session_factory() as db:
+        old = db.get(Message, first)
+        if excluded == "deleted":
+            old.is_deleted = True
+        else:
+            other = Conversation(
+                workspace_id=old.workspace_id,
+                social_account_id=old.social_account_id,
+                customer_external_id="another-customer",
+                is_simulated=True,
+            )
+            db.add(other)
+            db.flush()
+            old.conversation_id = other.id
+        db.commit()
+    assert propose(session_factory, clock, world)["status"] == "queued"
+    with session_factory() as db:
+        evidence = response_evidence(db, db.scalar(select(AgentThread)), latest)
+        assert evidence.message_ids == (latest,)
+
+
+def test_sent_legacy_draft_discharges_history_without_an_agent_event(session_factory, clock):
+    world = setup(session_factory, clock)
+    latest = inbound(session_factory, clock, world, "Hello")
+    legacy_history(session_factory, latest, "This service is terrible", seconds_before=3)
+    covered_id = legacy_history(session_factory, latest, "Hello", seconds_before=2)
+    with session_factory() as db:
+        covered = db.get(Message, covered_id)
+        db.add(
+            ReplyDraft(
+                workspace_id=covered.workspace_id,
+                conversation_id=covered.conversation_id,
+                covers_through_message_id=covered.id,
+                source="owner",
+                language="en",
+                text="We resolved your concern",
+                decision="auto",
+                status="sent",
+                created_by_actor_type="user",
+                created_by_actor_id=world[0].actor.id,
+                is_simulated=True,
+            )
+        )
+        db.commit()
+    assert propose(session_factory, clock, world)["status"] == "queued"
+    with session_factory() as db:
+        evidence = response_evidence(db, db.scalar(select(AgentThread)), latest)
+        assert evidence.message_ids == (latest,)
+
+
+def test_pending_legacy_media_resumes_latest_response_without_creating_history_events(
+    session_factory, clock
+):
+    world = setup(session_factory, clock)
+    latest = inbound(session_factory, clock, world, "Hello")
+    first = legacy_history(session_factory, latest, "Hello", attachments=[{"type": "image"}])
+    image_id = image(session_factory, world, first, status="pending")
+    assert propose(session_factory, clock, world)["status"] == "waiting_media"
+    assert complete_image(session_factory, clock, first, image_id)
+    assert propose(session_factory, clock, world)["status"] == "queued"
+    with session_factory() as db:
+        draft = db.scalar(select(ReplyDraft))
+        assert draft.covers_through_message_id == latest
+        draft_id = draft.id
+    assert (
+        execute_send_reply(session_factory, clock, world[3], world[0].workspace_id, draft_id).kind
+        == "sent"
+    )
+    assert not complete_image(session_factory, clock, first, image_id)
+    with session_factory() as db:
+        assert len(db.scalars(select(SimSentMessage)).all()) == 1
+
+
+def test_unrecorded_history_query_stays_bounded_and_overflow_cannot_auto_send(
+    session_factory, clock
+):
+    world = setup(session_factory, clock)
+    latest = inbound(session_factory, clock, world, "Hello")
+    with session_factory() as db:
+        anchor = db.get(Message, latest)
+        db.add_all(
+            Message(
+                workspace_id=anchor.workspace_id,
+                social_account_id=anchor.social_account_id,
+                conversation_id=anchor.conversation_id,
+                direction="inbound",
+                sender_kind="customer",
+                text="Hello",
+                provider_timestamp=anchor.provider_timestamp - timedelta(seconds=index + 1),
+                created_at=anchor.created_at - timedelta(seconds=index + 1),
+                is_simulated=True,
+            )
+            for index in range(MAX_RESPONSE_MESSAGES + 1)
+        )
+        db.commit()
+    with session_factory() as db:
+        evidence = response_evidence(db, db.scalar(select(AgentThread)), latest)
+        assert evidence.truncated
+        assert latest in evidence.message_ids
+        assert len(evidence.message_ids) <= MAX_RESPONSE_MESSAGES + 1
+        assert not classify_request(
+            action_type="dm.send", surface="dm", inbound_text=evidence.text, template="Hello!"
+        ).is_basic

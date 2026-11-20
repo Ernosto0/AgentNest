@@ -92,6 +92,19 @@ The Session 03 decision service reads current membership for human-task requeste
 
 Under the pilot semi-automation model (`answeres2.md` §5 & Session 03), action delegation is governed by an authoritative server-side deterministic policy matrix (`app.agent.policy`).
 
+Unrecognized requests remain approval-required when a recognized FAQ appears in a different
+sentence or clause, including full-stop and colon separators. Numeric separators inside
+values such as `1.5` and `09:00` do not create separate requests. A model-selected fact does
+not establish that the customer's request is basic.
+
+DM policy evidence includes scoped unanswered message history from before Agent adoption or
+release, even when those messages have no `AgentEvent`. Event cursors still bind action
+ownership; they do not determine whether historical customer text is visible to safety checks.
+The latest earlier outbound reply or sent draft's covered message discharges earlier history.
+Reads remain bounded; overflow cannot authorize an automatic reply. Derived media from an
+unrecorded message may wake the current response only while that message remains in its
+unanswered evidence; it never fabricates an original customer event or reopens a sent reply.
+
 | Request / Action Category | Matrix Policy Handling | Enforcement & Invariants |
 |---|---|---|
 | **Greeting; verified hours, location/contact, service descriptions** | Automatic when owner grants `mode="automatic"` AND all existing checks pass. | Topic rule permits automatic execution; if owner configured `ask`, it stays `ask` (restricts, never broadens). |

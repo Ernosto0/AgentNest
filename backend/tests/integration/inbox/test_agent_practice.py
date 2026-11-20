@@ -323,7 +323,7 @@ def test_agent_practice_validates_real_fact_versions_again_before_saving(
     assert result.rendered[0]["fact_id"] == str(fact.fact_id)
     with session_factory() as db:
         if change_fact:
-            db.get(BusinessFact, fact.fact_id).status = "stale"
+            db.get(BusinessFact, fact.fact_id).status = "unverified"
             db.commit()
         sandbox.apply_agent_practice(db, clock, snapshot, result)
         db.commit()

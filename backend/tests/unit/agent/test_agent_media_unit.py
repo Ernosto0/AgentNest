@@ -906,6 +906,7 @@ def test_voice_transcript_speech_in_language_detection() -> None:
 def test_dm_revalidate_fences_recent_transcript() -> None:
     """revalidate() refuses automatic send if a voice transcript is present in the conversation."""
     from app.agent.dm import revalidate
+    from app.agent.reply_evidence import ReplyEvidence
     from app.identity.models import Workspace
 
     ws_id = uuid.uuid4()
@@ -914,6 +915,7 @@ def test_dm_revalidate_fences_recent_transcript() -> None:
     thread_id = uuid.uuid4()
     action_id = uuid.uuid4()
     draft_id = uuid.uuid4()
+    msg_id = uuid.uuid4()
 
     clock = FrozenClock(datetime(2026, 11, 19, 12, 0, tzinfo=UTC))
     workspace = Workspace(
@@ -949,6 +951,7 @@ def test_dm_revalidate_fences_recent_transcript() -> None:
         workspace_id=ws_id,
         conversation_id=conv_id,
         agent_action_id=action_id,
+        covers_through_message_id=msg_id,
         text="Hello!",
         validation={
             "cursor": 2,
@@ -969,7 +972,10 @@ def test_dm_revalidate_fences_recent_transcript() -> None:
 
     with (
         patch("app.agent.dm.validate_reply") as mock_val,
-        patch("app.policy.transcripts.recent_transcript_present", return_value=True),
+        patch("app.agent.dm.recent_transcript_present", return_value=True),
+        patch("app.agent.dm.response_evidence", return_value=ReplyEvidence("Hello", (msg_id,))),
+        patch("app.agent.reply_evidence.escalation_keywords", return_value=[]),
+        patch("app.agent.knowledge.prices_shared", return_value=False),
     ):
         mock_val.return_value = MagicMock(valid=True, text="Hello!")
         assert revalidate(db, clock, draft, conv) is False

@@ -1,14 +1,15 @@
 """Scoped customer evidence for one DM response obligation.
 
 The model sees multiple inbound messages, so policy must not reduce them to the
-last message. Events define the response boundary; derived media belongs to its
-original message and cannot allocate a second response slot after it was sent.
+last message or require every historical message to have an Agent event. Message
+history supplies unanswered legacy/human-handled context too. Events retain their
+response ownership boundary; derived media cannot allocate a second response slot.
 """
 
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import String, cast, func, select, tuple_
+from sqlalchemy import String, and_, cast, exists, func, or_, select, tuple_
 from sqlalchemy.orm import Session
 
 from app.agent.models import AgentEvent, AgentThread
@@ -135,21 +136,10 @@ def response_evidence(
                 ids.append(source_id)
         if anchor.id not in ids:
             ids.append(anchor.id)
-    messages = list(
-        db.scalars(
-            select(Message).where(
-                Message.workspace_id == thread.workspace_id,
-                Message.social_account_id == thread.social_account_id,
-                Message.conversation_id == thread.dm_conversation_id,
-                Message.id.in_(ids),
-                Message.direction == "inbound",
-                Message.is_deleted.is_(False),
-            )
-        )
-    )
     # Native/manual replies discharge earlier customer work too. Use the same
     # chronological tuple as takeover/release so a resolved old complaint does
     # not constrain a later independent question forever.
+    anchor_order = (anchor.provider_timestamp, anchor.created_at, anchor.id)
     outbound = db.scalar(
         select(Message)
         .where(
@@ -158,17 +148,73 @@ def response_evidence(
             Message.conversation_id == thread.dm_conversation_id,
             Message.direction == "outbound",
             Message.is_deleted.is_(False),
-            tuple_(Message.provider_timestamp, Message.created_at, Message.id)
-            < (anchor.provider_timestamp, anchor.created_at, anchor.id),
+            tuple_(Message.provider_timestamp, Message.created_at, Message.id) < anchor_order,
         )
         .order_by(Message.provider_timestamp.desc(), Message.created_at.desc(), Message.id.desc())
         .limit(1)
     )
-    if outbound is not None:
-        boundary = (outbound.provider_timestamp, outbound.created_at, outbound.id)
-        messages = [
-            row for row in messages if (row.provider_timestamp, row.created_at, row.id) > boundary
-        ]
+    # A sent legacy draft can cover messages with no Agent event. Keep that
+    # discharge boundary even if its outbound echo/message has been removed.
+    covered = db.scalar(
+        select(Message)
+        .join(ReplyDraft, ReplyDraft.covers_through_message_id == Message.id)
+        .where(
+            Message.workspace_id == thread.workspace_id,
+            Message.social_account_id == thread.social_account_id,
+            Message.conversation_id == thread.dm_conversation_id,
+            Message.direction == "inbound",
+            tuple_(Message.provider_timestamp, Message.created_at, Message.id) < anchor_order,
+            ReplyDraft.workspace_id == thread.workspace_id,
+            ReplyDraft.conversation_id == thread.dm_conversation_id,
+            ReplyDraft.status == "sent",
+        )
+        .order_by(Message.provider_timestamp.desc(), Message.created_at.desc(), Message.id.desc())
+        .limit(1)
+    )
+    boundaries = [
+        (row.provider_timestamp, row.created_at, row.id)
+        for row in (outbound, covered)
+        if row is not None
+    ]
+    # Supplement the event-owned obligation with scoped message history that
+    # predates Agent adoption/release. Do not admit messages owned by a later
+    # Agent event just because their provider timestamp arrived out of order.
+    has_message_event = exists().where(
+        AgentEvent.workspace_id == thread.workspace_id,
+        AgentEvent.social_account_id == thread.social_account_id,
+        AgentEvent.thread_id == thread.id,
+        AgentEvent.source_kind.in_(MESSAGE_SOURCES),
+        AgentEvent.source_id == cast(Message.id, String),
+    )
+    message_query = select(Message).where(
+        Message.workspace_id == thread.workspace_id,
+        Message.social_account_id == thread.social_account_id,
+        Message.conversation_id == thread.dm_conversation_id,
+        Message.direction == "inbound",
+        Message.is_deleted.is_(False),
+        or_(
+            Message.id.in_(ids),
+            and_(
+                ~has_message_event,
+                tuple_(Message.provider_timestamp, Message.created_at, Message.id) <= anchor_order,
+            ),
+        ),
+    )
+    if boundaries:
+        message_query = message_query.where(
+            tuple_(Message.provider_timestamp, Message.created_at, Message.id) > max(boundaries)
+        )
+    messages = list(
+        db.scalars(
+            message_query.order_by(
+                Message.provider_timestamp, Message.created_at, Message.id
+            ).limit(MAX_RESPONSE_MESSAGES + 1)
+        )
+    )
+    truncated = truncated or len(messages) > MAX_RESPONSE_MESSAGES
+    messages = messages[:MAX_RESPONSE_MESSAGES]
+    if all(row.id != anchor.id for row in messages):
+        messages.append(anchor)
     ids = [row.id for row in messages]
     transcripts = list(
         db.scalars(

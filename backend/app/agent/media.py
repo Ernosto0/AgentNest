@@ -58,10 +58,15 @@ def wake_for_media(
         return False
     original_cursor = message_cursor(db, thread, message.id)
     anchor = latest_customer_message(db, thread)
-    if original_cursor is None or anchor is None:
+    if anchor is None:
         return False
     evidence = response_evidence(db, thread, anchor.id)
     if message.id not in evidence.message_ids:
+        return False
+    # Pre-adoption/human-handled messages have no original Agent event. They
+    # can still be part of the latest event-owned unanswered response bundle.
+    response_cursor = original_cursor or message_cursor(db, thread, anchor.id)
+    if response_cursor is None:
         return False
     # A native/manual response also discharges the obligation, without an
     # Agent ReplyDraft that could be found by the sent-draft check below.
@@ -92,7 +97,7 @@ def wake_for_media(
             AgentEvent.workspace_id == message.workspace_id,
             AgentEvent.thread_id == thread.id,
             AgentEvent.source_kind.in_(MESSAGE_SOURCES),
-            AgentEvent.cursor >= original_cursor,
+            AgentEvent.cursor >= response_cursor,
         )
         .limit(1)
     )

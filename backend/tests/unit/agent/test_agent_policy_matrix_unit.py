@@ -51,6 +51,54 @@ def test_unknown_request_cannot_be_promoted_by_model_selected_facts(text):
     )
 
 
+@pytest.mark.parametrize("separator", [". ", ": "])
+@pytest.mark.parametrize(
+    ("basic", "unknown"),
+    [
+        (
+            "Please tell me your opening hours",
+            "Please arrange airport transfers for our entire team",
+        ),
+        ("Çalışma saatleriniz nedir", "Ekibimiz için havaalanı transferi ayarlayın"),
+        (
+            "Wie sind Ihre Öffnungszeiten",
+            "Bitte organisieren Sie Flughafentransfers für unser Team",
+        ),
+        ("Какой у вас график работы", "Организуйте трансфер из аэропорта для нашей команды"),
+        ("ما هي ساعات العمل", "رتبوا نقل فريقنا من المطار"),
+    ],
+)
+def test_separate_unknown_sentence_cannot_hide_behind_matching_basic_fact(
+    separator, basic, unknown
+):
+    classification = classify_request(
+        action_type="dm.send",
+        surface="dm",
+        inbound_text=f"{basic}{separator}{unknown}.",
+        template="{{fact:hours.weekly}}",
+    )
+    assert classification.reason == "unclear_or_unrecognized_request"
+    assert (
+        evaluate_action_policy(
+            ActionRule(mode="automatic"),
+            classification,
+            base_decision=Decision("automatic", "delegated"),
+        ).kind
+        == "ask"
+    )
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["How much does a 1.5 litre bottle cost?", "Are you open at 09:00?"],
+)
+def test_numeric_period_and_colon_do_not_create_unknown_request_fragments(text):
+    classification = classify_request(
+        action_type="dm.send", surface="dm", inbound_text=text, prices_shared=True
+    )
+    assert classification.is_basic
+
+
 # Helper fixtures & shortcuts
 AUTO_RULE = ActionRule(mode="automatic")
 ASK_RULE = ActionRule(mode="ask")
