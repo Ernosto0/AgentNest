@@ -8,7 +8,7 @@ import {
 const db = postgres("Postgres");
 
 const api = service("api", {
-  source: github("Ernosto0/AgentNest", { branch: "main" }),
+  source: github("Ernosto0/Pivoris", { branch: "main" }),
   dockerfilePath: "Dockerfile",
   preDeploy: "alembic upgrade head",
   start: "uvicorn app.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8000} --workers 2",
@@ -29,7 +29,7 @@ const api = service("api", {
 });
 
 const worker = service("worker", {
-  source: github("Ernosto0/AgentNest", { branch: "main" }),
+  source: github("Ernosto0/Pivoris", { branch: "main" }),
   dockerfilePath: "Dockerfile",
   start: "python -m app.worker",
   env: {
@@ -46,7 +46,7 @@ const worker = service("worker", {
 });
 
 const web = service("web", {
-  source: github("Ernosto0/AgentNest", { branch: "main" }),
+  source: github("Ernosto0/Pivoris", { branch: "main" }),
   dockerfilePath: "Dockerfile.web",
   healthcheck: "/healthz",
   domains: ["web-production-b2f30.up.railway.app"],
