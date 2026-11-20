@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Pivoris</title>
+  <desc id="desc">Your business. Your facts. Your control. An Instagram operations assistant built on verified knowledge, controlled actions, and clear outcomes.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1280" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#253b31"/>
+      <stop offset="1" stop-color="#121f18"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="860" y1="0" x2="1240" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d1e4b7" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#d1e4b7" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="frame"><rect width="1280" height="400" rx="24"/></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="1280" height="400" fill="url(#background)"/>
+    <circle cx="1180" cy="28" r="280" fill="url(#accent)"/>
+    <circle cx="1180" cy="28" r="224" stroke="#d1e4b7" stroke-opacity="0.10"/>
+    <circle cx="1180" cy="28" r="166" stroke="#d1e4b7" stroke-opacity="0.10"/>
+    <circle cx="1180" cy="28" r="108" stroke="#d1e4b7" stroke-opacity="0.10"/>
+    <path d="M0 245H1280" stroke="#d1e4b7" stroke-opacity="0.12"/>
+    <g font-family="Segoe UI, Arial, sans-serif">
+      <text x="56" y="56" fill="#d1e4b7" font-size="14" font-weight="600" letter-spacing="2.8">INSTAGRAM OPERATIONS FOR SMALL BUSINESSES</text>
+      <text x="50" y="153" fill="#f7f8f3" font-size="88" font-weight="700" letter-spacing="-4">Pivoris</text>
+      <text x="56" y="204" fill="#e1ede5" font-size="28" letter-spacing="-0.5">Your business. Your facts. Your control.</text>
+      <rect x="1003" y="163" width="221" height="40" rx="20" stroke="#d1e4b7" stroke-opacity="0.30"/>
+      <circle cx="1027" cy="183" r="4" fill="#d1e4b7"/>
+      <text x="1042" y="188" fill="#d1e4b7" font-size="13" font-weight="600" letter-spacing="1">BUILT FOR YOUR PHONE</text>
+      <rect x="56" y="278" width="356" height="78" rx="14" fill="#d1e4b7" fill-opacity="0.06" stroke="#d1e4b7" stroke-opacity="0.17"/>
+      <rect x="462" y="278" width="356" height="78" rx="14" fill="#d1e4b7" fill-opacity="0.06" stroke="#d1e4b7" stroke-opacity="0.17"/>
+      <rect x="868" y="278" width="356" height="78" rx="14" fill="#d1e4b7" fill-opacity="0.06" stroke="#d1e4b7" stroke-opacity="0.17"/>
+      <text x="80" y="308" fill="#d1e4b7" font-size="12" font-weight="600" letter-spacing="1.8">01 / KNOW THE BUSINESS</text>
+      <text x="80" y="336" fill="#f7f8f3" font-size="21" font-weight="600">Verified knowledge</text>
+      <text x="486" y="308" fill="#d1e4b7" font-size="12" font-weight="600" letter-spacing="1.8">02 / KEEP THE OWNER IN CONTROL</text>
+      <text x="486" y="336" fill="#f7f8f3" font-size="21" font-weight="600">Controlled actions</text>
+      <text x="892" y="308" fill="#d1e4b7" font-size="12" font-weight="600" letter-spacing="1.8">03 / SHOW WHAT HAPPENED</text>
+      <text x="892" y="336" fill="#f7f8f3" font-size="21" font-weight="600">Clear outcomes</text>
+    </g>
+    <g stroke="#d1e4b7" stroke-opacity="0.65" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M426 317H448M442 311L448 317L442 323"/>
+      <path d="M832 317H854M848 311L854 317L848 323"/>
+    </g>
+  </g>
+</svg>
