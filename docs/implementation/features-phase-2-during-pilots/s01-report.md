@@ -56,7 +56,7 @@ Docs: listed in section 1, plus this report.
 
 ## 4. Checks (exact)
 
-Environment for every backend run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= DEMO_TOOLS_ENABLED=true OPENAI_API_KEY=` and `TEST_DATABASE_URL` = the `.env` value with the database name swapped. Databases `agentnest_p2s01_test` and `agentnest_p2s01_{a,b,c,d}_test` ran as parallel shards; **all five were dropped** (verified: none left). The full ~3,550-test suite was **not** run serially, as instructed.
+Environment for every backend run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= DEMO_TOOLS_ENABLED=true OPENAI_API_KEY=` and `TEST_DATABASE_URL` = the `.env` value with the database name swapped. Databases `pivoris_p2s01_test` and `pivoris_p2s01_{a,b,c,d}_test` ran as parallel shards; **all five were dropped** (verified: none left). The full ~3,550-test suite was **not** run serially, as instructed.
 
 | Command (from `backend/`) | Result |
 |---|---|

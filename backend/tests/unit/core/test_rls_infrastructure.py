@@ -438,22 +438,22 @@ def test_provision_and_verify_database_roles(session_factory: sessionmaker[Sessi
     with session_factory() as session:
         provision_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=["agentnest_app", "agentnest_worker"],
+            migrator_role="pivoris_migrator",
+            runtime_roles=["pivoris_app", "pivoris_worker"],
         )
         session.commit()
 
         report = verify_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=("agentnest_app", "agentnest_worker"),
+            migrator_role="pivoris_migrator",
+            runtime_roles=("pivoris_app", "pivoris_worker"),
         )
         assert report.verified, f"Role verification failed: {report.errors}"
         assert report.migrator_exists
-        assert "agentnest_app" in report.runtime_roles
-        assert "agentnest_worker" in report.runtime_roles
+        assert "pivoris_app" in report.runtime_roles
+        assert "pivoris_worker" in report.runtime_roles
 
-        for role in ("agentnest_app", "agentnest_worker"):
+        for role in ("pivoris_app", "pivoris_worker"):
             flags = report.role_flags[role]
             assert not flags["rolsuper"]
             assert not flags["rolcreatedb"]

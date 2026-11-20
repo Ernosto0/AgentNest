@@ -142,14 +142,14 @@ def test_delivery_metadata_and_the_window_anchor_are_tenant_scoped(
     world: World, db_session: Session
 ) -> None:
     set_tenant_context(db_session, world.ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         wamids = db_session.scalars(
             select(NotificationDelivery.delivery_metadata["wamid"].astext)
         ).all()
         links = db_session.scalars(select(ChannelLink.channel_user_id)).all()
     assert wamids == ["wamid.A"] and links == [A_NUMBER]
     # B's wamid is invisible to A even when asked for by value.
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         found = db_session.scalars(
             select(NotificationDelivery.id).where(
                 NotificationDelivery.delivery_metadata["wamid"].astext == "wamid.B"
@@ -157,7 +157,7 @@ def test_delivery_metadata_and_the_window_anchor_are_tenant_scoped(
         ).all()
     assert found == []
     clear_tenant_context(db_session)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert db_session.scalars(select(NotificationDelivery.id)).all() == []
 
 

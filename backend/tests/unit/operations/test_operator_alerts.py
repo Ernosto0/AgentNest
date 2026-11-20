@@ -53,7 +53,7 @@ def clean_outbox() -> None:
 def _make_settings(operator_email: str = "operator@example.com") -> Settings:
     return Settings(
         operator_alert_email=operator_email,
-        product_name="AgentNest",
+        product_name="Pivoris",
     )
 
 

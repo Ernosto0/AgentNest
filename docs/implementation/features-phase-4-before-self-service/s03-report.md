@@ -26,11 +26,11 @@ All commands run on 2026-11-17 against the merged, uncommitted tree (Sessions 01
 | `uv run ruff format --check .` | pass (817 files) |
 | `uv run mypy app` | pass (432 files) |
 | `uv run lint-imports` | pass (24 contracts kept, 0 broken) |
-| `uv run alembic upgrade head`, `downgrade -1`, `upgrade head` (shard DB `agentnest_p4close_d_test`, `DATABASE_URL` only for those commands) | pass: `0061` -> `0060` -> `0061`; single head `0061`; `fact_candidates.source_detail` present |
+| `uv run alembic upgrade head`, `downgrade -1`, `upgrade head` (shard DB `pivoris_p4close_d_test`, `DATABASE_URL` only for those commands) | pass: `0061` -> `0060` -> `0061`; single head `0061`; `fact_candidates.source_detail` present |
 | `python -m evals run --all` (fake provider) | interpret_command 84/84, extract_fact_candidates 12/12, draft_reply 86/86, draft_content 26/26; 0 hard failures |
 | `frontend/openapi.json` against a fresh `export-openapi` (`INSTAGRAM_ENABLED_PROVIDERS=mock`) | identical after one fix (an out-of-date endpoint description, see section 3); `schema.d.ts` patched to match |
 
-Full pytest suite, four parallel shards on four empty databases (`agentnest_p4close_{a,b,c,d}_test`, dropped afterwards), always with `PYTHONUTF8=1 LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN=` and `WEBSITE_IMPORT_FETCHER=fake`, `-p no:cacheprovider -q`:
+Full pytest suite, four parallel shards on four empty databases (`pivoris_p4close_{a,b,c,d}_test`, dropped afterwards), always with `PYTHONUTF8=1 LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN=` and `WEBSITE_IMPORT_FETCHER=fake`, `-p no:cacheprovider -q`:
 
 | Shard | Paths | `DEMO_TOOLS_ENABLED` | First run | After attribution |
 |---|---|---|---|---|

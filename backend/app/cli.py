@@ -421,7 +421,7 @@ def cmd_telegram_poll(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="python -m app.cli", description="AgentNest commands")
+    parser = argparse.ArgumentParser(prog="python -m app.cli", description="Pivoris commands")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_seed = sub.add_parser("seed", help="create demo users and workspaces (never in production)")
@@ -534,13 +534,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_roles.add_argument(
         "--migrator-role",
-        default="agentnest_migrator",
-        help="DDL/migration owner role (default: agentnest_migrator)",
+        default="pivoris_migrator",
+        help="DDL/migration owner role (default: pivoris_migrator)",
     )
     p_roles.add_argument(
         "--runtime-roles",
-        default="agentnest_app,agentnest_worker",
-        help="comma-separated least-privilege runtime roles (default: agentnest_app,agentnest_worker)",  # noqa: E501
+        default="pivoris_app,pivoris_worker",
+        help="comma-separated least-privilege runtime roles (default: pivoris_app,pivoris_worker)",  # noqa: E501
     )
     p_roles.add_argument(
         "--provision",

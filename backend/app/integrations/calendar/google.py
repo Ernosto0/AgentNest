@@ -28,7 +28,7 @@ from app.integrations.calendar.errors import (
 
 GOOGLE_CALENDAR_API_BASE = "https://www.googleapis.com/calendar/v3"
 GOOGLE_OAUTH_ENDPOINT = "https://oauth2.googleapis.com/token"  # noqa: S105
-IDEMPOTENCY_PROP = "agentnest_idempotency_key"
+IDEMPOTENCY_PROP = "pivoris_idempotency_key"
 
 
 def _parse_iso(value: str) -> datetime:

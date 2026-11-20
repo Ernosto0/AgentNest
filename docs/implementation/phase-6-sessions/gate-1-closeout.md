@@ -2,9 +2,9 @@
 
 **Implementation:** 2026-10-24. **Final review:** 2026-10-25 (Europe/Istanbul).
 **Status: CLOSED on `main`, 2026-10-25 (Europe/Istanbul).**
-The owner authorized squash merge of [PR #1](https://github.com/Ernosto0/AgentNest/pull/1),
-which landed as [`dadf673`](https://github.com/Ernosto0/AgentNest/commit/dadf6733ade4af1590af282de3deba058376179e).
-[Fresh main CI](https://github.com/Ernosto0/AgentNest/actions/runs/40133915582)
+The owner authorized squash merge of [PR #1](https://github.com/Ernosto0/Pivoris/pull/1),
+which landed as [`dadf673`](https://github.com/Ernosto0/Pivoris/commit/dadf6733ade4af1590af282de3deba058376179e).
+[Fresh main CI](https://github.com/Ernosto0/Pivoris/actions/runs/40133915582)
 passed all four jobs. The merged application/test code matches reviewed `b47b019`.
 This is the current Gate 1 record. Earlier Phase 6 session reports remain historical
 evidence. Gate 2, live Meta acceptance, Phase 8 and Gate 3 are separate.
@@ -23,7 +23,7 @@ evidence. Gate 2, live Meta acceptance, Phase 8 and Gate 3 are separate.
 - The reporting membership/retention defect was already fixed by migration 0015 and
   the [owner Q&A implementation](qa-implementation-report.md). It is not reopened or rebuilt.
   The walkthrough's stale description of current-state historical lists is corrected.
-- The existing [CI run for bfa1724](https://github.com/Ernosto0/AgentNest/actions/runs/40011121524)
+- The existing [CI run for bfa1724](https://github.com/Ernosto0/Pivoris/actions/runs/40011121524)
   passed backend/security, failed four frontend tests (493/497), and skipped E2E.
   Those four failures reproduce on Node 22. Their fixtures passed jsdom `Blob` objects
   to Node fetch's `Response`; replacing those bodies with binary bytes preserves every
@@ -79,19 +79,19 @@ greater-than assertions. Both failed runs remain available; neither is reported 
 | Scenario E diagnostics | Failed runs retained above; final correction passed the complete reviewed-revision E2E run |
 | Full production-build E2E CI, all projects | 174/174 passed (58 each); zero retries, unexpected/flaky/skipped results; 17.0 minutes |
 | Windows WebKit visibility/report-return regressions | 8/8 passed (four cases, two independent repetitions); zero retries/failures/flaky/skipped; 4.1 minutes |
-| Reviewed-revision GitHub CI | [b47b019 run](https://github.com/Ernosto0/AgentNest/actions/runs/40129750466): all four jobs passed; GitGuardian also passed |
+| Reviewed-revision GitHub CI | [b47b019 run](https://github.com/Ernosto0/Pivoris/actions/runs/40129750466): all four jobs passed; GitGuardian also passed |
 | Merged-main backend, dadf673 | 2,905 passed / 4 intended live-probe skips; zero failures/errors; JUnit time 461.912 seconds; fake eval 166/166 with zero hard failures |
 | Merged-main frontend, dadf673 | 497 passed; lint/typecheck, 1,170 translation keys and OpenAPI regeneration passed |
 | Merged-main E2E, dadf673 | 174/174 passed, 58 per project; zero retries/failures/flaky/skipped/global errors; 909.583 seconds; standalone JSON artifact downloaded and verified |
-| Merged-main GitHub CI | [dadf673 run](https://github.com/Ernosto0/AgentNest/actions/runs/40133915582): backend, frontend, E2E and security all passed |
+| Merged-main GitHub CI | [dadf673 run](https://github.com/Ernosto0/Pivoris/actions/runs/40133915582): backend, frontend, E2E and security all passed |
 
-Review and landing: [PR #1](https://github.com/Ernosto0/AgentNest/pull/1). The owner first
+Review and landing: [PR #1](https://github.com/Ernosto0/Pivoris/pull/1). The owner first
 authorized publishing the branch and draft PR, then explicitly authorized the squash merge.
 The resulting `main` commit is `dadf673`; its application/test code matches reviewed
 `b47b019`. Fresh main CI passed before Gate 1 was recorded closed.
 
 Local logs, JUnit, Playwright JSON and failure traces are ignored under
-`backend/var/gate1-evidence/`. The first browser diagnostic used `agentnest_gate1_e2e_test` and ports 8400/5573. Final Windows verification uses an isolated Git worktree at `C:\Users\ernos\AgentNest-gate1-review`, `agentnest_gate1_unit_test` and `agentnest_gate1_browser_test`, browser ports 8500/5673 and its own media directory. Final evidence is under that worktree's ignored `backend/var/gate1-evidence/`.
+`backend/var/gate1-evidence/`. The first browser diagnostic used `pivoris_gate1_e2e_test` and ports 8400/5573. Final Windows verification uses an isolated Git worktree at `C:\Users\ernos\Pivoris-gate1-review`, `pivoris_gate1_unit_test` and `pivoris_gate1_browser_test`, browser ports 8500/5673 and its own media directory. Final evidence is under that worktree's ignored `backend/var/gate1-evidence/`.
 The existing development database/demo is not reset or migrated by this follow-up.
 Backend pytest retains its `_test` database-name guard.
 
@@ -128,7 +128,7 @@ require the complete three-project E2E result before sign-off.
 ## Concurrent-work interference and isolated validation
 
 The first local full backend run ended **2,903 passed / 4 skipped / 2 setup errors**
-(`workspaces` missing and a truncation deadlock in the shared `agentnest_test` database).
+(`workspaces` missing and a truncation deadlock in the shared `pivoris_test` database).
 The first full browser attempt was stopped after failures, not reported as a clean run.
 It found the stale lowercase simulation-banner assertion, now replaced with exact checks
 for both current simulation/real-account explanations. It also recorded WebKit visibility

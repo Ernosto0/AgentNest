@@ -109,7 +109,7 @@ def ingest_video(
     size = 0
     digest = hashlib.sha256()
     with tempfile.TemporaryDirectory(
-        prefix="agentnest-video-", dir=settings.media_scratch_dir or None
+        prefix="pivoris-video-", dir=settings.media_scratch_dir or None
     ) as directory:
         path = Path(directory) / "upload"
         # The enclosing directory is private, and the input itself is explicitly 0600.

@@ -30,7 +30,7 @@ All baseline static analysis, import boundary, typecheck, i18n, and unit test su
 
 | Area / Artifact | Path(s) | Status | Findings & Phase 8 Action Required |
 |---|---|---|---|
-| **Local Dev Compose & DB Init** | `docker-compose.yml`, `docker/postgres/init/01-create-test-db.sql` | `existing` (needs extension in S05) | Runs PostgreSQL 16 (`agentnest` and `agentnest_test` on port `5433`) using a single superuser role (`agentnest`). Needs runtime role separation (`agentnest_migrator`, `agentnest_app`, `agentnest_worker` with `NOBYPASSRLS`) in Session 05. |
+| **Local Dev Compose & DB Init** | `docker-compose.yml`, `docker/postgres/init/01-create-test-db.sql` | `existing` (needs extension in S05) | Runs PostgreSQL 16 (`pivoris` and `pivoris_test` on port `5433`) using a single superuser role (`pivoris`). Needs runtime role separation (`pivoris_migrator`, `pivoris_app`, `pivoris_worker` with `NOBYPASSRLS`) in Session 05. |
 | **Production Container Packaging** | `Dockerfile`, `.dockerignore` | `missing` | Create multi-stage production `Dockerfile` (serving API, worker, migration commands, and built SPA assets as non-root user) and `.dockerignore` in Session 02. |
 | **Production Compose & TLS Proxy** | `compose.prod.yml`, `Caddyfile` | `missing` | Create single-VPS production stack (`caddy`, `api`, `worker`, `postgres`, `backup`) and reverse-proxy config in Session 02. |
 | **CI Workflow** | `.github/workflows/ci.yml` | `existing` | Runs backend lint/typecheck/migrations/pytest, frontend lint/typecheck/i18n/tests/build, and Playwright E2E. |
@@ -55,9 +55,9 @@ The codebase defines **58 SQLAlchemy-mapped tables** across 18 model modules plu
 
 ### 3.1 Runtime Database Roles (`ADR-025` §1.1)
 
-- **`agentnest_migrator`:** Owns schema, tables, RLS policies, and `SECURITY DEFINER` bootstrap functions. Used only by `alembic upgrade` / DDL scripts.
-- **`agentnest_app`:** API runtime role (`NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`). Subject to `FORCE ROW LEVEL SECURITY` on all tenant tables. Granted `SELECT, INSERT` only on `audit_logs` and `fact_versions` (`REVOKE UPDATE, DELETE`).
-- **`agentnest_worker`:** Worker runtime role (`NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`). Subject to the same RLS and append-only constraints as `agentnest_app`.
+- **`pivoris_migrator`:** Owns schema, tables, RLS policies, and `SECURITY DEFINER` bootstrap functions. Used only by `alembic upgrade` / DDL scripts.
+- **`pivoris_app`:** API runtime role (`NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`). Subject to `FORCE ROW LEVEL SECURITY` on all tenant tables. Granted `SELECT, INSERT` only on `audit_logs` and `fact_versions` (`REVOKE UPDATE, DELETE`).
+- **`pivoris_worker`:** Worker runtime role (`NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`). Subject to the same RLS and append-only constraints as `pivoris_app`.
 
 ### 3.2 Table-by-Table Matrix
 
@@ -65,7 +65,7 @@ The codebase defines **58 SQLAlchemy-mapped tables** across 18 model modules plu
 
 | # | Table | Module | Primary Key | Scope & Runtime Access Pattern |
 |---|---|---|---|---|
-| 1 | `alembic_version` | Alembic | `version_num` | Global migration state. `SELECT` by runtime roles (`/readyz`); `INSERT/UPDATE/DELETE` by `agentnest_migrator` only. |
+| 1 | `alembic_version` | Alembic | `version_num` | Global migration state. `SELECT` by runtime roles (`/readyz`); `INSERT/UPDATE/DELETE` by `pivoris_migrator` only. |
 | 2 | `users` | `identity/models.py` | `id` | Global user identity (`email` unique). Queried during `POST /auth/login`, session validation, password change/reset, and member display. |
 | 3 | `sessions` | `identity/models.py` | `id` | User auth sessions (`user_id` FK -> `users.id`, `token_hash` unique). Queried by `token_hash` on every authenticated request before workspace context exists. |
 | 4 | `workspaces` | `identity/models.py` | `id` | Root tenant record (`status IN ('active', 'deleting')`). Read during membership resolution, daily report / promotion notice scheduling, and workspace settings/deletion lifecycle. |
@@ -252,7 +252,7 @@ The following open questions (`docs/research/open-questions.md`), platform verif
 |---|---|---|---|
 | **1** | **Fresh VPS to running HTTPS instance with documented commands. `/readyz` is green.** | **S02**, **S03**, **S16** | `Dockerfile`, `compose.prod.yml`, `Caddyfile`, `.github/workflows/deploy.yml`, `docs/operations/runbooks.md`; local/CI production container & `/readyz` smoke verification in S02–S03; live VPS HTTPS verification in S16. |
 | **2** | **The restore drill succeeds and its measured RPO and RTO are recorded.** | **S04**, **S06**, **S16** | `scripts/backup*`, `scripts/restore*`, post-restore reconciliation command (`in_progress` -> `outcome_unknown` + tombstone re-application), `docs/operations/backup-restore.md`, and executed restore drill report with measured RPO/RTO in S04 (and post-RLS drill in S06 / live drill in S16). |
-| **3** | **RLS tests pass. The isolation suite passes with RLS enabled.** | **S05**, **S06**, **S15**, **S16** | Alembic RLS migrations (`ENABLE` + `FORCE ROW LEVEL SECURITY` on all 49 Category C tables), `NOBYPASSRLS` runtime roles (`agentnest_app`, `agentnest_worker`), schema introspection test, and `tests/isolation/` passing with RLS enabled in S05–S06 and S15–S16. |
+| **3** | **RLS tests pass. The isolation suite passes with RLS enabled.** | **S05**, **S06**, **S15**, **S16** | Alembic RLS migrations (`ENABLE` + `FORCE ROW LEVEL SECURITY` on all 49 Category C tables), `NOBYPASSRLS` runtime roles (`pivoris_app`, `pivoris_worker`), schema introspection test, and `tests/isolation/` passing with RLS enabled in S05–S06 and S15–S16. |
 | **4** | **Security review findings are fixed or documented with accepted risk.** | **S15** (building on **S05–S13**) | `T1`–`T22` threat-model walk, `tests/security/`, `tests/isolation/`, `pip-audit`, `npm audit`, remediation commits, and documented residual risk register in `docs/implementation/phase-8-sessions/s15-report.md`. |
 | **5** | **Legal artifacts are reviewed by counsel. `OQ-04`, `OQ-12` and `OQ-13` are resolved in `open-questions.md`.** | **S01**, **S12**, **S14**, **S16** | Configurable retention/grace implementation (S10, S12), legal artifact package in `docs/legal/` (S14), and external counsel review status tracked honestly in `docs/research/open-questions.md` and `s14-report.md` / `s16-report.md` (never marked resolved without actual counsel sign-off). |
 | **6** | **The first pilot business is onboarded on production using the assisted onboarding checklist.** | **S16** | Assisted onboarding checklist (`docs/operations/pilot-onboarding.md`), App Review packet (`P8-10`), Gate 3 readiness package (`docs/implementation/phase-summaries/phase-08-summary.md`), and live pilot onboarding record once external prerequisites are met. |
@@ -260,7 +260,7 @@ The following open questions (`docs/research/open-questions.md`), platform verif
 ### 6.3 Sequence Rationale & Departures from Canonical Task List
 
 1. **Infrastructure & Backups (`P8-01`, `P8-02` in Sessions 02–04) before RLS (`P8-03` in Sessions 05–06):**
-   - Container entrypoints, database initialization scripts, and backup/restore tooling must establish separated database roles (`agentnest_migrator`, `agentnest_app`, `agentnest_worker`) and post-restore reconciliation before RLS locks down table access.
+   - Container entrypoints, database initialization scripts, and backup/restore tooling must establish separated database roles (`pivoris_migrator`, `pivoris_app`, `pivoris_worker`) and post-restore reconciliation before RLS locks down table access.
 2. **RLS Enforcement (`P8-03` in Sessions 05–06) before Auth, Email, Data-Rights, Retention & Alerts (`P8-04`–`P8-07` in Sessions 07–13):**
    - Every new table and query added in Sessions 07–13 (`password_reset_tokens`, `login_throttles`, export queries, erasure jobs, Meta callback lookups, retention sweeps, and alert evaluators) is built and tested directly under active `FORCE ROW LEVEL SECURITY` with `NOBYPASSRLS`, eliminating late retrofit regressions.
 3. **Email Delivery (`P8-04` in Session 08) before Workspace Deletion (`P8-05` in Session 10) and Operator Alerts (`P8-07` in Session 13):**

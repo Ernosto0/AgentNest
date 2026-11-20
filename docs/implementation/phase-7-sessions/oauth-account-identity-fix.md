@@ -41,7 +41,7 @@ No code was pushed, and no development data was reset.
   different account remains rejected. Invalid identity responses and denied
   owner lookup do not connect an account. Sensitive values remain absent from logs.
 - Ruff lint/format and targeted mypy passed; all 19 import contracts passed.
-- Tests used a uniquely owned `agentnest_oauth_identity_*_test` database with
+- Tests used a uniquely owned `pivoris_oauth_identity_*_test` database with
   fake/mock/local settings, explicit blank live-test inputs and synthetic HTTP
   transports. No test made a real Instagram request.
 - Ignored local evidence: `backend/var/instagram-setup/oauth-identity-tests.log`,

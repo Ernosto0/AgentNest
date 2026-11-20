@@ -17,7 +17,7 @@
 
 ## Verification
 
-Environment: Python 3.12 via `uv`, PostgreSQL 16 at `localhost:5433`, isolated `agentnest_test` schema rebuilt by pytest. No live provider or model was used.
+Environment: Python 3.12 via `uv`, PostgreSQL 16 at `localhost:5433`, isolated `pivoris_test` schema rebuilt by pytest. No live provider or model was used.
 
 | Command | Result |
 |---|---|

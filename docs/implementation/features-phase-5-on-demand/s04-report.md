@@ -32,7 +32,7 @@ Sources: https://developers.facebook.com/docs/instagram-platform/content-publish
 
 - Flow for Session 05: one child container per item (`is_carousel_item=true`), a `media_type=CAROUSEL` container with `children` and `caption`, then `media_publish`.
 - **Item count conflicts.** Both Meta pages read on 2026-11-18 say **up to 20** ("Carousels are limited to 20 images, videos, or a mix of the two"; `children`: "up to 20 container IDs"). Earlier documentation and several third-party guides say 10, and the project brief says 2 to 10. The product cap stays at **10** (approved by the orchestrator), which is valid under both readings; raising it is one constant plus doc text.
-- "Carousel images are all cropped based on the first image in the carousel (default 1:1)." Every image must also be 4:5 to 1.91:1. Meta does not say mixed ratios are rejected; AgentNest rejects them at submit to avoid a surprise crop.
+- "Carousel images are all cropped based on the first image in the carousel (default 1:1)." Every image must also be 4:5 to 1.91:1. Meta does not say mixed ratios are rejected; Pivoris rejects them at submit to avoid a surprise crop.
 - JPEG only (already guaranteed by `content/media.py`). Caption lives on the carousel container only (not supported on children). `alt_text` is supported on image children (not added here). `location_id` and `is_ai_generated` are not supported on children. A carousel counts as one post for the publishing limit. Reels cannot be carousel items.
 - The same pages still disagree on the publish quota (100 vs 50 per 24 h); unchanged, the existing conservative 50 applies.
 

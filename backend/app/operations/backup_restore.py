@@ -5,7 +5,7 @@ Implements the post-restore safety guarantees required by ``ADR-025`` §1.1 & §
 ``security-and-privacy.md`` §9:
 
 1. Verify (and optionally provision) separated migration vs runtime PostgreSQL roles
-   (``agentnest_migrator`` vs ``agentnest_app`` / ``agentnest_worker`` with
+   (``pivoris_migrator`` vs ``pivoris_app`` / ``pivoris_worker`` with
    ``NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`` and ``REVOKE UPDATE, DELETE``
    on append-only ``audit_logs`` and ``fact_versions``).
 2. Fence restored workers before they start:
@@ -252,7 +252,7 @@ class PostRestoreReconcileReport(BaseModel):
 def provision_database_roles(
     session: Session,
     *,
-    migrator_role: str = "agentnest_migrator",
+    migrator_role: str = "pivoris_migrator",
     runtime_roles: Sequence[str] | None = None,
     app_role: str | None = None,
     worker_role: str | None = None,
@@ -268,7 +268,7 @@ def provision_database_roles(
     elif app_role or worker_role:
         resolved_roles = list(dict.fromkeys([r for r in (app_role, worker_role) if r is not None]))
     else:
-        resolved_roles = ["agentnest_app", "agentnest_worker"]
+        resolved_roles = ["pivoris_app", "pivoris_worker"]
     r_roles = [_validate_identifier(r) for r in resolved_roles]
     effective_runtime_pw = runtime_password or app_password or worker_password
 
@@ -276,7 +276,7 @@ def provision_database_roles(
     if not mig_exists:
         if migrator_password:
             session.execute(
-                text("SELECT set_config('agentnest.tmp_role_pw', :pw, true)"),
+                text("SELECT set_config('pivoris.tmp_role_pw', :pw, true)"),
                 {"pw": migrator_password},
             )
             session.execute(
@@ -288,7 +288,7 @@ def provision_database_roles(
                             'CREATE ROLE %I LOGIN PASSWORD %L '
                             'NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS',
                             '{mig}',
-                            current_setting('agentnest.tmp_role_pw')
+                            current_setting('pivoris.tmp_role_pw')
                         );
                     END
                     $$;
@@ -305,7 +305,7 @@ def provision_database_roles(
         if not exists:
             if effective_runtime_pw:
                 session.execute(
-                    text("SELECT set_config('agentnest.tmp_role_pw', :pw, true)"),
+                    text("SELECT set_config('pivoris.tmp_role_pw', :pw, true)"),
                     {"pw": effective_runtime_pw},
                 )
                 session.execute(
@@ -317,7 +317,7 @@ def provision_database_roles(
                                 'CREATE ROLE %I LOGIN PASSWORD %L '
                                 'NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS',
                                 '{role}',
-                                current_setting('agentnest.tmp_role_pw')
+                                current_setting('pivoris.tmp_role_pw')
                             );
                         END
                         $$;
@@ -334,7 +334,7 @@ def provision_database_roles(
         else:
             if effective_runtime_pw:
                 session.execute(
-                    text("SELECT set_config('agentnest.tmp_role_pw', :pw, true)"),
+                    text("SELECT set_config('pivoris.tmp_role_pw', :pw, true)"),
                     {"pw": effective_runtime_pw},
                 )
                 session.execute(
@@ -346,7 +346,7 @@ def provision_database_roles(
                                 'ALTER ROLE %I LOGIN PASSWORD %L '
                                 'NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS',
                                 '{role}',
-                                current_setting('agentnest.tmp_role_pw')
+                                current_setting('pivoris.tmp_role_pw')
                             );
                         END
                         $$;
@@ -429,8 +429,8 @@ def provision_database_roles(
 def verify_database_roles(
     session: Session,
     *,
-    migrator_role: str = "agentnest_migrator",
-    runtime_roles: Sequence[str] = ("agentnest_app", "agentnest_worker"),
+    migrator_role: str = "pivoris_migrator",
+    runtime_roles: Sequence[str] = ("pivoris_app", "pivoris_worker"),
 ) -> RoleVerificationReport:
     """Verify table ownership, non-bypass runtime role flags, and append-only table grants."""
     mig = _validate_identifier(migrator_role)

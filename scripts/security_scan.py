@@ -83,12 +83,12 @@ class SecurityScanner:
             _env_file=None,
             app_env="production",
             secret_key="s" * 48,
-            database_url="postgresql+psycopg://agentnest_app:dummy@localhost:5432/agentnest",
-            migration_database_url="postgresql+psycopg://agentnest_migrator:dummy@localhost:5432/agentnest",
+            database_url="postgresql+psycopg://pivoris_app:dummy@localhost:5432/pivoris",
+            migration_database_url="postgresql+psycopg://pivoris_migrator:dummy@localhost:5432/pivoris",
             token_encryption_keys=f"k1:{valid_32b_b64}",
             token_encryption_active_key_id="k1",
             media_storage_backend="s3",
-            s3_bucket="agentnest-media",
+            s3_bucket="pivoris-media",
             s3_endpoint_url="https://s3.example.com",
             s3_access_key_id="s3-access-key",
             s3_secret_access_key="s3-secret-key",
@@ -421,12 +421,12 @@ class SecurityScanner:
 
         @app.middleware("http")
         async def mock_auth_middleware(request, call_next):
-            if request.cookies.get("agentnest_session") == "mock_session_token":
+            if request.cookies.get("pivoris_session") == "mock_session_token":
                 request.state.auth = mock_auth
                 request.state.user_id = str(mock_user_id)
             return await call_next(request)
 
-        client = TestClient(app, cookies={"agentnest_session": "mock_session_token"})
+        client = TestClient(app, cookies={"pivoris_session": "mock_session_token"})
 
         csrf_failures = []
         for method, path in unsafe_routes:
@@ -806,7 +806,7 @@ class SecurityScanner:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run AgentNest automated security review scan.")
+    parser = argparse.ArgumentParser(description="Run Pivoris automated security review scan.")
     parser.add_argument(
         "--output",
         "-o",
@@ -818,7 +818,7 @@ def main() -> int:
     args = parser.parse_args()
 
     print("=================================================================")
-    print("      AgentNest Automated Security Audit & Vulnerability Scan     ")
+    print("      Pivoris Automated Security Audit & Vulnerability Scan     ")
     print("=================================================================")
 
     scanner = SecurityScanner(verbose=args.verbose)

@@ -9,7 +9,7 @@ Started from Session 25. Read Sessions 01–25 reports, baseline decisions, CLAU
 Preserved existing landing routes, waitlist handling, theme toggle, and language switcher. No live database, worker, or external network requests were used.
 
 Canonical invariant enforcement:
-- **Design Token & Brand Alignment**: Aligned landing typography (Schibsted Grotesk headings, Source Serif 4 editorial accents, IBM Plex Mono for metrics/code badges), warm editorial palette (`#FBF8F1` paper canvas, `#0E1B16` forest dark, `#0D5C3A` emerald primary, `#8B5E3C` bronze accent), and unified border/surface elevations with the core AgentNest application.
+- **Design Token & Brand Alignment**: Aligned landing typography (Schibsted Grotesk headings, Source Serif 4 editorial accents, IBM Plex Mono for metrics/code badges), warm editorial palette (`#FBF8F1` paper canvas, `#0E1B16` forest dark, `#0D5C3A` emerald primary, `#8B5E3C` bronze accent), and unified border/surface elevations with the core Pivoris application.
 - **Truthful Product Representation**: Interactive preview frames (`OwnerChat`, `PhoneDemo`, `KnowledgePreview`, `ContentPlanner`, `DailyReport`) use clearly fictional examples (Gölkent Butik), respect capability limits, and never present simulated actions as completed live actions.
 - **Network Isolation & Safe Waitlist Preview**: The waitlist form in `landing/src/waitlist.ts` defaults safely to `'preview'` mode when `VITE_WAITLIST_ENDPOINT` is not configured, preventing unexpected network calls during tests or local exploration.
 - **Bilingual & Responsive Parity**: Full support for English (`en`) and Turkish (`tr`) with saved locale persistence. Responsive across mobile (360px), phone (390px), tablet (768px), and desktop (1440px), with keyboard navigation and accessible focus indicators.
@@ -22,9 +22,9 @@ Canonical invariant enforcement:
   - Mobile hamburger drawer with full accessible menu traversal, focus traps, and smooth state transitions.
 - **Hero & Truthful Capability Comparison (`Hero.tsx`, `Comparison.tsx`, L01):**
   - Hero section featuring value proposition, quick waitlist entry, and live product badges.
-  - Truthful side-by-side comparison table contrasting autonomous AI vs human agent vs AgentNest's human-in-the-loop architecture.
+  - Truthful side-by-side comparison table contrasting autonomous AI vs human agent vs Pivoris's human-in-the-loop architecture.
 - **Interactive Mockup Frames (`OwnerChat.tsx`, `PhoneDemo.tsx`, `KnowledgePreview.tsx`, `ContentPlanner.tsx`, `DailyReport.tsx`, L02):**
-  - Fictional specimen frames reflecting real AgentNest interfaces:
+  - Fictional specimen frames reflecting real Pivoris interfaces:
     - WhatsApp / Instagram DM conversation simulator with confidence score and knowledge grounding.
     - Knowledge store preview with 14 canonical categories and verification badges.
     - Content calendar preview displaying scheduled and draft posts.

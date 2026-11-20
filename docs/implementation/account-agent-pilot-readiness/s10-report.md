@@ -120,7 +120,7 @@ All 61 errors failed identically with `sqlalchemy.exc.OperationalError: (psycopg
     USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
     WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
     ```
-  - Grants `SELECT, INSERT, UPDATE, DELETE` to runtime roles (`agentnest_app`, `agentnest_worker`, `agentnest_migrator`) if present.
+  - Grants `SELECT, INSERT, UPDATE, DELETE` to runtime roles (`pivoris_app`, `pivoris_worker`, `pivoris_migrator`) if present.
   - Backfill query: Seeds initial preferences as `enabled=true` for all existing active `channel_links`, ensuring zero notification drops for currently onboarded owners upon deployment.
 
 ### 3.3 Rollback / Downgrade Restrictions and Data Dependencies

@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "AgentNest",
+    "name": "Pivoris",
     "skipToContent": "İçeriğe geç"
   },
   "nav": {
@@ -309,7 +309,7 @@
       "others": "Otomasyon durduruldu. Silme talebini yalnızca sahip iptal edebilir."
     },
     "account": {
-      "description": "Hangi hesapla giriş yaptığınız ve AgentNest'in sizin için nasıl göründüğü.",
+      "description": "Hangi hesapla giriş yaptığınız ve Pivoris'in sizin için nasıl göründüğü.",
       "signOut": "Oturumu kapat",
       "role": "Rolünüz",
       "roleHint": "{{workspace}} içinde neler yapabileceğiniz.",
@@ -319,7 +319,7 @@
       "nameRequired": "Bir ad girin.",
       "nameSaved": "Ad kaydedildi.",
       "language": "Arayüz dili",
-      "languageHint": "AgentNest'in dilini yalnızca sizin için değiştirir. Müşteri yanıtları çalışma alanının yanıt dillerini kullanır.",
+      "languageHint": "Pivoris'in dilini yalnızca sizin için değiştirir. Müşteri yanıtları çalışma alanının yanıt dillerini kullanır.",
       "languageSaved": "Hesabınıza kaydedildi."
     },
     "workspace": {
@@ -346,7 +346,7 @@
       "timezoneChangeBody": "Kaydettikten sonra bu çalışma alanındaki tarih ve saatler, günlük raporun gelme saati dahil, {{zone}} dilimini kullanır.",
       "replyLanguages": "Müşteri yanıt dilleri",
       "replyLanguagesHint": "Diğer dillerdeki mesajlar ekibinize aktarılır.",
-      "replyLanguagesChoose": "AgentNest’in müşteri yanıtı taslağı hazırlayabileceği dilleri seçin. Çalışma alanının ana dili her zaman açıktır.",
+      "replyLanguagesChoose": "Pivoris’in müşteri yanıtı taslağı hazırlayabileceği dilleri seçin. Çalışma alanının ana dili her zaman açıktır.",
       "replyLanguagesMain": "Çalışma alanının ana dili",
       "replyLanguagesCoverage": "Taslak kalitesi yalnızca burada listelenen diller için test edilmiştir. Başka bir dildeki mesaj her zaman ekibinize aktarılır.",
       "replyLanguagesNewTitle": "Rusça, Almanca ve Arapça yenidir",
@@ -419,7 +419,7 @@
       "alreadyEnded": "Bu oturum zaten sona ermişti."
     },
     "connections": {
-      "description": "AgentNest'in bu çalışma alanı için birlikte çalıştığı hizmetler.",
+      "description": "Pivoris'in bu çalışma alanı için birlikte çalıştığı hizmetler.",
       "status": {
         "connected": "Bağlı",
         "degraded": "Kararsız",
@@ -450,7 +450,7 @@
       "disconnectBody": "Hesabın konuşma ve mesaj geçmişini de silmeyi seçebilirsiniz.",
       "openConnections": "Bağlantılar",
       "policyTitle": "Gizlilik politikası",
-      "policyBody": "AgentNest'in kişisel verileri nasıl işlediği ve koruduğu.",
+      "policyBody": "Pivoris'in kişisel verileri nasıl işlediği ve koruduğu.",
       "readPolicy": "Politikayı oku",
       "newTab": "(yeni sekmede açılır)"
     },
@@ -636,7 +636,7 @@
     },
     "WEB_PUSH_NOT_CONFIGURED": {
       "what": "Telefon bildirimleri bu sunucuda henüz kurulu değil.",
-      "next": "AgentNest'i yöneten kişiden bildirimleri açmasını isteyin."
+      "next": "Pivoris'i yöneten kişiden bildirimleri açmasını isteyin."
     },
     "PROVIDER_RATE_LIMITED": {
       "what": "Instagram yavaşlamamızı istedi.",
@@ -962,7 +962,7 @@
     "task": "Görev"
   },
   "entry": {
-    "brandRegion": "AgentNest",
+    "brandRegion": "Pivoris",
     "brandTitle": "İşlerinize daha net bir bakış.",
     "brandDetail": "Mesajlarınız, içerikleriniz ve işletme bilgileriniz için tek bir çalışma alanı.",
     "brandFooter": "Kararlarınız ve işletmenizin bilgileri bir arada.",
@@ -1006,8 +1006,8 @@
   },
   "legal": {
     "privacyTitle": "Gizlilik Politikası",
-    "privacySubtitle": "AgentNest kişisel verileri nasıl işler ve korur",
-    "privacySummary": "AgentNest işletmeler için yapay zekâ destekli mesajlaşma ve içerik yönetimi yazılımı sunar. Kullanıcı hesapları ve platform operasyonları için AgentNest Veri Sorumlusudur. Müşteri mesajları ve Instagram iletişimleri için abone işletme Veri Sorumlusu, AgentNest ise Veri İşleme Sözleşmesi kapsamında Veri İşleyendir.",
+    "privacySubtitle": "Pivoris kişisel verileri nasıl işler ve korur",
+    "privacySummary": "Pivoris işletmeler için yapay zekâ destekli mesajlaşma ve içerik yönetimi yazılımı sunar. Kullanıcı hesapları ve platform operasyonları için Pivoris Veri Sorumlusudur. Müşteri mesajları ve Instagram iletişimleri için abone işletme Veri Sorumlusu, Pivoris ise Veri İşleme Sözleşmesi kapsamında Veri İşleyendir.",
     "privacyControllerSection": "Veri Sorumlusu ve Roller",
     "privacyControllerText": "Kayıtlı işletme sahipleri ve ekip üyeleri müşterileriyle iletişim kurar. Müşteri mesaj içerikleri, müşteri kimlikleri veya gizli işletme bilgileri temel yapay zekâ modellerini eğitmek amacıyla kesinlikle kullanılmaz.",
     "privacySecuritySection": "Güvenlik ve İzolasyon",
@@ -1015,13 +1015,13 @@
     "privacyRetentionSection": "Veri Saklama ve İmha",
     "privacyRetentionText": "Ham sistem kayıtları 30 gün sonra içeriksizleştirilir, 90 gün sonra silinir. Mesaj metinleri 365 gün sonra içeriksizleştirilir. Yedekler 35 gün sonra otomatik silinir. Hesap bağlantısını kesmek veya çalışma alanını silmek verileri güvenle imha eder.",
     "privacyContactSection": "İletişim ve İlgili Kişi Hakları",
-    "privacyContactText": "KVKK ve GDPR kapsamında verilerinize erişme, düzeltme veya silinmesini talep etme hakkına sahipsiniz. Gizlilik ekibimizle privacy@agentnest.io üzerinden iletişime geçebilirsiniz.",
+    "privacyContactText": "KVKK ve GDPR kapsamında verilerinize erişme, düzeltme veya silinmesini talep etme hakkına sahipsiniz. Gizlilik ekibimizle privacy@pivoris.com üzerinden iletişime geçebilirsiniz.",
     "dataDeletionTitle": "Veri Silme Talimatları",
     "dataDeletionSubtitle": "Instagram ve platform verilerinizin silinmesini nasıl talep edebilirsiniz",
     "dataDeletionOverview": "Meta Platform Kuralları, KVKK ve GDPR gereğince kullanıcılar ve müşteriler diledikleri zaman kişisel verilerinin silinmesini talep edebilirler.",
-    "dataDeletionStep1": "1. Instagram Uygulama Ayarları: Instagram hesabınızda Ayarlar ve Gizlilik > Web Sitesi İzinleri > Uygulamalar ve Web Siteleri > Aktif > AgentNest'i Kaldır seçeneğini kullanın.",
-    "dataDeletionStep2": "2. Silme Talebi: Kaldırdıktan sonra 'Kaldırılan Uygulamaları Gör' alanından AgentNest yanındaki 'Talep Gönder' düğmesine tıklayarak otomatik veri silme çağrısını tetikleyin.",
-    "dataDeletionStep3": "3. Manuel Silme: Alternatif olarak, çalışma alanı adınız veya Instagram kullanıcı adınızla privacy@agentnest.io adresine e-posta göndererek verilerinizin silinmesini talep edebilirsiniz.",
+    "dataDeletionStep1": "1. Instagram Uygulama Ayarları: Instagram hesabınızda Ayarlar ve Gizlilik > Web Sitesi İzinleri > Uygulamalar ve Web Siteleri > Aktif > Pivoris'i Kaldır seçeneğini kullanın.",
+    "dataDeletionStep2": "2. Silme Talebi: Kaldırdıktan sonra 'Kaldırılan Uygulamaları Gör' alanından Pivoris yanındaki 'Talep Gönder' düğmesine tıklayarak otomatik veri silme çağrısını tetikleyin.",
+    "dataDeletionStep3": "3. Manuel Silme: Alternatif olarak, çalışma alanı adınız veya Instagram kullanıcı adınızla privacy@pivoris.com adresine e-posta göndererek verilerinizin silinmesini talep edebilirsiniz.",
     "dataDeletionLookupTitle": "Silme Talebi Durumu Sorgulama",
     "dataDeletionLookupPlaceholder": "Onay kodunu girin (örn. del_...)",
     "dataDeletionLookupButton": "Durumu Sorgula",
@@ -1122,7 +1122,7 @@
     "verified": "E-postanız doğrulandı.",
     "continue": "Giriş yap ve çalışma alanını oluştur",
     "version": "Belge sürümü: {{version}}",
-    "termsBody": "AgentNest, işletme hesabınızı ve önerilen müşteri iletişimlerini yönetmenize yardımcı olur. Kullandığınız hesapları bağlamaya ve yönetmeye yetkili olmalısınız. Giriş bilgilerinizi güvenli tutun.",
+    "termsBody": "Pivoris, işletme hesabınızı ve önerilen müşteri iletişimlerini yönetmenize yardımcı olur. Kullandığınız hesapları bağlamaya ve yönetmeye yetkili olmalısınız. Giriş bilgilerinizi güvenli tutun.",
     "termsResponsibility": "Sağladığınız işletme bilgilerinden ve yetkilendirdiğiniz işlemlerden siz sorumlusunuz. Hizmeti hukuka uygun kullanın ve müşterilerinizin gizliliğine saygı gösterin. Verilerin işlenmesi hakkında Gizlilik Politikasını inceleyin."
   },
   "brand": {

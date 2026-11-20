@@ -39,7 +39,7 @@ DEFAULT_RETENTION_DAYS = 35
 DEFAULT_STATUS_FILE = ".backup-status.json"
 DEFAULT_BACKUP_PREFIX = "postgres/nightly"
 BACKUP_FILENAME_RE = re.compile(
-    r"^(?P<backup_id>agentnest-(?P<ts>\d{8}T\d{6}Z)(?:-[A-Za-z0-9._-]+)?)\.(?P<ext>dump\.enc|manifest\.json)$"
+    r"^(?P<backup_id>pivoris-(?P<ts>\d{8}T\d{6}Z)(?:-[A-Za-z0-9._-]+)?)\.(?P<ext>dump\.enc|manifest\.json)$"
 )
 
 
@@ -420,7 +420,7 @@ def query_alembic_revision(database_url: str, *, postgres_container: str | None 
         parsed = urllib.parse.urlsplit(normalize_libpq_url(database_url))
         user = urllib.parse.unquote(parsed.username or "postgres")
         password = urllib.parse.unquote(parsed.password or "")
-        dbname = (parsed.path or "/agentnest").lstrip("/") or "agentnest"
+        dbname = (parsed.path or "/pivoris").lstrip("/") or "pivoris"
         cmd = [
             "docker",
             "exec",
@@ -455,7 +455,7 @@ def run_pg_dump_custom(
     password = urllib.parse.unquote(parsed.password or "")
     host = parsed.hostname or "localhost"
     port = str(parsed.port or 5432)
-    dbname = (parsed.path or "/agentnest").lstrip("/") or "agentnest"
+    dbname = (parsed.path or "/pivoris").lstrip("/") or "pivoris"
 
     resolved_bin = shutil.which(pg_dump_bin) if not postgres_container else None
     if resolved_bin:
@@ -816,7 +816,7 @@ def execute_backup_run(
 
         ts_label = format_utc_timestamp(now)
         suffix = f"-{backup_id_suffix.strip('-')}" if backup_id_suffix else ""
-        backup_id = f"agentnest-{ts_label}{suffix}"
+        backup_id = f"pivoris-{ts_label}{suffix}"
         archive_filename = f"{backup_id}.dump.enc"
         manifest_filename = f"{backup_id}.manifest.json"
 
@@ -958,7 +958,7 @@ def execute_backup_run(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python scripts/backup.py",
-        description="AgentNest encrypted PostgreSQL backup, 35-day pruner, and decrypt tool.",
+        description="Pivoris encrypted PostgreSQL backup, 35-day pruner, and decrypt tool.",
     )
     sub = parser.add_subparsers(dest="subcommand")
 

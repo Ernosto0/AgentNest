@@ -77,8 +77,8 @@ jobs:
             echo "error: refusing mutable 'latest' tag for deployment; use a release tag (v*) or sha-<commit>." >&2
             exit 1
           fi
-          BACKEND_IMAGE="${REGISTRY}/${OWNER_LC}/agentnest-backend"
-          CADDY_IMAGE="${REGISTRY}/${OWNER_LC}/agentnest-caddy"
+          BACKEND_IMAGE="${REGISTRY}/${OWNER_LC}/pivoris-backend"
+          CADDY_IMAGE="${REGISTRY}/${OWNER_LC}/pivoris-caddy"
           {
             echo "image_tag=${IMAGE_TAG}"
             echo "sha_tag=${SHA_TAG}"
@@ -181,7 +181,7 @@ jobs:
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
           DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
           DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
-          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/agentnest' }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/pivoris' }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN || secrets.GITHUB_TOKEN }}
           GHCR_USERNAME: ${{ github.actor }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
@@ -198,10 +198,10 @@ jobs:
             -o ConnectTimeout=15
           )
           if [[ "${DEPLOY_ENV}" == "staging" ]]; then
-            PROJECT_NAME="${COMPOSE_PROJECT_NAME:-agentnest-staging}"
+            PROJECT_NAME="${COMPOSE_PROJECT_NAME:-pivoris-staging}"
             ENV_FILE="${ENV_FILE:-.env.staging}"
           else
-            PROJECT_NAME="${COMPOSE_PROJECT_NAME:-agentnest}"
+            PROJECT_NAME="${COMPOSE_PROJECT_NAME:-pivoris}"
             ENV_FILE="${ENV_FILE:-.env}"
           fi
 
@@ -221,8 +221,8 @@ jobs:
             "cd '${DEPLOY_PATH}' && \
              chmod 0750 scripts/deploy.sh scripts/rollback.sh scripts/deploy.py && \
              docker login '${REGISTRY}' -u '${GHCR_USERNAME}' --password-stdin && \
-             AGENTNEST_BACKEND_IMAGE='${BACKEND_IMAGE_REPO}:${IMAGE_TAG}' \
-             AGENTNEST_CADDY_IMAGE='${CADDY_IMAGE_REPO}:${IMAGE_TAG}' \
+             PIVORIS_BACKEND_IMAGE='${BACKEND_IMAGE_REPO}:${IMAGE_TAG}' \
+             PIVORIS_CADDY_IMAGE='${CADDY_IMAGE_REPO}:${IMAGE_TAG}' \
              ./scripts/deploy.sh \
                --image-tag '${IMAGE_TAG}' \
                --env-file '${ENV_FILE}' \

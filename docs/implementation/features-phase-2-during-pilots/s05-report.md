@@ -39,7 +39,7 @@ Changed
 
 ## Tests and checks
 
-Test database env: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, `TEST_DATABASE_URL` set to the `agentnest_p2s05*_test` databases.
+Test database env: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, `TEST_DATABASE_URL` set to the `pivoris_p2s05*_test` databases.
 
 - `pytest tests/integration/agent/test_delegation_suggestions.py`: 44 passed (threshold 19/20, edit/rejection/failure blockers, forbidden intents, off/auto skip, readiness, mock and agent-controlled accounts, one per week, expiry, preview/apply flow, tamper, stale evidence, role checks, idempotent repeat, dismissal and cool-down, job gating and run).
 - `pytest tests/isolation/test_delegation_suggestions_isolation.py`: 6 passed (forced RLS, fail-closed, cross-workspace write and FK, one per week, foreign owner gets 404).

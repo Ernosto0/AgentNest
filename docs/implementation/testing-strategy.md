@@ -7,7 +7,7 @@
 | Layer | Scope | Tools | DB | Location |
 |---|---|---|---|---|
 | **Unit** | Pure logic: parsers, renderers, claim validator, policy rules, state machine transitions, readiness, metric math, canonical hashing, permission matrix | pytest | none | `backend/tests/unit/<module>/` |
-| **Integration** | Services + DB + jobs + fake LLM + mock Instagram, through service functions or the HTTP API (`TestClient`) | pytest, httpx TestClient | real Postgres (`agentnest_test`) | `backend/tests/integration/<module>/` |
+| **Integration** | Services + DB + jobs + fake LLM + mock Instagram, through service functions or the HTTP API (`TestClient`) | pytest, httpx TestClient | real Postgres (`pivoris_test`) | `backend/tests/integration/<module>/` |
 | **Isolation** | Cross-tenant access across all routes | pytest (route enumeration) | Postgres | `backend/tests/isolation/` |
 | **Contract** | `InstagramProvider` behaviour shared by mock and Meta adapters; webhook fixtures | pytest (parametrised by adapter) | Postgres for mock | `backend/tests/contract/` |
 | **Security** | Signature checks, CSRF, permission matrix, redaction, schema secret scan, upload attacks, config safety | pytest | mixed | `backend/tests/security/` (and unit) |

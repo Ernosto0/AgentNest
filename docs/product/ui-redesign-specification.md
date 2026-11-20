@@ -1,12 +1,12 @@
 # Application UI Redesign Specification
 
 **Status:** Core experience implemented, 2026-11-07; see [verification and before/after evidence](../ui-core-redesign/verification-report.md). The wider Phase 8.5 specification remains a reference for secondary workflows and historical scope. This core change does not assert whole-phase, live-platform, owner or actual-device acceptance.
-**Reference:** [Interactive concept](https://agentnest-style-preview.woollyhero2.chatgpt.site) and [local concept source](../../design-preview/agentnest-today/README.md).
+**Reference:** [Interactive concept](https://pivoris-style-preview.woollyhero2.chatgpt.site) and [local concept source](../../design-preview/pivoris-today/README.md).
 **Current behavior:** [User journeys](user-journeys.md). The core navigation and workflows below are implemented and documented there. Wider secondary-screen targets remain reference scope rather than an assertion of whole-phase acceptance.
 
 ## 1. Design intent and reference boundary
 
-AgentNest should feel calm, competent and approachable to a business owner checking Instagram between real-world tasks. Use the concept's charcoal-green sidebar, warm canvas, white surfaces, deep teal primary actions, sage assistant areas, image-led content and clear separation between daily work and configuration.
+Pivoris should feel calm, competent and approachable to a business owner checking Instagram between real-world tasks. Use the concept's charcoal-green sidebar, warm canvas, white surfaces, deep teal primary actions, sage assistant areas, image-led content and clear separation between daily work and configuration.
 
 The concept establishes composition and visual direction. It does not establish backend behavior, available metrics, permanent assistant branding, legal wording, per-account authority or production asset policy. Its fictional studio, prices, names, photos, numbers and in-memory actions must not become runtime defaults. Adopt the layout and improve text sizes/contrast for production.
 

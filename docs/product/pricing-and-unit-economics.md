@@ -1,6 +1,6 @@
 # Pricing Strategy and Unit Economics (Türkiye & Global)
 
-**Purpose:** Define the cost structure (COGS), unit economics, packaging, and pricing tiers for the AgentNest hosted SaaS across both the **Türkiye** (high-touch, TRY) and **Global** (self-service, USD) markets, while respecting the open-source core boundary ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) and open questions ([OQ-01, OQ-06, OQ-09](../research/open-questions.md)).
+**Purpose:** Define the cost structure (COGS), unit economics, packaging, and pricing tiers for the Pivoris hosted SaaS across both the **Türkiye** (high-touch, TRY) and **Global** (self-service, USD) markets, while respecting the open-source core boundary ([ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md)) and open questions ([OQ-01, OQ-06, OQ-09](../research/open-questions.md)).
 
 > [!IMPORTANT]
 > **What is built today (reconciled against code, Feature Phases 1–5 & Pilot Readiness Sessions 01–08, 2026-11-19).** Sell only what an owner can use on day one: one Instagram Professional account per workspace, mobile web app, Telegram owner control (primary), WhatsApp owner control (optional alternative, delivered in Session 02), 5 customer reply languages (`tr`, `en`, `ru`, `de`, `ar` with app UI strictly `tr` and `en`), grounded DM drafts with semi-automation (basic FAQ auto-sends under explicit owner grant; complex questions require human approval), private replies via Comment-to-DM, template images, feed carousels and video Reels, voice note transcripts & image descriptions, lead lists, test chat with Account Agent parity, and daily activity reports. Each workspace has a plan (`starter` 500, `growth` 2,500, or `pro` 7,500 AI replies per month; default `growth` on trial), a monthly reply counter, and warnings at 80% and 100% with a 10% grace buffer (built, P-11; operator manages plans via CLI, see §4 and §8). Automated billing does not exist in the code; all billing is manual (bank transfer / EFT invoice; CLI `plan-extend` is operational quota tracking, not payment enforcement). Pilots are managed by hand (§6, stage 1). The findings per feature are in [§8](#8-what-the-code-supports-today-p-19-check).
@@ -15,20 +15,20 @@ Small business owners do not buy "tokens", "agent steps", or "API calls". They b
 3. **Zero stale promotions:** Updating a price via natural language automatically places scheduled posts carrying the old price on hold.
 
 ### The ROI Anchor
-- **In Türkiye:** A single reformer Pilates package, gym membership, or clinic appointment is worth **₺3,000 – ₺7,500**. Hiring a freelance social media manager or agency costs **₺10,000 – ₺25,000/month** (and agencies still ask the owner for price confirmations and don't reply to DMs at midnight). If AgentNest saves **one customer per month** and 15 hours of repetitive typing, a **₺1,490 – ₺2,490/month** subscription delivers a **3x–10x return**.
+- **In Türkiye:** A single reformer Pilates package, gym membership, or clinic appointment is worth **₺3,000 – ₺7,500**. Hiring a freelance social media manager or agency costs **₺10,000 – ₺25,000/month** (and agencies still ask the owner for price confirmations and don't reply to DMs at midnight). If Pivoris saves **one customer per month** and 15 hours of repetitive typing, a **₺1,490 – ₺2,490/month** subscription delivers a **3x–10x return**.
 - **Globally:** Competing tools either require building fragile flowcharts (ManyChat at \$15–\$65/mo), charge steep omnichannel seat prices (Respond.io / Gorgias at \$79–\$159/mo), or use ungrounded AI wrappers (\$49–\$99/mo) that hallucinate discounts. A flat **\$29 – \$59/month** position hits the SMB sweet spot.
 
 ---
 
 ## 2. Granular Cost Breakdown (COGS & Unit Economics)
 
-Every external cost driver in AgentNest is bounded by deterministic limits in the codebase ([agent-runtime.md](../architecture/agent-runtime.md), [account-agent-contracts.md](../architecture/account-agent-contracts.md), [.env.example](../../.env.example)).
+Every external cost driver in Pivoris is bounded by deterministic limits in the codebase ([agent-runtime.md](../architecture/agent-runtime.md), [account-agent-contracts.md](../architecture/account-agent-contracts.md), [.env.example](../../.env.example)).
 
 ### 2.1 LLM API Costs (OpenAI Responses API)
 
 Per [platform-capabilities.md §4](../research/platform-capabilities.md), the confirmed GPT-6 family pricing is:
 
-| Model Tier | Input (per 1M tokens) | Cached Input (~50% off) | Output (per 1M tokens) | Role in AgentNest |
+| Model Tier | Input (per 1M tokens) | Cached Input (~50% off) | Output (per 1M tokens) | Role in Pivoris |
 |---|---|---|---|---|
 | **`gpt-6-luna`** (Default) | \$0.10 | \$0.05 | \$0.50 | Default across all tasks (`LLM_MODEL_DEFAULT=gpt-6-luna`, `LLM_REASONING_EFFORT=low`) |
 | **`gpt-6.1-sol`** | \$2.00 | \$1.00 | \$10.00 | Optional upgrade for high-nuance `draft_content` or complex multi-turn reasoning |
@@ -56,14 +56,14 @@ Because system prompts are static and ordered first ([agent-runtime.md §10](../
 
 > [!TIP]
 > **Cost Control Built Into the Architecture:**
-> - **Reply Debounce (`REPLY_DEBOUNCE_SECONDS=8`):** When a customer sends 4 rapid messages in a row (*"Merhaba" / "Fiyat nedir?" / "Hafta sonu açık mısınız?"*), AgentNest coalesces them into **one** LLM draft call.
+> - **Reply Debounce (`REPLY_DEBOUNCE_SECONDS=8`):** When a customer sends 4 rapid messages in a row (*"Merhaba" / "Fiyat nedir?" / "Hafta sonu açık mısınız?"*), Pivoris coalesces them into **one** LLM draft call.
 > - **Hard Daily Cap (`LLM_MAX_CALLS_PER_WORKSPACE_PER_DAY=500`):** Even if an account is targeted by spam or a loop, a workspace can never exceed 500 model calls/day (~15,000/month = **<\$6/month** on `gpt-6-luna`).
 
 ---
 
 ### 2.2 Infrastructure, Database & Storage Costs
 
-AgentNest is architected as a lean modular monolith ([ADR-001](../architecture/decisions/ADR-001-modular-monolith.md)) using PostgreSQL for both persistence and background jobs ([ADR-004](../architecture/decisions/ADR-004-postgresql-only-datastore.md), [ADR-006](../architecture/decisions/ADR-006-postgres-job-queue.md))—eliminating Redis and Celery overhead.
+Pivoris is architected as a lean modular monolith ([ADR-001](../architecture/decisions/ADR-001-modular-monolith.md)) using PostgreSQL for both persistence and background jobs ([ADR-004](../architecture/decisions/ADR-004-postgresql-only-datastore.md), [ADR-006](../architecture/decisions/ADR-006-postgres-job-queue.md))—eliminating Redis and Celery overhead.
 
 | Stage | Capacity | Topology ([deployment.md](../architecture/deployment.md)) | Total Monthly Infra | Infra Cost per Workspace |
 |---|---|---|---|---|
@@ -186,12 +186,12 @@ For the global English-speaking market ([idea.md §2.2](../idea.md)), onboarding
 
 ## 5. Open-Source Core vs. Hosted SaaS Value Boundary
 
-Per [ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md), AgentNest has an open-source core. Why will businesses pay for the Hosted SaaS instead of self-hosting?
+Per [ADR-019](../architecture/decisions/ADR-019-open-source-and-hosted-boundary.md), Pivoris has an open-source core. Why will businesses pay for the Hosted SaaS instead of self-hosting?
 
-| Capability | Self-Hosted Open-Source Core | AgentNest Hosted SaaS |
+| Capability | Self-Hosted Open-Source Core | Pivoris Hosted SaaS |
 |---|---|---|
 | **Price** | Free (bring your own VPS, S3, OpenAI key) | **₺1,490–₺4,490/mo** or **\$29–\$119/mo** |
-| **Meta App Review & Business Verification** | **Self-hoster must apply**, submit screencasts, verify a legal business entity with Meta, and maintain compliance | **Instant 1-click OAuth** via AgentNest's verified Meta App (after Meta App Review is granted; pilots use tester roles until then) |
+| **Meta App Review & Business Verification** | **Self-hoster must apply**, submit screencasts, verify a legal business entity with Meta, and maintain compliance | **Instant 1-click OAuth** via Pivoris's verified Meta App (after Meta App Review is granted; pilots use tester roles until then) |
 | **WhatsApp & Telegram Bot Setup** | Self-hoster must register bots, webhooks, and Meta Cloud API numbers | **Pre-configured & managed** |
 | **Hosting, TLS, Postgres & S3 Media** | Self-managed Docker Compose, SSH deploys, S3 buckets | **Fully managed**, zero maintenance |
 | **Encrypted Off-Site Backups & Restore Drills** | Self-hoster configures `BACKUP_ENCRYPTION_KEY` & S3 | **Automated nightly AES-256-GCM backups** (35-day retention; tooling delivered, scheduling on Railway documented) |

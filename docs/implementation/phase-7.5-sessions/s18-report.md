@@ -27,11 +27,11 @@ provider capability or production configuration was changed by Session 18.
 ## Verification
 
 Windows PowerShell, Python 3.12 via `python -m uv`, Postgres 16 in Docker. Dedicated
-disposable `agentnest_s18_test` database; the test harness rebuilt its schema to current
+disposable `pivoris_s18_test` database; the test harness rebuilt its schema to current
 head. Both live Meta inputs were blanked. Exact command from `backend/`:
 
 ```powershell
-$env:TEST_DATABASE_URL='postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest_s18_test'
+$env:TEST_DATABASE_URL='postgresql+psycopg://pivoris:pivoris@localhost:5433/pivoris_s18_test'
 $env:META_LIVE_ACCESS_TOKEN=''
 $env:META_LIVE_IG_USER_ID=''
 python -m uv run pytest tests/integration/agent/test_rollout_rehearsal.py -q --tb=short

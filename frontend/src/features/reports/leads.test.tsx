@@ -16,7 +16,7 @@ type Handler = (r: RecordedRequest) => Response | Promise<Response>;
 
 function routes(extra: Record<string, Handler> = {}, role: "owner" | "manager" | "staff" = "owner") {
   return {
-    "GET /api/v1/meta": () => json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
+    "GET /api/v1/meta": () => json({ product_name: "Pivoris", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json({ ...ME, memberships: ME.memberships.map((m) => m.workspace_id === WS_GOLKENT ? { ...m, role } : m) }),
     [`GET /api/v1/workspaces/${WS_GOLKENT}`]: () => json(workspace(WS_GOLKENT)),
     [`GET /api/v1/workspaces/${WS_GOLKENT}/readiness`]: () => json(READINESS),

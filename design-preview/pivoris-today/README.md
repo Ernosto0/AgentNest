@@ -1,6 +1,6 @@
-# AgentNest design preview
+# Pivoris design preview
 
-A standalone, interactive visual concept for a redesigned AgentNest Today screen. It uses fictional studio and customer data. All actions are browser-local; nothing connects to the AgentNest API or Instagram. Refresh resets the preview.
+A standalone, interactive visual concept for a redesigned Pivoris Today screen. It uses fictional studio and customer data. All actions are browser-local; nothing connects to the Pivoris API or Instagram. Refresh resets the preview.
 
 ## Open locally
 

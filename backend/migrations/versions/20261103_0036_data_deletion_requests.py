@@ -72,12 +72,12 @@ def upgrade() -> None:
             """
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT SELECT, INSERT, UPDATE ON TABLE data_deletion_requests TO agentnest_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_app') THEN
+                    GRANT SELECT, INSERT, UPDATE ON TABLE data_deletion_requests TO pivoris_app;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_worker') THEN
                     GRANT SELECT, INSERT, UPDATE ON TABLE data_deletion_requests
-                        TO agentnest_worker;
+                        TO pivoris_worker;
                 END IF;
             END $$;
             """

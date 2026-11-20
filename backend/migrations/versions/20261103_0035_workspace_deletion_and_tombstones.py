@@ -80,17 +80,17 @@ def upgrade() -> None:
         unique=False,
     )
 
-    # 3. Grant runtime privileges to agentnest_app and agentnest_worker if they exist
+    # 3. Grant runtime privileges to pivoris_app and pivoris_worker if they exist
     op.execute(
         sa.text(
             """
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE deletion_tombstones TO agentnest_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_app') THEN
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE deletion_tombstones TO pivoris_app;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE deletion_tombstones TO agentnest_worker;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_worker') THEN
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE deletion_tombstones TO pivoris_worker;
                 END IF;
             END
             $$;

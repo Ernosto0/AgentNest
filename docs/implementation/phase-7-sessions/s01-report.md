@@ -38,7 +38,7 @@ Static-check logs, full pytest log and JUnit XML are saved under ignored `backen
 
 JUnit independently confirms 2,627 tests, 0 failures, 0 errors and 0 skipped, with suite time 689.400 seconds. The operator independently reran the three focused files: 142 passed in 1.72 seconds. No baseline failures were encountered, and no full-suite rerun was needed.
 
-The full backend run explicitly sets `TEST_DATABASE_URL` to the known local `agentnest_test` database. Its resolved target was checked as localhost:5433/agentnest_test before execution; the existing conftest refusal for names not ending `_test` remains intact. The existing Docker postgres service was already healthy. Only the test database is rebuilt by the test harness; no development demo reset or migration was run.
+The full backend run explicitly sets `TEST_DATABASE_URL` to the known local `pivoris_test` database. Its resolved target was checked as localhost:5433/pivoris_test before execution; the existing conftest refusal for names not ending `_test` remains intact. The existing Docker postgres service was already healthy. Only the test database is rebuilt by the test harness; no development demo reset or migration was run.
 
 ## Limitations and next review
 

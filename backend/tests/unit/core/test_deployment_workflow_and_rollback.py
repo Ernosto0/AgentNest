@@ -20,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 
 def _load_deploy_module() -> Any:
     script_path = REPO_ROOT / "scripts" / "deploy.py"
-    spec = importlib.util.spec_from_file_location("agentnest_deploy_script", script_path)
+    spec = importlib.util.spec_from_file_location("pivoris_deploy_script", script_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -33,14 +33,14 @@ deploy_mod = _load_deploy_module()
 
 def _write_prod_env(path: Path, *, separate_migrator: bool = True) -> None:
     mig_line = (
-        "MIGRATION_DATABASE_URL=postgresql+psycopg://agentnest_migrator:mig_pw@postgres:5432/agentnest\n"
+        "MIGRATION_DATABASE_URL=postgresql+psycopg://pivoris_migrator:mig_pw@postgres:5432/pivoris\n"
         if separate_migrator
         else ""
     )
     path.write_text(
         "APP_ENV=production\n"
         "SECRET_KEY=" + ("s" * 48) + "\n"
-        "DATABASE_URL=postgresql+psycopg://agentnest_app:app_pw@postgres:5432/agentnest\n"
+        "DATABASE_URL=postgresql+psycopg://pivoris_app:app_pw@postgres:5432/pivoris\n"
         f"{mig_line}"
         "LLM_PROVIDER=openai\n"
         "OPENAI_API_KEY=sk-test-key\n"
@@ -127,11 +127,11 @@ def test_cli_migration_status_head_only_and_check_config(
     monkeypatch.setenv("COOKIE_SECURE", "true")
     monkeypatch.setenv("SECRET_KEY", "k" * 48)
     monkeypatch.setenv(
-        "DATABASE_URL", "postgresql+psycopg://agentnest_app:app_secret@db.internal:5432/agentnest"
+        "DATABASE_URL", "postgresql+psycopg://pivoris_app:app_secret@db.internal:5432/pivoris"
     )
     monkeypatch.setenv(
         "MIGRATION_DATABASE_URL",
-        "postgresql+psycopg://agentnest_migrator:mig_secret@db.internal:5432/agentnest",
+        "postgresql+psycopg://pivoris_migrator:mig_secret@db.internal:5432/pivoris",
     )
     monkeypatch.setenv("LLM_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-secret")
@@ -158,7 +158,7 @@ def test_cli_migration_status_head_only_and_check_config(
         # Same user for both URLs fails --require-separated-migration-credentials
         monkeypatch.setenv(
             "MIGRATION_DATABASE_URL",
-            "postgresql+psycopg://agentnest_app:other_pw@db.internal:5432/agentnest",
+            "postgresql+psycopg://pivoris_app:other_pw@db.internal:5432/pivoris",
         )
         cli.get_settings.cache_clear()
         rc_same = cli.main(
@@ -277,7 +277,7 @@ def test_orchestrator_deploy_migration_gate_readiness_and_rollback(tmp_path: Pat
     orch = deploy_mod.DeploymentOrchestrator(
         compose_file=compose_file,
         env_file=env_file,
-        project_name="agentnest",
+        project_name="pivoris",
         state_file=state_file,
         lock_file=lock_file,
         runner=fake_runner,

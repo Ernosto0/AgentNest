@@ -22,7 +22,7 @@ Migration `0044` is verified locally. Its three insights tables have forced row-
 | Browser outcomes | Zero axe WCAG A/AA violations, horizontal page overflow, unexpected requests or runtime errors; partial-history phone screenshots visually inspected |
 | Static checks | Frontend lint, typecheck, localization and production build passed. Scoped backend Ruff and mypy passed. `git diff --check` passed. |
 
-The focused backend checks exercise exact counts beyond the former list limits, verified versus queued replies, workspace/role isolation, incomplete 7/28-day history, scheduler transaction ownership, durable interval deduplication, 56-day initial backfill, two-day refresh, actual worker execution, external story IDs, migration head and all 52 registered tenant-table policies. PostgreSQL runs used only the disposable `agentnest_today_test` database on port 55435.
+The focused backend checks exercise exact counts beyond the former list limits, verified versus queued replies, workspace/role isolation, incomplete 7/28-day history, scheduler transaction ownership, durable interval deduplication, 56-day initial backfill, two-day refresh, actual worker execution, external story IDs, migration head and all 52 registered tenant-table policies. PostgreSQL runs used only the disposable `pivoris_today_test` database on port 55435.
 
 Broader backend verification is **not green**. An attempted full offline suite and a broader reporting/jobs selection reported failures and were stopped. Isolated checks confirmed the following outside the six Today findings:
 

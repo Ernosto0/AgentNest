@@ -69,12 +69,12 @@ def test_workspaces_see_and_change_only_their_own_plan_and_ledger(
     db_session.expunge_all()
 
     clear_tenant_context(db_session)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert db_session.scalars(select(WorkspacePlan)).all() == []  # fail closed
         assert db_session.scalars(select(ReplyUsage)).all() == []
 
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert [p.workspace_id for p in db_session.scalars(select(WorkspacePlan))] == [ws_a.id]
         assert [u.workspace_id for u in db_session.scalars(select(ReplyUsage))] == [ws_a.id]
         changed = db_session.execute(
@@ -85,7 +85,7 @@ def test_workspaces_see_and_change_only_their_own_plan_and_ledger(
         assert deleted.rowcount == 0
 
     set_tenant_context(db_session, ws_b.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         (only,) = db_session.scalars(select(WorkspacePlan)).all()
         assert only.workspace_id == ws_b.id and only.used == 1
 
@@ -98,7 +98,7 @@ def test_a_workspace_cannot_write_a_row_for_another(
     ws_b, _ = workspace_with_members(db_session, name="Write B")
     set_tenant_context(db_session, ws_a.id)
     db_session.commit()
-    with as_role(db_session, "agentnest_app"), pytest.raises(DBAPIError), db_session.begin_nested():
+    with as_role(db_session, "pivoris_app"), pytest.raises(DBAPIError), db_session.begin_nested():
         db_session.execute(
             insert(ReplyUsage).values(
                 id=uuid.uuid4(),

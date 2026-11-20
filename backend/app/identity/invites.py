@@ -136,7 +136,7 @@ def create_invite(
 
     if normalized_email and settings:
         workspace = session.get(Workspace, ctx.workspace_id)
-        ws_name = workspace.name if workspace else "AgentNest"
+        ws_name = workspace.name if workspace else "Pivoris"
         ui_locale = workspace.default_locale if workspace else "tr"
         invite_path = f"/invite/{token}"
         invite_url = settings.app_base_url.rstrip("/") + invite_path

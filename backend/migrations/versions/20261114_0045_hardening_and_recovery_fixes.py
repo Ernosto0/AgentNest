@@ -103,16 +103,16 @@ def upgrade() -> None:
             f"""
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_pending_media TO agentnest_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_app') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_pending_media TO pivoris_app;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_pending_media TO agentnest_worker;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_worker') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_pending_media TO pivoris_worker;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_migrator') THEN
-                    GRANT ALL ON TABLE telegram_pending_media TO agentnest_migrator;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_migrator') THEN
+                    GRANT ALL ON TABLE telegram_pending_media TO pivoris_migrator;
                 END IF;
             END $$;
             """

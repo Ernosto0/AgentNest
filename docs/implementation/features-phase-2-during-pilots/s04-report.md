@@ -28,7 +28,7 @@
 Added: `backend/app/inbox/stories.py`, `backend/app/ai/prompts/draft_reply/v3.md`, `backend/migrations/versions/20261116_0052_story_mention_thank_you.py`, `backend/evals/draft_reply/stories.yaml`, `backend/tests/integration/inbox/test_story_context.py` (33 tests), `backend/tests/unit/inbox/test_stories.py`, `frontend/src/features/inbox/StoryNote.tsx`.
 Changed: backend `ai/schemas.py`, `ai/tasks/draft_reply.py`, `demo/scripts/customer_messages.yaml`, `inbox/{answers,context,drafting,router,schemas,views}.py`, `integrations/instagram/webhook_format.py`, `knowledge/{approved_answers,constants}.py`, `policy/{classes,schemas}.py`, `evals/{loader,runner}.py`; tests `test_simulator.py`, `test_automation_policies.py`, `test_eval_harness.py`, `test_reply_rules.py`; frontend `openapi.json`, `api/schema.d.ts`, `ConversationPage.tsx`, `inbox/hooks.ts`, `ApprovedAnswers.tsx`, two test files, two `inbox.json` locale files; the docs listed above. `backend/pyproject.toml` D-01 line kept.
 
-## Tests (all run from `backend/` with the required env vars; DBs `agentnest_p2s04[_a|_b]_test`)
+## Tests (all run from `backend/` with the required env vars; DBs `pivoris_p2s04[_a|_b]_test`)
 
 - `tests/integration/inbox/test_story_context.py`: 33 passed. `test_simulator.py` (with `DEMO_TOOLS_ENABLED=true`, needed for dev routes): 36 passed.
 - `tests/unit tests/isolation tests/security tests/contract` (shard `_a`): 2020 passed, 13 skipped, 3 failed. The 2 isolation failures need `DEMO_TOOLS_ENABLED=true`; rerun with it: pass (with `test_simulator_published.py`, 16 passed). `tests/security/test_invite_secrets.py` failed in the shard but passes alone (2 passed); not investigated further, unrelated to this work (likely shared-state flake).

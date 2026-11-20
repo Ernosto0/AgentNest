@@ -6,9 +6,9 @@ database:
   1. Refuses to overwrite a non-empty target database unless ``--allow-overwrite-disposable``
      is set.
   2. Verifies archive/manifest SHA-256 and decrypts using ``BACKUP_ENCRYPTION_KEY``.
-  3. Provisions ``agentnest_migrator`` / ``agentnest_app`` / ``agentnest_worker`` roles when
+  3. Provisions ``pivoris_migrator`` / ``pivoris_app`` / ``pivoris_worker`` roles when
      requested and runs
-     ``pg_restore --clean --if-exists --no-owner --no-privileges --role=agentnest_migrator``.
+     ``pg_restore --clean --if-exists --no-owner --no-privileges --role=pivoris_migrator``.
   4. Verifies restored Alembic revision against ``migration_head()``, public table count, and
      least-privilege role separation (including ``REVOKE UPDATE, DELETE`` on ``audit_logs`` and
      ``fact_versions``).
@@ -107,7 +107,7 @@ def ensure_target_database(
     libpq_url = normalize_libpq_url(target_database_url)
     parsed = urllib.parse.urlsplit(libpq_url)
     target_db = _validate_identifier(
-        (parsed.path or "/agentnest").lstrip("/") or "agentnest",
+        (parsed.path or "/pivoris").lstrip("/") or "pivoris",
         "database name",
     )
 
@@ -157,7 +157,7 @@ def ensure_migrator_role_exists(target_database_url: str, migrator_role: str) ->
                 f'CREATE ROLE "{safe_role}" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS'
             )
         cur.execute("SELECT current_user, current_database()")
-        current_user, current_db = cur.fetchone() or ("postgres", "agentnest")
+        current_user, current_db = cur.fetchone() or ("postgres", "pivoris")
         safe_user = _validate_identifier(str(current_user), "current user")
         safe_db = _validate_identifier(str(current_db), "current database")
         if safe_user != safe_role:
@@ -170,7 +170,7 @@ def run_pg_restore_custom(
     target_database_url: str,
     plaintext_dump: bytes,
     *,
-    migrator_role: str = "agentnest_migrator",
+    migrator_role: str = "pivoris_migrator",
     pg_restore_bin: str = "pg_restore",
     postgres_container: str | None = None,
     clean_existing: bool = False,
@@ -183,7 +183,7 @@ def run_pg_restore_custom(
     password = urllib.parse.unquote(parsed.password or "")
     host = parsed.hostname or "localhost"
     port = str(parsed.port or 5432)
-    dbname = (parsed.path or "/agentnest").lstrip("/") or "agentnest"
+    dbname = (parsed.path or "/pivoris").lstrip("/") or "pivoris"
 
     restore_flags = [
         "--no-owner",
@@ -281,8 +281,8 @@ def execute_restore(
     allow_overwrite_disposable: bool = False,
     postgres_container: str | None = None,
     pg_restore_bin: str = "pg_restore",
-    migrator_role: str = "agentnest_migrator",
-    runtime_roles: Sequence[str] = ("agentnest_app", "agentnest_worker"),
+    migrator_role: str = "pivoris_migrator",
+    runtime_roles: Sequence[str] = ("pivoris_app", "pivoris_worker"),
     provision_roles: bool = True,
     app_role_password: str | None = None,
     worker_role_password: str | None = None,
@@ -403,7 +403,7 @@ def execute_restore(
                     f"Restored database has unexpectedly few public tables ({table_count})."
                 )
 
-            app_role = runtime_roles[0] if runtime_roles else "agentnest_app"
+            app_role = runtime_roles[0] if runtime_roles else "pivoris_app"
             worker_role = runtime_roles[1] if len(runtime_roles) > 1 else app_role
             if provision_roles:
                 provision_database_roles(
@@ -467,7 +467,7 @@ def execute_restore(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python scripts/restore.py",
-        description="Restore an encrypted AgentNest PostgreSQL backup into an isolated database.",
+        description="Restore an encrypted Pivoris PostgreSQL backup into an isolated database.",
     )
     parser.add_argument("--archive", default="", help="Path to local .dump.enc backup archive")
     parser.add_argument("--manifest", default="", help="Optional path to .manifest.json")
@@ -501,8 +501,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional Docker container name for pg_restore when pg_restore is not on host PATH",
     )
     parser.add_argument("--pg-restore-bin", default="pg_restore")
-    parser.add_argument("--migrator-role", default="agentnest_migrator")
-    parser.add_argument("--runtime-roles", default="agentnest_app,agentnest_worker")
+    parser.add_argument("--migrator-role", default="pivoris_migrator")
+    parser.add_argument("--runtime-roles", default="pivoris_app,pivoris_worker")
     parser.add_argument(
         "--no-provision-roles",
         action="store_true",

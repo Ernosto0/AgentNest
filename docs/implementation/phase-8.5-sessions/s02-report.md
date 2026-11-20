@@ -35,7 +35,7 @@ setup, reset data, or contact Meta/model/email/waitlist/storage services.
 - `Dockerfile`: frontend builder now copies `frontend/public` so packaged font
   notices accompany the bundled font distribution. No other packaging change.
 - Existing `components/icons.tsx` already uses one local 24px/stroke2 family with
-  hidden decorative SVGs. Retained those paths and the AgentNest wordmark, as
+  hidden decorative SVGs. Retained those paths and the Pivoris wordmark, as
   decided in01; no unapproved graphical mark or external imagery was introduced.
 - `frontend/src/dev/DesignReference.tsx`, `src/main.tsx`: a documented DEV-only
   `/?ui-reference=1&lang=tr|en` view supplies headings, data, metadata, Turkish

@@ -9,7 +9,7 @@
 
 ## Context and Problem Statement
 
-Phase 8 hardens AgentNest for multi-tenant production operations (`docs/implementation/phases/phase-08-hardening.md`). Following Phase 7.5, the schema contains **58 application tables** across 18 model modules (plus `alembic_version`, **59 database tables total**), including the Phase 7.5 account-agent, customer-memory, owner-request, and public-comment tables introduced in migrations `0021`–`0030`.
+Phase 8 hardens Pivoris for multi-tenant production operations (`docs/implementation/phases/phase-08-hardening.md`). Following Phase 7.5, the schema contains **58 application tables** across 18 model modules (plus `alembic_version`, **59 database tables total**), including the Phase 7.5 account-agent, customer-memory, owner-request, and public-comment tables introduced in migrations `0021`–`0030`.
 
 Before implementing Sessions 02–16, five cross-cutting architectural contracts must be settled explicitly so later sessions do not invent ad-hoc bypasses or break invariants (`INV-01` through `INV-20`):
 
@@ -31,12 +31,12 @@ Production and test PostgreSQL environments separate schema migration authority 
 
 | Role | Privileges | Purpose |
 |---|---|---|
-| `agentnest_migrator` | Schema/table owner; DDL authority; used by Alembic (`alembic upgrade head`) | Creates/alters tables, indexes, RLS policies, and tightly scoped `SECURITY DEFINER` bootstrap functions. |
-| `agentnest_app` | `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`; DML (`SELECT, INSERT, UPDATE, DELETE`) on application tables except append-only restrictions | Default runtime role for FastAPI (`DATABASE_URL`). Subject to all RLS policies. |
-| `agentnest_worker` | `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS` (or shares `agentnest_app` role with identical RLS enforcement) | Runtime role for background worker. Must never rely on `BYPASSRLS`; uses explicit transaction-scoped GUC binding (`SET LOCAL app.workspace_id = '<uuid>'`) or audited `SECURITY DEFINER` bootstrap helpers. |
+| `pivoris_migrator` | Schema/table owner; DDL authority; used by Alembic (`alembic upgrade head`) | Creates/alters tables, indexes, RLS policies, and tightly scoped `SECURITY DEFINER` bootstrap functions. |
+| `pivoris_app` | `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`; DML (`SELECT, INSERT, UPDATE, DELETE`) on application tables except append-only restrictions | Default runtime role for FastAPI (`DATABASE_URL`). Subject to all RLS policies. |
+| `pivoris_worker` | `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS` (or shares `pivoris_app` role with identical RLS enforcement) | Runtime role for background worker. Must never rely on `BYPASSRLS`; uses explicit transaction-scoped GUC binding (`SET LOCAL app.workspace_id = '<uuid>'`) or audited `SECURITY DEFINER` bootstrap helpers. |
 
 **Append-only table privilege restriction (`INV-06`, `INV-07`, `ADR-022`):**
-- On `audit_logs` and `fact_versions`, `REVOKE UPDATE, DELETE` is enforced for `agentnest_app` and `agentnest_worker`. Only `SELECT` and `INSERT` are granted at runtime.
+- On `audit_logs` and `fact_versions`, `REVOKE UPDATE, DELETE` is enforced for `pivoris_app` and `pivoris_worker`. Only `SELECT` and `INSERT` are granted at runtime.
 
 #### 1.2 Tenant Context GUC and Session Lifecycle
 
@@ -52,7 +52,7 @@ Production and test PostgreSQL environments separate schema migration authority 
 All 58 SQLAlchemy-mapped tables (plus `alembic_version`) are classified into three RLS categories:
 
 1. **Category A — Global / Identity Root Tables (4 tables; no `workspace_id`, no tenant RLS):**
-   - `alembic_version` (read-only to runtime for `/readyz`; owned by `agentnest_migrator`)
+   - `alembic_version` (read-only to runtime for `/readyz`; owned by `pivoris_migrator`)
    - `users` (`identity/models.py`)
    - `sessions` (`identity/models.py` — `AuthSession`)
    - `workspaces` (`identity/models.py` — tenant root table; `id` is the workspace UUID)
@@ -83,7 +83,7 @@ All 58 SQLAlchemy-mapped tables (plus `alembic_version`) are classified into thr
 
 Where an operation legitimately needs to resolve `workspace_id` or discover due work across workspaces before `app.workspace_id` is known, it must use one of two explicit, auditable mechanisms:
 
-1. **Narrow `SECURITY DEFINER` SQL lookup functions (owned by `agentnest_migrator`, `search_path = public, pg_temp`, granted `EXECUTE` to runtime roles):**
+1. **Narrow `SECURITY DEFINER` SQL lookup functions (owned by `pivoris_migrator`, `search_path = public, pg_temp`, granted `EXECUTE` to runtime roles):**
    - **Webhook account resolution:** `resolve_social_account_by_external(p_provider_kind text, p_external_account_id text)` returns only `(id, workspace_id, status)` from `social_accounts`. The webhook router/ingestor then binds `SET LOCAL app.workspace_id` for that workspace before touching any tenant rows.
    - **Invite & OAuth state resolution:** Either `invites` / `oauth_states` use a `SECURITY DEFINER` lookup by `token_hash` / `state_hash` returning `workspace_id`, or a dual RLS policy permitting `workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid` alongside hash-bound lookup. Using narrow `SECURITY DEFINER` functions keeps table RLS policies strictly keyed on `app.workspace_id`.
    - **Periodic job discovery sweeps:** Global periodic jobs (`workspace_id IS NULL`) that scan across workspaces (`refresh_tokens`, `enqueue_health_checks`, `reconcile_stuck_operations`, `agent_recover`, `expire_approvals`, `expire_reply_drafts`, `expire_commands`, `sweep_agent_runs`, `retention_cleanup`, `media_cleanup`) either:

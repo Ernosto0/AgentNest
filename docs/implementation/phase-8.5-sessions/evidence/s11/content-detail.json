@@ -5,7 +5,7 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-tr-phone.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-tr-phone.png"
   },
   {
     "engine": "chromium",
@@ -13,7 +13,7 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-en-phone.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-en-phone.png"
   },
   {
     "engine": "chromium",
@@ -21,7 +21,7 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-tr-tablet.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-tr-tablet.png"
   },
   {
     "engine": "chromium",
@@ -29,7 +29,7 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-en-desktop.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/chromium-en-desktop.png"
   },
   {
     "engine": "webkit",
@@ -37,7 +37,7 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-tr-phone.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-tr-phone.png"
   },
   {
     "engine": "webkit",
@@ -45,7 +45,7 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-en-phone.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-en-phone.png"
   },
   {
     "engine": "webkit",
@@ -53,7 +53,7 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-tr-tablet.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-tr-tablet.png"
   },
   {
     "engine": "webkit",
@@ -61,6 +61,6 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-en-desktop.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s11\\/webkit-en-desktop.png"
   }
 ]

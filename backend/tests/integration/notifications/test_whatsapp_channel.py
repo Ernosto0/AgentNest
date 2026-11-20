@@ -307,7 +307,7 @@ def test_outside_the_window_an_approved_template_is_sent(
     (request,) = cloud.requests
     template = templates.BY_TYPE["approval.requested"]
     assert request["type"] == "template"
-    assert request["template"]["name"] == template.name == "agentnest_approval_requested_v1"
+    assert request["template"]["name"] == template.name == "pivoris_approval_requested_v1"
     assert request["template"]["language"] == {"code": env.owner.user.ui_locale[:2]}
     assert "components" not in request["template"]  # no variables
     (delivery,) = deliveries(env)
@@ -405,7 +405,7 @@ def test_the_daily_summary_carries_the_date_and_three_counts(
     work(env, factory)
     (request,) = cloud.requests
     assert request["type"] == "template"
-    assert request["template"]["name"] == "agentnest_daily_summary_v1"
+    assert request["template"]["name"] == "pivoris_daily_summary_v1"
     values = [p["text"] for p in request["template"]["components"][0]["parameters"]]
     expected = ["18.11.2026", "12", "5", "2"]
     if env.owner.user.ui_locale != "tr":

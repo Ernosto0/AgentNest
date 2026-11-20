@@ -7,7 +7,7 @@
 
 ## 1. Product outcome
 
-AgentNest becomes a conversational representative that operates a business's supported Instagram capabilities. It understands the conversation, asks useful questions, remembers relevant context, speaks in the business's tone, chooses tools, performs delegated actions and resumes work after receiving information or approval.
+Pivoris becomes a conversational representative that operates a business's supported Instagram capabilities. It understands the conversation, asks useful questions, remembers relevant context, speaks in the business's tone, chooses tools, performs delegated actions and resumes work after receiving information or approval.
 
 The owner configures goals and authority, then supervises exceptions. Opening hours, prices and services are knowledge, not a fixed list of situations in which the agent is allowed to converse. Setting the existing topic dropdowns to automatic, adding a longer prompt, or relabelling the current draft workflow does not meet this phase.
 

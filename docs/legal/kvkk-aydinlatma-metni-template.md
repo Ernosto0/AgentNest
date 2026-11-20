@@ -1,7 +1,7 @@
 # KVKK Müşteri Aydınlatma Metni Şablonu (İşletmeler İçin)
 
 - **Doküman Kodu:** `KVKK-INFO-TEMPLATE-TR`
-- **Hedef Kitle:** AgentNest platformunu kullanan işletmeler (Veri Sorumluları: pilates stüdyoları, klinikler, güzellik salonları, butik işletmeler vb.)
+- **Hedef Kitle:** Pivoris platformunu kullanan işletmeler (Veri Sorumluları: pilates stüdyoları, klinikler, güzellik salonları, butik işletmeler vb.)
 - **Amaç:** İşletmelerin Instagram hesabı üzerinden DM veya yorum yoluyla iletişime geçen müşterilerine sunacağı 6698 sayılı KVKK 10. madde uyumlu aydınlatma metni şablonu.
 - **Hukuki Statü:** `PENDING_COUNSEL_REVIEW` (Pilot işletmeler tarafından kendi unvan ve iletişim bilgileri girilerek ve avukatları tarafından onaylanarak kullanılmalıdır).
 
@@ -66,7 +66,7 @@ Toplanan kişisel verileriniz aşağıdaki amaçlarla sınırlı, bağlantılı 
 
 > [!NOTE]
 > **Otomasyon Açıklaması:**
-> İşletmemiz, sizlere mesai saatleri dışında da hızlı yanıt verebilmek ve hizmet saatleri, adres, standart fiyatlar gibi sıkça sorulan sorularınızı gecikmeksizin cevaplayabilmek amacıyla **AgentNest** yapay zekâ destekli mesajlaşma otomasyon altyapısını kullanmaktadır.
+> İşletmemiz, sizlere mesai saatleri dışında da hızlı yanıt verebilmek ve hizmet saatleri, adres, standart fiyatlar gibi sıkça sorulan sorularınızı gecikmeksizin cevaplayabilmek amacıyla **Pivoris** yapay zekâ destekli mesajlaşma otomasyon altyapısını kullanmaktadır.
 > 
 > - Standart bilgi talepleriniz (çalışma saatleri, adres, genel fiyatlar), yapay zekâ asistanı tarafından sistemde kayıtlı doğrulanmış işletme bilgilerimiz temel alınarak otomatik olarak veya işletme yetkilimizin onayı ile yanıtlanabilir.
 > - Otomatik olarak gönderilen yanıtların sonunda `" — Otomatik yanıt"` veya benzeri bir bilgilendirme ibaresi yer alır.
@@ -91,7 +91,7 @@ Bu veriler, KVKK'nın 5. maddesinin 2. fıkrasında belirtilen aşağıdaki huku
 
 Kişisel verileriniz, yukarıda belirtilen amaçların gerçekleştirilmesi doğrultusunda:
 
-1. **Altyapı ve Yazılım Sağlayıcıları (Veri İşleyenler):** Mesajlaşma altyapısı, veritabanı barındırma ve otomasyon hizmeti aldığımız AgentNest platform sağlayıcısına;
+1. **Altyapı ve Yazılım Sağlayıcıları (Veri İşleyenler):** Mesajlaşma altyapısı, veritabanı barındırma ve otomasyon hizmeti aldığımız Pivoris platform sağlayıcısına;
 2. **Sosyal Medya Platformu:** Doğrudan mesajlaşma kanalını sağlayan Meta Platforms (Instagram) altyapısına;
 3. **Yetkili Kamu Kurum ve Kuruluşları:** Yasal bir zorunluluk veya adli süreç halinde yetkili kamu kurum ve mercilerine,
 

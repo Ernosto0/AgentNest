@@ -10,7 +10,7 @@ P9-04 / ADR-012 / ADR-014 / INV-16:
 - Enforces decision check constraint ('approved', 'rejected').
 - Enables and forces PostgreSQL Row-Level Security (RLS) with tenant isolation.
 - Adds resolve_action_token_by_hash SECURITY DEFINER helper function for webhook ingress.
-- Grants runtime privileges to agentnest_app, agentnest_worker, and agentnest_migrator.
+- Grants runtime privileges to pivoris_app, pivoris_worker, and pivoris_migrator.
 """
 
 from collections.abc import Sequence
@@ -161,16 +161,16 @@ def upgrade() -> None:
             f"""
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE action_tokens TO agentnest_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_app') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE action_tokens TO pivoris_app;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE action_tokens TO agentnest_worker;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_worker') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE action_tokens TO pivoris_worker;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_migrator') THEN
-                    GRANT ALL ON TABLE action_tokens TO agentnest_migrator;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_migrator') THEN
+                    GRANT ALL ON TABLE action_tokens TO pivoris_migrator;
                 END IF;
             END $$;
             """

@@ -21,8 +21,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # Development-only placeholders. Production refuses the example secret key.
 EXAMPLE_SECRET_KEY = "dev-only-change-me-dev-only-change-me"  # noqa: S105
-DEFAULT_DATABASE_URL = "postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest"
-DEFAULT_TEST_DATABASE_URL = "postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest_test"
+DEFAULT_DATABASE_URL = "postgresql+psycopg://pivoris:pivoris@localhost:5433/pivoris"
+DEFAULT_TEST_DATABASE_URL = "postgresql+psycopg://pivoris:pivoris@localhost:5433/pivoris_test"
 MIN_SECRET_KEY_BYTES = 32
 
 # Never included in ``Settings.public_dict()`` (logs, /meta, diagnostics).
@@ -91,7 +91,7 @@ class Settings(BaseSettings):
     # their cross-origin requests (no cookies); empty disables it. Example: https://landing.example
     landing_origins: str = ""
     app_base_url: str = "http://localhost:8000"
-    product_name: str = "AgentNest"
+    product_name: str = "Pivoris"
     cookie_secure: bool = False
     signup_enabled: bool = False
     email_outbox_dir: str = ""  # Optional local capture, ignored in production and with SMTP.

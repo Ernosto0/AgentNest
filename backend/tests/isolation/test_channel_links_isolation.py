@@ -134,7 +134,7 @@ def test_channel_links_rls_isolation_between_workspaces(db_session: Session) -> 
     bind = db_session.get_bind()
     if bind.dialect.name == "postgresql":
         # Under runtime application role:
-        with as_role(db_session, "agentnest_app"):
+        with as_role(db_session, "pivoris_app"):
             # 1. Without setting app.workspace_id, tenant queries return 0 rows under RLS
             clear_tenant_context(db_session)
             db_session.expunge_all()
@@ -196,7 +196,7 @@ def test_channel_link_codes_tenant_scoping(db_session: Session) -> None:
 
     bind = db_session.get_bind()
     if bind.dialect.name == "postgresql":
-        with as_role(db_session, "agentnest_app"):
+        with as_role(db_session, "pivoris_app"):
             # With A's tenant set:
             set_tenant_context(db_session, ws_a.id)
             visible_codes_a = db_session.scalars(select(ChannelLinkCode)).all()

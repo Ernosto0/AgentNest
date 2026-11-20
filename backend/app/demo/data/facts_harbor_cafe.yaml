@@ -1,5 +1,5 @@
 # Fictional demo facts for "Harbor Café & Bakery" (English, EUR, Europe/Lisbon, ADR-023).
-# Demonstrates AgentNest for food & beverage businesses.
+# Demonstrates Pivoris for food & beverage businesses.
 facts:
   - key: identity.business_name
     value: {text: Harbor Café & Bakery}

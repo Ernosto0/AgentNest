@@ -1,6 +1,6 @@
 """Owner channel linking service (ADR-012, Phase 9 Session 01 / P9-01).
 
-Manages identity linking between AgentNest users/workspaces and external messaging channels
+Manages identity linking between Pivoris users/workspaces and external messaging channels
 (such as Telegram). Generates single-use 15-minute alphanumeric codes and binds external
 channel user IDs to workspace memberships.
 """

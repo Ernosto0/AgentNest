@@ -13,7 +13,7 @@
 | Artifact / File | Status | Implementation Summary |
 |---|---|---|
 | `backend/app/integrations/channels/telegram/models.py` | **Created** | Created `TelegramUpdate` global database model tracking `update_id` (BigInteger PK), `received_at` (timestamptz), `status` ('processed', 'ignored', 'failed'), `channel_user_id`, and `error`. Deduplication occurs at ingress before tenant context resolution (INV-06). |
-| `backend/migrations/versions/20261104_0040_telegram_updates.py` | **Created** | Alembic revision 0040: creates `telegram_updates` global table, primary key on `update_id`, status check constraint, indexes on `received_at` and `channel_user_id`; grants permissions to `agentnest_app` and `agentnest_worker`. Verified bidirectional upgrade and rollback. |
+| `backend/migrations/versions/20261104_0040_telegram_updates.py` | **Created** | Alembic revision 0040: creates `telegram_updates` global table, primary key on `update_id`, status check constraint, indexes on `received_at` and `channel_user_id`; grants permissions to `pivoris_app` and `pivoris_worker`. Verified bidirectional upgrade and rollback. |
 | `backend/app/integrations/channels/telegram/webhook_format.py` | **Created** | Implemented Pydantic models with `ConfigDict(populate_by_name=True, extra="ignore")` for Telegram Bot API objects: `TelegramUser`, `TelegramChat`, `PhotoSize`, `TelegramMessage`, `CallbackQuery`, and `Update` (with friendly aliases `User`, `Chat`, `Message`). |
 | `backend/app/integrations/channels/telegram/client.py` | **Created** | Created `TelegramClient` (sync) and `AsyncTelegramClient` (async) HTTP client wrappers for the Telegram Bot API (`sendMessage`, `sendPhoto`, `answerCallbackQuery`, `editMessageText`, `editMessageReplyMarkup`, `getFile`, `downloadFile`, `getUpdates`). Configured with 15s timeout, no automatic retry on 4xx, structured `TelegramApiError` mapping, and `httpx.BaseTransport` test injection. |
 | `backend/app/integrations/channels/telegram/adapter.py` | **Created** | Implemented `TelegramChannel` conforming to `OwnerChannel` Protocol (ADR-012 §5.1): implements `deliver_notification` (retrieving notification, formatting HTML message with severity indicators, sending via bot API, returning `DeliveryResult`) and `render_command_result`. |
@@ -65,7 +65,7 @@
 - **INV-01 / Global Table Boundary:** `telegram_updates` is an explicit global table (without `workspace_id` or RLS) because deduplication happens at ingress before tenant identity resolution.
 - **INV-03 (Command System Boundary):** Telegram adapter and dispatcher components do not import `app.commands`, preserving import-linter contract 19/19 intact.
 - **INV-06 (Idempotent Delivery & Deduplication):** Both the webhook endpoint and long-polling runner check incoming `update_id` against `telegram_updates`. Replay of the same `update_id` immediately exits with 200 `{"status": "duplicate"}` and causes no duplicate downstream actions.
-- **INV-12 (Least Privilege Database Roles):** Table permissions on `telegram_updates` were granted explicitly to `agentnest_app` and `agentnest_worker`.
+- **INV-12 (Least Privilege Database Roles):** Table permissions on `telegram_updates` were granted explicitly to `pivoris_app` and `pivoris_worker`.
 - **Secret Token Validation:** The webhook router checks `X-Telegram-Bot-Api-Secret-Token` using `hmac.compare_digest` against `settings.telegram_webhook_secret`. Missing or mismatched headers return 401 without executing any database transactions or dispatcher logic.
 
 ---

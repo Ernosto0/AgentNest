@@ -105,7 +105,7 @@ for (const browserType of [chromium, webkit]) {
     });
 
     await context.addInitScript((loc) => {
-      window.localStorage.setItem("agentnest.locale", loc);
+      window.localStorage.setItem("pivoris.locale", loc);
     }, scenario.locale);
 
     const page = await context.newPage();
@@ -119,7 +119,7 @@ for (const browserType of [chromium, webkit]) {
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({
-            product_name: "AgentNest",
+            product_name: "Pivoris",
             demo_tools_enabled: true,
             llm_mode: "fake",
             supported_locales: ["tr", "en"],

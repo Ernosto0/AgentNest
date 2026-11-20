@@ -9,13 +9,13 @@
 
 ## 1. Executive Summary
 
-This comprehensive security review verifies the production hardening of the AgentNest platform prior to production deployment and the first business pilot. The review walks the canonical threat model (threats **T1 through T22** defined in `security-and-privacy.md`) along with the five Phase 7.5 and Phase 8 additions (**T23 through T27**).
+This comprehensive security review verifies the production hardening of the Pivoris platform prior to production deployment and the first business pilot. The review walks the canonical threat model (threats **T1 through T22** defined in `security-and-privacy.md`) along with the five Phase 7.5 and Phase 8 additions (**T23 through T27**).
 
 Automated verification was performed using the newly implemented administrative scanner `scripts/security_scan.py`, software composition analysis (`uv run pip-audit` and `npm audit`), static security analysis (`ruff`, `mypy`, `lint-imports`), and authenticated route/permission inspections.
 
 **Key Findings:**
 1. **Zero High/Critical Vulnerabilities:** Both Python and JavaScript dependencies report `0 vulnerabilities` (`pip-audit` clean; `npm audit` clean following the `minimatch ^11.0.4` override).
-2. **PostgreSQL Multi-Tenancy (RLS):** All 49 Category C tenant tables have database-level `FORCE ROW LEVEL SECURITY` keyed to `current_setting('app.workspace_id')` under non-bypass runtime roles (`agentnest_app`, `agentnest_worker`).
+2. **PostgreSQL Multi-Tenancy (RLS):** All 49 Category C tenant tables have database-level `FORCE ROW LEVEL SECURITY` keyed to `current_setting('app.workspace_id')` under non-bypass runtime roles (`pivoris_app`, `pivoris_worker`).
 3. **Authentication Hardening:** Argon2id password hashing, per-IP and per-email exponential backoff throttling, sliding 14-day sessions with HttpOnly/Secure/SameSite=Lax cookies, and mandatory session revocation upon password change/reset.
 4. **Data Rights & Fencing:** 7-day cancellable workspace deletion grace period, durable backup-restore tombstones (`deletion_tombstones`), and HMAC-SHA256 verification of Meta deauthorization and data-deletion callbacks.
 5. **Agent Broker & Public/Private Separation:** Closed schema broker architecture preventing prompt injection from executing unauthorized tools; strict separation of public Instagram comments from private facts and DMs.
@@ -60,9 +60,9 @@ Automated verification was performed using the newly implemented administrative 
 
 ### 3.1 Database Roles & Row-Level Security (RLS)
 - **Role Separation:**
-  - `agentnest_migrator`: Owns schemas, runs Alembic migrations (`alembic upgrade head`), configures RLS policies, and defines narrow `SECURITY DEFINER` bootstrap functions.
-  - `agentnest_app`: Runtime application role with `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`. Subject to all RLS policies.
-  - `agentnest_worker`: Background worker role with identical least-privilege non-bypass constraints.
+  - `pivoris_migrator`: Owns schemas, runs Alembic migrations (`alembic upgrade head`), configures RLS policies, and defines narrow `SECURITY DEFINER` bootstrap functions.
+  - `pivoris_app`: Runtime application role with `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`. Subject to all RLS policies.
+  - `pivoris_worker`: Background worker role with identical least-privilege non-bypass constraints.
 - **Tenant Isolation:**
   - 49 Category C tenant tables have `ALTER TABLE ... FORCE ROW LEVEL SECURITY` and `CREATE POLICY ... USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)`.
   - Transaction-scoped GUC binding (`SET LOCAL app.workspace_id = '<uuid>'`) binds tenant context strictly for the duration of the transaction.
@@ -120,7 +120,7 @@ The automated security scan was executed against the platform codebase and simul
 
 ```
 =================================================================
-      AgentNest Automated Security Audit & Vulnerability Scan     
+      Pivoris Automated Security Audit & Vulnerability Scan     
 =================================================================
 Scan completed at: 2026-11-03T20:07:44.001562+00:00
 Total checks:      12
@@ -164,7 +164,7 @@ The following accepted residual risks and external legal dependencies are carrie
 
 ## 6. Conclusion
 
-Phase 8 Session 15 has successfully validated all security controls across the AgentNest application stack. The platform exhibits zero unmitigated high or critical vulnerabilities, implements transaction-scoped database multi-tenancy, enforces strict authentication and CSRF boundaries, safeguards third-party API tokens, and protects customer privacy in compliance with KVKK and GDPR engineering standards.
+Phase 8 Session 15 has successfully validated all security controls across the Pivoris application stack. The platform exhibits zero unmitigated high or critical vulnerabilities, implements transaction-scoped database multi-tenancy, enforces strict authentication and CSRF boundaries, safeguards third-party API tokens, and protects customer privacy in compliance with KVKK and GDPR engineering standards.
 
 The application is cleared to proceed to **Session 16: App Review Preparation, Production Acceptance, and Pilot Close-Out**.
 

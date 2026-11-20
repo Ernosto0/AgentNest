@@ -1,23 +1,23 @@
-# AgentNest Product Privacy Policy / Gizlilik Politikası
+# Pivoris Product Privacy Policy / Gizlilik Politikası
 
 - **Document Version:** 1.0.0 (Provisional Draft for Legal Counsel Review)
 - **Effective Date:** November 3, 2026
 - **Review Status:** `PENDING_COUNSEL_REVIEW` (Tracking under `OQ-04`, `OQ-12`, `OQ-13`; Gate 3 Pre-condition)
 - **Languages:** English (primary legal draft) & Türkçe (özet bilgilendirme)
-- **Scope:** AgentNest Platform (Web application, API, background workers, and automated business integrations)
+- **Scope:** Pivoris Platform (Web application, API, background workers, and automated business integrations)
 
 ---
 
 ## 1. Introduction & Overview
 
-AgentNest ("we", "our", "us", or the "Platform") provides AI-assisted Instagram messaging and content management software for business workspaces (such as wellness studios, clinics, salons, and local service providers).
+Pivoris ("we", "our", "us", or the "Platform") provides AI-assisted Instagram messaging and content management software for business workspaces (such as wellness studios, clinics, salons, and local service providers).
 
-This Privacy Policy explains how personal data is collected, used, processed, stored, and protected when business owners and their team members ("Users") access the AgentNest platform, and how personal data of third-party customers who interact with businesses via Instagram Direct Messages ("End-Customers") is handled.
+This Privacy Policy explains how personal data is collected, used, processed, stored, and protected when business owners and their team members ("Users") access the Pivoris platform, and how personal data of third-party customers who interact with businesses via Instagram Direct Messages ("End-Customers") is handled.
 
 > [!IMPORTANT]
 > **Data Protection Roles & Responsibilities:**
-> - **Platform Users & Accounts:** AgentNest acts as a **Data Controller** (Veri Sorumlusu) for personal data relating to registered platform users (e.g., account credentials, subscription information, and operator audit logs).
-> - **End-Customer Instagram Communications:** The tenant business (Workspace Owner) is the **Data Controller** for all customer messages, inquiries, and customer profile identifiers received through Instagram. AgentNest acts strictly as a **Data Processor** (Veri İşleyen) providing automated drafting, scheduling, and message storage services on behalf of the business under the Data Processing Agreement (DPA).
+> - **Platform Users & Accounts:** Pivoris acts as a **Data Controller** (Veri Sorumlusu) for personal data relating to registered platform users (e.g., account credentials, subscription information, and operator audit logs).
+> - **End-Customer Instagram Communications:** The tenant business (Workspace Owner) is the **Data Controller** for all customer messages, inquiries, and customer profile identifiers received through Instagram. Pivoris acts strictly as a **Data Processor** (Veri İşleyen) providing automated drafting, scheduling, and message storage services on behalf of the business under the Data Processing Agreement (DPA).
 > - **Meta Platforms:** Meta Platforms Ireland Ltd. / Meta Platforms, Inc. acts as an independent data controller regarding Instagram platform services.
 
 ---
@@ -57,15 +57,15 @@ We process personal data only in accordance with applicable data protection laws
 
 1. **No Model Training on Customer Data:** Customer message text, customer identifiers, and private business facts processed through the OpenAI API are **never used to train base artificial intelligence models**. Processing utilizes commercial API endpoints governed by Enterprise Zero Data Retention (ZDR) and strict confidentiality terms (`INV-09`).
 2. **Deterministic Guardrails & Closed Schemas:** The AI layer produces structured, closed-schema outputs (drafts, detected categories, and usable fact placeholders). The language model cannot execute arbitrary side-effects or dispatch communications without passing through policy validators and owner-configured approval gates.
-3. **Voice Notes:** When a customer sends an Instagram voice note, AgentNest downloads it for the duration of one background job and sends the audio, and nothing else (no handle, name or conversation), to the speech-to-text service of its AI sub-processor (OpenAI; see the [Sub-Processor Register](sub-processor-register.md)) to obtain a text transcript. The audio is not stored by AgentNest. The transcript is shown to the business owner labelled as an automatic transcript, is treated as untrusted customer content, and any reply drafted from it requires the owner's approval. A business can switch voice transcription off (`TRANSCRIPTION_PROVIDER=off`), in which case no audio is downloaded or sent.
+3. **Voice Notes:** When a customer sends an Instagram voice note, Pivoris downloads it for the duration of one background job and sends the audio, and nothing else (no handle, name or conversation), to the speech-to-text service of its AI sub-processor (OpenAI; see the [Sub-Processor Register](sub-processor-register.md)) to obtain a text transcript. The audio is not stored by Pivoris. The transcript is shown to the business owner labelled as an automatic transcript, is treated as untrusted customer content, and any reply drafted from it requires the owner's approval. A business can switch voice transcription off (`TRANSCRIPTION_PROVIDER=off`), in which case no audio is downloaded or sent.
 3a. **Automated Reply Disclosure:** By default, responses dispatched autonomously without manual approval append a disclosure suffix (e.g., `" — Otomatik yanıt"` / `" — Automated reply"`) to ensure transparent communication with consumers (`OQ-13`).
-3b. **Photos and Screenshots:** When a customer sends an Instagram photo or screenshot, AgentNest downloads it for the duration of one background job and sends the image, and nothing else (no handle, name or conversation), to the vision-capable model of its AI sub-processor (OpenAI; see the [Sub-Processor Register](sub-processor-register.md)) to obtain a short description. The image is not stored by AgentNest. The description, and any text that appears in the picture, are shown to the business owner labelled as automatic, are treated as untrusted customer content (never as a fact about the business and never as an instruction), and are not used to answer the customer automatically. A business can switch this off (`IMAGE_DESCRIPTION_ENABLED=false`), in which case no image is downloaded or sent.
+3b. **Photos and Screenshots:** When a customer sends an Instagram photo or screenshot, Pivoris downloads it for the duration of one background job and sends the image, and nothing else (no handle, name or conversation), to the vision-capable model of its AI sub-processor (OpenAI; see the [Sub-Processor Register](sub-processor-register.md)) to obtain a short description. The image is not stored by Pivoris. The description, and any text that appears in the picture, are shown to the business owner labelled as automatic, are treated as untrusted customer content (never as a fact about the business and never as an instruction), and are not used to answer the customer automatically. A business can switch this off (`IMAGE_DESCRIPTION_ENABLED=false`), in which case no image is downloaded or sent.
 
 ---
 
 ## 5. Technical & Organizational Security Measures (TOMs)
 
-AgentNest enforces defense-in-depth security measures to protect personal data from unauthorized access, accidental alteration, disclosure, or destruction:
+Pivoris enforces defense-in-depth security measures to protect personal data from unauthorized access, accidental alteration, disclosure, or destruction:
 
 1. **PostgreSQL Row-Level Security (RLS):** All tenant tables are strictly isolated using PostgreSQL Row-Level Security keyed on `app.workspace_id`. Cross-tenant queries are blocked at the database engine level (`INV-01`, `INV-02`, `ADR-025`).
 2. **Encryption in Transit & at Rest:**
@@ -88,8 +88,8 @@ We retain personal data only for as long as necessary to fulfill business purpos
 | **Raw Webhook Payloads** (`inbound_events.payload`) | 30 days | Payload nulled at 30 days; metadata row deleted at 90 days. | Minimizes raw transmission exposure; point gap markers preserved. |
 | **Agent Run Inputs** (`agent_runs.input_snapshot`) | 30 days | Input snapshot payload nulled. | Keeps run execution status and token cost metrics. |
 | **Customer Message Text** (`messages.text`, `reply_drafts.text`) | 365 days (provisional) | Message text nulled; metadata (timestamp, intent flags, direction) retained. | Preserves historical business reports without retaining customer text (`INV-17`). |
-| **Voice-Note Transcripts** (`message_transcripts.text`) | 365 days (provisional), with the message | Transcript text nulled; status, language, model and duration retained. | A transcript is the customer's speech as text. The audio itself is never stored by AgentNest (it is processed in memory and sent to the transcription provider, see section 4). |
-| **Image Descriptions** (`message_image_descriptions.description`, `.visible_text`) | 365 days (provisional), with the message | Description and visible text nulled; status, kind, model and size retained. | A description is a machine's reading of the customer's picture, and the text in it. The image itself is never stored by AgentNest (it is processed in memory and sent to the AI provider, see section 4). |
+| **Voice-Note Transcripts** (`message_transcripts.text`) | 365 days (provisional), with the message | Transcript text nulled; status, language, model and duration retained. | A transcript is the customer's speech as text. The audio itself is never stored by Pivoris (it is processed in memory and sent to the transcription provider, see section 4). |
+| **Image Descriptions** (`message_image_descriptions.description`, `.visible_text`) | 365 days (provisional), with the message | Description and visible text nulled; status, kind, model and size retained. | A description is a machine's reading of the customer's picture, and the text in it. The image itself is never stored by Pivoris (it is processed in memory and sent to the AI provider, see section 4). |
 | **Owner Tasks & Clarifications** | 180 days (provisional) | `request_text` redacted, clarification unlinked. | Retains status ledger and task completion records. |
 | **Owner Questions & Answers** | 180 days (provisional) | Question/Answer text nulled; source message hash cleared. | Protects proprietary communications. |
 | **Agent Steps & Actions** | 30 days (provisional) | Payload checkpoints and policy grant snapshots scrubbed. | Removes customer prompt data. |
@@ -106,7 +106,7 @@ We retain personal data only for as long as necessary to fulfill business purpos
 ### 7.1 Customer Erasure & Disconnection
 - **Account Disconnection:** When a business disconnects an Instagram account, access tokens are wiped immediately. Workspace owners may elect to purge all associated conversation history. Incomplete or uncertain operations retain minimal reconciliation evidence until verified (`INV-17`, `ADR-022`).
 - **Workspace Deletion:** Initiating workspace deletion places the tenant in a 7-day grace period (`status = deleting`). Following the grace period, all tenant database records and associated media files are permanently deleted via cascading foreign keys. Backups roll off naturally after 35 days, with deletion tombstones re-applied upon any disaster recovery (`ADR-026`).
-- **Meta Data Deletion Callback:** In compliance with Meta Platform Terms, AgentNest provides an automated endpoint (`/api/v1/webhooks/meta/data-deletion`) supporting verified `signed_request` calls. Upon receipt, customer data is purged, and a permanent confirmation code with a tracking URL is returned to the user.
+- **Meta Data Deletion Callback:** In compliance with Meta Platform Terms, Pivoris provides an automated endpoint (`/api/v1/webhooks/meta/data-deletion`) supporting verified `signed_request` calls. Upon receipt, customer data is purged, and a permanent confirmation code with a tracking URL is returned to the user.
 
 ### 7.2 Data Subject Rights
 Under KVKK Article 11 and GDPR Articles 15–22, data subjects possess the right to:
@@ -117,13 +117,13 @@ Under KVKK Article 11 and GDPR Articles 15–22, data subjects possess the right
 - Object to automated decision-making producing legal effects;
 - Lodge a complaint with the Turkish Personal Data Protection Authority (KVKK Kurumu) or competent European Data Protection Authority.
 
-To exercise these rights, platform users or end-customers may contact our privacy team at `privacy@agentnest.io`.
+To exercise these rights, platform users or end-customers may contact our privacy team at `privacy@pivoris.com`.
 
 ---
 
 ## 8. Third-Party Sub-Processors & Cross-Border Transfers
 
-To provide the platform services, AgentNest engages vetted third-party service providers (sub-processors) for infrastructure, object storage, transactional email, error monitoring, and artificial intelligence processing.
+To provide the platform services, Pivoris engages vetted third-party service providers (sub-processors) for infrastructure, object storage, transactional email, error monitoring, and artificial intelligence processing.
 
 A complete and continuously maintained list of sub-processors, their corporate locations, and applicable cross-border transfer safeguards is available in the [Sub-Processor Register](sub-processor-register.md).
 
@@ -132,7 +132,7 @@ A complete and continuously maintained list of sub-processors, their corporate l
 ## 9. Contact & Inquiries
 
 For questions, comments, or data subject requests regarding this Privacy Policy:
-- **Email:** `privacy@agentnest.io`
-- **Data Protection Officer / Responsible Operator:** `dpo@agentnest.io`
-- **Postal Address:** AgentNest Operations Team, [Registered Entity Address Pending OQ-05], Istanbul, Türkiye
+- **Email:** `privacy@pivoris.com`
+- **Data Protection Officer / Responsible Operator:** `dpo@pivoris.com`
+- **Postal Address:** Pivoris Operations Team, [Registered Entity Address Pending OQ-05], Istanbul, Türkiye
 

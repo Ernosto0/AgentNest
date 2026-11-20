@@ -68,7 +68,7 @@ try {
               status: 200,
               contentType: "application/json",
               body: JSON.stringify({
-                product_name: "AgentNest",
+                product_name: "Pivoris",
                 demo_tools_enabled: true,
                 llm_mode: "fake",
                 mock_requires_demo_workspace: false,
@@ -91,7 +91,7 @@ try {
             return route.fulfill({
               status: 401,
               contentType: "application/problem+json",
-              body: JSON.stringify({ type: "urn:agentnest:error:auth_required", title: "Authentication required", status: 401 }),
+              body: JSON.stringify({ type: "urn:pivoris:error:auth_required", title: "Authentication required", status: 401 }),
             });
           }
 
@@ -111,7 +111,7 @@ try {
               return route.fulfill({
                 status: 400,
                 contentType: "application/problem+json",
-                body: JSON.stringify({ type: "urn:agentnest:error:invite_invalid", title: "Invalid invite", status: 400 }),
+                body: JSON.stringify({ type: "urn:pivoris:error:invite_invalid", title: "Invalid invite", status: 400 }),
               });
             }
             currentUser = { id: "88888888-8888-4888-8888-888888888888", display_name: body.display_name || "Invited User", email: body.email || "invited@example.test", ui_locale: scenario.locale };

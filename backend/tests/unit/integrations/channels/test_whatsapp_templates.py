@@ -149,10 +149,10 @@ def test_the_window_is_24_hours_with_a_five_minute_margin() -> None:
 
 
 def test_cost_metadata_never_invents_a_price() -> None:
-    template = cost_metadata("template", "agentnest_x_v1", "tr", "utility")
-    session = cost_metadata("session", "agentnest_x_v1", "tr", "utility")
+    template = cost_metadata("template", "pivoris_x_v1", "tr", "utility")
+    session = cost_metadata("session", "pivoris_x_v1", "tr", "utility")
     assert template["is_template"] is True and template["category"] == "utility"
-    assert template["template_name"] == "agentnest_x_v1"
+    assert template["template_name"] == "pivoris_x_v1"
     assert session["is_template"] is False and session["category"] == "service"
     assert session["template_name"] is None
     for meta in (template, session):

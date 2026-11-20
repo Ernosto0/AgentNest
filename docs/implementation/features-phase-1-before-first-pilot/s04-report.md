@@ -45,7 +45,7 @@ Rule written in `security-and-privacy.md` (§7.2, "Web Push payloads"): title, s
 
 ## 5. Checks run
 
-Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN=` (and `DEMO_TOOLS_ENABLED=true` for the broad runs), `TEST_DATABASE_URL` on my own databases `agentnest_p1s04_test` and `agentnest_p1s04b_test` (the two broad runs in parallel), `agentnest_p1s04_mig` for migrations. All dropped at the end.
+Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN=` (and `DEMO_TOOLS_ENABLED=true` for the broad runs), `TEST_DATABASE_URL` on my own databases `pivoris_p1s04_test` and `pivoris_p1s04b_test` (the two broad runs in parallel), `pivoris_p1s04_mig` for migrations. All dropped at the end.
 
 | Command (from `backend/`) | Result |
 |---|---|
@@ -99,7 +99,7 @@ Prerequisites: HTTPS deployment (or a tunnel) with `WEB_PUSH_VAPID_PUBLIC_KEY`, 
 
 **iPhone (iOS 16.4 or later)**
 1. In Safari (not installed) open the site, approve something: the prompt shows the Add to Home Screen guide instead of a permission button; Settings shows the same guide.
-2. Share > Add to Home Screen, open AgentNest from the icon, sign in, open Settings > Connections > "Bu cihazda aç", allow notifications.
+2. Share > Add to Home Screen, open Pivoris from the icon, sign in, open Settings > Connections > "Bu cihazda aç", allow notifications.
 3. Repeat the approval test; the push should show on the lock screen with no customer text; tapping opens the installed app on Approvals.
 4. Check the icon and the maskable icon on an Android adaptive launcher (Session 03 open item).
 

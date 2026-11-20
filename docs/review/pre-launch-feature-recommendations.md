@@ -1,7 +1,7 @@
 # Pre-Launch Feature Recommendations
 
 **Reviewed:** 2026-11-15, at commit `f1cc494` on `main`.
-**Companion document:** [pre-launch-problems.md](pre-launch-problems.md) lists what is broken or inconsistent today. This file lists features to add: first the ones competitors have and AgentNest lacks, then the ones that would set it apart.
+**Companion document:** [pre-launch-problems.md](pre-launch-problems.md) lists what is broken or inconsistent today. This file lists features to add: first the ones competitors have and Pivoris lacks, then the ones that would set it apart.
 
 **Scope note.** Several items below are on the deferred list in [mvp-scope.md](../product/mvp-scope.md) §4. Per the scope guardrails, update that document and the relevant phase plan before building any of them. Effort sizes (S, M, L) are rough estimates from reading the code, not plans.
 
@@ -14,11 +14,11 @@
 - **Kommo** is a WhatsApp-first CRM with strong presence in Türkiye, including a beauty-salon offering with appointment handling.
 - No competitor found in this search publishes TRY pricing.
 
-**What this means.** "AI answers your Instagram DMs" is now a free, native feature. AgentNest should lead with what Meta and ManyChat do not offer: verified facts, explicit approval, content and reporting in one place, and a Turkish, in-person setup. Section 3 builds on that.
+**What this means.** "AI answers your Instagram DMs" is now a free, native feature. Pivoris should lead with what Meta and ManyChat do not offer: verified facts, explicit approval, content and reporting in one place, and a Turkish, in-person setup. Section 3 builds on that.
 
 Most of the competitor information comes from vendor pages and third-party reviews, so treat specific claims as vendor-stated. Sources are listed at the end.
 
-## 2. Features competitors have and AgentNest lacks
+## 2. Features competitors have and Pivoris lacks
 
 | ID | Feature | Priority | Effort |
 |---|---|---|---|
@@ -79,7 +79,7 @@ Most of the competitor information comes from vendor pages and third-party revie
 
 **What.** When someone comments "price?" on a post, reply privately with the verified answer.
 
-**Why.** This is ManyChat's core feature and the one most small businesses already know by name. The difference AgentNest can offer is that the private reply contains a verified price instead of a fixed link.
+**Why.** This is ManyChat's core feature and the one most small businesses already know by name. The difference Pivoris can offer is that the private reply contains a verified price instead of a fixed link.
 
 **Current state.** Built and tested against the mock provider. On real accounts it cannot work: the OAuth flow does not request a comment permission (see P-05), and research items R75-01 to R75-06 are open.
 
@@ -153,7 +153,7 @@ Most of the competitor information comes from vendor pages and third-party revie
 
 **Suggested scope.** One filtered view over existing conversations and customer memory, plus export. No pipelines, stages or custom fields.
 
-## 3. Features that would set AgentNest apart
+## 3. Features that would set Pivoris apart
 
 These build on things the product already does that the competitors reviewed do not.
 

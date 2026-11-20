@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Multi-stage production Dockerfile for AgentNest (P8-01 / ADR-017 / deployment.md §2).
+# Multi-stage production Dockerfile for Pivoris (P8-01 / ADR-017 / deployment.md §2).
 #
 # Targets:
 #   - frontend-builder : Builds static SPA assets (npm ci && npm run build -> /app/frontend/dist).
@@ -59,25 +59,25 @@ RUN apt-get update \
     && test "$(dpkg-query -W -f='${Version}' ffmpeg)" = "${FFMPEG_DEBIAN_VERSION}" \
     && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd --system --gid 10001 agentnest \
-    && useradd --system --uid 10001 --gid 10001 --home-dir /app --no-create-home --shell /usr/sbin/nologin agentnest \
+RUN groupadd --system --gid 10001 pivoris \
+    && useradd --system --uid 10001 --gid 10001 --home-dir /app --no-create-home --shell /usr/sbin/nologin pivoris \
     && mkdir -p /app/backend/var/media /app/frontend/dist \
-    && chown -R agentnest:agentnest /app
+    && chown -R pivoris:pivoris /app
 
 WORKDIR /app/backend
 
-COPY --from=backend-builder --chown=agentnest:agentnest /app/backend/.venv /app/backend/.venv
-COPY --chown=agentnest:agentnest backend/alembic.ini backend/pyproject.toml /app/backend/
-COPY --chown=agentnest:agentnest backend/migrations /app/backend/migrations
-COPY --chown=agentnest:agentnest backend/app /app/backend/app
-COPY --from=frontend-builder --chown=agentnest:agentnest /app/frontend/dist /app/frontend/dist
+COPY --from=backend-builder --chown=pivoris:pivoris /app/backend/.venv /app/backend/.venv
+COPY --chown=pivoris:pivoris backend/alembic.ini backend/pyproject.toml /app/backend/
+COPY --chown=pivoris:pivoris backend/migrations /app/backend/migrations
+COPY --chown=pivoris:pivoris backend/app /app/backend/app
+COPY --from=frontend-builder --chown=pivoris:pivoris /app/frontend/dist /app/frontend/dist
 
 ENV PATH="/app/backend/.venv/bin:${PATH}" \
     PYTHONPATH="/app/backend" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-USER agentnest:agentnest
+USER pivoris:pivoris
 
 EXPOSE 8000
 

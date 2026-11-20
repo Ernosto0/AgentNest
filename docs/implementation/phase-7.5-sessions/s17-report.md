@@ -52,7 +52,7 @@ session's implementation scope.
 
 Windows PowerShell, Python 3.12 through `python -m uv`, PostgreSQL 16 Docker,
 fake LLM and mock Instagram. The browser run uses a dedicated disposable
-`agentnest_s17_e2e_test` database and `CI=true` production build. No paid model
+`pivoris_s17_e2e_test` database and `CI=true` production build. No paid model
 call or live Instagram action was authorized or run.
 
 | Check | Result |
@@ -65,7 +65,7 @@ call or live Instagram action was authorized or run.
 | Generated API client | `export-openapi`, `npm.cmd run gen:api`, and `git diff --exit-code -- openapi.json src/api/schema.d.ts` passed with no drift. |
 | Backend Ruff, format, mypy, import rules | Passed after the evaluator and matching changes; Ruff format checked 563 files, mypy checked 298 source files, 19 import contracts kept. |
 | Full backend `pytest` | Initial full run: **3300 passed, 10 skipped, 4 failed** in 1647.48 s. Failures were inbox list row, mock capability names, permission matrix and Activity catalog; each was fixed and focused rerun was **8 passed**. First clean rerun was interrupted by a Docker Desktop/Postgres restart; its DB errors are captured in `backend/var/ci/s17-backend-rerun.log` and are not a pass. Final sequential full rerun: **3307 passed, 10 intentionally skipped** in 1851.60 s; log `backend/var/ci/s17-backend-clean.log`. |
-| Dedicated agent journey command | First run on separate `agentnest_s17_journey_test`: **66 passed** in 446.44 s. Final run with moderation and private-reply cases: **69 passed** in 112.63 s. |
+| Dedicated agent journey command | First run on separate `pivoris_s17_journey_test`: **66 passed** in 446.44 s. Final run with moderation and private-reply cases: **69 passed** in 112.63 s. |
 | Production-build Playwright, all three projects | Initial complete run: **140 passed, 37 failed, 3 skipped** in 27.5 minutes. Its contexts/traces are at `frontend/var/ci/s17-initial-e2e/`. Failure groups: stale Harbor seed name and approvals copy, duplicate fact cards, missed verified price in fake content generation, and one G3 `seed --reset` command failure. The first rerun timed out during Postgres crash recovery before browser tests (`frontend/var/ci/s17-e2e-rerun.log`). The next complete run: **153 passed, 24 failed, 3 skipped** in 22.7 minutes; all 24 failures were eight duplicate-card cases on each browser, with contexts/traces saved at `frontend/var/ci/s17-second-e2e/`. Final clean production-build run: **177 passed, 3 skipped, zero failed** in 24.7 minutes across mobile WebKit, mobile Chromium and desktop Chromium; log `frontend/var/ci/s17-e2e-final.log`. The three skips are `agent-work.spec.ts` on each project because `E2E_FIXTURE_DATABASE_URL` and its dedicated API container were not configured; Session 15 separately ran that spec on all three projects, but this run does not repeat it. Initial launch failed because `uv.exe` was absent from PATH; adding its installed Scripts directory started the stack. |
 
 ## Acceptance mapping

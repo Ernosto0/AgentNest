@@ -47,7 +47,7 @@ Run one assigned session at a time in strict numerical order. An externally pend
 
 ## 3. Starting State, Gates and Constraints
 
-- **Phase 8 baseline:** Commit `7990869`+ with migration head `20261103_0037_operator_alert_states.py` (64 tables). PostgreSQL Row-Level Security (`FORCE ROW LEVEL SECURITY`) is active on all tenant tables. Runtime application roles connect as `agentnest_app` / `agentnest_worker` without superuser or bypass privileges.
+- **Phase 8 baseline:** Commit `7990869`+ with migration head `20261103_0037_operator_alert_states.py` (64 tables). PostgreSQL Row-Level Security (`FORCE ROW LEVEL SECURITY`) is active on all tenant tables. Runtime application roles connect as `pivoris_app` / `pivoris_worker` without superuser or bypass privileges.
 - **Phase 8.5 UI baseline:** Warm workspace design system is active across all web views (`frontend/src/`). Settings and Connections surfaces use TanStack Query, typed OpenAPI clients, and bilingual i18n (`tr` / `en`).
 - **Gate 4 / OQ-01 status:** Telegram is the provisional second channel per ADR-012 and `docs/implementation/phases/phase-09-owner-channel.md`. WhatsApp is explicitly deferred due to per-message utility costs, business verification requirements, and Meta platform policies. The channel abstraction in Sessions 01–03 remains strictly provider-agnostic.
 - **Phase 7.5 handoff contracts:**
@@ -97,7 +97,7 @@ Before starting each session, read this document, the specific session brief bel
   - Add partial unique index: `channel_links(workspace_id, user_id, channel) WHERE status = 'active'`.
   - Add `ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY` with policies matching `current_setting('app.workspace_id', true)`.
   - Update `OwnerTask` table check constraint `source_channel` to admit `'telegram'` alongside `'api'`.
-  - Grant table permissions to `agentnest_app`, `agentnest_worker`, and `agentnest_migrator`.
+  - Grant table permissions to `pivoris_app`, `pivoris_worker`, and `pivoris_migrator`.
 - Add audit catalog events (`app/audit/`):
   - `channel_link.code_generated` (workspace_id, actor_user_id, channel, expires_at).
   - `channel_link.created` (workspace_id, user_id, channel, channel_user_id).
@@ -138,7 +138,7 @@ Before starting each session, read this document, the specific session brief bel
   - Create `frontend/src/features/settings/Channels.tsx` (or integrate as a tab/section in `frontend/src/features/settings/Connections.tsx` and `MorePage.tsx`).
   - Add query hook `useChannelLinks()` and mutation hooks `useGenerateChannelLinkCode()`, `useUnlinkChannel()`.
   - Display "Telegram Bağlantısı" / "Telegram Connection" card:
-    - If unlinked: "Bağla" / "Connect" button opening modal with generated 8-character code, countdown timer, step-by-step instructions ("1. Telegram'da @AgentNestBot'u açın, 2. /link <code> komutunu gönderin"), and direct `t.me` deep-link button.
+    - If unlinked: "Bağla" / "Connect" button opening modal with generated 8-character code, countdown timer, step-by-step instructions ("1. Telegram'da @PivorisBot'u açın, 2. /link <code> komutunu gönderin"), and direct `t.me` deep-link button.
     - If linked: Active badge, connected Telegram username, linked date, and "Bağlantıyı Kaldır" / "Disconnect" button with confirmation sheet.
 - Update localization catalogs (`frontend/src/locales/tr.json` and `en.json`) with all channel linking strings.
 - Write frontend component and hook tests (`frontend/src/features/settings/channels.test.tsx`).
@@ -220,9 +220,9 @@ Before starting each session, read this document, the specific session brief bel
   - Hands received updates to the exact same update processing pipeline as the webhook endpoint.
   - Allows zero-credential testing via synthetic fixture server or local bot testing without ngrok/tunnel.
 - Add Telegram bot base command handlers:
-  - `/start`: Greeting message explaining AgentNest bot capabilities and `/link <code>` instruction.
+  - `/start`: Greeting message explaining Pivoris bot capabilities and `/link <code>` instruction.
   - `/link <code>`: Calls `ChannelLinkService.redeem_link_code`. Responds with success message naming the linked workspace and user, or an error.
-  - `/unlink`: Unlinks current Telegram account from AgentNest.
+  - `/unlink`: Unlinks current Telegram account from Pivoris.
   - `/status`: Reports current link status, workspace name, and active notifications count.
   - Unknown commands from unlinked users: prompt to link with the web app.
 - Write unit and contract tests with offline fixtures (`tests/contract/test_telegram_adapter.py`).

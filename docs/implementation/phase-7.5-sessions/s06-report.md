@@ -6,7 +6,7 @@ No real-model quality, live Instagram effect, or end-to-end DM send acceptance i
 ## Baseline and scope
 
 Started on `main` at `d7d3c01`, with Session 05's operator-reviewed changes uncommitted in
-the actual Windows checkout `C:\Users\ernos\AgentNest`. Read the common rules, inherited
+the actual Windows checkout `C:\Users\ernos\Pivoris`. Read the common rules, inherited
 Sessions 01-04 reports, Session 05 report, phase/contract/invariant/roadmap documents and
 knowledge/render/claims/approved-answer/context/runner sources. Preserved those changes and
 Session 08's preliminary audit. No commit, push, deployment, live Meta action or paid model call.
@@ -56,7 +56,7 @@ Canonical contract, data model and observability catalog updated.
 
 ## Verification
 
-Environment: Python 3.12 local venv, PostgreSQL 16 disposable `agentnest_test` on 5433,
+Environment: Python 3.12 local venv, PostgreSQL 16 disposable `pivoris_test` on 5433,
 frozen clock and fake/mock providers. Tests explicitly set process-only
 `COOKIE_SECURE=false`, `INSTAGRAM_ENABLED_PROVIDERS=mock`, `LLM_PROVIDER=fake`,
 `MEDIA_STORAGE_BACKEND=local`; local `.env` was preserved.

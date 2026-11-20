@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-AgentNest stores OAuth access tokens for Meta/Instagram accounts in `social_accounts.token_ciphertext`, encrypted using AES-256-GCM.
+Pivoris stores OAuth access tokens for Meta/Instagram accounts in `social_accounts.token_ciphertext`, encrypted using AES-256-GCM.
 Each ciphertext is authenticated with Additional Authenticated Data (`AAD = "<workspace_id>:<account_id>"`).
 The active encryption key is identified by `TOKEN_ENCRYPTION_ACTIVE_KEY_ID`, and key definitions are stored in `TOKEN_ENCRYPTION_KEYS` (formatted as `<key_id_1>:<base64_key_1>,<key_id_2>:<base64_key_2>`).
 

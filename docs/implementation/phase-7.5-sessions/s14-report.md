@@ -47,16 +47,16 @@ head remains `0030`. No OAuth work was overwritten.
 ## Verification and environment
 
 Windows PowerShell, Python 3.12, Node/npm locked dependencies. Fake model, mock Instagram,
-local media. Initial backend tests used disposable `agentnest_test`. Further verification
-uses Python 3.12 in `agentnest-s14-api` on Docker network `agentnest_default` with
+local media. Initial backend tests used disposable `pivoris_test`. Further verification
+uses Python 3.12 in `pivoris-s14-api` on Docker network `pivoris_default` with
 `UV_PROJECT_ENVIRONMENT=/tmp/s14-venv`; test database is the separate disposable
-`agentnest_s14_backend_test`. The real API browser database is `agentnest_s14_e2e_test`.
+`pivoris_s14_backend_test`. The real API browser database is `pivoris_s14_e2e_test`.
 Host virtualenv and development databases were preserved.
 
 Actual verification evidence:
 
 - `python -m uv run --directory backend pytest tests/integration/agent/test_settings_overview.py -q --tb=short`: 2 passed on Windows before socket exhaustion.
-- `docker exec -e TEST_DATABASE_URL=postgresql+psycopg://agentnest:agentnest@postgres:5432/agentnest_s14_backend_test agentnest-s14-api uv run pytest tests/integration/agent/test_settings_overview.py tests/integration/agent/test_personality_context_loop.py -q --tb=short`: 7 passed; final run includes foreign persisted account isolation and saved-goal/model-context proof.
+- `docker exec -e TEST_DATABASE_URL=postgresql+psycopg://pivoris:pivoris@postgres:5432/pivoris_s14_backend_test pivoris-s14-api uv run pytest tests/integration/agent/test_settings_overview.py tests/integration/agent/test_personality_context_loop.py -q --tb=short`: 7 passed; final run includes foreign persisted account isolation and saved-goal/model-context proof.
 - Changed-module Ruff lint/format and mypy passed; `lint-imports`: 19 contracts kept.
 - `npm.cmd --prefix frontend test -- src/features/agent/agent.test.tsx --maxWorkers=1`: 7 passed, covering owner/manager/staff, exact preview/apply, stale save/recovery, capability loss, local sample and explicit migration.
 - `npm.cmd --prefix frontend test -- --maxWorkers=1`: 512 passed / 33 files at that checkpoint. Later recovery/capability-label edits have focused verification; final combined frontend result belongs to commander verification.
@@ -101,7 +101,7 @@ Mobile Chromium full-page screenshot was visually inspected: labelled controls w
 no horizontal overflow, 44px touch controls, distinct sections and simulation/state shown.
 The form is intentionally long because ten action scopes are independently reviewable.
 Final screenshots for all three projects and `browser.log` live under
-`%TEMP%/agentnest-s14-linux-evidence/`. Each screenshot uses its test output directory.
+`%TEMP%/pivoris-s14-linux-evidence/`. Each screenshot uses its test output directory.
 The mobile Chromium full-page screenshot was inspected directly. This automated viewport inspection is
 not a real-phone owner walkthrough.
 

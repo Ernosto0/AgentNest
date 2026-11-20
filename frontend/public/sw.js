@@ -1,4 +1,4 @@
-/* AgentNest service worker: Web Push only.
+/* Pivoris service worker: Web Push only.
  *
  * It exists so the browser can wake the app to show a notification and open it on click. It has
  * NO fetch handler and NO cache: every request goes straight to the network, so it can never
@@ -9,7 +9,7 @@
  * are shown as plain text, and `url` is only ever opened if it resolves to this app's own origin.
  */
 
-const FALLBACK_TITLE = "AgentNest";
+const FALLBACK_TITLE = "Pivoris";
 const FALLBACK_URL = "/";
 const ICON = "/icon-192.png";
 

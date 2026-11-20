@@ -12,7 +12,7 @@ const RUN = "b0000000-0000-4000-8000-000000000001";
 const POST = `POST ${BASE}/knowledge/imports/website`;
 function routes(extra: Record<string, () => Response> = {}) {
   return {
-    "GET /api/v1/meta": () => json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
+    "GET /api/v1/meta": () => json({ product_name: "Pivoris", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json(ME),
     "POST /api/v1/workspaces": () => json(created, 201),
     [`GET ${BASE}`]: () => json(created),

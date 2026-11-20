@@ -43,7 +43,7 @@ Production relies on two distinct key rings that **must** be backed up in an off
      ```
 
 > [!CAUTION]
-> **Total VPS Loss Recovery Requirement:** Never store the sole copy of `BACKUP_ENCRYPTION_KEY` or `TOKEN_ENCRYPTION_KEYS` in `/opt/agentnest/.env` on the VPS. If the VPS disk is lost:
+> **Total VPS Loss Recovery Requirement:** Never store the sole copy of `BACKUP_ENCRYPTION_KEY` or `TOKEN_ENCRYPTION_KEYS` in `/opt/pivoris/.env` on the VPS. If the VPS disk is lost:
 > - Without `BACKUP_ENCRYPTION_KEY`, off-site `.dump.enc` archives in S3 cannot be decrypted.
 > - Without `TOKEN_ENCRYPTION_KEYS`, a restored database will have unreadable `social_accounts.token_ciphertext` values, forcing every connected workspace owner to re-authorize Instagram OAuth.
 >
@@ -65,7 +65,7 @@ Store database backups in a dedicated off-site bucket (`BACKUP_S3_BUCKET`) or is
       "Sid": "ListBackupPrefixOnly",
       "Effect": "Allow",
       "Action": ["s3:ListBucket"],
-      "Resource": "arn:aws:s3:::agentnest-backups",
+      "Resource": "arn:aws:s3:::pivoris-backups",
       "Condition": {
         "StringLike": {
           "s3:prefix": ["postgres/nightly/*"]
@@ -80,13 +80,13 @@ Store database backups in a dedicated off-site bucket (`BACKUP_S3_BUCKET`) or is
         "s3:PutObject",
         "s3:DeleteObject"
       ],
-      "Resource": "arn:aws:s3:::agentnest-backups/postgres/nightly/*"
+      "Resource": "arn:aws:s3:::pivoris-backups/postgres/nightly/*"
     }
   ]
 }
 ```
 
-- **Object Lock / Versioning Recommendation:** Enable S3 Object Versioning (and optional Governance-mode Object Lock for 7–14 days) on `agentnest-backups` so compromised host credentials cannot silently destroy recent restore points, with an S3 lifecycle rule expiring noncurrent versions after 35 days.
+- **Object Lock / Versioning Recommendation:** Enable S3 Object Versioning (and optional Governance-mode Object Lock for 7–14 days) on `pivoris-backups` so compromised host credentials cannot silently destroy recent restore points, with an S3 lifecycle rule expiring noncurrent versions after 35 days.
 
 ### 3.2 Media Bucket Protection (`S3_BUCKET`) & Cross-Store Consistency Limits
 
@@ -110,10 +110,10 @@ Workspace media assets (`media_assets` table) are stored as content-addressed ob
 ```bash
 # Host CLI (uses local pg_dump or --postgres-container)
 ./scripts/backup.sh \
-  --output-dir /var/backups/agentnest \
-  --s3-bucket agentnest-backups \
+  --output-dir /var/backups/pivoris \
+  --s3-bucket pivoris-backups \
   --s3-prefix postgres/nightly \
-  --status-file /opt/agentnest/.backup-status.json
+  --status-file /opt/pivoris/.backup-status.json
 
 # Or via the Compose backup profile in compose.prod.yml
 docker compose -f compose.prod.yml --profile backup run --rm backup
@@ -121,13 +121,13 @@ docker compose -f compose.prod.yml --profile backup run --rm backup
 
 ### 4.2 Nightly Cron / Systemd Timer Configuration (`02:00 UTC`)
 
-Install `/etc/cron.d/agentnest-backup` (owned by `root`, mode `0644`):
+Install `/etc/cron.d/pivoris-backup` (owned by `root`, mode `0644`):
 
 ```cron
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # Run encrypted PostgreSQL backup nightly at 02:00 UTC and log output
-0 2 * * * deploy cd /opt/agentnest && /opt/agentnest/scripts/backup.sh --postgres-container agentnest-postgres-1 >> /var/log/agentnest-backup.log 2>&1
+0 2 * * * deploy cd /opt/pivoris && /opt/pivoris/scripts/backup.sh --postgres-container pivoris-postgres-1 >> /var/log/pivoris-backup.log 2>&1
 ```
 
 ### 4.3 Standalone Archive Inspection & Decryption
@@ -136,9 +136,9 @@ Any `.dump.enc` file can be authenticated and decrypted into a standard `pg_dump
 
 ```bash
 python scripts/backup.py decrypt \
-  --input /var/backups/agentnest/agentnest-20261030T020000Z.dump.enc \
-  --manifest /var/backups/agentnest/agentnest-20261030T020000Z.manifest.json \
-  --output /tmp/agentnest-decrypted.dump
+  --input /var/backups/pivoris/pivoris-20261030T020000Z.dump.enc \
+  --manifest /var/backups/pivoris/pivoris-20261030T020000Z.manifest.json \
+  --output /tmp/pivoris-decrypted.dump
 ```
 
 ---
@@ -151,7 +151,7 @@ python scripts/backup.py decrypt \
 ### Step 1 — Stop Runtime Containers (`api` and `worker`)
 
 ```bash
-cd /opt/agentnest
+cd /opt/pivoris
 docker compose -f compose.prod.yml stop worker api
 ```
 
@@ -179,25 +179,25 @@ If any customer, conversation, social account, or workspace deletion was process
 
 ### Step 3 — Run `scripts/restore.sh` into a Fresh Isolated Database
 
-`scripts/restore.py` refuses to overwrite a non-empty database unless `--allow-overwrite-disposable` is explicitly passed. Always restore into a fresh database (e.g. `agentnest_restored_<date>`), verify it, and then point `DATABASE_URL` / `MIGRATION_DATABASE_URL` to the verified database:
+`scripts/restore.py` refuses to overwrite a non-empty database unless `--allow-overwrite-disposable` is explicitly passed. Always restore into a fresh database (e.g. `pivoris_restored_<date>`), verify it, and then point `DATABASE_URL` / `MIGRATION_DATABASE_URL` to the verified database:
 
 ```bash
 ./scripts/restore.sh \
-  --archive /var/backups/agentnest/agentnest-20261030T020000Z.dump.enc \
-  --manifest /var/backups/agentnest/agentnest-20261030T020000Z.manifest.json \
-  --target-database-url "postgresql://postgres:${POSTGRES_PASSWORD}@127.0.0.1:5432/agentnest_restored" \
+  --archive /var/backups/pivoris/pivoris-20261030T020000Z.dump.enc \
+  --manifest /var/backups/pivoris/pivoris-20261030T020000Z.manifest.json \
+  --target-database-url "postgresql://postgres:${POSTGRES_PASSWORD}@127.0.0.1:5432/pivoris_restored" \
   --create-target-db \
-  --postgres-container agentnest-postgres-1 \
-  --migrator-role agentnest_migrator \
-  --runtime-roles agentnest_app,agentnest_worker \
-  --tombstone-manifest /var/backups/agentnest/tombstones.json
+  --postgres-container pivoris-postgres-1 \
+  --migrator-role pivoris_migrator \
+  --runtime-roles pivoris_app,pivoris_worker \
+  --tombstone-manifest /var/backups/pivoris/tombstones.json
 ```
 
 `scripts/restore.sh` automatically performs:
 1. **Target DB emptiness check:** Refuses non-empty targets unless `--allow-overwrite-disposable` is set.
 2. **Cryptographic verification:** Verifies `.manifest.json` ciphertext SHA-256 and decrypts the `AGNBKP01` AES-256-GCM envelope (authenticating header metadata AAD and plaintext `PGDMP` SHA-256).
-3. **`pg_restore`:** Restores schema and data with `--no-owner --no-privileges --role=agentnest_migrator --exit-on-error`.
-4. **Schema & Role Verification (`verify-db-roles`):** Verifies `alembic_version` equals `migration_head()` (`0030`), checks public table counts, provisions/verifies `agentnest_migrator` ownership, confirms `agentnest_app` and `agentnest_worker` have `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`, and verifies `REVOKE UPDATE, DELETE` on append-only `audit_logs` and `fact_versions`.
+3. **`pg_restore`:** Restores schema and data with `--no-owner --no-privileges --role=pivoris_migrator --exit-on-error`.
+4. **Schema & Role Verification (`verify-db-roles`):** Verifies `alembic_version` equals `migration_head()` (`0030`), checks public table counts, provisions/verifies `pivoris_migrator` ownership, confirms `pivoris_app` and `pivoris_worker` have `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`, and verifies `REVOKE UPDATE, DELETE` on append-only `audit_logs` and `fact_versions`.
 5. **Post-Restore Worker Fencing & Tombstone Re-Application (`post-restore-reconcile`):**
    - Pauses all `account_agents` (`state = 'paused'`, bumping `controller_epoch` and `config_version`) and revokes all active `agent_delegations` (`revoked_at = now()`).
    - Transitions all `in_progress` `operations` to `outcome_unknown` (`last_error_code = 'RESTORED_FROM_BACKUP_OUTCOME_UNKNOWN'`) and all `sending` `reply_drafts` to `outcome_unknown`, enqueuing `reconcile_send` / `reconcile_publish` jobs so no ambiguous outbound message or post is ever blindly re-sent (`INV-05`).
@@ -228,13 +228,13 @@ Before starting `api` and `worker` or unpausing any workspace agent, verify:
 
 ## 6. Executed Restore Drill Record (2026-10-30)
 
-An end-to-end backup, tamper-rejection, isolated restore, role-verification, worker-fencing, and tombstone re-application drill was executed on **2026-10-30** against a disposable PostgreSQL 16 container (`agentnest-s04-drill`, schema revision `0030`, 59 public tables).
+An end-to-end backup, tamper-rejection, isolated restore, role-verification, worker-fencing, and tombstone re-application drill was executed on **2026-10-30** against a disposable PostgreSQL 16 container (`pivoris-s04-drill`, schema revision `0030`, 59 public tables).
 
 ### 6.1 Measured RPO, RTO & Archive Metrics
 
 | Metric | Measured Drill Value | Production Target / Threshold |
 |---|---|---|
-| **Backup Archive ID** | `agentnest-20261030T212245Z-s04-drill` | `agentnest-<YYYYMMDDTHHMMSSZ>` |
+| **Backup Archive ID** | `pivoris-20261030T212245Z-s04-drill` | `pivoris-<YYYYMMDDTHHMMSSZ>` |
 | **Alembic Schema Revision** | `0030` (59 public tables) | `0030` (`migration_head()`) |
 | **Plaintext `pg_dump -Fc` Size** | `279,616` bytes (`273.1 KiB`) | Proportional to DB size |
 | **Plaintext SHA-256** | `50eeedd18e1e3e91e0644a43731b1201cb44b81b51b16ec5910506550f310c92` | Verified on decrypt |
@@ -246,29 +246,29 @@ An end-to-end backup, tamper-rejection, isolated restore, role-verification, wor
 
 ### 6.2 Drill Verification Outcomes
 
-1. **Unreadable Without Decryption:** Running `pg_restore --list` directly on `agentnest-20261030T212245Z-s04-drill.dump.enc` exited non-zero (`pg_restore: error: input file does not appear to be a valid archive`).
+1. **Unreadable Without Decryption:** Running `pg_restore --list` directly on `pivoris-20261030T212245Z-s04-drill.dump.enc` exited non-zero (`pg_restore: error: input file does not appear to be a valid archive`).
 2. **Authenticated Encryption Tamper Rejection:** Flipping 1 byte of ciphertext or 1 byte of the authenticated JSON header raised `BackupTamperedError` (`AES-256-GCM authentication tag verification failed`).
-3. **Non-Empty Target DB Protection:** Attempting to restore into the populated source database `agentnest_drill_src` without `--allow-overwrite-disposable` was refused (`Target database 'agentnest_drill_src' is not empty (59 tables found)`).
-4. **Restored Data Integrity:** Restored into fresh isolated database `agentnest_restored_drill`; verified workspace `golkent-pilates-drill`, verified business fact `pricing.monthly_reformer` (`4500 TRY`) and `fact_versions`, kept conversation (`ayse_wellness`), and `media_assets` reference (`workspaces/<ws_id>/media/reformer-schedule-2026.jpg`).
+3. **Non-Empty Target DB Protection:** Attempting to restore into the populated source database `pivoris_drill_src` without `--allow-overwrite-disposable` was refused (`Target database 'pivoris_drill_src' is not empty (59 tables found)`).
+4. **Restored Data Integrity:** Restored into fresh isolated database `pivoris_restored_drill`; verified workspace `golkent-pilates-drill`, verified business fact `pricing.monthly_reformer` (`4500 TRY`) and `fact_versions`, kept conversation (`ayse_wellness`), and `media_assets` reference (`workspaces/<ws_id>/media/reformer-schedule-2026.jpg`).
 5. **Post-Restore Worker Fencing:**
    - `in_progress` `send_reply` operation transitioned to `outcome_unknown` (`last_error_code = 'RESTORED_FROM_BACKUP_OUTCOME_UNKNOWN'`) and `reconcile_send` job enqueued (`enqueued_reconcile_jobs = 1`).
    - `sending` `ReplyDraft` transitioned to `outcome_unknown` (`fenced_reply_drafts = 1`).
    - Active `AccountAgent` paused (`state = 'paused'`, `paused_account_agents = 1`) and active `AgentDelegation` revoked (`revoked_agent_delegations = 1`).
    - Active `AgentSession` (`cancelled_agent_sessions = 1`), `AgentThread` (`cancelled_agent_threads = 1`), `AgentStep` (`abandoned_agent_steps = 1`), and queued `send_reply` job (`cancelled_outbound_jobs = 1`) fenced.
 6. **Post-Snapshot Tombstone Re-Application:** Customer `cust-erased-202` from `tombstones.json` (`reapplied_customer_tombstones = 1`) had its `Conversation`, `Message`, and `CustomerMemory` rows purged, `InboundEvent.payload` nulled, and `CustomerIdentity.generation` incremented before workers could start.
-7. **Least-Privilege Runtime Role Enforcement:** Connected directly as `agentnest_app` (`NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`) and verified `SELECT` on `audit_logs` succeeded while `DELETE FROM audit_logs` and `UPDATE fact_versions` failed with `psycopg.errors.InsufficientPrivilege`.
+7. **Least-Privilege Runtime Role Enforcement:** Connected directly as `pivoris_app` (`NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`) and verified `SELECT` on `audit_logs` succeeded while `DELETE FROM audit_logs` and `UPDATE fact_versions` failed with `psycopg.errors.InsufficientPrivilege`.
 
 ---
 
 ## 7. Canonical Final Restore Drill Record — Phase 8 Close-Out (2026-11-03)
 
-The definitive Phase 8 production acceptance restore drill was executed on **2026-11-03** against an isolated PostgreSQL 16 environment (`agentnest-s16-prod-drill`) containing the complete hardened RLS schema at Alembic revision **`0037`** (`20261103_0037_operator_alert_states.py`, 63 model tables + `alembic_version`).
+The definitive Phase 8 production acceptance restore drill was executed on **2026-11-03** against an isolated PostgreSQL 16 environment (`pivoris-s16-prod-drill`) containing the complete hardened RLS schema at Alembic revision **`0037`** (`20261103_0037_operator_alert_states.py`, 63 model tables + `alembic_version`).
 
 ### 7.1 Measured Final RPO, RTO & Cryptographic Metrics
 
 | Metric | Measured Session 16 Drill Value | Canonical Production Target / Threshold |
 |---|---|---|
-| **Backup Archive ID** | `agentnest-20261103T203000Z-s16-drill` | `agentnest-<YYYYMMDDTHHMMSSZ>` |
+| **Backup Archive ID** | `pivoris-20261103T203000Z-s16-drill` | `pivoris-<YYYYMMDDTHHMMSSZ>` |
 | **Alembic Schema Head** | `0037` (`20261103_0037_operator_alert_states.py`) | `0037` (`migration_head()`) |
 | **Public Table Count** | `64` (63 application tables + `alembic_version`) | Exactly matches Base metadata sorted tables |
 | **Plaintext `pg_dump -Fc` Size** | `312,480` bytes (`305.2 KiB`) | Proportional to hardened schema + seed data |
@@ -302,6 +302,6 @@ The restore drill proved that restored databases cannot execute outdated or conf
      - Raw inbound payload scrubbed to `None` in `inbound_events`.
      - Generation counter incremented (`generation >= 1`) in `customer_identities`.
 5. **Least-Privilege Runtime Roles (`ADR-025` §1.1):**
-   - Verified that `agentnest_app` and `agentnest_worker` hold `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`.
+   - Verified that `pivoris_app` and `pivoris_worker` hold `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`.
    - Verified `REVOKE UPDATE, DELETE ON TABLE audit_logs, fact_versions` remains active post-restore.
 

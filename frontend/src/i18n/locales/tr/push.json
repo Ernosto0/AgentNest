@@ -12,10 +12,10 @@
       "settings": "Bildirim ayarları"
     },
     "ios": {
-      "title": "Bildirim almak için AgentNest'i Ana Ekran'a ekleyin",
+      "title": "Bildirim almak için Pivoris'i Ana Ekran'a ekleyin",
       "step1": "Safari'de Paylaş düğmesine dokunun.",
       "step2": "\"Ana Ekrana Ekle\"yi seçin.",
-      "step3": "AgentNest'i yeni Ana Ekran simgesinden açın ve bildirimleri orada açın.",
+      "step3": "Pivoris'i yeni Ana Ekran simgesinden açın ve bildirimleri orada açın.",
       "note": "iPhone ve iPad, bildirimleri yalnızca Ana Ekran'a eklenmiş uygulamalara iletir (iOS 16.4 veya üzeri).",
       "dismiss": "Anladım"
     },
@@ -34,7 +34,7 @@
       "disable": "Bu cihazda kapat",
       "working": "Lütfen bekleyin…",
       "denied": "Bu site için bildirimler tarayıcınızda engellenmiş. Tarayıcı ayarlarından izin verin, sonra buraya dönün.",
-      "unsupported": "Bu tarayıcı bildirim alamıyor. Android'de Chrome veya Edge kullanın, iPhone'da ise AgentNest'i Ana Ekran'dan açın.",
+      "unsupported": "Bu tarayıcı bildirim alamıyor. Android'de Chrome veya Edge kullanın, iPhone'da ise Pivoris'i Ana Ekran'dan açın.",
       "typesTitle": "Şunlardan haber ver",
       "types": {
         "approvals": {

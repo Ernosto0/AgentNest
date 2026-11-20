@@ -18,7 +18,7 @@ const pinToday = () => vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-
 
 const base = `/api/v1/workspaces/${WS_GOLKENT}`;
 const chatPath = `${base}/assistant/test-chat`;
-const META = { product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"] };
+const META = { product_name: "Pivoris", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"] };
 
 const draft = (overrides: Partial<TestChatDraft> = {}): TestChatDraft => ({
   text: "Monthly membership is 6.000 ₺ / month.",

@@ -83,7 +83,7 @@ Output:
 ```text
 ============================= test session starts =============================
 platform win32 -- Python 3.12.15, pytest-9.1.1, pluggy-1.7.0
-rootdir: C:\Users\ernos\AgentNest\backend
+rootdir: C:\Users\ernos\Pivoris\backend
 configfile: pyproject.toml
 plugins: anyio-4.15.1, platformdirs-4.14.3
 collected 58 items

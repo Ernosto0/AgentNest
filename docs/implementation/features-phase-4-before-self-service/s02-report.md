@@ -43,7 +43,7 @@ Frontend, from `frontend/` (PowerShell): `npm.cmd run lint` pass; `npm.cmd run t
 
 ## Pending live / open questions (do not claim)
 
-- No live import against real customer sites; real sites may serve gzip regardless of `Accept-Encoding: identity`, be script-rendered, or block the bot user agent `AgentNestImport/1.0`. Try 3-5 real Turkish small-business sites before pilot.
+- No live import against real customer sites; real sites may serve gzip regardless of `Accept-Encoding: identity`, be script-rendered, or block the bot user agent `PivorisImport/1.0`. Try 3-5 real Turkish small-business sites before pilot.
 - The OS resolver call (`getaddrinfo`) has no own timeout; only the 180 s job timeout bounds it.
 - Whether the daily limit of 10 is right for onboarding (owner retries) is a guess.
 - The website text goes to the LLM provider like pasted text; the sub-processor register needs no change but a pilot owner should know the page content is public.

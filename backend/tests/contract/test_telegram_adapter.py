@@ -313,7 +313,7 @@ def test_telegram_dispatcher_start_command(
     assert len(mock_tg.calls) == 1
     call = mock_tg.calls[0]
     assert call["api_method"] == "sendMessage"
-    assert "Welcome to AgentNest" in call["body"]["text"]
+    assert "Welcome to Pivoris" in call["body"]["text"]
     assert "/link" in call["body"]["text"]
 
 
@@ -403,7 +403,7 @@ def test_telegram_dispatcher_link_and_unlink_lifecycle(
         client=mock_tg_client,
     )
     assert res_unlink.action == "unlink"
-    assert "unlinked from AgentNest" in mock_tg.calls[-1]["body"]["text"]
+    assert "unlinked from Pivoris" in mock_tg.calls[-1]["body"]["text"]
 
     # Verify link is unlinked in DB
     db_session.refresh(link)
@@ -417,7 +417,7 @@ def test_telegram_dispatcher_link_and_unlink_lifecycle(
         client=mock_tg_client,
     )
     assert res_status_unlinked.action == "status"
-    assert "not linked to any AgentNest workspace" in mock_tg.calls[-1]["body"]["text"]
+    assert "not linked to any Pivoris workspace" in mock_tg.calls[-1]["body"]["text"]
 
 
 def test_telegram_dispatcher_unlinked_user_message_prompts_link(

@@ -46,7 +46,7 @@ async function fixture(browser, locale, width, role = 'owner') {
     requests.push({ path, query: url.search, method, body });
     const send = (json, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(json) });
     const problem = (code = 'VERSION_CONFLICT', status = 409) => send({ code, status, title: code, request_id: 'fixture-request' }, status);
-    if (path === '/api/v1/meta') return send({ product_name: 'AgentNest', demo_tools_enabled: true, llm_mode: 'fake', supported_locales: ['tr', 'en'], instagram_providers: ['mock'] });
+    if (path === '/api/v1/meta') return send({ product_name: 'Pivoris', demo_tools_enabled: true, llm_mode: 'fake', supported_locales: ['tr', 'en'], instagram_providers: ['mock'] });
     if (path === '/api/v1/auth/me') return send({ user: { id: 'user-1', display_name: 'Deniz', email: 'fixture@example.test', ui_locale: locale }, csrf_token: 'fixture', memberships: [{ workspace_id: ws, workspace_name: 'Studio Garden · Test', role, is_demo: true }] });
     if (path === api) return send({ id: ws, name: 'Studio Garden · Test', slug: 'fixture', business_category: 'fitness', market: 'tr', default_locale: locale, reply_languages: ['tr', 'en'], timezone: 'Europe/Istanbul', currency: 'TRY', is_demo: true, status: 'active', settings: {}, created_at: now });
     if (path.endsWith('/deletion-status')) return send({ is_deleting: false });

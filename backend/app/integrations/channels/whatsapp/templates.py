@@ -63,72 +63,72 @@ def _t(
 
 _TEMPLATES = (
     _t(
-        "agentnest_approval_requested_v1",
+        "pivoris_approval_requested_v1",
         "approval.requested",
-        "AgentNest: Kararınızı bekleyen bir onay var. Ayrıntılar için uygulamayı açın.",
-        "AgentNest: An approval is waiting for your decision. Open the app for details.",
+        "Pivoris: Kararınızı bekleyen bir onay var. Ayrıntılar için uygulamayı açın.",
+        "Pivoris: An approval is waiting for your decision. Open the app for details.",
     ),
     _t(
-        "agentnest_owner_question_v1",
+        "pivoris_owner_question_v1",
         "owner_question.requested",
-        "AgentNest: Asistanınızın size bir sorusu var. Yanıtlamak için uygulamayı açın.",
-        "AgentNest: Your assistant has a question for you. Open the app to answer it.",
+        "Pivoris: Asistanınızın size bir sorusu var. Yanıtlamak için uygulamayı açın.",
+        "Pivoris: Your assistant has a question for you. Open the app to answer it.",
     ),
     _t(
-        "agentnest_question_unanswered_v1",
+        "pivoris_question_unanswered_v1",
         "owner_question.window_closed",
-        "AgentNest: Bir soru yanıtsız kaldı. Ne olduğunu görmek için uygulamayı açın.",
-        "AgentNest: A question went unanswered. Open the app to see what happened.",
+        "Pivoris: Bir soru yanıtsız kaldı. Ne olduğunu görmek için uygulamayı açın.",
+        "Pivoris: A question went unanswered. Open the app to see what happened.",
     ),
     _t(
-        "agentnest_content_failed_v1",
+        "pivoris_content_failed_v1",
         "content.failed",
-        "AgentNest: Bir paylaşım yayınlanamadı. Ne olduğunu görmek için uygulamayı açın.",
-        "AgentNest: A post could not be published. Open the app to see what happened.",
+        "Pivoris: Bir paylaşım yayınlanamadı. Ne olduğunu görmek için uygulamayı açın.",
+        "Pivoris: A post could not be published. Open the app to see what happened.",
     ),
     _t(
-        "agentnest_reply_failed_v1",
+        "pivoris_reply_failed_v1",
         "reply.failed",
-        "AgentNest: Bir yanıt gönderilemedi. Ne olduğunu görmek için uygulamayı açın.",
-        "AgentNest: A reply was not sent. Open the app to see what happened.",
+        "Pivoris: Bir yanıt gönderilemedi. Ne olduğunu görmek için uygulamayı açın.",
+        "Pivoris: A reply was not sent. Open the app to see what happened.",
     ),
     _t(
-        "agentnest_account_reauth_v1",
+        "pivoris_account_reauth_v1",
         "account.needs_reauth",
-        "AgentNest: Instagram bağlantısının yenilenmesi gerekiyor. "
+        "Pivoris: Instagram bağlantısının yenilenmesi gerekiyor. "
         "Hesabı yeniden bağlamak için uygulamayı açın.",
-        "AgentNest: Your Instagram connection needs to be renewed. "
+        "Pivoris: Your Instagram connection needs to be renewed. "
         "Open the app to reconnect your account.",
     ),
     _t(
-        "agentnest_quota_warning_v1",
+        "pivoris_quota_warning_v1",
         "quota.warning",
-        "AgentNest: Yapay zeka yanıt hakkınızın %80'i kullanıldı. "
+        "Pivoris: Yapay zeka yanıt hakkınızın %80'i kullanıldı. "
         "Planınızı ve kullanımı Ayarlar'dan görün.",
-        "AgentNest: 80% of your AI reply allowance is used. See your plan and usage in Settings.",
+        "Pivoris: 80% of your AI reply allowance is used. See your plan and usage in Settings.",
     ),
     _t(
-        "agentnest_quota_grace_v1",
+        "pivoris_quota_grace_v1",
         "quota.grace",
-        "AgentNest: Yapay zeka yanıt hakkınıza ulaşıldı. "
+        "Pivoris: Yapay zeka yanıt hakkınıza ulaşıldı. "
         "Taslaklar %10 ek hakla devam eder, sonra duraklar.",
-        "AgentNest: AI reply allowance reached. Drafting continues within an extra 10%, "
+        "Pivoris: AI reply allowance reached. Drafting continues within an extra 10%, "
         "then pauses.",
     ),
     _t(
-        "agentnest_quota_paused_v1",
+        "pivoris_quota_paused_v1",
         "quota.paused",
-        "AgentNest: Yapay zeka yanıtları duraklatıldı. Mesajlar gelen kutusuna düşmeye devam "
+        "Pivoris: Yapay zeka yanıtları duraklatıldı. Mesajlar gelen kutusuna düşmeye devam "
         "eder; yeni döneme kadar kendiniz yanıtlayın.",
-        "AgentNest: AI replies are paused. Messages still arrive in the inbox; reply yourself "
+        "Pivoris: AI replies are paused. Messages still arrive in the inbox; reply yourself "
         "until the next period.",
     ),
     _t(
-        "agentnest_daily_summary_v1",
+        "pivoris_daily_summary_v1",
         "report.daily_ready",
-        "AgentNest günlük özet, {{1}} tarihi için: {{2}} yeni mesaj, {{3}} gönderilen yanıt, "
+        "Pivoris günlük özet, {{1}} tarihi için: {{2}} yeni mesaj, {{3}} gönderilen yanıt, "
         "{{4}} bekleyen onay. Ayrıntılar uygulamada.",
-        "AgentNest daily summary for {{1}}: {{2}} new messages, {{3}} replies sent, "
+        "Pivoris daily summary for {{1}}: {{2}} new messages, {{3}} replies sent, "
         "{{4}} approvals waiting. Details are in the app.",
         ("local_date", "inbound_messages", "replies_sent", "pending_approvals"),
     ),

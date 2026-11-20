@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.clock import Clock
 from app.core.logging import get_logger
 
-# Arbitrary constant identifying "the AgentNest scheduler" among advisory locks.
+# Arbitrary constant identifying "the Pivoris scheduler" among advisory locks.
 SCHEDULER_LOCK_KEY = 7_201_410_001
 
 # A periodic function enqueues jobs through the given session/clock and returns how many it

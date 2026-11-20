@@ -72,7 +72,7 @@ Docs: listed in section 1, plus this report.
 
 ## 5. Checks (exact)
 
-Backend env for every run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, `TEST_DATABASE_URL` = the `.env` value with the database name `agentnest_p2s03_test` (and `_a_`, `_b_`, `_c_` for shards). `DEMO_TOOLS_ENABLED=true` only where stated. The full ~3,600-test suite was not run serially.
+Backend env for every run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, `TEST_DATABASE_URL` = the `.env` value with the database name `pivoris_p2s03_test` (and `_a_`, `_b_`, `_c_` for shards). `DEMO_TOOLS_ENABLED=true` only where stated. The full ~3,600-test suite was not run serially.
 
 | Command (from `backend/`) | Result |
 |---|---|

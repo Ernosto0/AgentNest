@@ -14,10 +14,10 @@
 #     docker compose -f compose.prod.yml --env-file .env --profile backup run --rm backup
 #
 #   Optional staging environment (P8-12, isolated stack/volumes/hostname on same or separate VM):
-#     COMPOSE_PROJECT_NAME=agentnest-staging ENV_FILE=.env.staging \
+#     COMPOSE_PROJECT_NAME=pivoris-staging ENV_FILE=.env.staging \
 #       docker compose -f compose.prod.yml --env-file .env.staging up -d
 
-name: ${COMPOSE_PROJECT_NAME:-agentnest}
+name: ${COMPOSE_PROJECT_NAME:-pivoris}
 
 x-logging: &default-logging
   driver: json-file
@@ -26,7 +26,7 @@ x-logging: &default-logging
     max-file: "${DOCKER_LOG_MAX_FILE:-5}"
 
 x-backend-common: &backend-common
-  image: ${AGENTNEST_BACKEND_IMAGE:-ghcr.io/agentnest/agentnest-backend:${IMAGE_TAG:-latest}}
+  image: ${PIVORIS_BACKEND_IMAGE:-ghcr.io/pivoris/pivoris-backend:${IMAGE_TAG:-latest}}
   build:
     context: .
     dockerfile: Dockerfile
@@ -52,9 +52,9 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-agentnest}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentnest}
-      POSTGRES_DB: ${POSTGRES_DB:-agentnest}
+      POSTGRES_USER: ${POSTGRES_USER:-pivoris}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pivoris}
+      POSTGRES_DB: ${POSTGRES_DB:-pivoris}
     expose:
       - "5432"
     volumes:
@@ -62,7 +62,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-agentnest} -d $${POSTGRES_DB:-agentnest}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-pivoris} -d $${POSTGRES_DB:-pivoris}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -98,8 +98,8 @@ services:
       BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-}
     volumes:
       - ./scripts:/app/scripts:ro
-      - backups_data:/var/backups/agentnest
-    command: ["python", "/app/scripts/backup.py", "run", "--output-dir", "/var/backups/agentnest"]
+      - backups_data:/var/backups/pivoris
+    command: ["python", "/app/scripts/backup.py", "run", "--output-dir", "/var/backups/pivoris"]
     networks:
       - backend
 
@@ -179,7 +179,7 @@ services:
       start_period: 15s
 
   caddy:
-    image: ${AGENTNEST_CADDY_IMAGE:-ghcr.io/agentnest/agentnest-caddy:${IMAGE_TAG:-latest}}
+    image: ${PIVORIS_CADDY_IMAGE:-ghcr.io/pivoris/pivoris-caddy:${IMAGE_TAG:-latest}}
     build:
       context: .
       dockerfile: Dockerfile

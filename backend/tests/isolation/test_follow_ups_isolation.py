@@ -64,7 +64,7 @@ def test_forced_rls_and_policy(db_session: Session) -> None:
     )
 
 
-@pytest.mark.parametrize("role", ["agentnest_app", "agentnest_worker"])
+@pytest.mark.parametrize("role", ["pivoris_app", "pivoris_worker"])
 def test_runtime_tenant_isolation(
     db_session: Session, two_workspaces: TwoWorkspaces, role: str
 ) -> None:

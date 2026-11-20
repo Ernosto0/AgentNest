@@ -51,7 +51,7 @@ try {
       assert.equal(request.method(), "GET", "No mutations allowed in asset verification");
       apiRequests.push(url.pathname);
       if (url.pathname === "/api/v1/auth/me") return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "AUTH_REQUIRED", status: 401, params: {} }) });
-      if (url.pathname === "/api/v1/meta") return route.fulfill({ contentType: "application/json", body: JSON.stringify({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"] }) });
+      if (url.pathname === "/api/v1/meta") return route.fulfill({ contentType: "application/json", body: JSON.stringify({ product_name: "Pivoris", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"] }) });
       throw new Error(`Unmocked asset API: ${url.pathname}`);
     });
     await page.goto(`${scenario.origin}${scenario.path}`, { waitUntil: "networkidle" });

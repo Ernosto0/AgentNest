@@ -3,7 +3,7 @@
 **Status:** Completed and locally verified across Sessions 01–28 on 2026-11-01 (see Session 28 report and screen coverage ledger); physical operator mobile walkthrough pending live deployment.
 **Execution plan:** [28 implementation sessions](../phase-8.5-sessions/phase-8.5-sessions.md).
 **Design specification:** [Application UI specification](../../product/ui-redesign-specification.md).
-**Visual reference:** [Interactive AgentNest concept](https://agentnest-style-preview.woollyhero2.chatgpt.site), with retained [source and instructions](../../../design-preview/agentnest-today/README.md).
+**Visual reference:** [Interactive Pivoris concept](https://pivoris-style-preview.woollyhero2.chatgpt.site), with retained [source and instructions](../../../design-preview/pivoris-today/README.md).
 
 ## 1. Objective
 

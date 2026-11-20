@@ -114,13 +114,13 @@ def test_notification_deliveries_fail_closed_without_tenant_context(
 
     # Clear tenant context and query under runtime role
     clear_tenant_context(db_session)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         rows = db_session.scalars(select(NotificationDelivery)).all()
         assert len(rows) == 0
 
     # With matching tenant context, row is visible
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         rows_authed = db_session.scalars(select(NotificationDelivery)).all()
         assert len(rows_authed) == 1
         assert rows_authed[0].id == delivery_a.id
@@ -192,14 +192,14 @@ def test_cross_tenant_notification_deliveries_isolation(
 
     # Under WS A context: only delivery A visible
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         ws_a_deliveries = db_session.scalars(select(NotificationDelivery)).all()
         assert len(ws_a_deliveries) == 1
         assert ws_a_deliveries[0].id == delivery_a.id
 
     # Under WS B context: only delivery B visible
     set_tenant_context(db_session, ws_b.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         ws_b_deliveries = db_session.scalars(select(NotificationDelivery)).all()
         assert len(ws_b_deliveries) == 1
         assert ws_b_deliveries[0].id == delivery_b.id

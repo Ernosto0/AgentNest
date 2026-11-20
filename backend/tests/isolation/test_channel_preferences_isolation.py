@@ -122,14 +122,14 @@ def test_channel_preferences_rls_isolation_between_workspaces(db_session: Sessio
     clear_tenant_context(db_session)
     db_session.flush()
 
-    # Under runtime role 'agentnest_app':
+    # Under runtime role 'pivoris_app':
     # 1. Without tenant context set: 0 rows returned
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         rows_empty = db_session.scalars(select(ChannelPreference)).all()
         assert len(rows_empty) == 0
 
     # 2. With workspace A context: only workspace A rows visible
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         set_tenant_context(db_session, ws_a.id)
         rows_a = db_session.scalars(select(ChannelPreference)).all()
         assert len(rows_a) == 2
@@ -137,7 +137,7 @@ def test_channel_preferences_rls_isolation_between_workspaces(db_session: Sessio
         clear_tenant_context(db_session)
 
     # 3. With workspace B context: only workspace B rows visible
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         set_tenant_context(db_session, ws_b.id)
         rows_b = db_session.scalars(select(ChannelPreference)).all()
         assert len(rows_b) == 2

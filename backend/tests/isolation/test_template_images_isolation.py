@@ -71,10 +71,10 @@ def test_brand_rls_fail_closed_and_same_tenant_crud(db_session):
     a_id, b_id, wa, wb = row_a.id, row_b.id, a.id, b.id
     db_session.expunge_all()
     clear_tenant_context(db_session)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert not db_session.scalars(select(WorkspaceBrandSettings)).all()
     set_tenant_context(db_session, wa)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert [r.id for r in db_session.scalars(select(WorkspaceBrandSettings))] == [a_id]
         assert (
             db_session.execute(

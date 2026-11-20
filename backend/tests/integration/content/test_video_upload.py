@@ -154,7 +154,7 @@ def test_size_counter_and_scratch_cleanup(env, tmp_path, media_root):
             FakeVideoProber(),
         )
     assert source.tell() == 11
-    assert not list(tmp_path.glob("agentnest-video-*"))
+    assert not list(tmp_path.glob("pivoris-video-*"))
     assert not assets(env) and len(audits(env, "media.rejected")) == 1
 
 

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Launch the local Understand Anything dashboard for AgentNest.
+Launch the local Understand Anything dashboard for Pivoris.
 #>
 [CmdletBinding()]
 param(
@@ -16,7 +16,7 @@ if (Test-Path -LiteralPath (Join-Path $projectRoot '.understand-anything') -Path
     $dataDir = Join-Path $projectRoot '.understand-anything'
 }
 if (-not (Test-Path -LiteralPath (Join-Path $dataDir 'knowledge-graph.json') -PathType Leaf)) {
-    throw 'No knowledge graph yet. In Codex, run $understand in AgentNest first.'
+    throw 'No knowledge graph yet. In Codex, run $understand in Pivoris first.'
 }
 $dashboardDir = Join-Path $PluginRoot 'packages\dashboard'
 if (-not (Test-Path -LiteralPath $dashboardDir -PathType Container)) {

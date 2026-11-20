@@ -99,7 +99,7 @@ All steps use the credential-free defaults (`LLM_PROVIDER=fake`, mock Instagram,
 
 ## 4. Checks run
 
-Full detail and exact commands: [s08-report.md](../features-phase-2-during-pilots/s08-report.md) section 4. Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, `DEMO_TOOLS_ENABLED=true` for the inbox, "everything else" and e2e shards; the backend suite ran as parallel shards on their own databases (`agentnest_p2s08_{,a,b,c,d}_test`, not dropped).
+Full detail and exact commands: [s08-report.md](../features-phase-2-during-pilots/s08-report.md) section 4. Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, `DEMO_TOOLS_ENABLED=true` for the inbox, "everything else" and e2e shards; the backend suite ran as parallel shards on their own databases (`pivoris_p2s08_{,a,b,c,d}_test`, not dropped).
 
 | Check | Result |
 |---|---|
@@ -196,4 +196,4 @@ Full detail and exact commands: [s08-report.md](../features-phase-2-during-pilot
 7. D-05: should unsaved owner-answer candidates expire? Is the knowledge-fence rebase in `accept_candidate` and `reject_candidate` acceptable?
 8. D-04: should the pause command also cover a legacy-controlled account, and should "pause until" allow an open-ended pause? Should a reschedule confirmed by chat need a second look when the item was already approved by someone else?
 9. P-13 is still open for the rest of the Today screen on phones (collapse or move the remaining sections); schedule it in the UI polish session.
-10. **Working tree.** Every change of Sessions 01 to 08 is uncommitted on `main`. Unrelated pre-existing modifications and the git worktrees (`agentnest-p2/*`, `backend/tmp-session05*`) were left untouched. `frontend/openapi.json` was exported with `uv run python -m app.cli export-openapi` and has no drift. Suggested next step: review, then commit in logical pieces (one per session) before Feature Phase 3.
+10. **Working tree.** Every change of Sessions 01 to 08 is uncommitted on `main`. Unrelated pre-existing modifications and the git worktrees (`pivoris-p2/*`, `backend/tmp-session05*`) were left untouched. `frontend/openapi.json` was exported with `uv run python -m app.cli export-openapi` and has no drift. Suggested next step: review, then commit in logical pieces (one per session) before Feature Phase 3.

@@ -233,7 +233,7 @@ def test_outside_the_window_it_is_the_plain_template_without_buttons(
     assert work(env, factory) == 1
     (message,) = cloud.requests
     assert message["type"] == "template"
-    assert message["template"]["name"] == "agentnest_approval_requested_v1"
+    assert message["template"]["name"] == "pivoris_approval_requested_v1"
     assert "interactive" not in message and "buttons" not in json.dumps(message)
     assert tokens(env, approval) == []  # no token exists for a message that has no buttons
     (delivery,) = deliveries(env)

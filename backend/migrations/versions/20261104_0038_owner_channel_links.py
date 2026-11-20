@@ -11,7 +11,7 @@ P9-01 / ADR-012 / ADR-025:
 - Enables and forces PostgreSQL Row-Level Security (RLS) on both Category C tables.
 - Updates agent_owner_tasks check constraint source_channel to include 'telegram'.
 - Defines pre-context SECURITY DEFINER resolution helpers for webhook ingress.
-- Grants runtime privileges to agentnest_app and agentnest_worker.
+- Grants runtime privileges to pivoris_app and pivoris_worker.
 """
 
 from collections.abc import Sequence
@@ -260,15 +260,15 @@ def upgrade() -> None:
             f"""
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_links TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_link_codes TO agentnest_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_app') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_links TO pivoris_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_link_codes TO pivoris_app;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_links TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_link_codes TO agentnest_worker;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_worker') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_links TO pivoris_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE channel_link_codes TO pivoris_worker;
                 END IF;
             END $$;
             """

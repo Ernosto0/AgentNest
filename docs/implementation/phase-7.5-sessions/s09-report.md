@@ -9,7 +9,7 @@ external owner messenger, commit, push or deployment was used. Session 10 has no
 `main` at `d7d3c01`, with the operator-reviewed uncommitted Sessions 05–08 preserved.
 Migration `0025` follows `0024`. Existing accounts retain legacy/inactive defaults; nothing
 activates an account automatically. All tests use the disposable PostgreSQL database
-`agentnest_test` on localhost:5433, fake models, mock Instagram and local storage. Process-only
+`pivoris_test` on localhost:5433, fake models, mock Instagram and local storage. Process-only
 overrides are `COOKIE_SECURE=false`, `DEMO_TOOLS_ENABLED=true`,
 `INSTAGRAM_ENABLED_PROVIDERS=mock`, `LLM_PROVIDER=fake`, `MEDIA_STORAGE_BACKEND=local`.
 `.env` and ignored prior scratch directories were left alone.

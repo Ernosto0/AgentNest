@@ -11,7 +11,7 @@ describe("LoginPage", () => {
   const meta = {
     "GET /api/v1/meta": () =>
       json({
-        product_name: "AgentNest",
+        product_name: "Pivoris",
         demo_tools_enabled: true,
         llm_mode: "fake",
         supported_locales: ["tr", "en"],

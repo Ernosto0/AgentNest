@@ -227,14 +227,14 @@ def process_update(
         # Route: /start
         if cmd == "/start":
             greeting = (
-                "👋 <b>Welcome to AgentNest!</b>\n\n"
+                "👋 <b>Welcome to Pivoris!</b>\n\n"
                 "I am your business operations and delegated autonomy assistant.\n\n"
-                "<b>With AgentNest you can:</b>\n"
+                "<b>With Pivoris you can:</b>\n"
                 "• Receive instant notifications and approval requests\n"
                 "• Review and approve marketing content and replies\n"
                 "• Query business performance and status\n\n"
                 "<b>To connect your account:</b>\n"
-                "1. Open AgentNest in your browser\n"
+                "1. Open Pivoris in your browser\n"
                 "2. Navigate to <i>Settings → Notifications & Channels</i>\n"
                 "3. Generate a <b>Telegram Link Code</b>\n"
                 "4. Send <code>/link &lt;CODE&gt;</code> here!"
@@ -288,7 +288,7 @@ def process_update(
                     ws_name = workspace.name
                 else:
                     user_name = "User"
-                    ws_name = "AgentNest"
+                    ws_name = "Pivoris"
 
                 deferred_client.send_message(
                     chat_id=chat_id,
@@ -311,12 +311,12 @@ def process_update(
                 if exc.code == "LINK_CODE_INVALID":
                     msg = (
                         "❌ <b>Invalid link code.</b> Please check the code in "
-                        "AgentNest Settings and try again."
+                        "Pivoris Settings and try again."
                     )
                 elif exc.code == "LINK_CODE_USED":
                     msg = (
                         "❌ <b>This link code has already been used.</b> Please generate "
-                        "a new code in AgentNest Settings."
+                        "a new code in Pivoris Settings."
                     )
                 elif exc.code == "LINK_CODE_EXPIRED":
                     msg = (
@@ -346,7 +346,7 @@ def process_update(
             )
             deferred_client.send_message(
                 chat_id=chat_id,
-                text="🔌 Your Telegram account has been unlinked from AgentNest.",
+                text="🔌 Your Telegram account has been unlinked from Pivoris.",
                 parse_mode="HTML",
             )
             return _finalize(
@@ -370,7 +370,7 @@ def process_update(
                     chat_id=chat_id,
                     text=(
                         "ℹ️ <b>Account Status</b>\n\n"
-                        "Your Telegram account is not linked to any AgentNest workspace.\n\n"
+                        "Your Telegram account is not linked to any Pivoris workspace.\n\n"
                         "Use <code>/link &lt;CODE&gt;</code> to connect your account."
                     ),
                     parse_mode="HTML",
@@ -392,7 +392,7 @@ def process_update(
                 deferred_client.send_message(
                     chat_id=chat_id,
                     text=(
-                        f"✅ <b>Linked to AgentNest</b>\n\n"
+                        f"✅ <b>Linked to Pivoris</b>\n\n"
                         f"• <b>Workspace:</b> {html.escape(workspace.name)}\n"
                         f"• <b>User:</b> {html.escape(user_name)}\n"
                         f"• <b>Active notifications:</b> {unread_count}\n"
@@ -424,7 +424,7 @@ def process_update(
                 text=(
                     "ℹ️ You have not linked your Telegram account yet.\n\n"
                     "Please link your account first using <code>/link &lt;CODE&gt;</code>.\n"
-                    "You can generate a link code in the AgentNest web app under "
+                    "You can generate a link code in the Pivoris web app under "
                     "<i>Settings → Notifications & Channels</i>."
                 ),
                 parse_mode="HTML",

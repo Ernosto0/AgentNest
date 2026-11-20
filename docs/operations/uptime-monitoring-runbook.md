@@ -8,7 +8,7 @@
 
 ## 1. Overview & Health Probes Architecture
 
-AgentNest provides two dedicated HTTP probes mounted at the root path of the API application:
+Pivoris provides two dedicated HTTP probes mounted at the root path of the API application:
 
 | Endpoint | Probe Type | Purpose | Behavior & Dependencies | Expected Healthy Response | Unhealthy Status |
 |---|---|---|---|---|---|
@@ -32,7 +32,7 @@ AgentNest provides two dedicated HTTP probes mounted at the root path of the API
 - **Failure Threshold:** **2 consecutive failures** before paging operators (prevents transient network flutters from waking on-call).
 - **Recovery Threshold:** **2 consecutive successful probes** before closing the incident.
 - **Request Headers:**
-  - `User-Agent: AgentNest-Uptime-Monitor/1.0`
+  - `User-Agent: Pivoris-Uptime-Monitor/1.0`
   - `Accept: application/json`
 
 ---
@@ -43,9 +43,9 @@ AgentNest provides two dedicated HTTP probes mounted at the root path of the API
 
 ```json
 {
-  "name": "AgentNest Production Readiness",
+  "name": "Pivoris Production Readiness",
   "type": "http",
-  "url": "https://agentnest.example.com/readyz",
+  "url": "https://pivoris.example.com/readyz",
   "interval": 30,
   "retryInterval": 15,
   "maxretries": 2,
@@ -59,7 +59,7 @@ AgentNest provides two dedicated HTTP probes mounted at the root path of the API
 ### 3.2 Better Stack (Better Uptime)
 
 1. **Monitor Type:** URL / HTTP monitor
-2. **URL:** `https://agentnest.example.com/readyz`
+2. **URL:** `https://pivoris.example.com/readyz`
 3. **Alerting rule:** Alert if status code is not `200` OR response body does not contain `"status": "ok"`.
 4. **Check frequency:** 30 seconds.
 5. **Request timeout:** 5 seconds.
@@ -68,12 +68,12 @@ AgentNest provides two dedicated HTTP probes mounted at the root path of the API
 ### 3.3 Datadog Synthetics (API HTTP Test)
 
 ```yaml
-name: "AgentNest Production /readyz Check"
+name: "Pivoris Production /readyz Check"
 type: api
 subtype: http
 request:
   method: GET
-  url: "https://agentnest.example.com/readyz"
+  url: "https://pivoris.example.com/readyz"
   timeout: 5
 assertions:
   - type: statusCode
@@ -98,7 +98,7 @@ options:
 ### 3.4 AWS Route 53 Health Check
 
 - **Type:** HTTP / HTTPS
-- **Domain Name:** `agentnest.example.com`
+- **Domain Name:** `pivoris.example.com`
 - **Port:** `443`
 - **Path:** `/readyz`
 - **Request Interval:** Standard (30 seconds)
@@ -113,7 +113,7 @@ When `/readyz` transitions to `503 Service Unavailable` or connection refused:
 
 ### Step 1: Inspect Response Payload
 ```bash
-curl -i https://agentnest.example.com/readyz
+curl -i https://pivoris.example.com/readyz
 ```
 
 - **If `database: false`:**

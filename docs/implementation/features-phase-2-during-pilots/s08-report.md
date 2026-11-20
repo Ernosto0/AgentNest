@@ -44,7 +44,7 @@ Docs: as above.
 
 ## 4. Checks (exact)
 
-Environment for every backend run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, `TEST_DATABASE_URL` = the `.env` value with the database name `agentnest_p2s08_test` or `agentnest_p2s08_{a,b,c,d}_test` (parallel shards), run from `backend/` with `uv run pytest -q -p no:cacheprovider <paths>`.
+Environment for every backend run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, `TEST_DATABASE_URL` = the `.env` value with the database name `pivoris_p2s08_test` or `pivoris_p2s08_{a,b,c,d}_test` (parallel shards), run from `backend/` with `uv run pytest -q -p no:cacheprovider <paths>`.
 
 | Check | Result |
 |---|---|

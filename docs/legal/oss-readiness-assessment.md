@@ -32,7 +32,7 @@ In accordance with `docs/implementation/phase-8-sessions/phase-08-sessions.md` Â
 
 ## 3. Current Implementation Actions (Session 14)
 
-1. **Repository Privacy Maintained:** The AgentNest repository remains strictly **private**. No public repository or mirror is authorized until `OQ-02` is formally decided.
+1. **Repository Privacy Maintained:** The Pivoris repository remains strictly **private**. No public repository or mirror is authorized until `OQ-02` is formally decided.
 2. **No LICENSE File Added:** In accordance with ADR-019 Â§Decisions Taken, no `LICENSE` file is created at the repository root. All rights remain reserved by the project owners.
 3. **No External Contributions Accepted:** External pull requests, issues, or patches are not accepted, eliminating any risk of contributor copyright entanglement or relicensing gridlock.
 4. **Dependency Compliance Verified:** All currently utilized runtime dependencies (FastAPI, SQLAlchemy, Pydantic, React, Tailwind, Vite) operate under permissive licenses (MIT, BSD-3, Apache-2.0) that remain compatible with whichever license is ultimately chosen for `OQ-02`.
@@ -49,7 +49,7 @@ As soon as legal counsel and the founder resolve `OQ-02`:
    - If Apache-2.0 is selected: Create `CONTRIBUTING.md` enforcing the Developer Certificate of Origin (DCO, `Signed-off-by`).
 3. **Community & Security Standards:**
    - Add `CODE_OF_CONDUCT.md` based on the Contributor Covenant v2.1.
-   - Add `SECURITY.md` defining vulnerability reporting channels (`security@agentnest.io`) and disclosure SLAs.
+   - Add `SECURITY.md` defining vulnerability reporting channels (`security@pivoris.com`) and disclosure SLAs.
    - Add `.github/ISSUE_TEMPLATE/` (bug reports, feature proposals) and `.github/PULL_REQUEST_TEMPLATE.md`.
 4. **Public Release:** Transition repository visibility from private to public.
 

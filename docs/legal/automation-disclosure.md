@@ -19,13 +19,13 @@ Under Turkish legislation:
 The EU Artificial Intelligence Act (Regulation 2024/1689, Article 50) establishes transparency obligations:
 > *"Providers shall ensure that AI systems intended to interact directly with natural persons are designed and developed in such a way that the natural persons concerned are informed that they are interacting with an AI system, unless this is obvious from the points of view of a reasonable and reasonably well-informed, observant and circumspect natural person."*
 
-While AgentNest primarily serves Turkish SMBs in the pilot phase, adopting clear automation transparency aligns with both Turkish consumer protection norms and international best practices.
+While Pivoris primarily serves Turkish SMBs in the pilot phase, adopting clear automation transparency aligns with both Turkish consumer protection norms and international best practices.
 
 ---
 
 ## 2. Platform Architecture & Technical Implementation
 
-AgentNest implements a granular, tiered disclosure model based on the level of autonomy involved in each message:
+Pivoris implements a granular, tiered disclosure model based on the level of autonomy involved in each message:
 
 ```
 [Inbound Customer DM]

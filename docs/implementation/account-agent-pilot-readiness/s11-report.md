@@ -30,10 +30,10 @@ Audited via `railway_mcp` and documented in Session 00:
 
 | Service | Service ID | Production Status | Active Deployment ID | Source / Commit | Public URL / Endpoint |
 |---|---|---|---|---|---|
-| **api** | `6cfd4455-ad68-4a0f-992b-bbc429d2128a` | `SUCCESS` (Online, 1 replica) | `5e1ceb63-7eed-4d64-89c1-4ca919de1a4e` | `Ernosto0/AgentNest@main` · `e1c9f13` | Internal (proxied via `web`) |
-| **worker** | `c7cdabc3-c0e2-4b05-8254-b9283541ec65` | `SUCCESS` (Online, 1 replica) | `220546e6-98d0-4e56-a604-9e05bc813b24` | `Ernosto0/AgentNest@main` · `e1c9f13` | Background worker (Postgres queue) |
-| **web** | `9fea5780-98c4-48d1-a63b-3184d073bee0` | `SUCCESS` (Online, 1 replica) | `ecd82504-669d-4180-a2c6-3bf18b23f3ed` | `Ernosto0/AgentNest@main` · `e1c9f13` | `https://web-production-b2f30.up.railway.app` |
-| **landing** | `77541bf2-11f3-44e1-8371-71cc18082ac4` | `SUCCESS` (Online, 1 replica) | `f1656500-b8c7-46ca-8375-775a146b5a6d` | `Ernosto0/AgentNest@main` · `1a58d41` | `https://landing-production-945f7d94.up.railway.app` |
+| **api** | `6cfd4455-ad68-4a0f-992b-bbc429d2128a` | `SUCCESS` (Online, 1 replica) | `5e1ceb63-7eed-4d64-89c1-4ca919de1a4e` | `Ernosto0/Pivoris@main` · `e1c9f13` | Internal (proxied via `web`) |
+| **worker** | `c7cdabc3-c0e2-4b05-8254-b9283541ec65` | `SUCCESS` (Online, 1 replica) | `220546e6-98d0-4e56-a604-9e05bc813b24` | `Ernosto0/Pivoris@main` · `e1c9f13` | Background worker (Postgres queue) |
+| **web** | `9fea5780-98c4-48d1-a63b-3184d073bee0` | `SUCCESS` (Online, 1 replica) | `ecd82504-669d-4180-a2c6-3bf18b23f3ed` | `Ernosto0/Pivoris@main` · `e1c9f13` | `https://web-production-b2f30.up.railway.app` |
+| **landing** | `77541bf2-11f3-44e1-8371-71cc18082ac4` | `SUCCESS` (Online, 1 replica) | `f1656500-b8c7-46ca-8375-775a146b5a6d` | `Ernosto0/Pivoris@main` · `1a58d41` | `https://landing-production-945f7d94.up.railway.app` |
 | **Postgres** | `d47a5af2-0a6a-4f93-946f-3b5e2ebab3b2` | `SUCCESS` (Online, 1 replica) | `157faac9-589e-4a89-9cab-b1de9193937b` | `postgres-ssl:18` (volume 5 GB) | Internal (`host: postgres.railway.internal`) |
 
 ---

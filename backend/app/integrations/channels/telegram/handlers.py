@@ -934,7 +934,7 @@ def _handle_agent_task(
             "🤖 <b>Talimat Alındı</b>\n\n"
             "Talimatınız yapay zeka asistanına iletildi:\n"
             f'<i>"{html.escape(raw_text)}"</i>\n\n'
-            "Durumu AgentNest üzerinden takip edebilirsiniz."
+            "Durumu Pivoris üzerinden takip edebilirsiniz."
         )
     else:
         reply = (

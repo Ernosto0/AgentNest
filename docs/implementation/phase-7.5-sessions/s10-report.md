@@ -64,7 +64,7 @@ Existing accounts remain legacy/inactive unless explicitly activated.
 
 ## Verification evidence
 
-Local Python 3.12 venv; disposable PostgreSQL 16 `agentnest_test` at localhost:5433;
+Local Python 3.12 venv; disposable PostgreSQL 16 `pivoris_test` at localhost:5433;
 frozen clocks, fake model, mock Instagram and local media only. Every pytest shell sets
 `COOKIE_SECURE=false`, `DEMO_TOOLS_ENABLED=true`, `INSTAGRAM_ENABLED_PROVIDERS=mock`,
 `LLM_PROVIDER=fake`, `MEDIA_STORAGE_BACKEND=local`. `.env` was not edited; test scratch

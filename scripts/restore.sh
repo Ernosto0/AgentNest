@@ -4,17 +4,17 @@
 # Performs:
 #   1. Target database isolation check (refuses non-empty DB without --allow-overwrite-disposable)
 #   2. Archive & manifest SHA-256 verification and AES-256-GCM decryption
-#   3. pg_restore (--no-owner --no-privileges --role=agentnest_migrator)
+#   3. pg_restore (--no-owner --no-privileges --role=pivoris_migrator)
 #   4. Alembic revision, table count, and least-privilege role verification
 #   5. Post-restore worker fencing (in_progress -> outcome_unknown, account_agents -> paused,
 #      agent_delegations -> revoked) and tombstone manifest re-application
 #
 # Usage:
 #   ./scripts/restore.sh \
-#     --archive /var/backups/agentnest/agentnest-20261030T020000Z.dump.enc \
-#     --target-database-url postgresql://postgres:postgres@localhost:5432/agentnest_restored \
+#     --archive /var/backups/pivoris/pivoris-20261030T020000Z.dump.enc \
+#     --target-database-url postgresql://postgres:postgres@localhost:5432/pivoris_restored \
 #     --create-target-db \
-#     --tombstone-manifest /var/backups/agentnest/tombstones.json
+#     --tombstone-manifest /var/backups/pivoris/tombstones.json
 
 set -euo pipefail
 

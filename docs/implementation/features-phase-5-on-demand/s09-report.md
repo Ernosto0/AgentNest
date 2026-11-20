@@ -9,7 +9,7 @@
 - A **feature**, not an OAuth scope. It needs App Review, Business Verification (Advanced Access) and possibly additional contracts. The Instagram Login scopes stay `instagram_business_basic` and `instagram_business_manage_messages`.
 - Rule: a human agent replies within 7 days of the user's last message, for an issue that cannot be resolved in the standard window (business closed, more than 24 hours needed).
 - Request: `messaging_type: "MESSAGE_TAG"` and `tag: "HUMAN_AGENT"` beside `recipient` and `message`. Meta's Page `messages` reference says only `HUMAN_AGENT` exists for Instagram. **Unverified:** the same fields under Instagram Login (`graph.instagram.com`); the error when the feature is not granted; the exact 7-day boundary; any way for an app to read whether the feature was granted. Logged as V-HA.
-- Meta's pages state no explicit automation prohibition (secondary sources say human-only). AgentNest takes the conservative reading: human-typed only.
+- Meta's pages state no explicit automation prohibition (secondary sources say human-only). Pivoris takes the conservative reading: human-typed only.
 - The App Review package (`docs/operations/meta-app-review-package.md`) has a Human Agent row in section 3, a pending Screencast 5 and a checklist item.
 
 ## What was delivered

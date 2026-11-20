@@ -107,7 +107,7 @@ def upgrade() -> None:
             """
         )
     )
-    for role in ("agentnest_app", "agentnest_worker", "agentnest_migrator"):
+    for role in ("pivoris_app", "pivoris_worker", "pivoris_migrator"):
         op.execute(
             sa.text(
                 f"""

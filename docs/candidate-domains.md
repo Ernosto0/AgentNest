@@ -1,7 +1,7 @@
 # Candidate Domains & Product Brand Exploration
 
 **Context & Purpose:**  
-This document tracks brand name candidates and verified domain availability for the Instagram Operations Assistant project (currently using the working name `AgentNest`). It directly informs:
+This document tracks brand name candidates and verified domain availability for the Instagram Operations Assistant project (currently using the working name `Pivoris`). It directly informs:
 1. **OQ-10 (Product Name and Trademark):** Finalizing a brand name before commercial pilot scaling and public release.
 2. **P-07 (Production Custom Domain Rollout):** Replacing the temporary `*.up.railway.app` deployment URL with an authoritative custom domain across `APP_BASE_URL`, `FRONTEND_ORIGIN`, and `META_OAUTH_REDIRECT_URI`.
 
@@ -18,7 +18,7 @@ Invented, non-dictionary terms designed for global brandability, clean trademark
 | # | Brand Name | English Pronunciation | Phonetic Vibe & Brand Character | `.com` Availability | `.ai` Availability |
 |---|---|---|---|---|---|
 | 1 | **Daxvelo** | `daks-VEL-oh` | Dynamic, two-syllable tech tempo; combines speed (*velo*) with modern SaaS crispness. | ✅ **Available** | ✅ **Available** |
-| 2 | **Nestalux** | `NEST-uh-luks` | Preserves `AgentNest` project heritage while adding premium polish and enterprise clarity. | ✅ **Available** | ✅ **Available** |
+| 2 | **Nestalux** | `NEST-uh-luks` | Preserves `Pivoris` project heritage while adding premium polish and enterprise clarity. | ✅ **Available** | ✅ **Available** |
 | 3 | **Calyvix** | `KAL-ih-viks` | Sharp, futuristic AI agent identity; distinct consonant ending for strong recall. | ✅ **Available** | ✅ **Available** |
 | 4 | **Kinvelix** | `kin-VEL-iks` | Evokes kinetic momentum and velocity; smooth, natural vocal transition. | ✅ **Available** | ✅ **Available** |
 | 5 | **Flowisto** | `flow-ISS-toh` | Warm Mediterranean cadence paired with messaging workflow fluidity (*flow*). | ✅ **Available** | ✅ **Available** |

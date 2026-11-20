@@ -1,7 +1,7 @@
 # Understand Anything
 
 [Understand Anything](https://github.com/Egonex-AI/Understand-Anything) is optional
-development tooling for exploring AgentNest's architecture. It runs separately
+development tooling for exploring Pivoris's architecture. It runs separately
 from the API, worker, frontend, and public landing page.
 
 ## Installed on this Windows machine
@@ -17,7 +17,7 @@ them, restart its Codex session.
 
 ## Analyze and explore
 
-Open AgentNest in Codex and run:
+Open Pivoris in Codex and run:
 
 ```text
 $understand
@@ -53,7 +53,7 @@ without an AI session:
 # Optional: .\scripts\understand-dashboard.ps1 -Port 5180
 ```
 
-This launcher uses port 5174 to avoid AgentNest's frontend on 5173. Vite chooses
+This launcher uses port 5174 to avoid Pivoris's frontend on 5173. Vite chooses
 another free port if necessary. Use the tokenized URL printed in the terminal;
 the dashboard opens in your browser. Press Ctrl+C to stop it.
 

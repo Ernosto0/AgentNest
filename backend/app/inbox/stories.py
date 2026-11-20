@@ -11,7 +11,7 @@ Two kinds of DM refer to one of the business's Instagram stories:
 What we can say about a story we did not publish is nothing: the Graph API exposes no caption for
 a story (stories have no caption field; unverified, see integrations.md), so a reply to a story
 that is not in our own ``content_items`` has no context and keeps the old behaviour. For a story
-AgentNest published the stored content record is the context: its internal title, its objective and
+Pivoris published the stored content record is the context: its internal title, its objective and
 the overlay text the owner approved. That record is owner-authored data, still passed to the model
 as labelled data and never as instructions (INV-03), with fact placeholders reduced to a plain
 label so that no value reaches the model outside a placeholder it may copy (INV-02).
@@ -122,7 +122,7 @@ def own_story(
     *,
     message_time: datetime,
 ) -> StoryContent | None:
-    """The story AgentNest published under this media id on this account, else ``None``."""
+    """The story Pivoris published under this media id on this account, else ``None``."""
     item = session.scalars(
         select(ContentItem)
         .where(

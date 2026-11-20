@@ -10,7 +10,7 @@
 #   6. /readyz readiness verification and structured diagnostics on failure
 #
 # Usage:
-#   ./scripts/deploy.sh --image-tag v0.8.0 --env-file .env --project-name agentnest
+#   ./scripts/deploy.sh --image-tag v0.8.0 --env-file .env --project-name pivoris
 
 set -euo pipefail
 

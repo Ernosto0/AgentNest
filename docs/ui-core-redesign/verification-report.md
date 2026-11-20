@@ -40,7 +40,7 @@ Representative captures:
 
 The baseline and visual browser runs use the production Vite bundle with intercepted APIs. All fixture mutations affect an in-memory fixture ledger. Browser versions and successful capture/check records are in `after/results.json`. The separate stack browser test uses the actual API, worker and a seeded disposable database with fake models and mock Instagram.
 
-Docker Desktop could not start. Backend verification used an isolated local PostgreSQL 17 cluster bound to `127.0.0.1:55433`, with a new `agentnest_core_ui_test` database. The configured development/default database was not reseeded. The cluster is stopped after verification. The initial backend run exposed test-environment provider configuration and a fixture account uniqueness mistake; these were corrected before the complete 16-test selection was rerun successfully.
+Docker Desktop could not start. Backend verification used an isolated local PostgreSQL 17 cluster bound to `127.0.0.1:55433`, with a new `pivoris_core_ui_test` database. The configured development/default database was not reseeded. The cluster is stopped after verification. The initial backend run exposed test-environment provider configuration and a fixture account uniqueness mistake; these were corrected before the complete 16-test selection was rerun successfully.
 
 Only the optional owner-question `thread_id` query contract is changed; no migration is added. Generated OpenAPI/client diffs contain only that addition. A full runtime OpenAPI export also exposed two pre-existing Telegram webhook paths absent from the checked-in baseline; those unrelated paths were excluded from this scoped contract change.
 

@@ -4,7 +4,7 @@ Executed 2026-11-01, Europe/Istanbul. Scope: P8.5-28 (Full Regression and Accept
 
 ## 1. Executive Summary & Trajectory
 
-Phase 8.5 (Complete Application UI & UX Redesign) has executed and verified all 28 sessions strictly sequentially from Session 00 through Session 28, transitioning AgentNest from legacy visual styling to an editorial, human-in-the-loop product design.
+Phase 8.5 (Complete Application UI & UX Redesign) has executed and verified all 28 sessions strictly sequentially from Session 00 through Session 28, transitioning Pivoris from legacy visual styling to an editorial, human-in-the-loop product design.
 
 ### Trajectory Overview:
 - **Sessions 00–15 (Committed on `main` at `dfd2752`):**

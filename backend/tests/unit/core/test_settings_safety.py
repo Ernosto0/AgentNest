@@ -13,7 +13,7 @@ from app.core.config import (
 )
 
 GOOD_SECRET = "x" * 48
-PROD_DB = "postgresql+psycopg://u:p@db.internal:5432/agentnest"
+PROD_DB = "postgresql+psycopg://u:p@db.internal:5432/pivoris"
 
 
 @pytest.fixture(autouse=True)
@@ -476,7 +476,7 @@ def test_phase8_defaults_and_migration_url_fallback() -> None:
         "127.0.0.1/32",
         "::1/128",
     ]
-    override_url = "postgresql+psycopg://migrator:pw@db.internal:5432/agentnest"
+    override_url = "postgresql+psycopg://migrator:pw@db.internal:5432/pivoris"
     with_migrator = Settings(_env_file=None, migration_database_url=override_url)
     assert with_migrator.effective_migration_database_url == override_url
 
@@ -499,7 +499,7 @@ def test_smtp_url_requires_mail_from() -> None:
 
 def test_phase8_secrets_never_appear_in_public_dict() -> None:
     settings = prod(
-        migration_database_url="postgresql+psycopg://migrator:super-secret-mig@db.internal:5432/agentnest",
+        migration_database_url="postgresql+psycopg://migrator:super-secret-mig@db.internal:5432/pivoris",
         smtp_url="smtp://user:super-secret-smtp@smtp.example.test:587",
         mail_from="noreply@example.test",
         sentry_dsn="https://super-secret-dsn@o0.ingest.sentry.io/1",
@@ -521,7 +521,7 @@ def test_telegram_production_settings_validation() -> None:
     with pytest.raises(
         ConfigError, match="TELEGRAM_BOT_TOKEN must be set when TELEGRAM_BOT_USERNAME"
     ):
-        prod(telegram_bot_username="AgentNestBot")
+        prod(telegram_bot_username="PivorisBot")
 
     # Webhook secret without token/username
     with pytest.raises(
@@ -531,11 +531,11 @@ def test_telegram_production_settings_validation() -> None:
 
     # Both set is valid
     s = prod(
-        telegram_bot_username="AgentNestBot",
+        telegram_bot_username="PivorisBot",
         telegram_bot_token="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
         telegram_webhook_secret="secret_token_123",
     )
-    assert s.telegram_bot_username == "AgentNestBot"
+    assert s.telegram_bot_username == "PivorisBot"
     public = s.public_dict()
     assert "telegram_bot_token" not in public
     assert "telegram_webhook_secret" not in public

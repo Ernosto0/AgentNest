@@ -29,7 +29,7 @@ Intermediate operator-ledger commits (`dbddcab`, `0bf3fe2`, `6a25f64`, `68e728c`
 
 ## 2. Verification
 
-All commands run on Windows PowerShell 5.1. Backend tests use `agentnest_test`; E2E uses the ordinary `agentnest` demo database on ports **8100/5273**, `npm run dev`, one worker, all three projects, **zero retries**. The separate real-time walkthrough uses `agentnest_s11_walkthrough`, `MEDIA_LOCAL_ROOT=./var/session-11-media`, API **8200** and Vite **5373**, with the ordinary worker clock and default eight-second reply debounce. It uses no future-clock or run-due shortcut.
+All commands run on Windows PowerShell 5.1. Backend tests use `pivoris_test`; E2E uses the ordinary `pivoris` demo database on ports **8100/5273**, `npm run dev`, one worker, all three projects, **zero retries**. The separate real-time walkthrough uses `pivoris_s11_walkthrough`, `MEDIA_LOCAL_ROOT=./var/session-11-media`, API **8200** and Vite **5373**, with the ordinary worker clock and default eight-second reply debounce. It uses no future-clock or run-due shortcut.
 
 | Check | Session 11 result |
 |---|---|

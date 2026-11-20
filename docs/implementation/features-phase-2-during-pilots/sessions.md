@@ -126,7 +126,7 @@ Run the backend and frontend checks, write s03-report.md in the same folder, and
 **Goal.** A reply to the business's story is drafted with the story as context. A story mention gets an owner-approved thank-you.
 
 **Work**
-- Find where `story_reply` attachments currently force `human_required`. Instead, fetch the story's caption or overlay text where the API allows it. If the story is one AgentNest published, use its stored content record. Pass it to drafting as "Customer is replying to this story: ...". If the story context cannot be found, keep today's behaviour.
+- Find where `story_reply` attachments currently force `human_required`. Instead, fetch the story's caption or overlay text where the API allows it. If the story is one Pivoris published, use its stored content record. Pass it to drafting as "Customer is replying to this story: ...". If the story context cannot be found, keep today's behaviour.
 - Add story mention ingestion (webhook format, mock provider). Create a mention item that offers a single owner-configured thank-you template. It is approval-required by default, and the delegation ladder can later make it automatic.
 - Show the story thumbnail or text in the conversation view.
 - Tests: story with known content, unknown story, expired story, mention with template, mention with no template configured.

@@ -75,7 +75,7 @@ ELLIPSIS = "\u2026"
 
 _TEXT = {
     "tr": {
-        "head": "AgentNest: Kararınızı bekleyen bir onay var ({label}).",
+        "head": "Pivoris: Kararınızı bekleyen bir onay var ({label}).",
         "expires": "Son karar zamanı: {expires}. Aşağıdaki düğmelerle karar verebilirsiniz.",
         "cut": "(tam metin uygulamada)",
         "reply": "Önerilen yanıt",
@@ -90,7 +90,7 @@ _TEXT = {
         "creates_draft": "Yalnızca taslak oluşturulur.",
     },
     "en": {
-        "head": "AgentNest: An approval is waiting for your decision ({label}).",
+        "head": "Pivoris: An approval is waiting for your decision ({label}).",
         "expires": "Decide by: {expires}. You can decide with the buttons below.",
         "cut": "(full text in the app)",
         "reply": "Proposed reply",

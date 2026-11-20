@@ -69,7 +69,7 @@ def test_live_telegram_send_ping_message(
     result: dict[str, Any] = _probe(
         lambda: live_client.send_message(
             chat_id=chat_id,
-            text="[AgentNest] Live Telegram probe ping: OK",
+            text="[Pivoris] Live Telegram probe ping: OK",
         )
     )
     _check(isinstance(result, dict))
@@ -92,7 +92,7 @@ def test_live_telegram_send_photo(
         lambda: live_client.send_photo(
             chat_id=chat_id,
             photo=photo_bytes,
-            caption="[AgentNest] Live Telegram probe photo: OK",
+            caption="[Pivoris] Live Telegram probe photo: OK",
         )
     )
     _check(isinstance(result, dict))

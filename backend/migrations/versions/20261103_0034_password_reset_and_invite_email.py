@@ -67,11 +67,11 @@ def upgrade() -> None:
             """
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE password_reset_tokens TO agentnest_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_app') THEN
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE password_reset_tokens TO pivoris_app;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE password_reset_tokens TO agentnest_worker;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_worker') THEN
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE password_reset_tokens TO pivoris_worker;
                 END IF;
             END
             $$;

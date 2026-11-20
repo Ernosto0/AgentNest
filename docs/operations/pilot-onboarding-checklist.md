@@ -14,7 +14,7 @@ Before initiating the onboarding session, the operator and business owner must v
 | Requirement | Turkish Description | Verification Method |
 |---|---|---|
 | **Instagram Account Type** | Instagram Profesyonel (İşletme veya İçerik Üretici) hesabı | In the Instagram app: `Settings and activity -> Account type and tools` must offer *Switch to personal account* (confirming it is already Professional). A personal account must first be switched to Professional (Business or Creator). |
-| **Facebook Page** | **Gerekmez.** | AgentNest connects with *Instagram API with Instagram Login* (Business Login for Instagram). Meta does not require a Facebook Page to be linked to the Instagram professional account; the owner needs neither a linked Page nor Page admin rights. |
+| **Facebook Page** | **Gerekmez.** | Pivoris connects with *Instagram API with Instagram Login* (Business Login for Instagram). Meta does not require a Facebook Page to be linked to the Instagram professional account; the owner needs neither a linked Page nor Page admin rights. |
 | **Meta App Tester Role** | Meta Geliştirici panelinde Instagram Test Kullanıcısı (OQ-03) | While the app is in development mode (before public App Review), the operator adds the owner's Instagram username in `Meta Developer Portal -> App roles -> Roles -> Instagram Testers`. The owner accepts the invitation in the Instagram app (`Settings -> Apps and websites -> Tester invites`). Until accepted, the OAuth consent screen fails. |
 | **Business Facts Inventory** | Doğrulanmış işletme bilgileri (çalışma saatleri, fiyatlar, adres, hizmetler) | Owner prepares working hours, service pricing, address/directions, contact phone/WhatsApp, booking instructions, and cancellation policy. These are the verified facts the assistant may quote (§2.2). |
 | **Legal Documentation** | KVKK Aydınlatma Metni ve Veri İşleme Sözleşmesi (DPA) | Operator delivers `docs/legal/kvkk-aydinlatma-metni-template.md` and `docs/legal/dpa-template.md` to owner for review and sign-off. |
@@ -125,7 +125,7 @@ flowchart TD
 
 ## 4. Channel Choice & Notification Setup (Bilingual Walkthrough)
 
-AgentNest provides explicit **Channel Choice** (Session 02). Business owners choose how they receive notifications and approve actions.
+Pivoris provides explicit **Channel Choice** (Session 02). Business owners choose how they receive notifications and approve actions.
 
 ### 4.1 Prioritized Day-One Channel: Telegram
 
@@ -135,7 +135,7 @@ Telegram is the recommended and primary day-one channel for instant alerts and o
 2. Under **Telegram**, tap **Telegram'a Bağla** (Link Telegram).
 3. The app generates a single-use deep link: `https://t.me/<BotUsername>?start=<token>`.
 4. The owner taps the link on their mobile device, opening the Telegram app.
-5. In Telegram, the owner taps **Start**. The bot confirms: *"AgentNest hesabınız bağlandı!"*
+5. In Telegram, the owner taps **Start**. The bot confirms: *"Pivoris hesabınız bağlandı!"*
 6. The operator sends a test notification from the app to verify delivery. When an approval alert arrives, the owner taps **Onayla** (Approve) or **Reddet** (Reject) directly within Telegram.
 
 ### 4.2 First-Class Alternative: WhatsApp Owner Channel
@@ -183,7 +183,7 @@ While the **App UI is strictly bilingual in Turkish and English (`tr` and `en`)*
 
 ## 6. Meta Instagram OAuth Authorization Walkthrough
 
-Connect the business Instagram account to AgentNest. The owner signs in with their **Instagram** credentials; no Facebook account or Page is involved.
+Connect the business Instagram account to Pivoris. The owner signs in with their **Instagram** credentials; no Facebook account or Page is involved.
 
 ### 🇹🇷 Instagram Bağlantısı (Türkçe)
 1. **Bağlantılar Ekranına Gitme:** **Daha fazla -> Instagram bağlantısı** (ya da **Ayarlar -> Bağlantılar**) bölümüne dokunun.
@@ -194,14 +194,14 @@ Connect the business Instagram account to AgentNest. The owner signs in with the
    - Gönderi ve hikâye paylaşma (`instagram_business_content_publish`)
    - Hesap istatistiklerini görme (`instagram_business_manage_insights`)
    - Yorumları yönetme (`instagram_business_manage_comments`)
-4. **Onay:** **İzin Ver (Allow)** butonuna dokunun. Ekran AgentNest'e döner; durum **bağlı** olarak güncellenir.
+4. **Onay:** **İzin Ver (Allow)** butonuna dokunun. Ekran Pivoris'e döner; durum **bağlı** olarak güncellenir.
 5. **Yorumdan DM (Private Reply):** Bağlantılar ekranında **Yorumdan DM’ye yanıt (özel yanıtlar)** ayarının açık olduğunu doğrulayın.
 
 ### 🇬🇧 Instagram Connection (English)
 1. **Navigate to Connections:** Go to **More -> Instagram connection** (or **Settings -> Connections**).
 2. **Connect Button:** Tap **Connect with Instagram**. The official Instagram sign-in screen opens.
 3. **Permissions Review:** Allow profile info, message management, content publishing, insights, and comment management.
-4. **Confirmation:** Tap **Allow**. Return to AgentNest; status displays **connected**.
+4. **Confirmation:** Tap **Allow**. Return to Pivoris; status displays **connected**.
 5. **Comment-to-DM:** Verify **Comment-to-DM (private replies)** toggle is active in settings.
 
 ---
@@ -405,16 +405,16 @@ GROUP BY channel, status, last_error;
 
 ## 10. Emergency Rollback & Contingency Runbooks
 
-The business owner must know how to pause, override, or immediately disconnect AgentNest at any time.
+The business owner must know how to pause, override, or immediately disconnect Pivoris at any time.
 
 ### Contingency Runbook A: Immediate Emergency Disconnect (Tek Tıkla Bağlantı Kesme)
 - **In-App Action:**
   1. Go to **Daha fazla -> Instagram bağlantısı** (More -> Instagram connection).
   2. Tap **Bağlantıyı kes** (Disconnect).
-  3. Confirm dialog: tap **Evet, bağlantıyı kes**. AgentNest revokes stored tokens, invalidates pending operations, and ceases all sends.
+  3. Confirm dialog: tap **Evet, bağlantıyı kes**. Pivoris revokes stored tokens, invalidates pending operations, and ceases all sends.
 - **Instagram Native Action:**
   1. Open Instagram -> `Settings -> Apps and websites`.
-  2. Select `AgentNest` and tap **Remove**. Meta sends deauthorization webhook; AgentNest immediately disables the account.
+  2. Select `Pivoris` and tap **Remove**. Meta sends deauthorization webhook; Pivoris immediately disables the account.
 
 ### Contingency Runbook B: Pause Account Agent (Asistanı Duraklatma)
 - **When to use:** If the owner wishes to handle all DMs personally or take full manual control during an event.
@@ -424,6 +424,6 @@ The business owner must know how to pause, override, or immediately disconnect A
   3. New customer messages still arrive in the Inbox, but the Agent stops autonomous drafting and actions until **Asistanı sürdür** (Resume assistant) is tapped.
 
 ### Contingency Runbook C: Emergency Operator Escalation
-- **Emergency Contact:** `ops@agentnest.io` / WhatsApp Destek: `+90 (5XX) XXX XX XX`.
+- **Emergency Contact:** `ops@pivoris.com` / WhatsApp Destek: `+90 (5XX) XXX XX XX`.
 - **Pilot SLA:** 15-minute response time during business hours (08:00 – 22:00 TRT).
 - **Incident Inspection:** Check **Daha fazla -> Sistem durumu** first. On the server, run `python -m app.cli check-config` and `python -m app.cli migration-status`.

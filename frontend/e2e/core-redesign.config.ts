@@ -4,8 +4,8 @@ import baseline from "./playwright.config";
 
 // This suite may reseed data. Require an explicitly selected disposable local database.
 const database = process.env.DATABASE_URL ?? "";
-if (!/127\.0\.0\.1:55433\/agentnest_core_ui_test$/.test(database)) {
-  throw new Error("Core redesign E2E requires the isolated agentnest_core_ui_test database.");
+if (!/127\.0\.0\.1:55433\/pivoris_core_ui_test$/.test(database)) {
+  throw new Error("Core redesign E2E requires the isolated pivoris_core_ui_test database.");
 }
 Object.assign(process.env, {
   APP_ENV: "development",

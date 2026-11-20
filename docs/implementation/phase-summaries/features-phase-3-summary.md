@@ -78,7 +78,7 @@ Full check results: section 4.
 
 ## 4. Checks run
 
-Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1 DEMO_TOOLS_ENABLED=true`. The whole backend suite ran as four parallel shards on four empty databases (`agentnest_p3m_{a,b,c,d}_test`, dropped afterwards). The shards shared one Postgres container and were slow (about 80 to 90 minutes for the integration shards, dominated by per-test `TRUNCATE` fsyncs), not hung.
+Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1 DEMO_TOOLS_ENABLED=true`. The whole backend suite ran as four parallel shards on four empty databases (`pivoris_p3m_{a,b,c,d}_test`, dropped afterwards). The shards shared one Postgres container and were slow (about 80 to 90 minutes for the integration shards, dominated by per-test `TRUNCATE` fsyncs), not hung.
 
 | Check | Result |
 |---|---|
@@ -165,4 +165,4 @@ All steps use the credential-free defaults (`LLM_PROVIDER=fake`, mock Instagram,
 3. Should `policy.price_disclosure` apply to price cards? Should the 1.1 MB of fonts be subset to Latin (needs fontTools)?
 4. Should the draft page poll while a command-staged render job is running? Should the hours card get a structured per-day builder as a next step?
 5. If the agent coordinator ever replays an unrecorded private-reply tool call on a real account, it would see a refusal rather than an idempotent answer (S02 risk 2). The checkpointed observation path should prevent it but was not exercised under a real replay.
-6. **Working tree.** Every change of Sessions 01 to 04 is uncommitted on `main`, on top of the also-uncommitted Feature Phase 2 work. The git worktrees `agentnest-p3/s01` and `agentnest-p3/s03` (outside the repo) and a git-ignored `.tmp` folder were left as they are. Suggested next step: review, then commit in logical pieces (one per session) before the next phase.
+6. **Working tree.** Every change of Sessions 01 to 04 is uncommitted on `main`, on top of the also-uncommitted Feature Phase 2 work. The git worktrees `pivoris-p3/s01` and `pivoris-p3/s03` (outside the repo) and a git-ignored `.tmp` folder were left as they are. Suggested next step: review, then commit in logical pieces (one per session) before the next phase.

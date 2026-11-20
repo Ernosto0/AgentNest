@@ -14,7 +14,7 @@
 ## 3. Files
 Backend and docs: see `git status` (new: `app/content/templates/{link,rerender,staging,jobs}.py`, `app/commands/price_card.py`, `app/commands/executors/content_make_price_card.py`, `app/ai/prompts/interpret_command/v3.md`, migration 0060, evals yaml, new tests under `tests/integration/{content,commands}`, `tests/isolation`, `tests/unit/ai`). Frontend new: `features/content/{TemplateImageSheet,TemplateImageNotice,templateHooks,templateImage.test}.ts(x)`, `features/approvals/{PriceCardSummary,priceCard.test}.tsx`; changed: editor, composer, content page, detail page, on-hold actions, Today (HomePage, UpcomingPanel, WeekCalendar), commands card and messages, approvals sheet, i18n (ai, common, content), test fixtures.
 
-## 4. Checks (test DB `agentnest_p3s03_test`)
+## 4. Checks (test DB `pivoris_p3s03_test`)
 | Check | Result |
 |---|---|
 | ruff check, ruff format --check, mypy app (420 files), lint-imports | pass, 791 files formatted, 23 contracts kept |

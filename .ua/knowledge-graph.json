@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "project": {
-    "name": "AgentNest",
+    "name": "Pivoris",
     "languages": [
       "config",
       "css",
@@ -32,7 +32,7 @@
       "Docker Compose",
       "GitHub Actions"
     ],
-    "description": "AgentNest is a Turkish-first, mobile-first Instagram operations assistant for small businesses. It maintains verified business knowledge, drafts grounded customer DM replies, prepares and schedules content with explicit approvals, and reports outcomes with credential-free simulated integrations.",
+    "description": "Pivoris is a Turkish-first, mobile-first Instagram operations assistant for small businesses. It maintains verified business knowledge, drafts grounded customer DM replies, prepares and schedules content with explicit approvals, and reports outcomes with credential-free simulated integrations.",
     "analyzedAt": "2026-10-23T10:49:00.846Z",
     "gitCommitHash": "5c71606429c3aa355afe428b08677bcac892659b"
   },
@@ -78017,7 +78017,7 @@
       "type": "document",
       "name": "README.md",
       "filePath": "README.md",
-      "summary": "Introduces AgentNest, a Turkish-first Instagram operations assistant, and gives local API, worker, frontend and demo setup commands.",
+      "summary": "Introduces Pivoris, a Turkish-first Instagram operations assistant, and gives local API, worker, frontend and demo setup commands.",
       "tags": [
         "documentation",
         "project-guide",
@@ -78290,7 +78290,7 @@
       "type": "document",
       "name": "README.md",
       "filePath": "docs/README.md",
-      "summary": "Documents AgentNest Documentation, covering Reading order; Map; Document rules.",
+      "summary": "Documents Pivoris Documentation, covering Reading order; Map; Document rules.",
       "tags": [
         "documentation",
         "project-guide",
@@ -81535,7 +81535,7 @@
       "type": "file",
       "name": "01-create-test-db.sql",
       "filePath": "docker/postgres/init/01-create-test-db.sql",
-      "summary": "Creates the isolated agentnest_test database when the local PostgreSQL data volume is first initialized.",
+      "summary": "Creates the isolated pivoris_test database when the local PostgreSQL data volume is first initialized.",
       "tags": [
         "source",
         "sql",
@@ -218324,7 +218324,7 @@
     {
       "id": "layer:documentation",
       "name": "Architecture & Product Documentation",
-      "description": "Product requirements, invariants, architecture decisions, workflow and API contracts, bounded-task prompt templates, implementation reports and operational guides explain AgentNest behavior and development decisions.",
+      "description": "Product requirements, invariants, architecture decisions, workflow and API contracts, bounded-task prompt templates, implementation reports and operational guides explain Pivoris behavior and development decisions.",
       "nodeIds": [
         "document:CLAUDE.md",
         "document:README.md",
@@ -218446,7 +218446,7 @@
     {
       "order": 1,
       "title": "Understand the Product",
-      "description": "Start with the project overview: AgentNest helps small businesses manage Instagram knowledge, customer replies and scheduled content in a Turkish-first experience. The architecture document connects the workspace interface, FastAPI API and background worker, giving you a map for the workflows that follow. The current local demonstration uses simulated integrations.",
+      "description": "Start with the project overview: Pivoris helps small businesses manage Instagram knowledge, customer replies and scheduled content in a Turkish-first experience. The architecture document connects the workspace interface, FastAPI API and background worker, giving you a map for the workflows that follow. The current local demonstration uses simulated integrations.",
       "nodeIds": [
         "document:README.md",
         "document:docs/architecture/system-overview.md"

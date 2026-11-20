@@ -1,7 +1,7 @@
 # Personal Data Breach Response Runbook / Veri İhlali Müdahale Rehberi
 
 - **Document Code:** `RUNBOOK-DATA-BREACH-V1`
-- **Scope:** Security incidents involving personal data, unauthorized access, credential leakage, or data loss across the AgentNest platform.
+- **Scope:** Security incidents involving personal data, unauthorized access, credential leakage, or data loss across the Pivoris platform.
 - **Audience:** Platform Operators, Security Leads, Infrastructure Administrators, and Legal Counsel.
 - **Review Status:** `PENDING_COUNSEL_REVIEW` (Tracking under `OQ-04`, `OQ-12`, `OQ-13`; Gate 3 Pre-condition)
 
@@ -17,7 +17,7 @@ When an incident involves actual or suspected unauthorized access, alteration, d
 | **Türkiye (KVKK)** | **İlgili Kişiler (Affected Data Subjects)** | As soon as reasonably possible after identification | KVKK m. 12/5; Tebliğ hükümleri |
 | **European Union (GDPR)** | **Competent Supervisory Authority (DPA)** | Within **72 hours** of becoming aware | GDPR Article 33 |
 | **European Union (GDPR)** | **Affected Data Subjects** | Without undue delay (if high risk to rights and freedoms) | GDPR Article 34 |
-| **B2B Contractual (DPA)** | **Tenant Businesses (Data Controllers)** | Within **24 to 48 hours** of confirmed breach | [AgentNest DPA](dpa-template.md) Section 6 |
+| **B2B Contractual (DPA)** | **Tenant Businesses (Data Controllers)** | Within **24 to 48 hours** of confirmed breach | [Pivoris DPA](dpa-template.md) Section 6 |
 
 ---
 
@@ -39,7 +39,7 @@ Incidents may be detected via multiple automated and manual channels:
 1. **Automated Operator Alerts:** Webhook signature failure bursts (`webhook:signature_failure_burst`), dead background jobs, or backup failures received via operator alerting (`scripts/evaluate_alerts.py`, `app.operations.operator_alerts`).
 2. **Error Monitoring (Sentry):** Sudden bursts of authentication failures, database connection exceptions, or unexpected authorization errors.
 3. **Immutable Audit Logs:** Anomaly detection in `audit_logs` (e.g., unexpected role changes, mass export requests, bulk key rotations).
-4. **Third-Party / Customer Reports:** Reports submitted to `security@agentnest.io` or `privacy@agentnest.io`.
+4. **Third-Party / Customer Reports:** Reports submitted to `security@pivoris.com` or `privacy@pivoris.com`.
 
 ---
 
@@ -105,7 +105,7 @@ caddy reload --config Caddyfile
 
 ### 6.2 Notification to Business Customers (Controllers) (Within 24–48 Hours)
 Send a formal, confidential breach notification email to the primary Workspace Owner address:
-- **Subject:** `[IMPORTANT] Security Incident Notification / Güvenlik Olayı Bildirimi - AgentNest`
+- **Subject:** `[IMPORTANT] Security Incident Notification / Güvenlik Olayı Bildirimi - Pivoris`
 - **Body:** Clear, factual description of the incident, affected workspaces, categories of data accessed, immediate mitigation taken, and actionable recommendations for the business (e.g., informing their customers or rotating Instagram account credentials).
 
 ---

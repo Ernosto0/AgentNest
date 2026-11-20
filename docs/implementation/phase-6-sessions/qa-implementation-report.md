@@ -16,7 +16,7 @@
 
 Migration `0015` follows `0014`. `daily_reports` is unique by workspace/date/revision, rather than workspace/date alone. `report_items` has a composite tenant/report FK and deliberately has no source-record FK. `report_source_gaps` records source completeness independently of the retained source rows.
 
-The local development database (`localhost`, `agentnest`) was upgraded to `0015`. Both existing report IDs and all their aggregate values were compared before/after and preserved. The owner's demo data was not reset.
+The local development database (`localhost`, `pivoris`) was upgraded to `0015`. Both existing report IDs and all their aggregate values were compared before/after and preserved. The owner's demo data was not reset.
 
 Legacy reports have `evidence_complete=false`: their original membership was never stored and cannot be reconstructed honestly from mutable current records. Their saved values remain readable, with a UI explanation; detail requests return `REPORT_EVIDENCE_UNAVAILABLE`. Explicit regeneration creates a separate complete generation only while sources remain available. If old system-wide cleanup audits show prior deletions, migration conservatively marks pre-cleanup history uncertain for then-existing workspaces, because those old counts cannot identify the lost tenant/day.
 

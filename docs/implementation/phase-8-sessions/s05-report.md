@@ -23,7 +23,7 @@
 | `backend/app/inbox/expiry.py` | **Updated** | Updated `sweep_expired_drafts` to discover candidate drafts across workspaces via `discover_expired_reply_draft_ids`, binding tenant context for each draft resolution. |
 | `backend/app/commands/repository.py` | **Updated** | Updated `due_clarifications()` cross-workspace query to use `discover_expired_command_ids`. |
 | `backend/app/operations/jobs.py` | **Updated** | Updated `reconcile_stuck_operations` to query `discover_stuck_operations`, binding tenant context per stuck operation during unsticking / reconciliation. |
-| `backend/app/operations/backup_restore.py` | **Updated** | Updated `provision_database_roles()` to grant `EXECUTE ON ALL FUNCTIONS IN SCHEMA public` and set default function execution privileges for runtime roles (`agentnest_app`, `agentnest_worker`). |
+| `backend/app/operations/backup_restore.py` | **Updated** | Updated `provision_database_roles()` to grant `EXECUTE ON ALL FUNCTIONS IN SCHEMA public` and set default function execution privileges for runtime roles (`pivoris_app`, `pivoris_worker`). |
 | `backend/tests/unit/core/test_rls_infrastructure.py` | **Created** | 8 comprehensive tests verifying: tenant GUC binding and fail-closed state when unset; invalid UUID rejection; context reset across sessions and connection pool reuse; nested savepoints; `tenant_session` context manager; worker job dispatch with workspace context; all 8 `SECURITY DEFINER` bootstrap functions; and least-privilege non-bypass roles with `REVOKE UPDATE, DELETE` on append-only tables (`audit_logs`, `fact_versions`). |
 | `backend/tests/unit/core/test_deployment_workflow_and_rollback.py` | **Updated** | Updated expected migration head revision to `0031`. |
 
@@ -66,7 +66,7 @@
    - Only narrow lookup paths that must execute prior to tenant context establishment (e.g. webhook account resolution, invite token hashing, OAuth state callback, periodic sweeper discovery) are allowed to bypass RLS.
    - All functions set `search_path = public, pg_temp` to prevent schema search-path hijacking attacks.
 4. **Least-Privilege Database Roles:**
-   - `agentnest_app` and `agentnest_worker` roles are configured with `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`.
+   - `pivoris_app` and `pivoris_worker` roles are configured with `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`.
    - Explicit `REVOKE UPDATE, DELETE ON public.audit_logs, public.fact_versions` enforces append-only immutability.
 
 ---
@@ -75,7 +75,7 @@
 
 - **Next Objective:** Phase 8 Session 06 — RLS Policies for Category C (Workspace-Scoped) Tables (`P8-03`).
 - **Prerequisites Satisfied:**
-  - Database roles (`agentnest_migrator`, `agentnest_app`, `agentnest_worker`) provisioned and verified.
+  - Database roles (`pivoris_migrator`, `pivoris_app`, `pivoris_worker`) provisioned and verified.
   - Transaction-local GUC binding and session factory infrastructure in place across HTTP API dependencies and job worker.
   - Narrow bootstrap discovery functions deployed via migration `0031`.
   - All unit tests (1522 passing), linters, formatters, and type checkers passing cleanly.

@@ -45,7 +45,7 @@ _COMMON_PASSWORDS = frozenset(
 
 _hasher = PasswordHasher()  # argon2id with library defaults
 # Verified against when the user does not exist, so timing does not reveal existence.
-_DUMMY_HASH = _hasher.hash("agentnest-dummy-password")
+_DUMMY_HASH = _hasher.hash("pivoris-dummy-password")
 
 
 def hash_password(password: str) -> str:

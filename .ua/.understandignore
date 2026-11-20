@@ -1,4 +1,4 @@
-# Paths are relative to the AgentNest repository root.
+# Paths are relative to the Pivoris repository root.
 # Keep application code, tests, migrations, evals, and engineering docs in scope.
 
 # Secrets, dependencies, runtime data, and generated output

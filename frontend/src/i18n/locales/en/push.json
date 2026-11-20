@@ -12,10 +12,10 @@
       "settings": "Notification settings"
     },
     "ios": {
-      "title": "Add AgentNest to your Home Screen to get notifications",
+      "title": "Add Pivoris to your Home Screen to get notifications",
       "step1": "Tap the Share button in Safari.",
       "step2": "Choose \"Add to Home Screen\".",
-      "step3": "Open AgentNest from the new Home Screen icon and turn on notifications there.",
+      "step3": "Open Pivoris from the new Home Screen icon and turn on notifications there.",
       "note": "An iPhone or iPad delivers notifications only to apps added to the Home Screen (iOS 16.4 or later).",
       "dismiss": "Got it"
     },
@@ -34,7 +34,7 @@
       "disable": "Turn off for this device",
       "working": "Please wait…",
       "denied": "Notifications are blocked for this site in your browser. Allow them in the browser settings, then come back here.",
-      "unsupported": "This browser cannot receive notifications. Use Chrome or Edge on Android, or open AgentNest from the Home Screen on an iPhone.",
+      "unsupported": "This browser cannot receive notifications. Use Chrome or Edge on Android, or open Pivoris from the Home Screen on an iPhone.",
       "typesTitle": "Tell me about",
       "types": {
         "approvals": {

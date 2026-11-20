@@ -59,16 +59,16 @@
 Read-only inspection was performed via `railway_mcp` (`whoami`, `list-projects`, `get-status`, `describe-environment`, `list-deployments`, `list-domains`). No variables, secrets, or logs were mutated or exposed.
 
 - **Authenticated Account:** `Cinar Che Aksoy` (`cinarcheaksoy@gmail.com`)
-- **Project:** `agentnest` (`f6dd192d-d9eb-4007-acfa-3c3fd00dda72`)
+- **Project:** `pivoris` (`f6dd192d-d9eb-4007-acfa-3c3fd00dda72`)
 - **Environment:** `production` (`b6d7dec1-51f5-43a4-90b8-318d046a33e1`), region `sfo`, 0 staged changes, 0 services with issues, 0 recent failures.
 - **Live Services Inventory:**
 
 | Service | Service ID | Status | Active Deployment ID | Deployed Timestamp (UTC) | Source / Commit | Public Domain |
 |---|---|---|---|---|---|---|
-| **api** | `6cfd4455-ad68-4a0f-992b-bbc429d2128a` | `SUCCESS` (Online, 1 replica) | `5e1ceb63-7eed-4d64-89c1-4ca919de1a4e` | `2026-11-18T18:53:45.414Z` | `Ernosto0/AgentNest@main` · `e1c9f13` | None listed in `list-domains` (internal or proxied via `web`) |
-| **worker** | `c7cdabc3-c0e2-4b05-8254-b9283541ec65` | `SUCCESS` (Online, 1 replica) | `220546e6-98d0-4e56-a604-9e05bc813b24` | `2026-11-18T18:53:45.411Z` | `Ernosto0/AgentNest@main` · `e1c9f13` | None (background worker) |
-| **web** | `9fea5780-98c4-48d1-a63b-3184d073bee0` | `SUCCESS` (Online, 1 replica) | `ecd82504-669d-4180-a2c6-3bf18b23f3ed` | `2026-11-18T18:53:45.412Z` | `Ernosto0/AgentNest@main` · `e1c9f13` | `https://web-production-b2f30.up.railway.app` |
-| **landing** | `77541bf2-11f3-44e1-8371-71cc18082ac4` | `SUCCESS` (Online, 1 replica) | `f1656500-b8c7-46ca-8375-775a146b5a6d` | `2026-11-17T20:36:36.600Z` | `Ernosto0/AgentNest@main` · `1a58d41` (`e1c9f13` & `5ec7435` skipped as non-landing diffs) | `https://landing-production-945f7d94.up.railway.app` |
+| **api** | `6cfd4455-ad68-4a0f-992b-bbc429d2128a` | `SUCCESS` (Online, 1 replica) | `5e1ceb63-7eed-4d64-89c1-4ca919de1a4e` | `2026-11-18T18:53:45.414Z` | `Ernosto0/Pivoris@main` · `e1c9f13` | None listed in `list-domains` (internal or proxied via `web`) |
+| **worker** | `c7cdabc3-c0e2-4b05-8254-b9283541ec65` | `SUCCESS` (Online, 1 replica) | `220546e6-98d0-4e56-a604-9e05bc813b24` | `2026-11-18T18:53:45.411Z` | `Ernosto0/Pivoris@main` · `e1c9f13` | None (background worker) |
+| **web** | `9fea5780-98c4-48d1-a63b-3184d073bee0` | `SUCCESS` (Online, 1 replica) | `ecd82504-669d-4180-a2c6-3bf18b23f3ed` | `2026-11-18T18:53:45.412Z` | `Ernosto0/Pivoris@main` · `e1c9f13` | `https://web-production-b2f30.up.railway.app` |
+| **landing** | `77541bf2-11f3-44e1-8371-71cc18082ac4` | `SUCCESS` (Online, 1 replica) | `f1656500-b8c7-46ca-8375-775a146b5a6d` | `2026-11-17T20:36:36.600Z` | `Ernosto0/Pivoris@main` · `1a58d41` (`e1c9f13` & `5ec7435` skipped as non-landing diffs) | `https://landing-production-945f7d94.up.railway.app` |
 | **Postgres** | `d47a5af2-0a6a-4f93-946f-3b5e2ebab3b2` | `SUCCESS` (Online, 1 replica) | `157faac9-589e-4a89-9cab-b1de9193937b` | `2026-11-05T12:53:09.518Z` | `ghcr.io/railwayapp-templates/postgres-ssl:18` (volume `postgres-volume` 5000 MB at `/var/lib/postgresql/data`) | Internal |
 
 - **Observation:** The live Railway `api`, `worker`, and `web` services are running commit `e1c9f13` (matching local `HEAD`), and `landing` is running `1a58d41` (the latest commit touching `landing/`).
@@ -191,7 +191,7 @@ This table separates **existing code & offline tests**, **missing implementation
 Per Session 00 instructions, owner-reported readiness is respected as the starting context, while distinguishing what has recorded live evidence in the repository versus what remains unrecorded or pending live verification.
 
 ### 5.1 Live Infrastructure Confirmed in Session 00
-1. **Railway Production Environment (`agentnest` project):**
+1. **Railway Production Environment (`pivoris` project):**
    - Verified read-only via Railway MCP on 2026-11-19: `Postgres`, `api`, `worker`, `web` (`https://web-production-b2f30.up.railway.app`), and `landing` (`https://landing-production-945f7d94.up.railway.app`) are **Online** (`SUCCESS`), with `api`, `worker`, and `web` deployed from commit `e1c9f13` on 2026-11-18T18:53:45Z.
 2. **GitHub Actions Main CI (Historical Gate 1):**
    - Recorded in `roadmap.md` / `gate-1-closeout.md` at commit `dadf673` (2026-10-25), and updated through commit `e1c9f13` on `main`.
@@ -233,6 +233,6 @@ These open items from `answeres2.md` Section B are explicitly labelled and separ
 - [x] **Dated baseline recorded:** 2026-11-19, Git commit `e1c9f13` on `main`, single Alembic migration head `0100`.
 - [x] **Actual agent controller settings inspected:** `account_agents`, `agent_delegations`, `coordinator.py`, `context.py`, `grounding.py`, `dm.py`, `calendar.py`, `content.py`, and `config.py` verified and documented.
 - [x] **Existing test commands and static checks verified:** `alembic heads`, `ruff check`, `ruff format --check`, `mypy app`, `lint-imports`, `pytest --collect-only` (5,986 tests), 529 pure unit tests, `npm run lint`, `npm run typecheck`, `npm run i18n:check`, and targeted Vitest suites executed and recorded. Local Docker Postgres port `5433` offline status explicitly noted.
-- [x] **Read-only deployment evidence recorded:** Railway `agentnest` production environment inspected read-only (`api`, `worker`, `web` online at `e1c9f13`; `landing` online at `1a58d41`; `Postgres` online).
+- [x] **Read-only deployment evidence recorded:** Railway `pivoris` production environment inspected read-only (`api`, `worker`, `web` online at `e1c9f13`; `landing` online at `1a58d41`; `Postgres` online).
 - [x] **Requirement-to-code-and-test checklist complete:** Every session requirement (Sessions 01–09) mapped to exact files, existing tests, missing implementation gaps, and live verification dependencies.
 - [x] **Every unknown labelled:** Unresolved product decisions (`U-01` through `U-06`) and unrecorded live evidence items explicitly separated from offline test results.

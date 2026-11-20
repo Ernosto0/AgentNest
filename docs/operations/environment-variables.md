@@ -9,9 +9,9 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | Variable | dev | prod | Description |
 |---|---|---|---|
 | `APP_ENV` | `development` | `production` | `development` \| `test` \| `production` |
-| `DATABASE_URL` | `postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest` | required 🔒 | Main runtime DB (`agentnest_app` / `agentnest_worker` in Phase 8) |
-| `MIGRATION_DATABASE_URL` | empty (= `DATABASE_URL`) | recommended 🔒 | Optional DDL/migration connection URL (`agentnest_migrator` in Phase 8; falls back to `DATABASE_URL` when empty) |
-| `TEST_DATABASE_URL` | `…/agentnest_test` | — | Used by pytest |
+| `DATABASE_URL` | `postgresql+psycopg://pivoris:pivoris@localhost:5433/pivoris` | required 🔒 | Main runtime DB (`pivoris_app` / `pivoris_worker` in Phase 8) |
+| `MIGRATION_DATABASE_URL` | empty (= `DATABASE_URL`) | recommended 🔒 | Optional DDL/migration connection URL (`pivoris_migrator` in Phase 8; falls back to `DATABASE_URL` when empty) |
+| `TEST_DATABASE_URL` | `…/pivoris_test` | — | Used by pytest |
 | `SECRET_KEY` 🔒 | dev placeholder (refused in prod) | required, ≥ 32 bytes random | Signing (OAuth state HMAC, misc) |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | site origin | CORS (dev only) and redirects |
 | `LANDING_ORIGINS` | empty (none) | the landing page's origin, e.g. `https://landing.example` | Comma-separated origins (`scheme://host[:port]`, no path; anything else fails startup). Only `POST /api/v1/waitlist` answers their cross-origin requests (no cookies, `POST` only); every other route stays same-origin. Needed because the landing page is a separate site. `.env.example` sets `http://localhost:5174` for local development |
@@ -27,7 +27,7 @@ Legend: **dev** = development default, **prod** = production requirement. 🔒 =
 | `WORKER_CONCURRENCY` | `2` | `2` | Threads per worker process |
 | `WORKER_POLL_INTERVAL_SECONDS` | `1.0` | `1.0` | |
 | `JOB_LEASE_SECONDS` | `120` | `120` | |
-| `PRODUCT_NAME` | `AgentNest` | configurable | Shown in UI and notifications (OQ-10) |
+| `PRODUCT_NAME` | `Pivoris` | configurable | Shown in UI and notifications (OQ-10) |
 
 **Production safety checks (Phase 1, enforced at startup of the API, worker and CLI):** `SECRET_KEY` set explicitly, at least 32 bytes and not the example value; `DATABASE_URL` set explicitly; `DEMO_TOOLS_ENABLED=false`; `COOKIE_SECURE=true`. When these are not set in production they default to the safe values (`DEMO_TOOLS_ENABLED=false`, `COOKIE_SECURE=true`, `LOG_FORMAT=json`); setting an unsafe value explicitly refuses to start, and all problems are listed together. The seed (`seed`) refuses to run when `APP_ENV=production`. Checks for variables introduced later (fake LLM, mock Instagram, Meta keys, S3) are added by the phase that introduces the variable. Variables in `.env` that the current phase does not know yet are ignored.
 
@@ -167,19 +167,19 @@ These host-level Compose/Caddy variables parameterize `compose.prod.yml` and `Ca
 
 | Variable | Default | Description |
 |---|---|---|
-| `COMPOSE_PROJECT_NAME` | `agentnest` | Docker Compose stack/volume/network prefix (`agentnest-prod`, `agentnest-staging`, etc.) |
+| `COMPOSE_PROJECT_NAME` | `pivoris` | Docker Compose stack/volume/network prefix (`pivoris-prod`, `pivoris-staging`, etc.) |
 | `ENV_FILE` | `.env` | Path to the environment file loaded by `api`, `worker`, and `migrate` |
 | `APP_DOMAIN` | `:80` | Site address in `Caddyfile` (`app.example.com` for production ACME HTTPS, `staging.example.com` for staging, `:80` for local HTTP rehearsal) |
 | `CADDY_TLS_CONFIG` | empty | Optional Caddy TLS directive (`tls internal` for local self-signed HTTPS, `tls ops@example.com` for explicit ACME contact, or empty for automatic HTTPS) |
 | `API_UPSTREAM` | `api:8000` | Upstream FastAPI address proxied by Caddy |
-| `IMAGE_TAG` | `latest` | Container image tag for `AGENTNEST_BACKEND_IMAGE` and `AGENTNEST_CADDY_IMAGE` |
+| `IMAGE_TAG` | `latest` | Container image tag for `PIVORIS_BACKEND_IMAGE` and `PIVORIS_CADDY_IMAGE` |
 | `WEB_CONCURRENCY` | `2` | Uvicorn worker process count in the `api` container |
 | `HTTP_PORT` / `HTTPS_PORT` | `80` / `443` | Host ports published by `caddy` |
 | `DOCKER_LOG_MAX_SIZE` / `DOCKER_LOG_MAX_FILE` | `10m` / `5` | Bounded `json-file` container log rotation limits |
 
 ### Server `.env` ownership and secret handling (`ADR-017`, `INV-10`)
 
-- On production and staging hosts, `.env` (and `.env.staging` if used) must be owned by the non-root deploy user with `0600` permissions (`chown deploy:deploy /opt/agentnest/.env && chmod 600 /opt/agentnest/.env`).
+- On production and staging hosts, `.env` (and `.env.staging` if used) must be owned by the non-root deploy user with `0600` permissions (`chown deploy:deploy /opt/pivoris/.env && chmod 600 /opt/pivoris/.env`).
 - `.dockerignore` excludes `.env`, `.env.*`, key/certificate files, `.git`, `.venv`, `node_modules`, and `var/` from the Docker build context so secrets never enter image layers or build history.
 - The frontend build stage receives only `VITE_API_BASE_URL` (empty for same-origin production); no secret is ever passed to `VITE_*` variables.
 

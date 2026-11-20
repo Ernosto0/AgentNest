@@ -69,12 +69,12 @@ def _load_script_module(module_name: str, filename: str) -> Any:
     return module
 
 
-backup_mod = _load_script_module("agentnest_backup_script", "backup.py")
-restore_mod = _load_script_module("agentnest_restore_script", "restore.py")
+backup_mod = _load_script_module("pivoris_backup_script", "backup.py")
+restore_mod = _load_script_module("pivoris_restore_script", "restore.py")
 
 KEY_B1 = "b1:" + base64.urlsafe_b64encode(b"B" * 32).decode("ascii")
 KEY_B2 = "b2:" + base64.urlsafe_b64encode(b"C" * 32).decode("ascii")
-FAKE_PG_DUMP_BYTES = b"PGDMP\x01\x0e\x00\x04\x08agentnest-custom-dump-payload-for-s04-testing"
+FAKE_PG_DUMP_BYTES = b"PGDMP\x01\x0e\x00\x04\x08pivoris-custom-dump-payload-for-s04-testing"
 
 
 class FakeS3Client:
@@ -176,7 +176,7 @@ def test_backup_encryption_roundtrip_key_rotation_and_tamper_rejection() -> None
     encrypted, header = backup_mod.encrypt_backup_bytes(
         FAKE_PG_DUMP_BYTES,
         keyring_v1,
-        backup_id="agentnest-20261030T020000Z",
+        backup_id="pivoris-20261030T020000Z",
         created_at=now,
         alembic_revision="0030",
     )
@@ -216,7 +216,7 @@ def test_backup_encryption_roundtrip_key_rotation_and_tamper_rejection() -> None
         backup_mod.encrypt_backup_bytes(
             b"not-a-pg-dump",
             keyring_v1,
-            backup_id="agentnest-20261030T020000Z",
+            backup_id="pivoris-20261030T020000Z",
             created_at=now,
             alembic_revision="0030",
         )
@@ -230,22 +230,22 @@ def test_backup_35_day_retention_pruning_and_failed_upload_visibility(tmp_path: 
     now = datetime(2026, 10, 30, 2, 0, 0, tzinfo=UTC)
 
     # Seed expired (36 days old and 45 days old) and retained (34 days old and 10 days old) backups
-    expired_36d = "agentnest-20260923T020000Z"
-    expired_45d = "agentnest-20260914T020000Z"
-    retained_34d = "agentnest-20260926T020000Z"
-    retained_10d = "agentnest-20261020T020000Z"
+    expired_36d = "pivoris-20260923T020000Z"
+    expired_45d = "pivoris-20260914T020000Z"
+    retained_34d = "pivoris-20260926T020000Z"
+    retained_10d = "pivoris-20261020T020000Z"
 
     for bid in (expired_36d, expired_45d, retained_34d, retained_10d):
         for ext in ("dump.enc", "manifest.json"):
             fname = f"{bid}.{ext}"
             (backup_dir / fname).write_bytes(b"old-backup")
-            s3.put_object(Bucket="agentnest-backups", Key=f"postgres/nightly/{fname}", Body=b"old")
+            s3.put_object(Bucket="pivoris-backups", Key=f"postgres/nightly/{fname}", Body=b"old")
 
     report = backup_mod.execute_backup_run(
-        database_url="postgresql+psycopg://u:p@localhost:5432/agentnest",
+        database_url="postgresql+psycopg://u:p@localhost:5432/pivoris",
         raw_encryption_key=KEY_B1,
         output_dir=backup_dir,
-        s3_bucket="agentnest-backups",
+        s3_bucket="pivoris-backups",
         s3_prefix="postgres/nightly",
         s3_client=s3,
         retention_days=35,
@@ -255,7 +255,7 @@ def test_backup_35_day_retention_pruning_and_failed_upload_visibility(tmp_path: 
         dump_fn=lambda: FAKE_PG_DUMP_BYTES,
     )
 
-    assert report.backup_id == "agentnest-20261030T020000Z"
+    assert report.backup_id == "pivoris-20261030T020000Z"
     assert report.retention_days == 35
     # Expired (>35d) archives pruned in both S3 and local dir; <=35d archives retained
     remaining_local = {p.name for p in backup_dir.iterdir()}
@@ -274,7 +274,7 @@ def test_backup_35_day_retention_pruning_and_failed_upload_visibility(tmp_path: 
     health_ok = backup_health(now + timedelta(hours=2), status_file=status_file)
     assert health_ok.last_backup_status == "succeeded"
     assert health_ok.stale_or_failed is False
-    assert health_ok.last_backup_id == "agentnest-20261030T020000Z"
+    assert health_ok.last_backup_id == "pivoris-20261030T020000Z"
     assert health_ok.age_seconds == 7200
 
     # After 26h + 1s without a newer backup, backup_health flags stale_or_failed=True (ADR-025 §4.3)
@@ -290,9 +290,9 @@ def test_backup_35_day_retention_pruning_and_failed_upload_visibility(tmp_path: 
     next_night = now + timedelta(days=1)
     with pytest.raises(backup_mod.BackupError, match="S3 simulated network failure"):
         backup_mod.execute_backup_run(
-            database_url="postgresql+psycopg://u:p@localhost:5432/agentnest",
+            database_url="postgresql+psycopg://u:p@localhost:5432/pivoris",
             raw_encryption_key=KEY_B1,
-            s3_bucket="agentnest-backups",
+            s3_bucket="pivoris-backups",
             s3_prefix="postgres/nightly",
             s3_client=failing_s3,
             retention_days=35,
@@ -315,8 +315,8 @@ def test_backup_audit_log_recording(db_session: Session) -> None:
         db_session,
         clock,
         succeeded=True,
-        backup_id="agentnest-20261030T020000Z",
-        archive_key="s3://agentnest-backups/postgres/nightly/agentnest-20261030T020000Z.dump.enc",
+        backup_id="pivoris-20261030T020000Z",
+        archive_key="s3://pivoris-backups/postgres/nightly/pivoris-20261030T020000Z.dump.enc",
         archive_sha256="abc123",
         archive_size_bytes=4096,
         alembic_revision="0030",
@@ -326,7 +326,7 @@ def test_backup_audit_log_recording(db_session: Session) -> None:
         db_session,
         clock,
         succeeded=False,
-        backup_id="agentnest-20261031T020000Z",
+        backup_id="pivoris-20261031T020000Z",
         error_message="disk full",
     )
     rows = list(
@@ -341,7 +341,7 @@ def test_backup_audit_log_recording(db_session: Session) -> None:
     by_action = {r.action: r for r in rows}
     assert len(rows) == 2 and set(by_action) == {"system.backup_succeeded", "system.backup_failed"}
     assert by_action["system.backup_succeeded"].metadata_["backup_id"] == (
-        "agentnest-20261030T020000Z"
+        "pivoris-20261030T020000Z"
     )
     assert by_action["system.backup_failed"].metadata_["error"] == "disk full"
 
@@ -651,24 +651,24 @@ def test_provision_and_verify_database_roles_enforces_least_privilege_and_append
 ) -> None:
     provision_database_roles(
         db_session,
-        migrator_role="agentnest_migrator",
-        app_role="agentnest_app",
-        worker_role="agentnest_worker",
+        migrator_role="pivoris_migrator",
+        app_role="pivoris_app",
+        worker_role="pivoris_worker",
     )
     report = verify_database_roles(
         db_session,
-        migrator_role="agentnest_migrator",
-        runtime_roles=("agentnest_app", "agentnest_worker"),
+        migrator_role="pivoris_migrator",
+        runtime_roles=("pivoris_app", "pivoris_worker"),
     )
     assert report.verified is True
     assert report.errors == []
 
-    # If someone grants DELETE on audit_logs to agentnest_app, verify_database_roles must fail
-    db_session.execute(text('GRANT DELETE ON TABLE public."audit_logs" TO "agentnest_app"'))
+    # If someone grants DELETE on audit_logs to pivoris_app, verify_database_roles must fail
+    db_session.execute(text('GRANT DELETE ON TABLE public."audit_logs" TO "pivoris_app"'))
     bad_report = verify_database_roles(
         db_session,
-        migrator_role="agentnest_migrator",
-        runtime_roles=("agentnest_app", "agentnest_worker"),
+        migrator_role="pivoris_migrator",
+        runtime_roles=("pivoris_app", "pivoris_worker"),
     )
     assert bad_report.verified is False
     assert any("audit_logs" in err and "DELETE" in err for err in bad_report.errors)

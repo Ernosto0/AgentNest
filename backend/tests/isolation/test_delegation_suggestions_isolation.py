@@ -108,11 +108,11 @@ def test_workspaces_see_only_their_own_suggestions(db_session: Session) -> None:
     db_session.expunge_all()
 
     clear_tenant_context(db_session)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert db_session.scalars(select(DelegationSuggestion)).all() == []  # fail closed
 
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert [r.id for r in db_session.scalars(select(DelegationSuggestion))] == [a_id]
         changed = db_session.execute(
             update(DelegationSuggestion)
@@ -122,7 +122,7 @@ def test_workspaces_see_only_their_own_suggestions(db_session: Session) -> None:
         assert changed.rowcount == 0  # a foreign row is simply not there
 
     set_tenant_context(db_session, ws_b.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         [seen] = db_session.scalars(select(DelegationSuggestion)).all()
         assert (seen.id, seen.status) == (b_id, "pending")
 
@@ -135,7 +135,7 @@ def test_a_workspace_cannot_write_a_suggestion_into_another(db_session: Session)
     db_session.commit()
     set_tenant_context(db_session, ws_a.id)
     with (
-        as_role(db_session, "agentnest_app"),
+        as_role(db_session, "pivoris_app"),
         pytest.raises(DBAPIError),
         db_session.begin_nested(),
     ):

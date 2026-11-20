@@ -1,6 +1,6 @@
-# AgentNest knowledge graph
+# Pivoris knowledge graph
 
-AgentNest is a Turkish-first, mobile-first Instagram operations assistant for small businesses. It maintains verified business knowledge, drafts grounded customer DM replies, prepares and schedules content with explicit approvals, and reports outcomes with credential-free simulated integrations.
+Pivoris is a Turkish-first, mobile-first Instagram operations assistant for small businesses. It maintains verified business knowledge, drafts grounded customer DM replies, prepares and schedules content with explicit approvals, and reports outcomes with credential-free simulated integrations.
 
 Analyzed at 2026-10-23T10:49:00.846Z. Base Git commit: 5c71606429c3aa355afe428b08677bcac892659b.
 
@@ -60,11 +60,11 @@ Coverage: **827/827 included files**, 5,245 nodes, 18,842 edges, 10 architectura
 - **Runtime & Shared Foundations** (21 assigned nodes): API and worker bootstraps, the PostgreSQL job queue, scheduler, handler registries and shared clocks, context, security, canonical hashing and localization support the monolith.
 - **Verification & Evaluations** (262 assigned nodes): Backend contract, unit, integration, security and tenant-isolation tests, AI evaluation runners and browser and component tests verify approvals, grounding and side-effect idempotency.
 - **Configuration & Deployment** (58 assigned nodes): Project manifests, compiler and build tools, localization and fixture catalogs, demo and knowledge configuration, PostgreSQL Compose, CI checks and dashboard tooling configure reproducible local operation.
-- **Architecture & Product Documentation** (113 assigned nodes): Product requirements, invariants, architecture decisions, workflow and API contracts, bounded-task prompt templates, implementation reports and operational guides explain AgentNest behavior and development decisions.
+- **Architecture & Product Documentation** (113 assigned nodes): Product requirements, invariants, architecture decisions, workflow and API contracts, bounded-task prompt templates, implementation reports and operational guides explain Pivoris behavior and development decisions.
 
 ## Guided tour
 
-1. **Understand the Product** — Start with the project overview: AgentNest helps small businesses manage Instagram knowledge, customer replies and scheduled content in a Turkish-first experience. The architecture document connects the workspace interface, FastAPI API and background worker, giving you a map for the workflows that follow. The current local demonstration uses simulated integrations.
+1. **Understand the Product** — Start with the project overview: Pivoris helps small businesses manage Instagram knowledge, customer replies and scheduled content in a Turkish-first experience. The architecture document connects the workspace interface, FastAPI API and background worker, giving you a map for the workflows that follow. The current local demonstration uses simulated integrations.
 2. **Trace the Runtime Entrypoints** — With the process map in mind, follow the API factory as it installs middleware, routes, startup checks and handler registration. The worker entrypoint initializes the same application foundations for background execution, while typed settings select configuration and reject unsafe production combinations. These two processes share domain services rather than duplicating business policy.
 3. **Establish Workspace Boundaries** — Before following a business workflow, understand how explicit workspace and actor context travels through requests and jobs. Authentication services establish identity, and SQLAlchemy sessions and tenant-safe model conventions support isolated persistence. The injected UTC clock is a widely shared dependency that makes time-sensitive workflows reproducible, while the data-model document explains durable relationships and constraints.
 4. **Explore the User Interfaces** — The React entrypoint mounts the providers and routes that expose the backend workflows to authenticated workspace members. The application shell makes navigation, notifications and commands available across desktop and phone layouts, while the simulation banner keeps the integration mode visible. The public landing application is built separately and presents a bilingual demonstration and pilot signup rather than participating in workspace operations.

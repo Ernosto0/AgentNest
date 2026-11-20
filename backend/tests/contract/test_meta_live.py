@@ -74,7 +74,7 @@ def test_live_optional_dm_and_lookup(
         pytest.skip("A recipient input is required to opt in to a real DM.")
     provider, account, clock = live_account
     since = clock.now() - timedelta(seconds=2)
-    text = "AgentNest manually opted-in contract probe."
+    text = "Pivoris manually opted-in contract probe."
     result = _probe(lambda: provider.send_text_message(account, recipient, text))
     _check(bool(result.message_id))
     # Read-only polling accommodates eventual consistency; never repeat the send.
@@ -152,7 +152,7 @@ def test_live_optional_comment_target(
     if effect == "read":
         return
     operation_key = f"manual-contract-{uuid.uuid4()}"
-    text = "AgentNest explicitly authorized synthetic-test-target contract probe."
+    text = "Pivoris explicitly authorized synthetic-test-target contract probe."
     if effect == "private_reply":
         value = _probe(
             lambda: provider.send_private_reply(account, comment_id, text, operation_key)

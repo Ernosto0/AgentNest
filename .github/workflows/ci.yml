@@ -15,8 +15,8 @@ concurrency:
 # Runtime suites run with loopback-only egress (INV-14, AC-X8). Dependency installation
 # and the Actions runner retain network access; tests and their child processes do not.
 env:
-  DATABASE_URL: postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest
-  TEST_DATABASE_URL: postgresql+psycopg://agentnest:agentnest@localhost:5433/agentnest_test
+  DATABASE_URL: postgresql+psycopg://pivoris:pivoris@localhost:5433/pivoris
+  TEST_DATABASE_URL: postgresql+psycopg://pivoris:pivoris@localhost:5433/pivoris_test
   LLM_PROVIDER: fake
   INSTAGRAM_ENABLED_PROVIDERS: mock
   MEDIA_STORAGE_BACKEND: local
@@ -33,12 +33,12 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: agentnest
-          POSTGRES_PASSWORD: agentnest
-          POSTGRES_DB: agentnest
+          POSTGRES_USER: pivoris
+          POSTGRES_PASSWORD: pivoris
+          POSTGRES_DB: pivoris
         ports: ["5433:5432"]
         options: >-
-          --health-cmd "pg_isready -U agentnest -d agentnest"
+          --health-cmd "pg_isready -U pivoris -d pivoris"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
@@ -54,7 +54,7 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --locked
       - name: Create the test database
-        run: PGPASSWORD=agentnest psql -h localhost -p 5433 -U agentnest -d agentnest -c "CREATE DATABASE agentnest_test"
+        run: PGPASSWORD=pivoris psql -h localhost -p 5433 -U pivoris -d pivoris -c "CREATE DATABASE pivoris_test"
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy app
@@ -129,12 +129,12 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: agentnest
-          POSTGRES_PASSWORD: agentnest
-          POSTGRES_DB: agentnest
+          POSTGRES_USER: pivoris
+          POSTGRES_PASSWORD: pivoris
+          POSTGRES_DB: pivoris
         ports: ["5433:5432"]
         options: >-
-          --health-cmd "pg_isready -U agentnest -d agentnest"
+          --health-cmd "pg_isready -U pivoris -d pivoris"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10

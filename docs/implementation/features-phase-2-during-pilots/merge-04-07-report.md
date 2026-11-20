@@ -37,7 +37,7 @@ Clean-up: all `*.merge.rej` files deleted, no `*.orig` left. `s04` to `s07` repo
 
 ## Verification
 
-Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, one test database per shard (`agentnest_p2merge_{a,b,c,d}_test`, `agentnest_p2merge_test`; the `_test` suffix is required by the test guard).
+Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1`, one test database per shard (`pivoris_p2merge_{a,b,c,d}_test`, `pivoris_p2merge_test`; the `_test` suffix is required by the test guard).
 
 Backend static checks: `ruff check .` clean, `ruff format --check .` clean (729 files), `mypy app` clean (387 files), `lint-imports` 23 kept, 0 broken.
 

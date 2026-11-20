@@ -151,7 +151,7 @@ def upgrade() -> None:
             WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
         """)
         )
-        for role in ("agentnest_app", "agentnest_worker", "agentnest_migrator"):
+        for role in ("pivoris_app", "pivoris_worker", "pivoris_migrator"):
             op.execute(
                 sa.text(f"""
                 DO $$ BEGIN

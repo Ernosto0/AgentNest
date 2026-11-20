@@ -53,7 +53,7 @@ function setup(role = "owner", extra: Record<string, (r: RecordedRequest) => Res
     memberships: ME.memberships.map((m) => (m.workspace_id === WS_GOLKENT ? { ...m, role } : m)),
   };
   return mockApi({
-    "GET /api/v1/meta": () => json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"] }),
+    "GET /api/v1/meta": () => json({ product_name: "Pivoris", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"] }),
     "GET /api/v1/auth/me": () => json(me),
     [`GET ${base}`]: () => json(workspace(WS_GOLKENT)),
     [`GET ${BASE}/readiness`]: () => json(READINESS),

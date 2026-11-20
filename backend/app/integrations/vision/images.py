@@ -6,7 +6,7 @@ here decodes the image, so a decompression bomb cannot happen here: the byte cap
 and the provider does the decoding.
 """
 
-FAKE_IMAGE_MAGIC = b"\x89PNG\r\n\x1a\nAGENTNEST-FAKE-IMAGE\n"
+FAKE_IMAGE_MAGIC = b"\x89PNG\r\n\x1a\nPIVORIS-FAKE-IMAGE\n"
 
 JPEG = "image/jpeg"
 PNG = "image/png"

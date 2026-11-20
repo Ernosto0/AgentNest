@@ -12,7 +12,7 @@ const DATA = { enabled: false, hours: 6, text: { tr: "", en: "" }, default_text:
 
 function setup(role: "owner" | "manager" | "staff" = "owner", put?: (request: RecordedRequest) => Response) {
   mockApi({
-    "GET /api/v1/meta": () => json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
+    "GET /api/v1/meta": () => json({ product_name: "Pivoris", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json({ ...ME, memberships: ME.memberships.map(item => item.workspace_id === WS_GOLKENT ? { ...item, role } : item) }),
     "GET /api/v1/auth/sessions": () => json([]),
     [`GET ${BASE}`]: () => json(workspace(WS_GOLKENT)),

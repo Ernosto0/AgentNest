@@ -233,7 +233,7 @@ def inspect_migration_credentials(
     if not mig_url:
         msg = (
             "MIGRATION_DATABASE_URL is not set; migrations will fall back to DATABASE_URL. "
-            "Set MIGRATION_DATABASE_URL with a dedicated migration role (agentnest_migrator) "
+            "Set MIGRATION_DATABASE_URL with a dedicated migration role (pivoris_migrator) "
             "for least-privilege runtime separation (ADR-025 §1.1)."
         )
         if require_separated:
@@ -250,7 +250,7 @@ def inspect_migration_credentials(
     if app_user and mig_user and app_user == mig_user:
         msg = (
             f"MIGRATION_DATABASE_URL and DATABASE_URL use the same database role ({app_user!r}); "
-            "use distinct roles (agentnest_migrator vs agentnest_app)."
+            "use distinct roles (pivoris_migrator vs pivoris_app)."
         )
         if require_separated:
             problems.append(msg)
@@ -472,7 +472,7 @@ class DeploymentOrchestrator:
     ) -> None:
         self.compose_file = compose_file.resolve()
         self.env_file = env_file.resolve()
-        self.project_name = project_name.strip() or "agentnest"
+        self.project_name = project_name.strip() or "pivoris"
         self.state_file = state_file.resolve()
         self.lock_file = lock_file.resolve()
         self.runner = runner
@@ -510,8 +510,8 @@ class DeploymentOrchestrator:
         env["ENV_FILE"] = str(self.env_file)
         env["IMAGE_TAG"] = image_tag
         for passthrough in (
-            "AGENTNEST_BACKEND_IMAGE",
-            "AGENTNEST_CADDY_IMAGE",
+            "PIVORIS_BACKEND_IMAGE",
+            "PIVORIS_CADDY_IMAGE",
             "HTTP_PORT",
             "HTTPS_PORT",
         ):
@@ -904,13 +904,13 @@ class DeploymentOrchestrator:
 
 
 def _default_state_file(project_name: str) -> Path:
-    if project_name and project_name != "agentnest":
+    if project_name and project_name != "pivoris":
         return Path(f".deploy-state.{project_name}")
     return Path(".deploy-state")
 
 
 def _default_lock_file(project_name: str) -> Path:
-    if project_name and project_name != "agentnest":
+    if project_name and project_name != "pivoris":
         return Path(f".deploy.{project_name}.lock")
     return Path(".deploy.lock")
 
@@ -918,7 +918,7 @@ def _default_lock_file(project_name: str) -> Path:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python scripts/deploy.py",
-        description="AgentNest production/staging deployment and rollback orchestrator",
+        description="Pivoris production/staging deployment and rollback orchestrator",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -935,8 +935,8 @@ def build_parser() -> argparse.ArgumentParser:
         )
         p.add_argument(
             "--project-name",
-            default=os.environ.get("COMPOSE_PROJECT_NAME", "agentnest"),
-            help="Docker Compose project name (default: agentnest)",
+            default=os.environ.get("COMPOSE_PROJECT_NAME", "pivoris"),
+            help="Docker Compose project name (default: pivoris)",
         )
         p.add_argument(
             "--state-file",
@@ -1047,7 +1047,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    project_name = str(args.project_name).strip() or "agentnest"
+    project_name = str(args.project_name).strip() or "pivoris"
     state_file = Path(args.state_file) if args.state_file else _default_state_file(project_name)
     lock_file = Path(args.lock_file) if args.lock_file else _default_lock_file(project_name)
 

@@ -33,14 +33,14 @@ from app.notifications.models import NotificationDelivery
 _log = logging.getLogger(__name__)
 REPLIES = {
     "tr": {
-        "linked": "WhatsApp bağlantınız kuruldu. Ayarları AgentNest uygulamasından yönetebilirsiniz.",  # noqa: E501
-        "failed": "Bağlantı kurulamadı. AgentNest Ayarlar'dan yeni bir kod alıp tekrar deneyin.",
-        "open_app": "İşlemleriniz için AgentNest uygulamasını açın.",
+        "linked": "WhatsApp bağlantınız kuruldu. Ayarları Pivoris uygulamasından yönetebilirsiniz.",  # noqa: E501
+        "failed": "Bağlantı kurulamadı. Pivoris Ayarlar'dan yeni bir kod alıp tekrar deneyin.",
+        "open_app": "İşlemleriniz için Pivoris uygulamasını açın.",
     },
     "en": {
-        "linked": "WhatsApp linked. You can manage settings in the AgentNest app.",
-        "failed": "Linking failed. Get a new code from AgentNest Settings and try again.",
-        "open_app": "Open the AgentNest app to manage your work.",
+        "linked": "WhatsApp linked. You can manage settings in the Pivoris app.",
+        "failed": "Linking failed. Get a new code from Pivoris Settings and try again.",
+        "open_app": "Open the Pivoris app to manage your work.",
     },
 }
 _LINK_CODE = re.compile(r"^(?:LINK\s+)?([A-Z0-9]{8})$", re.ASCII)

@@ -101,7 +101,7 @@ def upgrade() -> None:
         )
     )
     op.execute(sa.text("GRANT EXECUTE ON FUNCTION resolve_fact_save_token_by_hash(text) TO PUBLIC"))
-    for role in ("agentnest_app", "agentnest_worker", "agentnest_migrator"):
+    for role in ("pivoris_app", "pivoris_worker", "pivoris_migrator"):
         op.execute(
             sa.text(
                 f"""

@@ -112,7 +112,7 @@ def main() -> int:
     else:
         status_label = "CRITICAL" if has_critical else ("WARNING" if has_warning else "HEALTHY")
         print("\n=======================================================")
-        print(f" AgentNest Operator Alert Evaluation: [{status_label}]")
+        print(f" Pivoris Operator Alert Evaluation: [{status_label}]")
         print("=======================================================")
         print(f" Evaluated At:           {report.evaluated_at.isoformat()}")
         print(f" Active Conditions:      {report.active_candidates_count}")

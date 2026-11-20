@@ -1,13 +1,13 @@
 # Data Processing Agreement (DPA) Template / Veri İşleme Sözleşmesi
 
 - **Document Reference:** `DPA-TEMPLATE-V1`
-- **Parties:** AgentNest Operator (Data Processor / Veri İşleyen) & Tenant Business (Data Controller / Veri Sorumlusu)
+- **Parties:** Pivoris Operator (Data Processor / Veri İşleyen) & Tenant Business (Data Controller / Veri Sorumlusu)
 - **Legal Alignment:** 6698 sayılı KVKK (Madde 12) ve Regulation (EU) 2016/679 (GDPR Article 28)
 - **Review Status:** `PENDING_COUNSEL_REVIEW` (Tracking under `OQ-04`, `OQ-12`, `OQ-13`; Gate 3 Pre-condition)
 
 ---
 
-This Data Processing Agreement ("**DPA**") governs the processing of personal data by **AgentNest Operator** ("**Processor**" or "**Veri İşleyen**") on behalf of the customer subscribing to the AgentNest services ("**Controller**" or "**Veri Sorumlusu**").
+This Data Processing Agreement ("**DPA**") governs the processing of personal data by **Pivoris Operator** ("**Processor**" or "**Veri İşleyen**") on behalf of the customer subscribing to the Pivoris services ("**Controller**" or "**Veri Sorumlusu**").
 
 The Controller and Processor are collectively referred to as the "**Parties**" and individually as a "**Party**".
 
@@ -15,7 +15,7 @@ The Controller and Processor are collectively referred to as the "**Parties**" a
 
 ## 1. Scope, Purpose, and Duration of Processing
 
-1.1. **Subject Matter:** This DPA applies to all processing of personal data carried out by Processor in connection with the provision of the AgentNest AI-assisted messaging and social media management platform ("**Services**") pursuant to the Master Services Agreement ("**Principal Agreement**").
+1.1. **Subject Matter:** This DPA applies to all processing of personal data carried out by Processor in connection with the provision of the Pivoris AI-assisted messaging and social media management platform ("**Services**") pursuant to the Master Services Agreement ("**Principal Agreement**").
 
 1.2. **Nature & Purpose:** The purpose of processing is to enable Controller to receive, view, draft, schedule, automate, and dispatch communications with its customers on connected social platforms (specifically Instagram Direct Messages and comments), and to maintain operational logs, reports, and knowledge bases relating thereto.
 

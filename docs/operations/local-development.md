@@ -19,7 +19,7 @@ No paid accounts or API keys are needed. Defaults: `LLM_PROVIDER=fake`, `INSTAGR
 
 ## 2. First-time setup
 
-For a new checkout, replace `<repo>` with this repository's clone URL, then run `git clone <repo> agentnest` and `Set-Location agentnest` on separate lines. For an existing checkout, open PowerShell at its root. Copy the defaults only when `.env` does not exist; keep your existing local configuration otherwise.
+For a new checkout, replace `<repo>` with this repository's clone URL, then run `git clone <repo> pivoris` and `Set-Location pivoris` on separate lines. For an existing checkout, open PowerShell at its root. Copy the defaults only when `.env` does not exist; keep your existing local configuration otherwise.
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
@@ -35,7 +35,7 @@ npm ci
 npx playwright install chromium webkit    # needed for the E2E checks, not for the walkthrough
 ```
 
-`docker compose up -d postgres` also creates the `agentnest_test` database used by the tests (`docker/postgres/init/`). That script only runs when the data volume is first created; if you started Postgres before it existed, create the database once: `docker compose exec postgres psql -U agentnest -c "CREATE DATABASE agentnest_test OWNER agentnest;"`.
+`docker compose up -d postgres` also creates the `pivoris_test` database used by the tests (`docker/postgres/init/`). That script only runs when the data volume is first created; if you started Postgres before it existed, create the database once: `docker compose exec postgres psql -U pivoris -c "CREATE DATABASE pivoris_test OWNER pivoris;"`.
 
 Other CLI commands (from `backend/`): `uv run python -m app.cli create-user --email … --display-name …` (prompts for the password), `uv run python -m app.cli generate-key` (a `SECRET_KEY` value; `--kind token-encryption` prints a `TOKEN_ENCRYPTION_KEYS` entry).
 
@@ -104,7 +104,7 @@ npx playwright install chromium webkit     # first time (add --with-deps on Linu
 npm run e2e                                # Playwright, 3 projects (see below)
 ```
 
-- Backend tests always run against `TEST_DATABASE_URL` (the `agentnest_test` database): the test session refuses any database whose name does not end in `_test`. The schema is dropped and rebuilt with `alembic upgrade head` at the start of every test session, so never point `TEST_DATABASE_URL` at data you care about.
+- Backend tests always run against `TEST_DATABASE_URL` (the `pivoris_test` database): the test session refuses any database whose name does not end in `_test`. The schema is dropped and rebuilt with `alembic upgrade head` at the start of every test session, so never point `TEST_DATABASE_URL` at data you care about.
 - `npm run e2e` needs Postgres running with migrations applied (`uv run alembic upgrade head`). It **re-seeds** the demo data (`seed --reset`), starts the API (`:8000`) and the Vite dev server (`:5173`) itself, and reuses them if they are already running. In CI (`CI=true`) it serves the production build with `vite preview` instead. Projects: `mobile-webkit` (iPhone 13 settings, 390x844 viewport), `mobile-chromium` (Pixel 7 settings, 390x844 viewport), `desktop-chromium`. Run one with `npm run e2e -- --project=desktop-chromium`. Specs: `phase1` (shell, language, isolation), `scenario-a` to `scenario-g` (the walkthrough of section 6, one spec per scenario; `scenario-g` advances its future post deadline through the existing frozen-clock job hook, without waiting minutes), `i18n` (tr, en, tr on the main screens) and `a11y` (axe via `@axe-core/playwright`: no serious or critical violation; every screen must also fit the phone width). Run times per project are recorded in the [session 10 report](../implementation/phase-6-sessions/s10-report.md). A stale server on the E2E ports is reused, so check that they are free first. The Phase 3 and 4 scenarios (commands, extraction, inbox) need the worker: Playwright starts `python -m app.worker` itself (`WORKER_POLL_INTERVAL_SECONDS=0.2`, `REPLY_DEBOUNCE_SECONDS=1`) and waits for its startup log line. To run a second stack next to another checkout, move the ports: `$env:E2E_API_PORT="8001"; $env:E2E_WEB_PORT="5174"; npm run e2e` (PowerShell; clear the overrides afterwards with `Remove-Item Env:E2E_API_PORT, Env:E2E_WEB_PORT`) (the Vite proxy follows `E2E_API_PORT`) and point `DATABASE_URL` / `TEST_DATABASE_URL` at databases of your own.
 
 ### Regenerating the API client
@@ -195,7 +195,7 @@ A drafted reply appears about `REPLY_DEBOUNCE_SECONDS` (default 8) after the las
 | System health | More → Sistem durumu (owner and manager; `more/settings/system-health`, also linked from Ayarlar and the connection screen): accounts, operations, jobs, webhooks (with the system-wide invalid-signature count) and AI use of the last 24 hours, with a refresh button |
 | Instagram connection | More → Instagram bağlantısı (`more/settings/connections`): status, last error, capabilities, reconnect (simulation), disconnect |
 | Logs | API and worker terminals (console format). Set `LOG_LEVEL=DEBUG` for more. |
-| Database | `docker compose exec postgres psql -U agentnest agentnest`, e.g., `select action, occurred_at from audit_logs order by occurred_at desc limit 20;` |
+| Database | `docker compose exec postgres psql -U pivoris pivoris`, e.g., `select action, occurred_at from audit_logs order by occurred_at desc limit 20;` |
 
 ## 8. Resetting
 

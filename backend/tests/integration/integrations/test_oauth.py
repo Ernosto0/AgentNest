@@ -345,7 +345,7 @@ def test_redirect_preserves_sliding_cookie(env, flow):
         row.last_seen_at = env.clock.now() - timedelta(hours=2)
     env.session.commit()
     response = callback(env, raw)
-    assert "agentnest_session=" in response.headers.get("set-cookie", "")
+    assert "pivoris_session=" in response.headers.get("set-cookie", "")
 
 
 def test_reconnect_callback_resumes_queued_reply_through_registered_handler(env, flow):

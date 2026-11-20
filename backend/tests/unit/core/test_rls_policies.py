@@ -5,7 +5,7 @@ Proves:
    FORCE ROW LEVEL SECURITY and tenant_isolation_policy defined.
 2. Category A (global/identity) and Category B (bootstrap/hybrid) tables are not
    blocked by tenant RLS.
-3. Fail-closed behavior under non-bypass runtime roles (agentnest_app, agentnest_worker):
+3. Fail-closed behavior under non-bypass runtime roles (pivoris_app, pivoris_worker):
    - Zero rows visible on tenant tables when app.workspace_id is unset.
    - Insert fails closed when app.workspace_id is unset.
    - Foreign tenant reads return 0 rows.
@@ -168,15 +168,15 @@ def test_verify_database_roles_validates_category_c_rls(
     with session_factory() as session:
         provision_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=["agentnest_app", "agentnest_worker"],
+            migrator_role="pivoris_migrator",
+            runtime_roles=["pivoris_app", "pivoris_worker"],
         )
         session.commit()
 
         report = verify_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=("agentnest_app", "agentnest_worker"),
+            migrator_role="pivoris_migrator",
+            runtime_roles=("pivoris_app", "pivoris_worker"),
         )
         assert report.verified, f"Role verification failed: {report.errors}"
         assert report.category_c_rls_verified is True
@@ -187,20 +187,20 @@ def test_verify_database_roles_validates_category_c_rls(
 def test_non_bypass_runtime_role_fail_closed_without_tenant_context(
     session_factory: sessionmaker[Session],
 ) -> None:
-    """Under agentnest_app, reads return 0 rows and writes fail closed when app.workspace_id
+    """Under pivoris_app, reads return 0 rows and writes fail closed when app.workspace_id
     is unset.
     """
     with session_factory() as session:
         provision_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=["agentnest_app", "agentnest_worker"],
+            migrator_role="pivoris_migrator",
+            runtime_roles=["pivoris_app", "pivoris_worker"],
         )
         ws = _create_test_workspace(session)
         ws_id = ws.id
         session.commit()
 
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         # 1. Without tenant context: SELECT returns 0 rows
         count = session.scalar(text("SELECT count(*) FROM public.business_facts"))
         assert count == 0
@@ -226,12 +226,12 @@ def test_non_bypass_runtime_role_fail_closed_without_tenant_context(
 
 @pytest.mark.commits
 def test_tenant_isolation_reads_and_writes(session_factory: sessionmaker[Session]) -> None:
-    """Under agentnest_app, tenant rows are visible only when app.workspace_id matches."""
+    """Under pivoris_app, tenant rows are visible only when app.workspace_id matches."""
     with session_factory() as session:
         provision_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=["agentnest_app", "agentnest_worker"],
+            migrator_role="pivoris_migrator",
+            runtime_roles=["pivoris_app", "pivoris_worker"],
         )
         ws1 = _create_test_workspace(session, "Tenant 1")
         ws2 = _create_test_workspace(session, "Tenant 2")
@@ -240,7 +240,7 @@ def test_tenant_isolation_reads_and_writes(session_factory: sessionmaker[Session
         session.commit()
 
     # Insert rows for Tenant 1 and Tenant 2 under their respective contexts
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws1_id)
         fact1_id = uuid.uuid4()
         session.execute(
@@ -258,7 +258,7 @@ def test_tenant_isolation_reads_and_writes(session_factory: sessionmaker[Session
         )
         session.commit()
 
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws2_id)
         fact2_id = uuid.uuid4()
         session.execute(
@@ -277,7 +277,7 @@ def test_tenant_isolation_reads_and_writes(session_factory: sessionmaker[Session
         session.commit()
 
     # Query under ws1: only fact1 is visible, fact2 is hidden
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws1_id)
 
         rows = session.execute(text("SELECT id, workspace_id FROM public.business_facts")).all()
@@ -304,7 +304,7 @@ def test_tenant_isolation_reads_and_writes(session_factory: sessionmaker[Session
         session.rollback()
 
     # Query under ws2: only fact2 is visible, fact1 is hidden
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws2_id)
 
         rows = session.execute(text("SELECT id, workspace_id FROM public.business_facts")).all()
@@ -319,8 +319,8 @@ def test_cannot_modify_row_workspace_id(session_factory: sessionmaker[Session]) 
     with session_factory() as session:
         provision_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=["agentnest_app", "agentnest_worker"],
+            migrator_role="pivoris_migrator",
+            runtime_roles=["pivoris_app", "pivoris_worker"],
         )
         ws1 = _create_test_workspace(session, "Tenant 1")
         ws2 = _create_test_workspace(session, "Tenant 2")
@@ -328,7 +328,7 @@ def test_cannot_modify_row_workspace_id(session_factory: sessionmaker[Session]) 
         ws2_id = ws2.id
         session.commit()
 
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws1_id)
         fact_id = uuid.uuid4()
         session.execute(
@@ -347,7 +347,7 @@ def test_cannot_modify_row_workspace_id(session_factory: sessionmaker[Session]) 
         session.commit()
 
     # Attempt to change workspace_id to ws2 while context is ws1
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws1_id)
 
         with pytest.raises((ProgrammingError, DBAPIError)) as exc_info:
@@ -365,8 +365,8 @@ def test_foreign_delete_is_noop(session_factory: sessionmaker[Session]) -> None:
     with session_factory() as session:
         provision_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=["agentnest_app", "agentnest_worker"],
+            migrator_role="pivoris_migrator",
+            runtime_roles=["pivoris_app", "pivoris_worker"],
         )
         ws1 = _create_test_workspace(session, "Tenant 1")
         ws2 = _create_test_workspace(session, "Tenant 2")
@@ -374,7 +374,7 @@ def test_foreign_delete_is_noop(session_factory: sessionmaker[Session]) -> None:
         ws2_id = ws2.id
         session.commit()
 
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws2_id)
         fact_id = uuid.uuid4()
         session.execute(
@@ -393,7 +393,7 @@ def test_foreign_delete_is_noop(session_factory: sessionmaker[Session]) -> None:
         session.commit()
 
     # Tenant 1 attempts to delete Tenant 2's row: executes without error but deletes 0 rows
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws1_id)
 
         res = session.execute(
@@ -404,7 +404,7 @@ def test_foreign_delete_is_noop(session_factory: sessionmaker[Session]) -> None:
         session.commit()
 
     # Verify fact still exists under ws2
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws2_id)
 
         row = session.scalar(
@@ -421,8 +421,8 @@ def test_phase_7_5_and_inbox_models_isolation(session_factory: sessionmaker[Sess
     with session_factory() as session:
         provision_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=["agentnest_app", "agentnest_worker"],
+            migrator_role="pivoris_migrator",
+            runtime_roles=["pivoris_app", "pivoris_worker"],
         )
         ws1 = _create_test_workspace(session, "Tenant 1")
         ws2 = _create_test_workspace(session, "Tenant 2")
@@ -431,7 +431,7 @@ def test_phase_7_5_and_inbox_models_isolation(session_factory: sessionmaker[Sess
         session.commit()
 
     # Populate ws1 entities
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws1_id)
 
         acc1_id = uuid.uuid4()
@@ -477,7 +477,7 @@ def test_phase_7_5_and_inbox_models_isolation(session_factory: sessionmaker[Sess
         session.commit()
 
     # Verify ws2 cannot see any of ws1's agents, accounts, conversations, or messages
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws2_id)
 
         assert session.scalar(text("SELECT count(*) FROM public.social_accounts")) == 0
@@ -486,7 +486,7 @@ def test_phase_7_5_and_inbox_models_isolation(session_factory: sessionmaker[Sess
         assert session.scalar(text("SELECT count(*) FROM public.messages")) == 0
 
     # Verify ws1 sees all of them (account_agent was automatically created by trigger)
-    with session_factory() as session, as_role(session, "agentnest_app"):
+    with session_factory() as session, as_role(session, "pivoris_app"):
         set_tenant_context(session, ws1_id)
 
         assert session.scalar(text("SELECT count(*) FROM public.social_accounts")) == 1
@@ -502,8 +502,8 @@ def test_post_restore_reconcile_under_forced_rls(session_factory: sessionmaker[S
     with session_factory() as session:
         provision_database_roles(
             session,
-            migrator_role="agentnest_migrator",
-            runtime_roles=["agentnest_app", "agentnest_worker"],
+            migrator_role="pivoris_migrator",
+            runtime_roles=["pivoris_app", "pivoris_worker"],
         )
         ws = _create_test_workspace(session, "Reconcile Tenant")
         ws_id = ws.id

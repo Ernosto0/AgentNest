@@ -14,7 +14,7 @@ function activeLink(overrides: Partial<ChannelLink> = {}): ChannelLink {
   return {
     id: LINK_ID,
     channel: "telegram",
-    channel_username: "agentnest_founder",
+    channel_username: "pivoris_founder",
     linked_at: "2026-11-04T00:00:00Z",
     status: "active",
     ...overrides,
@@ -30,7 +30,7 @@ function routes(
   return {
     "GET /api/v1/meta": () =>
       json({
-        product_name: "AgentNest",
+        product_name: "Pivoris",
         demo_tools_enabled: true,
         llm_mode: "fake",
         supported_locales: ["tr", "en"],
@@ -143,8 +143,8 @@ describe("Owner Messaging Channel Settings (Telegram)", () => {
           return json({
             code: "TEST1234",
             expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-            bot_username: "AgentNestBot",
-            deep_link_url: "https://t.me/AgentNestBot?start=TEST1234",
+            bot_username: "PivorisBot",
+            deep_link_url: "https://t.me/PivorisBot?start=TEST1234",
           });
         },
       }),
@@ -161,7 +161,7 @@ describe("Owner Messaging Channel Settings (Telegram)", () => {
     expect(screen.getByTestId("channel-link-timer")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Telegram'da aç" })).toHaveAttribute(
       "href",
-      "https://t.me/AgentNestBot?start=TEST1234",
+      "https://t.me/PivorisBot?start=TEST1234",
     );
   });
 
@@ -179,8 +179,8 @@ describe("Owner Messaging Channel Settings (Telegram)", () => {
           json({
             code: "COPYCODE",
             expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-            bot_username: "AgentNestBot",
-            deep_link_url: "https://t.me/AgentNestBot?start=COPYCODE",
+            bot_username: "PivorisBot",
+            deep_link_url: "https://t.me/PivorisBot?start=COPYCODE",
           }),
       }),
     );
@@ -218,7 +218,7 @@ describe("Owner Messaging Channel Settings (Telegram)", () => {
 
     renderApp(PAGE(WS_GOLKENT));
 
-    expect(await screen.findByText("@agentnest_founder")).toBeInTheDocument();
+    expect(await screen.findByText("@pivoris_founder")).toBeInTheDocument();
     const statusBadge = await screen.findByTestId("channel-status-badge");
     expect(statusBadge).toHaveAttribute("data-status", "connected");
 

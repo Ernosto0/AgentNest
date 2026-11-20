@@ -82,7 +82,7 @@ def _render_status_html(status_data: dict[str, Any]) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Deletion Status - AgentNest</title>
+  <title>Data Deletion Status - Pivoris</title>
   <style>
     body {{
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

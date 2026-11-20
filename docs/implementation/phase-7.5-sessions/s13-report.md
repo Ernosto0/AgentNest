@@ -57,11 +57,11 @@ behavior in matching, draft-content formatting, money annotation and a template 
 Windows PowerShell/Python 3.12.3 for the 757-test affected regression, an earlier clean
 152-test focused/reporting run, statics, frontend and fake evals. Locked dependencies,
 PostgreSQL 16.15, fake model, mock Instagram, local media and frozen clock were used.
-Those database runs used disposable `agentnest_test` on `127.0.0.1:55433`; filesystem sync
+Those database runs used disposable `pivoris_test` on `127.0.0.1:55433`; filesystem sync
 was disabled only in that temporary test container, which has been removed. This does
 not claim power-loss durability. The final focused/reporting rerun uses Python 3.12.16
 in a disposable `python:3.12-slim` container, `uv sync --frozen`, and the compose test
-database at `postgres:5432/agentnest_test` with normal sync settings. Windows commands
+database at `postgres:5432/pivoris_test` with normal sync settings. Windows commands
 use `python -m uv` because uv is installed as a Python module. Application settings and
 machine-wide network settings were not changed.
 
@@ -79,15 +79,15 @@ machine-wide network settings were not changed.
 | `git diff --check` | Passed |
 
 Affected command from `backend/` on Windows, with
-`TEST_DATABASE_URL=postgresql+psycopg://agentnest:agentnest@127.0.0.1:55433/agentnest_test`:
+`TEST_DATABASE_URL=postgresql+psycopg://pivoris:pivoris@127.0.0.1:55433/pivoris_test`:
 
 ```powershell
 python -m uv run pytest tests/integration/agent tests/integration/content tests/isolation/test_content_isolation.py tests/isolation/test_publishing_isolation.py tests/integration/commands/test_content_commands.py tests/unit/ai/test_fake_interpreter_content.py tests/unit/ai/test_draft_content_task.py tests/unit/content tests/unit/knowledge/test_templates.py -q --tb=short
 ```
 
 Final focused/reporting command from the container's `/workspace/backend`, with
-`TEST_DATABASE_URL=postgresql+psycopg://agentnest:agentnest@postgres:5432/agentnest_test`
-and `UV_PROJECT_ENVIRONMENT=/tmp/agentnest-venv` (host `.venv` is preserved):
+`TEST_DATABASE_URL=postgresql+psycopg://pivoris:pivoris@postgres:5432/pivoris_test`
+and `UV_PROJECT_ENVIRONMENT=/tmp/pivoris-venv` (host `.venv` is preserved):
 
 ```sh
 uv run pytest tests/integration/agent/test_owner_content.py tests/integration/agent/test_owner_content_migration.py tests/integration/content/test_agent_content_tools.py tests/integration/reporting -q --tb=short --maxfail=1 -p no:cacheprovider --basetemp=/tmp/pytest
@@ -110,7 +110,7 @@ Evidence: `tests/integration/agent/test_owner_content.py`, `test_owner_content_m
 `tests/integration/content/test_agent_content_tools.py` and existing agent/content/isolation/
 reporting regressions. Strict fake reports: ignored generated files
 `backend/evals/reports/20261029T094351Z-fake.{md,json}`.
-The final container log is saved at `%TEMP%\agentnest-s13-final-linux.log`.
+The final container log is saved at `%TEMP%\pivoris-s13-final-linux.log`.
 Both temporary verification containers were removed after their runs.
 
 ## Acceptance and demo

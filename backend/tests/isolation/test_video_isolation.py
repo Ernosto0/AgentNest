@@ -70,10 +70,10 @@ def test_composite_fk_and_runtime_rls(two_workspaces, db_session):
     db.commit()
     db.expunge_all()
     clear_tenant_context(db)
-    with as_role(db, "agentnest_app"):
+    with as_role(db, "pivoris_app"):
         assert db.scalars(select(MediaAsset)).all() == []
     set_tenant_context(db, wa)
-    with as_role(db, "agentnest_app"):
+    with as_role(db, "pivoris_app"):
         assert db.scalar(select(MediaAsset.id).where(MediaAsset.id == bid)) is None
         assert (
             db.execute(

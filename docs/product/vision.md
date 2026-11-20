@@ -2,11 +2,11 @@
 
 **Purpose:** What the product is, for whom, why, and what it deliberately is not. It is the stable "north star" for scope decisions. Requirements live in [requirements.md](requirements.md); scope lives in [mvp-scope.md](mvp-scope.md).
 
-Working name: **AgentNest** (repository name; final product name is open, see OQ-10). Descriptive name: *Instagram Operations Agent*.
+Working name: **Pivoris** (repository name; final product name is open, see OQ-10). Descriptive name: *Instagram Operations Agent*.
 
 ## 1. Vision
 
-Small businesses run their Instagram from a phone, between customers. AgentNest learns verified facts about the business. Its Phase 7.5 account agent can hold natural DM and public-comment conversations, remember relevant customer context, ask the owner for missing information and perform supported actions within explicit account delegation. It helps prepare and schedule posts and tells the owner what actually happened. The earlier bounded draft and approval workflow remains available for accounts that have not switched controllers.
+Small businesses run their Instagram from a phone, between customers. Pivoris learns verified facts about the business. Its Phase 7.5 account agent can hold natural DM and public-comment conversations, remember relevant customer context, ask the owner for missing information and perform supported actions within explicit account delegation. It helps prepare and schedule posts and tells the owner what actually happened. The earlier bounded draft and approval workflow remains available for accounts that have not switched controllers.
 
 > **The business owner should not have to adapt to the software. The software should adapt to how the business owner works.** (from the original specification)
 

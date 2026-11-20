@@ -7,7 +7,7 @@
 
 | Area | Contents |
 |---|---|
-| Repository (P1-01) | `.gitignore`, `.gitattributes` (LF), `.editorconfig`, `docker-compose.yml` (Postgres 16 on host port 5433, named volume, healthcheck), `docker/postgres/init/` (creates `agentnest_test`), `.env.example`, `README.md` |
+| Repository (P1-01) | `.gitignore`, `.gitattributes` (LF), `.editorconfig`, `docker-compose.yml` (Postgres 16 on host port 5433, named volume, healthcheck), `docker/postgres/init/` (creates `pivoris_test`), `.env.example`, `README.md` |
 | Backend project (P1-02) | `backend/pyproject.toml` + `uv.lock` (Python 3.12), ruff (lint + format), mypy strict on `app/`, pytest markers (`commits`, `invariant`, `meta_live`), import-linter contracts, `create_app()` |
 | `core` (P1-03/04) | `config` (Settings + production safety checks), `logging` (structlog, redaction, stderr), `errors` (catalog + `AppError`/`RetryableError`), `clock`, `ids`, `context`, `security` (argon2id, tokens), `i18n` (tr/en JSON, `t()`), `canonical` (`payload_hash`), `db` (naming convention, mixins, sessions, readiness) |
 | API layer | `api/errors` (problem+json, 422 field errors), `api/middleware` (request IDs, one log line per request), `api/deps` (auth, **default-on CSRF**, `require_membership`), `/healthz`, `/readyz`, `/api/v1/meta` |

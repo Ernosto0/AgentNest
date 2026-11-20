@@ -162,6 +162,6 @@
 
 - **PostgreSQL 16 Docker Container (Port 5433):**
   - Offline unit tests passed 100% (193/193 in `tests/unit/agent/`).
-  - Integration tests that connect to `localhost:5433` (`agentnest_test`) require the local PostgreSQL Docker daemon to be running.
+  - Integration tests that connect to `localhost:5433` (`pivoris_test`) require the local PostgreSQL Docker daemon to be running.
 - **Session 06 Next Steps:**
   - Close booking and lead-list coverage gaps on Account Agent accounts (`reporting/leads.py`, `agent/calendar.py`, lead CSV export).

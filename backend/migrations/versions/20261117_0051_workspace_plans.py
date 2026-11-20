@@ -75,7 +75,7 @@ def upgrade() -> None:
             USING (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)
             WITH CHECK (workspace_id = nullif(current_setting('app.workspace_id', true), '')::uuid)""")
         )
-        for role in ("agentnest_app", "agentnest_worker", "agentnest_migrator"):
+        for role in ("pivoris_app", "pivoris_worker", "pivoris_migrator"):
             op.execute(
                 sa.text(f"""DO $$ BEGIN IF to_regrole('{role}') IS NOT NULL THEN
                 GRANT SELECT, INSERT, UPDATE, DELETE ON {table} TO {role};

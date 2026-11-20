@@ -80,11 +80,11 @@ def test_workspaces_see_only_their_own_preferences(db_session: Session) -> None:
     db_session.expunge_all()
 
     clear_tenant_context(db_session)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert db_session.scalars(select(PushPreference)).all() == []  # fail closed
 
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert [r.id for r in db_session.scalars(select(PushPreference))] == [a_id]
         changed = db_session.execute(
             update(PushPreference).where(PushPreference.id == b_id).values(enabled=False)
@@ -94,7 +94,7 @@ def test_workspaces_see_only_their_own_preferences(db_session: Session) -> None:
         assert deleted.rowcount == 0
 
     set_tenant_context(db_session, ws_b.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         (only,) = db_session.scalars(select(PushPreference)).all()
         assert only.id == b_id and only.enabled is True
 
@@ -104,7 +104,7 @@ def test_a_workspace_cannot_write_a_row_into_another(db_session: Session) -> Non
     ws_a, users_a = workspace_with_members(db_session, name="Pref W A")
     ws_b, _ = workspace_with_members(db_session, name="Pref W B")
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         with pytest.raises(DBAPIError), db_session.begin_nested():
             db_session.execute(
                 insert(PushPreference).values(

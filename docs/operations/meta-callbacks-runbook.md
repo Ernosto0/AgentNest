@@ -13,7 +13,7 @@ Meta (Facebook / Instagram Graph API) developer policy requires all production a
 2. **Data Deletion Request URL**: Triggered when a user requests deletion of their platform data via Meta account settings.
 3. **Data Deletion Status URL**: Returned by the data deletion callback so the user can verify that their data deletion request was fulfilled.
 
-In AgentNest, these endpoints are implemented with strict cryptographic verification of Meta's `signed_request`, server-owned identity mapping (`INV-01`), durable status tracking via `data_deletion_requests`, and privacy-preserving confirmation status queries.
+In Pivoris, these endpoints are implemented with strict cryptographic verification of Meta's `signed_request`, server-owned identity mapping (`INV-01`), durable status tracking via `data_deletion_requests`, and privacy-preserving confirmation status queries.
 
 ---
 

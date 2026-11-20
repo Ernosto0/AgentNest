@@ -13,7 +13,7 @@ from app.identity.models import AuthSession, User
 from tests.factories import DEFAULT_PASSWORD, add_member, create_user, create_workspace, login
 
 LOGIN = "/api/v1/auth/login"
-COOKIE = "agentnest_session"
+COOKIE = "pivoris_session"
 
 
 def credentials(user: User, password: str = DEFAULT_PASSWORD) -> dict[str, str]:

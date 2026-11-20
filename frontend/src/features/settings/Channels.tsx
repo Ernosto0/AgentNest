@@ -45,7 +45,7 @@ function LinkCodeModal({
   const timeFormatted = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
   const isWhatsApp = codeData.channel === "whatsapp";
-  const botName = codeData.bot_username?.replace(/^@/, "") || "AgentNestBot";
+  const botName = codeData.bot_username?.replace(/^@/, "") || "PivorisBot";
   const deepLink =
     codeData.deep_link_url || (isWhatsApp ? undefined : `https://t.me/${botName}?start=${codeData.code}`);
 

@@ -8,7 +8,7 @@
 
 ## 1. Overview & Alerting Architecture
 
-AgentNest evaluates 8 canonical operational conditions designed to catch silent failures, data synchronization stalls, capability degradations, and security anomalies before they cause business disruption.
+Pivoris evaluates 8 canonical operational conditions designed to catch silent failures, data synchronization stalls, capability degradations, and security anomalies before they cause business disruption.
 
 Alert evaluations run via two independent, decoupled mechanisms:
 1. **Background Worker Periodic Job:** `enqueue_operator_alert_evaluation` runs every 5 minutes and claims `evaluate_operator_alerts`.
@@ -67,7 +67,7 @@ Durable state tracking in table `operator_alert_states` prevents notification st
 - **Remediation:**
   1. Trigger manual backup execution:
      ```bash
-     ./scripts/backup.sh --output-dir /var/backups/agentnest
+     ./scripts/backup.sh --output-dir /var/backups/pivoris
      ```
   2. If S3 upload failed, verify `BACKUP_S3_ACCESS_KEY_ID` and `BACKUP_S3_SECRET_ACCESS_KEY`.
   3. Ensure disk partition has sufficient space (`df -h /var/backups`).

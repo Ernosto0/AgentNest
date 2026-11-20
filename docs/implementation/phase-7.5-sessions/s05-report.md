@@ -4,7 +4,7 @@
 
 ## Baseline and preserved work
 
-Started from clean `main` at `d7d3c01` on 2026-10-27 in the actual Windows checkout `C:\Users\ernos\AgentNest` (the requested Linux path does not exist in this environment). The operator read common rules and Sessions 01–04 reports. This subsession read the Session 05 brief, canonical contract, source repositories, broker, runner, queue/worker and lease/recovery tests. Sessions 01–04 remain the foundation; Session 08's early audit is preserved for its owning session to replace. No commit, push, deployment, paid model call or live Meta action occurred.
+Started from clean `main` at `d7d3c01` on 2026-10-27 in the actual Windows checkout `C:\Users\ernos\Pivoris` (the requested Linux path does not exist in this environment). The operator read common rules and Sessions 01–04 reports. This subsession read the Session 05 brief, canonical contract, source repositories, broker, runner, queue/worker and lease/recovery tests. Sessions 01–04 remain the foundation; Session 08's early audit is preserved for its owning session to replace. No commit, push, deployment, paid model call or live Meta action occurred.
 
 ## Implemented behavior
 
@@ -21,7 +21,7 @@ Affected contracts: canonical account-agent contract and data model now document
 
 ## Verification evidence
 
-Environment: Python 3.12 local venv, PostgreSQL 16 `agentnest_test` at localhost:5433, frozen clocks, fake LLM and mock Instagram only. Test database fixtures rebuild their disposable schema. The operator started local PostgreSQL; no credentials or personal production data were used.
+Environment: Python 3.12 local venv, PostgreSQL 16 `pivoris_test` at localhost:5433, frozen clocks, fake LLM and mock Instagram only. Test database fixtures rebuild their disposable schema. The operator started local PostgreSQL; no credentials or personal production data were used.
 
 | Command / evidence | Actual result |
 |---|---|

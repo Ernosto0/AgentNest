@@ -20,7 +20,7 @@ the production build, alongside those assets.
 The application declares normal weights 400–700. The unmodified distribution
 files retain their full variable weight axes. Latin and Latin Extended subsets
 cover Turkish; `unicode-range` restricts browser requests to necessary subsets.
-No new graphic product mark is approved: keep the AgentNest wordmark and local
+No new graphic product mark is approved: keep the Pivoris wordmark and local
 24px stroke icon family. These icons are repository-authored SVG paths and have
 no external runtime source. Photographs and fictional concept imagery are not
 application assets.

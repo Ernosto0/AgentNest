@@ -1,7 +1,7 @@
 # Feature Phase 3 merge report
 
 **Date:** 2026-11-17. **Baseline:** `main` at `06c5d64`. **Nothing is committed.**
-**Scope:** applying Track A (Sessions 01 and 02, worktree `agentnest-p3/s01`) and Track B (Sessions 03 and 04, worktree `agentnest-p3/s03`) to the main tree, merge review, and full verification. Per-session details are in `s01-report.md` to `s04-report.md`; the phase summary is [features-phase-3-summary.md](../phase-summaries/features-phase-3-summary.md).
+**Scope:** applying Track A (Sessions 01 and 02, worktree `pivoris-p3/s01`) and Track B (Sessions 03 and 04, worktree `pivoris-p3/s03`) to the main tree, merge review, and full verification. Per-session details are in `s01-report.md` to `s04-report.md`; the phase summary is [features-phase-3-summary.md](../phase-summaries/features-phase-3-summary.md).
 
 ## 1. What conflicted and how it was resolved
 
@@ -40,11 +40,11 @@ Status lines updated for close-out: `docs/implementation/roadmap.md` (Feature Ph
 
 ## 3. Migration round trip
 
-Single head: `uv run alembic heads` shows `0060 (head)`. On shard DB `agentnest_p3m_d_test` (with `DATABASE_URL` pointed at it): `upgrade head` (current `0060`), `downgrade 0057` (current `0057`), `upgrade head` (current `0060`). All succeeded. The test fixtures also run `alembic upgrade head` on a fresh schema in every shard.
+Single head: `uv run alembic heads` shows `0060 (head)`. On shard DB `pivoris_p3m_d_test` (with `DATABASE_URL` pointed at it): `upgrade head` (current `0060`), `downgrade 0057` (current `0057`), `upgrade head` (current `0060`). All succeeded. The test fixtures also run `alembic upgrade head` on a fresh schema in every shard.
 
 ## 4. Verification
 
-Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1 DEMO_TOOLS_ENABLED=true`. The whole backend suite ran as four parallel shards on four empty databases (`agentnest_p3m_{a,b,c,d}_test`, dropped afterwards). The shards shared one Postgres container and were slow (about 80 to 90 minutes for the integration shards, dominated by per-test `TRUNCATE` fsyncs), not hung.
+Environment: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY= PYTHONUTF8=1 DEMO_TOOLS_ENABLED=true`. The whole backend suite ran as four parallel shards on four empty databases (`pivoris_p3m_{a,b,c,d}_test`, dropped afterwards). The shards shared one Postgres container and were slow (about 80 to 90 minutes for the integration shards, dominated by per-test `TRUNCATE` fsyncs), not hung.
 
 | Check | Result |
 |---|---|

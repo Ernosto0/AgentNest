@@ -56,7 +56,7 @@
   "errors.TEST_CHAT_RATE_LIMITED.what": "Kısa sürede çok fazla deneme mesajı gönderdiniz.",
   "errors.TEST_CHAT_RATE_LIMITED.next": "Biraz bekleyip tekrar deneyin. Her deneme mesajı asistanı çalıştırdığı için bir sınır var.",
   "errors.WEB_PUSH_NOT_CONFIGURED.what": "Telefon bildirimleri bu sunucuda henüz kurulu değil.",
-  "errors.WEB_PUSH_NOT_CONFIGURED.next": "AgentNest'i yöneten kişiden bildirimleri açmasını isteyin.",
+  "errors.WEB_PUSH_NOT_CONFIGURED.next": "Pivoris'i yöneten kişiden bildirimleri açmasını isteyin.",
   "errors.LAST_OWNER_REQUIRED.what": "Çalışma alanında en az bir sahip kalmalı.",
   "errors.LAST_OWNER_REQUIRED.next": "Önce başka birini sahip yapın, sonra bu işlemi tekrarlayın.",
   "errors.MEDIA_INVALID.what": "Bu dosya desteklenen bir görsel değil.",

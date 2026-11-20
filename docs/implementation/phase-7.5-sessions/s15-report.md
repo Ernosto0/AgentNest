@@ -65,8 +65,8 @@ grant or silently enabling a model tool. Migration head remains `0030`.
 Verification uses fake model, mock Instagram and disposable PostgreSQL databases only.
 Host: Windows PowerShell and the existing locked frontend dependencies. Backend checks use
 Python 3.12.16 in Linux, locked dependencies copied from the existing Session 14 test
-container, source mounted at `/workspace`. Databases `agentnest_s15_backend_test` and
-`agentnest_s15_e2e_test` are separate from Session 14 and development data.
+container, source mounted at `/workspace`. Databases `pivoris_s15_backend_test` and
+`pivoris_s15_e2e_test` are separate from Session 14 and development data.
 
 | Check | Actual result |
 |---|---|
@@ -97,7 +97,7 @@ The final API regression after extending the response/filter enum:
 uv run pytest tests/integration/agent/test_work_views.py tests/integration/approvals -q --tb=short --maxfail=1
 ```
 
-Both commands used `TEST_DATABASE_URL=postgresql+psycopg://agentnest:agentnest@postgres:5432/agentnest_s15_backend_test`
+Both commands used `TEST_DATABASE_URL=postgresql+psycopg://pivoris:pivoris@postgres:5432/pivoris_s15_backend_test`
 inside the test container. The new explicit moderation tests cover stable replay/conflicting
 retry, off-delegation manual authority, unknown reservation/positive reconciliation,
 missing readback, demotion, source change, deadline, disconnect and agent/manual conflict.
@@ -115,13 +115,13 @@ measure unscripted real-model choice or live platform behavior.
 
 For the clean browser run, a Linux API container served port 8015 with the isolated database;
 frontend origin was `http://127.0.0.1:5115`. A production build used
-`VITE_API_BASE_URL=http://127.0.0.1:8015` and output `%TEMP%/agentnest-s15-dist`. Vite preview
+`VITE_API_BASE_URL=http://127.0.0.1:8015` and output `%TEMP%/pivoris-s15-dist`. Vite preview
 served that directory on 5115. Browser locale changes use native fetch rather than a Node
 loopback request. The opt-in runner command from `frontend/` was:
 
 ```powershell
-$env:E2E_FIXTURE_DATABASE_URL='postgresql+psycopg://agentnest:agentnest@postgres:5432/agentnest_s15_e2e_test'
-$env:E2E_FIXTURE_CONTAINER='agentnest-s14-api'
+$env:E2E_FIXTURE_DATABASE_URL='postgresql+psycopg://pivoris:pivoris@postgres:5432/pivoris_s15_e2e_test'
+$env:E2E_FIXTURE_CONTAINER='pivoris-s14-api'
 $env:E2E_API_PORT='8015'
 $env:E2E_WEB_PORT='5115'
 npx.cmd playwright test -c e2e/session15.config.ts
@@ -131,7 +131,7 @@ All three projects passed: mobile WebKit (390×844), mobile Chromium (390×844) 
 Chromium. Checks include information-versus-approval copy, actual continued customer text,
 verified operation state, simulation badges, Axe main-region zero violations, no horizontal
 overflow and EN→TR reload. Screenshots are under
-`%TEMP%/agentnest-s15-browser/agent-work-comment-to-DM-o-f1c4e-ified-customer-continuation-{project}/s15.png`.
+`%TEMP%/pivoris-s15-browser/agent-work-comment-to-DM-o-f1c4e-ified-customer-continuation-{project}/s15.png`.
 The mobile WebKit screenshot was visually inspected: ownership/outcome panel, private memory
 link, truthful verified send and simulation badges fit the narrow layout.
 

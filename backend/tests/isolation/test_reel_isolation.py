@@ -204,7 +204,7 @@ def test_composite_fk_and_rls_on_reel_and_simulator_columns(two_workspaces, db_s
         )
 
     # Forced runtime role fails closed on sim_failure_rules/sim_containers without tenant or with A
-    with as_role(db, "agentnest_app"):
+    with as_role(db, "pivoris_app"):
         clear_tenant_context(db)
         assert db.execute(text("SELECT count(*) FROM sim_containers")).scalar() == 0
         set_tenant_context(db, t.a.id)

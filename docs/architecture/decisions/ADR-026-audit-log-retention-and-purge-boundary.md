@@ -12,7 +12,7 @@
 ADR-022 and ADR-025 established that:
 1. Historical business outcomes are never rewritten (`INV-17`).
 2. Audit logs (`audit_logs`) and fact versions (`fact_versions`) are strictly append-only (`INV-06`, `INV-07`, `INV-12`).
-3. Runtime database roles (`agentnest_app`, `agentnest_worker`) have `REVOKE UPDATE, DELETE ON audit_logs` enforced (`ADR-025 §1.1`).
+3. Runtime database roles (`pivoris_app`, `pivoris_worker`) have `REVOKE UPDATE, DELETE ON audit_logs` enforced (`ADR-025 §1.1`).
 4. The provisional two-year (730-day) audit retention period specified in open question `OQ-12` has had no automated purge path, with ADR-022 explicitly stating: *"Any audit purge requires its own accepted decision and verification... The proposed two-year production purge is deferred to Phase 8 and legal review (OQ-12), with a separate ADR required for its privileged identity, boundaries and database privileges."*
 5. Data rights erasure workflows (`P8-05` / Sessions 10–11) erase customer and workspace personal data, while database backups have a 35-day retention (`backup_retention_days = 35`, `P8-02` / Session 04). How backup retention reconciles with erasure obligations must be documented unambiguously.
 
@@ -25,14 +25,14 @@ Before real customer data is onboarded (Gate 3), the architectural boundaries fo
 ### 1. Audit Log Append-Only Integrity and Runtime Purge Prohibition
 
 1. **No Runtime Application Purge:**
-   The daily `retention_cleanup` background job and the FastAPI application runtime (`agentnest_app`, `agentnest_worker`) shall **never** attempt, possess, or execute `DELETE` or `UPDATE` statements on `audit_logs`. Runtime database roles lack these privileges and will fail closed if attempted.
+   The daily `retention_cleanup` background job and the FastAPI application runtime (`pivoris_app`, `pivoris_worker`) shall **never** attempt, possess, or execute `DELETE` or `UPDATE` statements on `audit_logs`. Runtime database roles lack these privileges and will fail closed if attempted.
 
 2. **Audit Purge Deferral Pending Counsel Review (`OQ-12`):**
    Automated 730-day audit log deletion is **deferred**. Audit records continue to be retained indefinitely in the application database. Gate 3 remains open until legal counsel sign-off on `OQ-12` resolves whether production audit logs should be archived to cold storage, purged after 730 days, or retained longer for regulatory compliance.
 
 3. **Narrow Out-of-Band Maintenance Purge Specification:**
    If/when audit purging is executed following counsel approval, it must satisfy all of the following requirements:
-   - **Identity & Privilege:** Executed exclusively via an explicit, out-of-band administrative maintenance command or script by the schema owner (`agentnest_migrator`), completely outside normal worker job execution.
+   - **Identity & Privilege:** Executed exclusively via an explicit, out-of-band administrative maintenance command or script by the schema owner (`pivoris_migrator`), completely outside normal worker job execution.
    - **Audit of the Purge:** Before deleting rows older than the agreed retention threshold, the purge script must record an immutable audit entry (`audit.purged`, including cutoff timestamp, row count, and executor identity) that is itself preserved.
    - **No Data Resurrection:** The purge must never delete tombstones in `deletion_tombstones` or active state ledger evidence.
 

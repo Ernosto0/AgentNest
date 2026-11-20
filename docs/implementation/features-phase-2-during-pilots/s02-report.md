@@ -64,7 +64,7 @@ Docs: `architecture/{workflows,background-jobs,data-model,api-design,agent-runti
 
 ## 5. Checks (exact)
 
-Environment for backend runs: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY=` and `TEST_DATABASE_URL` = the `.env` value with the database swapped to `agentnest_p2s02_{a,b,c,d,e}_test` (parallel shards; **dropped at the end**). `.env` has `DEMO_TOOLS_ENABLED=false`; tests that call `/dev/*` routes were run with `DEMO_TOOLS_ENABLED=true`, everything else with the `.env` value.
+Environment for backend runs: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= OPENAI_API_KEY=` and `TEST_DATABASE_URL` = the `.env` value with the database swapped to `pivoris_p2s02_{a,b,c,d,e}_test` (parallel shards; **dropped at the end**). `.env` has `DEMO_TOOLS_ENABLED=false`; tests that call `/dev/*` routes were run with `DEMO_TOOLS_ENABLED=true`, everything else with the `.env` value.
 
 | Command (from `backend/` unless noted) | Result |
 |---|---|

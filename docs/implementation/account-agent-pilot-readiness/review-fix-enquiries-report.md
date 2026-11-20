@@ -24,7 +24,7 @@ Date: 2026-11-19. Reviewed baseline: `4cf8ee3`. Scope: review finding 6.
 ## Verification
 
 - New integration tests plus existing lead-list integration tests: **45 passed** on
-  disposable database `agentnest_review_enquiry_test`.
+  disposable database `pivoris_review_enquiry_test`.
 - Expanded enquiry integration tests plus existing lead unit/CSV tests: **62 passed**.
 - Final enquiry, transcript-retention and draft-erasure lifecycle regressions: **22 passed**.
 - Migration `0102 -> 0101 -> head` completed on that disposable database.

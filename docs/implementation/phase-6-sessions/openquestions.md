@@ -25,7 +25,7 @@ Running ledger kept by the operator. One entry per item, newest sessions last. P
 
 ## Session 4 (P6-04a, P6-04b, P6-04c)
 - **Ledger item closed:** `ContentPage` now reads `?status=` and maps it to the tab; `/content?status=on_hold` opens `problems`.
-- **Dev servers / E2E:** the owner's `npm run dev` and `uvicorn --reload` were running; Vite served a broken module graph (`NotificationBell` export), so E2E ran on `E2E_API_PORT=8100 E2E_WEB_PORT=5273`. **Restart the dev Vite server.** E2E global setup re-seeded the dev database `agentnest` (demo data there was wiped, as it always does).
+- **Dev servers / E2E:** the owner's `npm run dev` and `uvicorn --reload` were running; Vite served a broken module graph (`NotificationBell` export), so E2E ran on `E2E_API_PORT=8100 E2E_WEB_PORT=5273`. **Restart the dev Vite server.** E2E global setup re-seeded the dev database `pivoris` (demo data there was wiped, as it always does).
 - **Only scenario A E2E run** (15/15 on 3 projects); the full suite is session 10/11.
 - **Interpretation:** the "failures" attention card uses `content_failed` (failed today); the needs-human card uses `attention_now`, which also counts `needs_approval`/`failed` conversations.
 - **Existing tests rewritten:** bell now links to a page (not a sheet); placeholder assertion in `app.test.tsx`; unknown notification types in tests replaced by catalog types; `mockApi` background routes extended.
@@ -47,7 +47,7 @@ Running ledger kept by the operator. One entry per item, newest sessions last. P
 - **Bug fixed:** `accounts_router.account_out` was not filling `degraded_until`.
 - **Link targets beyond the brief:** the `account.*` notification link and the on-hold "check the connection" link now point to Connections (3 existing test hrefs changed).
 - **System health screen** never shows raw error codes; uses `errors.<CODE>.what`, generic sentence for uncatalogued codes.
-- **Dev database `agentnest` migrated** to 0013 with `alembic upgrade head` (it was at 0012, so `/readyz` returned 503).
+- **Dev database `pivoris` migrated** to 0013 with `alembic upgrade head` (it was at 0012, so `/readyz` returned 503).
 - **Prettier slip:** ran prettier with defaults once, reformatted existing files; reverted with `git checkout` and reapplied only the intended edits (repo has no prettier config). Final diff has no formatting churn.
 - **OPEN (non-blocking):** the `ACCOUNT_NEEDS_REAUTH` catalog text still says "Ayarlar'da Yeniden bağla'ya basın" (session 4/5 wording); consider aligning with the new Connections screen.
 

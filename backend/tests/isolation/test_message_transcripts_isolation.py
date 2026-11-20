@@ -94,11 +94,11 @@ def test_workspaces_see_only_their_own_transcripts(db_session: Session) -> None:
     db_session.expunge_all()
 
     clear_tenant_context(db_session)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert db_session.scalars(select(MessageTranscript)).all() == []  # fail closed
 
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert [r.id for r in db_session.scalars(select(MessageTranscript))] == [a_id]
         assert (
             db_session.execute(
@@ -114,7 +114,7 @@ def test_workspaces_see_only_their_own_transcripts(db_session: Session) -> None:
         )
 
     set_tenant_context(db_session, ws_b.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         (only,) = db_session.scalars(select(MessageTranscript)).all()
         assert only.id == b_id and only.text is None and only.status == "pending"
 
@@ -124,7 +124,7 @@ def test_a_workspace_cannot_write_a_transcript_into_another(db_session: Session)
     ws_a, _, message_a = world(db_session, "Transcript W A")
     ws_b, _, message_b = world(db_session, "Transcript W B")
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         with pytest.raises(DBAPIError), db_session.begin_nested():
             db_session.execute(
                 insert(MessageTranscript).values(

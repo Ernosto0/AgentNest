@@ -59,12 +59,12 @@ def test_dockerfile_defines_multistage_nonroot_build_with_frozen_deps() -> None:
     )
     assert "rm -rf /var/lib/apt/lists/*" in dockerfile
     assert "dpkg-query -W -f='${Version}' ffmpeg" in dockerfile
-    assert dockerfile.index("apt-get install") < dockerfile.index("USER agentnest:agentnest")
+    assert dockerfile.index("apt-get install") < dockerfile.index("USER pivoris:pivoris")
 
     # Non-root execution in final backend runtime stage
-    assert "groupadd --system --gid 10001 agentnest" in dockerfile
+    assert "groupadd --system --gid 10001 pivoris" in dockerfile
     assert "useradd --system --uid 10001 --gid 10001" in dockerfile
-    assert "USER agentnest:agentnest" in dockerfile
+    assert "USER pivoris:pivoris" in dockerfile
     assert 'CMD ["uvicorn", "app.main:create_app", "--factory"' in dockerfile
 
 
@@ -72,7 +72,7 @@ def test_compose_prod_defines_hardened_services_volumes_and_grace_periods() -> N
     compose_raw = (REPO_ROOT / "compose.prod.yml").read_text(encoding="utf-8")
     compose = yaml.safe_load(compose_raw)
 
-    assert compose["name"] == "${COMPOSE_PROJECT_NAME:-agentnest}"
+    assert compose["name"] == "${COMPOSE_PROJECT_NAME:-pivoris}"
     services = compose["services"]
     assert set(services) == {"postgres", "migrate", "backup", "api", "worker", "caddy"}
 

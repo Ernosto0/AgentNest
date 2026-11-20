@@ -67,7 +67,7 @@ def upgrade() -> None:
     if bind.dialect.name == "postgresql":
         schema = bind.execute(sa.text("SELECT current_schema()")).scalar_one() or "public"
         q_schema = '"' + str(schema).replace('"', '""') + '"'
-        for role in ("agentnest_app", "agentnest_worker"):
+        for role in ("pivoris_app", "pivoris_worker"):
             op.execute(
                 sa.text(f"""
                 DO $$ BEGIN

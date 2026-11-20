@@ -1,4 +1,4 @@
-# AgentNest Production & Staging Reverse Proxy (P8-01 / P8-12 / deployment.md §2).
+# Pivoris Production & Staging Reverse Proxy (P8-01 / P8-12 / deployment.md §2).
 #
 # Parameterized via environment variables so production, optional staging (P8-12),
 # and local container rehearsals share the exact same Caddyfile without forking:

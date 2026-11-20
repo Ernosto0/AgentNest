@@ -124,7 +124,7 @@ class SafeFetcher:
                         ),
                         headers={
                             "Host": host,
-                            "User-Agent": "AgentNestImport/1.0",
+                            "User-Agent": "PivorisImport/1.0",
                             "Accept": "text/html,application/xhtml+xml;q=0.9",
                             "Accept-Language": "tr,en;q=0.8",
                             "Accept-Encoding": "identity",

@@ -14,7 +14,7 @@
 5. Migrate reporting, notifications, settings, security/privacy, team and operator surfaces.
 6. Align the public/transactional presentation, then complete accessibility, responsive and regression verification across the entire inventory.
 
-The [interactive concept](https://agentnest-style-preview.woollyhero2.chatgpt.site) supplies the visual direction. Its sample numbers, photos, fictional identity, miniature type sizes and local-only actions are not production requirements. Preserve the existing typed APIs and all invariants.
+The [interactive concept](https://pivoris-style-preview.woollyhero2.chatgpt.site) supplies the visual direction. Its sample numbers, photos, fictional identity, miniature type sizes and local-only actions are not production requirements. Preserve the existing typed APIs and all invariants.
 
 ## Session and acceptance mapping
 

@@ -44,7 +44,7 @@ CLAUDE, architecture contracts and Session 11 report. Migration `0028` follows `
 
 ## Verification evidence
 
-Windows PowerShell, Python 3.12 `.venv`, disposable PostgreSQL 16 `agentnest_test`
+Windows PowerShell, Python 3.12 `.venv`, disposable PostgreSQL 16 `pivoris_test`
 at localhost:5433, fake model, mock Instagram, local media, frozen clock. Pytest shells
 set `COOKIE_SECURE=false`, `DEMO_TOOLS_ENABLED=true`,
 `INSTAGRAM_ENABLED_PROVIDERS=mock`, `LLM_PROVIDER=fake`, and

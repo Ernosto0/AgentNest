@@ -1,6 +1,6 @@
-# AgentNest Documentation
+# Pivoris Documentation
 
-AgentNest (working name) is an open-source core, with a possible hosted SaaS, that helps small businesses run Instagram operations. It maintains verified business knowledge, drafts and (when allowed) sends grounded replies to customer DMs, prepares and schedules content with explicit approvals, and reports honestly on what happened. It is Turkish-first, mobile-first, and fully demonstrable locally on simulated integrations.
+Pivoris is an open-source core, with a possible hosted SaaS, that helps small businesses run Instagram operations. It maintains verified business knowledge, drafts and (when allowed) sends grounded replies to customer DMs, prepares and schedules content with explicit approvals, and reports honestly on what happened. It is Turkish-first, mobile-first, and fully demonstrable locally on simulated integrations.
 
 This folder is the **primary engineering specification**. It is written in English for engineers and coding agents. The original product idea is preserved unchanged in [idea.md](idea.md). Where the two differ, these documents win, and [review/gap-analysis.md](review/gap-analysis.md) explains why.
 
@@ -8,7 +8,7 @@ This folder is the **primary engineering specification**. It is written in Engli
 
 ## Reading order
 
-**Complete UI redesign planned (2026-10-30):** [Phase 8.5](implementation/phases/phase-8.5-ui-redesign.md), the [28 implementation sessions](implementation/phase-8.5-sessions/phase-8.5-sessions.md), and the [application UI specification](product/ui-redesign-specification.md) cover all current app routes, tabs, nested editors/dialogs, responsive states and public presentation using the [AgentNest concept](https://agentnest-style-preview.woollyhero2.chatgpt.site). These are planned targets; existing workflow, permission and state contracts remain authoritative until the corresponding implementation is delivered.
+**Complete UI redesign planned (2026-10-30):** [Phase 8.5](implementation/phases/phase-8.5-ui-redesign.md), the [28 implementation sessions](implementation/phase-8.5-sessions/phase-8.5-sessions.md), and the [application UI specification](product/ui-redesign-specification.md) cover all current app routes, tabs, nested editors/dialogs, responsive states and public presentation using the [Pivoris concept](https://pivoris-style-preview.woollyhero2.chatgpt.site). These are planned targets; existing workflow, permission and state contracts remain authoritative until the corresponding implementation is delivered.
 
 | If you are… | Read |
 |---|---|

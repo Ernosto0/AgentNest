@@ -228,7 +228,7 @@ export const copy: Record<Lang, Copy> = {
     meta: {
       title: `${PRODUCT_NAME} · Küçük işletmeler için Instagram asistanı`,
       description:
-        'Instagram’da zaman kazanın, müşteri mesajlarını gözden kaçırmayın. AgentNest işletmenizin bilgileriyle yanıt hazırlar, paylaşımlarınızı planlar. Kontrol sizde kalır.',
+        'Instagram’da zaman kazanın, müşteri mesajlarını gözden kaçırmayın. Pivoris işletmenizin bilgileriyle yanıt hazırlar, paylaşımlarınızı planlar. Kontrol sizde kalır.',
     },
     nav: {
       links: [
@@ -298,7 +298,7 @@ export const copy: Record<Lang, Copy> = {
       eyebrow: 'İşletmenize daha çok zaman',
       title: 'İşinizin arasında bir de DM yetiştirmeyin.',
       body:
-        'Müşterilerinizle ilgilenirken mesajlar birikir, aynı sorular tekrar gelir, paylaşımlar ertelenir. AgentNest yanıtları ve planları hazırlar; siz önemli konulara odaklanırsınız.',
+        'Müşterilerinizle ilgilenirken mesajlar birikir, aynı sorular tekrar gelir, paylaşımlar ertelenir. Pivoris yanıtları ve planları hazırlar; siz önemli konulara odaklanırsınız.',
       withoutLabel: 'Bugün',
       withLabel: `${PRODUCT_NAME} ile`,
       rows: [
@@ -722,7 +722,7 @@ export const copy: Record<Lang, Copy> = {
     meta: {
       title: `${PRODUCT_NAME} · An Instagram assistant for small businesses`,
       description:
-        'Save time on Instagram and keep track of customer messages. AgentNest drafts replies using your business details and plans your posts. You stay in control.',
+        'Save time on Instagram and keep track of customer messages. Pivoris drafts replies using your business details and plans your posts. You stay in control.',
     },
     nav: {
       links: [
@@ -792,7 +792,7 @@ export const copy: Record<Lang, Copy> = {
       eyebrow: 'More time for your business',
       title: 'One less task between customers.',
       body:
-        'While you look after customers, messages pile up, the same questions return and posts get postponed. AgentNest prepares replies and plans so you can focus on what needs you.',
+        'While you look after customers, messages pile up, the same questions return and posts get postponed. Pivoris prepares replies and plans so you can focus on what needs you.',
       withoutLabel: 'Today',
       withLabel: `With ${PRODUCT_NAME}`,
       rows: [

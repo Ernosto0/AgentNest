@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-AgentNest enforces automated software composition analysis (SCA) to detect known Common Vulnerabilities and Exposures (CVEs) and GitHub Security Advisories (GHSAs) before code merges:
+Pivoris enforces automated software composition analysis (SCA) to detect known Common Vulnerabilities and Exposures (CVEs) and GitHub Security Advisories (GHSAs) before code merges:
 - **Backend (Python):** Audited via `pip-audit` against the official PyPI vulnerability database / OSV.
 - **Frontend (TypeScript / React):** Audited via `npm audit --audit-level=moderate` against npm advisory database.
 
@@ -45,7 +45,7 @@ Fails the CI build if any package in `package-lock.json` has a `moderate`, `high
 
 ## 4. Exception Policy & Governance
 
-If a vulnerability cannot be immediately patched (e.g. upstream fix is not yet released, or the advisory is a false positive for AgentNest's usage), an explicit documented exception may be granted.
+If a vulnerability cannot be immediately patched (e.g. upstream fix is not yet released, or the advisory is a false positive for Pivoris's usage), an explicit documented exception may be granted.
 
 ### 4.1 Exception Rules
 1. **Ownership:** Every exception must be approved by the Lead Engineer.

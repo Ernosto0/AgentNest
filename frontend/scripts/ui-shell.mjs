@@ -38,7 +38,7 @@ for (const engine of [{ name: "chromium", type: chromium }, { name: "webkit", ty
         assert.equal(route.request().method(), "GET", "Shell fixture permits read-only APIs");
         const pathname = url.pathname;
         let data;
-        if (pathname === "/api/v1/meta") data = { product_name: "AgentNest", demo_tools_enabled: false, llm_mode: "fake", mock_requires_demo_workspace: true };
+        if (pathname === "/api/v1/meta") data = { product_name: "Pivoris", demo_tools_enabled: false, llm_mode: "fake", mock_requires_demo_workspace: true };
         else if (pathname === "/api/v1/auth/me") data = { user: { id: "99999999-9999-4999-8999-999999999999", display_name: "Example Owner", email: "owner@example.test", ui_locale: scenario.locale }, csrf_token: "fictional-fixture-csrf", memberships: [{ workspace_id: ws, workspace_name: name, role: scenario.role, is_demo: true }, { workspace_id: nextWs, workspace_name: "Second example studio", role: scenario.role, is_demo: true }] };
         else if (pathname === `/api/v1/workspaces/${ws}` || pathname === `/api/v1/workspaces/${nextWs}`) data = { id: pathname.endsWith(nextWs) ? nextWs : ws, name: pathname.endsWith(nextWs) ? "Second example studio" : name, slug: "example-studio", business_category: "fitness", market: "tr", default_locale: "tr", reply_languages: ["tr"], timezone: "Europe/Istanbul", currency: "TRY", is_demo: true, status: "active", created_at: "2026-10-15T12:00:00Z", settings: { automation_reviewed_at: null, disclosure_enabled: true, disclosure_text: { tr: "", en: "" }, daily_report_hour: 20, publish_max_delay_minutes: 1440 } };
         else if (pathname.endsWith("/notifications")) data = { items: [], unread_count: 12, next_cursor: null };

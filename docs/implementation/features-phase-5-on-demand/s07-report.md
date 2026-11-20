@@ -2,7 +2,7 @@
 
 - **Session:** 07 of 07 (Track B: F-08 Carousels and Reels; ends with Track B close-out)
 - **Feature:** F-08 Reels (`0083` migration, `reel` content type, custom cover or `thumb_offset_ms`, `share_to_feed`, asynchronous `poll_reel_container` ledger publishing, React upload/scrubber/preview UI, Track B close-out)
-- **Branch / worktree:** `C:\Users\ernos\agentnest-p5\b` (detached checkout at baseline commit `1a58d41`, `main`; uncommitted on top of Sessions 04, 05 and 06)
+- **Branch / worktree:** `C:\Users\ernos\pivoris-p5\b` (detached checkout at baseline commit `1a58d41`, `main`; uncommitted on top of Sessions 04, 05 and 06)
 - **Migration head:** `20261118_0083_reels.py` (`0083`, `down_revision = "0082"`, track B range `0080–0089`)
 - **Date:** 2026-11-18
 - **Status:** Implemented and verified offline; stopped for review. All changes left uncommitted as instructed.

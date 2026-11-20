@@ -87,7 +87,7 @@ function stubIosSafari() {
 function routes(extra: Record<string, () => Response> = {}, enabled = true) {
   return {
     "GET /api/v1/meta": () =>
-      json({ product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
+      json({ product_name: "Pivoris", demo_tools_enabled: true, llm_mode: "fake", supported_locales: ["tr", "en"], instagram_providers: ["mock"], mock_requires_demo_workspace: false }),
     "GET /api/v1/auth/me": () => json(ME),
     [`GET /api/v1/workspaces/${WS_GOLKENT}`]: () => json(workspace(WS_GOLKENT)),
     [`GET ${BASE}/readiness`]: () => json(READINESS),
@@ -157,8 +157,8 @@ describe("phone notification settings", () => {
 
   it("removes a device and drops the browser subscription when it was the last one", async () => {
     const browser = stubBrowser({ subscribed: true });
-    window.localStorage.setItem(`agentnest.push.device.${USER}.${WS_GOLKENT}`, DEVICE_ID);
-    window.localStorage.setItem("agentnest.push.owner", USER);
+    window.localStorage.setItem(`pivoris.push.device.${USER}.${WS_GOLKENT}`, DEVICE_ID);
+    window.localStorage.setItem("pivoris.push.owner", USER);
     let devices = [{ id: DEVICE_ID, label: "Chrome on Android", created_at: "2026-11-16T09:00:00Z", last_success_at: "2026-11-16T10:00:00Z" }];
     const requests = mockApi(
       routes({
@@ -330,8 +330,8 @@ describe("the notification prompt", () => {
 describe("signing out and switching", () => {
   it("revokes this browser's devices and drops its subscription on sign-out", async () => {
     const browser = stubBrowser({ subscribed: true });
-    window.localStorage.setItem(`agentnest.push.device.${USER}.${WS_GOLKENT}`, DEVICE_ID);
-    window.localStorage.setItem("agentnest.push.owner", USER);
+    window.localStorage.setItem(`pivoris.push.device.${USER}.${WS_GOLKENT}`, DEVICE_ID);
+    window.localStorage.setItem("pivoris.push.owner", USER);
     const requests = mockApi({
       [`DELETE ${PUSH}/${DEVICE_ID}`]: () => noContent(),
     });
@@ -339,13 +339,13 @@ describe("signing out and switching", () => {
     expect(requests.filter((r) => r.method === "DELETE").map((r) => r.path)).toEqual([`${PUSH}/${DEVICE_ID}`]);
     expect(browser.state.unsubscribed).toBe(1);
     expect(storedDeviceId(USER, WS_GOLKENT)).toBeNull();
-    expect(window.localStorage.getItem("agentnest.push.owner")).toBeNull();
+    expect(window.localStorage.getItem("pivoris.push.owner")).toBeNull();
   });
 
   it("still signs out when the revoke fails", async () => {
     stubBrowser({ subscribed: true });
-    window.localStorage.setItem(`agentnest.push.device.${USER}.${WS_GOLKENT}`, DEVICE_ID);
-    window.localStorage.setItem("agentnest.push.owner", USER);
+    window.localStorage.setItem(`pivoris.push.device.${USER}.${WS_GOLKENT}`, DEVICE_ID);
+    window.localStorage.setItem("pivoris.push.owner", USER);
     mockApi({ [`DELETE ${PUSH}/${DEVICE_ID}`]: () => json({ code: "INTERNAL_ERROR", status: 500 }, 500) });
     await expect(forgetThisDevice(USER, [WS_GOLKENT])).resolves.toBeUndefined();
     expect(storedDeviceId(USER, WS_GOLKENT)).toBeNull();
@@ -353,7 +353,7 @@ describe("signing out and switching", () => {
 
   it("drops another user's browser subscription before subscribing a new user", async () => {
     const browser = stubBrowser({ subscribed: true });
-    window.localStorage.setItem("agentnest.push.owner", "11111111-1111-4111-8111-111111111111");
+    window.localStorage.setItem("pivoris.push.owner", "11111111-1111-4111-8111-111111111111");
     mockApi(
       routes({
         [`POST ${PUSH}`]: () => json({ id: DEVICE_ID, label: "Chrome on Android", created_at: "2026-11-16T09:00:00Z", last_success_at: null }, 201),
@@ -364,6 +364,6 @@ describe("signing out and switching", () => {
     await userEvent.setup().click(within(panel).getByRole("button", { name: "Bu cihazda aç" }));
     await waitFor(() => expect(storedDeviceId(USER, WS_GOLKENT)).toBe(DEVICE_ID));
     expect(browser.state.unsubscribed).toBe(1); // the previous user's endpoint was dropped first
-    expect(window.localStorage.getItem("agentnest.push.owner")).toBe(USER);
+    expect(window.localStorage.getItem("pivoris.push.owner")).toBe(USER);
   });
 });

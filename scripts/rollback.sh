@@ -8,7 +8,7 @@
 # a forward-fix deployment).
 #
 # Usage:
-#   ./scripts/rollback.sh [--to-tag v0.7.9] [--env-file .env] [--project-name agentnest]
+#   ./scripts/rollback.sh [--to-tag v0.7.9] [--env-file .env] [--project-name pivoris]
 
 set -euo pipefail
 

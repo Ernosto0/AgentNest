@@ -113,7 +113,7 @@ See [agent-runtime.md §7](agent-runtime.md). Summary of the guarantees **[S1]**
 | Party | Likely role | Data |
 |---|---|---|
 | The business (workspace owner) | **Data controller** for its customers' DM data | Customer messages, handles |
-| AgentNest operator (hosted SaaS) | **Data processor** for the business; controller for its own users' account data | Hosting and processing |
+| Pivoris operator (hosted SaaS) | **Data processor** for the business; controller for its own users' account data | Hosting and processing |
 | LLM provider, hosting provider, object storage | **Sub-processors** | Message text (LLM), all data (hosting) |
 | Meta | Independent controller of Instagram data | — |
 

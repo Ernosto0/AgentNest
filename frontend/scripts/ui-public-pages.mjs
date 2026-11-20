@@ -20,7 +20,7 @@ for (const engine of [chromium, webkit]) {
           const url = new URL(route.request().url());
           if (url.origin !== origin) return route.abort();
           if (!url.pathname.startsWith('/api/')) return route.continue();
-          if (url.pathname.endsWith('/meta')) return route.fulfill({ json: { product_name: 'AgentNest', demo_tools_enabled: false, llm_mode: 'fake' } });
+          if (url.pathname.endsWith('/meta')) return route.fulfill({ json: { product_name: 'Pivoris', demo_tools_enabled: false, llm_mode: 'fake' } });
           return route.fulfill({ status: 401, json: { code: 'AUTH_REQUIRED', status: 401, params: {} } });
         });
         for (const route of ['/privacy', '/data-deletion', '/reset-password', '/reset-password/fixture-token', '/unknown-page']) {

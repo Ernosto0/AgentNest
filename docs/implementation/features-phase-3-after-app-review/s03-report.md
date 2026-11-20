@@ -41,7 +41,7 @@ Docs: the five listed above plus this report.
 
 Exact pixel hashes are not asserted, because FreeType and Pillow can differ between CI (Linux) and Windows. The tests assert: output size and RGB mode for every template and format; byte-identical PNG on a second render in the same process; text-box geometry (inside the canvas, inside the story safe zones, clear of the logo box); wrapping and ellipsis truncation, and breaking of a very long word; glyph presence for every Turkish letter (ğ Ğ ı İ ş Ş ç Ç ö Ö ü Ü) and the TRY sign, and that İ and ı survive unfolded; and a tolerant mean-absolute-difference comparison against tiny checked-in grayscale golden thumbnails (regenerate with `tests/unit/content/templates/regen_goldens.py`). Integration tests cover a missing, unverified, contested, expired and wrong-type fact (no asset row, no stored object), ungrounded free text, a `{{fact:...}}` placeholder with its version recorded, a re-render after a price change recording the new version, the stored JPEG without EXIF and with `render_record`, preview storing nothing, brand defaults, set, validation, 403 and 404, the audit row, and a logo surviving `media_cleanup`. Isolation tests cover foreign workspace and foreign logo IDs and the RLS of the new table.
 
-## 6. Checks (run in `s03`, test DB `agentnest_p3s03_test`)
+## 6. Checks (run in `s03`, test DB `pivoris_p3s03_test`)
 
 | Check | Result |
 |---|---|

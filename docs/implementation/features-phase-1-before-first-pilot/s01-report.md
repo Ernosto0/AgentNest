@@ -51,7 +51,7 @@ Docs: `product/mvp-scope.md` (PWA/Web Push removed from Deferred; "Feature Phase
 
 ## 4. Checks run (exact)
 
-Environment for every run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock DEMO_TOOLS_ENABLED=true`, `TEST_DATABASE_URL` pointing to my own database `agentnest_p1s01_test` (the repo `.env` sets `DEMO_TOOLS_ENABLED=false`, `LLM_PROVIDER=openai`, `INSTAGRAM_ENABLED_PROVIDERS=meta`, which makes the dev-route tests fail on this machine regardless of code; the first fast run without `DEMO_TOOLS_ENABLED=true` showed 2 extra failures for that reason only).
+Environment for every run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock DEMO_TOOLS_ENABLED=true`, `TEST_DATABASE_URL` pointing to my own database `pivoris_p1s01_test` (the repo `.env` sets `DEMO_TOOLS_ENABLED=false`, `LLM_PROVIDER=openai`, `INSTAGRAM_ENABLED_PROVIDERS=meta`, which makes the dev-route tests fail on this machine regardless of code; the first fast run without `DEMO_TOOLS_ENABLED=true` showed 2 extra failures for that reason only).
 
 Run from `backend/` with `uv run` (Windows). `MEDIA_STORAGE_BACKEND=local` was also set for the last run (the repo `.env` sets `s3`, which made 6 publish and demo tests fail only on this machine).
 
@@ -88,7 +88,7 @@ Not done on purpose: no audit-log rows for test messages (they would show in the
 
 - During the session the shared tree changed under me: the branch went from `fix/ci-green` to `main` at `f1cc494` (reflog: `reset: moving to HEAD`), and the uncommitted `frontend/src/app/router.tsx` change and some format-only edits by another session disappeared from `git status`. I did not cause that (I never ran stash/reset/checkout on tracked files except `git checkout frontend/openapi.json`, my own file, to redo my patch), and I did not touch `router.tsx`. If that router change mattered it needs to be recovered from whoever made the reset.
 - I ran `ruff format` only on files I created or edited. `ruff format --check .` reports 3 files that are not mine and not formatted at HEAD: `app/notifications/jobs.py`, `app/operations/calendar.py`, `tests/integration/test_hardening_integration_regressions.py`.
-- A temporary git worktree at HEAD was used to get a baseline of failing tests and has been removed. The temporary databases `agentnest_p1s01_test` and `agentnest_p1s01_mig` are dropped at the end.
+- A temporary git worktree at HEAD was used to get a baseline of failing tests and has been removed. The temporary databases `pivoris_p1s01_test` and `pivoris_p1s01_mig` are dropped at the end.
 
 ## 8. Handoff to Session 02
 

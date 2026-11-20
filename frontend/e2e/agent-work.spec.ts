@@ -8,7 +8,7 @@ function fixture(mode: string, id?: string) {
     "exec",
     "-e",
     `DATABASE_URL=${process.env.E2E_FIXTURE_DATABASE_URL}`,
-    process.env.E2E_FIXTURE_CONTAINER ?? "agentnest-s14-api",
+    process.env.E2E_FIXTURE_CONTAINER ?? "pivoris-s14-api",
     "uv",
     "run",
     "python",

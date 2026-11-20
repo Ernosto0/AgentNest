@@ -14,7 +14,7 @@ const base = `/w/${WS_GOLKENT}`;
 const other = `/w/${WS_HARBOR}`;
 function routes(role: Role = "owner", demoTools = true) {
   return {
-    "GET /api/v1/meta": () => json({ product_name: "AgentNest", demo_tools_enabled: demoTools, llm_mode: "fake" }),
+    "GET /api/v1/meta": () => json({ product_name: "Pivoris", demo_tools_enabled: demoTools, llm_mode: "fake" }),
     "GET /api/v1/auth/me": () => json({ ...ME, memberships: ME.memberships.map(member => ({ ...member, role })) }),
     [`GET /api/v1/workspaces/${WS_GOLKENT}`]: () => json(workspace(WS_GOLKENT)),
     [`GET /api/v1/workspaces/${WS_HARBOR}`]: () => json(workspace(WS_HARBOR)),

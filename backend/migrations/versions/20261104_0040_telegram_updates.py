@@ -8,7 +8,7 @@ P9-04 / ADR-012 / INV-06:
 - Creates telegram_updates global table for webhook/polling update deduplication.
 - Deduplication occurs at ingress before tenant resolution (explicit global table).
 - Enforces status check constraint ('processed', 'ignored', 'failed').
-- Grants runtime privileges to agentnest_app and agentnest_worker.
+- Grants runtime privileges to pivoris_app and pivoris_worker.
 """
 
 from collections.abc import Sequence
@@ -67,13 +67,13 @@ def upgrade() -> None:
             f"""
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_updates TO agentnest_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_app') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_updates TO pivoris_app;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_updates TO agentnest_worker;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_worker') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE telegram_updates TO pivoris_worker;
                 END IF;
             END $$;
             """

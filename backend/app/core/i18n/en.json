@@ -56,7 +56,7 @@
   "errors.TEST_CHAT_RATE_LIMITED.what": "You have sent many test messages in a short time.",
   "errors.TEST_CHAT_RATE_LIMITED.next": "Wait a little and try again. Each test message uses the assistant, so there is a limit.",
   "errors.WEB_PUSH_NOT_CONFIGURED.what": "Phone notifications are not set up on this server yet.",
-  "errors.WEB_PUSH_NOT_CONFIGURED.next": "Ask the person who runs AgentNest to turn them on.",
+  "errors.WEB_PUSH_NOT_CONFIGURED.next": "Ask the person who runs Pivoris to turn them on.",
   "errors.LAST_OWNER_REQUIRED.what": "A workspace must keep at least one owner.",
   "errors.LAST_OWNER_REQUIRED.next": "Make someone else an owner first, then try again.",
   "errors.MEDIA_INVALID.what": "This file is not a supported image.",

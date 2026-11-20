@@ -41,7 +41,7 @@ try {
       const pathname = url.pathname;
       let status = 200;
       let data;
-      if (pathname === "/api/v1/meta") data = { product_name: "AgentNest", demo_tools_enabled: true, llm_mode: "fake", mock_requires_demo_workspace: true };
+      if (pathname === "/api/v1/meta") data = { product_name: "Pivoris", demo_tools_enabled: true, llm_mode: "fake", mock_requires_demo_workspace: true };
       else if (pathname === "/api/v1/auth/me") {
         if (!scenario.signedIn) { status = 401; data = { code: "AUTH_REQUIRED", status: 401, params: {} }; }
         else data = { user: { id: "99999999-9999-4999-8999-999999999999", email: "owner@example.test", display_name: "Örnek Kullanıcı", ui_locale: scenario.locale }, csrf_token: "fictional-fixture-csrf", memberships: [{ workspace_id: ws, workspace_name: workspace.name, role: scenario.role ?? "owner", is_demo: true }] };

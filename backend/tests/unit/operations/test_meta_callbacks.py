@@ -177,7 +177,7 @@ def test_handle_data_deletion_page_owner_account() -> None:
     session = MagicMock()
     clock = FrozenClock(datetime(2026, 11, 3, 12, 0, tzinfo=UTC))
     settings = Settings(
-        app_base_url="https://app.agentnest.test",
+        app_base_url="https://app.pivoris.test",
         meta_app_secret=SecretStr(MOCK_SECRET),
     )
 
@@ -202,7 +202,7 @@ def test_handle_data_deletion_page_owner_account() -> None:
 
     assert "confirmation_code" in res
     assert res["url"].startswith(
-        "https://app.agentnest.test/api/v1/webhooks/meta/data-deletion/del_"
+        "https://app.pivoris.test/api/v1/webhooks/meta/data-deletion/del_"
     )
     assert acc.status == "disconnected"
     assert session.add.called
@@ -213,7 +213,7 @@ def test_handle_data_deletion_customer_identity_triggers_erasure() -> None:
     session = MagicMock()
     clock = FrozenClock(datetime(2026, 11, 3, 12, 0, tzinfo=UTC))
     settings = Settings(
-        app_base_url="https://app.agentnest.test",
+        app_base_url="https://app.pivoris.test",
         meta_app_secret=SecretStr(MOCK_SECRET),
     )
 
@@ -253,7 +253,7 @@ def test_handle_data_deletion_reconciliation_pending_marks_in_progress() -> None
     session = MagicMock()
     clock = FrozenClock(datetime(2026, 11, 3, 12, 0, tzinfo=UTC))
     settings = Settings(
-        app_base_url="https://app.agentnest.test",
+        app_base_url="https://app.pivoris.test",
         meta_app_secret=SecretStr(MOCK_SECRET),
     )
 
@@ -293,7 +293,7 @@ def test_handle_data_deletion_unknown_identity_writes_tombstone() -> None:
     session = MagicMock()
     clock = FrozenClock(datetime(2026, 11, 3, 12, 0, tzinfo=UTC))
     settings = Settings(
-        app_base_url="https://app.agentnest.test",
+        app_base_url="https://app.pivoris.test",
         meta_app_secret=SecretStr(MOCK_SECRET),
     )
 
@@ -322,7 +322,7 @@ def test_handle_data_deletion_idempotent_replay() -> None:
     session = MagicMock()
     clock = FrozenClock(datetime(2026, 11, 3, 12, 0, tzinfo=UTC))
     settings = Settings(
-        app_base_url="https://app.agentnest.test",
+        app_base_url="https://app.pivoris.test",
         meta_app_secret=SecretStr(MOCK_SECRET),
     )
 
@@ -339,7 +339,7 @@ def test_handle_data_deletion_idempotent_replay() -> None:
     assert res["confirmation_code"] == "del_existing_code_123"
     assert (
         res["url"]
-        == "https://app.agentnest.test/api/v1/webhooks/meta/data-deletion/del_existing_code_123"
+        == "https://app.pivoris.test/api/v1/webhooks/meta/data-deletion/del_existing_code_123"
     )
     assert not session.add.called  # No new record added
 
@@ -371,7 +371,7 @@ def test_get_data_deletion_status_privacy_safe() -> None:
 
 def test_meta_callbacks_endpoints_via_test_client() -> None:
     settings = Settings(
-        app_base_url="https://app.agentnest.test",
+        app_base_url="https://app.pivoris.test",
         meta_app_secret=SecretStr(MOCK_SECRET),
         demo_tools_enabled=True,
     )
@@ -423,7 +423,7 @@ def test_meta_callbacks_endpoints_via_test_client() -> None:
     # 4. Successful data-deletion callback
     with patch("app.operations.meta_callbacks_router.handle_data_deletion_request") as mock_del:
         mock_del.return_value = {
-            "url": "https://app.agentnest.test/api/v1/webhooks/meta/data-deletion/del_123",
+            "url": "https://app.pivoris.test/api/v1/webhooks/meta/data-deletion/del_123",
             "confirmation_code": "del_123",
         }
 

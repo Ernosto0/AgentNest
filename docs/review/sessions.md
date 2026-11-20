@@ -87,7 +87,7 @@ Done when: CI is green on the PR, the checklist dry run passes, and each entry (
 **Covers:** P-02, P-03. **You must be present** to perform the Instagram actions on your phone and in the Meta dashboard.
 
 ```text
-Goal: record the first real end-to-end proof that AgentNest works against a real Instagram professional account and the real OpenAI model. I will do the actions on Instagram; you drive the app, logs and recordings.
+Goal: record the first real end-to-end proof that Pivoris works against a real Instagram professional account and the real OpenAI model. I will do the actions on Instagram; you drive the app, logs and recordings.
 
 Read first:
 - docs/review/pre-launch-problems.md, entries P-02 and P-03.

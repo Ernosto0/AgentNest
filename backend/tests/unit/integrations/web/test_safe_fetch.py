@@ -96,7 +96,7 @@ def test_headers_pin_sni_and_rebinding():
     assert lines[0] == "GET /gizli?token=SECRET HTTP/1.1"
     assert set(lines[1:-2]) == {
         "Host: business.example",
-        "User-Agent: AgentNestImport/1.0",
+        "User-Agent: PivorisImport/1.0",
         "Accept: text/html,application/xhtml+xml;q=0.9",
         "Accept-Language: tr,en;q=0.8",
         "Accept-Encoding: identity",

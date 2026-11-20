@@ -83,7 +83,7 @@ describe("service worker (push only)", () => {
     const worker = loadWorker();
     await push(worker, null);
     await push(worker, { title: 42, body: {}, url: 7 });
-    expect(worker.shown.map((n) => n.title)).toEqual(["AgentNest", "AgentNest"]);
+    expect(worker.shown.map((n) => n.title)).toEqual(["Pivoris", "Pivoris"]);
     expect(worker.shown[1]?.options).toMatchObject({ body: "", data: { url: "/" } });
   });
 
@@ -133,7 +133,7 @@ describe("web manifest and page", () => {
   const html = readFileSync(resolve(__dirname, "../../index.html"), "utf8");
 
   it("is installable: name, standalone, start_url, 192 and 512 icons, a maskable icon", () => {
-    expect(manifest).toMatchObject({ name: "AgentNest", display: "standalone", start_url: "/", scope: "/" });
+    expect(manifest).toMatchObject({ name: "Pivoris", display: "standalone", start_url: "/", scope: "/" });
     const sizes = manifest.icons.map((i: { sizes: string; purpose: string }) => `${i.sizes}:${i.purpose}`);
     expect(sizes).toEqual(expect.arrayContaining(["192x192:any", "512x512:any", "512x512:maskable"]));
     for (const icon of manifest.icons) {

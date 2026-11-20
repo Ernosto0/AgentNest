@@ -1,6 +1,6 @@
 # Feature Phase 2, Session 06: Missed-customer report in lira (D-03)
 
-**Status:** Implemented, uncommitted, in worktree `C:\Users\ernos\agentnest-p2\s06`. Nothing was run against a real Instagram account or provider; all figures come from test data.
+**Status:** Implemented, uncommitted, in worktree `C:\Users\ernos\pivoris-p2\s06`. Nothing was run against a real Instagram account or provider; all figures come from test data.
 **Baseline commit:** 20a0551 (detached). **Migration:** none (the report is computed live; no table was added).
 **Earlier work:** a Codex run left only `backend/app/reporting/weekly_sources.py` (kept after review, fixed: it required `last_verified_at`, which the app's own usability rule does not; its hours-to-instant code was rewritten; the registry was added). The D-01 line in `backend/pyproject.toml` was kept.
 

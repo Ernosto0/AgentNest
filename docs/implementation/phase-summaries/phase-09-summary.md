@@ -12,7 +12,7 @@
 
 ## 1. Executive Summary
 
-Phase 9 establishes the **Owner Messaging Channel** using the channel-agnostic core architecture specified in ADR-012. It connects business owners and managers directly to their AgentNest workspace via Telegram, enabling mobile receipt of critical notifications, replay-safe single-use approval decisions, daily business metrics queries, photo ingestion, and conversational task intake without requiring access to a desktop browser.
+Phase 9 establishes the **Owner Messaging Channel** using the channel-agnostic core architecture specified in ADR-012. It connects business owners and managers directly to their Pivoris workspace via Telegram, enabling mobile receipt of critical notifications, replay-safe single-use approval decisions, daily business metrics queries, photo ingestion, and conversational task intake without requiring access to a desktop browser.
 
 All engineering deliverables across all 8 sequential sessions are fully implemented and verified offline:
 - **Zero core coupling (AC-4):** Architectural isolation verified by `lint-imports` (20 contracts kept, 0 broken) and AST scanning; no core module imports the Telegram adapter except the channel registry and webhook router.

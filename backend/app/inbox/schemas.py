@@ -32,7 +32,7 @@ class ConversationOut(BaseModel):
 
 
 class StoryOut(BaseModel):
-    """The story a message refers to (F-04). ``known`` is true only for a story AgentNest
+    """The story a message refers to (F-04). ``known`` is true only for a story Pivoris
     published, where the stored content is shown; a reply to any other story, and every mention,
     carries just the kind (the provider's story link is short-lived and is never shown)."""
 

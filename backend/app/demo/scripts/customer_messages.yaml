@@ -91,7 +91,7 @@ scripts:
     text: "Bu ne kadar?"
     attachments:
       - {type: story_reply, url: "https://example.test/story.jpg", note: "sim-story-1"}
-    expect: Handed to a person. The story is not one AgentNest published, so nothing says what "this" is; for a story AgentNest published, the stored story is passed to the draft as context.
+    expect: Handed to a person. The story is not one Pivoris published, so nothing says what "this" is; for a story Pivoris published, the stored story is passed to the draft as context.
 
   - id: story_mention
     label: {tr: Hikâye etiketi, en: Story mention}

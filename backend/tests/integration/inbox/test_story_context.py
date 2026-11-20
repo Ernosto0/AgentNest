@@ -1,6 +1,6 @@
 """F-04: replies to and mentions of the business's stories.
 
-A reply to a story AgentNest published is drafted with the stored story as context; a reply to any
+A reply to a story Pivoris published is drafted with the stored story as context; a reply to any
 other story, and a reply with no text, behave as before. A plain mention gets the owner's single
 thank-you template as an approval-required draft, or goes to a person when none is set up.
 """

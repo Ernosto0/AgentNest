@@ -51,7 +51,7 @@ export type PushOutcome =
 // Switching workspace needs nothing: the subscription belongs to the user and the device, and a
 // workspace only pushes to a device registered there by a user who opted in.
 
-const PREFIX = "agentnest.push.";
+const PREFIX = "pivoris.push.";
 const deviceKey = (userId: string, workspaceId: string) => `${PREFIX}device.${userId}.${workspaceId}`;
 const ownerKey = `${PREFIX}owner`;
 const opportunityKey = (userId: string, workspaceId: string) =>
@@ -60,7 +60,7 @@ const dismissedKey = (userId: string, workspaceId: string) =>
   `${PREFIX}dismissed.${userId}.${workspaceId}`;
 
 /** Fired when the owner approves something, so an open prompt can appear without a reload. */
-export const PUSH_OPPORTUNITY_EVENT = "agentnest:push-opportunity";
+export const PUSH_OPPORTUNITY_EVENT = "pivoris:push-opportunity";
 
 function read(key: string): string | null {
   try {

@@ -3,8 +3,8 @@
 # Allow loopback (including Docker port forwarding), reject IPv4/IPv6 external traffic.
 set -euo pipefail
 
-group="agentnest-offline"
-chain="AGENTNEST_OFFLINE"
+group="pivoris-offline"
+chain="PIVORIS_OFFLINE"
 sudo groupadd --system "$group"
 gid="$(getent group "$group" | cut -d: -f3)"
 cleanup() {

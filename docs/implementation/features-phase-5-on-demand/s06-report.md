@@ -41,7 +41,7 @@ Videos follow the existing orphan (7 days) and published-only (90 days) rules; u
 
 ### Deployment
 
-Root `Dockerfile` backend stage installs Debian `ffmpeg` pinned by `ARG FFMPEG_DEBIAN_VERSION=7:5.1.9-0+deb12u1` (`--no-install-recommends`, lists cleaned, `dpkg-query` version check, before `USER agentnest`). `Caddyfile`: the 10 MB body limit now applies to everything except `/api/v1/workspaces/*/media/video`, which gets 310 MB. CI backend job installs `ffmpeg` so the real-binary test runs there. Docs: platform-capabilities (spec, sources, conflicts), ADR-028 (new) and the ADR-015 addendum, data-model, api-design, integrations, observability, security-and-privacy, deployment, runbook, local-development, environment-variables, troubleshooting, mvp-scope, pricing (derived, not measured storage cost).
+Root `Dockerfile` backend stage installs Debian `ffmpeg` pinned by `ARG FFMPEG_DEBIAN_VERSION=7:5.1.9-0+deb12u1` (`--no-install-recommends`, lists cleaned, `dpkg-query` version check, before `USER pivoris`). `Caddyfile`: the 10 MB body limit now applies to everything except `/api/v1/workspaces/*/media/video`, which gets 310 MB. CI backend job installs `ffmpeg` so the real-binary test runs there. Docs: platform-capabilities (spec, sources, conflicts), ADR-028 (new) and the ADR-015 addendum, data-model, api-design, integrations, observability, security-and-privacy, deployment, runbook, local-development, environment-variables, troubleshooting, mvp-scope, pricing (derived, not measured storage cost).
 
 ### Frontend (minimal)
 
@@ -54,7 +54,7 @@ Backend, from `backend/`:
 - `uv run ruff check app tests evals migrations`: pass. `uv run ruff format --check app tests evals migrations`: pass (842 files). `uv run mypy app`: pass (441 files). `uv run lint-imports`: pass (25 contracts kept, 0 broken).
 - `uv run pytest tests/unit tests/contract tests/security tests/isolation tests/integration/content tests/integration/operations -q -p no:cacheprovider`: **3035 passed, 20 skipped, 2 failed** (17 min). Both failures are environmental and known: `test_cli_migration_status_head_only_and_check_config` (the worktree `.env` sets `DEMO_TOOLS_ENABLED=true`) and `test_invite_secrets::...never_logged...` (passes, 2 passed, when run alone with `SENTRY_DSN=`). The 20 skips are live Meta/Telegram probes, one POSIX-rlimit test and the real-ffprobe test (no binaries here).
 - After the reviewer's router change: `test_video_upload.py`, `test_video_isolation.py`, `test_video_agent_tools.py`, `test_media_upload.py`: 73 passed.
-- Not run: the other `tests/integration` directories (full suite over an hour); the `alembic downgrade 0081 && upgrade head` CLI round trip (the worktree `.env` `DATABASE_URL` is not an `agentnest_p5b*` database); the round trip is covered by `test_video_media_migration.py` against the test DB.
+- Not run: the other `tests/integration` directories (full suite over an hour); the `alembic downgrade 0081 && upgrade head` CLI round trip (the worktree `.env` `DATABASE_URL` is not an `pivoris_p5b*` database); the round trip is covered by `test_video_media_migration.py` against the test DB.
 
 Frontend, from `frontend/` (PowerShell): `npm.cmd run lint` pass; `npm.cmd run typecheck` pass; `npm.cmd test` 66 files, 925 tests passed; `npm.cmd run i18n:check` pass (2849 keys); `npm.cmd run build` pass.
 

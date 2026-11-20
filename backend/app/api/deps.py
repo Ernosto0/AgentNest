@@ -17,7 +17,7 @@ from app.identity import service as identity_service
 from app.identity.permissions import PERMISSION_MATRIX, has_permission
 from app.identity.service import AuthenticatedSession
 
-SESSION_COOKIE = "agentnest_session"
+SESSION_COOKIE = "pivoris_session"
 CSRF_HEADER = "X-CSRF-Token"
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 # Unsafe /api/v1 routes that need no session (CSRF applies to everything else, by default).

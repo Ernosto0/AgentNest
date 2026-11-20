@@ -42,7 +42,7 @@ report. Migration `0027` follows `0026` and refuses downgrade with effect histor
 
 ## Verification evidence
 
-Windows PowerShell, Python 3.12 local `.venv`, disposable PostgreSQL 16 `agentnest_test`
+Windows PowerShell, Python 3.12 local `.venv`, disposable PostgreSQL 16 `pivoris_test`
 at localhost:5433, frozen clocks, fake model, mock Instagram, local media. Every pytest
 shell set `COOKIE_SECURE=false`, `DEMO_TOOLS_ENABLED=true`,
 `INSTAGRAM_ENABLED_PROVIDERS=mock`, `LLM_PROVIDER=fake`, and

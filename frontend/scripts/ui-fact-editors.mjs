@@ -191,7 +191,7 @@ try {
     try {
       await page.addInitScript(
         ({ lang }) => {
-          localStorage.setItem("agentnest.locale", lang);
+          localStorage.setItem("pivoris.locale", lang);
           localStorage.setItem("i18nextLng", lang);
         },
         { lang: scenario.locale },
@@ -200,7 +200,7 @@ try {
       const currentMe = {
         user: {
           id: `u-${scenario.role}`,
-          email: `${scenario.role}@agentnest.example`,
+          email: `${scenario.role}@pivoris.example`,
           display_name: `${scenario.role.toUpperCase()} User`,
           ui_locale: scenario.locale,
         },
@@ -230,7 +230,7 @@ try {
 
         if (pathname === "/api/v1/meta") {
           return respond({
-            product_name: "AgentNest",
+            product_name: "Pivoris",
             demo_tools_enabled: true,
             llm_mode: "fake",
             supported_locales: ["tr", "en"],

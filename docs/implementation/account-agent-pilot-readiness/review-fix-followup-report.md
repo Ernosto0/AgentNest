@@ -42,7 +42,7 @@ The Account Agent contract documentation was updated. No migration or API change
 - `git diff --check`: **passed**.
 
 Database checks used PostgreSQL 17 on loopback port 55439 and the dedicated disposable
-`agentnest_three_review_fixes_20261120_test` database. Existing application databases were not
+`pivoris_three_review_fixes_20261120_test` database. Existing application databases were not
 reset or migrated. The disposable PostgreSQL instance was stopped after verification.
 
 ## Existing failures outside these three fixes

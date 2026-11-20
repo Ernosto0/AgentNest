@@ -1,6 +1,6 @@
-# AgentNest
+# Pivoris
 
-AgentNest (working name) is an Instagram operations assistant for small businesses. It keeps verified business knowledge, drafts grounded replies to customer DMs, prepares and schedules content behind explicit approvals, and reports honestly on what happened. Turkish-first, mobile-first, and fully demonstrable locally on simulated integrations (no credentials needed).
+Pivoris is an Instagram operations assistant for small businesses. It keeps verified business knowledge, drafts grounded replies to customer DMs, prepares and schedules content behind explicit approvals, and reports honestly on what happened. Turkish-first, mobile-first, and fully demonstrable locally on simulated integrations (no credentials needed).
 
 The specification lives in [docs/](docs/README.md). Coding agents: read [CLAUDE.md](CLAUDE.md) first.
 

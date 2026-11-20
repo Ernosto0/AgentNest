@@ -1,7 +1,7 @@
 [project]
-name = "agentnest-backend"
+name = "pivoris-backend"
 version = "0.1.0"
-description = "AgentNest backend: API, worker and CLI"
+description = "Pivoris backend: API, worker and CLI"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.115",

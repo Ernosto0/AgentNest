@@ -76,7 +76,7 @@ Full check results: section 4.
 
 ## 4. Checks run
 
-Environment for the backend suite: `PYTHONUTF8=1 LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= WEBSITE_IMPORT_FETCHER=fake`, with `DEMO_TOOLS_ENABLED=true` for the integration shards. Four parallel shards on four empty databases (`agentnest_p4close_{a,b,c,d}_test`, dropped afterwards).
+Environment for the backend suite: `PYTHONUTF8=1 LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= WEBSITE_IMPORT_FETCHER=fake`, with `DEMO_TOOLS_ENABLED=true` for the integration shards. Four parallel shards on four empty databases (`pivoris_p4close_{a,b,c,d}_test`, dropped afterwards).
 
 | Check | Result |
 |---|---|
@@ -137,7 +137,7 @@ Credential-free defaults (`LLM_PROVIDER=fake`, `INSTAGRAM_ENABLED_PROVIDERS=mock
 ## 7. Limitations and live items pending
 
 - **V-12, real Instagram import:** real `biography` and `website` reads, whether `caption` is returned under Instagram Login, `/media` ordering, `limit` behaviour, `@` handling, with fixtures to record from the founder's test account. Until then Session 01 is verified against the mock and synthetic Meta responses only.
-- **Real website imports on 3 to 5 Turkish small-business sites** are untried: gzip served despite `Accept-Encoding: identity`, script-rendered sites, sites that block the `AgentNestImport/1.0` user agent, and whether the daily limit of 10 suits onboarding. One manual fetch of `example.com` over TLS and plain HTTP succeeded; `localhost.localdomain` and a port other than 443 were refused.
+- **Real website imports on 3 to 5 Turkish small-business sites** are untried: gzip served despite `Accept-Encoding: identity`, script-rendered sites, sites that block the `PivorisImport/1.0` user agent, and whether the daily limit of 10 suits onboarding. One manual fetch of `example.com` over TLS and plain HTTP succeeded; `localhost.localdomain` and a port other than 443 were refused.
 - The OS resolver call has no own timeout; only the 180 s job timeout bounds it.
 - Website text goes to the LLM provider like pasted text; the pages are public, but a pilot owner should know.
 - A re-import does not supersede pending candidates whose key no longer appears in the profile (open question).

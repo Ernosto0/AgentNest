@@ -8,7 +8,7 @@ Reels need bounded validation and storage before publishing exists. Untrusted vi
 
 ## Decision
 
-Use Debian `ffmpeg` (both ffprobe and ffmpeg) pinned by `ARG FFMPEG_DEBIAN_VERSION=7:5.1.9-0+deb12u1` in the backend stage of `python:3.12-slim-bookworm`, installed as root before `USER agentnest:agentnest`. The build checks `dpkg-query -W -f='${Version}' ffmpeg` equals the ARG. Pin source supplied by the session lead: https://packages.debian.org/bookworm/ffmpeg and https://security-tracker.debian.org/tracker/source-package/ffmpeg, accessed 2026-11-18.
+Use Debian `ffmpeg` (both ffprobe and ffmpeg) pinned by `ARG FFMPEG_DEBIAN_VERSION=7:5.1.9-0+deb12u1` in the backend stage of `python:3.12-slim-bookworm`, installed as root before `USER pivoris:pivoris`. The build checks `dpkg-query -W -f='${Version}' ffmpeg` equals the ARG. Pin source supplied by the session lead: https://packages.debian.org/bookworm/ffmpeg and https://security-tracker.debian.org/tracker/source-package/ffmpeg, accessed 2026-11-18.
 
 No transcoding. Store the original bytes with their SHA-256. Our bounded seek-based ISO BMFF scanner validates box sizes, `ftyp` major brand, moov-first and edit-list presence before ffprobe. Maximum 256 top-level boxes, 4096 nested boxes, depth cap 4 and 32 MiB moov inspection. Probe optional JSON defensively; apply phone display rotation before size/aspect rules. Fake header fixtures and deterministic Pillow thumbnails support offline tests. `VIDEO_PROBER=fake` is forbidden in production startup and `check-config --production`.
 

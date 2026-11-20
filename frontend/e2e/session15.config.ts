@@ -2,7 +2,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
-  outputDir: join(tmpdir(), "agentnest-s15-browser"),
+  outputDir: join(tmpdir(), "pivoris-s15-browser"),
   testDir: ".",
   testMatch: "agent-work.spec.ts",
   workers: 1,

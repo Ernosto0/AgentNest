@@ -61,7 +61,7 @@ def test_live_whatsapp_session_text_ping(
     live_client: WhatsAppClient, live_inputs: tuple[str, str, str]
 ) -> None:
     """A free-form message inside the 24-hour window is accepted and returns a message id."""
-    result = _probe(lambda: live_client.send_text(live_inputs[2], "[AgentNest] Live probe: OK"))
+    result = _probe(lambda: live_client.send_text(live_inputs[2], "[Pivoris] Live probe: OK"))
     _check(result.message_id.startswith("wamid."))
 
 
@@ -72,7 +72,7 @@ def test_live_whatsapp_interactive_buttons_with_probe_ids(
     result = _probe(
         lambda: live_client.send_interactive_buttons(
             live_inputs[2],
-            "[AgentNest] Live probe: these buttons do nothing.",
+            "[Pivoris] Live probe: these buttons do nothing.",
             [("probe:approve", "Approve"), ("probe:reject", "Reject")],
         )
     )

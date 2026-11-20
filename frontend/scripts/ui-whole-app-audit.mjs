@@ -20,7 +20,7 @@ const ws = "11111111-1111-4111-8111-111111111111";
 const wsName = "Gölkent Butik / Lake City Boutique with long Turkish characters: Şöför İğne Çiçek";
 
 const mockMeta = {
-  product_name: "AgentNest",
+  product_name: "Pivoris",
   demo_tools_enabled: true,
   llm_mode: "fake",
   mock_requires_demo_workspace: false,

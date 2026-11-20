@@ -1,7 +1,7 @@
 # Feature Phase 3, Session 01 report: close comment research and request the permission
 
 **Status:** done (code, tests, research record, docs). Live evidence is **pending**: nothing was run against Meta, no app, token, test account or webhook was used, and nothing was submitted to App Review.
-**Baseline:** `main` at `06c5d64` (detached worktree `agentnest-p3/s01`). Nothing committed or pushed.
+**Baseline:** `main` at `06c5d64` (detached worktree `pivoris-p3/s01`). Nothing committed or pushed.
 **Migration head:** `0057`, unchanged. No migration was needed (the capability is derived from `granted_scopes` and a new key in the existing `capabilities` JSON; a missing key means "not granted").
 
 ## Who built what
@@ -37,7 +37,7 @@ Sources were read on 2026-11-17 on `developers.facebook.com/documentation/instag
 
 Capabilities remain off in code until Session 02 and its live probe; no item is "verified by test" (no dev-mode account was available).
 
-## Tests and checks (all run in `WT`, DB `agentnest_p3s01_test`)
+## Tests and checks (all run in `WT`, DB `pivoris_p3s01_test`)
 - Backend unit: `SCOPES` order and content, the authorize URL carries the scope, `compute_capabilities` with and without the scope across both story settings (`comments_permission` true/false, all four `comment_*` false, messaging and publishing unchanged), updated full-dict assertion.
 - Backend integration: OAuth reconnect callback records the actual consent (scope returned or not, from `connected` and `needs_reauth`), stores `granted_scopes`, keeps `comment_*` false; an account with legacy capabilities (no key) serializes through the API unchanged; legacy and `comments_permission` true/false/absent accounts keep passing the DM send gate and content submit validation.
 - Frontend: reconnect prompt for connected, degraded and needs_reauth real accounts (one button, correct reconnect request body), not shown with the permission, for mock accounts or disconnected ones, non-owner sees owner-only text; Inbox hint with permission undefined, false and true.

@@ -9,7 +9,7 @@ P9-03 / ADR-012:
 - Adds foreign keys to workspaces, notifications, users, and channel_links.
 - Enforces channel and delivery status check constraints.
 - Enables and forces PostgreSQL Row-Level Security (RLS) with tenant isolation.
-- Grants runtime privileges to agentnest_app and agentnest_worker.
+- Grants runtime privileges to pivoris_app and pivoris_worker.
 """
 
 from collections.abc import Sequence
@@ -143,13 +143,13 @@ def upgrade() -> None:
             f"""
             DO $$
             BEGIN
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_app') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE notification_deliveries TO agentnest_app;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_app') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE notification_deliveries TO pivoris_app;
                 END IF;
-                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentnest_worker') THEN
-                    GRANT USAGE ON SCHEMA {q_schema} TO agentnest_worker;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE notification_deliveries TO agentnest_worker;
+                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'pivoris_worker') THEN
+                    GRANT USAGE ON SCHEMA {q_schema} TO pivoris_worker;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE notification_deliveries TO pivoris_worker;
                 END IF;
             END $$;
             """

@@ -4,7 +4,7 @@
 
 ## Baseline and implemented behavior
 
-Started in `C:\Users\ernos\AgentNest`, `main` at `d7d3c01`, with reviewed Sessions 05-07 uncommitted. Preserved prior work. Read common rules, phase/roadmap/invariants/contracts, prior reports, ADR-022 and inbox/send/retention/disconnect sources. Baseline migration head was `0023`; additive `0024` introduces account-scoped customer identities, memory, correction versions, source links, summary versions and content-free source fences, plus the thread identity composite FK. Downgrade refuses populated privacy evidence.
+Started in `C:\Users\ernos\Pivoris`, `main` at `d7d3c01`, with reviewed Sessions 05-07 uncommitted. Preserved prior work. Read common rules, phase/roadmap/invariants/contracts, prior reports, ADR-022 and inbox/send/retention/disconnect sources. Baseline migration head was `0023`; additive `0024` introduces account-scoped customer identities, memory, correction versions, source links, summary versions and content-free source fences, plus the thread identity composite FK. Downgrade refuses populated privacy evidence.
 
 - Identity continuity uses only the provider kind and authoritative account-scoped DM participant ID, stored as a digest. Usernames/display names never merge identities. Comments never resolve or load private memory even when a thread contains an identity reference.
 - Private `memory.write` accepts one typed, useful self-report, its current-thread inbound source UUID, a bounded exact quote and one of five business topics: size, schedule, service, language, contact. Kinds are `preference`, `customer_claim`, `open_goal`. Forged/foreign/deleted sources, paraphrases, unsupported authority kinds and sensitive/credential patterns fail closed. No business fact or delegation service changes. The existing critical-claim validator remains authoritative.
@@ -21,7 +21,7 @@ The loop also discards in-process tool observations when a new claim captures a 
 
 ## Verification evidence
 
-PostgreSQL 16 disposable `agentnest_test`, localhost:5433; local venv, frozen clocks, fake model and mock Instagram only. All pytest processes set `COOKIE_SECURE=false`, `DEMO_TOOLS_ENABLED=true`, `INSTAGRAM_ENABLED_PROVIDERS=mock`, `LLM_PROVIDER=fake`, `MEDIA_STORAGE_BACKEND=local`. `.env` was not edited. Commands run from `backend/` unless stated otherwise.
+PostgreSQL 16 disposable `pivoris_test`, localhost:5433; local venv, frozen clocks, fake model and mock Instagram only. All pytest processes set `COOKIE_SECURE=false`, `DEMO_TOOLS_ENABLED=true`, `INSTAGRAM_ENABLED_PROVIDERS=mock`, `LLM_PROVIDER=fake`, `MEDIA_STORAGE_BACKEND=local`. `.env` was not edited. Commands run from `backend/` unless stated otherwise.
 
 | Exact command / evidence | Actual result |
 |---|---|

@@ -31,7 +31,7 @@ export const SUPPORTED_LANGUAGES = ["tr", "en"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: Language = "tr";
 
-const STORAGE_KEY = "agentnest.language";
+const STORAGE_KEY = "pivoris.language";
 
 export function isLanguage(value: unknown): value is Language {
   return typeof value === "string" && (SUPPORTED_LANGUAGES as readonly string[]).includes(value);

@@ -164,10 +164,10 @@ def test_runtime_rls_is_fail_closed_and_prevents_cross_tenant_writes(
     aid, bid, wa, wb, bitem, bmedia = ra.id, rb.id, t.a.id, t.b.id, b.id, mb.id
     db.expunge_all()
     clear_tenant_context(db)
-    with as_role(db, "agentnest_app"):
+    with as_role(db, "pivoris_app"):
         assert db.scalars(select(ContentItemMedia)).all() == []
     set_tenant_context(db, wa)
-    with as_role(db, "agentnest_app"):
+    with as_role(db, "pivoris_app"):
         assert list(db.scalars(select(ContentItemMedia.id))) == [aid]
         assert (
             db.execute(

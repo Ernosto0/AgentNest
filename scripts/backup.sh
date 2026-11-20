@@ -9,11 +9,11 @@
 #   5. Durable .backup-status.json heartbeat update (non-zero exit on failure)
 #
 # Usage:
-#   ./scripts/backup.sh [--output-dir /var/backups/agentnest] [--s3-bucket ...]
+#   ./scripts/backup.sh [--output-dir /var/backups/pivoris] [--s3-bucket ...]
 #   ./scripts/backup.sh decrypt --input <archive.dump.enc> --output <archive.dump>
 #
 # Recommended cron / systemd schedule (02:00 UTC nightly):
-#   0 2 * * * cd /opt/agentnest && docker compose -f compose.prod.yml --profile backup run --rm backup
+#   0 2 * * * cd /opt/pivoris && docker compose -f compose.prod.yml --profile backup run --rm backup
 
 set -euo pipefail
 

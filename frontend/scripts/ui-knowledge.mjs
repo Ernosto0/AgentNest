@@ -179,7 +179,7 @@ try {
 
           if (pathname === "/api/v1/meta") {
             return respond({
-              product_name: "AgentNest",
+              product_name: "Pivoris",
               demo_tools_enabled: true,
               llm_mode: "fake",
               supported_locales: ["tr", "en"],

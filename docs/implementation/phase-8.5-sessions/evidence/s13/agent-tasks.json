@@ -5,8 +5,8 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-tr-phone-overview.png",
-    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-tr-phone-task.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-tr-phone-overview.png",
+    "taskShot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-tr-phone-task.png"
   },
   {
     "engine": "chromium",
@@ -14,8 +14,8 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-en-phone-overview.png",
-    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-en-phone-task.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-en-phone-overview.png",
+    "taskShot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-en-phone-task.png"
   },
   {
     "engine": "chromium",
@@ -23,8 +23,8 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-tr-tablet-overview.png",
-    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-tr-tablet-task.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-tr-tablet-overview.png",
+    "taskShot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-tr-tablet-task.png"
   },
   {
     "engine": "chromium",
@@ -32,8 +32,8 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-en-desktop-overview.png",
-    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-en-desktop-task.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-en-desktop-overview.png",
+    "taskShot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/chromium-en-desktop-task.png"
   },
   {
     "engine": "webkit",
@@ -41,8 +41,8 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-tr-phone-overview.png",
-    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-tr-phone-task.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-tr-phone-overview.png",
+    "taskShot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-tr-phone-task.png"
   },
   {
     "engine": "webkit",
@@ -50,8 +50,8 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-en-phone-overview.png",
-    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-en-phone-task.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-en-phone-overview.png",
+    "taskShot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-en-phone-task.png"
   },
   {
     "engine": "webkit",
@@ -59,8 +59,8 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-tr-tablet-overview.png",
-    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-tr-tablet-task.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-tr-tablet-overview.png",
+    "taskShot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-tr-tablet-task.png"
   },
   {
     "engine": "webkit",
@@ -68,7 +68,7 @@
     "violations": 0,
     "errors": 0,
     "overflow": false,
-    "shot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-en-desktop-overview.png",
-    "taskShot": "C:\\Users\\ernos\\AgentNest\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-en-desktop-task.png"
+    "shot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-en-desktop-overview.png",
+    "taskShot": "C:\\Users\\ernos\\Pivoris\\docs\\implementation\\phase-8.5-sessions\\evidence\\s13\\/webkit-en-desktop-task.png"
   }
 ]

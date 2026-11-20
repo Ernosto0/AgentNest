@@ -24,7 +24,7 @@ from tests.factories import DEFAULT_PASSWORD, create_user, login
 LOGIN = "/api/v1/auth/login"
 SESSIONS = "/api/v1/auth/sessions"
 PASSWORD = "/api/v1/auth/password"
-COOKIE = "agentnest_session"
+COOKIE = "pivoris_session"
 
 
 def test_client_ip_extraction_and_proxy_trust() -> None:

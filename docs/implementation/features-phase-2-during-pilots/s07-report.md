@@ -1,7 +1,7 @@
 # Session 07 report: visible learning loop (D-05)
 
 - **Status:** implemented and verified offline. Nothing was run against a real Telegram bot, a real phone or the real model. Stopped for review.
-- **Baseline commit:** `20a0551` (worktree `agentnest-p2/s07`, nothing committed).
+- **Baseline commit:** `20a0551` (worktree `pivoris-p2/s07`, nothing committed).
 - **Migration:** `0055` (`20261116_0055_fact_save_tokens.py`, `down_revision = "0048"`). The orchestrator re-chains it.
 
 ## What was built

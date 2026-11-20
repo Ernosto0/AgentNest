@@ -82,7 +82,7 @@ them, and these clean final runs supersede those failures.
 
 The operator ran `uv run pytest tests/integration/integrations/test_oauth.py -q --tb=short --maxfail=1`
 inside the Python 3.12 test container, with both live credential inputs blank and
-`TEST_DATABASE_URL` pointing to the separate disposable `agentnest_s16_backend_test`.
+`TEST_DATABASE_URL` pointing to the separate disposable `pivoris_s16_backend_test`.
 **19 passed** in 15.31 seconds, including the changed exact-capability-map assertion.
 Full backend/frontend/E2E and real-model quality gates remain Session 17 work.
 

@@ -10912,7 +10912,7 @@
         "type": "object"
       },
       "StoryOut": {
-        "description": "The story a message refers to (F-04). ``known`` is true only for a story AgentNest\npublished, where the stored content is shown; a reply to any other story, and every mention,\ncarries just the kind (the provider's story link is short-lived and is never shown).",
+        "description": "The story a message refers to (F-04). ``known`` is true only for a story Pivoris\npublished, where the stored content is shown; a reply to any other story, and every mention,\ncarries just the kind (the provider's story link is short-lived and is never shown).",
         "properties": {
           "expired": {
             "title": "Expired",
@@ -13294,7 +13294,7 @@
     }
   },
   "info": {
-    "title": "AgentNest",
+    "title": "Pivoris",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",

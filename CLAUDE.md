@@ -3,7 +3,7 @@
 Guidance for coding agents working in this repository.
 
 ## Project
-AgentNest (working name): an Instagram operations assistant for small businesses (Turkish-first, mobile-first). It has an open-source core and a possible hosted SaaS. The full specification is in `docs/`. Start at `docs/README.md`.
+Pivoris: an Instagram operations assistant for small businesses (Turkish-first, mobile-first). It has an open-source core and a possible hosted SaaS. The full specification is in `docs/`. Start at `docs/README.md`.
 
 ## Current state
 Planning is complete. Implementation follows `docs/implementation/roadmap.md`, phase by phase. **Check which phase is current** (latest phase summary or git log) before doing anything.

@@ -19,8 +19,8 @@ npm run typecheck
   (`docs/product/mvp-scope.md`), so the page does not promise them; the FAQ answers honestly if asked.
   Re-check the copy, including the pilot price
   wording in the FAQ, against the product before publishing.
-- **Product name** is a single constant in `src/brand.ts` (the final name is still open, OQ-10).
-- **Waitlist**: the form posts to the AgentNest backend, `POST /api/v1/waitlist`. Set
+- **Product name** is a single constant in `src/brand.ts`.
+- **Waitlist**: the form posts to the Pivoris backend, `POST /api/v1/waitlist`. Set
   `VITE_WAITLIST_ENDPOINT` at build time to that full URL (for example
   `https://<api-host>/api/v1/waitlist`; locally `http://localhost:8000/api/v1/waitlist`). The body is
   JSON `{ email, business_name, category, instagram_handle, city, locale }`; only `email` is
@@ -64,4 +64,4 @@ The page ships as its own container: `Dockerfile` builds the static site and ser
    so the operator is emailed.
 3. Under **Settings → Networking**, generate a domain or attach your own.
 
-Local check: `docker build -t agentnest-landing . && docker run -e PORT=8080 -p 8080:8080 agentnest-landing`.
+Local check: `docker build -t pivoris-landing . && docker run -e PORT=8080 -p 8080:8080 pivoris-landing`.

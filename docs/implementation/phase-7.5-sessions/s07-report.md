@@ -4,7 +4,7 @@
 
 ## Baseline and scope
 
-Started from `main` at `d7d3c01` with reviewed Sessions 05-06 uncommitted, in `C:\Users\ernos\AgentNest`. Read the common rules, Session 07 brief, prior reports, phase/invariants/roadmap/contracts and inbox, approval, operations, echo and privacy sources. Preserved all prior work. No commit, push, deployment, paid model call or live account action occurred.
+Started from `main` at `d7d3c01` with reviewed Sessions 05-06 uncommitted, in `C:\Users\ernos\Pivoris`. Read the common rules, Session 07 brief, prior reports, phase/invariants/roadmap/contracts and inbox, approval, operations, echo and privacy sources. Preserved all prior work. No commit, push, deployment, paid model call or live account action occurred.
 
 ## Implementation and contracts
 
@@ -21,7 +21,7 @@ OpenAPI and client types were regenerated with explicit development/demo/fake/mo
 
 ## Verification evidence
 
-Python 3.12 local venv, PostgreSQL 16 disposable `agentnest_test` at localhost:5433, frozen clocks, fake model and mock Instagram. Test process overrides: `COOKIE_SECURE=false`, `DEMO_TOOLS_ENABLED=true`, `INSTAGRAM_ENABLED_PROVIDERS=mock`, `LLM_PROVIDER=fake`, `MEDIA_STORAGE_BACKEND=local`. Local `.env` was not edited.
+Python 3.12 local venv, PostgreSQL 16 disposable `pivoris_test` at localhost:5433, frozen clocks, fake model and mock Instagram. Test process overrides: `COOKIE_SECURE=false`, `DEMO_TOOLS_ENABLED=true`, `INSTAGRAM_ENABLED_PROVIDERS=mock`, `LLM_PROVIDER=fake`, `MEDIA_STORAGE_BACKEND=local`. Local `.env` was not edited.
 
 | Command / evidence | Actual result |
 |---|---|

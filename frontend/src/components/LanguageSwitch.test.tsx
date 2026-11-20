@@ -37,7 +37,7 @@ describe("LanguageSwitch", () => {
     const user = userEvent.setup();
     render(<LanguageSwitch />);
     await user.click(screen.getByRole("button", { name: "English" }));
-    expect(window.localStorage.getItem("agentnest.language")).toBe("en");
+    expect(window.localStorage.getItem("pivoris.language")).toBe("en");
     expect(document.documentElement.lang).toBe("en");
   });
 

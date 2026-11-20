@@ -29,7 +29,7 @@ def test_channel_link_code_generation_and_throttling(
 
     test_settings = Settings(
         _env_file=None,
-        telegram_bot_username="AgentNestTestBot",
+        telegram_bot_username="PivorisTestBot",
     )
     client.app.dependency_overrides[get_app_settings] = lambda: test_settings
     try:
@@ -43,8 +43,8 @@ def test_channel_link_code_generation_and_throttling(
         data = res.json()
         assert len(data["code"]) == 8
         assert data["code"].isupper()
-        assert data["bot_username"] == "AgentNestTestBot"
-        assert data["deep_link_url"] == f"https://t.me/AgentNestTestBot?start={data['code']}"
+        assert data["bot_username"] == "PivorisTestBot"
+        assert data["deep_link_url"] == f"https://t.me/PivorisTestBot?start={data['code']}"
 
         # 2. Generate 2nd and 3rd codes
         res2 = client.post(

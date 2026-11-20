@@ -12,7 +12,7 @@ const COPY = {
     metric: "Metric type specimen · fictional number", colors: "Surfaces, boundaries and focus", sample: "Example field",
     action: "Primary action", navigation: "Navigation specimen", current: "Today", statuses: "State specimens · labels remain explicit",
     success: "Verified success", attention: "Needs a decision", danger: "Failed", info: "Checking", simulation: "Simulated",
-    focus: "Use Tab to inspect the focus ring", inverse: "Use Tab to inspect inverse focus", brand: "AgentNest",
+    focus: "Use Tab to inspect the focus ring", inverse: "Use Tab to inspect inverse focus", brand: "Pivoris",
   },
   tr: {
     title: "Çalışma alanı tasarım referansı", intro: "Yerel örnekler · işletme verisi veya API çağrısı yok",
@@ -21,7 +21,7 @@ const COPY = {
     metric: "Sayı stili örneği · kurgu değer", colors: "Yüzeyler, sınırlar ve odak", sample: "Örnek alan",
     action: "Birincil işlem", navigation: "Gezinme örneği", current: "Bugün", statuses: "Durum örnekleri · açık metin etiketleri",
     success: "Doğrulanmış başarı", attention: "Karar bekliyor", danger: "Başarısız", info: "Kontrol ediliyor", simulation: "Simülasyon",
-    focus: "Odak halkasını incelemek için Tab kullanın", inverse: "Koyu yüzeyde odağı incelemek için Tab kullanın", brand: "AgentNest",
+    focus: "Odak halkasını incelemek için Tab kullanın", inverse: "Koyu yüzeyde odağı incelemek için Tab kullanın", brand: "Pivoris",
   },
 } as const;
 

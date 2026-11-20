@@ -1,6 +1,6 @@
 # Türkiye Pazarı: 30 Günde İlk 10–15 Pilot ve Ödeme Yapan Müşteri Kazanım Planı
 
-**Amaç:** AgentNest için reklam bütçesi harcamadan, sahada birebir temas (Bucak, Burdur, Antalya) ve hedefli Instagram/WhatsApp ulaşımı ile **30 gün içinde 10–15 aktif pilot işletme** kazanmak ve bunların **en az 5'ini ücretli "Kurucu İşletme" (990 ₺/ay) aboneliğine** dönüştürmek.
+**Amaç:** Pivoris için reklam bütçesi harcamadan, sahada birebir temas (Bucak, Burdur, Antalya) ve hedefli Instagram/WhatsApp ulaşımı ile **30 gün içinde 10–15 aktif pilot işletme** kazanmak ve bunların **en az 5'ini ücretli "Kurucu İşletme" (990 ₺/ay) aboneliğine** dönüştürmek.
 
 **İlgili Belgeler:**
 - Fiyatlandırma ve Birim Ekonomi: [pricing-and-unit-economics.md](pricing-and-unit-economics.md)
@@ -19,7 +19,7 @@ Küçük işletme sahipleri (pilates stüdyoları, güzellik merkezleri, spor sa
 ### Altın Kural: "Önce Kişiselleştirilmiş Demo, Sonra Ziyaret"
 Bir işletmeye gitmeden veya mesaj atmadan önce **3 dakikanızı** ayırıp:
 1. İşletmenin Instagram profilindeki biyografiyi, öne çıkan hikayelerdeki (Highlights) fiyat/saat bilgilerini veya adresini kopyalayın.
-2. Kendi telefonunuzdaki AgentNest demo ortamında ([local-development.md](../operations/local-development.md)) **o işletmenin adıyla bir çalışma alanı (Workspace)** açıp gerçek bilgilerini yapıştırın (`extract_fact_candidates`).
+2. Kendi telefonunuzdaki Pivoris demo ortamında ([local-development.md](../operations/local-development.md)) **o işletmenin adıyla bir çalışma alanı (Workspace)** açıp gerçek bilgilerini yapıştırın (`extract_fact_candidates`).
 3. İçeride işletmeye özel 2 gerçekçi müşteri DM'i simüle edin.
 4. İşletme sahibine **"Size bir yazılım anlatmaya gelmedim, stüdyonuz için hazırladığım asistanı telefonumda 60 saniyede göstermeye geldim"** deyin.
 
@@ -51,7 +51,7 @@ Bir işletmeye gitmeden veya mesaj atmadan önce **3 dakikanızı** ayırıp:
   * Listedeki işletmelere akşam 21:30–23:00 arasında normal bir müşteri gibi gerçek bir soru sorun (*"Merhaba, haftada 2 gün reformer pilates fiyatınız nedir ve deneme dersiniz var mı?"*).
   * Kaç saat sonra döndüklerini, eksik bilgi verip vermediklerini tabloya kaydedin. *(Örn: "Sabah 11:20'de döndü — 13 saat gecikme").*
 * **Gün 4–5: İlk 10 İşletme İçin Telefonunuzda Kişiselleştirilmiş Demo Hazırlığı**
-  * Ziyaret edeceğiniz ilk 10 işletmenin çalışma saatlerini ve adreslerini AgentNest'e yükleyin.
+  * Ziyaret edeceğiniz ilk 10 işletmenin çalışma saatlerini ve adreslerini Pivoris'e yükleyin.
 * **Gün 6–7: Bucak & Burdur'da İlk 10 Yüz Yüze Ziyaret**
   * İşletmelerin en sakin olduğu saatlerde (**10:30–12:00** veya **14:00–16:30** arası; asla akşam 18:00 ders yoğunluğunda değil) çat kapı veya kısa telefon aramasıyla ziyaret edin.
   * **1. Hafta Sonu Çıktısı:** 15 görüşme, **3–4 canlı pilot kurulum**.
@@ -65,7 +65,7 @@ Bir işletmeye gitmeden veya mesaj atmadan önce **3 dakikanızı** ayırıp:
 * **Gün 8–9: İlk Pilotların 30 Dakikalık Birlikte Kurulumu**
   * İşletme sahibiyle yan yana oturup gerçek fiyatlarını doğrulayın (`Verified Facts`).
   * Resmi Instagram giriş ekranıyla hesabı bağlayın (Meta Standard Access Tester akışı).
-  * Kendi telefonunuzdan işletmeye canlı DM atıp AgentNest'in 5 saniyede hazırladığı doğru fiyatlı taslağı işletme sahibine **tek dokunuşla onaylatın**.
+  * Kendi telefonunuzdan işletmeye canlı DM atıp Pivoris'in 5 saniyede hazırladığı doğru fiyatlı taslağı işletme sahibine **tek dokunuşla onaylatın**.
 * **Gün 10–12: Antalya Saha Ziyaretleri (15 İşletme) + WhatsApp Video Demo**
   * Antalya'da aynı sokak/mahalle üzerindeki (örn. Lara Şirinyalı veya Konyaaltı Gürsu) 8–10 pilates ve güzellik merkezini aynı gün içinde ziyaret edin.
   * Ziyaret edemediğiniz işletmelere **60 saniyelik kişiselleştirilmiş ekran kaydı (Loom / WhatsApp Video)** gönderin (Şablon aşağıda).
@@ -170,4 +170,4 @@ Soğuk metin mesajları okunmaz; ancak işletmenin kendi Instagram profilinin g�
 | **5. Ücretli "Kurucu İşletme"ye Dönüşen** | **5 – 8 İşletme** | %45 – %55 | 990 ₺/ay (Kurucu) veya 1.490 ₺ – 2.490 ₺/ay (Standart) |
 
 > [!TIP]
-> **Finansal Sonuç:** İlk 30 günün sonunda sadece **5 pilot işletmenin** 990 ₺ – 1.490 ₺ bandında ücretli aboneliğe geçmesi bile AgentNest'in tüm sunucu, veritabanı, yedekleme ve OpenAI (`gpt-6-luna`) maliyetlerini **fazlasıyla karşılayıp kâra geçirir** ([pricing-and-unit-economics.md §7](pricing-and-unit-economics.md)).
+> **Finansal Sonuç:** İlk 30 günün sonunda sadece **5 pilot işletmenin** 990 ₺ – 1.490 ₺ bandında ücretli aboneliğe geçmesi bile Pivoris'in tüm sunucu, veritabanı, yedekleme ve OpenAI (`gpt-6-luna`) maliyetlerini **fazlasıyla karşılayıp kâra geçirir** ([pricing-and-unit-economics.md §7](pricing-and-unit-economics.md)).

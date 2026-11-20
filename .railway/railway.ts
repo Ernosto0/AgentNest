@@ -23,6 +23,7 @@ const api = service("api", {
     DEMO_TOOLS_ENABLED: "false",
     LOG_FORMAT: "json",
     LOG_LEVEL: "INFO",
+    PRODUCT_NAME: "Pivoris",
     TRUSTED_PROXY_CIDRS: "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16",
   },
 });
@@ -39,6 +40,7 @@ const worker = service("worker", {
     COOKIE_SECURE: "true",
     DEMO_TOOLS_ENABLED: "false",
     LOG_FORMAT: "json",
+    PRODUCT_NAME: "Pivoris",
     LOG_LEVEL: "INFO",
   },
 });

@@ -1,7 +1,7 @@
 # Feature Phase 3, Session 02 report: comment-to-DM on real accounts
 
 **Status:** done offline (code, tests, rollout docs). Every live result is **pending**: nothing was run against Meta, no token, test account, webhook subscription or message was used, and nothing was submitted to App Review.
-**Baseline:** `main` at `06c5d64` plus Session 01's uncommitted work (kept and built on) in the detached worktree `agentnest-p3/s01`. Nothing committed or pushed.
+**Baseline:** `main` at `06c5d64` plus Session 01's uncommitted work (kept and built on) in the detached worktree `pivoris-p3/s01`. Nothing committed or pushed.
 **Migration head:** `0059` (`20261117_0059_comment_automation.py`, `down_revision = "0057"`). Session 03 uses `0058`; the orchestrator re-chains at merge (0059 -> 0058).
 
 ## Who built what
@@ -59,7 +59,7 @@ Connections card: for a real account with `comments_permission`, an owner-only s
 **Changed (frontend):** `openapi.json`, `src/api/schema.d.ts`, `features/settings/{Connections.tsx,hooks.ts,connections.test.tsx,automation.test.tsx,settings.test.tsx}`, `features/inbox/{InboxWorkspace.tsx,inbox.test.tsx}`, `features/{agent/presentation.ts,content/messages.ts}`, `test/contentFixtures.ts`, `i18n/locales/{en,tr}/{agent,common,content,inbox}.json`.
 Session 01 files remain as they were (the shared ones above carry both sessions' edits).
 
-## Checks (in `WT`, DB `agentnest_p3s01_test`, `DEMO_TOOLS_ENABLED=true`)
+## Checks (in `WT`, DB `pivoris_p3s01_test`, `DEMO_TOOLS_ENABLED=true`)
 - Backend: `ruff check` clean, `ruff format --check` (773 files) clean, `mypy app` (409 files) clean, `lint-imports` 23 contracts kept.
 - Backend tests (`tests/unit tests/isolation tests/security tests/contract tests/integration/{integrations,operations,inbox}` and the agent comment, private-reply, tools, migration files, hardening and health tests): **2,964 passed, 18 skipped, 3 failed** (1,397 s).
   - `test_cors_allows_only_the_frontend_origin`: known environment failure from the baseline list (not rerun at HEAD in a separate tree; not allowed to touch other trees).

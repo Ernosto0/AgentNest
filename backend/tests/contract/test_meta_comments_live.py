@@ -20,7 +20,7 @@ from app.integrations.instagram.base import AccountRef
 from app.integrations.instagram.meta import MetaInstagramProvider
 
 pytestmark = pytest.mark.meta_comments_live
-PROBE_TEXT = "AgentNest manually opted-in private reply probe."
+PROBE_TEXT = "Pivoris manually opted-in private reply probe."
 
 
 def _probe[T](call: Callable[[], T]) -> T:

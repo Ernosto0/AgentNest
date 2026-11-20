@@ -84,7 +84,7 @@ def test_send_email_captures_locally_when_smtp_unconfigured() -> None:
 
 def test_send_invitation_email_templates_tr_and_en() -> None:
     email_outbox.clear()
-    settings = Settings(app_env="test", product_name="AgentNest")
+    settings = Settings(app_env="test", product_name="Pivoris")
 
     # Turkish template
     send_invitation_email(
@@ -92,15 +92,15 @@ def test_send_invitation_email_templates_tr_and_en() -> None:
         to_email="staff@example.com",
         workspace_name="Gölkent Pilates",
         role="staff",
-        invite_url="https://app.agentnest.test/invite/token-123",
+        invite_url="https://app.pivoris.test/invite/token-123",
         ui_locale="tr",
     )
     msgs = email_outbox.get_messages()
     assert len(msgs) == 1
     tr_msg = msgs[0]
-    assert "[AgentNest] Gölkent Pilates çalışma alanına davet edildiniz" in tr_msg.subject
+    assert "[Pivoris] Gölkent Pilates çalışma alanına davet edildiniz" in tr_msg.subject
     assert "Gölkent Pilates" in tr_msg.text_body
-    assert "https://app.agentnest.test/invite/token-123" in tr_msg.text_body
+    assert "https://app.pivoris.test/invite/token-123" in tr_msg.text_body
     assert "7 gün" in tr_msg.text_body
     assert "Personel (Staff)" in tr_msg.text_body
 
@@ -110,52 +110,52 @@ def test_send_invitation_email_templates_tr_and_en() -> None:
         to_email="owner@example.com",
         workspace_name="Harbor Studio",
         role="owner",
-        invite_url="https://app.agentnest.test/invite/token-456",
+        invite_url="https://app.pivoris.test/invite/token-456",
         ui_locale="en",
     )
     msgs = email_outbox.get_messages()
     assert len(msgs) == 2
     en_msg = msgs[1]
-    assert "[AgentNest] You have been invited to Harbor Studio" in en_msg.subject
+    assert "[Pivoris] You have been invited to Harbor Studio" in en_msg.subject
     assert "Harbor Studio" in en_msg.text_body
-    assert "https://app.agentnest.test/invite/token-456" in en_msg.text_body
+    assert "https://app.pivoris.test/invite/token-456" in en_msg.text_body
     assert "7 days" in en_msg.text_body
     assert "Owner" in en_msg.text_body
 
 
 def test_send_password_reset_email_templates_tr_and_en() -> None:
     email_outbox.clear()
-    settings = Settings(app_env="test", product_name="AgentNest")
+    settings = Settings(app_env="test", product_name="Pivoris")
 
     # Turkish template
     send_password_reset_email(
         settings,
         to_email="ayse@example.com",
-        reset_url="https://app.agentnest.test/reset-password/tok-tr",
+        reset_url="https://app.pivoris.test/reset-password/tok-tr",
         ui_locale="tr",
     )
     msgs = email_outbox.get_messages()
     assert len(msgs) == 1
     tr_msg = msgs[0]
-    assert "[AgentNest] Şifre sıfırlama talebi" in tr_msg.subject
+    assert "[Pivoris] Şifre sıfırlama talebi" in tr_msg.subject
     assert "60 dakika" in tr_msg.text_body
     assert "tek kullanımlıktır" in tr_msg.text_body
-    assert "https://app.agentnest.test/reset-password/tok-tr" in tr_msg.text_body
+    assert "https://app.pivoris.test/reset-password/tok-tr" in tr_msg.text_body
 
     # English template
     send_password_reset_email(
         settings,
         to_email="john@example.com",
-        reset_url="https://app.agentnest.test/reset-password/tok-en",
+        reset_url="https://app.pivoris.test/reset-password/tok-en",
         ui_locale="en",
     )
     msgs = email_outbox.get_messages()
     assert len(msgs) == 2
     en_msg = msgs[1]
-    assert "[AgentNest] Password reset request" in en_msg.subject
+    assert "[Pivoris] Password reset request" in en_msg.subject
     assert "60 minutes" in en_msg.text_body
     assert "single-use" in en_msg.text_body
-    assert "https://app.agentnest.test/reset-password/tok-en" in en_msg.text_body
+    assert "https://app.pivoris.test/reset-password/tok-en" in en_msg.text_body
 
 
 def test_password_reset_schemas() -> None:
@@ -178,7 +178,7 @@ def test_password_reset_request_enumeration_resistance_and_trusted_origin() -> N
     email_outbox.clear()
     settings = Settings(
         app_env="test",
-        frontend_origin="https://secure.agentnest.com",
+        frontend_origin="https://secure.pivoris.com",
     )
     clock = FrozenClock(datetime(2026, 11, 3, 10, 0, 0, tzinfo=UTC))
 
@@ -206,7 +206,7 @@ def test_password_reset_request_enumeration_resistance_and_trusted_origin() -> N
     assert messages[0].to_email == "owner@example.com"
     # Verify link starts with trusted frontend origin (never an arbitrary Host header)
     assert messages[0].text_body.startswith("Hello,")
-    assert "https://secure.agentnest.com/reset-password/" in messages[0].text_body
+    assert "https://secure.pivoris.com/reset-password/" in messages[0].text_body
 
 
 def test_password_reset_strength_validation() -> None:

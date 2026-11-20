@@ -237,7 +237,7 @@ def test_workspace_deletion_request_owner_flow() -> None:
     ctx = _make_ctx(role="owner")
     ws_id = ctx.workspace_id
     workspace = Workspace(id=ws_id, name="Studio Pro", status="active")
-    settings = Settings(product_name="AgentNest", frontend_origin="https://app.agentnest.test")
+    settings = Settings(product_name="Pivoris", frontend_origin="https://app.pivoris.test")
 
     session = MagicMock()
     session.get.return_value = workspace
@@ -262,9 +262,9 @@ def test_workspace_deletion_request_owner_flow() -> None:
     emails = outbox.get_messages()
     assert len(emails) == 1
     assert emails[0].to_email == "owner@example.com"
-    assert "https://app.agentnest.test/w/" in emails[0].text_body
+    assert "https://app.pivoris.test/w/" in emails[0].text_body
     # The cancel link opens the real Settings route (/w/{id}/settings is not a route).
-    assert f"https://app.agentnest.test/w/{ws_id}/more/settings#danger-zone" in emails[0].text_body
+    assert f"https://app.pivoris.test/w/{ws_id}/more/settings#danger-zone" in emails[0].text_body
 
     mock_audit.assert_called_once()
     assert mock_audit.call_args[0][2] == "workspace.deletion_requested"
@@ -275,7 +275,7 @@ def test_workspace_deletion_request_refusal_when_already_deleting() -> None:
     ctx = _make_ctx(role="owner")
     ws_id = ctx.workspace_id
     workspace = Workspace(id=ws_id, name="Studio Pro", status="deleting")
-    settings = Settings(product_name="AgentNest")
+    settings = Settings(product_name="Pivoris")
 
     session = MagicMock()
     session.get.return_value = workspace

@@ -41,7 +41,7 @@ A mistake I made and reverted: I ran `ruff format` over `app` and `tests`, which
 
 ## 3. Checks (exact)
 
-Environment for every backend run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= DEMO_TOOLS_ENABLED=true`, `TEST_DATABASE_URL` = the `.env` value with the database name swapped. Six databases `agentnest_p1s05_{1..6}_test` ran as parallel shards, one more for dev runs and one for the baseline worktree; **all eight were dropped** (verified: none left).
+Environment for every backend run: `LLM_PROVIDER=fake INSTAGRAM_ENABLED_PROVIDERS=mock MEDIA_STORAGE_BACKEND=local SENTRY_DSN= DEMO_TOOLS_ENABLED=true`, `TEST_DATABASE_URL` = the `.env` value with the database name swapped. Six databases `pivoris_p1s05_{1..6}_test` ran as parallel shards, one more for dev runs and one for the baseline worktree; **all eight were dropped** (verified: none left).
 
 | Command (from `backend/` unless noted) | Result |
 |---|---|

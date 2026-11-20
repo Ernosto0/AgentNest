@@ -195,7 +195,7 @@ def test_seed_refuses_to_run_in_production(
         cookie_secure=True,
         demo_tools_enabled=False,
         secret_key="p" * 48,
-        database_url="postgresql+psycopg://u:p@db.internal:5432/agentnest",
+        database_url="postgresql+psycopg://u:p@db.internal:5432/pivoris",
         llm_provider="openai",
         openai_api_key="sk-test-key",
         instagram_enabled_providers="mock",

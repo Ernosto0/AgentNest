@@ -73,7 +73,7 @@ def test_the_table_has_forced_rls_and_the_tenant_policy(db_session: Session) -> 
             )
         ).scalars()
     )
-    assert {"agentnest_app", "agentnest_worker"} <= grants
+    assert {"pivoris_app", "pivoris_worker"} <= grants
 
 
 @pytest.mark.invariant("INV-01")
@@ -92,11 +92,11 @@ def test_workspaces_see_only_their_own_subscriptions(db_session: Session) -> Non
     db_session.expunge_all()
 
     clear_tenant_context(db_session)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert db_session.scalars(select(PushSubscription)).all() == []  # fail closed
 
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert [r.id for r in db_session.scalars(select(PushSubscription))] == [a_id]
         assert (
             db_session.scalar(select(PushSubscription).where(PushSubscription.id == b_id)) is None
@@ -112,7 +112,7 @@ def test_workspaces_see_only_their_own_subscriptions(db_session: Session) -> Non
         )
 
     set_tenant_context(db_session, ws_b.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         assert [r.id for r in db_session.scalars(select(PushSubscription))] == [b_id]
         assert db_session.scalars(select(PushSubscription.device_label)).one() == ""
 
@@ -122,7 +122,7 @@ def test_a_workspace_cannot_write_a_row_into_another(db_session: Session) -> Non
     ws_a, users_a = workspace_with_members(db_session, name="Push W A")
     ws_b, _ = workspace_with_members(db_session, name="Push W B")
     set_tenant_context(db_session, ws_a.id)
-    with as_role(db_session, "agentnest_app"):
+    with as_role(db_session, "pivoris_app"):
         with pytest.raises(DBAPIError), db_session.begin_nested():
             db_session.execute(
                 insert(PushSubscription).values(

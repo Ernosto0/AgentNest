@@ -8,7 +8,7 @@
 flowchart LR
   owner["Owner / manager / staff<br/>(phone browser)"]
   customer["Customer<br/>(Instagram app)"]
-  subgraph AgentNest
+  subgraph Pivoris
     web["Web SPA"]
     api["API process"]
     worker["Worker process"]
@@ -115,7 +115,7 @@ sequenceDiagram
 | Instagram | `mock` | `mock` | `meta` (+ `mock` for `is_demo` workspaces if `ALLOW_SIMULATED_WORKSPACES`) |
 | Media | `local` | `local` (tmp dir) | `s3` |
 | Demo tools | enabled | enabled in tests | **refused** |
-| DB | Docker Postgres `agentnest` | Docker Postgres `agentnest_test` (CI service container) | Managed or self-run Postgres with backups |
+| DB | Docker Postgres `pivoris` | Docker Postgres `pivoris_test` (CI service container) | Managed or self-run Postgres with backups |
 | Logs | console | console | JSON |
 
 ## 6. Mapping from the original specification's components

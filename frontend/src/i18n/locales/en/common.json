@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "AgentNest",
+    "name": "Pivoris",
     "skipToContent": "Skip to content"
   },
   "nav": {
@@ -309,7 +309,7 @@
       "others": "Automation is paused. Only the owner can cancel the deletion."
     },
     "account": {
-      "description": "Who you are signed in as and how AgentNest looks for you.",
+      "description": "Who you are signed in as and how Pivoris looks for you.",
       "signOut": "Sign out",
       "role": "Your role",
       "roleHint": "What you can do in {{workspace}}.",
@@ -319,7 +319,7 @@
       "nameRequired": "Enter a name.",
       "nameSaved": "Name saved.",
       "language": "Interface language",
-      "languageHint": "Changes AgentNest's language for you only. Customer replies use the workspace's reply languages.",
+      "languageHint": "Changes Pivoris's language for you only. Customer replies use the workspace's reply languages.",
       "languageSaved": "Saved to your account."
     },
     "workspace": {
@@ -346,7 +346,7 @@
       "timezoneChangeBody": "After saving, dates and times in this workspace, including when the daily report arrives, use {{zone}}.",
       "replyLanguages": "Customer reply languages",
       "replyLanguagesHint": "Messages in other languages are passed to your team.",
-      "replyLanguagesChoose": "Choose the languages AgentNest may draft customer replies in. The main language of the workspace is always on.",
+      "replyLanguagesChoose": "Choose the languages Pivoris may draft customer replies in. The main language of the workspace is always on.",
       "replyLanguagesMain": "Main language of the workspace",
       "replyLanguagesCoverage": "Draft quality is tested only for the languages listed here. A message in any other language is always passed to your team.",
       "replyLanguagesNewTitle": "Russian, German and Arabic are new",
@@ -419,7 +419,7 @@
       "alreadyEnded": "That session had already ended."
     },
     "connections": {
-      "description": "Services AgentNest works with for this workspace.",
+      "description": "Services Pivoris works with for this workspace.",
       "status": {
         "connected": "Connected",
         "degraded": "Unstable",
@@ -450,7 +450,7 @@
       "disconnectBody": "You can choose to also delete the account's conversation and message history.",
       "openConnections": "Connections",
       "policyTitle": "Privacy policy",
-      "policyBody": "How AgentNest processes and protects personal data.",
+      "policyBody": "How Pivoris processes and protects personal data.",
       "readPolicy": "Read policy",
       "newTab": "(opens in a new tab)"
     },
@@ -636,7 +636,7 @@
     },
     "WEB_PUSH_NOT_CONFIGURED": {
       "what": "Phone notifications are not set up on this server yet.",
-      "next": "Ask the person who runs AgentNest to turn them on."
+      "next": "Ask the person who runs Pivoris to turn them on."
     },
     "PROVIDER_RATE_LIMITED": {
       "what": "Instagram asked us to slow down.",
@@ -962,7 +962,7 @@
     "task": "Task"
   },
   "entry": {
-    "brandRegion": "AgentNest",
+    "brandRegion": "Pivoris",
     "brandTitle": "A clearer view of your work.",
     "brandDetail": "One workspace for your messages, content and business knowledge.",
     "brandFooter": "Your decisions and business knowledge, together.",
@@ -1006,8 +1006,8 @@
   },
   "legal": {
     "privacyTitle": "Privacy Policy",
-    "privacySubtitle": "How AgentNest processes and protects personal data",
-    "privacySummary": "AgentNest provides AI-assisted messaging and content management software for business workspaces. For user accounts and platform operations, AgentNest acts as a Data Controller. For customer messages and Instagram communications, the tenant business is the Data Controller, and AgentNest acts as a Data Processor under our Data Processing Agreement.",
+    "privacySubtitle": "How Pivoris processes and protects personal data",
+    "privacySummary": "Pivoris provides AI-assisted messaging and content management software for business workspaces. For user accounts and platform operations, Pivoris acts as a Data Controller. For customer messages and Instagram communications, the tenant business is the Data Controller, and Pivoris acts as a Data Processor under our Data Processing Agreement.",
     "privacyControllerSection": "Data Controller & Roles",
     "privacyControllerText": "Registered business owners and team members communicate with customers. We do not use customer message text, customer identifiers, or private business facts to train base artificial intelligence models.",
     "privacySecuritySection": "Security & Isolation",
@@ -1015,13 +1015,13 @@
     "privacyRetentionSection": "Data Retention & Erasure",
     "privacyRetentionText": "Inbound raw webhooks are scrubbed after 30 days and deleted after 90 days. Message texts are redacted after 365 days while preserving aggregate reports. Backups roll off after 35 days. Disconnecting an account or deleting a workspace securely purges associated data.",
     "privacyContactSection": "Contact & Data Subject Rights",
-    "privacyContactText": "Under KVKK and GDPR, you have the right to access, rectify, or request deletion of your personal data. Contact our privacy team at privacy@agentnest.io.",
+    "privacyContactText": "Under KVKK and GDPR, you have the right to access, rectify, or request deletion of your personal data. Contact our privacy team at privacy@pivoris.com.",
     "dataDeletionTitle": "Data Deletion Instructions",
     "dataDeletionSubtitle": "How to request deletion of your Instagram and platform data",
     "dataDeletionOverview": "In compliance with Meta Platform Terms, KVKK, and GDPR, users and customers can request the deletion of their personal data at any time.",
-    "dataDeletionStep1": "1. Instagram App Settings: Go to your Instagram account Settings & Privacy > Website Permissions > Apps and Websites > Active > Remove AgentNest.",
-    "dataDeletionStep2": "2. Deletion Request: Once removed, click 'View Removed Apps' and select 'Send Request' next to AgentNest to initiate an automated data deletion callback.",
-    "dataDeletionStep3": "3. Manual Deletion: Alternatively, contact privacy@agentnest.io with your workspace name or Instagram handle to request complete data erasure.",
+    "dataDeletionStep1": "1. Instagram App Settings: Go to your Instagram account Settings & Privacy > Website Permissions > Apps and Websites > Active > Remove Pivoris.",
+    "dataDeletionStep2": "2. Deletion Request: Once removed, click 'View Removed Apps' and select 'Send Request' next to Pivoris to initiate an automated data deletion callback.",
+    "dataDeletionStep3": "3. Manual Deletion: Alternatively, contact privacy@pivoris.com with your workspace name or Instagram handle to request complete data erasure.",
     "dataDeletionLookupTitle": "Check Deletion Request Status",
     "dataDeletionLookupPlaceholder": "Enter confirmation code (e.g. del_...)",
     "dataDeletionLookupButton": "Check Status",
@@ -1122,7 +1122,7 @@
     "verified": "Your email is verified.",
     "continue": "Sign in and create your workspace",
     "version": "Document version: {{version}}",
-    "termsBody": "AgentNest helps you manage your business account and proposed customer communications. You must be authorized to connect and manage the accounts you use. Keep your login details secure.",
+    "termsBody": "Pivoris helps you manage your business account and proposed customer communications. You must be authorized to connect and manage the accounts you use. Keep your login details secure.",
     "termsResponsibility": "You are responsible for the business information you provide and actions you authorize. Use the service lawfully and respect your customers’ privacy. See the Privacy Policy for how data is handled."
   },
   "brand": {

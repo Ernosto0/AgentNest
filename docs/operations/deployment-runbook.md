@@ -32,14 +32,14 @@ usermod -aG docker deploy
 # 3. Install dedicated deploy SSH public key
 install -d -m 0700 -o deploy -g deploy /home/deploy/.ssh
 cat <<'EOF' > /home/deploy/.ssh/authorized_keys
-ssh-ed25519 AAAA... agentnest-github-actions-deploy
+ssh-ed25519 AAAA... pivoris-github-actions-deploy
 EOF
 chown deploy:deploy /home/deploy/.ssh/authorized_keys
 chmod 0600 /home/deploy/.ssh/authorized_keys
 
 # 4. Create application deployment directory
-install -d -m 0750 -o deploy -g deploy /opt/agentnest
-install -d -m 0750 -o deploy -g deploy /opt/agentnest/scripts
+install -d -m 0750 -o deploy -g deploy /opt/pivoris
+install -d -m 0750 -o deploy -g deploy /opt/pivoris/scripts
 ```
 
 ### 1.2 Configure Host Firewall (`ufw`)
@@ -57,22 +57,22 @@ ufw --force enable
 ufw status verbose
 ```
 
-### 1.3 Create & Lock Down `/opt/agentnest/.env` (`0600` Permissions)
+### 1.3 Create & Lock Down `/opt/pivoris/.env` (`0600` Permissions)
 
-On the server as `deploy`, create `/opt/agentnest/.env` from `.env.example` and lock permissions to `0600` (`INV-10`, `ADR-017`):
+On the server as `deploy`, create `/opt/pivoris/.env` from `.env.example` and lock permissions to `0600` (`INV-10`, `ADR-017`):
 
 ```bash
 umask 0077
-touch /opt/agentnest/.env
-chown deploy:deploy /opt/agentnest/.env
-chmod 0600 /opt/agentnest/.env
+touch /opt/pivoris/.env
+chown deploy:deploy /opt/pivoris/.env
+chmod 0600 /opt/pivoris/.env
 ```
 
 Generate production secrets using a local or one-off container command:
 
 ```bash
-docker run --rm ghcr.io/<owner>/agentnest-backend:<tag> python -m app.cli generate-key --kind secret
-docker run --rm ghcr.io/<owner>/agentnest-backend:<tag> python -m app.cli generate-key --kind token-encryption --key-id k1
+docker run --rm ghcr.io/<owner>/pivoris-backend:<tag> python -m app.cli generate-key --kind secret
+docker run --rm ghcr.io/<owner>/pivoris-backend:<tag> python -m app.cli generate-key --kind token-encryption --key-id k1
 ```
 
 Required production `.env` settings (validated before every deploy by `python -m app.cli check-config --production`):
@@ -84,8 +84,8 @@ Required production `.env` settings (validated before every deploy by `python -m
 - `SECRET_KEY=<>=32-byte random secret>`
 - `COOKIE_SECURE=true`
 - `DEMO_TOOLS_ENABLED=false`
-- `DATABASE_URL=postgresql+psycopg://agentnest_app:<app_password>@postgres:5432/agentnest`
-- `MIGRATION_DATABASE_URL=postgresql+psycopg://agentnest_migrator:<migrator_password>@postgres:5432/agentnest`
+- `DATABASE_URL=postgresql+psycopg://pivoris_app:<app_password>@postgres:5432/pivoris`
+- `MIGRATION_DATABASE_URL=postgresql+psycopg://pivoris_migrator:<migrator_password>@postgres:5432/pivoris`
 - `LLM_PROVIDER=openai` and `OPENAI_API_KEY=sk-...`
 - `INSTAGRAM_ENABLED_PROVIDERS=meta` (with `META_APP_ID`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, `META_OAUTH_REDIRECT_URI`, `TOKEN_ENCRYPTION_KEYS`, `TOKEN_ENCRYPTION_ACTIVE_KEY_ID`, and `MEDIA_STORAGE_BACKEND=s3` + `S3_*` credentials)
 
@@ -109,7 +109,7 @@ Verify the fingerprint on the VPS (`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key
 | `DEPLOY_SSH_KNOWN_HOSTS` | Secret | Verified `ssh-keyscan -t ed25519` line(s); enforced with `StrictHostKeyChecking=yes` |
 | `GHCR_READ_TOKEN` | Secret | Optional PAT (`read:packages`) if `GITHUB_TOKEN` lacks package pull scope on the server |
 | `DEPLOY_SSH_PORT` | Variable | Optional SSH port (defaults to `22`) |
-| `DEPLOY_PATH` | Variable | Optional target directory (defaults to `/opt/agentnest`) |
+| `DEPLOY_PATH` | Variable | Optional target directory (defaults to `/opt/pivoris`) |
 
 ---
 
@@ -119,8 +119,8 @@ Production separates DDL/schema migration authority from runtime request and job
 
 | Variable | Database Role | Used By | Privileges |
 |---|---|---|---|
-| `MIGRATION_DATABASE_URL` | `agentnest_migrator` | One-off `migrate` service (`alembic upgrade head`) | Schema and table owner, RLS policy creator, `SECURITY DEFINER` bootstrap function owner |
-| `DATABASE_URL` | `agentnest_app` / `agentnest_worker` | `api` and `worker` containers | `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`; DML only (`REVOKE UPDATE, DELETE` on `audit_logs` and `fact_versions`) |
+| `MIGRATION_DATABASE_URL` | `pivoris_migrator` | One-off `migrate` service (`alembic upgrade head`) | Schema and table owner, RLS policy creator, `SECURITY DEFINER` bootstrap function owner |
+| `DATABASE_URL` | `pivoris_app` / `pivoris_worker` | `api` and `worker` containers | `NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`; DML only (`REVOKE UPDATE, DELETE` on `audit_logs` and `fact_versions`) |
 
 **Container boundary enforcement (`compose.prod.yml`):**
 - The `migrate` service (`profiles: ["migrate", "ops"]`) reads `MIGRATION_DATABASE_URL` from `.env` (falling back to `DATABASE_URL` only in local/single-role setups).
@@ -184,13 +184,13 @@ You can also trigger a deployment manually via GitHub Actions (`Actions -> Deplo
 
 ### 4.2 Manual / SSH Deployment on the VPS
 
-From `/opt/agentnest` as `deploy`:
+From `/opt/pivoris` as `deploy`:
 
 ```bash
 ./scripts/deploy.sh \
   --image-tag v0.8.0 \
   --env-file .env \
-  --project-name agentnest
+  --project-name pivoris
 ```
 
 What `scripts/deploy.sh` (`scripts/deploy.py deploy`) does in order:
@@ -216,14 +216,14 @@ What `scripts/deploy.sh` (`scripts/deploy.py deploy`) does in order:
 
 ### 5.2 Executing an Application Rollback
 
-From `/opt/agentnest` as `deploy`:
+From `/opt/pivoris` as `deploy`:
 
 ```bash
 # Roll back to previous_image_tag recorded in .deploy-state:
-./scripts/rollback.sh --env-file .env --project-name agentnest
+./scripts/rollback.sh --env-file .env --project-name pivoris
 
 # Or specify an explicit target image tag:
-./scripts/rollback.sh --to-tag v0.7.9 --env-file .env --project-name agentnest
+./scripts/rollback.sh --to-tag v0.7.9 --env-file .env --project-name pivoris
 ```
 
 `scripts/rollback.sh` (`scripts/deploy.py rollback`):
@@ -257,22 +257,22 @@ Staging uses the **exact same** `compose.prod.yml`, `Caddyfile`, `.github/workfl
 # On a separate staging VM or isolated side-by-side directory:
 # 1. Create .env.staging with chmod 600 (distinct DB credentials, APP_DOMAIN=staging.example.com,
 #    test Meta app credentials, and optional HTTP_PORT=8080 / HTTPS_PORT=8443 if side-by-side)
-chown deploy:deploy /opt/agentnest/.env.staging
-chmod 0600 /opt/agentnest/.env.staging
+chown deploy:deploy /opt/pivoris/.env.staging
+chmod 0600 /opt/pivoris/.env.staging
 
 # 2. Deploy staging stack
 ./scripts/deploy.sh \
   --image-tag v0.8.0-rc1 \
   --env-file .env.staging \
-  --project-name agentnest-staging
+  --project-name pivoris-staging
 
-# 3. Inspect staging state (.deploy-state.agentnest-staging)
-python3 scripts/deploy.py status --project-name agentnest-staging --env-file .env.staging
+# 3. Inspect staging state (.deploy-state.pivoris-staging)
+python3 scripts/deploy.py status --project-name pivoris-staging --env-file .env.staging
 
 # 4. Roll back staging stack if needed
 ./scripts/rollback.sh \
   --env-file .env.staging \
-  --project-name agentnest-staging
+  --project-name pivoris-staging
 ```
 
 ---
@@ -286,10 +286,10 @@ An end-to-end production preflight, bootstrap verification, readiness probe audi
 | Verification Vector | Canonical Requirement | Verification Command / Evidence | Status |
 |---|---|---|---|
 | **Host Operating System** | Linux Ubuntu 24.04 LTS (or compatible POSIX) | Multi-stage Dockerfile (`python:3.12-slim-bookworm`, `node:22-alpine`, `caddy:2.8-alpine`) | **VERIFIED** |
-| **Non-Root Execution** | Runtime user UID/GID `10001` (`agentnest:agentnest`) | `Dockerfile` Line 74 (`USER agentnest:agentnest`); `compose.prod.yml` user mapping | **VERIFIED** |
+| **Non-Root Execution** | Runtime user UID/GID `10001` (`pivoris:pivoris`) | `Dockerfile` Line 74 (`USER pivoris:pivoris`); `compose.prod.yml` user mapping | **VERIFIED** |
 | **Firewall & Ingress** | Ports 80, 443 TCP/UDP exposed; DB (5432) & API (8000) internal | `ufw` rules verified; internal Docker network `internal` isolates Postgres and FastAPI | **VERIFIED** |
-| **Environment File Security** | `chmod 600` on `/opt/agentnest/.env` | Enforced by `check_env_file_permissions()` in `scripts/deploy.py`; POSIX permission bits `0077` rejected | **VERIFIED** |
-| **Separated DB Roles** | `agentnest_app` / `agentnest_worker` vs `agentnest_migrator` | `inspect_migration_credentials()` and `verify_database_roles()` enforce DDL/DML boundaries; `REVOKE UPDATE, DELETE` on `audit_logs` | **VERIFIED** |
+| **Environment File Security** | `chmod 600` on `/opt/pivoris/.env` | Enforced by `check_env_file_permissions()` in `scripts/deploy.py`; POSIX permission bits `0077` rejected | **VERIFIED** |
+| **Separated DB Roles** | `pivoris_app` / `pivoris_worker` vs `pivoris_migrator` | `inspect_migration_credentials()` and `verify_database_roles()` enforce DDL/DML boundaries; `REVOKE UPDATE, DELETE` on `audit_logs` | **VERIFIED** |
 | **Readiness Probe (`/readyz`)** | Database connection + Alembic head revision check | `app/api/routes/health.py` queries `SELECT 1` and matches `alembic_version == migration_head()` (`0037`) | **VERIFIED** |
 | **Reverse Proxy Security** | HSTS (2y), CSP, nosniff, DENY, stripped Server header | Audited by `HDR-01` in `scripts/security_scan.py` against `Caddyfile` | **VERIFIED** |
 | **SMTP Delivery Safety** | `validate_production_settings()` requires valid `MAIL_FROM` | `CONF-01` check asserts `SMTP_URL` / `MAIL_FROM` configuration integrity | **VERIFIED** |

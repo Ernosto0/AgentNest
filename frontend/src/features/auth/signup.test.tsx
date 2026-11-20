@@ -10,7 +10,7 @@ afterEach(() => vi.unstubAllGlobals());
 const metaWith = (signup_enabled: boolean) => ({
   "GET /api/v1/meta": () =>
     json({
-      product_name: "AgentNest",
+      product_name: "Pivoris",
       demo_tools_enabled: false,
       llm_mode: "fake",
       supported_locales: ["tr", "en"],

@@ -9,7 +9,7 @@ bound. Nothing here decodes audio.
 import json
 import struct
 
-FAKE_MAGIC = b"AGENTNEST-FAKE-AUDIO\n"
+FAKE_MAGIC = b"PIVORIS-FAKE-AUDIO\n"
 
 # Declared content types accepted from the CDN (parameters such as ``; codecs=`` are ignored).
 ALLOWED_CONTENT_TYPES: dict[str, str] = {
