@@ -585,6 +585,14 @@
       "coverDeleted": "Özel kapak görseli yayınlandıktan sonra silindi.",
       "saving": "Kaydediliyor…",
       "previewLabel": "Reels önizlemesi"
+    },
+    "tour": {
+      "composerTitle": "Gönderi veya hikaye başlatın",
+      "composerDesc": "Asistan için bir fikir yazın, boş taslak açın veya hazır bir şablondan başlayın.",
+      "viewsTitle": "Kütüphane veya ajanda",
+      "viewsDesc": "Durum sekmeleri ile zamanlanmış gönderilerin takvim görünümü arasında geçiş yapın.",
+      "tabsTitle": "Her aşamayı takip edin",
+      "tabsDesc": "İnceleme bekleyen taslakları, zamanlananları, yayınlananları ve düzeltme gerekenleri izleyin."
     }
   }
 }

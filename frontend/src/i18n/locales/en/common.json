@@ -238,6 +238,16 @@
     },
     "readiness": {
       "subtitle": "What your assistant still needs to answer customers"
+    },
+    "tour": {
+      "quickActionsTitle": "Create content fast",
+      "quickActionsDesc": "Start a post or story with the assistant, from scratch, or from a template.",
+      "attentionTitle": "What needs you",
+      "attentionDesc": "Approvals, unanswered questions, and anything needing a person appear here first.",
+      "assistantTitle": "Your Instagram assistant",
+      "assistantDesc": "See your connected account status and whether the assistant is active or paused.",
+      "upcomingTitle": "Next 7 days",
+      "upcomingDesc": "Review posts and stories scheduled for the coming week."
     }
   },
   "inbox": {
@@ -1136,5 +1146,16 @@
     "save": "Save brand",
     "saved": "Brand saved.",
     "readOnly": "An owner or manager can edit the brand."
+  },
+  "tour": {
+    "openGuide": "Page guide",
+    "showMeAround": "Show me around",
+    "next": "Next",
+    "prev": "Back",
+    "done": "Done",
+    "welcomeTitle": "New here? Take a 30-second tour",
+    "welcomeBody": "See where approvals, assistant controls, and quick actions live on this page.",
+    "startTour": "Start tour",
+    "dismiss": "Dismiss"
   }
 }

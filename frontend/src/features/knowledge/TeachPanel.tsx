@@ -15,7 +15,7 @@ export function TeachPanel({ onPaste }: { onPaste: () => void }) {
   const { t } = useTranslation();
   const { workspace } = useCurrentWorkspace();
   return (
-    <Panel tone="assistant" aria-labelledby="knowledge-teach-title" data-testid="knowledge-teach" className="gap-3">
+    <Panel tone="assistant" aria-labelledby="knowledge-teach-title" data-testid="knowledge-teach" data-tour="knowledge-teach" className="gap-3">
       <PanelHeading id="knowledge-teach-title" icon={<SparkIcon />} iconTone="assistant" title={t("knowledge.teach.title")} />
       <p className="text-metadata text-primary/80">{t("knowledge.teach.body")}</p>
       <ol className="flex flex-col gap-1.5">

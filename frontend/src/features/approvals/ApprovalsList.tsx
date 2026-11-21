@@ -51,6 +51,7 @@ export function ApprovalsList() {
 
       <div
         role="tablist"
+        data-tour="approvals-tabs"
         aria-label={t("approvals.tabs.label")}
         className="flex gap-1 border-b border-border"
       >
@@ -72,21 +73,23 @@ export function ApprovalsList() {
         ))}
       </div>
 
-      {approvals.isError ? <ErrorMessage error={approvals.error} /> : null}
-      {approvals.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
-      {approvals.data && shown.length === 0 ? (
-        <EmptyState
-          title={tab === "pending" ? t("approvals.empty") : t("approvals.emptyHistory")}
-          description={tab === "pending" ? t("approvals.emptyHint") : undefined}
-        />
-      ) : null}
-      {shown.length > 0 ? (
-        <ul className="overflow-hidden rounded-panel border border-border bg-surface divide-y divide-border" aria-label={t("approvals.tabs.label")}>
-          {shown.map((approval) => (
-            <Row key={approval.id} approval={approval} onOpen={() => setOpenId(approval.id)} />
-          ))}
-        </ul>
-      ) : null}
+      <div data-tour="approvals-list" className="flex flex-col gap-4">
+        {approvals.isError ? <ErrorMessage error={approvals.error} /> : null}
+        {approvals.isPending ? <p className="text-sm text-secondary">{t("common.loading")}</p> : null}
+        {approvals.data && shown.length === 0 ? (
+          <EmptyState
+            title={tab === "pending" ? t("approvals.empty") : t("approvals.emptyHistory")}
+            description={tab === "pending" ? t("approvals.emptyHint") : undefined}
+          />
+        ) : null}
+        {shown.length > 0 ? (
+          <ul className="overflow-hidden rounded-panel border border-border bg-surface divide-y divide-border" aria-label={t("approvals.tabs.label")}>
+            {shown.map((approval) => (
+              <Row key={approval.id} approval={approval} onOpen={() => setOpenId(approval.id)} />
+            ))}
+          </ul>
+        ) : null}
+      </div>
       {open ? <ApprovalDetailSheet approval={open} onClose={() => setOpenId(null)} /> : null}
     </div>
   );

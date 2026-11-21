@@ -238,6 +238,16 @@
     },
     "readiness": {
       "subtitle": "Asistanınızın müşterilere yanıt vermek için ihtiyaç duydukları"
+    },
+    "tour": {
+      "quickActionsTitle": "Hızlıca içerik oluşturun",
+      "quickActionsDesc": "Asistanla, sıfırdan veya bir şablondan gönderi ya da hikaye hazırlayın.",
+      "attentionTitle": "Sizi bekleyenler",
+      "attentionDesc": "Onaylar, bekleyen sorular ve sizin ilgilenmeniz gereken işler önce burada görünür.",
+      "assistantTitle": "Instagram asistanınız",
+      "assistantDesc": "Bağlı hesabınızın durumunu ve asistanın aktif olup olmadığını buradan takip edin.",
+      "upcomingTitle": "Gelecek 7 gün",
+      "upcomingDesc": "Önümüzdeki hafta için planlanan gönderi ve hikayeleri görün."
     }
   },
   "inbox": {
@@ -1136,5 +1146,16 @@
     "save": "Markayı kaydet",
     "saved": "Marka kaydedildi.",
     "readOnly": "Markayı işletme sahibi veya yönetici düzenleyebilir."
+  },
+  "tour": {
+    "openGuide": "Sayfa rehberi",
+    "showMeAround": "Bana göster",
+    "next": "İleri",
+    "prev": "Geri",
+    "done": "Tamam",
+    "welcomeTitle": "Yeni misiniz? 30 saniyelik tura katılın",
+    "welcomeBody": "Bu sayfada onayların, asistan kontrollerinin ve hızlı işlemlerin yerini görün.",
+    "startTour": "Turu başlat",
+    "dismiss": "Kapat"
   }
 }

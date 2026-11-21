@@ -56,6 +56,7 @@ export function KnowledgeStats({ data }: { data: Overview | null }) {
     <section
       aria-labelledby="knowledge-stats-title"
       data-testid="knowledge-stats"
+      data-tour="knowledge-stats"
       className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface lg:flex-row"
     >
       <div className="flex min-w-0 flex-col justify-center gap-0.5 px-5 pt-3 pb-2.5 lg:w-56 lg:shrink-0 lg:border-r lg:border-border lg:py-3 xl:w-64">

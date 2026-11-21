@@ -8,11 +8,13 @@ import {
   AlertIcon,
   CalendarIcon,
   CheckIcon,
+  HelpCircleIcon,
   MagnifierIcon,
   PencilIcon,
   SparkIcon,
   XIcon,
 } from "@/components/icons";
+import { useTour } from "@/components/tour/useTour";
 import { useSocialAccounts } from "@/features/inbox/hooks";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { byScheduledTime, friendlyMoment } from "./agenda";
@@ -262,6 +264,7 @@ function StatusTiles({
   return (
     <div
       role="tablist"
+      data-tour="content-tabs"
       aria-label={t("content.tabsLabel")}
       onKeyDown={onKeyDown}
       className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
@@ -444,6 +447,7 @@ function TabEmpty({
 /** A library with nothing in it yet: how content moves here, and where to begin. */
 function GettingStarted({ onWrite }: { onWrite: () => void }) {
   const { t } = useTranslation();
+  const { start, hasTour } = useTour("content");
   const steps: { icon: Icon; title: string; text: string }[] = [
     { icon: SparkIcon, title: t("content.onboarding.step1Title"), text: t("content.onboarding.step1") },
     { icon: CalendarIcon, title: t("content.onboarding.step2Title"), text: t("content.onboarding.step2") },
@@ -471,11 +475,17 @@ function GettingStarted({ onWrite }: { onWrite: () => void }) {
           </li>
         ))}
       </ol>
-      <div>
+      <div className="flex flex-wrap items-center gap-2">
         <Button onClick={onWrite}>
           <SparkIcon className="text-base" />
           {t("content.emptyAction.write")}
         </Button>
+        {hasTour ? (
+          <Button variant="secondary" onClick={start}>
+            <HelpCircleIcon className="text-base" />
+            {t("tour.showMeAround")}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

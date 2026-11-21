@@ -58,26 +58,30 @@ export function Dashboard({ onCreate }: { onCreate: CreateContent }) {
           <div className="order-3 empty:hidden lg:order-none">
             <DelegationSuggestionCard />
           </div>
-          <AssistantPanel
-            className="order-3 lg:order-none"
-            accounts={activeAccounts}
-            overviews={overviews}
-            canControl={isOwner}
-            pending={accounts.isPending}
-            error={accounts.error}
-          />
-          <UpcomingPanel onCreate={onCreate} className="order-4 lg:order-none" />
+          <div data-tour="home-assistant" className="order-3 lg:order-none">
+            <AssistantPanel
+              accounts={activeAccounts}
+              overviews={overviews}
+              canControl={isOwner}
+              pending={accounts.isPending}
+              error={accounts.error}
+            />
+          </div>
+          <div data-tour="home-upcoming" className="order-4 lg:order-none">
+            <UpcomingPanel onCreate={onCreate} />
+          </div>
         </div>
 
         <div className="contents lg:col-span-5 lg:flex lg:flex-col lg:gap-5">
-          <AttentionPanel
-            className="order-1 lg:order-none"
-            metrics={metrics}
-            pending={report.isPending || accounts.isPending}
-            error={report.error ?? accounts.error}
-            accounts={activeAccounts}
-            overviews={overviews}
-          />
+          <div data-tour="home-attention" className="order-1 lg:order-none">
+            <AttentionPanel
+              metrics={metrics}
+              pending={report.isPending || accounts.isPending}
+              error={report.error ?? accounts.error}
+              accounts={activeAccounts}
+              overviews={overviews}
+            />
+          </div>
           <div className="order-5 empty:hidden lg:order-none">
             <AppointmentsCard />
           </div>

@@ -222,3 +222,68 @@ h4 {
   padding: 1.25rem;
   color: var(--an-text-primary);
 }
+
+/* Driver.js product tour theme aligned with Pivoris tokens. */
+.driver-popover {
+  background-color: var(--an-surface);
+  color: var(--an-text-primary);
+  border: 1px solid var(--an-border);
+  border-radius: var(--radius-dialog);
+  box-shadow: var(--shadow-float);
+  font-family: var(--font-sans);
+  max-width: min(20rem, calc(100vw - 2rem));
+}
+
+.driver-popover-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-section);
+  font-weight: 600;
+  color: var(--an-text-primary);
+}
+
+.driver-popover-description {
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: var(--an-text-secondary);
+}
+
+.driver-popover-progress-text {
+  font-size: var(--text-metadata);
+  color: var(--an-text-secondary);
+}
+
+.driver-popover-footer button {
+  border-radius: var(--radius-control);
+  font-family: var(--font-sans);
+  font-size: var(--text-metadata);
+  font-weight: 600;
+  text-shadow: none;
+  padding: 0.45rem 0.85rem;
+}
+
+.driver-popover-footer .driver-popover-next-btn,
+.driver-popover-footer .driver-popover-done-btn {
+  background-color: var(--an-action);
+  color: var(--an-on-action);
+  border: 1px solid var(--an-action);
+}
+
+.driver-popover-footer .driver-popover-next-btn:hover,
+.driver-popover-footer .driver-popover-done-btn:hover {
+  background-color: var(--an-action-hover);
+  border-color: var(--an-action-hover);
+}
+
+.driver-popover-footer .driver-popover-prev-btn {
+  background-color: var(--an-surface-subtle);
+  color: var(--an-text-primary);
+  border: 1px solid var(--an-border);
+}
+
+.driver-popover-close-btn {
+  color: var(--an-text-secondary);
+}
+
+.driver-popover-close-btn:hover {
+  color: var(--an-text-primary);
+}

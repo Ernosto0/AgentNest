@@ -39,7 +39,7 @@ export function ContentComposer({
   const [type, setType] = useState<ContentType>("feed_image");
 
   return (
-    <section aria-labelledby={ids.title} data-testid="content-composer" className="rounded-2xl bg-assistant p-3 sm:p-4">
+    <section aria-labelledby={ids.title} data-testid="content-composer" data-tour="content-composer" className="rounded-2xl bg-assistant p-3 sm:p-4">
       <h2 id={ids.title} className="sr-only">
         {t("content.composer.title")}
       </h2>

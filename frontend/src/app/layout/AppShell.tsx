@@ -8,6 +8,7 @@ import { MagnifierIcon, MenuIcon } from "@/components/icons";
 import { useMeta } from "@/features/auth/hooks";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { PushPrompt } from "@/features/notifications/PushPrompt";
+import { PageGuideButton } from "@/components/tour/PageGuideButton";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { WorkspaceSwitcher } from "@/features/workspaces/WorkspaceSwitcher";
 import { DestinationLauncher } from "./DestinationLauncher";
@@ -80,6 +81,7 @@ export function AppShell() {
           <Link to={prefix} aria-label={productName} className="shrink-0 rounded-control text-action focus-visible:outline-2 focus-visible:outline-focus md:hidden"><Brand variant="monogram" /></Link>
           <WorkspaceSwitcher />
           <div className="hidden md:block"><Button ref={trigger} variant="ghost" onClick={() => setLauncher("pointer")} aria-haspopup="dialog" className="min-w-11 rounded-xl border border-border/80 bg-surface-subtle/80 px-3 hover:bg-surface-subtle hover:border-border transition-all shadow-2xs min-[1200px]:min-w-60 min-[1200px]:justify-start"><MagnifierIcon className="text-xl text-secondary" /><span className="sr-only min-[1200px]:not-sr-only min-[1200px]:flex-1 min-[1200px]:text-left whitespace-nowrap text-secondary font-medium">{t("shell.openLauncher")}</span><kbd className="hidden rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-mono text-secondary min-[1200px]:inline font-semibold">{t("shell.shortcut")}</kbd></Button></div>
+          <PageGuideButton />
           <NotificationBell />
         </div>
       </header>

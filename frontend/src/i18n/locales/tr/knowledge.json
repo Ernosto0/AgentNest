@@ -396,6 +396,14 @@
       "title": "Instagram’dan veya web sitenizden içe aktarın",
       "intro": "İşletmenize ait bilgileri bulun ve kaydetmeden önce inceleyin.",
       "review": "Önerileri incele"
+    },
+    "tour": {
+      "statsTitle": "Asistanın bildikleri",
+      "statsDesc": "Kullanılan doğrulanmış bilgileri, inceleme bekleyenleri ve eksik temelleri tek bakışta görün.",
+      "teachTitle": "Hızlıca bilgi ekleyin",
+      "teachDesc": "Biyografinizi veya fiyat listenizi yapıştırın ya da Instagram ve web sitenizden aktarın. Siz kabul etmeden hiçbir şey değişmez.",
+      "categoriesTitle": "Bilgileri inceleyin veya arayın",
+      "categoriesDesc": "Fiyatları, saatleri, hizmetleri ve yanıtları eklemek veya doğrulamak için bir kategori açın."
     }
   },
   "readiness": {

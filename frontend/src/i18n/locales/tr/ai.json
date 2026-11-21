@@ -186,6 +186,12 @@
       "reply_draft": "Yanıt taslağı",
       "content_item": "İçerik",
       "approved_answer": "Onaylı yanıt"
+    },
+    "tour": {
+      "tabsTitle": "Bekleyenler ve geçmiş",
+      "tabsDesc": "Şu an kararınızı bekleyen işlemleri görün veya önceki onay ve ret kararlarını inceleyin.",
+      "listTitle": "Değişiklik olmadan önce inceleyin",
+      "listDesc": "Ne yapılacağını görmek ve açıkça onaylamak ya da reddetmek için herhangi bir satıra dokunun."
     }
   },
   "notifications": {

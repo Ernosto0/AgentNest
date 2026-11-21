@@ -121,6 +121,7 @@ function ViewSwitch({ view, onChange }: { view: View; onChange: (view: View) => 
   return (
     <div
       role="tablist"
+      data-tour="content-views"
       aria-label={t("content.viewsLabel")}
       onKeyDown={onKeyDown}
       className="inline-flex rounded-xl border border-border bg-surface-subtle/80 p-1"

@@ -39,7 +39,7 @@ export function CategoryBrowser({
   const byCategory = new Map(summaries?.map((s) => [s.category, s]));
 
   return (
-    <section aria-labelledby="knowledge-categories-title" className={`flex min-w-0 flex-col gap-4 ${className}`}>
+    <section aria-labelledby="knowledge-categories-title" data-tour="knowledge-categories" className={`flex min-w-0 flex-col gap-4 ${className}`}>
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h2 id="knowledge-categories-title" className="font-heading text-base leading-snug font-semibold tracking-tight text-primary">

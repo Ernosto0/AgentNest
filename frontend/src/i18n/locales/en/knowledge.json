@@ -396,6 +396,14 @@
       "title": "Import from Instagram or your website",
       "intro": "Find business information and review it before adding it to your knowledge.",
       "review": "Review suggestions"
+    },
+    "tour": {
+      "statsTitle": "What the assistant knows",
+      "statsDesc": "See verified facts in use, items needing review, and missing essentials at a glance.",
+      "teachTitle": "Import information fast",
+      "teachDesc": "Paste your bio or price list, or import from Instagram or your website. Nothing changes until you accept.",
+      "categoriesTitle": "Browse or search facts",
+      "categoriesDesc": "Open any category to add or verify prices, hours, services, and answers."
     }
   },
   "readiness": {

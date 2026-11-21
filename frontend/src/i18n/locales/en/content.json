@@ -585,6 +585,14 @@
       "coverDeleted": "The custom cover image was deleted after publishing.",
       "saving": "Saving…",
       "previewLabel": "Reel preview"
+    },
+    "tour": {
+      "composerTitle": "Start a post or story",
+      "composerDesc": "Describe an idea for the assistant, start a blank draft, or pick a ready-made template.",
+      "viewsTitle": "Library or agenda",
+      "viewsDesc": "Switch between your status tabs and a calendar view of scheduled posts.",
+      "tabsTitle": "Track every stage",
+      "tabsDesc": "Follow drafts awaiting review, scheduled posts, published items, and anything needing a fix."
     }
   }
 }

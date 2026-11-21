@@ -292,3 +292,10 @@ export const VideoIcon = (p: IconProps) => (
     <path d="m16 10 5.5-3v10L16 14Z" />
   </Svg>
 );
+export const HelpCircleIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.5 9.25a2.5 2.5 0 0 1 4.8.9c0 1.6-2.3 2.1-2.3 3.35" />
+    <path d="M12 16.75v.01" />
+  </Svg>
+);

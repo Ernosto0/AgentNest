@@ -186,6 +186,12 @@
       "reply_draft": "Reply draft",
       "content_item": "Content item",
       "approved_answer": "Approved answer"
+    },
+    "tour": {
+      "tabsTitle": "Pending vs. history",
+      "tabsDesc": "See actions waiting for your decision now, or review past approvals and rejections.",
+      "listTitle": "Review before anything changes",
+      "listDesc": "Tap any item to inspect what will happen and explicitly approve or reject it."
     }
   },
   "notifications": {

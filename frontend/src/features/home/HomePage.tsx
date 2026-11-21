@@ -9,6 +9,7 @@ import { GenerateSheet, type NewContentMode } from "@/features/content/GenerateS
 import { TemplateImageSheet } from "@/features/content/TemplateImageSheet";
 import { useCurrentWorkspace } from "@/features/workspaces/context";
 import { Dashboard } from "./Dashboard";
+import { HomeWelcomePrompt } from "./HomeWelcomePrompt";
 
 type Sheet = { mode: NewContentMode | "template"; type?: "feed_image" | "story_image" };
 
@@ -41,7 +42,7 @@ export function HomePage() {
           </div>
         }
         action={
-          <>
+          <div data-tour="home-quick-actions" className="flex flex-wrap items-center gap-2">
             <Button onClick={() => create("ai")}>
               <SparkIcon className="text-base" />
               <span>{t("home.quick.generate")}</span>
@@ -58,9 +59,11 @@ export function HomePage() {
               <ImageIcon className="text-base" />
               <span>{t("content.actions.storyFromTemplate")}</span>
             </Button>
-          </>
+          </div>
         }
       />
+
+      <HomeWelcomePrompt workspaceId={workspace.id} />
 
       <Dashboard onCreate={create} />
 

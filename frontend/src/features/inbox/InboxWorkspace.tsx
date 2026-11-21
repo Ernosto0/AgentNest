@@ -123,7 +123,7 @@ export function InboxWorkspace() {
         <h1 className="type-page break-words text-primary">{t("core.inbox")}</h1>
         <p className="mt-1.5 max-w-prose text-body text-secondary">{t(`convo.sectionIntro.${section}`)}</p>
       </div>
-      <nav aria-label={t("core.inbox")} className="w-full sm:w-auto">
+      <nav aria-label={t("core.inbox")} data-tour="inbox-tabs" className="w-full sm:w-auto">
         <div className="flex gap-1 rounded-xl bg-surface-subtle p-1 ring-1 ring-border/70 ring-inset">
           {tabs.map(({ name, icon }) => (
             <SectionTab key={name} to={target(name)} current={section === name} icon={icon} label={t(`core.${name}`)} count={name === "comments" && commentsUnavailable ? undefined : counts[name]} note={name === "comments" && commentsUnavailable ? t("convo.commentsUnavailableTab") : undefined} />
@@ -135,13 +135,14 @@ export function InboxWorkspace() {
       <div
         ref={list}
         data-testid="inbox-list"
+        data-tour="inbox-list"
         onClickCapture={() => { if (!detail) scroll.current = window.scrollY; }}
         onScroll={event => positions.current.set(filterKey, event.currentTarget.scrollTop)}
         className={`${PANE} lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto lg:overscroll-contain ${detail ? "hidden lg:block" : ""}`}
       >
         {section === "messages" ? <ConversationList activeId={conversationId} /> : section === "comments" ? (commentsUnavailable ? <PaneEmpty testId="comments-unavailable" icon={<CommentIcon />} title={t("convo.commentsUnavailableTitle")} hint={t(commentsNeedReconnect ? "convo.commentsUnavailableReconnectHint" : commentsNeedEnable ? "convo.commentsUnavailableEnableHint" : "convo.commentsUnavailableHint")} /> : <CommentsPage />) : <QuestionsPage />}
       </div>
-      <div className={`min-w-0 ${detail ? "" : "hidden lg:block"}`}><Outlet key={location.pathname} /></div>
+      <div data-tour="inbox-detail" className={`min-w-0 ${detail ? "" : "hidden lg:block"}`}><Outlet key={location.pathname} /></div>
     </div>
   </div>;
 }

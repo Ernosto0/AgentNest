@@ -265,6 +265,14 @@
       "needs_approval": "The assistant prepared a reply. Review it, then approve, edit or reject.",
       "needs_human": "The assistant left this to you, for example a complaint. Write your own reply.",
       "failed": "A reply could not be sent. Open the conversation to see what happened."
+    },
+    "tour": {
+      "tabsTitle": "Messages, comments & questions",
+      "tabsDesc": "Switch between customer DMs, public post comments, and questions the assistant asks you.",
+      "listTitle": "Conversations waiting for you",
+      "listDesc": "Open any item to see what the customer wrote and why it needs your attention.",
+      "detailTitle": "Review & reply",
+      "detailDesc": "Approve or edit the assistant's draft, or write your own reply using verified facts."
     }
   },
   "automation": {

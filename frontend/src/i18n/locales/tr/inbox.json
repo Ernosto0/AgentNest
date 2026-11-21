@@ -265,6 +265,14 @@
       "needs_approval": "Asistan bir yanıt hazırladı. İnceleyin; onaylayın, düzenleyin ya da reddedin.",
       "needs_human": "Asistan bunu size bıraktı, örneğin bir şikayet. Kendi yanıtınızı yazın.",
       "failed": "Bir yanıt gönderilemedi. Ne olduğunu görmek için konuşmayı açın."
+    },
+    "tour": {
+      "tabsTitle": "Mesajlar, yorumlar ve sorular",
+      "tabsDesc": "Müşteri mesajları, gönderi yorumları ve asistanın size sorduğu sorular arasında geçiş yapın.",
+      "listTitle": "Sizi bekleyen konuşmalar",
+      "listDesc": "Müşterinin ne yazdığını ve neden ilginize ihtiyaç duyduğunu görmek için bir öğeyi açın.",
+      "detailTitle": "İnceleyin ve yanıtlayın",
+      "detailDesc": "Asistanın taslağını onaylayın, düzenleyin veya doğrulanmış bilgilerle kendi yanıtınızı yazın."
     }
   },
   "automation": {
