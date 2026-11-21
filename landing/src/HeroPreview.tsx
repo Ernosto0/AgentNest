@@ -1,144 +1,88 @@
 import { useState } from 'react'
-import { PRODUCT_NAME } from './brand'
 import { Brand } from './BrandIdentity'
 import type { Copy } from './copy'
-import {
-  Badge,
-  CheckIcon,
-  ChatIcon,
-  ClockIcon,
-  ExampleLabel,
-  HandIcon,
-  PauseIcon,
-  RotateIcon,
-  buttonPrimary,
-  buttonSecondary,
-} from './ui'
+import { Badge, BookIcon, CalendarIcon, ChatIcon, CheckIcon, ExampleLabel, HandIcon } from './ui'
 
-// A simplified "Today" screen in the app's own visual language, plus one pending reply that can be
-// approved here. An illustration with example data, labelled as such; nothing is sent anywhere.
+// Illustrative recorded outcomes, never a live connection or a real customer send.
 export function HeroPreview({ t }: { t: Copy['preview'] }) {
-  const [approved, setApproved] = useState(false)
-  const counts = t.queueCounts.map((n, i) => (i === 0 && approved ? n - 1 : n))
-  const metrics = t.metricValues.map((n, i) => (i === 1 && approved ? n + 1 : n))
-  const queueIcons = [<ClockIcon key="c" />, <HandIcon key="h" />, <PauseIcon key="p" />]
-
+  const [sourceOpen, setSourceOpen] = useState(false)
   return (
     <figure className="relative mx-auto w-full min-w-0 max-w-[36rem] lg:mr-0">
       <figcaption className="mb-3 flex justify-end">
         <ExampleLabel>{t.example}</ExampleLabel>
       </figcaption>
-
       <div className="overflow-hidden rounded-frame border border-border bg-surface shadow-frame">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-border px-5 py-4">
           <Brand variant="monogram" size="sm" />
-          <div className="flex min-w-0 flex-col leading-tight">
-            <Brand variant="wordmark" size="xs" label={PRODUCT_NAME} />
-            <span className="text-xs text-secondary">{t.screen}</span>
+          <div className="min-w-0 flex-1">
+            <p className="font-heading text-base font-bold">{t.waitingTitle}</p>
+            <p className="text-sm text-secondary">{t.date}</p>
           </div>
-          <span aria-hidden className="ml-auto flex gap-1.5">
-            <span className="size-2 rounded-full bg-border" />
-            <span className="size-2 rounded-full bg-border" />
-            <span className="size-2 rounded-full bg-border" />
-          </span>
+          <div className="text-right">
+            <Badge tone="brand">Full Auto</Badge>
+            <p className="mt-1 text-xs text-secondary">{t.screen}</p>
+          </div>
         </div>
-
-        <div className="flex flex-col gap-4 bg-canvas p-4 sm:p-5 sm:pb-16">
-          <div>
-            <p className="text-xs text-secondary">{t.date}</p>
-            <p className="mt-0.5 font-heading text-xl font-bold tracking-tight">{t.greeting}</p>
-          </div>
-
-          <div className="rounded-panel border border-border bg-surface p-4">
-            <p className="font-heading text-sm font-semibold">{t.waitingTitle}</p>
-            <ul className="mt-2 divide-y divide-border">
-              {t.queue.map((label, i) => (
-                <li key={label} className="flex items-center gap-3 py-2.5 text-sm">
-                  <span aria-hidden className="text-base text-attention">
-                    {queueIcons[i]}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">{label}</span>
-                  <span
-                    key={counts[i]}
-                    className="pop-in grid min-w-7 place-items-center rounded-md bg-attention-subtle px-1.5 py-0.5 text-sm font-bold tabular-nums text-attention"
-                  >
-                    {counts[i]}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <dl className="grid grid-cols-3 gap-2.5">
+        <div className="bg-canvas p-4 sm:p-6">
+          <dl className="grid grid-cols-3 gap-2">
             {t.metrics.map((label, i) => (
-              <div key={label} className="rounded-panel bg-surface-subtle px-3 py-2.5">
-                <dt className="min-h-8 text-[0.6875rem] leading-4 text-secondary sm:min-h-0 sm:text-xs">{label}</dt>
-                <dd key={metrics[i]} className="pop-in mt-1 font-heading text-2xl font-bold tabular-nums text-action">
-                  {metrics[i]}
+              <div key={label} className="rounded-panel border border-border bg-surface p-3">
+                <dd className="font-heading text-3xl font-extrabold tracking-tight text-action tabular-nums">
+                  {t.metricValues[i]}
                 </dd>
+                <dt className="mt-1 text-sm leading-snug text-secondary">{label}</dt>
               </div>
             ))}
           </dl>
-        </div>
-      </div>
-
-      {/* The pending reply. From tablet width it overlaps the frame's empty bottom edge. */}
-      <div className="relative z-10 mt-4 rounded-panel border border-border bg-surface p-4 shadow-frame sm:mx-6 sm:-mt-10 lg:mr-0 lg:-ml-6 lg:w-[24rem]">
-        <div className="flex items-center gap-2.5">
-          <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-subtle text-xs font-bold text-secondary">
-            {t.customer.slice(0, 2).toUpperCase()}
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="truncate text-sm font-semibold">{t.customer}</span>
-            <span className="flex items-center gap-1 text-xs text-secondary">
-              <ChatIcon aria-hidden /> Instagram · {t.time}
+          <div className="mt-5 rounded-panel border border-border bg-surface p-4 sm:p-5">
+            <div className="flex items-center gap-2 text-sm text-secondary">
+              <ChatIcon /> Instagram DM <span className="ml-auto tabular-nums">{t.time}</span>
+            </div>
+            <p className="mt-4 max-w-[90%] rounded-2xl rounded-bl-sm bg-surface-subtle p-3 text-base">
+              {t.message}
+            </p>
+            <div className="mt-3 ml-5 rounded-2xl rounded-br-sm bg-action p-3 text-base leading-relaxed text-on-action">
+              {t.reply[0]}
+              <strong>{t.facts[0]}</strong>
+              {t.reply[1]}
+            </div>
+            <p className="mt-3 flex items-center justify-end gap-1.5 text-sm font-medium text-success">
+              <CheckIcon />
+              {t.sent}
+            </p>
+            <div className="mt-4 border-t border-border pt-3">
+              <button
+                type="button"
+                aria-expanded={sourceOpen}
+                aria-controls="hero-reply-source"
+                onClick={() => setSourceOpen(!sourceOpen)}
+                className="flex min-h-11 items-center gap-2 rounded-control text-sm font-semibold text-action"
+              >
+                <BookIcon />
+                {sourceOpen ? t.hideSource : t.showSource}
+              </button>
+              {sourceOpen && (
+                <p
+                  id="hero-reply-source"
+                  className="pop-in rounded-control bg-fact px-3 py-2 text-sm text-on-fact"
+                >
+                  {t.source} · {t.facts[0]}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-secondary">
+            <span className="flex items-center gap-1.5">
+              <HandIcon />
+              {t.queueCounts[1]} · {t.queue[1]}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CalendarIcon />
+              {t.queueCounts[2]} · {t.queue[2]}
             </span>
           </div>
-          <span aria-live="polite">
-            {approved ? (
-              <Badge tone="success" size="sm" icon={<CheckIcon />}>
-                {t.sent}
-              </Badge>
-            ) : (
-              <Badge tone="attention" size="sm" icon={<ClockIcon />}>
-                {t.pending}
-              </Badge>
-            )}
-          </span>
-        </div>
-
-        <p className="mt-3 rounded-xl rounded-tl-sm bg-surface-subtle px-3 py-2 text-sm leading-snug">{t.message}</p>
-        <p className="mt-2.5 text-sm leading-relaxed">
-          {t.reply[0]}
-          <FactMark>{t.facts[0]}</FactMark>
-          {t.reply[1]}
-          <FactMark>{t.facts[1]}</FactMark>
-          {t.reply[2]}
-        </p>
-
-        <div className="mt-3.5 flex items-center gap-2">
-          {approved ? (
-            <button type="button" onClick={() => setApproved(false)} className={`${buttonSecondary} min-h-10 text-sm`}>
-              <RotateIcon />
-              {t.undo}
-            </button>
-          ) : (
-            <button type="button" onClick={() => setApproved(true)} className={`${buttonPrimary} min-h-10 flex-1 text-sm`}>
-              <CheckIcon />
-              {t.approve}
-            </button>
-          )}
         </div>
       </div>
     </figure>
-  )
-}
-
-function FactMark({ children }: { children: string }) {
-  return (
-    <mark className="inline-flex items-baseline gap-0.5 rounded bg-fact px-1 font-semibold text-on-fact">
-      {children}
-      <CheckIcon className="self-center text-[0.75em]" />
-    </mark>
   )
 }

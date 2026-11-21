@@ -1,13 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import type { Copy, Lang } from './copy'
-import { AlertIcon, ArrowRightIcon, CheckIcon, ChatIcon, buttonLarge, buttonPrimary } from './ui'
+import { AlertIcon, CheckIcon, ChatIcon, buttonLarge, buttonPrimary } from './ui'
 import { getWhatsAppContactUrl, isValidEmail, submitWaitlist, type SubmitResult } from './waitlist'
 
 type Props = { t: Copy['form']; pilot: Copy['pilot']; lang: Lang }
 
 type Field = 'business' | 'instagram' | 'contact' | 'city'
 type Values = Record<Field, string>
-type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'done'; result: SubmitResult } | { kind: 'failed' }
+type Status =
+  | { kind: 'idle' }
+  | { kind: 'sending' }
+  | { kind: 'done'; result: SubmitResult }
+  | { kind: 'failed' }
 
 const empty: Values = { business: '', instagram: '', contact: '', city: '' }
 
@@ -21,11 +25,26 @@ export function WaitlistForm({ t, pilot, lang }: Props) {
   const selectedCategory = t.categories[categoryIdx] ?? t.categories[0] ?? ''
   const whatsappUrl = getWhatsAppContactUrl(pilot.whatsappPrefill)
 
-  const fields: { id: Field; label: string; hint?: string; help?: string; autoComplete: string; inputMode?: 'email' | 'text'; wide?: boolean }[] = [
+  const fields: {
+    id: Field
+    label: string
+    hint?: string
+    help?: string
+    autoComplete: string
+    inputMode?: 'email' | 'text'
+    wide?: boolean
+  }[] = [
     { id: 'business', label: t.business, autoComplete: 'organization', wide: true },
     { id: 'instagram', label: t.instagram, hint: t.instagramHint, autoComplete: 'off' },
     { id: 'city', label: t.city, autoComplete: 'address-level2' },
-    { id: 'contact', label: t.contact, help: t.contactHint, autoComplete: 'email', inputMode: 'email', wide: true },
+    {
+      id: 'contact',
+      label: t.contact,
+      help: t.contactHint,
+      autoComplete: 'email',
+      inputMode: 'email',
+      wide: true,
+    },
   ]
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -110,7 +129,10 @@ export function WaitlistForm({ t, pilot, lang }: Props) {
               placeholder={hint}
               value={values[id]}
               aria-invalid={errors[id] ? true : undefined}
-              aria-describedby={[help ? `wl-${id}-help` : '', errors[id] ? `wl-${id}-error` : ''].filter(Boolean).join(' ') || undefined}
+              aria-describedby={
+                [help ? `wl-${id}-help` : '', errors[id] ? `wl-${id}-error` : ''].filter(Boolean).join(' ') ||
+                undefined
+              }
               onChange={(e) => setValues((v) => ({ ...v, [id]: e.target.value }))}
               className={input}
             />
@@ -150,9 +172,12 @@ export function WaitlistForm({ t, pilot, lang }: Props) {
         )}
       </div>
 
-      <button type="submit" disabled={status.kind === 'sending'} className={`${buttonPrimary} ${buttonLarge} w-full`}>
+      <button
+        type="submit"
+        disabled={status.kind === 'sending'}
+        className={`${buttonPrimary} ${buttonLarge} w-full`}
+      >
         {status.kind === 'sending' ? t.sending : t.submit}
-        {status.kind !== 'sending' && <ArrowRightIcon aria-hidden />}
       </button>
 
       <div aria-live="polite" className="empty:hidden">

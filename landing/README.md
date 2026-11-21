@@ -14,11 +14,15 @@ npm run typecheck
   pills are the app's own (`frontend/src/index.css`, `StatusBadge`, `Button`), so the page and the
   product read as one thing. The page adds larger display type, a dark theme and the dark-green brand
   band. Tokens live in `src/index.css`; shared pieces (icons, badges, buttons) in `src/ui.tsx`.
-- **Copy** for both languages lives in `src/copy.ts`. It describes what is built: the web app and the
-  Telegram owner channel (Phase 9). WhatsApp owner control and comment replies are deferred
-  (`docs/product/mvp-scope.md`), so the page does not promise them; the FAQ answers honestly if asked.
-  Re-check the copy, including the pilot price
-  wording in the FAQ, against the product before publishing.
+- **Copy** for both languages lives in `src/copy.ts`; operational stories, channel previews and
+  the five-language demo live in `src/ProductStories.tsx`. The page leads with automatic routine
+  DM and eligible comment replies, then shows comment-to-private-reply, calendar requests,
+  shared business facts, customer memory, media context, lead lists and content formats.
+  Telegram supports owner commands, photos, tasks and answers; optional WhatsApp supports
+  notifications, summaries and in-window approval buttons, not free-text commands. Calendar
+  changes and publication retain the current pilot decision requirements. Provider permissions,
+  configuration and pending live acceptance still apply; code support is not live verification.
+  Re-check capabilities and pilot price wording against the product before publishing.
 - **Product name** is a single constant in `src/brand.ts`.
 - **Brand identity**: `BrandIdentity.tsx` and `Brand.css` are generated from the
   shared canonical sources in `scripts/brand/`. See [brand usage and regeneration](../docs/product/brand-identity.md).
@@ -49,8 +53,8 @@ npm run typecheck
 - **Theme**: `public/theme.js` applies the saved choice before first paint; light is the default, whatever the OS
   preference. Language and theme choices are remembered in `localStorage`.
 - Every screen, chat and summary on the page is an illustration with example data and is labelled
-  as an example. The interactive parts (approve, verify, scenario tabs, commands) only change local
-  state; nothing is sent anywhere.
+  as an example. Source details, verification, workflow selectors, channel selectors, language
+  samples and command examples only change local state; they perform no external actions.
 
 ## Deploying (Railway)
 

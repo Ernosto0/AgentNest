@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import type { Copy } from './copy'
-import { AlertIcon, ArrowDownIcon, ArrowRightIcon, Badge, CheckIcon, ExampleLabel, RotateIcon, buttonSecondary } from './ui'
+import {
+  AlertIcon,
+  ArrowDownIcon,
+  ArrowRightIcon,
+  Badge,
+  CheckIcon,
+  ExampleLabel,
+  RotateIcon,
+  buttonSecondary,
+} from './ui'
 
 // Paste → picked-out facts → the owner verifies each one. Mirrors the app's knowledge rows:
 // "Verify" is the primary action only for unverified facts. Example data only.
@@ -18,7 +27,7 @@ export function KnowledgePreview({ t, example }: { t: Copy['knowledge']; example
           <span className="type-eyebrow text-secondary">{t.pasteLabel}</span>
           <ExampleLabel>{example}</ExampleLabel>
         </figcaption>
-        <p className="mt-3 text-[0.9375rem] leading-relaxed">“{t.pasteSample}”</p>
+        <p className="mt-3 text-base leading-relaxed">“{t.pasteSample}”</p>
         <p className="mt-4 flex items-center gap-1.5 border-t border-border pt-3 text-xs text-secondary">
           <AlertIcon aria-hidden className="text-attention" />
           {t.pasteNote}
@@ -48,12 +57,15 @@ export function KnowledgePreview({ t, example }: { t: Copy['knowledge']; example
 
         <ul className="divide-y divide-border">
           {t.facts.map((fact, i) => (
-            <li key={fact.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-3.5">
+            <li
+              key={fact.label}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-3.5"
+            >
               <div className="flex min-w-0 flex-col">
                 <span className="text-xs text-secondary">
                   {fact.category} · {fact.label}
                 </span>
-                <span className="mt-0.5 font-heading text-[0.9375rem] font-bold tabular-nums">{fact.value}</span>
+                <span className="mt-0.5 font-heading text-base font-bold tabular-nums">{fact.value}</span>
               </div>
               {verified[i] ? (
                 <Badge tone="success" size="sm" icon={<CheckIcon />} className="pop-in">
@@ -82,7 +94,11 @@ export function KnowledgePreview({ t, example }: { t: Copy['knowledge']; example
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-subtle px-5 py-3">
           <p className="text-xs text-secondary">{t.usageNote}</p>
           {done === verified.length && (
-            <button type="button" onClick={() => setVerified(INITIAL)} className={`${buttonSecondary} min-h-9 px-3 text-xs`}>
+            <button
+              type="button"
+              onClick={() => setVerified(INITIAL)}
+              className={`${buttonSecondary} min-h-9 px-3 text-xs`}
+            >
               <RotateIcon aria-hidden />
               {t.reset}
             </button>

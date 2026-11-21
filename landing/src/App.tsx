@@ -7,8 +7,8 @@ import { DraftDemo } from './DraftDemo'
 import { HeroPreview } from './HeroPreview'
 import { KnowledgePreview } from './KnowledgePreview'
 import { OwnerChat } from './OwnerChat'
+import { CapabilitiesSection, ChannelPreview, JourneySection } from './ProductStories'
 import {
-  ArrowRightIcon,
   ArrowUpIcon,
   Badge,
   BookIcon,
@@ -23,7 +23,6 @@ import {
   KeyIcon,
   LayersIcon,
   ListIcon,
-  MinusCircleIcon,
   MoonIcon,
   PauseIcon,
   PlusIcon,
@@ -109,20 +108,12 @@ export function App() {
         {t.nav.skip}
       </a>
 
-      <SiteHeader
-        t={t}
-        lang={lang}
-        setLang={setLang}
-        theme={theme}
-        setTheme={setTheme}
-        active={active}
-      />
+      <SiteHeader t={t} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} active={active} />
 
       <main id="main" tabIndex={-1} className="outline-none">
         <Hero t={t} heroRef={heroRef} />
         <Promises t={t} />
-        <Problem t={t.problem} />
-        <HowItWorks t={t} />
+        <JourneySection lang={lang} />
         <Section id="demo" tone="surface">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-20">
             <div>
@@ -130,12 +121,15 @@ export function App() {
               <ul className="reveal mt-10 flex flex-col gap-5">
                 {t.demo.points.map((point, i) => (
                   <li key={point.title} className="flex gap-4">
-                    <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-panel bg-assistant text-lg text-action">
+                    <span
+                      aria-hidden
+                      className="grid size-10 shrink-0 place-items-center rounded-panel bg-assistant text-lg text-action"
+                    >
                       {[<TagIcon key="t" />, <CheckIcon key="c" />, <HandIcon key="h" />][i]}
                     </span>
                     <div>
                       <h3 className="font-heading text-base font-bold">{point.title}</h3>
-                      <p className="mt-0.5 text-[0.9375rem] leading-relaxed text-secondary">{point.body}</p>
+                      <p className="mt-0.5 text-base leading-relaxed text-secondary">{point.body}</p>
                     </div>
                   </li>
                 ))}
@@ -146,9 +140,10 @@ export function App() {
             </div>
           </div>
         </Section>
-        <OwnerSection t={t.owner} />
+        <OwnerSection t={t.owner} lang={lang} />
+        <CapabilitiesSection lang={lang} />
+        <HowItWorks t={t} />
         <ContentAndReport t={t} />
-        <Limits t={t.limits} />
         <Trust t={t.trust} />
         <LocalPackage t={t.localPackage} />
         <Faq t={t.faq} />
@@ -244,9 +239,15 @@ function SiteHeader({
             className="grid size-10 place-items-center rounded-control text-lg text-primary hover:bg-surface-subtle lg:hidden"
           >
             <span aria-hidden className="relative block h-3 w-4">
-              <span className={`absolute left-0 h-0.5 w-4 rounded bg-current transition-transform ${open ? 'top-[5px] rotate-45' : 'top-0'}`} />
-              <span className={`absolute top-[5px] left-0 h-0.5 w-4 rounded bg-current transition-opacity ${open ? 'opacity-0' : ''}`} />
-              <span className={`absolute left-0 h-0.5 w-4 rounded bg-current transition-transform ${open ? 'top-[5px] -rotate-45' : 'top-[10px]'}`} />
+              <span
+                className={`absolute left-0 h-0.5 w-4 rounded bg-current transition-transform ${open ? 'top-[5px] rotate-45' : 'top-0'}`}
+              />
+              <span
+                className={`absolute top-[5px] left-0 h-0.5 w-4 rounded bg-current transition-opacity ${open ? 'opacity-0' : ''}`}
+              />
+              <span
+                className={`absolute left-0 h-0.5 w-4 rounded bg-current transition-transform ${open ? 'top-[5px] -rotate-45' : 'top-[10px]'}`}
+              />
             </span>
           </button>
         </div>
@@ -263,7 +264,6 @@ function SiteHeader({
                 className="flex min-h-12 items-center justify-between border-b border-border text-base font-medium last:border-b-0"
               >
                 {link.label}
-                <ArrowRightIcon aria-hidden className="text-control" />
               </a>
             ))}
             <a href="#pilot" onClick={() => setOpen(false)} className={`${buttonPrimary} mt-3 w-full`}>
@@ -278,7 +278,11 @@ function SiteHeader({
 
 function LangSwitch({ t, lang, setLang }: { t: Copy; lang: Lang; setLang: (l: Lang) => void }) {
   return (
-    <div role="group" aria-label={t.nav.language} className="flex rounded-control border border-border bg-surface p-0.5">
+    <div
+      role="group"
+      aria-label={t.nav.language}
+      className="flex rounded-control border border-border bg-surface p-0.5"
+    >
       {(['tr', 'en'] as const).map((code) => (
         <button
           key={code}
@@ -305,7 +309,9 @@ function Hero({ t, heroRef }: { t: Copy; heroRef: RefObject<HTMLElement | null> 
         <div className="dot-field absolute inset-x-0 top-0 h-[36rem] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       </div>
 
-      <div className={`${container} relative grid items-center gap-14 pt-10 pb-24 md:pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14 lg:pb-28`}>
+      <div
+        className={`${container} relative grid items-center gap-14 pt-10 pb-24 md:pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14 lg:pb-28`}
+      >
         <div className="min-w-0 max-w-[40rem]">
           <p className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-[0.8125rem] font-medium">
             <span aria-hidden className="relative flex size-2">
@@ -316,18 +322,18 @@ function Hero({ t, heroRef }: { t: Copy; heroRef: RefObject<HTMLElement | null> 
           </p>
 
           <h1 className="type-display mt-6">
-            {t.hero.title}{' '}
-            <span className="block text-action">{t.hero.accent}</span>
+            {t.hero.title} <span className="block text-action">{t.hero.accent}</span>
           </h1>
 
-          <p className="mt-6 text-lg leading-relaxed text-secondary md:text-xl md:leading-relaxed">{t.hero.lead}</p>
+          <p className="mt-6 text-lg leading-relaxed text-secondary md:text-xl md:leading-relaxed">
+            {t.hero.lead}
+          </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a href="#pilot" className={`${buttonPrimary} ${buttonLarge}`}>
               {t.hero.cta}
-              <ArrowRightIcon aria-hidden />
             </a>
-            <a href="#nasil" className={`${buttonSecondary} ${buttonLarge}`}>
+            <a href="#otomasyon" className={`${buttonSecondary} ${buttonLarge}`}>
               {t.hero.secondary}
             </a>
           </div>
@@ -355,13 +361,19 @@ function Promises({ t }: { t: Copy }) {
       <div className={container}>
         <ul className="reveal grid overflow-hidden rounded-frame border border-border bg-surface md:grid-cols-3">
           {t.promises.map((promise, i) => (
-            <li key={promise.title} className="flex gap-4 border-border p-6 not-last:border-b md:not-last:border-r md:not-last:border-b-0 lg:p-7">
-              <span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-panel bg-assistant text-xl text-action">
+            <li
+              key={promise.title}
+              className="flex gap-4 border-border p-6 not-last:border-b md:not-last:border-r md:not-last:border-b-0 lg:p-7"
+            >
+              <span
+                aria-hidden
+                className="grid size-11 shrink-0 place-items-center rounded-panel bg-assistant text-xl text-action"
+              >
                 {icons[i]}
               </span>
               <div>
                 <h2 className="font-heading text-lg font-bold tracking-tight">{promise.title}</h2>
-                <p className="mt-1 text-[0.9375rem] leading-relaxed text-secondary">{promise.body}</p>
+                <p className="mt-1 text-base leading-relaxed text-secondary">{promise.body}</p>
               </div>
             </li>
           ))}
@@ -370,7 +382,10 @@ function Promises({ t }: { t: Copy }) {
         <div className="reveal mt-8 flex flex-wrap items-center justify-center gap-2">
           <span className="mr-1 text-sm text-secondary">{t.audience.label}:</span>
           {t.audience.items.map((item) => (
-            <span key={item} className="rounded-full border border-border bg-surface px-3 py-1 text-sm font-medium">
+            <span
+              key={item}
+              className="rounded-full border border-border bg-surface px-3 py-1 text-sm font-medium"
+            >
               {item}
             </span>
           ))}
@@ -401,33 +416,6 @@ function Section({
   )
 }
 
-function Problem({ t }: { t: Copy['problem'] }) {
-  return (
-    <Section id="neden" className="mt-8">
-      <SectionHeader eyebrow={t.eyebrow} title={t.title} body={t.body} />
-      <div className="mt-12 grid gap-5 md:grid-cols-3">
-        {t.rows.map((row) => (
-          <article key={row.scenario} className="reveal flex flex-col rounded-frame border border-border bg-surface p-2">
-            <h3 className="px-4 pt-4 pb-3 font-heading text-lg leading-snug font-bold tracking-tight">{row.scenario}</h3>
-            <div className="px-4 pb-4">
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-secondary">
-                <MinusCircleIcon aria-hidden /> {t.withoutLabel}
-              </p>
-              <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-secondary">{row.without}</p>
-            </div>
-            <div className="mt-auto rounded-panel bg-assistant p-4">
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-action">
-                <CheckIcon aria-hidden /> {t.withLabel}
-              </p>
-              <p className="mt-1.5 text-[0.9375rem] leading-relaxed">{row.withProduct}</p>
-            </div>
-          </article>
-        ))}
-      </div>
-    </Section>
-  )
-}
-
 function HowItWorks({ t }: { t: Copy }) {
   const icons = [<BookIcon key="b" />, <ChatIcon key="c" />, <CheckIcon key="k" />, <ChartIcon key="r" />]
   return (
@@ -436,15 +424,21 @@ function HowItWorks({ t }: { t: Copy }) {
 
       <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {t.how.steps.map((step, i) => (
-          <li key={step.title} className="reveal relative rounded-frame border border-border bg-canvas p-5" style={{ transitionDelay: `${i * 70}ms` }}>
+          <li
+            key={step.title}
+            className="reveal relative rounded-frame border border-border bg-canvas p-5"
+            style={{ transitionDelay: `${i * 70}ms` }}
+          >
             <div className="flex items-center justify-between">
-              <span aria-hidden className="grid size-10 place-items-center rounded-panel bg-band text-lg text-band-accent">
+              <span
+                aria-hidden
+                className="grid size-10 place-items-center rounded-panel bg-band text-lg text-band-accent"
+              >
                 {icons[i]}
               </span>
-              <span className="font-heading text-3xl font-extrabold text-border tabular-nums">{String(i + 1).padStart(2, '0')}</span>
             </div>
             <h3 className="mt-5 font-heading text-lg leading-snug font-bold tracking-tight">{step.title}</h3>
-            <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-secondary">{step.body}</p>
+            <p className="mt-1.5 text-base leading-relaxed text-secondary">{step.body}</p>
           </li>
         ))}
       </ol>
@@ -465,48 +459,76 @@ function HowItWorks({ t }: { t: Copy }) {
   )
 }
 
-function OwnerSection({ t }: { t: Copy['owner'] }) {
+function OwnerSection({ t, lang }: { t: Copy['owner']; lang: Lang }) {
   const [selected, setSelected] = useState<number | null>(null)
-  const channelIcons = [<SmartphoneIcon key="s" />, <ChatIcon key="c" />]
+  const [channel, setChannel] = useState(0)
+  const channelIcons = [<ChatIcon key="t" />, <ChatIcon key="w" />, <SmartphoneIcon key="s" />]
   return (
     <Section id="yonetim">
+      <SectionHeader eyebrow={t.eyebrow} title={t.title} body={t.body} />
+      <div role="group" aria-label={t.title} className="mt-8 mb-10 flex flex-wrap gap-2">
+        {t.channels.map((item, i) => (
+          <button
+            key={item.title}
+            type="button"
+            aria-pressed={channel === i}
+            onClick={() => setChannel(i)}
+            className="flex min-h-12 items-center gap-2 rounded-full border border-border bg-surface px-5 text-base font-semibold text-secondary transition-colors hover:border-control aria-pressed:border-action aria-pressed:bg-action aria-pressed:text-on-action"
+          >
+            {channelIcons[i]}
+            {item.title}
+          </button>
+        ))}
+      </div>
       <div className="grid gap-12 lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)] lg:gap-20">
         <div className="reveal order-last lg:sticky lg:top-20 lg:order-first lg:self-start">
-          <OwnerChat t={t} selected={selected === null ? null : t.commands[selected]} />
+          {channel === 0 ? (
+            <OwnerChat t={t} selected={selected === null ? null : t.commands[selected]} />
+          ) : (
+            <ChannelPreview lang={lang} channel={channel} owner={t} />
+          )}
         </div>
         <div className="min-w-0">
-          <SectionHeader eyebrow={t.eyebrow} title={t.title} body={t.body} />
-
-          <div className="reveal mt-10">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <h3 className="font-heading text-lg font-bold tracking-tight">{t.commandsTitle}</h3>
-              <p className="text-sm text-secondary">{t.commandsHint}</p>
-            </div>
-            <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-              {t.commands.map((command, idx) => (
-                <button
-                  key={command.ask}
-                  type="button"
-                  aria-pressed={selected === idx}
-                  onClick={() => setSelected(selected === idx ? null : idx)}
-                  className="group flex min-h-13 items-center gap-3 rounded-panel border border-border bg-surface px-4 py-3 text-left text-[0.9375rem] transition-colors hover:border-control aria-pressed:border-action aria-pressed:bg-assistant"
-                >
-                  <span
-                    aria-hidden
-                    className="grid size-6 shrink-0 place-items-center rounded-full border border-border text-sm text-secondary transition-colors group-aria-pressed:border-action group-aria-pressed:bg-action group-aria-pressed:text-on-action"
-                  >
-                    {selected === idx ? <CheckIcon /> : <PlusIcon />}
-                  </span>
-                  <span className="font-medium">“{command.ask}”</span>
-                </button>
-              ))}
-            </div>
+          <div className="rounded-frame border border-border bg-assistant p-6">
+            <h3 className="font-heading text-2xl font-bold">{t.channels[channel].title}</h3>
+            <p className="mt-3 text-lg leading-relaxed text-secondary">{t.channels[channel].body}</p>
           </div>
+
+          {channel === 0 && (
+            <div className="reveal mt-8">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h3 className="font-heading text-lg font-bold tracking-tight">{t.commandsTitle}</h3>
+                <p className="text-sm text-secondary">{t.commandsHint}</p>
+              </div>
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                {t.commands.map((command, idx) => (
+                  <button
+                    key={command.ask}
+                    type="button"
+                    aria-pressed={selected === idx}
+                    onClick={() => setSelected(selected === idx ? null : idx)}
+                    className="group flex min-h-13 items-center gap-3 rounded-panel border border-border bg-surface px-4 py-3 text-left text-base transition-colors hover:border-control aria-pressed:border-action aria-pressed:bg-assistant"
+                  >
+                    <span
+                      aria-hidden
+                      className="grid size-6 shrink-0 place-items-center rounded-full border border-border text-sm text-secondary transition-colors group-aria-pressed:border-action group-aria-pressed:bg-action group-aria-pressed:text-on-action"
+                    >
+                      {selected === idx ? <CheckIcon /> : <PlusIcon />}
+                    </span>
+                    <span className="font-medium">“{command.ask}”</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <ul className="reveal mt-10 grid gap-x-6 gap-y-5 border-t border-border pt-8 sm:grid-cols-2">
             {t.channels.map((channel, i) => (
               <li key={channel.title} className="flex gap-3.5">
-                <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-panel bg-assistant text-lg text-action">
+                <span
+                  aria-hidden
+                  className="grid size-10 shrink-0 place-items-center rounded-panel bg-assistant text-lg text-action"
+                >
                   {channelIcons[i]}
                 </span>
                 <div>
@@ -516,7 +538,7 @@ function OwnerSection({ t }: { t: Copy['owner'] }) {
               </li>
             ))}
           </ul>
-          <p className="reveal mt-6 flex gap-3 rounded-panel bg-assistant p-4 text-sm leading-relaxed">
+          <p className="reveal mt-6 flex gap-3 rounded-panel border border-border p-4 text-sm leading-relaxed text-secondary">
             <ShieldCheckIcon aria-hidden className="mt-0.5 shrink-0 text-lg text-action" />
             {t.note}
           </p>
@@ -558,11 +580,21 @@ function ContentAndReport({ t }: { t: Copy }) {
                         <span className="text-xs text-secondary">{post.kind}</span>
                         <span className="truncate text-sm font-semibold">{post.title}</span>
                       </div>
-                      <Badge tone={postTone[post.state].tone} size="sm" icon={postTone[post.state].icon} className="hidden sm:inline-flex">
+                      <Badge
+                        tone={postTone[post.state].tone}
+                        size="sm"
+                        icon={postTone[post.state].icon}
+                        className="hidden sm:inline-flex"
+                      >
                         {post.status}
                       </Badge>
                     </div>
-                    <Badge tone={postTone[post.state].tone} size="sm" icon={postTone[post.state].icon} className="self-start sm:hidden">
+                    <Badge
+                      tone={postTone[post.state].tone}
+                      size="sm"
+                      icon={postTone[post.state].icon}
+                      className="self-start sm:hidden"
+                    >
                       {post.status}
                     </Badge>
                     {post.state === 'held' && (
@@ -584,7 +616,9 @@ function ContentAndReport({ t }: { t: Copy }) {
             <h3 className="font-heading text-[clamp(1.5rem,1.2rem+1.2vw,2.125rem)] leading-tight font-extrabold tracking-[-0.025em]">
               {t.report.title}
             </h3>
-            <p className="mt-4 max-w-[34rem] text-[1.0625rem] leading-relaxed text-secondary">{t.report.body}</p>
+            <p className="mt-4 max-w-[34rem] text-[1.0625rem] leading-relaxed text-secondary">
+              {t.report.body}
+            </p>
           </div>
           <figure className="reveal mt-8 rounded-frame border border-border bg-canvas p-5">
             <figcaption className="flex flex-wrap items-center justify-between gap-2">
@@ -622,49 +656,44 @@ function ContentAndReport({ t }: { t: Copy }) {
 function PostThumb({ index }: { index: number }) {
   const palettes = ['bg-[#d7dccd]', 'bg-[#e9dfcf]', 'bg-[#dfe7e2]', 'bg-[#e5e9d6]']
   return (
-    <span aria-hidden className={`relative h-11 w-8 shrink-0 overflow-hidden rounded-md ring-1 ring-black/5 ${palettes[index % palettes.length]}`}>
+    <span
+      aria-hidden
+      className={`relative h-11 w-8 shrink-0 overflow-hidden rounded-md ring-1 ring-black/5 ${palettes[index % palettes.length]}`}
+    >
       <span className="absolute -top-2 -right-2 size-5 rounded-full bg-[#253b31]/80" />
       <span className="absolute right-1.5 bottom-1.5 left-1.5 h-1 rounded-full bg-[#253b31]/40" />
     </span>
   )
 }
 
-function Limits({ t }: { t: Copy['limits'] }) {
-  return (
-    <Section id="sinirlar">
-      <SectionHeader eyebrow={t.eyebrow} title={t.title} body={t.body} />
-      <ul className="mt-12 grid gap-4 sm:grid-cols-2">
-        {t.escalate.map((item) => (
-          <li key={item.title} className="reveal rounded-frame border border-border bg-surface p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-heading text-lg font-bold tracking-tight">{item.title}</h3>
-              <Badge tone="attention" size="sm" icon={<HandIcon />}>
-                {t.escalateBadge}
-              </Badge>
-            </div>
-            <p className="mt-2.5 rounded-panel bg-surface-subtle px-3.5 py-2.5 text-sm leading-relaxed text-secondary italic">{item.example}</p>
-          </li>
-        ))}
-      </ul>
-    </Section>
-  )
-}
-
 function Trust({ t }: { t: Copy['trust'] }) {
-  const controlIcons = [<SettingsIcon key="a" />, <HandIcon key="b" />, <UsersIcon key="c" />, <ListIcon key="d" />]
-  const securityIcons = [<KeyIcon key="a" />, <ShieldCheckIcon key="b" />, <LayersIcon key="c" />, <TrashIcon key="d" />]
+  const controlIcons = [
+    <SettingsIcon key="a" />,
+    <HandIcon key="b" />,
+    <UsersIcon key="c" />,
+    <ListIcon key="d" />,
+  ]
+  const securityIcons = [
+    <KeyIcon key="a" />,
+    <ShieldCheckIcon key="b" />,
+    <LayersIcon key="c" />,
+    <TrashIcon key="d" />,
+  ]
   const group = (title: string, items: Copy['trust']['control'], icons: ReactNode[]) => (
     <div className="reveal">
       <h3 className="type-eyebrow text-band-accent">{title}</h3>
       <ul className="mt-5 grid gap-x-8 gap-y-6 sm:grid-cols-2">
         {items.map((item, i) => (
           <li key={item.title} className="flex gap-3.5">
-            <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-panel bg-white/8 text-lg text-band-accent ring-1 ring-white/10">
+            <span
+              aria-hidden
+              className="grid size-10 shrink-0 place-items-center rounded-panel bg-white/8 text-lg text-band-accent ring-1 ring-white/10"
+            >
               {icons[i]}
             </span>
             <div>
               <p className="font-heading font-bold text-white dark:text-primary">{item.title}</p>
-              <p className="mt-1 text-[0.9375rem] leading-relaxed text-band-text/80">{item.body}</p>
+              <p className="mt-1 text-base leading-relaxed text-band-text/80">{item.body}</p>
             </div>
           </li>
         ))}
@@ -689,7 +718,13 @@ function Trust({ t }: { t: Copy['trust'] }) {
 }
 
 function LocalPackage({ t }: { t: Copy['localPackage'] }) {
-  const icons = [<ChatIcon key="l" />, <ShieldCheckIcon key="k" />, <ListIcon key="i" />, <UsersIcon key="s" />, <TagIcon key="p" />]
+  const icons = [
+    <ChatIcon key="l" />,
+    <ShieldCheckIcon key="k" />,
+    <ListIcon key="i" />,
+    <UsersIcon key="s" />,
+    <TagIcon key="p" />,
+  ]
   return (
     <Section id="paket" tone="surface">
       <SectionHeader eyebrow={t.eyebrow} title={t.title} body={t.body} />
@@ -701,7 +736,10 @@ function LocalPackage({ t }: { t: Copy['localPackage'] }) {
             style={{ transitionDelay: `${i * 60}ms` }}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span aria-hidden className="grid size-10 place-items-center rounded-panel bg-assistant text-lg text-action">
+              <span
+                aria-hidden
+                className="grid size-10 place-items-center rounded-panel bg-assistant text-lg text-action"
+              >
                 {icons[i]}
               </span>
               {item.badge && (
@@ -711,18 +749,22 @@ function LocalPackage({ t }: { t: Copy['localPackage'] }) {
               )}
             </div>
             <h3 className="mt-4 font-heading text-lg leading-snug font-bold tracking-tight">{item.title}</h3>
-            <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-secondary">{item.body}</p>
+            <p className="mt-1.5 text-base leading-relaxed text-secondary">{item.body}</p>
             {i === 1 && (
               <div className="mt-4">
                 <p className="text-xs font-semibold text-secondary">{t.legalLabel}</p>
                 <ul className="mt-2 flex flex-wrap gap-2">
                   {t.legal.map((doc) => {
                     const href = appLink(doc.path)
-                    const chip = 'inline-flex min-h-9 items-center rounded-full border border-border bg-surface px-3 text-sm font-medium'
+                    const chip =
+                      'inline-flex min-h-9 items-center rounded-full border border-border bg-surface px-3 text-sm font-medium'
                     return (
                       <li key={doc.path}>
                         {href ? (
-                          <a href={href} className={`${chip} text-action hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>
+                          <a
+                            href={href}
+                            className={`${chip} text-action hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
+                          >
                             {doc.label}
                           </a>
                         ) : (
@@ -744,7 +786,7 @@ function LocalPackage({ t }: { t: Copy['localPackage'] }) {
             </div>
           )}
           <a href="#pilot" className={`${buttonPrimary} ${buttonLarge}`}>
-            {t.cta} <ArrowRightIcon aria-hidden />
+            {t.cta}
           </a>
         </li>
       </ul>
@@ -771,7 +813,9 @@ function Faq({ t }: { t: Copy['faq'] }) {
                   <PlusIcon />
                 </span>
               </summary>
-              <p className="max-w-[40rem] px-5 pb-5 text-[0.9375rem] leading-relaxed text-secondary sm:px-6">{item.a}</p>
+              <p className="max-w-[40rem] px-5 pb-5 text-base leading-relaxed text-secondary sm:px-6">
+                {item.a}
+              </p>
             </details>
           ))}
         </div>
@@ -782,9 +826,18 @@ function Faq({ t }: { t: Copy['faq'] }) {
 
 function Pilot({ t, lang, pilotRef }: { t: Copy; lang: Lang; pilotRef: RefObject<HTMLElement | null> }) {
   return (
-    <section id="pilot" ref={pilotRef} className="relative overflow-hidden border-t border-border bg-assistant py-20 md:py-28">
-      <div aria-hidden className="dot-field pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
-      <div className={`${container} relative grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,31rem)] lg:gap-16`}>
+    <section
+      id="pilot"
+      ref={pilotRef}
+      className="relative overflow-hidden border-t border-border bg-assistant py-20 md:py-28"
+    >
+      <div
+        aria-hidden
+        className="dot-field pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]"
+      />
+      <div
+        className={`${container} relative grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,31rem)] lg:gap-16`}
+      >
         <div className="min-w-0">
           <SectionHeader eyebrow={t.pilot.eyebrow} title={t.pilot.title} body={t.pilot.body} />
 
@@ -847,7 +900,9 @@ function SiteFooter({ t }: { t: Copy }) {
           </a>
         </nav>
       </div>
-      <div className={`${container} flex flex-col gap-3 border-t border-border py-6 text-xs text-secondary md:flex-row md:items-center md:justify-between`}>
+      <div
+        className={`${container} flex flex-col gap-3 border-t border-border py-6 text-xs text-secondary md:flex-row md:items-center md:justify-between`}
+      >
         <p className="max-w-3xl leading-relaxed">{t.footer.trademark}</p>
         <div className="flex shrink-0 items-center gap-4">
           <span>© 2026 {PRODUCT_NAME}</span>
